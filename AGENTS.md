@@ -156,6 +156,7 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 - Prefer modern collection expressions (`[]`)
 - Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing
+- Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
 
 **C/C++ style:**
 - See `.clang-format`; keep consistent naming

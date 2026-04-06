@@ -13,7 +13,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.LifetimeManager;
 
@@ -28,7 +28,7 @@ public class TerminationSignalTests : TestHelper
     {
     }
 
-    [SkippableFact(Skip = "There are timing issues in the shutdown after adding DisposeAsync")]
+    [SkippableFact]
     public async Task SigtermTriggersShutdownOnce_WhenRepeated()
     {
         await RunSigtermTestAsync(signalCount: 2, usePublishWithRid: false);
@@ -74,6 +74,7 @@ public class TerminationSignalTests : TestHelper
 
         SetEnvironmentVariable("DD_LIFETIME_READY_FILE", readyFile);
         SetEnvironmentVariable("DD_LIFETIME_SHUTDOWN_FILE", shutdownFile);
+        SetEnvironmentVariable("DD_LIFETIME_SHUTDOWN_DELAY_MS", "1000");
 
         using var process = await StartSample(agent, "--wait", packageVersion: string.Empty, aspNetCorePort: 0, usePublishWithRID: usePublishWithRid);
         using var helper = new ProcessHelper(process);

@@ -6,7 +6,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
-    <LangVersion>11</LangVersion>
+    <LangVersion>14</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!-- Strong name signature -->

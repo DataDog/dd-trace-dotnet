@@ -124,8 +124,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetData))]
         public async Task SubmitsTraces(string packageVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -173,7 +171,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task SubmitsTracesWithActivitySource(string packageVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             SetEnvironmentVariable("ADD_ADDITIONAL_ACTIVITY_SOURCE", "true");
 
             using (var telemetry = this.ConfigureTelemetry())
@@ -218,6 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task IntegrationDisabled(string packageVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -265,8 +263,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
             SetEnvironmentVariable("OTEL_TRACES_EXPORTER", datadogTracesEnabled == "true" ? "otlp" : "none");
 
-            // While the feature does not need DD_TRACE_OTEL_ENABLED=true to be set, spans are only written with the OTel API in this test application
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
@@ -687,6 +683,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (logRecord["span_id"] != null)
                     {
                         logRecord["span_id"] = "normalized-span-id";
+                    }
+
+                    // This is sometimes added, sometimes not, so just remove it
+                    if (logRecord is JObject jObj)
+                    {
+                        jObj.Remove("flags");
                     }
                 }
 

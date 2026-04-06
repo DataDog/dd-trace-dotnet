@@ -66,6 +66,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "DeprecatedHttpStatusTagName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -124,6 +148,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "InnerSpanError"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -194,6 +242,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "InnerSpanOk"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -249,6 +321,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "InnerSpanUpdated"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -356,6 +452,36 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "OperationNameRootSpan"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -396,12 +522,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
                 }
               ]
             },
@@ -414,6 +534,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "http.server.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -474,6 +618,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "http.client.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "client"
@@ -533,6 +701,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "redis.query"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "db"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "client"
@@ -591,6 +783,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "kafka.receive"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -656,6 +872,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "kafka.receive"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -722,6 +962,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "kafka.receive"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "producer"
@@ -787,6 +1051,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "kafka.receive"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "consumer"
@@ -851,6 +1139,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aws.s3.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -917,6 +1229,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aws.client.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "client"
@@ -975,6 +1311,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "grpc.client.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1035,6 +1395,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "grpc.server.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "server"
@@ -1093,6 +1477,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aws.my_function.invoke"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1159,6 +1567,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "datasource.invoke"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "server"
@@ -1217,6 +1649,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "graphql.server.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1277,6 +1733,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "amqp.server.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "server"
@@ -1336,6 +1816,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "server.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "server"
@@ -1388,6 +1892,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "amqp.client.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1448,6 +1976,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "client.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "client"
@@ -1500,6 +2052,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1554,6 +2130,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "consumer"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "consumer"
@@ -1606,6 +2206,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "producer"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceName"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1660,6 +2284,36 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "servicenameoverride"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "operationnameoverride"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "ResourceNameOverride"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "SpanTypeOverride"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "server"
@@ -1708,12 +2362,6 @@
                   }
                 },
                 {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
-                },
-                {
                   "key": "_dd1.sr.eausr",
                   "value": {
                     "doubleValue": 1.0
@@ -1730,6 +2378,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "Response"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1788,6 +2460,36 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "saying_hello"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "SayHello"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -1900,12 +2602,6 @@
                   "key": "attribute-doubleArrayEmpty",
                   "value": {
                     "stringValue": "[]"
-                  }
-                },
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
                   }
                 },
                 {
@@ -2073,6 +2769,36 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "SayHello2"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -2112,12 +2838,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
                   }
                 }
               ],
@@ -2138,6 +2858,36 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "SayHello3"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -2177,12 +2927,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
                   }
                 }
               ],
@@ -2207,6 +2951,36 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.opentelemetrysdk"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "service.name should be the DefaultServiceName value"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -2236,12 +3010,6 @@
                   "value": {
                     "stringValue": "Samples.OpenTelemetrySdk"
                   }
-                },
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
                 }
               ]
             },
@@ -2254,6 +3022,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "SomeHttpSpan"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -2314,6 +3106,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "StartActiveSpan.Child"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -2366,6 +3182,30 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "StartRootSpan"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
                 {
                   "key": "span.kind",
                   "value": {
@@ -2420,6 +3260,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "StartSpan"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -2473,6 +3337,30 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "myservicename"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "StartSpan2"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -2525,6 +3413,36 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.opentelemetrysdk"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "Transform"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "custom"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
                   "key": "span.kind",
                   "value": {
                     "stringValue": "internal"
@@ -2546,12 +3464,6 @@
                   "key": "otel.status_code",
                   "value": {
                     "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
                   }
                 }
               ]
