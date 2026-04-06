@@ -327,8 +327,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.19.1",
-        "maxVersionAvailableInclusive": "4.0.19.1",
+        "maxVersionSupportedInclusive": "4.0.19.2",
+        "maxVersionAvailableInclusive": "4.0.19.2",
         "maxVersionTestedInclusive": "4.0.19.1"
       }
     ]
@@ -344,8 +344,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.11",
-        "maxVersionSupportedInclusive": "4.0.3.21",
-        "maxVersionAvailableInclusive": "4.0.3.21",
+        "maxVersionSupportedInclusive": "4.0.3.22",
+        "maxVersionAvailableInclusive": "4.0.3.22",
         "maxVersionTestedInclusive": "4.0.3.21"
       }
     ]
@@ -699,13 +699,13 @@
     "maxAssemblyVersionInclusive": "1.65535.65535",
     "packages": [
       {
-        "name": "Hangfire",
+        "name": "Hangfire.Core",
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "1.7.0",
-        "minVersionTestedInclusive": null,
+        "minVersionTestedInclusive": "1.7.37",
         "maxVersionSupportedInclusive": "1.8.23",
         "maxVersionAvailableInclusive": "1.8.23",
-        "maxVersionTestedInclusive": null
+        "maxVersionTestedInclusive": "1.8.23"
       }
     ]
   },
@@ -1006,7 +1006,17 @@
     "assemblyName": "MSTest.TestFramework",
     "minAssemblyVersionInclusive": "4.0.0",
     "maxAssemblyVersionInclusive": "4.65535.65535",
-    "packages": []
+    "packages": [
+      {
+        "name": "MSTest.TestFramework",
+        "minVersionAvailableInclusive": "1.1.11",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": "2.0.0",
+        "maxVersionSupportedInclusive": "4.1.0",
+        "maxVersionAvailableInclusive": "4.1.0",
+        "maxVersionTestedInclusive": "4.1.0"
+      }
+    ]
   },
   {
     "integrationName": "MsTestV2",
@@ -1105,7 +1115,17 @@
     "assemblyName": "Datadog.FeatureFlags.OpenFeature",
     "minAssemblyVersionInclusive": "2.0.0",
     "maxAssemblyVersionInclusive": "2.65535.65535",
-    "packages": []
+    "packages": [
+      {
+        "name": "OpenFeature",
+        "minVersionAvailableInclusive": "0.1.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": "2.0.0",
+        "maxVersionSupportedInclusive": "2.11.1",
+        "maxVersionAvailableInclusive": "2.11.1",
+        "maxVersionTestedInclusive": "2.10.0"
+      }
+    ]
   },
   {
     "integrationName": "OpenTelemetry",
@@ -1340,8 +1360,8 @@
         "minVersionAvailableInclusive": "1.0.187",
         "minVersionSupportedInclusive": "1.0.187",
         "minVersionTestedInclusive": "1.0.488",
-        "maxVersionSupportedInclusive": "2.12.4",
-        "maxVersionAvailableInclusive": "2.12.4",
+        "maxVersionSupportedInclusive": "2.12.8",
+        "maxVersionAvailableInclusive": "2.12.8",
         "maxVersionTestedInclusive": "2.12.4"
       }
     ]

@@ -775,12 +775,12 @@ supportedConfigurations:
     const_name: UseUnsafeEncoder
     documentation: Use new unsafe encoder for the waf
   DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED:
-  - implementation: A
+  - implementation: B
     type: boolean
-    default: 'false'
+    default: 'true'
     const_name: PropagateProcessTags
     documentation: |-
-      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `false`
+      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
   DD_GIT_BRANCH:
   - implementation: A
     type: string
@@ -1580,6 +1580,15 @@ supportedConfigurations:
     documentation: |-
       Configuration key for whether telemetry metrics should be sent.
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
+  _DD_ROOT_DOTNET_SESSION_ID:
+  - implementation: A
+    type: string
+    default: null
+    product: Telemetry
+    const_name: RootSessionId
+    documentation: |-
+      Internal env var for propagating the root session ID to child processes.
+      Set automatically by the tracer at init time; not user-configurable.
   DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES:
   - implementation: A
     type: int

@@ -29,6 +29,8 @@ updates:
         update-types: ["version-update:semver-patch"]
 
   # Mocked projects for integration dependency notifications
+    cooldown:
+      default-days: 2
   - package-ecosystem: "nuget"
     directory: "/tracer/dependabot/integrations"
     registries: "*"
@@ -41,6 +43,8 @@ updates:
 
   # Azure functions explicit testing - we can't include these with our "normal" process checks
   # Because they aren't compatible with the dotnet msbuild approach we're using
+    cooldown:
+      default-days: 2
   - package-ecosystem: "nuget"
     directory: "/tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated"
     registries: "*"
@@ -54,6 +58,8 @@ updates:
         update-types: ["version-update:semver-patch"]
 
   # Src libraries
+    cooldown:
+      default-days: 2
   - package-ecosystem: "nuget"
     directory: "/tracer/src"
     # This is a hacky way to get Dependabot to care primarily about
@@ -93,6 +99,8 @@ updates:
       # Lock Microsoft.Build.Framework for widest compatibility when instrumenting builds
       - dependency-name: "Microsoft.Build.Framework"
 
+    cooldown:
+      default-days: 2
   - package-ecosystem: "github-actions"
     directories:
       - "/"
@@ -104,3 +112,5 @@ updates:
       gh-actions-packages:
         patterns:
           - "*"
+    cooldown:
+      default-days: 2
