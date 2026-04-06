@@ -690,6 +690,9 @@ public class ProbesTests : TestHelper
 
         foreach (var span in spans)
         {
+            // Remove process tags that can be injected on the first span in a payload
+            span.Tags.Remove(global::Datadog.Trace.Tags.ProcessTags);
+
             var toSanitize = span.Tags.Where(tag => tag.Key.StartsWith(errorTagStartWith) && tag.Key.EndsWith(errorTagEndWith)).ToList();
             foreach (var keyValuePair in toSanitize)
             {

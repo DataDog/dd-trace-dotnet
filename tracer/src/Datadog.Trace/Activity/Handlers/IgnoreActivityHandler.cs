@@ -19,16 +19,22 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly string[] SourcesNames =
         {
             "Couchbase.DotnetSdk.RequestTracer",
+            "Couchbase.DotnetSdk.OpenTelemetryRequestTracer",
+            "Grpc.Net.Client",
             "HttpHandlerDiagnosticListener",
             "Microsoft.AspNetCore",
             "Microsoft.EntityFrameworkCore",
             "MongoDB.Driver",
             "MySqlConnector",
+            "connector-net",
             "Npgsql",
+            "RabbitMQ.Client.Publisher",
+            "RabbitMQ.Client.Subscriber",
             "System.Net.Http.Desktop",
             "SqlClientDiagnosticListener",
             "Experimental.System.Net.NameResolution",
             "Experimental.System.Net.Http.Connections",
+            "Experimental.System.Net.Security",
             "Experimental.System.Net.Sockets",
         };
 
