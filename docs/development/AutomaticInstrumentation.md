@@ -40,8 +40,8 @@ Creating a new instrumentation implementation typically uses the following proce
 6. Create integration tests for your instrumentation. For more details, see [Testing](#testing).
    1. Create (or reuse) a sample application that uses the target library, which ideally exercises all the code paths in your new instrumentation. Use an `$(ApiVersion)` MSBuild variables to allow testing against multiple package versions in CI. 
    2. Add a new entry in the SpanMetadataRules files (see the /tracer/test/Datadog.Trace.TestHelpers/SpanMetadata*Rules.cs files) that define the expected Name, Type, and Tags for the new integration spans, and run build target `GenerateSpanDocumentation` to generate the updated Markdown file. For new instrumentation, you should add the definitions for all existing schema versions.
-   3. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../tracer/build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples. You may need to add an entry in the [tracer/build/Honeypot/IntegrationGroups.cs](../../tracer/build//Honeypot/IntegrationGroups.cs) to specify the Nuget Package instrumented by the integration. 
-   4. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests. 
+   3. Add an entry in [tracer/build/_build/GeneratePackageVersions/IntegrationDefinitions.cs](../../tracer/build/_build/GeneratePackageVersions/IntegrationDefinitions.cs) defining the NuGet package, version range, and supported frameworks using the fluent builder API. See the existing definitions for examples.
+   4. Add a corresponding property in [PackageVersions.cs](../../tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Helpers/PackageVersions.cs) for your new integration, then run `./tracer/build.ps1 GeneratePackageVersions` (optionally with `--IncludePackages YourNuGetPackage` to scope the update). This generates the `.g.props` files and JSON test manifests that you can use as `[MemberData]` for your `[Theory]` tests. 
    5. If needed, add a docker image in the docker-compose.yml to allow the CI to test against it. Locally, you can use docker-compose as well and start only the dependencies you need.
    6. Use the `MockTracerAgent` and the newly defined `SpanMetadataRules` method in your integration test to confirm your instrumentation is working as expected.
 7. After testing locally, push to GitHub, and do a manual run in Azure Devops for your branch. For more details, see [Testing in CI](#testing-in-ci).
@@ -364,13 +364,11 @@ In CI, or when do "multi-version" testing, the project will be built multiple ti
 
 We use a [Nuke](https://nuke.build/) target to automatically generate all the required boilerplate to test against multiple package versions. To add support for a new library you must:
 
-- Update [tracer/build/PackageVersionsGeneratorDefinitions.json](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/PackageVersionsGeneratorDefinitions.json) to describe which versions to test.
-- If you're instrumenting a new NuGet package/assembly, add an entry into [the `IntegrationMap` dictionary](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/_build/Honeypot/IntegrationGroups.cs) which maps from an assembly name to a NuGet package name.
-- Using `./tracer/build.ps1` (or appropriate script for your platform) run `./tracer/build.ps1 GeneratePackageVersions` to generate all the boilerplate.
+- Add an entry in [tracer/build/_build/GeneratePackageVersions/IntegrationDefinitions.cs](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/_build/GeneratePackageVersions/IntegrationDefinitions.cs) using the fluent builder API to define the NuGet package name, version range, supported frameworks, and any version-scoped constraints (via `.When()`).
+- Add a corresponding property in [PackageVersions.cs](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Helpers/PackageVersions.cs) for your new integration.
+- Using `./tracer/build.ps1` (or appropriate script for your platform) run `./tracer/build.ps1 GeneratePackageVersions` to generate the `.g.props` files and JSON test manifests.
 
-The JSON format has various mechanisms for only testing specific framework versions (if required), as well as which _specific_ versions to test on every PR (you can use `*` for "floating" versions which are automatically updated to new versions as packages are released.)
-
-Note that running `GeneratePackageVersions` updates _all_ the packages in the solution. This can lead to lots of unrelated changes (\*\*Cough, AWS SDK, Cough\*\*). It's best to revert the changes that don't apply strictly to your integration to avoid noise.
+The builder API supports version-scoped framework constraints (`.When()`), specific version globs (`.Specific()`), Alpine/ARM64 skip flags, and Docker dependency declarations. Use `--IncludePackages YourNuGetPackage` to scope the update to just your integration and avoid unrelated changes.
 
 ##### Creating the integration test
 
@@ -446,7 +444,7 @@ On MacOs, you won't be able to run all tests as some images aren't arm compatibl
 
 #### Testing in CI
 
-In CI, for PRs, the Windows build runs against a single API version (the default version listed in your sample's _.csproj_ file). On Linux, we test against all of the "specific" versions you listed in the _PackageVersionsGeneratorDefinitions.json_ file.
+In CI, for PRs, the Windows build runs against a single API version (the default version listed in your sample's _.csproj_ file). On Linux, we test against all of the "specific" versions defined in _IntegrationDefinitions.cs_.
 
 When creating a new integration, or when making significant changes to an integration, you should _also_ do a dedicated run that tests all the supported minor versions for your package. 
 

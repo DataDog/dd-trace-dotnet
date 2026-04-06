@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             private static object?[] GetFilteredVersions(string packageName, string minVersion, string maxVersion)
             {
                 var property = typeof(PackageVersions).GetProperty(packageName)
-                               ?? throw new ArgumentException($"Package name '{packageName}' not found in PackageVersions.g.cs class.");
+                               ?? throw new ArgumentException($"Package name '{packageName}' not found in PackageVersions class.");
 
                 if (property.GetValue(null) is not IEnumerable<object[]> packageVersions)
                 {

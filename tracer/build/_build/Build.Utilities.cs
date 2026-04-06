@@ -238,6 +238,20 @@ partial class Build
                _ => _ => true
            };
 
+           // Warn about filter values that don't match any known integration package
+           var knownPackages = new HashSet<string>(
+               IntegrationDefinitions.All.Select(d => d.NuGetPackageName),
+               StringComparer.OrdinalIgnoreCase);
+
+           foreach (var filter in new[] { IncludePackages, ExcludePackages })
+           {
+               if (filter is null) continue;
+               foreach (var name in filter.Where(name => !knownPackages.Contains(name)))
+               {
+                   Logger.Warning("Filter value '{Name}' does not match any NuGet package in IntegrationDefinitions", name);
+               }
+           }
+
            // Resolve effective cooldown:
            //  - Explicit --PackageVersionCooldownDays wins
            //  - --IncludePackages without explicit cooldown defaults to 0

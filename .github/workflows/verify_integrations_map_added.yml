@@ -30,9 +30,7 @@ jobs:
         run: |
           echo "## :warning: Error generating package versions" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "New integration detected. You must update the [IntegrationGroup.IntegrationMap](tracer/build/_build/Honeypot/IntegrationGroups.cs)" >> $GITHUB_STEP_SUMMARY
-          echo "class to include the new integration." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "If your new integration uses multi-api testing to test multiple package versions," >> $GITHUB_STEP_SUMMARY
-          echo "list the NuGet package in the associated array. Otherwise use an empty array." >> $GITHUB_STEP_SUMMARY
+          echo "Package version generation failed. If you added a new integration, ensure you have added" >> $GITHUB_STEP_SUMMARY
+          echo "an entry in [IntegrationDefinitions.cs](tracer/build/_build/GeneratePackageVersions/IntegrationDefinitions.cs)" >> $GITHUB_STEP_SUMMARY
+          echo "and a corresponding property in [PackageVersions.cs](tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Helpers/PackageVersions.cs)." >> $GITHUB_STEP_SUMMARY
 

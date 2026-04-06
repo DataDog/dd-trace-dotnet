@@ -4,7 +4,7 @@
     <!--
       Note:
       ServiceStack.Redis 6.2.0 accidentally broke .NET Standard 2.0 compliance
-      The PackageVersionsGeneratorDefinitions.json has been updated with this restriction.
+      The IntegrationDefinitions.cs has been updated with this restriction.
       The second <ApiVersion> will lower the targeted ServiceStack.Redis NuGet to 6.1.0 for .NET Core 2.1/3.0
       if the first <ApiVersion> is targeting version 6.2.0 of the ServiceStack.Redis Nuget.
 

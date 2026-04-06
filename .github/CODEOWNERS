@@ -80,10 +80,8 @@
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/InstrumentationVerificationSanityCheckTests.cs  @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NativeProfilerChecks.cs                         @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/NoMultiLoaderTests.cs                           @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersions.g.cs                            @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatestMajors.g.cs                @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatestMinors.g.cs                @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatestSpecific.g.cs              @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Helpers/PackageVersions.cs                      @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersions/                                @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/RemotingTests.cs                                @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/RuntimeMetricsTests.cs                          @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TelemetryTests.cs                               @DataDog/tracing-dotnet
