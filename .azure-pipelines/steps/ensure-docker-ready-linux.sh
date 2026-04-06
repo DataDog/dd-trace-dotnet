@@ -98,6 +98,8 @@ wait_for_docker()
             elif [ "${svc_status}" != "active" ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
                 log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted"
             fi
+        else
+            log "systemctl not available, cannot attempt Docker service restart"
         fi
 
         log "Docker not ready yet (${elapsed}s elapsed), retrying in ${DOCKER_READY_CHECK_INTERVAL_SECONDS}s..."
