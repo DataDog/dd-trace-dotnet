@@ -61,16 +61,16 @@ namespace Datadog.Trace.DatabaseMonitoring
             //  with all parts except trimming separators for leading empty names (null or empty strings,
             //  but not whitespace). Separators in the middle should be added, even if the name part is
             //  null/empty, to maintain proper location of the parts.
-            for (int i = 0; i < strings.Length; i++)
+            foreach (var s in strings)
             {
-                if (0 < sb.Length)
+                if (sb.Length > 0)
                 {
                     sb.Append('.');
                 }
 
-                if (strings[i] != null && 0 != strings[i].Length)
+                if (!string.IsNullOrEmpty(s))
                 {
-                    AppendQuotedString(sb, "[", "]", strings[i]);
+                    AppendQuotedString(sb, "[", "]", s);
                 }
             }
 
