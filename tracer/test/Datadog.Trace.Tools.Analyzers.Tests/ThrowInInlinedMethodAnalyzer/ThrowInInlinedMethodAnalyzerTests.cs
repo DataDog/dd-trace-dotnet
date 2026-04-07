@@ -191,7 +191,7 @@ public class ThrowInInlinedMethodAnalyzerTests
 
             class TestClass
             {
-                [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+                [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.NoOptimization)]
                 void TestMethod()
                 {
                     {|#0:throw new InvalidOperationException();|}
@@ -258,6 +258,37 @@ public class ThrowInInlinedMethodAnalyzerTests
         var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithArguments("TestMethod");
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task ShouldFlagThrowInAggressiveInliningLocalFunction()
+    {
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                void OuterMethod()
+                {
+                    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                    int LocalFunc(int value)
+                    {
+                        if (value < 0)
+                        {
+                            {|#0:throw new ArgumentOutOfRangeException(nameof(value));|}
+                        }
+
+                        return value;
+                    }
+                }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("LocalFunc");
         await Verifier.VerifyAnalyzerAsync(source, expected);
     }
 

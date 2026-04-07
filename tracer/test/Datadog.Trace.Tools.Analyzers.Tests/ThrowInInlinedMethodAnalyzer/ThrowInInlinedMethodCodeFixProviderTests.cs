@@ -29,18 +29,28 @@ public class ThrowInInlinedMethodCodeFixProviderTests
         {
             internal static class ThrowHelper
             {
+                internal static void ThrowArgumentNullException() => throw new System.ArgumentNullException();
                 internal static void ThrowArgumentNullException(string paramName) => throw new System.ArgumentNullException(paramName);
+                internal static void ThrowArgumentOutOfRangeException() => throw new System.ArgumentOutOfRangeException();
                 internal static void ThrowArgumentOutOfRangeException(string paramName) => throw new System.ArgumentOutOfRangeException(paramName);
                 internal static void ThrowArgumentOutOfRangeException(string paramName, string message) => throw new System.ArgumentOutOfRangeException(paramName, message);
                 internal static void ThrowArgumentOutOfRangeException(string paramName, object actualValue, string message) => throw new System.ArgumentOutOfRangeException(paramName, actualValue, message);
+                internal static void ThrowArgumentException() => throw new System.ArgumentException();
                 internal static void ThrowArgumentException(string message) => throw new System.ArgumentException(message);
                 internal static void ThrowArgumentException(string message, string paramName) => throw new System.ArgumentException(message, paramName);
+                internal static void ThrowInvalidOperationException() => throw new System.InvalidOperationException();
                 internal static void ThrowInvalidOperationException(string message) => throw new System.InvalidOperationException(message);
+                internal static void ThrowException() => throw new System.Exception();
                 internal static void ThrowException(string message) => throw new System.Exception(message);
+                internal static void ThrowInvalidCastException() => throw new System.InvalidCastException();
                 internal static void ThrowInvalidCastException(string message) => throw new System.InvalidCastException(message);
+                internal static void ThrowIndexOutOfRangeException() => throw new System.IndexOutOfRangeException();
                 internal static void ThrowIndexOutOfRangeException(string message) => throw new System.IndexOutOfRangeException(message);
+                internal static void ThrowNotSupportedException() => throw new System.NotSupportedException();
                 internal static void ThrowNotSupportedException(string message) => throw new System.NotSupportedException(message);
+                internal static void ThrowKeyNotFoundException() => throw new System.Collections.Generic.KeyNotFoundException();
                 internal static void ThrowKeyNotFoundException(string message) => throw new System.Collections.Generic.KeyNotFoundException(message);
+                internal static void ThrowNullReferenceException() => throw new System.NullReferenceException();
                 internal static void ThrowNullReferenceException(string message) => throw new System.NullReferenceException(message);
             }
         }
@@ -261,9 +271,8 @@ public class ThrowInInlinedMethodCodeFixProviderTests
     }
 
     [Fact]
-    public async Task ShouldNotFixZeroArgConstructor()
+    public async Task ShouldFixZeroArgConstructor()
     {
-        // throw new InvalidOperationException() has 0 args, ThrowHelper requires 1
         const string source = """
             using System;
             using System.Runtime.CompilerServices;
@@ -278,17 +287,31 @@ public class ThrowInInlinedMethodCodeFixProviderTests
             }
             """;
 
+        const string fix = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void TestMethod()
+                {
+                    ThrowHelper.ThrowInvalidOperationException();
+                }
+            }
+            """;
+
         var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithArguments("TestMethod");
-
-        await Verifier.VerifyCodeFixAsync(source, expected, source);
+        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
     }
 
     [Fact]
-    public async Task ShouldNotFixThrowExpression()
+    public async Task ShouldFixThrowExpression()
     {
-        // Throw expressions can't be replaced with void ThrowHelper calls
+        // Throw expressions in null-coalescing are converted to if-statements
         const string source = """
             using System;
             using System.Runtime.CompilerServices;
@@ -303,11 +326,29 @@ public class ThrowInInlinedMethodCodeFixProviderTests
             }
             """;
 
+        const string fix = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                object TestMethod(object? arg)
+                {
+                    if (arg is null)
+                    {
+                        ThrowHelper.ThrowArgumentNullException(nameof(arg));
+                    }
+                    return arg;
+                }
+            }
+            """;
+
         var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithArguments("TestMethod");
-
-        await Verifier.VerifyCodeFixAsync(source, expected, source);
+        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
     }
 
     [Fact]
@@ -332,6 +373,201 @@ public class ThrowInInlinedMethodCodeFixProviderTests
                         {|#0:throw;|}
                     }
                 }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestMethod");
+
+        await Verifier.VerifyCodeFixAsync(source, expected, source);
+    }
+
+    [Fact]
+    public async Task ShouldFixNullCoalesceThrowExpressionInReturn()
+    {
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                object TestMethod(object? arg)
+                {
+                    return arg ?? {|#0:throw new ArgumentNullException(nameof(arg))|};
+                }
+            }
+            """;
+
+        const string fix = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                object TestMethod(object? arg)
+                {
+                    if (arg is null)
+                    {
+                        ThrowHelper.ThrowArgumentNullException(nameof(arg));
+                    }
+                    return arg;
+                }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestMethod");
+        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
+    }
+
+    [Fact]
+    public async Task ShouldFixNullCoalesceThrowExpressionInAssignment()
+    {
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void TestMethod(object? arg)
+                {
+                    var value = arg ?? {|#0:throw new ArgumentNullException(nameof(arg))|};
+                }
+            }
+            """;
+
+        const string fix = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void TestMethod(object? arg)
+                {
+                    if (arg is null)
+                    {
+                        ThrowHelper.ThrowArgumentNullException(nameof(arg));
+                    }
+                    var value = arg;
+                }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestMethod");
+        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
+    }
+
+    [Fact]
+    public async Task ShouldFixConditionalThrowExpressionInFalseBranch()
+    {
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                string TestMethod(bool isValid, string value)
+                {
+                    return isValid ? value : {|#0:throw new InvalidOperationException("invalid")|};
+                }
+            }
+            """;
+
+        const string fix = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                string TestMethod(bool isValid, string value)
+                {
+                    if (!isValid)
+                    {
+                        ThrowHelper.ThrowInvalidOperationException("invalid");
+                    }
+                    return value;
+                }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestMethod");
+        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
+    }
+
+    [Fact]
+    public async Task ShouldFixConditionalThrowExpressionInTrueBranch()
+    {
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                string TestMethod(bool isError, string value)
+                {
+                    return isError ? {|#0:throw new InvalidOperationException("error")|} : value;
+                }
+            }
+            """;
+
+        const string fix = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                string TestMethod(bool isError, string value)
+                {
+                    if (isError)
+                    {
+                        ThrowHelper.ThrowInvalidOperationException("error");
+                    }
+                    return value;
+                }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestMethod");
+        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
+    }
+
+    [Fact]
+    public async Task ShouldNotFixNullCoalesceWithMethodCallLeftSide()
+    {
+        // GetValue() has side effects — can't be evaluated twice safely
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                object TestMethod()
+                {
+                    return GetValue() ?? {|#0:throw new InvalidOperationException("no value")|};
+                }
+
+                object? GetValue() => null;
             }
             """;
 

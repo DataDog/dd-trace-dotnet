@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
 {
     /// <summary>
     /// A CodeFixProvider for <see cref="ThrowInInlinedMethodAnalyzer"/> that replaces
-    /// throw statements with ThrowHelper method calls.
+    /// throw statements and throw expressions with ThrowHelper method calls.
     /// </summary>
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ThrowInInlinedMethodCodeFixProvider))]
     [Shared]
@@ -29,23 +29,19 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
     {
         private const string ThrowHelperUsingNamespace = "Datadog.Trace.Util";
 
-        private static readonly int[] OneArg = { 1 };
-        private static readonly int[] OneOrTwoArgs = { 1, 2 };
-        private static readonly int[] OneToThreeArgs = { 1, 2, 3 };
-
-        private static readonly Dictionary<string, (string MethodName, int[] ValidArgCounts)> SupportedExceptions
-            = new Dictionary<string, (string, int[])>
+        private static readonly Dictionary<string, (string MethodName, int MaxArgs)> SupportedExceptions
+            = new Dictionary<string, (string, int)>
             {
-                ["System.ArgumentNullException"] = ("ThrowArgumentNullException", OneArg),
-                ["System.ArgumentOutOfRangeException"] = ("ThrowArgumentOutOfRangeException", OneToThreeArgs),
-                ["System.ArgumentException"] = ("ThrowArgumentException", OneOrTwoArgs),
-                ["System.InvalidOperationException"] = ("ThrowInvalidOperationException", OneArg),
-                ["System.Exception"] = ("ThrowException", OneArg),
-                ["System.InvalidCastException"] = ("ThrowInvalidCastException", OneArg),
-                ["System.IndexOutOfRangeException"] = ("ThrowIndexOutOfRangeException", OneArg),
-                ["System.NotSupportedException"] = ("ThrowNotSupportedException", OneArg),
-                ["System.Collections.Generic.KeyNotFoundException"] = ("ThrowKeyNotFoundException", OneArg),
-                ["System.NullReferenceException"] = ("ThrowNullReferenceException", OneArg),
+                ["System.ArgumentNullException"] = ("ThrowArgumentNullException", 1),
+                ["System.ArgumentOutOfRangeException"] = ("ThrowArgumentOutOfRangeException", 3),
+                ["System.ArgumentException"] = ("ThrowArgumentException", 2),
+                ["System.InvalidOperationException"] = ("ThrowInvalidOperationException", 1),
+                ["System.Exception"] = ("ThrowException", 1),
+                ["System.InvalidCastException"] = ("ThrowInvalidCastException", 1),
+                ["System.IndexOutOfRangeException"] = ("ThrowIndexOutOfRangeException", 1),
+                ["System.NotSupportedException"] = ("ThrowNotSupportedException", 1),
+                ["System.Collections.Generic.KeyNotFoundException"] = ("ThrowKeyNotFoundException", 1),
+                ["System.NullReferenceException"] = ("ThrowNullReferenceException", 1),
             };
 
         /// <inheritdoc />
@@ -68,42 +64,136 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
             var diagnostic = context.Diagnostics.First();
             var node = root.FindNode(diagnostic.Location.SourceSpan);
 
-            // Only handle throw statements with object creation expressions (not throw expressions or bare throw;)
-            if (node is not ThrowStatementSyntax throwStatement
-                || throwStatement.Expression is not ObjectCreationExpressionSyntax creation)
-            {
-                return;
-            }
-
             var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
             if (semanticModel is null)
             {
                 return;
             }
 
-            var typeInfo = semanticModel.GetTypeInfo(creation, context.CancellationToken);
+            if (node is ThrowStatementSyntax throwStatement
+                && throwStatement.Expression is ObjectCreationExpressionSyntax creation1
+                && TryGetThrowHelperMethod(semanticModel, creation1, context.CancellationToken, out var methodName1))
+            {
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title: $"Replace with ThrowHelper.{methodName1}",
+                        createChangedDocument: c => ReplaceThrowStatementAsync(context.Document, throwStatement, methodName1, c),
+                        equivalenceKey: nameof(ThrowInInlinedMethodCodeFixProvider)),
+                    diagnostic);
+            }
+            else if (node is ThrowExpressionSyntax throwExpression
+                     && throwExpression.Expression is ObjectCreationExpressionSyntax creation2
+                     && TryGetThrowHelperMethod(semanticModel, creation2, context.CancellationToken, out var methodName2)
+                     && CanConvertThrowExpression(throwExpression))
+            {
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title: $"Replace with ThrowHelper.{methodName2}",
+                        createChangedDocument: c => ReplaceThrowExpressionAsync(context.Document, throwExpression, methodName2, c),
+                        equivalenceKey: nameof(ThrowInInlinedMethodCodeFixProvider)),
+                    diagnostic);
+            }
+        }
+
+        private static bool TryGetThrowHelperMethod(
+            SemanticModel semanticModel,
+            ObjectCreationExpressionSyntax creation,
+            CancellationToken cancellationToken,
+            out string methodName)
+        {
+            methodName = string.Empty;
+            var typeInfo = semanticModel.GetTypeInfo(creation, cancellationToken);
             var typeName = typeInfo.Type?.ToDisplayString();
 
             if (typeName is null || !SupportedExceptions.TryGetValue(typeName, out var entry))
             {
-                return;
+                return false;
             }
 
             var argCount = creation.ArgumentList?.Arguments.Count ?? 0;
-            if (!entry.ValidArgCounts.Contains(argCount))
+            if (argCount > entry.MaxArgs)
             {
-                return;
+                return false;
             }
 
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    title: $"Replace with ThrowHelper.{entry.MethodName}",
-                    createChangedDocument: c => ReplaceWithThrowHelperAsync(context.Document, throwStatement, entry.MethodName, c),
-                    equivalenceKey: nameof(ThrowInInlinedMethodCodeFixProvider)),
-                diagnostic);
+            methodName = entry.MethodName;
+            return true;
         }
 
-        private static async Task<Document> ReplaceWithThrowHelperAsync(
+        private static bool CanConvertThrowExpression(ThrowExpressionSyntax throwExpression)
+        {
+            var parent = throwExpression.Parent;
+
+            if (parent is BinaryExpressionSyntax coalesce && coalesce.IsKind(SyntaxKind.CoalesceExpression))
+            {
+                // Only offer fix when left side has no side effects (won't be evaluated twice)
+                if (!IsSimpleExpression(coalesce.Left))
+                {
+                    return false;
+                }
+
+                // Must be a direct expression of a statement (not nested in another expression)
+                if (!IsDirectStatementExpression(coalesce))
+                {
+                    return false;
+                }
+            }
+            else if (parent is ConditionalExpressionSyntax conditional)
+            {
+                if (!IsDirectStatementExpression(conditional))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+
+            // Must be inside a statement within a block (so we can insert the if-statement)
+            var statement = parent.FirstAncestorOrSelf<StatementSyntax>();
+            return statement?.Parent is BlockSyntax;
+        }
+
+        private static bool IsSimpleExpression(ExpressionSyntax expression)
+        {
+            return expression switch
+            {
+                IdentifierNameSyntax => true,
+                ThisExpressionSyntax => true,
+                MemberAccessExpressionSyntax ma => IsSimpleExpression(ma.Expression),
+                _ => false,
+            };
+        }
+
+        private static bool IsDirectStatementExpression(ExpressionSyntax expression)
+        {
+            var parent = expression.Parent;
+
+            // return expr;
+            if (parent is ReturnStatementSyntax)
+            {
+                return true;
+            }
+
+            // var x = expr; or T x = expr;
+            if (parent is EqualsValueClauseSyntax)
+            {
+                return true;
+            }
+
+            // x = expr; (where the assignment is the entire expression statement)
+            if (parent is AssignmentExpressionSyntax assignment
+                && assignment.Right == expression
+                && assignment.Parent is ExpressionStatementSyntax)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static async Task<Document> ReplaceThrowStatementAsync(
             Document document,
             ThrowStatementSyntax throwStatement,
             string methodName,
@@ -116,34 +206,187 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
                 return document;
             }
 
-            // Build: ThrowHelper.MethodName(args)
-            var invocation = SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName("ThrowHelper"),
-                    SyntaxFactory.IdentifierName(methodName)),
-                creation.ArgumentList ?? SyntaxFactory.ArgumentList());
-
+            var invocation = BuildThrowHelperInvocation(methodName, creation.ArgumentList);
             var expressionStatement = SyntaxFactory.ExpressionStatement(invocation)
                 .WithLeadingTrivia(throwStatement.GetLeadingTrivia())
                 .WithTrailingTrivia(throwStatement.GetTrailingTrivia());
 
             root = root.ReplaceNode(throwStatement, expressionStatement);
+            root = AddUsingDirectiveIfNeeded(root);
+            return document.WithSyntaxRoot(root);
+        }
 
-            // Add using directive if not already present
+        private static async Task<Document> ReplaceThrowExpressionAsync(
+            Document document,
+            ThrowExpressionSyntax throwExpression,
+            string methodName,
+            CancellationToken cancellationToken)
+        {
+            var creation = (ObjectCreationExpressionSyntax)throwExpression.Expression;
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            if (root is null)
+            {
+                return document;
+            }
+
+            var parent = throwExpression.Parent!;
+            var containingStatement = parent.FirstAncestorOrSelf<StatementSyntax>()!;
+            var block = (BlockSyntax)containingStatement.Parent!;
+
+            var throwHelperInvocation = BuildThrowHelperInvocation(methodName, creation.ArgumentList);
+
+            ExpressionSyntax condition;
+            ExpressionSyntax valueExpression;
+
+            if (parent is BinaryExpressionSyntax coalesce && coalesce.IsKind(SyntaxKind.CoalesceExpression))
+            {
+                // x ?? throw new Ex(args)  →  if (x is null) { ThrowHelper.ThrowEx(args); }
+                condition = SyntaxFactory.IsPatternExpression(
+                    coalesce.Left.WithoutTrivia(),
+                    SyntaxFactory.ConstantPattern(
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
+                valueExpression = coalesce.Left.WithoutTrivia();
+            }
+            else if (parent is ConditionalExpressionSyntax conditional)
+            {
+                if (conditional.WhenFalse == throwExpression)
+                {
+                    // cond ? val : throw  →  if (negated-cond) { ThrowHelper; }; use val
+                    condition = NegateExpression(conditional.Condition.WithoutTrivia());
+                    valueExpression = conditional.WhenTrue.WithoutTrivia();
+                }
+                else
+                {
+                    // cond ? throw : val  →  if (cond) { ThrowHelper; }; use val
+                    condition = conditional.Condition.WithoutTrivia();
+                    valueExpression = conditional.WhenFalse.WithoutTrivia();
+                }
+            }
+            else
+            {
+                return document;
+            }
+
+            // Build the if statement with proper formatting
+            var indentation = GetIndentation(containingStatement);
+            var eol = GetEndOfLine(containingStatement);
+            var ifStatement = BuildIfStatement(indentation, eol, condition, throwHelperInvocation);
+
+            // Replace the parent expression (coalesce/conditional) with just the value expression
+            var modifiedStatement = containingStatement.ReplaceNode(parent, valueExpression);
+
+            // Replace the single statement with if + modified statement in the block
+            var newStatements = new List<StatementSyntax>(block.Statements.Count + 1);
+            foreach (var stmt in block.Statements)
+            {
+                if (stmt == containingStatement)
+                {
+                    newStatements.Add(ifStatement);
+                    newStatements.Add(modifiedStatement);
+                }
+                else
+                {
+                    newStatements.Add(stmt);
+                }
+            }
+
+            root = root.ReplaceNode(block, block.WithStatements(SyntaxFactory.List(newStatements)));
+            root = AddUsingDirectiveIfNeeded(root);
+            return document.WithSyntaxRoot(root);
+        }
+
+        private static StatementSyntax BuildIfStatement(
+            string indentation,
+            string eol,
+            ExpressionSyntax condition,
+            InvocationExpressionSyntax throwHelperInvocation)
+        {
+            var conditionText = condition.NormalizeWhitespace().ToFullString();
+            var invocationText = throwHelperInvocation.NormalizeWhitespace().ToFullString();
+            var innerIndent = indentation + "    ";
+
+            var text = $"if ({conditionText}){eol}{indentation}{{{eol}{innerIndent}{invocationText};{eol}{indentation}}}";
+            return SyntaxFactory.ParseStatement(text)
+                .WithLeadingTrivia(SyntaxFactory.Whitespace(indentation))
+                .WithTrailingTrivia(SyntaxFactory.EndOfLine(eol));
+        }
+
+        private static ExpressionSyntax NegateExpression(ExpressionSyntax expression)
+        {
+            // Already negated with !: unwrap
+            if (expression is PrefixUnaryExpressionSyntax prefix
+                && prefix.IsKind(SyntaxKind.LogicalNotExpression))
+            {
+                return prefix.Operand is ParenthesizedExpressionSyntax paren
+                    ? paren.Expression
+                    : prefix.Operand;
+            }
+
+            // Simple expressions don't need parentheses: !expr
+            if (expression is IdentifierNameSyntax or MemberAccessExpressionSyntax
+                or InvocationExpressionSyntax or ParenthesizedExpressionSyntax)
+            {
+                return SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, expression);
+            }
+
+            // Complex expressions: !(expr)
+            return SyntaxFactory.PrefixUnaryExpression(
+                SyntaxKind.LogicalNotExpression,
+                SyntaxFactory.ParenthesizedExpression(expression));
+        }
+
+        private static InvocationExpressionSyntax BuildThrowHelperInvocation(
+            string methodName,
+            ArgumentListSyntax? argumentList)
+        {
+            return SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("ThrowHelper"),
+                    SyntaxFactory.IdentifierName(methodName)),
+                argumentList ?? SyntaxFactory.ArgumentList());
+        }
+
+        private static SyntaxNode AddUsingDirectiveIfNeeded(SyntaxNode root)
+        {
             if (root is CompilationUnitSyntax compilationUnit && !HasUsingDirective(compilationUnit))
             {
-                // Match the document's existing line ending style
                 var eolTrivia = compilationUnit.Usings.Count > 0
                     ? GetTrailingEndOfLine(compilationUnit.Usings.Last())
                     : SyntaxFactory.ElasticCarriageReturnLineFeed;
 
                 var usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ThrowHelperUsingNamespace))
                     .WithTrailingTrivia(eolTrivia);
-                root = compilationUnit.AddUsings(usingDirective);
+                return compilationUnit.AddUsings(usingDirective);
             }
 
-            return document.WithSyntaxRoot(root);
+            return root;
+        }
+
+        private static string GetIndentation(SyntaxNode node)
+        {
+            foreach (var trivia in node.GetLeadingTrivia())
+            {
+                if (trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+                {
+                    return trivia.ToString();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string GetEndOfLine(SyntaxNode node)
+        {
+            foreach (var trivia in node.DescendantTrivia())
+            {
+                if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+                {
+                    return trivia.ToString();
+                }
+            }
+
+            return "\r\n";
         }
 
         private static SyntaxTrivia GetTrailingEndOfLine(UsingDirectiveSyntax usingDirective)
@@ -161,13 +404,11 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
 
         private static bool HasUsingDirective(CompilationUnitSyntax compilationUnit)
         {
-            // Check top-level usings
             if (compilationUnit.Usings.Any(u => u.Name?.ToString() == ThrowHelperUsingNamespace))
             {
                 return true;
             }
 
-            // Check usings inside namespace declarations
             foreach (var member in compilationUnit.Members)
             {
                 if (member is BaseNamespaceDeclarationSyntax ns
