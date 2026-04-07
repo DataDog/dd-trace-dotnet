@@ -433,4 +433,126 @@ public class StringBuilderCacheAnalyzerTests
         };
         await Verifier.VerifyAnalyzerAsync(source, expected);
     }
+
+    [Fact]
+    public async Task NewStringBuilder_ImplicitNoArgs_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    StringBuilder sb = {|#0:new()|};
+                    sb.Append("hello");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_ImplicitWithCapacity_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    StringBuilder sb = {|#0:new(100)|};
+                    sb.Append("hello");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task MethodAlreadyUsesQualifiedStringBuilderCache_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = Datadog.Trace.Util.StringBuilderCache.Acquire();
+                    sb.Append("hello");
+                    var result = Datadog.Trace.Util.StringBuilderCache.GetStringAndRelease(sb);
+
+                    // This new StringBuilder should be suppressed because the method already uses StringBuilderCache
+                    var sb2 = new StringBuilder();
+                    sb2.Append("world");
+                    var result2 = sb2.ToString();
+                }
+            }
+            """ + StringBuilderCacheStub;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleInSameMethod_WithFieldAssignment_ReportsDiagnostic()
+    {
+        // Only one StringBuilder is method-scoped (the field assignment doesn't count),
+        // so the method-scoped one should be flagged
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                private StringBuilder _sb;
+
+                void TestMethod()
+                {
+                    _sb = new StringBuilder(256);
+                    var sb = {|#0:new StringBuilder()|};
+                    sb.Append("hello");
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_InNestedLambda_WhenOuterHasMultiple_ReportsDiagnostic()
+    {
+        // Outer method has 2 StringBuilders (suppressed), but nested lambda has just 1 (should be flagged)
+        var source = """
+            using System;
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb1 = new StringBuilder();
+                    var sb2 = new StringBuilder();
+                    sb1.Append("hello");
+                    sb2.Append("world");
+
+                    Action action = () =>
+                    {
+                        var sb3 = {|#0:new StringBuilder()|};
+                        sb3.Append("nested");
+                    };
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
 }
