@@ -30,7 +30,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (string.IsNullOrEmpty(exceptionString))
             {
-                throw new ArgumentException(@"Exception string cannot be null or empty", nameof(exceptionString));
+                ThrowHelper.ThrowArgumentException(@"Exception string cannot be null or empty", nameof(exceptionString));
+                return 0; // code never reached
             }
 
             var fnvHashCode = HashLine(outerExceptionType.AsSpan(), Fnv1aHash.FnvOffsetBias);
@@ -104,7 +105,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (string.IsNullOrEmpty(exceptionString))
             {
-                throw new ArgumentException(@"Exception string cannot be null or empty", nameof(exceptionString));
+                ThrowHelper.ThrowArgumentException(@"Exception string cannot be null or empty", nameof(exceptionString));
+                return null; // code never reached
             }
 
             var results = new List<string>();
