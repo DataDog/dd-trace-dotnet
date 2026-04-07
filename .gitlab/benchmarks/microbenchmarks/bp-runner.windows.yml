@@ -44,7 +44,7 @@
 
   # Build the tracer and benchmarks using Nuke targets
   # BuildTracerHome: builds the tracer (required for benchmarks to reference)
-  # BuildBenchmarks: builds all benchmark projects (so parallel runs can use --no-benchmark-build)
+  # BuildBenchmarks: builds all benchmark projects (so parallel runs use pre-built binaries directly)
   Write-Output "Building tracer and benchmarks using Nuke..."
   Set-Location "$env:CODE_SRC\tracer"
   & .\build.cmd BuildTracerHome BuildBenchmarks

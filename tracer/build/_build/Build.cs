@@ -88,9 +88,6 @@ partial class Build : NukeBuild
     [Parameter("Override the default category filter for running benchmarks. (Optional)")]
     readonly string BenchmarkCategory;
 
-    [Parameter("Skip building benchmark projects in RunBenchmarks (use when already built)")]
-    readonly bool NoBenchmarkBuild;
-
     [Parameter("The directory to store benchmark artifacts/results. Defaults to <projectDir>/BenchmarkDotNet.Artifacts")]
     readonly AbsolutePath BenchmarkArtifactsDirectory;
 
@@ -613,6 +610,11 @@ partial class Build : NukeBuild
             {
                 var benchmarksProject = Solution.GetProject(tuple.Project);
 
+                // Clean results directory before building so each run starts fresh
+                var artifactsDirectory = BenchmarkArtifactsDirectory ?? benchmarksProject.Directory / "BenchmarkDotNet.Artifacts";
+                var resultsDirectory = artifactsDirectory / "results";
+                EnsureCleanDirectory(resultsDirectory);
+
                 DotNetBuild(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
@@ -623,8 +625,7 @@ partial class Build : NukeBuild
         });
 
     Target RunBenchmarks => _ => _
-        .After(BuildTracerHome)
-        .After(BuildProfilerHome)
+        .DependsOn(BuildBenchmarks)
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
@@ -641,25 +642,8 @@ partial class Build : NukeBuild
                 var artifactsDirectory = BenchmarkArtifactsDirectory ?? benchmarksProject.Directory / "BenchmarkDotNet.Artifacts";
                 var resultsDirectory = artifactsDirectory / "results";
 
-                // Only clean results directory when running sequentially (not using --no-benchmark-build).
-                // When running in parallel with pre-built benchmarks, skip cleaning to avoid deleting other parallel runs' results.
-                if (!NoBenchmarkBuild)
-                {
-                    EnsureCleanDirectory(resultsDirectory);
-                }
-
                 try
                 {
-                    if (!NoBenchmarkBuild)
-                    {
-                        DotNetBuild(s => s
-                            .SetProjectFile(benchmarksProject)
-                            .SetConfiguration(BuildConfiguration)
-                            .EnableNoDependencies()
-                            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                        );
-                    }
-
                     var (framework, runtimes) = IsOsx switch
                     {
                         true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
