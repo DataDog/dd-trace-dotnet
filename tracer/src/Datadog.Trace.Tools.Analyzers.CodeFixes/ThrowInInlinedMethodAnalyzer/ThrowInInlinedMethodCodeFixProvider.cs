@@ -42,6 +42,7 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
                 ["System.NotSupportedException"] = ("ThrowNotSupportedException", 1),
                 ["System.Collections.Generic.KeyNotFoundException"] = ("ThrowKeyNotFoundException", 1),
                 ["System.NullReferenceException"] = ("ThrowNullReferenceException", 1),
+                ["System.ObjectDisposedException"] = ("ThrowObjectDisposedException", 1),
             };
 
         /// <inheritdoc />

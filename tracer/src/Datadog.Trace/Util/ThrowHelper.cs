@@ -77,5 +77,10 @@ namespace Datadog.Trace.Util
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void ThrowNullReferenceException(string message) => throw new NullReferenceException(message);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void ThrowObjectDisposedException(string objectName) => throw new ObjectDisposedException(objectName);
     }
 }
