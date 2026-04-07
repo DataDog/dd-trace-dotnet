@@ -139,7 +139,8 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("TARGETING_KEY_MISSING", result.Error);
+        Assert.Equal("Targeting key missing", result.Error);
+        Assert.Equal("TARGETING_KEY_MISSING", result.FlagMetadata?["errorCode"]);
     }
 
     [Fact]
@@ -151,7 +152,8 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("FLAG_NOT_FOUND", result.Error);
+        Assert.Equal("Flag not found", result.Error);
+        Assert.Equal("FLAG_NOT_FOUND", result.FlagMetadata?["errorCode"]);
     }
 
     [Fact]
@@ -453,7 +455,8 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("PARSE_ERROR", result.Error);
+        Assert.NotNull(result.Error); // Contains the date parsing exception message
+        Assert.Equal("PARSE_ERROR", result.FlagMetadata?["errorCode"]);
     }
 
     [Theory]
@@ -482,7 +485,8 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("PARSE_ERROR", result.Error);
+        Assert.NotNull(result.Error); // Contains the regex parsing exception message
+        Assert.Equal("PARSE_ERROR", result.FlagMetadata?["errorCode"]);
     }
 
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)

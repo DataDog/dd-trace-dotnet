@@ -20,14 +20,11 @@ class Program
         Console.WriteLine($"<INSTRUMENTED>");
 
         var ev = Evaluator.Evaluate("nonexistent");
-
-        // "FeatureFlagsSdk is disabled" comes from the OpenFeature SDK layer when not instrumented
         if (ev == null || ev.Value.Error is "FeatureFlagsSdk is disabled")
         {
             return;
         }
 
-        // "No config loaded" comes from the internal FeatureFlagsModule/Evaluator when no config is loaded yet
         if (ev is { Error: "No config loaded" })
         {
             int attempts = 180;

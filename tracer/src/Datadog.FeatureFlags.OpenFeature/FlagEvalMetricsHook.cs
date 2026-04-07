@@ -95,23 +95,8 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         };
     }
 
-    private static string ReasonToString(string reason)
-    {
-        // Convert PascalCase reason values to snake_case
-        // OpenFeature standard reasons: Static, Default, TargetingMatch, Split, Disabled, Error, Cached, Stale
-        return reason switch
-        {
-            "Static" or "STATIC" => "static",
-            "Default" or "DEFAULT" => "default",
-            "TargetingMatch" or "TARGETING_MATCH" => "targeting_match",
-            "Split" or "SPLIT" => "split",
-            "Disabled" or "DISABLED" => "disabled",
-            "Error" or "ERROR" => "error",
-            "Cached" or "CACHED" => "cached",
-            "Stale" or "STALE" => "stale",
-            "Unknown" or "UNKNOWN" => "unknown",
-            _ => reason.ToLowerInvariant()
-        };
-    }
+    // Converts OpenFeature UPPER_SNAKE_CASE reason to lower_snake_case for metrics
+    // OpenFeature reasons: STATIC, DEFAULT, TARGETING_MATCH, SPLIT, DISABLED, ERROR, CACHED, STALE, UNKNOWN
+    private static string ReasonToString(string reason) => reason.ToLowerInvariant();
 }
 #endif

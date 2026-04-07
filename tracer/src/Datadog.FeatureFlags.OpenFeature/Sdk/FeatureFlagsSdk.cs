@@ -86,12 +86,24 @@ internal static class FeatureFlagsSdk
             evaluation.FlagKey,
             (T)value,
             ToErrorType(evaluation.FlagMetadata),
-            evaluation.Reason.ToString(),
+            ToOpenFeatureReason(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata));
         return res;
     }
+
+    private static string ToOpenFeatureReason(EvaluationReason reason) => reason switch
+    {
+        EvaluationReason.TargetingMatch => Reason.TargetingMatch,
+        EvaluationReason.Split => Reason.Split,
+        EvaluationReason.Disabled => Reason.Disabled,
+        EvaluationReason.Default => Reason.Default,
+        EvaluationReason.Static => Reason.Static,
+        EvaluationReason.Cached => Reason.Cached,
+        EvaluationReason.Error => Reason.Error,
+        _ => Reason.Unknown,
+    };
 
     private static ErrorType ToErrorType(IDictionary<string, string>? metadata)
     {
