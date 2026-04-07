@@ -207,9 +207,9 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "System.Reflection.Metadata",
-                version: "7.0.2",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Reflection.Metadata" },
+                version: "7.0.20",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.20.zip",
+                pathToSrc: new[] { "runtime-7.0.20", "src", "libraries", "System.Reflection.Metadata", "src" , "System", "Reflection" },
                 transform: filePath =>
                 {
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Reflection.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
