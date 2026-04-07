@@ -51,10 +51,11 @@ Gather the following (if not already provided):
 
 ### Step 2: Assign a Diagnostic ID
 
-Read existing `Diagnostics.cs` files to find the next available ID:
+Read existing diagnostic constant files to find the next available ID (including duck-typing diagnostics):
 
 ```
 tracer/src/Datadog.Trace.Tools.Analyzers/*/Diagnostics.cs
+tracer/src/Datadog.Trace.Tools.Analyzers/*/*Diagnostics.cs
 ```
 
 **ID conventions:**
