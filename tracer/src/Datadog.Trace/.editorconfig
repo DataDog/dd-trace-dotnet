@@ -1,8 +1,8 @@
 # EditorConfig is awesome:http://EditorConfig.org
 
 [*.{cs,vb}]
-dotnet_diagnostic.DDALLOC001.severity = none # ToString() on numeric types in log calls — disabled until existing usages are migrated
 dotnet_diagnostic.DDSEAL001.severity = error # types should be sealed
+dotnet_diagnostic.DDALLOC001.severity = error # ToString() on numeric types in log calls
 
 # Microsoft performance analyzers
 dotnet_diagnostic.CA1802.severity = error # Use Literals Where Appropriate
