@@ -106,7 +106,7 @@ namespace Datadog.Trace.ContinuousProfiler
             catch (Exception e)
             {
                 // seen in a crash: weird but possible on shutdown probably if the object is disposed
-                Log.Warning(e, "Disposed tracing context pointer wrapper for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
+                Log.Warning<int>(e, "Disposed tracing context pointer wrapper for the thread {ThreadID}", Environment.CurrentManagedThreadId);
                 _traceContextPtr.Value = IntPtr.Zero;
                 return false;
             }
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ContinuousProfiler
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Unable to get the tracing context pointer for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
+                Log.Warning<int>(e, "Unable to get the tracing context pointer for the thread {ThreadID}", Environment.CurrentManagedThreadId);
                 _traceContextPtr.Value = IntPtr.Zero;
                 return false;
             }
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ContinuousProfiler
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId.ToString());
+                Log.Warning<nint, int>(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId);
             }
         }
 

@@ -151,7 +151,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (revertProbeIds.Count > 0)
             {
-                Log.Information("ExceptionTrackManager: Reverting {RevertCount} Probes.", revertProbeIds.Count.ToString());
+                Log.Information<int>("ExceptionTrackManager: Reverting {RevertCount} Probes.", revertProbeIds.Count);
 
                 var removeProbesRequests = revertProbeIds.Select(p => new NativeRemoveProbeRequest(p)).ToArray();
                 DebuggerNativeMethods.InstrumentProbes(
