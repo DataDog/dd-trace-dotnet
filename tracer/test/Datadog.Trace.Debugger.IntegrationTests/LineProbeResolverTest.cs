@@ -111,12 +111,12 @@ public class LineProbeResolverTest
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
 
         result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
-        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch);
+        result.Reason.Should().Be(LineProbeResolveReason.LoadedAssemblySourceFileMismatch);
         result.Diagnostics.LoadedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SymbolicatedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameMatchCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameExamples.Should().NotBeNullOrEmpty();
-        result.Message.Should().Contain("same file name was found");
+        result.Message.Should().Contain("did not match the PDB document path");
         loc.Should().BeNull();
     }
 
@@ -128,9 +128,9 @@ public class LineProbeResolverTest
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
 
         result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
-        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch);
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
         result.Diagnostics.SameFileNameMatchCount.Should().Be(0);
-        result.Message.Should().Contain("assembly is not loaded yet or if the probe source path does not match the PDB document path");
+        result.Message.Should().Contain("assembly is not loaded yet or if symbols are unavailable");
         loc.Should().BeNull();
     }
 

@@ -48,16 +48,14 @@ namespace Datadog.Trace.Debugger
             return path.Split(DirectorySeparatorsCrossPlatform, StringSplitOptions.None).LastOrDefault() ?? string.Empty;
         }
 
-        private static string BuildUnboundMessage(AssemblySearchDiagnostics diagnostics)
+        private static string BuildLoadedAssemblySourceFileMismatchMessage()
         {
-            const string baseMessage = "Source file location for probe was not found in any currently loaded assembly.";
+            return "Source file location for probe did not match the PDB document path of a loaded, symbolicated assembly with the same file name.";
+        }
 
-            if (diagnostics.SameFileNameMatchCount > 0)
-            {
-                return baseMessage + " A loaded, symbolicated assembly with the same file name was found, which suggests that the probe source path does not match the PDB document path.";
-            }
-
-            return baseMessage + " This can happen if the relevant assembly is not loaded yet or if the probe source path does not match the PDB document path.";
+        private static string BuildAssemblyNotLoadedOrSymbolsUnavailableMessage()
+        {
+            return "Source file location for probe was not found in any currently loaded assembly. This can happen if the relevant assembly is not loaded yet or if symbols are unavailable for the matching assembly.";
         }
 
         private IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
@@ -186,10 +184,17 @@ namespace Datadog.Trace.Debugger
                 if (!TryFindAssemblyContainingFile(sourceFile, out var filePathFromPdb, out var assembly))
                 {
                     var searchDiagnostics = CollectAssemblySearchDiagnostics(sourceFile);
+                    var reason = searchDiagnostics.SameFileNameMatchCount > 0
+                                     ? LineProbeResolveReason.LoadedAssemblySourceFileMismatch
+                                     : LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable;
+                    var message = searchDiagnostics.SameFileNameMatchCount > 0
+                                      ? BuildLoadedAssemblySourceFileMismatchMessage()
+                                      : BuildAssemblyNotLoadedOrSymbolsUnavailableMessage();
+
                     return new LineProbeResolveResult(
                         LiveProbeResolveStatus.Unbound,
-                        LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch,
-                        BuildUnboundMessage(searchDiagnostics),
+                        reason,
+                        message,
                         searchDiagnostics.ToDiagnostics(lineNum, probe.Id));
                 }
 
