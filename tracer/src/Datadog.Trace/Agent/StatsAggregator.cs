@@ -66,8 +66,6 @@ namespace Datadog.Trace.Agent
             SpanKinds.Consumer,
         ];
 
-        private string _defaultServiceName;
-
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
             _api = api;
@@ -86,7 +84,6 @@ namespace Datadog.Trace.Agent
             _errorSampler = new ErrorSampler();
             _rareSampler = new RareSampler(settings, this);
             _analyticsEventSampler = new AnalyticsEventsSampler();
-            _defaultServiceName = settings.Manager.InitialMutableSettings.DefaultServiceName;
 
             // Create with the initial mutable settings, but be aware that this could change later
             var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
@@ -99,7 +96,6 @@ namespace Datadog.Trace.Agent
                 if (changes.UpdatedMutable is { } mutable)
                 {
                     header.UpdateDetails(mutable);
-                    Interlocked.Exchange(ref _defaultServiceName, mutable.DefaultServiceName);
                 }
             });
 
@@ -262,14 +258,12 @@ namespace Datadog.Trace.Agent
             // Normalize service source to match trace serialization behavior:
             // clear the source when service name equals the default, unless it's
             // a configuration-driven override (opt.*).
-            var serviceNameSource = span.Context.ServiceNameSource;
+            var serviceSource = span.Context.ServiceNameSource;
             var serviceNameEqualsDefault = string.Equals(span.ServiceName, span.Context.TraceContext?.Tracer?.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
-            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
+            if (serviceNameEqualsDefault && serviceSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
             {
-                serviceNameSource = null;
+                serviceSource = null;
             }
-
-            var serviceNameIsDefault = span.ServiceName == Volatile.Read(ref _defaultServiceName);
 
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L53-L99
             // Peer tags are extracted for client/producer/consumer spans
@@ -280,9 +274,9 @@ namespace Datadog.Trace.Agent
             // chicken and egg - we need to convert everything to utf-8, so that we can get the hash, so that we
             // know whether we need the tags as byte[] or not..
             ulong peerTagsHash;
-            if (!serviceNameIsDefault && (string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal))
+            if ((string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal) && span.GetTag(Tags.BaseService) is { Length: >0 } baseService)
             {
-                utf8PeerTags = [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{serviceName}")];
+                utf8PeerTags = [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{baseService}")];
                 peerTagsHash = FnvHash64.GenerateHash(utf8PeerTags[0], FnvHash64.Version.V1A);
             }
             else if (spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer)
