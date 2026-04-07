@@ -465,6 +465,25 @@ public partial class FeatureFlagsEvaluatorTests
         FeatureFlagsEvaluator.GetShard(salt, targetingKey, int.MaxValue).Should().Be(expected);
     }
 
+    [Fact]
+    public void EvaluateWithInvalidRegexReturnsParseError()
+    {
+        var flags = new Dictionary<string, Flag>
+        {
+            ["invalid-regex-flag"] = FeatureFlagsHelpers.CreateInvalidRegexFlag()
+        };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        // Provide an email attribute to trigger the MATCHES condition with the invalid regex
+        var ctx = new EvaluationContext("user-123", new Dictionary<string, object?> { { "email", "test@example.com" } });
+
+        var result = evaluator.Evaluate("invalid-regex-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("default", result.Value);
+        Assert.Equal(EvaluationReason.Error, result.Reason);
+        Assert.Equal("PARSE_ERROR", result.Error);
+    }
+
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)
     {
         var variants = new Dictionary<string, Variant>
