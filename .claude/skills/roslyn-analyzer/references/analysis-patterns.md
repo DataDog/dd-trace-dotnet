@@ -8,7 +8,6 @@ Use when inspecting specific code structures. See `ThreadAbortAnalyzer` for a co
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class MyAnalyzer : DiagnosticAnalyzer
 {
-#pragma warning disable RS2008
     private static readonly DiagnosticDescriptor Rule = new(
         id: Diagnostics.MyDiagnosticId,
         title: "Short title",
@@ -17,7 +16,6 @@ public class MyAnalyzer : DiagnosticAnalyzer
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
         description: "Why this matters.");
-#pragma warning restore RS2008
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; }
         = ImmutableArray.Create(Rule);
