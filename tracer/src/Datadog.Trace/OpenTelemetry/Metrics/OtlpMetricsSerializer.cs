@@ -12,6 +12,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 
 #nullable enable
 
@@ -65,7 +66,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             Array.Copy(tags, copy, tags.Length);
             Array.Sort(copy, (a, b) => string.CompareOrdinal(a.Key, b.Key));
 
-            var sb = new StringBuilder();
+            var sb = StringBuilderCache.Acquire();
             for (int i = 0; i < copy.Length; i++)
             {
                 if (i > 0)
@@ -80,7 +81,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 }
             }
 
-            return sb.ToString();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private byte[] SerializeResourceMetrics(IReadOnlyList<MetricPoint> metrics)
