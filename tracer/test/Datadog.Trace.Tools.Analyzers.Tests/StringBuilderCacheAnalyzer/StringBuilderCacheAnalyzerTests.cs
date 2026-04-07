@@ -555,4 +555,59 @@ public class StringBuilderCacheAnalyzerTests
         var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
         await Verifier.VerifyAnalyzerAsync(source, expected);
     }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleInLocalFunction_SuppressedCorrectly()
+    {
+        // Two StringBuilders in the same local function scope should suppress
+        // the diagnostic, just like they do in a regular method.
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    void LocalFunction()
+                    {
+                        var sb1 = new StringBuilder();
+                        var sb2 = new StringBuilder();
+                        sb1.Append("hello");
+                        sb2.Append("world");
+                    }
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_LocalFunctionWithCacheCall_SuppressedCorrectly()
+    {
+        // A local function that already calls StringBuilderCache.Acquire()
+        // should suppress the diagnostic for additional StringBuilder allocations in the same scope.
+        var source = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    void LocalFunction()
+                    {
+                        var sb = StringBuilderCache.Acquire();
+                        sb.Append("hello");
+                        var result = StringBuilderCache.GetStringAndRelease(sb);
+
+                        var sb2 = new StringBuilder();
+                        sb2.Append("world");
+                    }
+                }
+            }
+            """ + StringBuilderCacheStub;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
 }

@@ -72,27 +72,117 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
 
         var variableName = GetAssignedVariableName(creationNode);
 
-        // Collect all .ToString() invocations on the variable in the enclosing scope
-        var toStringInvocations = ImmutableArray<InvocationExpressionSyntax>.Empty;
+        SyntaxNode newRoot;
+
         if (variableName is not null)
         {
-            var enclosingFunction = GetEnclosingFunction(creationNode);
-            if (enclosingFunction is not null)
-            {
-                toStringInvocations = enclosingFunction
-                    .DescendantNodes()
-                    .OfType<InvocationExpressionSyntax>()
-                    .Where(inv =>
-                        inv.Expression is MemberAccessExpressionSyntax memberAccess
-                        && memberAccess.Name.Identifier.Text == "ToString"
-                        && memberAccess.Expression is IdentifierNameSyntax id
-                        && id.Identifier.Text == variableName
-                        && inv.ArgumentList.Arguments.Count == 0)
-                    .ToImmutableArray();
-            }
+            newRoot = ApplyVariableFix(root, creationNode, variableName);
+        }
+        else
+        {
+            newRoot = ApplyInlineFix(root, creationNode);
         }
 
-        // Replace all nodes in a single pass to avoid span invalidation
+        newRoot = AddUsingDirectiveIfMissing(newRoot);
+
+        return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static SyntaxNode ApplyVariableFix(SyntaxNode root, SyntaxNode creationNode, string variableName)
+    {
+        var enclosingFunction = GetEnclosingFunction(creationNode);
+
+        // Collect all .ToString() invocations on the variable in the enclosing scope
+        var toStringInvocations = ImmutableArray<InvocationExpressionSyntax>.Empty;
+        if (enclosingFunction is not null)
+        {
+            toStringInvocations = enclosingFunction
+                .DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Where(inv =>
+                    inv.Expression is MemberAccessExpressionSyntax memberAccess
+                    && memberAccess.Name.Identifier.Text == "ToString"
+                    && memberAccess.Expression is IdentifierNameSyntax id
+                    && id.Identifier.Text == variableName
+                    && inv.ArgumentList.Arguments.Count == 0)
+                .ToImmutableArray();
+        }
+
+        if (toStringInvocations.Length <= 1)
+        {
+            // Single or zero .ToString() — replace creation + that one call
+            return root.ReplaceNodes(
+                toStringInvocations.Cast<SyntaxNode>().Append(creationNode),
+                (original, _) =>
+                {
+                    if (original == creationNode)
+                    {
+                        return BuildAcquireCall(original);
+                    }
+
+                    return BuildGetStringAndReleaseCall(variableName)
+                        .WithTriviaFrom(original);
+                });
+        }
+
+        // Multiple .ToString() calls — check for mutations between first and last
+        if (enclosingFunction is not null && HasMutationsBetween(enclosingFunction, variableName, toStringInvocations.First(), toStringInvocations.Last()))
+        {
+            // Case B: mutations exist — only replace the last .ToString()
+            return root.ReplaceNodes(
+                new SyntaxNode[]
+                {
+                    creationNode,
+                    toStringInvocations.Last(),
+                },
+                (original, _) =>
+                {
+                    if (original == creationNode)
+                    {
+                        return BuildAcquireCall(original);
+                    }
+
+                    return BuildGetStringAndReleaseCall(variableName)
+                        .WithTriviaFrom(original);
+                });
+        }
+
+        // Case A: no mutations — use single GetStringAndRelease() + local variable
+        return ApplyNoMutationFix(root, creationNode, variableName, toStringInvocations);
+    }
+
+    private static SyntaxNode ApplyNoMutationFix(
+        SyntaxNode root,
+        SyntaxNode creationNode,
+        string variableName,
+        ImmutableArray<InvocationExpressionSyntax> toStringInvocations)
+    {
+        var resultVarName = variableName + "Result";
+
+        // The first .ToString() becomes: var sbResult = StringBuilderCache.GetStringAndRelease(sb);
+        // Remaining .ToString() calls become: sbResult
+        var firstToString = toStringInvocations[0];
+
+        // We need to:
+        // 1. Replace the creation node with Acquire()
+        // 2. Replace the first .ToString() statement with a GetStringAndRelease() + local var
+        // 3. Replace remaining .ToString() calls with the result variable
+
+        // Find the statement containing the first .ToString()
+        var firstToStringStatement = firstToString.FirstAncestorOrSelf<StatementSyntax>();
+
+        // Build the GetStringAndRelease local declaration:
+        // var sbResult = StringBuilderCache.GetStringAndRelease(sb);
+        var getStringAndReleaseStatement = SyntaxFactory.LocalDeclarationStatement(
+            SyntaxFactory.VariableDeclaration(
+                SyntaxFactory.IdentifierName("var"),
+                SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.VariableDeclarator(resultVarName)
+                        .WithInitializer(
+                            SyntaxFactory.EqualsValueClause(
+                                BuildGetStringAndReleaseCall(variableName))))));
+
+        // First pass: replace creation + all .ToString() calls
         var newRoot = root.ReplaceNodes(
             toStringInvocations.Cast<SyntaxNode>().Append(creationNode),
             (original, _) =>
@@ -102,7 +192,84 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
                     return BuildAcquireCall(original);
                 }
 
-                // Must be a .ToString() invocation — replace with GetStringAndRelease
+                // All .ToString() calls become the result variable reference
+                return SyntaxFactory.IdentifierName(resultVarName)
+                    .WithTriviaFrom(original);
+            });
+
+        // Second pass: insert the GetStringAndRelease statement before the first .ToString() statement
+        // We need to find the updated version of the statement
+        var updatedFirstToStringStatement = newRoot.DescendantNodes()
+            .OfType<StatementSyntax>()
+            .FirstOrDefault(s => s.Span.Start == firstToStringStatement!.Span.Start
+                && s.Span.Length == firstToStringStatement.Span.Length);
+
+        // Fallback: find statement containing the resultVarName identifier that was the first replacement
+        if (updatedFirstToStringStatement is null)
+        {
+            // After ReplaceNodes, spans may shift. Find the first statement containing our result variable.
+            var firstResultRef = newRoot.DescendantNodes()
+                .OfType<IdentifierNameSyntax>()
+                .FirstOrDefault(id => id.Identifier.Text == resultVarName);
+
+            updatedFirstToStringStatement = firstResultRef?.FirstAncestorOrSelf<StatementSyntax>();
+        }
+
+        if (updatedFirstToStringStatement?.Parent is BlockSyntax block)
+        {
+            var stmtIndex = block.Statements.IndexOf(updatedFirstToStringStatement);
+            if (stmtIndex >= 0)
+            {
+                var releaseStmt = getStringAndReleaseStatement
+                    .WithLeadingTrivia(updatedFirstToStringStatement.GetLeadingTrivia())
+                    .WithTrailingTrivia(updatedFirstToStringStatement.GetTrailingTrivia())
+                    .WithAdditionalAnnotations(Formatter.Annotation);
+
+                var newStatements = block.Statements.Insert(stmtIndex, releaseStmt);
+                var newBlock = block.WithStatements(newStatements);
+                newRoot = newRoot.ReplaceNode(block, newBlock);
+            }
+        }
+
+        return newRoot;
+    }
+
+    private static SyntaxNode ApplyInlineFix(SyntaxNode root, SyntaxNode creationNode)
+    {
+        // Walk up the fluent chain to find a trailing .ToString() call
+        var toStringInvocation = FindChainedToString(creationNode);
+
+        if (toStringInvocation is null)
+        {
+            // No .ToString() in the chain — just replace new StringBuilder() with Acquire()
+            return root.ReplaceNode(creationNode, BuildAcquireCall(creationNode));
+        }
+
+        // Replace the outer .ToString() invocation with GetStringAndRelease(<inner chain>)
+        // and the creation node with Acquire() in one pass
+        var memberAccess = (MemberAccessExpressionSyntax)toStringInvocation.Expression;
+        var innerChain = memberAccess.Expression; // everything before .ToString()
+
+        return root.ReplaceNodes(
+            new SyntaxNode[]
+            {
+                creationNode,
+                toStringInvocation,
+            },
+            (original, rewritten) =>
+            {
+                if (original == creationNode)
+                {
+                    return BuildAcquireCall(original);
+                }
+
+                // This is the .ToString() invocation — wrap inner chain with GetStringAndRelease
+                // At this point, the creationNode inside the chain has already been replaced with Acquire()
+                // by ReplaceNodes, so we need to use the rewritten version of the inner chain
+                var rewrittenInvocation = (InvocationExpressionSyntax)rewritten;
+                var rewrittenMemberAccess = (MemberAccessExpressionSyntax)rewrittenInvocation.Expression;
+                var rewrittenInnerChain = rewrittenMemberAccess.Expression;
+
                 return SyntaxFactory.InvocationExpression(
                     SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
@@ -110,14 +277,77 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
                         SyntaxFactory.IdentifierName("GetStringAndRelease")),
                     SyntaxFactory.ArgumentList(
                         SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(variableName!)))))
+                            SyntaxFactory.Argument(rewrittenInnerChain))))
                     .WithTriviaFrom(original);
             });
+    }
 
-        // Add using directive for Datadog.Trace.Util
-        newRoot = AddUsingDirectiveIfMissing(newRoot);
+    private static InvocationExpressionSyntax? FindChainedToString(SyntaxNode creationNode)
+    {
+        // Walk up through the fluent method chain looking for .ToString()
+        // Pattern: new StringBuilder().Append("x").ToString()
+        // AST: InvocationExpression(MemberAccess(InvocationExpression(MemberAccess(ObjectCreation, Append)), ToString))
+        for (var current = creationNode.Parent; current is not null; current = current.Parent)
+        {
+            if (current is InvocationExpressionSyntax invocation
+                && invocation.Expression is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Name.Identifier.Text == "ToString"
+                && invocation.ArgumentList.Arguments.Count == 0)
+            {
+                return invocation;
+            }
 
-        return document.WithSyntaxRoot(newRoot);
+            // Only continue walking if we're still in a fluent chain
+            if (current is not (MemberAccessExpressionSyntax or InvocationExpressionSyntax or ArgumentListSyntax))
+            {
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool HasMutationsBetween(
+        SyntaxNode enclosingFunction,
+        string variableName,
+        InvocationExpressionSyntax firstToString,
+        InvocationExpressionSyntax lastToString)
+    {
+        var firstSpanEnd = firstToString.Span.End;
+        var lastSpanStart = lastToString.SpanStart;
+
+        foreach (var invocation in enclosingFunction.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.SpanStart <= firstSpanEnd || invocation.SpanStart >= lastSpanStart)
+            {
+                continue;
+            }
+
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Expression is IdentifierNameSyntax id
+                && id.Identifier.Text == variableName
+                && memberAccess.Name.Identifier.Text != "ToString")
+            {
+                return true;
+            }
+        }
+
+        // Also check for element access (sb[i] = ...)
+        foreach (var elementAccess in enclosingFunction.DescendantNodes().OfType<ElementAccessExpressionSyntax>())
+        {
+            if (elementAccess.SpanStart <= firstSpanEnd || elementAccess.SpanStart >= lastSpanStart)
+            {
+                continue;
+            }
+
+            if (elementAccess.Expression is IdentifierNameSyntax id
+                && id.Identifier.Text == variableName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static InvocationExpressionSyntax BuildAcquireCall(SyntaxNode creationNode)
@@ -141,6 +371,18 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
 
         return SyntaxFactory.InvocationExpression(memberAccess, args)
             .WithTriviaFrom(creationNode);
+    }
+
+    private static InvocationExpressionSyntax BuildGetStringAndReleaseCall(string variableName)
+    {
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName("StringBuilderCache"),
+                SyntaxFactory.IdentifierName("GetStringAndRelease")),
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName(variableName)))));
     }
 
     private static string? GetAssignedVariableName(SyntaxNode creationNode)

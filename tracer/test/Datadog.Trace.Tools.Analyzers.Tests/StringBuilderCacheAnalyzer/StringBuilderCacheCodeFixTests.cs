@@ -103,8 +103,9 @@ public class StringBuilderCacheCodeFixTests
     }
 
     [Fact]
-    public async Task NewStringBuilder_MultipleToStringCalls_ReplacesAll()
+    public async Task NewStringBuilder_MultipleToStringCalls_WithMutations_OnlyReplacesLast()
     {
+        // Case B: mutations exist between .ToString() calls — only the last becomes GetStringAndRelease()
         var source = """
             using System.Text;
 
@@ -131,9 +132,49 @@ public class StringBuilderCacheCodeFixTests
                 {
                     var sb = StringBuilderCache.Acquire();
                     sb.Append("hello");
-                    var first = StringBuilderCache.GetStringAndRelease(sb);
+                    var first = sb.ToString();
                     sb.Append(" world");
                     var second = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleToStringCalls_NoMutations_UsesLocalVariable()
+    {
+        // Case A: no mutations between .ToString() calls — use single GetStringAndRelease() + local variable
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder()|};
+                    sb.Append("hello");
+                    var first = sb.ToString();
+                    var second = sb.ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire();
+                    sb.Append("hello");
+                    var sbResult = StringBuilderCache.GetStringAndRelease(sb);
+                    var first = sbResult;
+                    var second = sbResult;
                 }
             }
             """;
@@ -209,6 +250,40 @@ public class StringBuilderCacheCodeFixTests
                     sb = StringBuilderCache.Acquire();
                     sb.Append("hello");
                     var result = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_InlineUsage_ReplacesToStringWithGetStringAndRelease()
+    {
+        // Issue 3: When new StringBuilder() is used inline (not assigned to a variable),
+        // the code fix should still rewrite the full expression including .ToString().
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                string TestMethod()
+                {
+                    return {|#0:new StringBuilder()|}.Append("hello").ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                string TestMethod()
+                {
+                    return StringBuilderCache.GetStringAndRelease(StringBuilderCache.Acquire().Append("hello"));
                 }
             }
             """;
