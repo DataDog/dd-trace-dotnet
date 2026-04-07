@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                 { "DD-Telemetry-API-Version", TelemetryConstants.ApiVersionV2 },
                 { "DD-Telemetry-Request-Type", "my-request-type" },
                 { "Datadog-Container-ID", "my-container-id" },
-                { "Datadog-Entity-ID", "my-entity-id" }
+                { "Datadog-Entity-ID", "my-entity-id" },
             };
             if (debugEnabled)
             {
