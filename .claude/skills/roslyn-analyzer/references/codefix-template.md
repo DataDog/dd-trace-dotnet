@@ -64,9 +64,6 @@ public class <Name>CodeFixProvider : CodeFixProvider
 - Always use `WellKnownFixAllProviders.BatchFixer` for the FixAll provider.
 - Use `nameof(MyCodeFixProvider)` as the `equivalenceKey` — this groups fix actions for "Fix All".
 - Navigate from diagnostic span to target node using `FindToken().Parent.AncestorsAndSelf().OfType<T>()`.
-- The code fix project **links** `Diagnostics.cs` from the analyzer project — add to `Datadog.Trace.Tools.Analyzers.CodeFixes.csproj`:
-
-```xml
-<Compile Include="..\Datadog.Trace.Tools.Analyzers\<Name>Analyzer\Diagnostics.cs"
-         Link="<Name>Analyzer\Diagnostics.cs" />
-```
+- Link `Diagnostics.cs` from the analyzer project into the CodeFixes `.csproj` (see SKILL.md Step 3c for the XML snippet and rationale).
+- Apply `Formatter.Annotation` to modified nodes so the formatter cleans up spacing.
+- When generating type names, use `Simplifier.Annotation` to reduce fully-qualified names.
