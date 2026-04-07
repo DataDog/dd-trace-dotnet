@@ -70,17 +70,23 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+        {
+            return document;
+        }
+
         var variableName = GetAssignedVariableName(creationNode);
 
         SyntaxNode newRoot;
 
         if (variableName is not null)
         {
-            newRoot = ApplyVariableFix(root, creationNode, variableName);
+            newRoot = ApplyVariableFix(root, creationNode, variableName, semanticModel, cancellationToken);
         }
         else
         {
-            newRoot = ApplyInlineFix(root, creationNode);
+            newRoot = ApplyInlineFix(root, creationNode, semanticModel, cancellationToken);
         }
 
         newRoot = AddUsingDirectiveIfMissing(newRoot);
@@ -88,7 +94,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private static SyntaxNode ApplyVariableFix(SyntaxNode root, SyntaxNode creationNode, string variableName)
+    private static SyntaxNode ApplyVariableFix(SyntaxNode root, SyntaxNode creationNode, string variableName, SemanticModel semanticModel, CancellationToken cancellationToken)
     {
         var enclosingFunction = GetEnclosingFunction(creationNode);
 
@@ -117,7 +123,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
                 {
                     if (original == creationNode)
                     {
-                        return BuildAcquireCall(original);
+                        return BuildAcquireCall(original, semanticModel, cancellationToken);
                     }
 
                     return BuildGetStringAndReleaseCall(variableName)
@@ -139,7 +145,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
                 {
                     if (original == creationNode)
                     {
-                        return BuildAcquireCall(original);
+                        return BuildAcquireCall(original, semanticModel, cancellationToken);
                     }
 
                     return BuildGetStringAndReleaseCall(variableName)
@@ -148,14 +154,16 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         }
 
         // Case A: no mutations — use single GetStringAndRelease() + local variable
-        return ApplyNoMutationFix(root, creationNode, variableName, toStringInvocations);
+        return ApplyNoMutationFix(root, creationNode, variableName, toStringInvocations, semanticModel, cancellationToken);
     }
 
     private static SyntaxNode ApplyNoMutationFix(
         SyntaxNode root,
         SyntaxNode creationNode,
         string variableName,
-        ImmutableArray<InvocationExpressionSyntax> toStringInvocations)
+        ImmutableArray<InvocationExpressionSyntax> toStringInvocations,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
         var resultVarName = variableName + "Result";
 
@@ -189,7 +197,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
             {
                 if (original == creationNode)
                 {
-                    return BuildAcquireCall(original);
+                    return BuildAcquireCall(original, semanticModel, cancellationToken);
                 }
 
                 // All .ToString() calls become the result variable reference
@@ -234,7 +242,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         return newRoot;
     }
 
-    private static SyntaxNode ApplyInlineFix(SyntaxNode root, SyntaxNode creationNode)
+    private static SyntaxNode ApplyInlineFix(SyntaxNode root, SyntaxNode creationNode, SemanticModel semanticModel, CancellationToken cancellationToken)
     {
         // Walk up the fluent chain to find a trailing .ToString() call
         var toStringInvocation = FindChainedToString(creationNode);
@@ -242,7 +250,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         if (toStringInvocation is null)
         {
             // No .ToString() in the chain — just replace new StringBuilder() with Acquire()
-            return root.ReplaceNode(creationNode, BuildAcquireCall(creationNode));
+            return root.ReplaceNode(creationNode, BuildAcquireCall(creationNode, semanticModel, cancellationToken));
         }
 
         // Replace the outer .ToString() invocation with GetStringAndRelease(<inner chain>)
@@ -260,7 +268,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
             {
                 if (original == creationNode)
                 {
-                    return BuildAcquireCall(original);
+                    return BuildAcquireCall(original, semanticModel, cancellationToken);
                 }
 
                 // This is the .ToString() invocation — wrap inner chain with GetStringAndRelease
@@ -350,27 +358,101 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         return false;
     }
 
-    private static InvocationExpressionSyntax BuildAcquireCall(SyntaxNode creationNode)
+    private static ExpressionSyntax BuildAcquireCall(
+        SyntaxNode creationNode,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
-        var memberAccess = SyntaxFactory.MemberAccessExpression(
+        var (capacityArg, appendArgs) = AnalyzeConstructorArgs(creationNode, semanticModel, cancellationToken);
+
+        var acquireAccess = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             SyntaxFactory.IdentifierName("StringBuilderCache"),
             SyntaxFactory.IdentifierName("Acquire"));
 
-        // Forward constructor arguments (e.g., capacity) to Acquire()
-        ArgumentListSyntax? originalArgs = creationNode switch
+        var acquireArgList = capacityArg is not null
+            ? SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(capacityArg))
+            : SyntaxFactory.ArgumentList();
+
+        ExpressionSyntax result = SyntaxFactory.InvocationExpression(acquireAccess, acquireArgList);
+
+        if (appendArgs.Length > 0)
         {
-            ObjectCreationExpressionSyntax objectCreation => objectCreation.ArgumentList,
-            ImplicitObjectCreationExpressionSyntax implicitCreation => implicitCreation.ArgumentList,
+            // Chain .Append(value[, startIndex, length]) after Acquire()
+            result = SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    result,
+                    SyntaxFactory.IdentifierName("Append")),
+                SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(appendArgs)));
+        }
+
+        return result.WithTriviaFrom(creationNode);
+    }
+
+    private static (ArgumentSyntax? CapacityArg, ImmutableArray<ArgumentSyntax> AppendArgs) AnalyzeConstructorArgs(
+        SyntaxNode creationNode,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        ArgumentListSyntax? argList = creationNode switch
+        {
+            ObjectCreationExpressionSyntax oc => oc.ArgumentList,
+            ImplicitObjectCreationExpressionSyntax ic => ic.ArgumentList,
             _ => null,
         };
 
-        var args = originalArgs is not null && originalArgs.Arguments.Count > 0
-            ? originalArgs
-            : SyntaxFactory.ArgumentList();
+        if (argList is null || argList.Arguments.Count == 0)
+        {
+            return (null, ImmutableArray<ArgumentSyntax>.Empty);
+        }
 
-        return SyntaxFactory.InvocationExpression(memberAccess, args)
-            .WithTriviaFrom(creationNode);
+        var symbolInfo = semanticModel.GetSymbolInfo(creationNode, cancellationToken);
+        if (symbolInfo.Symbol is not IMethodSymbol constructor)
+        {
+            // Can't resolve constructor — don't forward args to be safe
+            return (null, ImmutableArray<ArgumentSyntax>.Empty);
+        }
+
+        var args = argList.Arguments;
+        var paramCount = constructor.Parameters.Length;
+
+        // StringBuilder(int capacity)
+        if (paramCount == 1 && constructor.Parameters[0].Type.SpecialType == SpecialType.System_Int32)
+        {
+            return (args[0], ImmutableArray<ArgumentSyntax>.Empty);
+        }
+
+        // StringBuilder(string? value)
+        if (paramCount == 1 && constructor.Parameters[0].Type.SpecialType == SpecialType.System_String)
+        {
+            return (null, ImmutableArray.Create(args[0]));
+        }
+
+        // StringBuilder(string? value, int capacity)
+        if (paramCount == 2
+            && constructor.Parameters[0].Type.SpecialType == SpecialType.System_String
+            && constructor.Parameters[1].Type.SpecialType == SpecialType.System_Int32)
+        {
+            return (args[1], ImmutableArray.Create(args[0]));
+        }
+
+        // StringBuilder(int capacity, int maxCapacity)
+        if (paramCount == 2
+            && constructor.Parameters[0].Type.SpecialType == SpecialType.System_Int32
+            && constructor.Parameters[1].Type.SpecialType == SpecialType.System_Int32)
+        {
+            return (args[0], ImmutableArray<ArgumentSyntax>.Empty);
+        }
+
+        // StringBuilder(string? value, int startIndex, int length, int capacity)
+        if (paramCount == 4 && constructor.Parameters[0].Type.SpecialType == SpecialType.System_String)
+        {
+            return (args[3], ImmutableArray.Create(args[0], args[1], args[2]));
+        }
+
+        // Unknown overload — don't forward args
+        return (null, ImmutableArray<ArgumentSyntax>.Empty);
     }
 
     private static InvocationExpressionSyntax BuildGetStringAndReleaseCall(string variableName)

@@ -291,4 +291,76 @@ public class StringBuilderCacheCodeFixTests
         var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
         await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
     }
+
+    [Fact]
+    public async Task NewStringBuilder_WithStringArg_ReplacesWithAcquireAndAppend()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder("hello")|};
+                    sb.Append(" world");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire().Append("hello");
+                    sb.Append(" world");
+                    var result = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_WithStringAndCapacityArgs_ReplacesWithAcquireCapacityAndAppend()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder("hello", 100)|};
+                    sb.Append(" world");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire(100).Append("hello");
+                    sb.Append(" world");
+                    var result = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
 }
