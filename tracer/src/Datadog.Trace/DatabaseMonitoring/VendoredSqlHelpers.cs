@@ -8,6 +8,7 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DatabaseMonitoring
 {
@@ -54,7 +55,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/netcore/src/Microsoft/Data/SqlClient/SqlCommand.cs#L6502
         private static string QuoteIdentifier(ReadOnlySpan<string> strings)
         {
-            StringBuilder bld = new StringBuilder();
+            var sb = StringBuilderCache.Acquire();
 
             // Stitching back together is a little tricky. Assume we want to build a full multi-part name
             //  with all parts except trimming separators for leading empty names (null or empty strings,
@@ -62,18 +63,18 @@ namespace Datadog.Trace.DatabaseMonitoring
             //  null/empty, to maintain proper location of the parts.
             for (int i = 0; i < strings.Length; i++)
             {
-                if (0 < bld.Length)
+                if (0 < sb.Length)
                 {
-                    bld.Append('.');
+                    sb.Append('.');
                 }
 
                 if (strings[i] != null && 0 != strings[i].Length)
                 {
-                    AppendQuotedString(bld, "[", "]", strings[i]);
+                    AppendQuotedString(sb, "[", "]", strings[i]);
                 }
             }
 
-            return bld.ToString();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/Common/AdapterUtil.cs#L547
