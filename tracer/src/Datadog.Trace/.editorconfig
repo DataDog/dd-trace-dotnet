@@ -2,7 +2,7 @@
 
 [*.{cs,vb}]
 dotnet_diagnostic.DDSEAL001.severity = error # types should be sealed
-dotnet_diagnostic.DDALLOC003.severity = none # use StringBuilderCache instead of new StringBuilder(), TODO: disabled until existing usages are migrated
+dotnet_diagnostic.DDALLOC003.severity = error # use StringBuilderCache instead of new StringBuilder()
 
 # Microsoft performance analyzers
 dotnet_diagnostic.CA1802.severity = error # Use Literals Where Appropriate
