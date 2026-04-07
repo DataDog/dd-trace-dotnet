@@ -76,6 +76,14 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // Suppress if the capacity exceeds StringBuilderCache.MaxBuilderSize (360).
+        // StringBuilderCache won't cache builders larger than this, so using it
+        // would add overhead without any caching benefit.
+        if (HasCapacityExceedingMaxBuilderSize(constructorSymbol, context))
+        {
+            return;
+        }
+
         var enclosingFunction = GetEnclosingFunction(context.Node);
 
         // Suppress if the enclosing function-like scope already calls StringBuilderCache.Acquire()
@@ -188,6 +196,55 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool HasCapacityExceedingMaxBuilderSize(IMethodSymbol constructorSymbol, SyntaxNodeAnalysisContext context)
+    {
+        const int maxBuilderSize = 360; // StringBuilderCache.MaxBuilderSize
+
+        // Find the capacity parameter index
+        int capacityIndex = -1;
+        for (var i = 0; i < constructorSymbol.Parameters.Length; i++)
+        {
+            if (constructorSymbol.Parameters[i].Type.SpecialType == SpecialType.System_Int32)
+            {
+                capacityIndex = i;
+                // For StringBuilder(string, int) the int is capacity
+                // For StringBuilder(int) the int is capacity
+                // For StringBuilder(int, int) the first int is capacity
+                // For StringBuilder(string, int, int, int) the last int is capacity
+                // In all overloads, we check the first int parameter found — except the 4-arg overload
+                if (constructorSymbol.Parameters.Length == 4)
+                {
+                    // StringBuilder(string, int startIndex, int length, int capacity) — capacity is last
+                    capacityIndex = 3;
+                }
+
+                break;
+            }
+        }
+
+        if (capacityIndex < 0)
+        {
+            return false;
+        }
+
+        ArgumentListSyntax? argList = context.Node switch
+        {
+            ObjectCreationExpressionSyntax oc => oc.ArgumentList,
+            ImplicitObjectCreationExpressionSyntax ic => ic.ArgumentList,
+            _ => null,
+        };
+
+        if (argList is null || capacityIndex >= argList.Arguments.Count)
+        {
+            return false;
+        }
+
+        var capacityArg = argList.Arguments[capacityIndex].Expression;
+        var constantValue = context.SemanticModel.GetConstantValue(capacityArg, context.CancellationToken);
+
+        return constantValue is { HasValue: true, Value: int capacity } && capacity > maxBuilderSize;
     }
 
     private static bool ContainsStringBuilderCacheAcquireCall(SyntaxNode functionNode)
