@@ -213,13 +213,16 @@ namespace UpdateVendors
                 transform: filePath =>
                 {
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Reflection.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+
                     // we run these _after_ the standard transform otherwise we get issues
                     if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
                     {
                         RewriteFileWithTransform(filePath, contents => FixSystemReflectionMetadata(filePath, contents));
                     }
+                },
+                relativePathsToExclude: new[]
+                {
+                    "Internal/Utilities/EncodingHelper.netcoreapp.cs"
                 });
 
             Add(
@@ -474,6 +477,11 @@ namespace UpdateVendors
             contents = contents.Insert(namespaceIndex, usings);
 
             // // some somewhat hacky fixes for specific issues
+            // contents = contents
+            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.ConstrainedExecution", "System.Runtime.ConstrainedExecution")
+            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.ExceptionServices", "System.Runtime.ExceptionServices")
+            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices", "System.Runtime.CompilerServices")
+            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Serialization", "System.Runtime.Serialization");
             // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Enumerator.cs"))
             // {
             //     contents = contents.Replace("System.Collections.IEnumerator.Current", "global::System.Collections.IEnumerator.Current");
