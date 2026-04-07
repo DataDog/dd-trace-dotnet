@@ -13,7 +13,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 {
     internal static class VendoredSqlHelpers
     {
-        // parse an string of the form db.schema.name where any of the three components
+        // parse a string of the form db.schema.name where any of the three components
         // might have "[" "]" and dots within it.
         // returns:
         //   [0] dbname (or null)
@@ -22,7 +22,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         // NOTE: if perf/space implications of Regex is not a problem, we can get rid
         // of this and use a simple regex to do the parsing
         // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/SqlClient/SqlParameter.cs#L2433
-        internal static string[] ParseTypeName(string typeName, bool isUdtTypeName)
+        private static string[] ParseTypeName(string typeName)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         //  the result as a single composite name.
         internal static string ParseAndQuoteIdentifier(string identifier, bool isUdtTypeName)
         {
-            string[] strings = ParseTypeName(identifier, isUdtTypeName);
+            string[] strings = ParseTypeName(identifier);
 
             if (strings.Length == 0)
             {
@@ -77,7 +77,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         }
 
         // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/Common/AdapterUtil.cs#L547
-        internal static string AppendQuotedString(StringBuilder buffer, string quotePrefix, string quoteSuffix, string unQuotedString)
+        private static void AppendQuotedString(StringBuilder buffer, string quotePrefix, string quoteSuffix, string unQuotedString)
         {
             if (!string.IsNullOrEmpty(quotePrefix))
             {
@@ -96,8 +96,6 @@ namespace Datadog.Trace.DatabaseMonitoring
             {
                 buffer.Append(unQuotedString);
             }
-
-            return buffer.ToString();
         }
     }
 }
