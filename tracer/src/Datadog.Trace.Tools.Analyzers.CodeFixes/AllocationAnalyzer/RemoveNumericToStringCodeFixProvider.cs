@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Collections.Immutable;
+using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace Datadog.Trace.Tools.Analyzers.AllocationAnalyzer;
 /// and updates explicit generic type arguments to match.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RemoveNumericToStringCodeFixProvider))]
+[Shared]
 public sealed class RemoveNumericToStringCodeFixProvider : CodeFixProvider
 {
     private const string Title = "Remove unnecessary .ToString() call";
