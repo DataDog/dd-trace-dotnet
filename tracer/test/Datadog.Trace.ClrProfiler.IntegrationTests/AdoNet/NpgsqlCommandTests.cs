@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // BATCH (v6+): +6 spans
             var expectedSpanCount = 153;
-            var hasBatchSupport = (string.IsNullOrEmpty(packageVersion) || packageVersion[0] >= '6') && Environment.Version.Major >= 6;
+            var hasBatchSupport = HasBatchSupport(packageVersion);
             if (!hasBatchSupport)
             {
                 expectedSpanCount -= 6;
@@ -121,6 +121,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             Assert.NotEmpty(spans);
             spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Npgsql);
+        }
+
+        private static bool HasBatchSupport(string packageVersion)
+        {
+            // at least dotnet 6.0
+            if (Environment.Version.Major < 6)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(packageVersion))
+            {
+                return true;
+            }
+
+            var separatorIndex = packageVersion.IndexOf('.');
+            var majorVersionText = separatorIndex >= 0 ? packageVersion.Substring(0, separatorIndex) : packageVersion;
+
+            // at least npgsql version 6
+            return int.TryParse(majorVersionText, out var majorVersion) && majorVersion >= 6;
         }
     }
 }
