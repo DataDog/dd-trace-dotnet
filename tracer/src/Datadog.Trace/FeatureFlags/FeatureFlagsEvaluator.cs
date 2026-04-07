@@ -58,7 +58,7 @@ namespace Datadog.Trace.FeatureFlags
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
-                        error: "PROVIDER_NOT_READY",
+                        error: "No config loaded",
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "PROVIDER_NOT_READY"
@@ -71,7 +71,7 @@ namespace Datadog.Trace.FeatureFlags
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
-                        error: "FLAG_NOT_FOUND",
+                        error: "Flag not found",
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "FLAG_NOT_FOUND"
@@ -92,7 +92,7 @@ namespace Datadog.Trace.FeatureFlags
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
-                        error: "TYPE_MISMATCH",
+                        error: "Type mismatch",
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "TYPE_MISMATCH"
@@ -188,11 +188,10 @@ namespace Datadog.Trace.FeatureFlags
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
-                    error: "PARSE_ERROR",
+                    error: ex.Message,
                     metadata: new Dictionary<string, string>
                     {
-                        ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = ex.Message
+                        ["errorCode"] = "PARSE_ERROR"
                     });
             }
             catch (MissingTargetingKeyException)
@@ -201,7 +200,7 @@ namespace Datadog.Trace.FeatureFlags
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
-                    error: "TARGETING_KEY_MISSING",
+                    error: "Targeting key missing",
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "TARGETING_KEY_MISSING"
@@ -686,8 +685,7 @@ namespace Datadog.Trace.FeatureFlags
                     error: error,
                     metadata: new Dictionary<string, string>
                     {
-                        ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = error
+                        ["errorCode"] = "PARSE_ERROR"
                     });
             }
         }

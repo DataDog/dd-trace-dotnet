@@ -114,7 +114,8 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal(23, result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("PROVIDER_NOT_READY", result.Error);
+        Assert.Equal("No config loaded", result.Error);
+        Assert.Equal("PROVIDER_NOT_READY", result.FlagMetadata?["errorCode"]);
     }
 
     [Fact]

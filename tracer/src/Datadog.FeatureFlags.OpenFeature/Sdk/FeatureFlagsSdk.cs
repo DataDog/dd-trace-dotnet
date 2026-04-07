@@ -85,7 +85,7 @@ internal static class FeatureFlagsSdk
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
             (T)value,
-            ToErrorType(evaluation.Reason, evaluation.Error),
+            ToErrorType(evaluation.FlagMetadata),
             evaluation.Reason.ToString(),
             evaluation.Variant,
             evaluation.Error,
@@ -93,9 +93,14 @@ internal static class FeatureFlagsSdk
         return res;
     }
 
-    private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason, string? errorMessage)
+    private static ErrorType ToErrorType(IDictionary<string, string>? metadata)
     {
-        return errorMessage switch
+        if (metadata is null || !metadata.TryGetValue("errorCode", out var errorCode))
+        {
+            return ErrorType.None;
+        }
+
+        return errorCode switch
         {
             "FLAG_NOT_FOUND" => ErrorType.FlagNotFound,
             "INVALID_CONTEXT" => ErrorType.InvalidContext,

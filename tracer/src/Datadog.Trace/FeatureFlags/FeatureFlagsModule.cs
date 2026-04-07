@@ -67,7 +67,15 @@ namespace Datadog.Trace.FeatureFlags
             if (evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(flagKey, defaultValue, EvaluationReason.Error, error: "PROVIDER_NOT_READY");
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "No config loaded",
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "PROVIDER_NOT_READY"
+                    });
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
