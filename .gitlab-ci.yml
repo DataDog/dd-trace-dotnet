@@ -184,7 +184,7 @@ aws-lambda-layer:
     project: DataDog/dd-trace-dotnet-aws-lambda-layer
     strategy: depend
   variables:
-    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID 
     UPSTREAM_PIPELINE_REF: $CI_COMMIT_REF_NAME
   allow_failure: true
 
