@@ -476,6 +476,9 @@ namespace UpdateVendors
 
             contents = contents.Insert(namespaceIndex, usings);
 
+            contents = contents
+               .Replace("using System.Collections.Immutable;", "using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;")
+               .Replace("namespace System.Reflection;", "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection;");
             // // some somewhat hacky fixes for specific issues
             // contents = contents
             //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.ConstrainedExecution", "System.Runtime.ConstrainedExecution")
