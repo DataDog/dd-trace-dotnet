@@ -116,6 +116,21 @@ public class LineProbeResolverTest
         result.Diagnostics.SymbolicatedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameMatchCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameExamples.Should().NotBeNullOrEmpty();
+        result.Message.Should().Contain("same file name was found");
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void UnknownFileReturnsUnboundWithGenericMessage()
+    {
+        _probeDefinition.Where.SourceFile = @"some\other\folder\FileThatDoesNotExistAnywhere.cs";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch);
+        result.Diagnostics.SameFileNameMatchCount.Should().Be(0);
+        result.Message.Should().Contain("assembly is not loaded yet or if the probe source path does not match the PDB document path");
         loc.Should().BeNull();
     }
 

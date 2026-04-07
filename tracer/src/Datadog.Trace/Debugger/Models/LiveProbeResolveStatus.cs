@@ -28,6 +28,7 @@ namespace Datadog.Trace.Debugger.Models
     {
         None,
         MissingSourceFile,
+        // Covers both "assembly not loaded yet" and "loaded assembly exists but the probe source path does not match the PDB document path".
         AssemblyNotLoadedOrSourceFileMismatch,
         MissingPdb,
         InvalidLineNumber,
