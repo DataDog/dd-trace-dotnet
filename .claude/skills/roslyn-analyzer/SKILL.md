@@ -103,8 +103,6 @@ Every analyzer requires:
 - `[DiagnosticAnalyzer(LanguageNames.CSharp)]` attribute
 - `context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None)` — generated code (from source generators) should not be flagged for human-authored patterns
 - `context.EnableConcurrentExecution()` — Roslyn runs analysis callbacks on multiple threads for IDE responsiveness, so all state must be thread-safe
-- `#pragma warning disable RS2008` around the `DiagnosticDescriptor` — Roslyn's release tracking expects IDs registered in a shipped analyzer; our internal IDs don't follow that model
-
 **Diagnostic message tips:**
 - **title**: Short noun-phrase (e.g., "Potential infinite loop on ThreadAbortException")
 - **messageFormat**: Actionable with `{0}` placeholders for context (e.g., "Type '{0}' should be sealed")
@@ -170,7 +168,6 @@ When reviewing an analyzer, check all of the following:
 - `[DiagnosticAnalyzer(LanguageNames.CSharp)]` attribute present
 - `ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None)` called
 - `EnableConcurrentExecution()` called
-- `#pragma warning disable RS2008` around `DiagnosticDescriptor`
 - Diagnostic ID follows naming convention
 - Category is one of: Reliability, CodeQuality, Performance, Usage, Maintainability
 - Severity is appropriate for the violation
