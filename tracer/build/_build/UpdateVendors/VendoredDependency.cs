@@ -215,24 +215,10 @@ namespace UpdateVendors
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Reflection.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-
-                    if (filePath.EndsWith(Path.Join("Reflection", "PortableExecutable", "PEBuilder.cs")))
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Fix cases where we're relying on this behaviour:
-                        // private static ReadOnlySpan<byte> Property => new byte[32]
-                        // it "works" in .NET Core, but is very allocaty in .NET FX
-                        RewriteFileWithTransform(
-                            filePath,
-                            content => content.Replace(
-                                "      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]",
-                                """
-                                #if NETCOREAPP
-                                      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]
-                                #else
-                                      private static readonly byte[] DosHeader = new byte[DosHeaderSize]
-                                #endif
-                                """
-                            ));
+                        RewriteFileWithTransform(filePath, contents => FixSystemReflectionMetadata(filePath, contents));
                     }
                 });
 
@@ -437,6 +423,97 @@ namespace UpdateVendors
                .Replace("""KeyNotFoundException(SR.Format(SR.Arg_KeyNotFoundWithKey, key.ToString()))""", """KeyNotFoundException("Arg_KeyNotFoundWithKey" + key.ToString())""")
                .Replace("""SR.Format(SR.Arg_KeyNotFoundWithKey, (object) key.ToString()));""", """key.ToString());""");
             contents = Regex.Replace(contents, @"SR\.(\w+)(?=\W)", "@\"$1\"");
+
+            return contents;
+        }
+
+        private static string FixSystemReflectionMetadata(string filePath, string contents)
+        {
+            if (filePath.EndsWith(Path.Join("Reflection", "PortableExecutable", "PEBuilder.cs")))
+            {
+                // Fix cases where we're relying on this behaviour:
+                // private static ReadOnlySpan<byte> Property => new byte[32]
+                // it "works" in .NET Core, but is very allocaty in .NET FX
+                RewriteFileWithTransform(
+                    filePath,
+                    content => content.Replace(
+                        "      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]",
+                        """
+                        #if NETCOREAPP
+                              private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]
+                        #else
+                              private static readonly byte[] DosHeader = new byte[DosHeaderSize]
+                        #endif
+                        """
+                    ));
+            }
+
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "#nullable enable\n" +
+                                  "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            // // some somewhat hacky fixes for specific issues
+            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Enumerator.cs"))
+            // {
+            //     contents = contents.Replace("System.Collections.IEnumerator.Current", "global::System.Collections.IEnumerator.Current");
+            // }
+            //
+            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.cs"))
+            // {
+            //     contents = contents
+            //               .Replace("System.Collections.IEnumerator", "global::System.Collections.IEnumerator")
+            //               .Replace("System.Collections.IEnumerable", "global::System.Collections.IEnumerable")
+            //               .Replace("System.Collections.ICollection", "global::System.Collections.ICollection");
+            // }
+            //
+            // if (string.Equals(Path.GetFileName(filePath), "KeysOrValuesCollectionAccessor.cs"))
+            // {
+            //     // Hacky, but it works
+            //     contents = contents.Replace("var sortedDictionary = this.Dictionary as ImmutableSortedDictionary<TKey, TValue>;", "var sortedDictionary = this.Dictionary as IImmutableDictionaryInternal<TKey, TValue>;");
+            // }
+            //
+            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Node.cs"))
+            // {
+            //     contents = contents.Replace("root.AddRange(Linq.Enumerable.Select(this, converter));", "root.AddRange(global::System.Linq.Enumerable.Select(this, converter));");
+            // }
+            //
+            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Builder.cs"))
+            // {
+            //     contents = contents.Replace("System.Threading.Interlocked.CompareExchange", "global::System.Threading.Interlocked.CompareExchange");
+            // }
+            //
+            // if (string.Equals(Path.GetFileName(filePath), "ImmutableDictionary_2.Builder.cs"))
+            // {
+            //     contents = contents.Replace("Threading.Interlocked.CompareExchange", "global::System.Threading.Interlocked.CompareExchange");
+            // }
+            //
+            // // replace SR, hard to do generally
+            // contents = contents
+            //    .Replace("""ArgumentException(SR.Format(SR.DuplicateKey, key))""", """ArgumentException("DuplicateKey" + key)""")
+            //    .Replace("""KeyNotFoundException(SR.Format(SR.Arg_KeyNotFoundWithKey, key.ToString()))""", """KeyNotFoundException("Arg_KeyNotFoundWithKey" + key.ToString())""")
+            //    .Replace("""SR.Format(SR.Arg_KeyNotFoundWithKey, (object) key.ToString()));""", """key.ToString());""");
+            // contents = Regex.Replace(contents, @"SR\.(\w+)(?=\W)", "@\"$1\"");
 
             return contents;
         }
