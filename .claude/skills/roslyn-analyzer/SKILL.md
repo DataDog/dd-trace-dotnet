@@ -45,7 +45,7 @@ Prompt the user to choose between creating or reviewing.
 
 Gather the following (if not already provided):
 1. **What should the analyzer detect?** (the code pattern or violation)
-2. **Should it have a code fix?** (auto-fix the violation)
+2. **Should it have a code fix?** Code fixes are appropriate when the transformation is mechanical and unambiguous (e.g., adding `sealed`, inserting a `throw`). Skip them when the fix requires design judgment or has multiple valid resolutions.
 3. **Category**: Reliability, CodeQuality, Performance, Usage, or Maintainability
 4. **Severity**: Error, Warning, or Info
 
@@ -103,6 +103,17 @@ Every analyzer requires:
 - `context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None)` — generated code (from source generators) should not be flagged for human-authored patterns
 - `context.EnableConcurrentExecution()` — Roslyn runs analysis callbacks on multiple threads for IDE responsiveness, so all state must be thread-safe
 - `#pragma warning disable RS2008` around the `DiagnosticDescriptor` — Roslyn's release tracking expects IDs registered in a shipped analyzer; our internal IDs don't follow that model
+
+**Diagnostic message tips:**
+- **title**: Short noun-phrase (e.g., "Potential infinite loop on ThreadAbortException")
+- **messageFormat**: Actionable with `{0}` placeholders for context (e.g., "Type '{0}' should be sealed")
+- **description**: Explain *why* the rule exists, not just *what* it checks
+- **Changing a diagnostic ID is a breaking change** — existing `#pragma warning disable` and `.editorconfig` suppressions silently stop working
+
+**Performance tips** (analyzers run on every keystroke in the IDE):
+- Check cheap conditions first (syntax) before expensive ones (semantic model queries)
+- Register for the most specific `SyntaxKind`/`SymbolKind` — never register broadly and filter inside the callback
+- Pass `context.CancellationToken` to all semantic model calls — the IDE cancels analysis frequently
 
 #### 3c. Code Fix Provider (if applicable)
 
