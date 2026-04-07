@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 /// </summary>
 [Browsable(browsable: false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class BatchExecuteWithCommandBehaviorIntegration
+public sealed class BatchExecuteWithCommandBehaviorIntegration
 {
 #if NET6_0_OR_GREATER
     internal static CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior)

@@ -143,7 +143,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         private static bool ShouldCreateScope(Tracer tracer, IntegrationId integrationId, string dbType, string commandText)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
                 // integration disabled, don't create a scope, skip this span
                 return false;
@@ -482,7 +483,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 return null;
             }
+
 #endif
+
             private static ServiceNameMetadata GetServiceNameMetadata(Tracer tracer, string dbTypeName)
             {
                 if (tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out var serviceName))

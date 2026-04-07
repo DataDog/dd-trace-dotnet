@@ -4,19 +4,15 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
 
 #nullable enable
 
@@ -48,7 +44,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         // baseHash should be null if hash injection is disabled, config is not checked in this method
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure, string? baseHash)
         {
-            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters, configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
+            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters, configuredServiceName, dbName, outhost, span, injectStoredProcedure, baseHash, out var modifiedText, out var modifiedType);
             command.CommandText = modifiedText;
             command.CommandType = modifiedType;
 
@@ -56,9 +52,9 @@ namespace Datadog.Trace.DatabaseMonitoring
         }
 
 #if NET6_0_OR_GREATER
-        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, DbBatchCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
+        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, DbBatchCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure, string? baseHash)
         {
-            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters, configuredServiceName, dbName, outhost, span, injectStoredProcedure, out var modifiedText, out var modifiedType);
+            var traceParentInjected = PropagateDataViaComment(propagationLevel, integrationId, command.CommandText, command.CommandType, command.Parameters, configuredServiceName, dbName, outhost, span, injectStoredProcedure, baseHash, out var modifiedText, out var modifiedType);
             command.CommandText = modifiedText;
             command.CommandType = modifiedType;
 
@@ -77,6 +73,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             string? outhost,
             Span span,
             bool injectStoredProcedure,
+            string? baseHash,
             out string modifiedText,
             out CommandType modifiedType)
         {

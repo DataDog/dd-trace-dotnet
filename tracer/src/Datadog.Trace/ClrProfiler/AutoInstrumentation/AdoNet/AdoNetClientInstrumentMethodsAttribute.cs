@@ -352,7 +352,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { ClrNames.CancellationToken },
             CallTargetType = typeof(BatchExecuteAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteNonQueryAsyncAttribute : Attribute
+        internal sealed class BatchExecuteNonQueryAsyncAttribute : Attribute
         {
         }
 
@@ -362,7 +362,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(BatchExecuteIntegration),
             CallTargetIntegrationKind = CallTargetKind.Default)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteNonQueryAttribute : Attribute
+        internal sealed class BatchExecuteNonQueryAttribute : Attribute
         {
         }
 
@@ -372,7 +372,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { ClrNames.CancellationToken },
             CallTargetType = typeof(BatchExecuteAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteReaderWithCancellationAsyncAttribute : Attribute
+        internal sealed class BatchExecuteReaderWithCancellationAsyncAttribute : Attribute
         {
         }
 
@@ -382,7 +382,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             CallTargetType = typeof(BatchExecuteWithCommandBehaviorAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        internal sealed class BatchExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
         {
         }
 
@@ -392,7 +392,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
             CallTargetType = typeof(BatchExecuteWithCommandBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteReaderWithBehaviorAttribute : Attribute
+        internal sealed class BatchExecuteReaderWithBehaviorAttribute : Attribute
         {
         }
 
@@ -402,7 +402,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             CallTargetType = typeof(BatchExecuteWithCommandBehaviorAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        internal sealed class BatchExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
         {
         }
 
@@ -412,7 +412,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
             CallTargetType = typeof(BatchExecuteWithCommandBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteDbDataReaderWithBehaviorAttribute : Attribute
+        internal sealed class BatchExecuteDbDataReaderWithBehaviorAttribute : Attribute
         {
         }
 
@@ -422,7 +422,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ParameterTypeNames = new[] { ClrNames.CancellationToken },
             CallTargetType = typeof(BatchExecuteAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteScalarAsyncAttribute : Attribute
+        internal sealed class BatchExecuteScalarAsyncAttribute : Attribute
         {
         }
 
@@ -431,7 +431,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             ReturnTypeName = ClrNames.Object,
             CallTargetType = typeof(BatchExecuteIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class BatchExecuteScalarAttribute : Attribute
+        internal sealed class BatchExecuteScalarAttribute : Attribute
         {
         }
     }

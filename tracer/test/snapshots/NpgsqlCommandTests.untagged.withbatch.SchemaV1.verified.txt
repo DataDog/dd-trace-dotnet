@@ -910,7 +910,29 @@
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID";CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name),
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_70,
+    ParentId: Id_68,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.operation.batch.size: 3,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      peer.service: postgres,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
+    }
+  },
+  {
+    TraceId: Id_66,
+    SpanId: Id_70,
+    Name: postgres.query,
+    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID";CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name),
+    Service: Samples.Npgsql,
+    Type: sql,
+    ParentId: Id_68,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -948,16 +970,17 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_66,
     SpanId: Id_73,
     Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID";CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name),
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_72,
     Tags: {
       component: Npgsql,
       db.name: postgres,
+      db.operation.batch.size: 3,
       db.type: postgres,
       env: integration_tests,
       language: dotnet,
@@ -969,16 +992,17 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_66,
     SpanId: Id_74,
     Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID";CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name),
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_72,
     Tags: {
       component: Npgsql,
       db.name: postgres,
+      db.operation.batch.size: 3,
       db.type: postgres,
       env: integration_tests,
       language: dotnet,
@@ -996,7 +1020,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1017,7 +1041,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1038,7 +1062,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1059,7 +1083,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_13,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1080,7 +1104,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1101,7 +1125,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_17,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1122,7 +1146,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_19,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1143,7 +1167,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1164,7 +1188,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1185,7 +1209,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1206,7 +1230,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1221,13 +1245,13 @@
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_86,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_25,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1242,13 +1266,13 @@
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_87,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_27,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1269,7 +1293,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_34,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1290,7 +1314,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_36,
+    ParentId: Id_32,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1311,7 +1335,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_38,
+    ParentId: Id_34,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1332,7 +1356,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_40,
+    ParentId: Id_36,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1353,7 +1377,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_38,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1374,7 +1398,7 @@
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_44,
+    ParentId: Id_40,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1389,13 +1413,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_94,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_42,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1410,13 +1434,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_95,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_44,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1437,7 +1461,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1458,7 +1482,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1479,7 +1503,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1500,7 +1524,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1521,7 +1545,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1542,7 +1566,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1563,7 +1587,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1584,7 +1608,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1605,7 +1629,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_13,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1626,7 +1650,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_13,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1647,7 +1671,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1668,7 +1692,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1689,7 +1713,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_17,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1710,7 +1734,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_17,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1731,7 +1755,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_19,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1752,7 +1776,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_19,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1773,7 +1797,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1794,7 +1818,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1815,7 +1839,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1836,7 +1860,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1857,7 +1881,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1878,7 +1902,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1899,7 +1923,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_25,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1920,6 +1944,27 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      peer.service: postgres,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_120,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql,
+    Type: sql,
     ParentId: Id_27,
     Tags: {
       component: Npgsql,
@@ -1935,34 +1980,13 @@
     }
   },
   {
-    TraceId: Id_28,
-    SpanId: Id_120,
-    Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_30,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_121,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_27,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1983,7 +2007,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2004,7 +2028,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2025,7 +2049,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_34,
+    ParentId: Id_32,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2046,7 +2070,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_34,
+    ParentId: Id_32,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2067,7 +2091,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_36,
+    ParentId: Id_34,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2088,7 +2112,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_36,
+    ParentId: Id_34,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2109,7 +2133,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_38,
+    ParentId: Id_36,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2130,7 +2154,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_38,
+    ParentId: Id_36,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2151,7 +2175,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_40,
+    ParentId: Id_38,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2172,7 +2196,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_40,
+    ParentId: Id_38,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2193,7 +2217,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_40,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2214,7 +2238,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_40,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2235,7 +2259,7 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_44,
+    ParentId: Id_42,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2256,6 +2280,27 @@
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
+    ParentId: Id_42,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      peer.service: postgres,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_136,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql,
+    Type: sql,
     ParentId: Id_44,
     Tags: {
       component: Npgsql,
@@ -2271,34 +2316,13 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_136,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql,
-    Type: sql,
-    ParentId: Id_3,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: integration_tests,
-      language: dotnet,
-      out.host: postgres,
-      peer.service: postgres,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.peer.service.source: db.name
-    }
-  },
-  {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_137,
     Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_44,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2319,7 +2343,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2340,7 +2364,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2361,7 +2385,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2382,7 +2406,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_13,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2403,7 +2427,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2424,7 +2448,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_17,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2445,7 +2469,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_19,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2466,7 +2490,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2487,7 +2511,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2508,7 +2532,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2529,7 +2553,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2544,13 +2568,13 @@
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_149,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_25,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2565,13 +2589,13 @@
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_150,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_27,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2592,7 +2616,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_34,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2613,7 +2637,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_36,
+    ParentId: Id_32,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2634,7 +2658,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_38,
+    ParentId: Id_34,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2655,7 +2679,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_40,
+    ParentId: Id_36,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2676,7 +2700,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_38,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2697,7 +2721,7 @@
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_44,
+    ParentId: Id_40,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2712,13 +2736,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_157,
     Name: postgres.query,
-    Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_42,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2733,13 +2757,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_158,
     Name: postgres.query,
-    Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_44,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2760,7 +2784,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2781,7 +2805,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2802,7 +2826,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2823,7 +2847,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_13,
+    ParentId: Id_9,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2844,7 +2868,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_11,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2865,7 +2889,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_17,
+    ParentId: Id_13,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2886,7 +2910,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_19,
+    ParentId: Id_15,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2907,7 +2931,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_17,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2928,7 +2952,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_19,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2949,7 +2973,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_21,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2970,7 +2994,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_23,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2985,13 +3009,13 @@
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_170,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_25,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3006,13 +3030,13 @@
     }
   },
   {
-    TraceId: Id_28,
+    TraceId: Id_1,
     SpanId: Id_171,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_27,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3033,7 +3057,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_34,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3054,7 +3078,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_36,
+    ParentId: Id_32,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3075,7 +3099,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_38,
+    ParentId: Id_34,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3096,7 +3120,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_40,
+    ParentId: Id_36,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3117,7 +3141,7 @@
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_38,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3134,6 +3158,48 @@
   {
     TraceId: Id_28,
     SpanId: Id_177,
+    Name: postgres.query,
+    Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.Npgsql,
+    Type: sql,
+    ParentId: Id_40,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      peer.service: postgres,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_178,
+    Name: postgres.query,
+    Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.Npgsql,
+    Type: sql,
+    ParentId: Id_42,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: integration_tests,
+      language: dotnet,
+      out.host: postgres,
+      peer.service: postgres,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_179,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql,

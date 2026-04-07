@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class BatchExecuteAsyncIntegration
+public sealed class BatchExecuteAsyncIntegration
 {
 #if NET6_0_OR_GREATER
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, CancellationToken cancellationToken)
