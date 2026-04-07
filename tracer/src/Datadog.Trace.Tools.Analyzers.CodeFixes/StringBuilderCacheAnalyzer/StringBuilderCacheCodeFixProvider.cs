@@ -98,12 +98,13 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
     {
         var enclosingFunction = GetEnclosingFunction(creationNode);
 
-        // Collect all .ToString() invocations on the variable in the enclosing scope
+        // Collect all .ToString() invocations on the variable in the enclosing scope,
+        // skipping nested lambdas/local functions that may shadow the variable name
         var toStringInvocations = ImmutableArray<InvocationExpressionSyntax>.Empty;
         if (enclosingFunction is not null)
         {
             toStringInvocations = enclosingFunction
-                .DescendantNodes()
+                .DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == enclosingFunction)
                 .OfType<InvocationExpressionSyntax>()
                 .Where(inv =>
                     inv.Expression is MemberAccessExpressionSyntax memberAccess
@@ -324,7 +325,8 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         var firstSpanEnd = firstToString.Span.End;
         var lastSpanStart = lastToString.SpanStart;
 
-        foreach (var invocation in enclosingFunction.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        // Skip nested lambdas/local functions that may shadow the variable name
+        foreach (var invocation in enclosingFunction.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == enclosingFunction).OfType<InvocationExpressionSyntax>())
         {
             if (invocation.SpanStart <= firstSpanEnd || invocation.SpanStart >= lastSpanStart)
             {
@@ -341,7 +343,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         }
 
         // Also check for element access (sb[i] = ...)
-        foreach (var elementAccess in enclosingFunction.DescendantNodes().OfType<ElementAccessExpressionSyntax>())
+        foreach (var elementAccess in enclosingFunction.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == enclosingFunction).OfType<ElementAccessExpressionSyntax>())
         {
             if (elementAccess.SpanStart <= firstSpanEnd || elementAccess.SpanStart >= lastSpanStart)
             {
