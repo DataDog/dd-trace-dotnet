@@ -30,7 +30,7 @@ namespace Datadog.Trace.Logging
 
             try
             {
-                if (GlobalSettings.Instance.DebugEnabledInternal)
+                if (GlobalSettings.Instance.DebugEnabled)
                 {
                     LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }
@@ -54,7 +54,11 @@ namespace Datadog.Trace.Logging
         public static IDatadogLogger GetLoggerFor(Type classType)
         {
             // Tells us which types are loaded, when, and how often.
-            SharedLogger.Debug("Logger retrieved for: {AssemblyQualifiedName}", classType.AssemblyQualifiedName);
+            if (SharedLogger.IsEnabled(LogEventLevel.Debug))
+            {
+                SharedLogger.Debug("Logger retrieved for: {AssemblyQualifiedName}", classType.AssemblyQualifiedName);
+            }
+
             return SharedLogger;
         }
 

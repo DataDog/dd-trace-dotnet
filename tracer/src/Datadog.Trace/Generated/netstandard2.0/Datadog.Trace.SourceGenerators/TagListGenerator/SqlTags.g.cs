@@ -15,21 +15,59 @@ namespace Datadog.Trace.Tagging
     partial class SqlTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // DbTypeBytes = MessagePack.Serialize("db.type");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> DbTypeBytes => new byte[] { 167, 100, 98, 46, 116, 121, 112, 101 };
+#else
+        private static readonly byte[] DbTypeBytes = new byte[] { 167, 100, 98, 46, 116, 121, 112, 101 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // DbNameBytes = MessagePack.Serialize("db.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> DbNameBytes => new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] DbNameBytes = new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
+#endif
         // DbUserBytes = MessagePack.Serialize("db.user");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> DbUserBytes => new byte[] { 167, 100, 98, 46, 117, 115, 101, 114 };
+#else
+        private static readonly byte[] DbUserBytes = new byte[] { 167, 100, 98, 46, 117, 115, 101, 114 };
+#endif
         // OutHostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> OutHostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] OutHostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
         // BatchSizeBytes = MessagePack.Serialize("db.operation.batch.size");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BatchSizeBytes => new byte[] { 183, 100, 98, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 97, 116, 99, 104, 46, 115, 105, 122, 101 };
+#else
+        private static readonly byte[] BatchSizeBytes = new byte[] { 183, 100, 98, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 97, 116, 99, 104, 46, 115, 105, 122, 101 };
+#endif
         // DbmTraceInjectedBytes = MessagePack.Serialize("_dd.dbm_trace_injected");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> DbmTraceInjectedBytes => new byte[] { 182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
+#else
+        private static readonly byte[] DbmTraceInjectedBytes = new byte[] { 182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
+#endif
+        // BaseHashBytes = MessagePack.Serialize("_dd.propagated_hash");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> BaseHashBytes => new byte[] { 179, 95, 100, 100, 46, 112, 114, 111, 112, 97, 103, 97, 116, 101, 100, 95, 104, 97, 115, 104 };
+#else
+        private static readonly byte[] BaseHashBytes = new byte[] { 179, 95, 100, 100, 46, 112, 114, 111, 112, 97, 103, 97, 116, 101, 100, 95, 104, 97, 115, 104 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -43,11 +81,12 @@ namespace Datadog.Trace.Tagging
                 "out.host" => OutHost,
                 "db.operation.batch.size" => BatchSize,
                 "_dd.dbm_trace_injected" => DbmTraceInjected,
+                "_dd.propagated_hash" => BaseHash,
                 _ => base.GetTag(key),
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
@@ -71,6 +110,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "_dd.dbm_trace_injected": 
                     DbmTraceInjected = value;
+                    break;
+                case "_dd.propagated_hash": 
+                    BaseHash = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(SqlTags));
@@ -121,6 +163,11 @@ namespace Datadog.Trace.Tagging
             if (DbmTraceInjected is not null)
             {
                 processor.Process(new TagItem<string>("_dd.dbm_trace_injected", DbmTraceInjected, DbmTraceInjectedBytes));
+            }
+
+            if (BaseHash is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.propagated_hash", BaseHash, BaseHashBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -181,6 +228,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("_dd.dbm_trace_injected (tag):")
                   .Append(DbmTraceInjected)
+                  .Append(',');
+            }
+
+            if (BaseHash is not null)
+            {
+                sb.Append("_dd.propagated_hash (tag):")
+                  .Append(BaseHash)
                   .Append(',');
             }
 

@@ -25,5 +25,10 @@ namespace Samples.HotChocolate
         {
             throw new System.Exception("Something went wrong");
         }
+
+        public string ThrowExceptionIndex()
+        {
+            throw new System.Exception("Invalid index Exception");
+        }
     }
 }

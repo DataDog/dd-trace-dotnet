@@ -15,9 +15,17 @@ namespace Datadog.Trace.Iast
     partial class IastTags
     {
         // IastJsonBytes = MessagePack.Serialize("_dd.iast.json");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IastJsonBytes => new byte[] { 173, 95, 100, 100, 46, 105, 97, 115, 116, 46, 106, 115, 111, 110 };
+#else
+        private static readonly byte[] IastJsonBytes = new byte[] { 173, 95, 100, 100, 46, 105, 97, 115, 116, 46, 106, 115, 111, 110 };
+#endif
         // IastEnabledBytes = MessagePack.Serialize("_dd.iast.enabled");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IastEnabledBytes => new byte[] { 176, 95, 100, 100, 46, 105, 97, 115, 116, 46, 101, 110, 97, 98, 108, 101, 100 };
+#else
+        private static readonly byte[] IastEnabledBytes = new byte[] { 176, 95, 100, 100, 46, 105, 97, 115, 116, 46, 101, 110, 97, 98, 108, 101, 100 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -29,7 +37,7 @@ namespace Datadog.Trace.Iast
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

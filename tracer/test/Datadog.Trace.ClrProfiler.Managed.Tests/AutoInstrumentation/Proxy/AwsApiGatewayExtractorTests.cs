@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using System.Collections.Specialized;
 using System.Globalization;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -17,29 +17,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 public class AwsApiGatewayExtractorTests
 {
     private readonly AwsApiGatewayExtractor _extractor;
-    private readonly Tracer _tracer; // this is a mocked instance of the tracer
 
     public AwsApiGatewayExtractorTests()
     {
         _extractor = new AwsApiGatewayExtractor();
-        _tracer = ProxyTestHelpers.GetMockTracer();
-    }
-
-    [Fact]
-    public void TryExtract_WhenProxySpansDisabled_ReturnsFalse()
-    {
-        var collection = new NameValueCollection
-        {
-            { ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, "false" }
-        };
-
-        var tracer = ProxyTestHelpers.GetMockTracer(collection);
-        var headers = ProxyTestHelpers.CreateValidHeaders();
-
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), tracer, out var data);
-
-        success.Should().BeFalse();
-        data.Should().Be(default(InferredProxyData));
     }
 
     [Fact]
@@ -51,7 +32,7 @@ public class AwsApiGatewayExtractorTests
 
         var headers = ProxyTestHelpers.CreateValidHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
         data.ProxyName.Should().Be("aws-apigateway");
@@ -75,7 +56,7 @@ public class AwsApiGatewayExtractorTests
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Stage);
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
         data.ProxyName.Should().Be("aws-apigateway");
@@ -90,41 +71,13 @@ public class AwsApiGatewayExtractorTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("invalid")]
-    [InlineData("aws.apigateway")]
-    public void TryExtract_WithInvalidProxyName_ReturnsFalse(string proxyName)
-    {
-        var headers = ProxyTestHelpers.CreateValidHeaders();
-        headers.Set(InferredProxyHeaders.Name, proxyName);
-
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
-
-        success.Should().BeFalse();
-        data.Should().Be(default(InferredProxyData));
-    }
-
-    [Fact]
-    public void TryExtract_WithMissingProxyName_ReturnsFalse()
-    {
-        var headers = ProxyTestHelpers.CreateValidHeaders();
-        headers.Remove(InferredProxyHeaders.Name);
-
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
-
-        success.Should().BeFalse();
-        data.Should().Be(default(InferredProxyData));
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("invalid")]
     [InlineData("1111111122222222333333334444444455555555666666667777777788888888")] // too large
     public void TryExtract_WithInvalidStartTime_ReturnsFalse(string startTime)
     {
         var headers = ProxyTestHelpers.CreateValidHeaders();
         headers.Set(InferredProxyHeaders.StartTime, startTime);
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));
@@ -136,7 +89,7 @@ public class AwsApiGatewayExtractorTests
         var headers = ProxyTestHelpers.CreateValidHeaders();
         headers.Remove(InferredProxyHeaders.StartTime);
 
-        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));

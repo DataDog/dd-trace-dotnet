@@ -18,7 +18,9 @@
         "out.host": "localhost",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
         "span.kind": "client",
-        "_dd.base_service": "AspNetCoreSmokeTest"
+        "_dd.tags.process": "entrypoint.basedir:VALUE,entrypoint.name:VALUE,entrypoint.workdir:VALUE,svc.auto:VALUE",
+        "_dd.base_service": "AspNetCoreSmokeTest",
+        "_dd.svc_src": "http-client"
       },
       "metrics": {
         "_dd.top_level": 1.0,
@@ -39,7 +41,7 @@
       "type": "web",
       "meta": {
         "_dd.appsec.event_rules.version": "1.15.0",
-        "_dd.appsec.waf.version": "1.28.1",
+        "_dd.appsec.waf.version": "1.30.0",
         "_dd.runtime_family": "dotnet",
         "_dd.appsec.fp.http.endpoint": "http-get-7460da9d--",
         "_dd.appsec.fp.http.header": "hdr-0000000000--3-98425651",

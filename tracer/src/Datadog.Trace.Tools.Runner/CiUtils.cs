@@ -52,7 +52,7 @@ internal static class CiUtils
         }
 
         // Reload Test optimization instance and settings  (in case they were changed by the environment variables using the `--set-env` option)
-        var testOptimization = new TestOptimization(CIEnvironmentValues.Instance);
+        var testOptimization = new TestOptimization();
         var testOptimizationSettings = testOptimization.Settings;
         TestOptimization.Instance = testOptimization;
 
@@ -134,13 +134,6 @@ internal static class CiUtils
 
             // Change the .git search folder to the CurrentDirectory or WorkingFolder
             var ciValues = testOptimization.CIValues;
-            ciValues.GitSearchFolder = Environment.CurrentDirectory;
-            if (string.IsNullOrEmpty(ciValues.WorkspacePath))
-            {
-                // In case we cannot get the WorkspacePath we fallback to the default configuration.
-                ciValues.GitSearchFolder = null;
-            }
-
             var client = TestOptimizationClient.Create(ciValues.WorkspacePath ?? Environment.CurrentDirectory, testOptimization);
             if (testOptimizationSettings.GitUploadEnabled != false || testOptimizationSettings.IntelligentTestRunnerEnabled)
             {
@@ -269,6 +262,11 @@ internal static class CiUtils
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled] = "1";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.RateLimitSeconds] = "0";
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.UploadFlushInterval] = "1000";
+
+            if (agentless)
+            {
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled] = "1";
+            }
         }
 
         // Let's set the code coverage datacollector if the code coverage is enabled

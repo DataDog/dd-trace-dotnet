@@ -1,4 +1,4 @@
-// <copyright file="TraceUtil.cs" company="Datadog">
+﻿// <copyright file="TraceUtil.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Processors
 {
-    internal class TraceUtil
+    internal static class TraceUtil
     {
         // MaxTagLength the maximum length a tag can have
         private const int MaxTagLength = 200;
@@ -227,7 +227,7 @@ namespace Datadog.Trace.Processors
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L223-L274
         public static string NormalizeMetricName(string name, int limit)
         {
-            if (name == string.Empty || Encoding.GetByteCount(name) > limit)
+            if (string.IsNullOrEmpty(name) || Encoding.GetByteCount(name) > limit)
             {
                 return null;
             }

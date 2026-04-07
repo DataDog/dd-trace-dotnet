@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,11 +17,178 @@ namespace Datadog.Trace.Tagging
     internal class TagsList : ITags
     {
         protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
-        private List<KeyValuePair<string, string>> _tags;
-        private List<KeyValuePair<string, double>> _metrics;
-        private List<KeyValuePair<string, byte[]>> _metaStruct;
+        private const int DefaultCapacity = 4;
+        private List<KeyValuePair<string, string>>? _tags;
+        private List<KeyValuePair<string, double>>? _metrics;
+        private List<KeyValuePair<string, byte[]>>? _metaStruct;
 
-        public virtual string GetTag(string key)
+        private static int CountNotNull(string? value) => value is null ? 0 : 1;
+
+        private List<KeyValuePair<string, string>> GetOrCreateTagsList()
+        {
+            var tags = Volatile.Read(ref _tags);
+
+            if (tags is null)
+            {
+                var newTags = new List<KeyValuePair<string, string>>(DefaultCapacity);
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            return tags;
+        }
+
+        public virtual void SetTag(string key, string? value)
+        {
+            var existingTags = Volatile.Read(ref _tags);
+            if (value is null && existingTags is null)
+            {
+                return;
+            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
+
+            lock (tags)
+            {
+                SetTagNoLock(tags, new KeyValuePair<string, string?>(key, value));
+            }
+        }
+
+        /// <summary>
+        /// Sets multiple tags.
+        /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
+        /// </summary>
+        public virtual void SetTags(
+            KeyValuePair<string, string?> tag1,
+            KeyValuePair<string, string?> tag2,
+            KeyValuePair<string, string?> tag3)
+        {
+            var nonNullTagsCount =
+                CountNotNull(tag1.Value) +
+                CountNotNull(tag2.Value) +
+                CountNotNull(tag3.Value);
+
+            var existingTags = Volatile.Read(ref _tags);
+            if (nonNullTagsCount == 0 && existingTags is null)
+            {
+                return;
+            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
+
+            lock (tags)
+            {
+                SetTagNoLock(tags, tag1);
+                SetTagNoLock(tags, tag2);
+                SetTagNoLock(tags, tag3);
+            }
+        }
+
+        /// <summary>
+        /// Sets multiple tags.
+        /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
+        /// </summary>
+        public virtual void SetTags(
+            KeyValuePair<string, string?> tag1,
+            KeyValuePair<string, string?> tag2,
+            KeyValuePair<string, string?> tag3,
+            KeyValuePair<string, string?> tag4)
+        {
+            var nonNullTagsCount =
+                CountNotNull(tag1.Value) +
+                CountNotNull(tag2.Value) +
+                CountNotNull(tag3.Value) +
+                CountNotNull(tag4.Value);
+
+            var existingTags = Volatile.Read(ref _tags);
+            if (nonNullTagsCount == 0 && existingTags is null)
+            {
+                return;
+            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
+
+            lock (tags)
+            {
+                SetTagNoLock(tags, tag1);
+                SetTagNoLock(tags, tag2);
+                SetTagNoLock(tags, tag3);
+                SetTagNoLock(tags, tag4);
+            }
+        }
+
+        /// <summary>
+        /// Sets multiple tags.
+        /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
+        /// </summary>
+        public virtual void SetTags(
+            KeyValuePair<string, string?> tag1,
+            KeyValuePair<string, string?> tag2,
+            KeyValuePair<string, string?> tag3,
+            KeyValuePair<string, string?> tag4,
+            KeyValuePair<string, string?> tag5,
+            KeyValuePair<string, string?> tag6,
+            KeyValuePair<string, string?> tag7)
+        {
+            var nonNullTagsCount =
+                CountNotNull(tag1.Value) +
+                CountNotNull(tag2.Value) +
+                CountNotNull(tag3.Value) +
+                CountNotNull(tag4.Value) +
+                CountNotNull(tag5.Value) +
+                CountNotNull(tag6.Value) +
+                CountNotNull(tag7.Value);
+
+            var existingTags = Volatile.Read(ref _tags);
+            if (nonNullTagsCount == 0 && existingTags is null)
+            {
+                return;
+            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
+
+            lock (tags)
+            {
+                SetTagNoLock(tags, tag1);
+                SetTagNoLock(tags, tag2);
+                SetTagNoLock(tags, tag3);
+                SetTagNoLock(tags, tag4);
+                SetTagNoLock(tags, tag5);
+                SetTagNoLock(tags, tag6);
+                SetTagNoLock(tags, tag7);
+            }
+        }
+
+        /// <summary>
+        /// NOTE: This method mutates the underlying list and is intentionally lock-free.
+        /// Callers MUST hold the lock on the specific `tags` instance for the duration of the call.
+        /// See <see cref="SetTag"/> and SetTags overloads.
+        /// </summary>
+        private static void SetTagNoLock(List<KeyValuePair<string, string>> tags, KeyValuePair<string, string?> tag)
+        {
+            for (var i = 0; i < tags.Count; i++)
+            {
+                if (tags[i].Key == tag.Key)
+                {
+                    if (tag.Value is null)
+                    {
+                        tags.RemoveAt(i);
+                    }
+                    else
+                    {
+                        tags[i] = new(tag.Key, tag.Value);
+                    }
+
+                    return;
+                }
+            }
+
+            if (tag.Value is not null)
+            {
+                tags.Add(new(tag.Key, tag.Value));
+            }
+        }
+
+        public virtual string? GetTag(string key)
         {
             var tags = Volatile.Read(ref _tags);
             if (tags is not null)
@@ -39,43 +208,6 @@ namespace Datadog.Trace.Tagging
             return null;
         }
 
-        public virtual void SetTag(string key, string value)
-        {
-            var tags = Volatile.Read(ref _tags);
-
-            if (tags == null)
-            {
-                var newTags = new List<KeyValuePair<string, string>>();
-                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
-            }
-
-            lock (tags)
-            {
-                for (int i = 0; i < tags.Count; i++)
-                {
-                    if (tags[i].Key == key)
-                    {
-                        if (value == null)
-                        {
-                            tags.RemoveAt(i);
-                        }
-                        else
-                        {
-                            tags[i] = new KeyValuePair<string, string>(key, value);
-                        }
-
-                        return;
-                    }
-                }
-
-                // If we get there, the tag wasn't in the collection
-                if (value != null)
-                {
-                    tags.Add(new KeyValuePair<string, string>(key, value));
-                }
-            }
-        }
-
         public virtual void EnumerateTags<TProcessor>(ref TProcessor processor)
             where TProcessor : struct, IItemProcessor<string>
         {
@@ -86,7 +218,7 @@ namespace Datadog.Trace.Tagging
                 {
                     for (int i = 0; i < tags.Count; i++)
                     {
-                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value, null));
+                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value, default));
                     }
                 }
             }
@@ -163,7 +295,7 @@ namespace Datadog.Trace.Tagging
                 for (var i = 0; i < metrics.Count; i++)
                 {
                     var item = metrics[i];
-                    processor.Process(new TagItem<double>(item.Key, item.Value, null));
+                    processor.Process(new TagItem<double>(item.Key, item.Value, default));
                 }
             }
         }
@@ -182,7 +314,7 @@ namespace Datadog.Trace.Tagging
             return false;
         }
 
-        public virtual void SetMetaStruct(string key, byte[] value)
+        public virtual void SetMetaStruct(string key, byte[]? value)
         {
             if (!string.IsNullOrEmpty(key))
             {
@@ -223,7 +355,7 @@ namespace Datadog.Trace.Tagging
         }
 
         public virtual void EnumerateMetaStruct<TProcessor>(ref TProcessor processor)
-    where TProcessor : struct, IItemProcessor<byte[]>
+            where TProcessor : struct, IItemProcessor<byte[]>
         {
             var metastruct = Volatile.Read(ref _metaStruct);
             if (metastruct is null)
@@ -236,7 +368,7 @@ namespace Datadog.Trace.Tagging
                 for (var i = 0; i < metastruct.Count; i++)
                 {
                     var item = metastruct[i];
-                    processor.Process(new TagItem<byte[]>(item.Key, item.Value, null));
+                    processor.Process(new TagItem<byte[]>(item.Key, item.Value, default));
                 }
             }
         }

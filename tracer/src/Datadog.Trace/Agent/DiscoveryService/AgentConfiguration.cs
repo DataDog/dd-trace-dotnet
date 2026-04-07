@@ -7,11 +7,13 @@
 
 namespace Datadog.Trace.Agent.DiscoveryService;
 
-internal record AgentConfiguration
+internal sealed record AgentConfiguration
 {
     public AgentConfiguration(
         string? configurationEndpoint,
         string? debuggerEndpoint,
+        string? debuggerV2Endpoint,
+        string? diagnosticsEndpoint,
         string? symbolDbEndpoint,
         string? agentVersion,
         string? statsEndpoint,
@@ -19,13 +21,14 @@ internal record AgentConfiguration
         string? eventPlatformProxyEndpoint,
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
+        string? containerTagsHash,
         bool clientDropP0,
-        string? diagnosticsEndpoint,
         bool spanMetaStructs,
         bool? spanEvents)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
+        DebuggerV2Endpoint = debuggerV2Endpoint;
         DiagnosticsEndpoint = diagnosticsEndpoint;
         SymbolDbEndpoint = symbolDbEndpoint;
         AgentVersion = agentVersion;
@@ -34,6 +37,7 @@ internal record AgentConfiguration
         EventPlatformProxyEndpoint = eventPlatformProxyEndpoint;
         TelemetryProxyEndpoint = telemetryProxyEndpoint;
         TracerFlareEndpoint = tracerFlareEndpoint;
+        ContainerTagsHash = containerTagsHash;
         ClientDropP0s = clientDropP0;
         SpanMetaStructs = spanMetaStructs;
         SpanEvents = spanEvents ?? false;
@@ -43,7 +47,21 @@ internal record AgentConfiguration
 
     public string? DebuggerEndpoint { get; }
 
+    public string? DebuggerV2Endpoint { get; }
+
     public string? DiagnosticsEndpoint { get; }
+
+    /// <summary>
+    /// Gets the preferred endpoint for debugger uploads that support the v2 intake.
+    /// Falls back to the diagnostics endpoint when the v2 endpoint is not available.
+    /// </summary>
+    public string? DebuggerUploadEndpoint => DebuggerV2Endpoint ?? DiagnosticsEndpoint;
+
+    /// <summary>
+    /// Gets the preferred endpoint for debugger diagnostics uploads.
+    /// Falls back to the v1 debugger input endpoint when the diagnostics endpoint is not available.
+    /// </summary>
+    public string? DebuggerDiagnosticsUploadEndpoint => DiagnosticsEndpoint ?? DebuggerEndpoint;
 
     public string? SymbolDbEndpoint { get; }
 
@@ -58,6 +76,8 @@ internal record AgentConfiguration
     public string? TelemetryProxyEndpoint { get; }
 
     public string? TracerFlareEndpoint { get; }
+
+    public string? ContainerTagsHash { get; }
 
     public bool ClientDropP0s { get; }
 

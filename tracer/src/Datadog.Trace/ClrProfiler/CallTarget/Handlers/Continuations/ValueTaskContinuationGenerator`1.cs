@@ -1,4 +1,4 @@
-// <copyright file="ValueTaskContinuationGenerator`1.cs" company="Datadog">
+﻿// <copyright file="ValueTaskContinuationGenerator`1.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 
-internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn, TResult>
+internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn, TResult>
 {
     private static readonly CallbackHandler Resolver;
 
@@ -53,7 +53,7 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TR
         return Resolver.ExecuteCallback(instance, returnValue, exception, in state);
     }
 
-    private class SyncCallbackHandler : CallbackHandler
+    private sealed class SyncCallbackHandler : CallbackHandler
     {
         private readonly ContinuationMethodDelegate _continuation;
         private readonly bool _preserveContext;
@@ -116,7 +116,7 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TR
         }
     }
 
-    private class AsyncCallbackHandler : CallbackHandler
+    private sealed class AsyncCallbackHandler : CallbackHandler
     {
         private readonly AsyncContinuationMethodDelegate _asyncContinuation;
         private readonly bool _preserveContext;

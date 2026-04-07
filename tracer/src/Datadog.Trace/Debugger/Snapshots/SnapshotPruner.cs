@@ -1,4 +1,4 @@
-// <copyright file="SnapshotPruner.cs" company="Datadog">
+﻿// <copyright file="SnapshotPruner.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace DatadogDebugger.Util
         Escape
     }
 
-    internal class SnapshotPruner
+    internal sealed class SnapshotPruner
     {
         private const string NotCapturedReason = "notCapturedReason";
         private const string Depth = "depth";
@@ -67,7 +67,7 @@ namespace DatadogDebugger.Util
 
             var total = 0;
             var nodes = new Dictionary<int, Node>();
-            while (sortedLeaves.Any())
+            while (sortedLeaves.Count != 0)
             {
                 Node leaf = sortedLeaves.Min;
                 sortedLeaves.Remove(leaf);
@@ -101,20 +101,20 @@ namespace DatadogDebugger.Util
 
             var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
             var sb = StringBuilderCache.Acquire();
-            sb.Append(snapshot.Substring(0, prunedNodes[0].Start));
+            sb.Append(snapshot, 0, prunedNodes[0].Start);
             for (var i = 1; i < prunedNodes.Count; i++)
             {
                 sb.Append(Pruned);
                 var nextSegmentStart = prunedNodes[i - 1].End + 1;
                 var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
-                sb.Append(snapshot.Substring(nextSegmentStart, nextSegmentLength));
+                sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
             }
 
             sb.Append(Pruned);
             var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
             if (lastSegmentStart < Encoding.UTF8.GetByteCount(snapshot))
             {
-                sb.Append(snapshot.Substring(lastSegmentStart));
+                sb.Append(snapshot, lastSegmentStart, snapshot.Length - lastSegmentStart);
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);
@@ -148,7 +148,7 @@ namespace DatadogDebugger.Util
             {
                 case '{':
                     var node = new Node(index, pruner._currentLevel++);
-                    if (pruner._stack.Any())
+                    if (pruner._stack.Count != 0)
                     {
                         node.Parent = pruner._stack.Peek();
                         node.Parent.Children.Add(node);
@@ -161,7 +161,7 @@ namespace DatadogDebugger.Util
                     var completedNode = pruner._stack.Pop();
                     completedNode.End = index;
                     pruner._currentLevel--;
-                    if (!pruner._stack.Any())
+                    if (pruner._stack.Count == 0)
                     {
                         pruner._root = completedNode;
                         return null;
@@ -248,7 +248,7 @@ namespace DatadogDebugger.Util
             return State.String;
         }
 
-        private class NodeComparer : IComparer<Node>
+        private sealed class NodeComparer : IComparer<Node>
         {
             public int Compare(Node x, Node y)
             {
@@ -280,7 +280,7 @@ namespace DatadogDebugger.Util
             }
         }
 
-        internal class Node : IComparable<Node>
+        internal sealed class Node : IComparable<Node>
         {
             public Node(int start, int level)
             {
@@ -306,7 +306,7 @@ namespace DatadogDebugger.Util
 
             public IEnumerable<Node> GetLeaves(int minLevel)
             {
-                if (!Children.Any() && Level >= minLevel)
+                if (Children.Count == 0 && Level >= minLevel)
                 {
                     return new[] { this };
                 }

@@ -12,7 +12,7 @@ namespace Datadog.Trace.Telemetry;
 /// <summary>
 /// message_batch payload, for batching multiple telemetry payloads together
 /// </summary>
-internal class MessageBatchPayload : List<MessageBatchData>, IPayload
+internal sealed class MessageBatchPayload : List<MessageBatchData>, IPayload
 {
     public MessageBatchPayload()
     {

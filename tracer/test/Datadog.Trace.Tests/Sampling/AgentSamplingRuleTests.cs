@@ -58,12 +58,12 @@ namespace Datadog.Trace.Tests.Sampling
 
             var firstScope = (Scope)tracer.StartActive("first");
             var firstSpan = firstScope.Span;
-            firstSpan.ServiceName = configuredService;
+            firstSpan.SetService(configuredService, null);
             firstSpan.Context.TraceContext.Environment = configuredEnv;
 
             var secondScope = (Scope)tracer.StartActive("second");
             var secondSpan = secondScope.Span;
-            secondSpan.ServiceName = unconfiguredService;
+            secondSpan.SetService(unconfiguredService, null);
 
             rule.GetSamplingRate(firstSpan).Should().Be(1f); // as we haven't configured it yet.
 

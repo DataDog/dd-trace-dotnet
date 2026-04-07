@@ -20,8 +20,6 @@ std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
     {"inuse-space", "bytes", -1}
 });
 
-const uint32_t MAX_LIVE_OBJECTS = 1024;
-
 const std::string LiveObjectsProvider::Gen1("1");
 const std::string LiveObjectsProvider::Gen2("2");
 
@@ -35,6 +33,7 @@ LiveObjectsProvider::LiveObjectsProvider(
     _rawSampleTransformer{rawSampleTransformer},
     _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
 {
+    _heapHandleLimit = pConfiguration->GetHeapHandleLimit();
 }
 
 const char* LiveObjectsProvider::GetName()
@@ -67,7 +66,8 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     std::chrono::nanoseconds endTimestamp,
     uint64_t gen2Size,
     uint64_t lohSize,
-    uint64_t pohSize)
+    uint64_t pohSize,
+    uint32_t memPressure)
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
@@ -151,7 +151,7 @@ void LiveObjectsProvider::OnAllocation(RawAllocationSample& rawSample)
 
     // Limit the number of handle to create until the next GC
     // If _monitoredObjects is already full, stop adding new objects
-    if (_monitoredObjects.size() < MAX_LIVE_OBJECTS)
+    if (_monitoredObjects.size() < _heapHandleLimit)
     {
         // When the AllocationTick event is received, the object is not already initialized.
         // To call CreateWeakHandle(), it is needed to patch the MethodTable in memory

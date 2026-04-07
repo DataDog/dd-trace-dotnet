@@ -58,12 +58,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly CookieContainer _cookieContainer;
         private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
-        private readonly bool _clearMetaStruct;
         private int _httpPort;
 #pragma warning restore SA1202 // Elements should be ordered by access
 #pragma warning restore SA1401 // Fields should be private
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false, bool allowAutoRedirect = true)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool allowAutoRedirect = true)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
@@ -83,7 +82,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 #endif
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
 
-            _clearMetaStruct = clearMetaStruct;
             SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
             // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
             SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
@@ -146,7 +144,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -184,21 +182,10 @@ namespace Datadog.Trace.Security.IntegrationTests
 
                             if (target.MetaStruct != null)
                             {
-                                AppsecMetaStructScrubbing(target, forceMetaStruct);
-                                IastVerifyScrubberExtensions.IastMetaStructScrubbing(target, forceMetaStruct);
+                                AppsecMetaStructScrubbing(target);
+                                IastVerifyScrubberExtensions.IastMetaStructScrubbing(target);
 
-                                if (_clearMetaStruct)
-                                {
-                                    target.MetaStruct = null;
-                                }
-                                else
-                                {
-                                    // Remove all data from meta structs keys, no need to get the binary data for other keys
-                                    foreach (var key in target.MetaStruct.Keys.ToList())
-                                    {
-                                        target.MetaStruct[key] = [];
-                                    }
-                                }
+                                target.MetaStruct = null;
                             }
 
                             return VerifyHelper.ScrubStringTags(target, target.Tags);
@@ -264,7 +251,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(appSecConnectionHeader1, "_dd.appsec.fp.http.header: hdr-1X");
         }
 
-        protected void AppsecMetaStructScrubbing(MockSpan target, bool forceMetaStruct = false)
+        protected void AppsecMetaStructScrubbing(MockSpan target)
         {
             // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
             // But that's hard to debug if we only see the binary data
@@ -276,9 +263,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
                 var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
                 target.Tags[Tags.AppSecJson] = orderedJson;
-
-                // Let the snapshot know that the data comes from the meta struct
-                if (forceMetaStruct) { target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true"; }
             }
         }
 

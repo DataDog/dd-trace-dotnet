@@ -25,12 +25,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         ReturnTypeName = "!!0",
         ParameterTypeNames = new[] { "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", ClrNames.Bool, ClrNames.String },
         MinimumVersion = "6.0.0",
-        MaximumVersion = "8.*.*",
+        MaximumVersion = "10.*.*",
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class RedisNativeClientSendReceiveIntegration_6_2_0
+    public sealed class RedisNativeClientSendReceiveIntegration_6_2_0
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.ServiceStackRedis);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.ServiceStackRedis;

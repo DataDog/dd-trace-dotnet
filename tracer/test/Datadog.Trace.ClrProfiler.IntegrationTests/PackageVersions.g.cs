@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static readonly bool IsAllMinorPackageVersions = false;
 #endif
 
+        public static IEnumerable<object[]> Hangfire => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Hangfire : PackageVersionsLatestSpecific.Hangfire;
+
         public static IEnumerable<object[]> Quartz => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Quartz : PackageVersionsLatestSpecific.Quartz;
 
         public static IEnumerable<object[]> AwsSdk => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSdk : PackageVersionsLatestSpecific.AwsSdk;
@@ -104,6 +106,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> CosmosDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.CosmosDb : PackageVersionsLatestSpecific.CosmosDb;
 
+        public static IEnumerable<object[]> CosmosDbVnext => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.CosmosDbVnext : PackageVersionsLatestSpecific.CosmosDbVnext;
+
         public static IEnumerable<object[]> Serilog => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Serilog : PackageVersionsLatestSpecific.Serilog;
 
         public static IEnumerable<object[]> NLog => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NLog : PackageVersionsLatestSpecific.NLog;
@@ -130,6 +134,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AzureServiceBusAPM => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBusAPM : PackageVersionsLatestSpecific.AzureServiceBusAPM;
 
+        public static IEnumerable<object[]> AzureEventHubs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventHubs : PackageVersionsLatestSpecific.AzureEventHubs;
+
         public static IEnumerable<object[]> Selenium => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Selenium : PackageVersionsLatestSpecific.Selenium;
+
+        public static IEnumerable<object[]> OpenFeature => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.OpenFeature : PackageVersionsLatestSpecific.OpenFeature;
     }
 }

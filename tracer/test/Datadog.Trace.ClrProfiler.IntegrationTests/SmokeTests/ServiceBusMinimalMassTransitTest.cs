@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     public class ServiceBusMinimalMassTransitTest : SmokeTestBase
     {
         public ServiceBusMinimalMassTransitTest(ITestOutputHelper output)

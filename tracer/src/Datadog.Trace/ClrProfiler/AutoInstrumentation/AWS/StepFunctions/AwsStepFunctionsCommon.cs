@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -20,14 +21,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
         private const string DatadogAwsStepFunctionsServiceName = "aws-stepfunctions";
         private const string StepFunctionsServiceName = "StepFunctions";
-        private const string StepFunctionsOperationName = "aws.stepfunctions";
         private const string StepFunctionsRequestOperationName = "stepfunctions.request";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
 
         public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsStepFunctionsTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -37,10 +38,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             try
             {
-                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsStepFunctionsServiceName);
+                tags = perTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
+                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsStepFunctionsServiceName);
                 var operationName = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
                 tags.Service = StepFunctionsServiceName;
                 tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -83,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(StepFunctionsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(StepFunctionsOperationName),
-                _ => $"{StepFunctionsOperationName}.request"
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.AwsStepFunctions),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsStepFunctions),
+                _ => "aws.stepfunctions.request"
             };
         }
     }

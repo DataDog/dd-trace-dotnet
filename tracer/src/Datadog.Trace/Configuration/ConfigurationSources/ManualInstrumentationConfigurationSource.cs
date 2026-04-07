@@ -19,7 +19,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources;
 /// <summary>
 /// Wraps the settings passed in from the manual instrumentation API in a configuration source, to make it easier to integrate
 /// </summary>
-internal class ManualInstrumentationConfigurationSource : ManualInstrumentationConfigurationSourceBase
+internal sealed class ManualInstrumentationConfigurationSource : ManualInstrumentationConfigurationSourceBase
 {
     public ManualInstrumentationConfigurationSource(IReadOnlyDictionary<string, object?> dictionary, bool useDefaultSources)
         : base(dictionary, useDefaultSources)

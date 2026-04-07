@@ -12,48 +12,50 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Configuration
 {
-    internal class PerTraceSettings
+    internal sealed class PerTraceSettings
     {
         private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
 
-        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, IReadOnlyDictionary<string, string> serviceNames, NamingSchema schema)
+        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, NamingSchema schema, MutableSettings mutableSettings)
         {
             TraceSampler = traceSampler;
             SpanSampler = spanSampler;
-            ServiceNames = serviceNames;
             Schema = schema;
             HasResourceBasedSamplingRule = (traceSampler?.HasResourceBasedSamplingRule ?? false) || (spanSampler?.HasResourceBasedSamplingRule ?? false);
+            Settings = mutableSettings;
         }
 
         public ITraceSampler? TraceSampler { get; }
 
         public ISpanSampler? SpanSampler { get; }
 
-        public IReadOnlyDictionary<string, string> ServiceNames { get; }
+        public IReadOnlyDictionary<string, string> ServiceNames => Settings.ServiceNameMappings;
 
         public NamingSchema Schema { get; }
 
         public bool HasResourceBasedSamplingRule { get; }
 
-        internal string GetServiceName(Tracer tracer, string serviceName)
+        public MutableSettings Settings { get; }
+
+        internal ServiceNameMetadata GetServiceNameMetadata(string integrationKey)
         {
-            if (ServiceNames.TryGetValue(serviceName, out var name))
+            if (ServiceNames.TryGetValue(integrationKey, out var mappedName))
             {
-                return name;
+                return new ServiceNameMetadata(mappedName, ServiceNameMetadata.OptServiceMapping);
             }
 
             if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
             {
-                return tracer.DefaultServiceName;
+                return new ServiceNameMetadata(Settings.DefaultServiceName, null);
             }
 
-            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
+            if (!_serviceNameCache.TryGetValue(integrationKey, out var resolvedName))
             {
-                finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
-                _serviceNameCache.TryAdd(serviceName, finalServiceName);
+                resolvedName = $"{Settings.DefaultServiceName}-{integrationKey}";
+                _serviceNameCache.TryAdd(integrationKey, resolvedName);
             }
 
-            return finalServiceName;
+            return new ServiceNameMetadata(resolvedName, integrationKey);
         }
     }
 }

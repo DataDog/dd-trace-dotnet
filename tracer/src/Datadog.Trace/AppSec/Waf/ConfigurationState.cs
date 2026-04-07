@@ -29,11 +29,11 @@ namespace Datadog.Trace.AppSec.Rcm;
 /// - ASM is not activated, and _fileUpdates/_fileRemoves contain some pending non-deserialized changes to apply when ASM_FEATURES activate ASM. Every time an RC payload is received here, pending changes are reset to the last ones
 /// - ASM is activated, stored configs in _fileUpdates/_fileRemoves are applied every time.
 /// </summary>
-internal record ConfigurationState
+internal sealed record ConfigurationState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationState>();
 
-    private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
+    private readonly AsmFeaturesProduct _asmFeatureProduct = new AsmFeaturesProduct();
 
     private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters;
 
@@ -43,7 +43,7 @@ internal record ConfigurationState
     private readonly bool _canBeToggled;
     private readonly Dictionary<string, List<RemoteConfiguration>> _fileUpdates = new();
     private readonly Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
-    private bool _defaultRulesetApplied = false;
+    private bool _defaultRulesetApplied;
 
     public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull)
     {
@@ -63,7 +63,7 @@ internal record ConfigurationState
         }
     }
 
-    public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull, Dictionary<string, RuleSet>? rulesetConfigs, Dictionary<string, Models.Asm.Payload>? asmConfigs, Dictionary<string, Models.AsmData.Payload>? asmDataConfigs)
+    public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull, List<KeyValuePair<string, RuleSet>>? rulesetConfigs, Dictionary<string, Models.Asm.Payload>? asmConfigs, Dictionary<string, Models.AsmData.Payload>? asmDataConfigs)
         : this(settings, telemetry, wafIsNull)
     {
         if (rulesetConfigs is not null)
@@ -84,7 +84,7 @@ internal record ConfigurationState
 
     public bool AppsecEnabled { get; set; }
 
-    internal string? AutoUserInstrumMode { get; set; } = null;
+    internal string? AutoUserInstrumMode { get; set; }
 
     // RC Product: ASM_FEATURES
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
@@ -98,7 +98,7 @@ internal record ConfigurationState
     internal Dictionary<string, JToken> AsmDataConfigs { get; } = new();
 
     // RC Product: ASM_DD
-    internal Dictionary<string, RuleSet> RulesetConfigs { get; } = new();
+    internal List<KeyValuePair<string, RuleSet>> RulesetConfigs { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -215,16 +215,11 @@ internal record ConfigurationState
         // no need to clear _fileUpdates / _fileRemoves after they've been applied, as when we receive a new config, `StoreLastConfigState` method will clear anything remaining anyway.
         foreach (var updater in _productConfigUpdaters)
         {
-            var fileUpdates = _fileUpdates.TryGetValue(updater.Key, out var value);
-            if (fileUpdates)
+            var fileRemoves = _fileRemoves.TryGetValue(updater.Key, out var removes);
+            var fileUpdates = _fileUpdates.TryGetValue(updater.Key, out var updates);
+            if (fileRemoves || fileUpdates)
             {
-                updater.Value.ProcessUpdates(this, value!);
-            }
-
-            var fileRemoves = _fileRemoves.TryGetValue(updater.Key, out var valueRemove);
-            if (fileRemoves)
-            {
-                updater.Value.ProcessRemovals(this, valueRemove!);
+                updater.Value.ProcessUpdates(this, removes, updates);
             }
         }
     }
@@ -254,9 +249,9 @@ internal record ConfigurationState
                         hasUpdateConfigurations = true;
                     }
 
-                    if (_fileRemoves.ContainsKey(configByProductToRemove.Key))
+                    if (_fileRemoves.TryGetValue(configByProductToRemove.Key, out var remove))
                     {
-                        _fileRemoves[configByProductToRemove.Key].AddRange(configByProductToRemove.Value);
+                        remove.AddRange(configByProductToRemove.Value);
                     }
                     else
                     {
@@ -272,9 +267,9 @@ internal record ConfigurationState
                     hasUpdateConfigurations = true;
                 }
 
-                if (_fileUpdates.ContainsKey(configByProduct.Key))
+                if (_fileUpdates.TryGetValue(configByProduct.Key, out var update))
                 {
-                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
+                    update.AddRange(configByProduct.Value);
                 }
                 else
                 {
@@ -294,19 +289,14 @@ internal record ConfigurationState
 
     private void ApplyAsmFeatures(bool appsecCurrentlyEnabled)
     {
-        var change = false;
         // only deserialize and apply asm_features as it will decide if asm gets toggled on and if we deserialize all the others
         // (the enable of auto user instrumentation as added to asm_features)
-        if (_fileRemoves.TryGetValue(RcmProducts.AsmFeatures, out var removals))
-        {
-            _asmFeatureProduct.ProcessRemovals(this, removals);
-            change = true;
-        }
+        var change = _fileRemoves.TryGetValue(RcmProducts.AsmFeatures, out var removals);
+        change |= _fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates);
 
-        if (_fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates))
+        if (change)
         {
-            _asmFeatureProduct.ProcessUpdates(this, updates);
-            change = true;
+            _asmFeatureProduct.ProcessUpdates(this, removals, updates);
         }
 
         if (!change) { return; }
@@ -351,13 +341,13 @@ internal record ConfigurationState
         }
     }
 
-    internal record IncomingUpdateStatus : IDisposable
+    internal sealed record IncomingUpdateStatus : IDisposable
     {
-        internal bool ShouldInitAppsec { get; set; } = false;
+        internal bool ShouldInitAppsec { get; set; }
 
-        internal bool ShouldUpdateAppsec { get; set; } = false;
+        internal bool ShouldUpdateAppsec { get; set; }
 
-        internal bool ShouldDisableAppsec { get; set; } = false;
+        internal bool ShouldDisableAppsec { get; set; }
 
         public void Dispose() => Reset();
 
@@ -369,7 +359,7 @@ internal record ConfigurationState
         }
     }
 
-    internal record RemoteConfigWafFiles(Dictionary<string, object>? Updates, List<string>? Removes)
+    internal sealed record RemoteConfigWafFiles(Dictionary<string, object>? Updates, List<string>? Removes)
     {
         public bool HasData => Updates is not null || Removes is not null;
     }

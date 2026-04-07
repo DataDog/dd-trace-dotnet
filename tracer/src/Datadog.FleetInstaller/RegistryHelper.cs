@@ -9,7 +9,7 @@ using Microsoft.Win32;
 
 namespace Datadog.FleetInstaller;
 
-internal class RegistryHelper
+internal static class RegistryHelper
 {
     public static bool AddCrashTrackingKey(ILogger log, TracerValues values, string registryKeyName)
     {

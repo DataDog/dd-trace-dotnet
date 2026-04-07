@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         IntegrationName = "NLog")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LoggerImplWriteIntegrationV4
+    public sealed class LoggerImplWriteIntegrationV4
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.LogsInjectionEnabled)
+            if (tracer.CurrentTraceSettings.Settings.LogsInjectionEnabled)
             {
                 if (DiagnosticContextHelper.Cache<TTarget>.Mdlc is { } mdlc)
                 {

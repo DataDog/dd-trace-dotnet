@@ -6,7 +6,7 @@
 
 namespace Datadog.Trace.Ci.EventModel;
 
-internal class TestSessionEvent : CIVisibilityEvent<Span>
+internal sealed class TestSessionEvent : CIVisibilityEvent<Span>
 {
     public TestSessionEvent(Span span)
         : base(SpanTypes.TestSession, 1, span)

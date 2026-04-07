@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Microsoft.AspNetCore.Http.Abstractions -->
     <!--    Assembly: Microsoft.AspNetCore.Http.Abstractions -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Http.Abstractions/2.3.0 -->
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Http.Abstractions/2.3.9 -->
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
   </ItemGroup>
 
 </Project>

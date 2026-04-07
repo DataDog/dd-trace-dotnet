@@ -10,10 +10,13 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Security.Unit.Tests.Iast;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -31,19 +34,19 @@ public class ApiSecurityTests
     [InlineData(true, true, true, SamplingPriorityValues.AutoKeep, false, null)]
     [InlineData(true, false, true, SamplingPriorityValues.AutoReject, true, "route2")]
     [InlineData(true, false, false, SamplingPriorityValues.AutoKeep, false, "route3")]
-    public void ApiSecurityTest(bool enable, bool apmTracingEnabled, bool lastCall, int samplingPriority, bool expectedResult, string route)
+    public async Task ApiSecurityTest(bool enable, bool apmTracingEnabled, bool lastCall, int samplingPriority, bool expectedResult, string route)
     {
-        var apiSec = new ApiSecurity(
-            new SecuritySettings(
-                new CustomSettingsForTests(
-                    new Dictionary<string, object>
-                    {
-                        { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, enable },
-                        { Configuration.ConfigurationKeys.ApmTracingEnabled, apmTracingEnabled },
-                    }),
-                new NullConfigurationTelemetry()));
+        var config = new Dictionary<string, object>
+        {
+            { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, enable },
+            { Configuration.ConfigurationKeys.ApmTracingEnabled, apmTracingEnabled },
+        };
+
+        await using var tracer = TracerHelper.Create(TracerSettings.Create(config));
+
+        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(config), new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object>();
-        var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
+        var tc = new TraceContext(tracer, new TraceTagCollection());
         tc.SetSamplingPriority(samplingPriority);
         var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), DateTimeOffset.Now);
         span.SetTag(Tags.HttpRoute, route);
@@ -66,10 +69,12 @@ public class ApiSecurityTests
     }
 
     [Fact]
-    public void ApiSecurityTestMaxRoutes()
+    public async Task ApiSecurityTestMaxRoutes()
     {
         var maxRouteSize = 50;
-        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true } }), new NullConfigurationTelemetry()), maxRouteSize);
+        var config = new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true } };
+        await using var tracer = TracerHelper.Create(TracerSettings.Create(config));
+        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(config), new NullConfigurationTelemetry()), maxRouteSize);
         var queue = new Queue<int>(maxRouteSize);
         for (var i = 0; i < maxRouteSize + 1; i++)
         {
@@ -85,7 +90,7 @@ public class ApiSecurityTests
             var resHash = ApiSecurity.CombineHashes(route, method, statusCode);
             queue.Enqueue(resHash);
             var dic = new Dictionary<string, object>();
-            var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
+            var tc = new TraceContext(tracer, new TraceTagCollection());
             tc.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
 
             var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), dt);
@@ -104,15 +109,13 @@ public class ApiSecurityTests
     }
 
     [Fact]
-    public void ApiSecurityTestMultiThread()
+    public async Task ApiSecurityTestMultiThread()
     {
-        var apiSec = new ApiSecurity(
-            new SecuritySettings(
-                new CustomSettingsForTests(
-                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true }, { Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 120 } }),
-                new NullConfigurationTelemetry()));
+        var config = new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true }, { Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 120 } };
+        await using var tracer = TracerHelper.Create(TracerSettings.Create(config));
+        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(config), new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object> { { "controller", "test" }, { "action", "test" } };
-        var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
+        var tc = new TraceContext(tracer, new TraceTagCollection());
         tc.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
         var dt = DateTime.UtcNow;
 

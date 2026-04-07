@@ -20,7 +20,7 @@ services:
     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_arm64:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     ports:
       - "27017"
     command: mongod
@@ -65,6 +65,10 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  cosmosdb-emulator_arm64:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    command: ["--protocol", "https"]
+
   stackexchangeredis_arm64:
     image: redis:4-alpine
     hostname: stackexchangeredis_arm64
@@ -89,6 +93,7 @@ services:
 # Dependencies
   localstack:
     image: localstack/localstack
+    profiles: ["group2"]
     environment:
       - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
@@ -101,6 +106,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    profiles: ["group1"]
     command: rabbitmq-server
     ports:
       - "127.0.0.1:5672:5672"
@@ -108,12 +114,14 @@ services:
 
   servicestackredis:
     image: redis:4-alpine
+    profiles: ["group1"]
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6379:6379"
 
   stackexchangeredis:
     image: redis:4-alpine
+    profiles: ["group1"]
     hostname: stackexchangeredis
     command: redis-server --bind 0.0.0.0
     ports:
@@ -121,6 +129,7 @@ services:
 
   stackexchangeredis-replica:
     image: redis:4-alpine
+    profiles: ["group1"]
     hostname: stackexchangeredis-replica
     command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis 6379
     ports:
@@ -128,25 +137,29 @@ services:
 
   stackexchangeredis-single:
     image: redis:4-alpine
+    profiles: ["group1"]
     hostname: stackexchangeredis-single
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6391:6379"
 
   mongo:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
+    profiles: ["group2"]
     ports:
       - "127.0.0.1:27017:27017"
     command: mongod
 
   couchbase:
     image: bentonam/couchbase-docker:community-5.0.1
+    profiles: ["group1"]
     ports:
       - "8091-8094:8091-8094"
       - "11210:11210"
 
   elasticsearch7:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    profiles: ["group2"]
     ports:
     - "127.0.0.1:9210:9200"
     - "127.0.0.1:9310:9300"
@@ -156,6 +169,7 @@ services:
 
   elasticsearch6:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+    profiles: ["group2"]
     ports:
     - "127.0.0.1:9200:9200"
     - "127.0.0.1:9300:9300"
@@ -165,6 +179,7 @@ services:
 
   elasticsearch5:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.6.16
+    profiles: ["group2"]
     ports:
     - "127.0.0.1:9205:9200"
     - "127.0.0.1:9305:9300"
@@ -174,6 +189,7 @@ services:
 
   postgres:
     image: postgres:10.5-alpine
+    profiles: ["group1"]
     environment:
     - POSTGRES_PASSWORD=postgres
     - POSTGRES_USER=postgres
@@ -183,6 +199,7 @@ services:
 
   mysql:
     image: mysql/mysql-server:8.0
+    profiles: ["group1"]
     environment:
     - MYSQL_DATABASE=world
     - MYSQL_ROOT_PASSWORD=mysqldb
@@ -193,6 +210,7 @@ services:
 
   mysql57:
     image: mysql/mysql-server:5.7
+    profiles: ["group1"]
     environment:
     - MYSQL_DATABASE=world
     - MYSQL_ROOT_PASSWORD=mysqldb
@@ -203,6 +221,7 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest
+    profiles: ["group1"]
     ports:
     - "127.0.0.1:1433:1433"
     environment:
@@ -211,14 +230,14 @@ services:
 
   sqledge:
     image: mcr.microsoft.com/azure-sql-edge:latest
+    profiles: ["group2"]
     environment:
     - ACCEPT_EULA=Y
     - MSSQL_SA_PASSWORD=Strong!Passw0rd
 
   azureservicebus-emulator:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
-    hostname: azureservicebus-emulator
-    container_name: azureservicebus-emulator
+    profiles: ["group2"]
     depends_on:
       - sqledge
     environment:
@@ -227,6 +246,35 @@ services:
       - MSSQL_SA_PASSWORD=Strong!Passw0rd
     volumes:
       - ./docker/servicebus-emulator-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    profiles: ["group2"]
+    hostname: azurite
+    container_name: azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+
+  azure-eventhubs-emulator:
+    image: mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest
+    profiles: ["group2"]
+    depends_on:
+      - azurite
+    ports:
+      - "127.0.0.1:5673:5672"
+    environment:
+      - ACCEPT_EULA=Y
+      - BLOB_SERVER=azurite
+      - METADATA_SERVER=azurite
+    volumes:
+      - ./docker/eventhubs-emulator-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json:ro
+
+  cosmosdb-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+    profiles: ["group2"]
+    command: ["--protocol", "https"]
 
   # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
   oracle:
@@ -245,6 +293,7 @@ services:
   # For original definitions
   kafka-zookeeper:
     image: confluentinc/cp-zookeeper:6.1.1
+    profiles: ["group1"]
     hostname: kafka-zookeeper
     container_name: kafka-zookeeper
     ports:
@@ -256,6 +305,7 @@ services:
 
   kafka-broker:
     image: confluentinc/cp-server:6.1.1
+    profiles: ["group1"]
     hostname: kafka-broker
     container_name: kafka-broker
     depends_on:
@@ -287,6 +337,7 @@ services:
 
   kafka-schema-registry:
     image: confluentinc/cp-schema-registry:6.1.1
+    profiles: ["group1"]
     hostname: kafka-schema-registry
     container_name: kafka-schema-registry
     depends_on:
@@ -301,6 +352,7 @@ services:
 
   kafka-control-center:
     image: confluentinc/cp-enterprise-control-center:6.1.1
+    profiles: ["group1"]
     hostname: kafka-control-center
     container_name: kafka-control-center
     depends_on:
@@ -320,6 +372,7 @@ services:
 
   kafka-rest-proxy:
     image: confluentinc/cp-kafka-rest:6.1.1
+    profiles: ["group1"]
     depends_on:
       - kafka-broker
       - kafka-schema-registry
@@ -351,8 +404,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -402,8 +455,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -445,7 +498,11 @@ services:
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+      - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+      - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
+      - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -474,34 +531,14 @@ services:
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
     hostname: integrationtests
-    depends_on:
-      - servicestackredis
-      - stackexchangeredis
-      - stackexchangeredis-replica
-      - stackexchangeredis-single
-      - elasticsearch7
-      - elasticsearch6
-      - elasticsearch5
-      - sqlserver
-      # - oracle disabled for now, image is too big for CI
-      - mongo
-      - postgres
-      - mysql
-      - mysql57
-      - rabbitmq
-      - kafka-broker
-      - kafka-zookeeper
-      - localstack
-      - couchbase
-      - azureservicebus-emulator
 
   IntegrationTests.Debugger:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -518,6 +555,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -552,8 +590,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -573,6 +611,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - CONTAINER_HOSTNAME=http://integrationtests
       - IncludeAllTestFrameworks
       - DD_LOGGER_DD_API_KEY
@@ -609,8 +648,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -653,39 +692,53 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
 
-  StartDependencies:
+  StartDependencies.Group1:
     image: andrewlock/wait-for-dependencies
+    profiles: ["group1"]
     depends_on:
       - servicestackredis
       - stackexchangeredis
       - stackexchangeredis-replica
       - stackexchangeredis-single
-      - elasticsearch7
-      - elasticsearch6
-      - elasticsearch5
       - sqlserver
-      # - oracle disabled for now, image is too big for CI
-      - mongo
       - postgres
       - mysql
       - mysql57
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
-      - localstack
       - couchbase
-      - azureservicebus-emulator
+      - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 azureservicebus-emulator:5672  # oracle:1521
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+
+  StartDependencies.Group2:
+    image: andrewlock/wait-for-dependencies
+    profiles: ["group2"]
+    depends_on:
+      - elasticsearch7
+      - elasticsearch6
+      - elasticsearch5
+      - mongo
+      - localstack
+      - sqledge
+      - azureservicebus-emulator
+      - azurite
+      - azure-eventhubs-emulator
+      - cosmosdb-emulator
+      - test-agent
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -704,6 +757,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
@@ -719,6 +773,7 @@ services:
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
+      - COSMOSDB_ENDPOINT=https://cosmosdb-emulator_arm64:8081
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -746,6 +801,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
+      - TEST_AGENT_HOST=test-agent
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -758,6 +814,8 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
+      - test-agent
+      - cosmosdb-emulator_arm64
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -773,17 +831,19 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
+      - test-agent
+      - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100-rc.1.25451.107}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -798,6 +858,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -826,14 +887,6 @@ services:
       - DD_LOGGER_DD_TAGS
       - RANDOM_SEED
 
-  start-test-agent:
-    image: andrewlock/wait-for-dependencies
-    depends_on:
-    - test-agent
-    environment:
-    - TIMEOUT_LENGTH=120
-    command: test-agent:8126
-
   test-agent:
     image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
     volumes:
@@ -841,263 +894,14 @@ services:
     - ./artifacts/build_data/snapshots:/debug_snapshots
     ports:
     - "8126:8126"
+    - "4317:4317"
+    - "4318:4318"
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
     # network.client.ip and http.client_ip differs between docker compose v1 and v2 - once we're migrated to v2 completely we can remove it from here
     # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
     - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network
-
-  smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.dockerfile
-      # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - INSTALL_CMD=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-    - ./:/project
-    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-    - ./artifacts/build_data/dumps:/dumps
-    environment:
-    - dockerTag=${dockerTag:-unset}
-    - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-    - test-agent
-
-  nuget-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.nuget.dockerfile
-      # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - TOOL_VERSION=
-        # - RELATIVE_PROFILER_PATH=
-        # - RELATIVE_API_WRAPPER_PATH=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-    - ./:/project
-    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-    - ./artifacts/build_data/dumps:/dumps
-    environment:
-    - dockerTag=${dockerTag:-unset}
-    - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-    - test-agent
-
-  nuget-dddotnet-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.nuget.dd-dotnet.dockerfile
-      # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - TOOL_VERSION=
-        # - RELATIVE_PROFILER_PATH=
-        # - RELATIVE_API_WRAPPER_PATH=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-    - ./:/project
-    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-    - ./artifacts/build_data/dumps:/dumps
-    environment:
-    - dockerTag=${dockerTag:-unset}
-    - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-    - test-agent
-
-  dotnet-tool-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.dotnet-tool.dockerfile
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - TOOL_VERSION=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-    - ./:/project
-    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-    - ./artifacts/build_data/dumps:/dumps
-    environment:
-    - dockerTag=${dockerTag:-unset}
-    - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-    - test-agent
-
-  dotnet-tool-self-instrument-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.dotnet-tool.self-instrument.dockerfile
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - INSTALL_CMD=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-self-instrument-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-    - ./:/project
-    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-    - ./artifacts/build_data/dumps:/dumps
-    environment:
-    - dockerTag=${dockerTag:-unset}
-    - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-    - test-agent
-
-  dotnet-tool-nuget-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.dotnet-tool.nuget.dockerfile
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - TOOL_VERSION=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-nuget-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-    - ./:/project
-    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-    - ./artifacts/build_data/dumps:/dumps
-    environment:
-    - dockerTag=${dockerTag:-unset}
-    - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-    - test-agent
-
-  dd-dotnet-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.dd-dotnet.dockerfile
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - INSTALL_CMD=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-      - ./:/project
-      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-      - ./artifacts/build_data/dumps:/dumps
-    environment:
-      - dockerTag=${dockerTag:-unset}
-      - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-      - test-agent
-
-  chiseled-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.chiseled.dockerfile
-      target: installer-final
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-chiseled-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-      - ./:/project
-      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-      - ./artifacts/build_data/dumps:/dumps
-    environment:
-      - dockerTag=${dockerTag:-unset}
-      - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-      - test-agent
-
-  dd-dotnet-chiseled-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.chiseled.dockerfile
-      target: dd-dotnet-final-linux-x64
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - RUNTIME_ID=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-chiseled-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-      - ./:/project
-      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-      - ./artifacts/build_data/dumps:/dumps
-    environment:
-      - dockerTag=${dockerTag:-unset}
-      - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-      - test-agent
-
-  dd-dotnet-chiseled-arm64-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.chiseled.dockerfile
-      target: dd-dotnet-final-linux-arm64
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - RUNTIME_ID=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-arm64-chiseled-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-      - ./:/project
-      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-      - ./artifacts/build_data/dumps:/dumps
-    environment:
-      - dockerTag=${dockerTag:-unset}
-      - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-      - test-agent
-
-  trimming-smoke-tests:
-    build:
-      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
-      dockerfile: build/_build/docker/smoke.trimming.dockerfile
-        # args:
-        # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
-        # - RUNTIME_IMAGE=
-        # - PUBLISH_FRAMEWORK=
-        # - INSTALL_CMD=
-        # - TOOL_VERSION=
-        # - PACKAGE_NAME=
-        # - RUNTIME_IDENTIFIER=
-    image: dd-trace-dotnet/${dockerTag:-not-set}-trimming-tester
-    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
-    volumes:
-      - ./:/project
-      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
-      - ./artifacts/build_data/dumps:/dumps
-    environment:
-      - dockerTag=${dockerTag:-unset}
-      - DD_TRACE_AGENT_URL=http://test-agent:8126
-    depends_on:
-      - test-agent
 
   StartDependencies.OSXARM64:
     image: andrewlock/wait-for-dependencies
@@ -1141,7 +945,7 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_osx_arm64:
-    image: mongo:4.0.9
+    image: mongo:5.0.31
     ports:
       - "27017:27017"
     command: mongod

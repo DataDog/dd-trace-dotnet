@@ -33,8 +33,7 @@ internal struct ConfiguratorHelper
         CString? localPath = null;
         CString? fleetPath = null;
         var configHandle = IntPtr.Zero;
-        Error? resultError = null;
-        LibraryConfigs? libraryConfigs = null;
+        LibraryConfigResult? configurationResult = null;
         try
         {
             languageCs = new CharSlice(TracerConstants.Language);
@@ -55,18 +54,18 @@ internal struct ConfiguratorHelper
                 NativeInterop.LibraryConfig.ConfiguratorWithFleetPath(configHandle, fleetPath.Value);
             }
 
-            var configurationResult = NativeInterop.LibraryConfig.ConfiguratorGet(configHandle);
-            var result = configurationResult.Result;
+            configurationResult = NativeInterop.LibraryConfig.ConfiguratorGet(configHandle);
+            var result = configurationResult.Value.Result;
 
-            if (configurationResult.Tag == ResultTag.Err)
+            if (configurationResult.Value.Tag == ResultTag.Err)
             {
-                resultError = result.Error;
-                var error = resultError.Value.Message.ToUtf8String();
+                var resultError = result.Error;
+                var error = resultError.Message.ToUtf8String();
                 return new ConfigurationResult(null, error, Result.LibDatadogCallError);
             }
 
-            libraryConfigs = result.Ok;
-            var configsLength = (int)libraryConfigs.Value.Length;
+            var libraryConfigs = result.Ok;
+            var configsLength = (int)libraryConfigs.Length;
             var configEntriesLocal = new Dictionary<string, string>();
             var configEntriesRemote = new Dictionary<string, string>();
             var structSize = Marshal.SizeOf<LibraryConfig>();
@@ -74,7 +73,7 @@ internal struct ConfiguratorHelper
             {
                 unsafe
                 {
-                    var ptr = new IntPtr(libraryConfigs.Value.Ptr + (structSize * i));
+                    var ptr = new IntPtr(libraryConfigs.Ptr + (structSize * i));
                     var libraryConfig = (LibraryConfig*)ptr;
                     var name = libraryConfig->Name.ToUtf8String();
                     var value = libraryConfig->Value.ToUtf8String();
@@ -100,15 +99,10 @@ internal struct ConfiguratorHelper
             languageCs?.Dispose();
             localPath?.Dispose();
             fleetPath?.Dispose();
-            if (resultError.HasValue)
-            {
-                var resultErrorValue = resultError.Value;
-                NativeInterop.Common.DropError(ref resultErrorValue);
-            }
 
-            if (libraryConfigs.HasValue)
+            if (configurationResult.HasValue)
             {
-                NativeInterop.LibraryConfig.LibraryConfigDrop(libraryConfigs.Value);
+                NativeInterop.LibraryConfig.LibraryConfigDrop(configurationResult.Value);
             }
 
             if (configHandle != IntPtr.Zero)

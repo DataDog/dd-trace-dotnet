@@ -1,4 +1,4 @@
-// <copyright file="EndpointDetector.cs" company="Datadog">
+﻿// <copyright file="EndpointDetector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 
@@ -56,6 +55,11 @@ internal static class EndpointDetector
 
     internal static ImmutableHashSet<int> GetEndpointMethodTokens(DatadogMetadataReader datadogMetadataReader)
     {
+        if (datadogMetadataReader is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(datadogMetadataReader));
+        }
+
         var builder = ImmutableHashSet.CreateBuilder<int>();
         var metadataReader = datadogMetadataReader.MetadataReader;
         foreach (var typeHandle in metadataReader.TypeDefinitions)
@@ -331,5 +335,5 @@ internal static class EndpointDetector
         return $"{nameSpace}.{name}";
     }
 
-    private record Entity(string Name, EntityHandle Handle);
+    private sealed record Entity(string Name, EntityHandle Handle);
 }

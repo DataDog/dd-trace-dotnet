@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+    <NoWarn>RS2008</NoWarn>
+    <RootNamespace>Datadog.Trace.Tools.Analyzers</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.Tools.Analyzers\AspectAnalyzers\Diagnostics.cs" Link="AspectAnalyzers\Diagnostics.cs" />
+    <Compile Include="..\Datadog.Trace.Tools.Analyzers\DuckTypeAnalyzer\DuckDiagnostics.cs" Link="DuckTypeAnalyzer\DuckDiagnostics.cs" />
+    <Compile Include="..\Datadog.Trace.Tools.Analyzers\Helpers\RoslynHelper.cs" Link="Helpers\RoslynHelper.cs" />
+    <Compile Include="..\Datadog.Trace.Tools.Analyzers\LogAnalyzer\Diagnostics.cs" Link="LogAnalyzer\Diagnostics.cs" />
+    <Compile Include="..\Datadog.Trace.Tools.Analyzers\ThreadAbortAnalyzer\Diagnostics.cs" Link="ThreadAbortAnalyzer\Diagnostics.cs" />
+    <Compile Include="..\Datadog.Trace.Tools.Analyzers\SealedAnalyzer\Diagnostics.cs" Link="SealedAnalyzer\Diagnostics.cs" />
+    <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs" Link="Helpers\System.Diagnostics.CodeAnalysis.Attributes.cs" />
+    <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs" Link="Helpers\System.Runtime.CompilerServices.Attributes.cs" />
+    <Compile Update="LogAnalyzer\ConstantMessageTemplateCodeFixProvider.*.cs">
+      <DependentUpon>ConstantMessageTemplateCodeFixProvider.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>

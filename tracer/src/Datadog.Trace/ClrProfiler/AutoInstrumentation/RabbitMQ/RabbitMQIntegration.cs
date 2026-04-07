@@ -11,11 +11,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
@@ -27,9 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
         internal const int DefaultMaxMessageSize = 128 * 1024;
-
-        private const string MessagingType = "rabbitmq";
-        private const string MessagingSystem = "amqp";
 
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.RabbitMQ;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
@@ -48,7 +47,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -58,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             try
             {
-                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
-                var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
+                tags = perTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
+                var (serviceName, serviceNameSource) = perTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.RabbitMq);
                 var operation = GetOperationName(tracer, spanKind);
 
                 scope = tracer.StartActiveInternal(
@@ -67,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     parent: context.SpanContext,
                     tags: tags,
                     serviceName: serviceName,
+                    serviceNameSource: serviceNameSource,
                     startTime: startTime);
 
                 var span = scope.Span;
@@ -81,8 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
                 tags.OutHost = host;
 
-                tags.InstrumentationName = IntegrationName;
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return scope;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static string GetOperationName(Tracer tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
@@ -105,8 +105,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             return spanKind switch
             {
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSystem),
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSystem),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Amqp),
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Amqp),
                 _ => RabbitMQConstants.AmqpCommand
             };
         }

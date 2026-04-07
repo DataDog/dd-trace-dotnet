@@ -23,12 +23,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
     IntegrationName = KafkaConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class KafkaProducerConstructorIntegration
+public sealed class KafkaProducerConstructorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder consumer)
         where TProducerBuilder : IProducerBuilder
     {
-        if (Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+        if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
         {
             string bootstrapServers = null;
             var deliveryReportsEnabled = true;
@@ -58,9 +58,7 @@ public class KafkaProducerConstructorIntegration
 
             if (!string.IsNullOrEmpty(bootstrapServers))
             {
-                // Save the map between this producer and its bootstrap server config
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers);
-                return new CallTargetState(scope: null, state: instance);
+                return new CallTargetState(scope: null, state: bootstrapServers);
             }
         }
 
@@ -69,11 +67,10 @@ public class KafkaProducerConstructorIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        // This method is called in the Producer constructor, so if we have an exception
-        // the consumer won't be created, so no point recording it.
-        if (exception is not null && state is { State: { } producer })
+        if (exception is null && state is { State: string bootstrapServers })
         {
-            ProducerCache.RemoveProducer(producer);
+            var clusterId = KafkaHelper.GetClusterId(bootstrapServers, instance) ?? string.Empty;
+            ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
         }
 
         return CallTargetReturn.GetDefault();

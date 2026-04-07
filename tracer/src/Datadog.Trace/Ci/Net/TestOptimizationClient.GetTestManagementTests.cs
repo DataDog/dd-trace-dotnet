@@ -11,6 +11,7 @@ using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Net;
@@ -31,15 +32,16 @@ internal sealed partial class TestOptimizationClient
 
         var commitSha = _testOptimization.CIValues.HeadCommit ?? _commitSha;
         var commitMessage = _testOptimization.CIValues.HeadMessage ?? _testOptimization.CIValues.Message ?? string.Empty;
+        var branch = _testOptimization.CIValues.Branch;
         _testManagementUrl ??= GetUriFromPath(TestManagementUrlPath);
         var query = new DataEnvelope<Data<TestManagementQuery>>(
             new Data<TestManagementQuery>(
                 commitSha,
                 TestManagementType,
-                new TestManagementQuery(_repositoryUrl, commitSha, null, commitMessage)),
+                new TestManagementQuery(_repositoryUrl, commitSha, null, commitMessage, branch)),
             null);
 
-        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
         Log.Debug("TestOptimizationClient: TestManagement.JSON RQ = {Json}", jsonQuery);
 
         string? queryResponse;
@@ -61,7 +63,7 @@ internal sealed partial class TestOptimizationClient
             return new TestManagementResponse();
         }
 
-        var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<TestManagementResponse>?>>(queryResponse);
+        var deserializedResult = JsonHelper.DeserializeObject<DataEnvelope<Data<TestManagementResponse>?>>(queryResponse);
         var finalResponse = deserializedResult.Data?.Attributes ?? new TestManagementResponse();
 
         // Count the number of tests for telemetry
@@ -126,12 +128,16 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("commit_message")]
         public readonly string CommitMessage;
 
-        public TestManagementQuery(string repositoryUrl, string commitSha, string? module, string commitMessage)
+        [JsonProperty("branch")]
+        public readonly string? Branch;
+
+        public TestManagementQuery(string repositoryUrl, string commitSha, string? module, string commitMessage, string? branch)
         {
             RepositoryUrl = repositoryUrl;
             CommitSha = commitSha;
             Module = module;
             CommitMessage = commitMessage;
+            Branch = branch;
         }
     }
 

@@ -7,17 +7,21 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Upload
 {
-    internal class SymbolUploadApi : DebuggerUploadApiBase
+    internal sealed class SymbolUploadApi : DebuggerUploadApiBase
     {
         private const int MaxRetries = 3;
         private const int StartingSleepDuration = 3;
@@ -25,42 +29,76 @@ namespace Datadog.Trace.Debugger.Upload
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly ArraySegment<byte> _eventMetadata;
+        private readonly Lazy<ArraySegment<byte>> _eventMetadata;
         private readonly bool _enableCompression;
 
         private SymbolUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            ArraySegment<byte> eventMetadata,
+            Lazy<ArraySegment<byte>> eventMetadata,
             bool enableCompression)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadata;
             _enableCompression = enableCompression;
-            discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
+            discoveryService.SubscribeToChanges(c =>
+            {
+                Endpoint = c.SymbolDbEndpoint;
+                Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
+            });
         }
 
         internal static IBatchUploadApi Create(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            string serviceName,
+            Func<string> serviceNameProvider,
             bool enableCompression)
         {
             ArraySegment<byte> GetEventMetadataAsArraySegment()
             {
-                var eventMetadata = $@"{{""ddsource"": ""dd_debugger"", ""service"": ""{serviceName}"", ""runtimeId"": ""{Tracer.RuntimeId}""}}";
-
-                var count = Encoding.UTF8.GetByteCount(eventMetadata);
-                var eventAsBytes = new byte[count];
-                Encoding.UTF8.GetBytes(eventMetadata, 0, eventMetadata.Length, eventAsBytes, 0);
-                return new ArraySegment<byte>(eventAsBytes);
+                // Capture service name on first use, and keep it fixed for the lifetime of this API instance
+                var serviceName = serviceNameProvider();
+                return CreateEventMetadata(serviceName, Tracer.RuntimeId);
             }
 
-            var eventMetadata = GetEventMetadataAsArraySegment();
+            var eventMetadata = new Lazy<ArraySegment<byte>>(GetEventMetadataAsArraySegment, LazyThreadSafetyMode.ExecutionAndPublication);
             return new SymbolUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, eventMetadata, enableCompression);
+        }
+
+        internal static ArraySegment<byte> CreateEventMetadata(string serviceName, string runtimeId)
+        {
+            const int bufferSize = 256;
+            using var stream = new MemoryStream(capacity: bufferSize);
+            using (var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize: bufferSize, leaveOpen: true))
+            using (var jsonWriter = new JsonTextWriter(streamWriter) { ArrayPool = JsonArrayPool.Shared })
+            {
+                jsonWriter.CloseOutput = false;
+                jsonWriter.Formatting = Formatting.None;
+                jsonWriter.WriteStartObject();
+
+                jsonWriter.WritePropertyName("ddsource");
+                jsonWriter.WriteValue(DebuggerTags.DDSource);
+
+                jsonWriter.WritePropertyName("service");
+                jsonWriter.WriteValue(serviceName);
+
+                jsonWriter.WritePropertyName("runtimeId");
+                jsonWriter.WriteValue(runtimeId);
+
+                jsonWriter.WritePropertyName("debugger.type");
+                jsonWriter.WriteValue(DebuggerTags.DebuggerType.SymDb);
+
+                jsonWriter.WriteEndObject();
+                jsonWriter.Flush();
+            }
+
+            // Avoid an extra copy when possible.
+            return stream.TryGetBuffer(out var buffer)
+                       ? new ArraySegment<byte>(buffer.Array!, buffer.Offset, (int)stream.Length)
+                       : new ArraySegment<byte>(stream.ToArray());
         }
 
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
@@ -99,7 +137,7 @@ namespace Datadog.Trace.Debugger.Upload
                 symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", compressedSymbols.Value);
             }
 
-            var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata) };
+            var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata.Value) };
 
             while (retries < MaxRetries)
             {

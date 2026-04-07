@@ -15,21 +15,53 @@ namespace Datadog.Trace.Tagging
     partial class CouchbaseTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // SeedNodesBytes = MessagePack.Serialize("db.couchbase.seed.nodes");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> SeedNodesBytes => new byte[] { 183, 100, 98, 46, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 115, 101, 101, 100, 46, 110, 111, 100, 101, 115 };
+#else
+        private static readonly byte[] SeedNodesBytes = new byte[] { 183, 100, 98, 46, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 115, 101, 101, 100, 46, 110, 111, 100, 101, 115 };
+#endif
         // OperationCodeBytes = MessagePack.Serialize("couchbase.operation.code");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> OperationCodeBytes => new byte[] { 184, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 99, 111, 100, 101 };
+#else
+        private static readonly byte[] OperationCodeBytes = new byte[] { 184, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 99, 111, 100, 101 };
+#endif
         // BucketBytes = MessagePack.Serialize("couchbase.operation.bucket");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> BucketBytes => new byte[] { 186, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 117, 99, 107, 101, 116 };
+#else
+        private static readonly byte[] BucketBytes = new byte[] { 186, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 117, 99, 107, 101, 116 };
+#endif
         // KeyBytes = MessagePack.Serialize("couchbase.operation.key");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> KeyBytes => new byte[] { 183, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 107, 101, 121 };
+#else
+        private static readonly byte[] KeyBytes = new byte[] { 183, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 107, 101, 121 };
+#endif
         // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
         // PortBytes = MessagePack.Serialize("out.port");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> PortBytes => new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#else
+        private static readonly byte[] PortBytes = new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -47,7 +79,7 @@ namespace Datadog.Trace.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

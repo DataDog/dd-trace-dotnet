@@ -11,10 +11,18 @@ using Datadog.Trace.Util;
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
-[BenchmarkAgent1]
-[BenchmarkCategory(Constants.TracerCategory)]
+[BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 public class CharSliceBenchmark
 {
+    [IterationSetup]
+    public void Setup()
+    {
+        // Force GC to ensure clean state and reduce variance from GC timing
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
     [Benchmark]
     public void OriginalCharSlice()
     {

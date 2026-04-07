@@ -9,7 +9,7 @@
     <RootNamespace>Benchmarks.OpenTelemetry.InstrumentedApi</RootNamespace>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
-    <LangVersion>11</LangVersion>
+    <LangVersion>14</LangVersion>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
@@ -18,17 +18,18 @@
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>1591;NU1901;NU1902;NU1903;NU1904</NoWarn>
 
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\*.cs" />
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\Trace\**\*.cs" Link="Trace\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Benchmarks.Trace\DummyAgentWriter.cs" />
+    <Compile Include="..\Benchmarks.Trace\TracerHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.6" />
     <PackageReference Include="OpenTelemetry.Api" Version="1.11.2" />
   </ItemGroup>
 

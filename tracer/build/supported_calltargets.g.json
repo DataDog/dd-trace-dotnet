@@ -3509,6 +3509,133 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Core.Shared.MessagingClientDiagnostics",
+    "TargetMethodName": "InstrumentMessage",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
+      "System.String",
+      "System.String&",
+      "System.String&"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 9,
+      "Item3": 2
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.InstrumentMessageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Amqp.AmqpConsumer",
+    "TargetMethodName": "ReceiveAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Collections.Generic.IReadOnlyList`1[Azure.Messaging.EventHubs.EventData]]",
+    "TargetParameterTypes": [
+      "System.Int32",
+      "System.Nullable`1[System.TimeSpan]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 9,
+      "Item3": 2
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.AmqpConsumerReceiveAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Producer.EventDataBatch",
+    "TargetMethodName": "TryAdd",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [
+      "Azure.Messaging.EventHubs.EventData"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 9,
+      "Item3": 2
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventDataBatchTryAddIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Producer.EventHubProducerClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "Azure.Messaging.EventHubs.Producer.EventDataBatch",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 9,
+      "Item3": 2
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubProducerClientSendBatchAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventHubs",
+    "AssemblyName": "Azure.Messaging.EventHubs",
+    "TargetTypeName": "Azure.Messaging.EventHubs.Producer.EventHubProducerClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventHubs.EventData]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 9,
+      "Item3": 2
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventHubProducerClientSendEnumerableAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AzureFunctions",
     "AssemblyName": "Microsoft.Azure.Functions.Worker.Core",
     "TargetTypeName": "Microsoft.Azure.Functions.Worker.Pipeline.FunctionExecutionMiddleware",
@@ -4172,6 +4299,39 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "CosmosDb",
+    "AssemblyName": "Microsoft.Azure.Cosmos.Client",
+    "TargetTypeName": "Microsoft.Azure.Cosmos.Handlers.RequestInvokerHandler",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Azure.Cosmos.ResponseMessage]",
+    "TargetParameterTypes": [
+      "System.String",
+      "Microsoft.Azure.Documents.ResourceType",
+      "Microsoft.Azure.Documents.OperationType",
+      "Microsoft.Azure.Cosmos.RequestOptions",
+      "Microsoft.Azure.Cosmos.ContainerInternal",
+      "_",
+      "System.IO.Stream",
+      "System.Action`1[Microsoft.Azure.Cosmos.RequestMessage]",
+      "_",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 12,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.RequestInvokerHandlerSendAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -6525,6 +6685,80 @@
   {
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "Evaluate",
+    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
+    "TargetParameterTypes": [
+      "System.String",
+      "Datadog.Trace.FeatureFlags.ValueType",
+      "System.Object",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkEvaluateIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "IsAvailable",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkIsAvailableIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.FeatureFlags.FeatureFlagsSdk",
+    "TargetMethodName": "RegisterOnNewConfigEventHandler",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Action"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 31,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkRegisterOnNewConfigEventHandlerIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.SpanContextExtractor",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
@@ -7066,6 +7300,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenTracing.OpenTracingTracerFactoryWrapTracerIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceVersionConflict",
+    "AssemblyName": "Datadog.Trace",
+    "TargetTypeName": "Datadog.Trace.Util.ProcessHelpers",
+    "TargetMethodName": "StartWithDoNotTrace",
+    "TargetReturnType": "System.Diagnostics.Process",
+    "TargetParameterTypes": [
+      "System.Diagnostics.ProcessStartInfo",
+      "System.Boolean"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 49,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict.ProcessHelpersStartWithDoNotTraceIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -8126,6 +8385,28 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallRunCallIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Hangfire",
+    "AssemblyName": "Hangfire.Core",
+    "TargetTypeName": "Hangfire.Common.JobFilterCollection",
+    "TargetMethodName": ".ctor",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 7,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire.JobFilterCollectionCtorIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9340,6 +9621,31 @@
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
     ],
@@ -9350,10 +9656,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9375,10 +9706,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9400,10 +9756,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9425,10 +9806,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9450,10 +9856,35 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.OperationContext",
+      "MongoDB.Driver.Core.Connections.IConnection"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 5,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -9475,7 +9906,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9500,7 +9931,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9525,7 +9956,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9550,7 +9981,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9575,7 +10006,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9600,7 +10031,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9625,7 +10056,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9650,7 +10081,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9675,7 +10106,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9700,7 +10131,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9725,7 +10156,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9750,7 +10181,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9775,7 +10206,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9800,7 +10231,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9825,7 +10256,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9900,7 +10331,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9925,7 +10356,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -9950,7 +10381,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
@@ -9975,7 +10406,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 5,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
@@ -10757,6 +11188,30 @@
     "IntegrationName": "MsTestV2",
     "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    "TargetMethodName": "ExecuteClassCleanupAsync",
+    "TargetReturnType": "_",
+    "TargetParameterTypes": [
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoExecuteClassCleanupAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
     "TargetMethodName": "RunClassCleanup",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [
@@ -10822,6 +11277,30 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeIntegrationV3_9",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    "TargetMethodName": "RunClassInitializeAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -11121,6 +11600,254 @@
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration",
     "IntegrationKind": 1,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTest.TestFramework",
+    "TargetTypeName": "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTest.TestFramework",
+    "TargetTypeName": "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteAsyncIntegration",
+    "IntegrationKind": 1,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
+    "TargetMethodName": "RunAssemblyInitialize",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestTools.UnitTesting.TestContext"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyInitializeIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    "TargetMethodName": "ExecuteClassCleanupAsync",
+    "TargetReturnType": "_",
+    "TargetParameterTypes": [
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoExecuteClassCleanupAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    "TargetMethodName": "RunClassInitializeAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    "TargetMethodName": "ExecuteTestAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV3_9",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache",
+    "TargetMethodName": "GetTestMethodInfo",
+    "TargetReturnType": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod",
+      "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TypeCacheGetTestMethodInfoIntegrationV3_9",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
+    "TargetMethodName": "RunSingleTest",
+    "TargetReturnType": "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
+    "TargetMethodName": "RunSingleTestAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegration3_8",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.UnitTestDiscoverer",
+    "TargetMethodName": "SendTestCases",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement]",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestCaseDiscoverySink",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IDiscoveryContext",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesIntegrationV4",
+    "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
   },
@@ -12652,7 +13379,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12677,7 +13404,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12699,7 +13426,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12723,7 +13450,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12745,7 +13472,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12769,7 +13496,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12794,7 +13521,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12816,7 +13543,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12840,7 +13567,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12890,7 +13617,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12914,7 +13641,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12936,7 +13663,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12960,7 +13687,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13161,6 +13888,80 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "Evaluate",
+    "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
+    "TargetParameterTypes": [
+      "System.String",
+      "Datadog.Trace.FeatureFlags.ValueType",
+      "System.Object",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "IsAvailable",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsAvailableIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "RegisterOnNewConfigEventHandler",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Action"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRegisterOnNewConfigEventHandlerIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "OpenTelemetry",
     "AssemblyName": "OpenTelemetry",
     "TargetTypeName": "OpenTelemetry.Trace.TracerProviderBuilderExtensions",
@@ -13180,6 +13981,152 @@
       "Item3": 0
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "ClearBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_ClearBaggageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "get_Current",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_GetCurrentIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "RemoveBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "System.String",
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_RemoveBaggageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "set_Current",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetCurrentIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "SetBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Baggage",
+    "TargetMethodName": "SetBaggage",
+    "TargetReturnType": "OpenTelemetry.Baggage",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.String]]",
+      "OpenTelemetry.Baggage"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageItemsIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -15772,7 +16719,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15796,7 +16743,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15821,7 +16768,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15843,7 +16790,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15867,7 +16814,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15889,7 +16836,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15913,7 +16860,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15935,7 +16882,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15959,7 +16906,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -15983,7 +16930,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16008,7 +16955,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16030,7 +16977,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16054,7 +17001,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16076,7 +17023,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16100,7 +17047,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16124,7 +17071,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16146,7 +17093,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16170,123 +17117,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 6,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "GetString",
-    "TargetReturnType": "System.String",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "GetValue",
-    "TargetReturnType": "System.Object",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "Read",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
-    "TargetParameterTypes": [
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
+      "Item1": 7,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16943,122 +17774,6 @@
     },
     "MaximumVersion": {
       "Item1": 4,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "GetString",
-    "TargetReturnType": "System.String",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "GetValue",
-    "TargetReturnType": "System.Object",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "Read",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
-    "TargetParameterTypes": [
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -17233,6 +17948,122 @@
   },
   {
     "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "GetString",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "GetValue",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "Read",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "ReadAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
     "AssemblyName": "System.Data.SQLite",
     "TargetTypeName": "System.Data.SQLite.SQLiteCommand",
     "TargetMethodName": "ExecuteDbDataReader",
@@ -17392,6 +18223,122 @@
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "GetString",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "GetValue",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "Read",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "ReadAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Ssrf",

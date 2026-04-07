@@ -382,6 +382,11 @@ namespace Datadog.Trace
         internal const string KafkaBootstrapServers = "messaging.kafka.bootstrap.servers";
 
         /// <summary>
+        /// The unique identifier for the Kafka cluster
+        /// </summary>
+        internal const string KafkaClusterId = "messaging.kafka.cluster_id";
+
+        /// <summary>
         /// The partition associated with a record
         /// </summary>
         internal const string KafkaPartition = "kafka.partition";
@@ -512,6 +517,12 @@ namespace Datadog.Trace
         internal const string RuntimeFamily = "_dd.runtime_family";
 
         /// <summary>
+        /// Contains a serialized list of process tags, that can be used in the backend for service renaming.
+        /// <see cref="ProcessTags"/>
+        /// </summary>
+        internal const string ProcessTags = "_dd.tags.process";
+
+        /// <summary>
         /// The resource ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         internal const string AzureAppServicesResourceId = "aas.resource.id";
@@ -630,6 +641,21 @@ namespace Datadog.Trace
         internal const string CosmosDbContainer = "cosmosdb.container";
 
         /// <summary>
+        /// The HTTP status code of the database response.
+        /// </summary>
+        internal const string DbResponseStatusCode = "db.response.status_code";
+
+        /// <summary>
+        /// The CosmosDb sub-status code of the response.
+        /// </summary>
+        internal const string CosmosDbResponseSubStatusCode = "cosmosdb.response.sub_status_code";
+
+        /// <summary>
+        /// The CosmosDb connection mode.
+        /// </summary>
+        internal const string CosmosDbConnectionMode = "cosmosdb.connection.mode";
+
+        /// <summary>
         /// If a span was involved with an application security event
         /// </summary>
         internal const string AppSecEvent = "appsec.event";
@@ -743,6 +769,10 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
+        // Hangfire tags
+        internal const string HangfireJobCreatedAt = "job.CreatedAt";
+        internal const string HangfireJobId = "job.ID";
+
         // general Service Fabric
         internal const string ServiceFabricApplicationId = "service-fabric.application-id";
         internal const string ServiceFabricApplicationName = "service-fabric.application-name";
@@ -771,6 +801,9 @@ namespace Datadog.Trace
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
 
+        /// <summary> contains a hash of container tags (for now), to be matched with the hash injected in queries, so that we can retrieve the corresponding values from the span</summary>
+        internal const string BaseHash = "_dd.propagated_hash";
+
         // Data Streams Monitoring
         internal const string SchemaDefinition = "schema.definition";
         internal const string SchemaWeight = "schema.weight";
@@ -786,6 +819,13 @@ namespace Datadog.Trace
         internal const string BaseService = "_dd.base_service";
 
         /// <summary>
+        /// Indicates the source that set the service name on a span.
+        /// The value is the integration name (e.g. "redis", "kafka") when the service name
+        /// was set by an integration, or null when the default service name is used.
+        /// </summary>
+        internal const string ServiceNameSource = "_dd.svc_src";
+
+        /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id
         /// lower-case 16 characters hexadecimal string
         /// </summary>
@@ -793,6 +833,12 @@ namespace Datadog.Trace
 
         // inferred proxy tags
         internal const string ProxyStage = "stage";
+
+        // code origin
+        internal const string CodeOriginType = "_dd.code_origin.type";
+        internal const string CodeOriginFrameIndex = "_dd.code_origin.frames.0.index";
+        internal const string CodeOriginFrameMethod = "_dd.code_origin.frames.0.method";
+        internal const string CodeOriginFrameType = "_dd.code_origin.frames.0.type";
 
         internal static class User
         {
@@ -826,6 +872,13 @@ namespace Datadog.Trace
             /// A two char hex string with the product being the trace source
             /// </summary>
             internal const string TraceSource = "_dd.p.ts";
+
+            /// <summary>
+            /// Tag used to propagate the Knuth sampling rate applied to the trace.
+            /// Set when a sampling decision is made using agent-based or rule-based sampling.
+            /// The value is the applied sampling rate formatted as a string with up to 6 significant digits.
+            /// </summary>
+            internal const string KnuthSamplingRate = "_dd.p.ksr";
         }
     }
 }

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling;
@@ -52,7 +53,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
         try
         {
             if (!string.IsNullOrWhiteSpace(configuration) &&
-                JsonConvert.DeserializeObject<List<RuleConfigJsonModel>>(configuration) is { Count: > 0 } ruleModels)
+                JsonHelper.DeserializeObject<List<RuleConfigJsonModel>>(configuration) is { Count: > 0 } ruleModels)
             {
                 var samplingRules = new RemoteCustomSamplingRule[ruleModels.Count];
 
@@ -115,7 +116,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
         return $"{base.ToString()} (Provenance: {Provenance})";
     }
 
-    internal class RuleConfigJsonModel
+    internal sealed class RuleConfigJsonModel
     {
         [JsonRequired]
         [JsonProperty(PropertyName = "sample_rate")]
@@ -136,7 +137,7 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
         [JsonProperty(PropertyName = "tags")]
         public List<TagJsonModel>? Tags { get; set; }
 
-        internal class TagJsonModel
+        internal sealed class TagJsonModel
         {
             [JsonProperty(PropertyName = "key")]
             public string? Name { get; set; }

@@ -8,8 +8,7 @@ using Datadog.Trace.Configuration;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent6]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class TraceAnnotationsBenchmark
     {
         private static readonly RuntimeMethodHandle MethodHandle;
@@ -17,16 +16,21 @@ namespace Benchmarks.Trace
 
         static TraceAnnotationsBenchmark()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
-
-            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
             var targetMethod = typeof(TraceAnnotationsBenchmark).GetMethod("InstrumentedMethod");
             MethodHandle = targetMethod.MethodHandle;
             TypeHandle = targetMethod.DeclaringType.TypeHandle;
+        }
 
-            var bench = new TraceAnnotationsBenchmark();
-            bench.RunOnMethodBegin();
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+            TracerHelper.SetGlobalTracer();
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]

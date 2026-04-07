@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         IntegrationName = nameof(IntegrationId.AzureServiceBus))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ProcessMessageIntegration
+    public sealed class ProcessMessageIntegration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessMessageIntegration));
 
@@ -53,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             var tracer = Tracer.Instance;
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && tracer.InternalActiveScope?.Span is Span span
                 && dataStreamsManager.IsEnabled)
             {
@@ -61,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 if (message.ApplicationProperties is not null)
                 {
-                    var headers = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
+                    var headers = new AzureHeadersCollectionAdapter(message.ApplicationProperties);
 
                     try
                     {

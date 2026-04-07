@@ -197,6 +197,8 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             logDirectory = ProcessConfiguration.GetProcessLogDirectory(pid.Value);
         }
 
+#pragma warning disable DD0002
         return logDirectory ?? Logging.DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
+#pragma warning restore DD0002
     }
 }

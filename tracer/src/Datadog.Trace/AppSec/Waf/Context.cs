@@ -14,7 +14,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf;
 
-internal class Context : IContext
+internal sealed class Context : IContext
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
 
@@ -30,7 +30,7 @@ internal class Context : IContext
     private readonly IEncoder _encoder;
     private readonly UserEventsState _userEventsState = new();
     private bool _disposed;
-    private ulong _totalRuntimeOverRuns = 0;
+    private ulong _totalRuntimeOverRuns;
 
     // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
     private Context(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -122,7 +122,7 @@ internal class Context : IContext
         return differentValue && (fromSdk || !previousValueFromSdk);
     }
 
-    private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
+    private unsafe Result? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
     {
         DdwafObjectStruct retNative = default;
 
@@ -145,6 +145,7 @@ internal class Context : IContext
         // not restart because it's the total runtime over runs, and we run several * during request
         _stopwatch.Start();
         WafReturnCode code;
+        bool truncated = false;
         lock (_stopwatch)
         {
             if (_disposed)
@@ -167,6 +168,7 @@ internal class Context : IContext
                 var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
                 pwPersistentArgs = persistentArgs.ResultDdwafObject;
                 _encodeResults.Add(persistentArgs);
+                truncated |= persistentArgs.Truncated;
             }
 
             // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
@@ -184,6 +186,7 @@ internal class Context : IContext
             {
                 // WARNING: Don't use ref here, we need to make a copy because ephemeralArgs is on the heap
                 pwEphemeralArgsValue = ephemeralArgs.ResultDdwafObject;
+                truncated |= ephemeralArgs.Truncated;
             }
 
             // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
@@ -191,7 +194,7 @@ internal class Context : IContext
         }
 
         _stopwatch.Stop();
-        var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp);
+        var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp, truncated);
         _wafLibraryInvoker.ObjectFree(ref retNative);
 
         if (Log.IsEnabled(LogEventLevel.Debug))
@@ -233,7 +236,7 @@ internal class Context : IContext
         GC.SuppressFinalize(this);
     }
 
-    internal record UserEventsState
+    internal sealed record UserEventsState
     {
         /// <summary>
         /// Gets or sets a string for the value and bool for if it came from sdk

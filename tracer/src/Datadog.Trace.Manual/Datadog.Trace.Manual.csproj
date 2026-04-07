@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
@@ -13,6 +13,7 @@
     <RootNamespace>Datadog.Trace</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,10 +25,13 @@
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Metadata\*.cs" Link="Ci\Coverage\Metadata\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\ArrayExtensions.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Ci\TestStatus.cs" Link="Ci\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs"  Link="Configuration\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs"  Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs" Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs" Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\DuckTyping\DuckAsClassAttribute.cs" Link="DuckTyping\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="FeatureFlags\EvaluationReason.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\ValueType.cs" Link="FeatureFlags\ValueType.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="FeatureFlags\IEvaluation.cs" />
     <Compile Include="..\Datadog.Trace\HttpHeaderNames.cs" />
     <Compile Include="..\Datadog.Trace\IDatadogOpenTracingTracer.cs" />
     <Compile Include="..\Datadog.Trace\IScope.cs" />
@@ -61,7 +65,7 @@
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
   </ItemGroup>
-
+  
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <!--DuckTyping-->
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />

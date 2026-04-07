@@ -1,0 +1,82 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: hangfire.perform,
+    Resource: job TestJob.Execute,
+    Service: Samples.Hangfire,
+    Type: hangfire,
+    ParentId: Id_3,
+    Tags: {
+      component: Hangfire,
+      env: integration_tests,
+      job.CreatedAt: DateTimeOffset_1,
+      job.ID: Guid_1,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: hangfire.perform,
+    Resource: job TestJob.ThrowException,
+    Service: Samples.Hangfire,
+    Type: hangfire,
+    ParentId: Id_3,
+    Error: 1,
+    Tags: {
+      component: Hangfire,
+      env: integration_tests,
+      error.msg: An exception occurred during performance of the job.,
+      error.stack:
+Hangfire.Server.JobPerformanceException: An exception occurred during performance of the job. ---> System.InvalidOperationException: Boom from TestJob.ThrowException
+at Samples.Hangfire.Jobs.TestJob.ThrowException(),
+      error.type: Hangfire.Server.JobPerformanceException,
+      job.CreatedAt: DateTimeOffset_2,
+      job.ID: Guid_3,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: internal,
+    Resource: OtelParent,
+    Service: OTEL-parent,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: AdditionalActivitySource,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.base_service: Samples.Hangfire
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

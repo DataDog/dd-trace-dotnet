@@ -10,7 +10,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
-    internal class Log4NetCommon<TResponseArray>
+    internal sealed class Log4NetCommon<TResponseArray>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Log4NetCommon<TResponseArray>));
 

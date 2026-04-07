@@ -1,4 +1,4 @@
-// <copyright file="KafkaTags.cs" company="Datadog">
+﻿// <copyright file="KafkaTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -36,6 +36,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.KafkaBootstrapServers)]
         public string BootstrapServers { get; set; }
 
+        [Tag(Trace.Tags.KafkaClusterId)]
+        public string ClusterId { get; set; }
+
         [Tag(Trace.Tags.MessagingDestinationName)]
         public string Topic { get; set; }
 
@@ -55,9 +58,9 @@ namespace Datadog.Trace.Tagging
         public double? MessageQueueTimeMs { get; set; }
     }
 
-    internal partial class KafkaV1Tags : KafkaTags
+    internal sealed partial class KafkaV1Tags : KafkaTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         // For the sake of unit tests, define a default constructor
         // though the Kafka integration should use the constructor that takes a spanKind

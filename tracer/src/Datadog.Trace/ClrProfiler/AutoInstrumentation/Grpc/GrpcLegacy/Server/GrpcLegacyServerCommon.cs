@@ -1,10 +1,11 @@
-// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
+﻿// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -14,7 +15,7 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 {
-    internal class GrpcLegacyServerCommon
+    internal static class GrpcLegacyServerCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcLegacyServerCommon));
 
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 }
 
                 var serviceName = tracer.DefaultServiceName ?? "grpc-server";
-                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol(ServerSchema.Protocol.Grpc);
                 scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
 
                 var span = scope.Span;
@@ -49,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 
                 if (metadata?.Count > 0)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.CurrentTraceSettings.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);

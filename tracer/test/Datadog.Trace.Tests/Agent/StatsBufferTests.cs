@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers.Stats;
 using FluentAssertions;
 using MessagePack;
@@ -24,12 +26,32 @@ namespace Datadog.Trace.Tests.Agent
             key1.Should().Be(key2);
         }
 
-        [Fact]
-        public void Serialization()
+        [Theory]
+        [CombinatorialData]
+        public void Serialization(bool propagateProcessTags, bool setServiceName)
         {
             const long expectedDuration = 42;
 
-            var payload = new ClientStatsPayload { Environment = "Env", HostName = "Hostname", Version = "v99.99" };
+            // For Tracer Settings, the non mutable one.
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+
+            var settings = MutableSettings.CreateForTesting(
+                new(source),
+                new()
+                {
+                    { ConfigurationKeys.Environment, "Env" },
+                    { ConfigurationKeys.ServiceVersion, "v99.99" },
+                    { ConfigurationKeys.ServiceName, setServiceName ? "AServiceName" : null },
+                });
+
+            var payload = new ClientStatsPayload(settings)
+            {
+                HostName = "Hostname",
+            };
 
             var buffer = new StatsBuffer(payload);
 
@@ -50,8 +72,8 @@ namespace Datadog.Trace.Tests.Agent
             var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Hostname.Should().Be(payload.HostName);
-            result.Env.Should().Be(payload.Environment);
-            result.Version.Should().Be(payload.Version);
+            result.Env.Should().Be(payload.Details.Environment);
+            result.Version.Should().Be(payload.Details.Version);
             result.Lang.Should().Be(TracerConstants.Language);
             result.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
             result.RuntimeId.Should().Be(Tracer.RuntimeId);
@@ -59,6 +81,16 @@ namespace Datadog.Trace.Tests.Agent
             result.AgentAggregation.Should().BeNull();
             result.Service.Should().BeNull();
             result.Stats.Should().HaveCount(1);
+
+            if (propagateProcessTags)
+            {
+                result.ProcessTags.Should().Contain(setServiceName ? "svc.user" : "svc.auto");
+                result.ProcessTags.Should().NotContain(setServiceName ? "svc.auto" : "svc.user");
+            }
+            else
+            {
+                result.ProcessTags.Should().BeNull();
+            }
 
             var bucket = result.Stats[0];
 
@@ -74,7 +106,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Reset()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload());
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
             var key2 = new StatsAggregationKey("resource2", "service2", "operation2", "type2", 2, false);
@@ -110,7 +142,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void IncrementSequence()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload());
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
             var statsBucket = new StatsBucket(key) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };

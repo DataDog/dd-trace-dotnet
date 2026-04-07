@@ -7,15 +7,43 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 
 internal static class IbmMqHelper
 {
-    private const string MessagingType = "ibmmq";
+    private const string QueueUriPrefix = "queue://";
+    private const string TopicUriPrefix = "topic://";
+
+    /// <summary>
+    /// Sanitizes an IBM MQ queue name by removing URI scheme prefixes.
+    /// Converts names like "queue://my_queue" to "my_queue".
+    /// </summary>
+    internal static string SanitizeQueueName(string? queueName)
+    {
+        if (StringUtil.IsNullOrEmpty(queueName))
+        {
+            return string.Empty;
+        }
+
+        // Remove queue:// or topic:// URI prefix if present
+        if (queueName.StartsWith(QueueUriPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return queueName.Substring(QueueUriPrefix.Length);
+        }
+
+        if (queueName.StartsWith(TopicUriPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return queueName.Substring(TopicUriPrefix.Length);
+        }
+
+        return queueName;
+    }
 
     internal static IbmMqHeadersAdapterNoop GetHeadersAdapter(IMqMessage message)
     {
@@ -32,29 +60,31 @@ internal static class IbmMqHelper
 
         try
         {
-            var settings = tracer.Settings;
-            if (!settings.IsIntegrationEnabled(IntegrationId.IbmMq))
+            var settings = tracer.CurrentTraceSettings;
+            if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
             {
                 return null;
             }
 
-            var operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingType);
-            var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
-            tags.TopicName = queue.Name;
+            var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.IbmMq);
+            var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
+            var queueName = SanitizeQueueName(queue.Name);
+            tags.TopicName = queueName;
 
             scope = tracer.StartActiveInternal(
                 operationName,
+                tags: tags,
                 serviceName: serviceName,
+                serviceNameSource: serviceNameSource,
                 finishOnClose: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
 
-            var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
+            var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queueName) ? "ibmmq" : queueName)}";
 
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
             var context = new PropagationContext(span.Context, Baggage.Current);
             tracer.TracerManager.SpanContextPropagator.Inject(context, GetHeadersAdapter(message));
@@ -77,14 +107,14 @@ internal static class IbmMqHelper
 
         try
         {
-            var settings = tracer.Settings;
-            if (!settings.IsIntegrationEnabled(IntegrationId.IbmMq))
+            var settings = tracer.CurrentTraceSettings;
+            if (!settings.Settings.IsIntegrationEnabled(IntegrationId.IbmMq))
             {
                 return null;
             }
 
             var parent = tracer.ActiveScope?.Span;
-            var operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingType);
+            var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.IbmMq);
             if (parent is not null &&
                 parent.OperationName == operationName &&
                 parent.GetTag(Tags.InstrumentationName) != null)
@@ -104,23 +134,24 @@ internal static class IbmMqHelper
                 Log.Error(ex, "Error extracting propagated headers from IbmMq message");
             }
 
-            var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
-            tags.TopicName = queue.Name;
+            var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
+            var queueName = SanitizeQueueName(queue.Name);
+            tags.TopicName = queueName;
             scope = tracer.StartActiveInternal(
                 operationName,
                 tags: tags,
                 parent: extractedContext.SpanContext,
                 serviceName: serviceName,
+                serviceNameSource: serviceNameSource,
                 finishOnClose: true,
                 startTime: spanStartTime);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
-            var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
+            var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queueName) ? "ibmmq" : queueName)}";
 
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
         }
         catch (Exception ex)
         {

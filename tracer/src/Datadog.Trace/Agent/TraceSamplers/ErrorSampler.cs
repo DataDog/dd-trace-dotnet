@@ -1,4 +1,4 @@
-// <copyright file="ErrorSampler.cs" company="Datadog">
+﻿// <copyright file="ErrorSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,13 +7,13 @@ using System;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
-    internal class ErrorSampler : ITraceChunkSampler
+    internal sealed class ErrorSampler : ITraceChunkSampler
     {
-        public bool Sample(ArraySegment<Span> trace)
+        public bool Sample(in SpanCollection trace)
         {
-            for (int i = 0; i < trace.Count; i++)
+            foreach (var span in trace)
             {
-                if (trace.Array[i + trace.Offset].Error)
+                if (span.Error)
                 {
                     return true;
                 }

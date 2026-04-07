@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class StartSpanIntegration
+    public sealed class StartSpanIntegration
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTracer, TSpanKind, TSpanContext, TSpanAttributes, TLinks>(TTracer instance, string name, TSpanKind kind, in TSpanContext parentContext, TSpanAttributes spanAttributes, TLinks links, DateTimeOffset startTimeinstance)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return new CallTargetState(Tracer.Instance.InternalActiveScope);
             }
@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <returns>CallTargetReturn</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // If the integration created a new scope, dispose it
                 var currentScope = Tracer.Instance.InternalActiveScope;

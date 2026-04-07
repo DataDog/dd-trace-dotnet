@@ -342,11 +342,15 @@ public class DataStreamsWriterTests
         int bucketDurationMs = BucketDurationMs)
     {
         discoveryService = new DiscoveryServiceMock();
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, Environment } });
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.Environment, Environment },
+            { ConfigurationKeys.ServiceName, Service },
+        });
         return new DataStreamsWriter(
             settings,
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled), Service),
+                new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled)),
                 bucketDurationMs),
             stubApi,
             bucketDurationMs: bucketDurationMs,

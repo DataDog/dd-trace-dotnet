@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Tests.Agent;
@@ -21,8 +22,8 @@ public class TelemetryTransportManagerTests
     {
         const int requestCount = 10;
         var telemetryPushResults = Enumerable.Repeat(TelemetryPushResult.Success, requestCount).ToArray();
-        var transports = new TelemetryTransports(new TestTransport(telemetryPushResults), null);
-        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
+        var transports = new TelemetryTransportFactory(_ => new TestTransport(telemetryPushResults), null);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, transports, new DiscoveryServiceMock());
 
         for (var i = 0; i < requestCount; i++)
         {
@@ -38,8 +39,8 @@ public class TelemetryTransportManagerTests
     {
         const int requestCount = 10;
         var telemetryPushResults = Enumerable.Repeat((TelemetryPushResult)result, requestCount).ToArray();
-        var transports = new TelemetryTransports(new TestTransport(telemetryPushResults), null);
-        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
+        var transports = new TelemetryTransportFactory(_ => new TestTransport(telemetryPushResults), null);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, transports, new DiscoveryServiceMock());
 
         for (var i = 0; i < requestCount; i++)
         {
@@ -52,8 +53,8 @@ public class TelemetryTransportManagerTests
     public async Task TestTransport_ThrowsIfCalledTooManyTimes()
     {
         var transport1 = new TestTransport(TelemetryPushResult.TransientFailure);
-        var transports = new TelemetryTransports(transport1, null);
-        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
+        var transports = new TelemetryTransportFactory(_ => transport1, null);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, transports, new DiscoveryServiceMock());
 
         await transportManager.TryPushTelemetry(null!);
 
@@ -66,8 +67,8 @@ public class TelemetryTransportManagerTests
     {
         var transport1 = new TestTransport(TelemetryPushResult.TransientFailure, TelemetryPushResult.Success);
         var transport2 = new TestTransport(TelemetryPushResult.TransientFailure);
-        var transports = new TelemetryTransports(transport1, transport2);
-        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
+        var transports = new TelemetryTransportFactory(_ => transport1, transport2);
+        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, transports, new DiscoveryServiceMock());
 
         var fail1 = await transportManager.TryPushTelemetry(null!);
         var fail2 = await transportManager.TryPushTelemetry(null!);
@@ -84,11 +85,11 @@ public class TelemetryTransportManagerTests
     [InlineData(false)]
     public void WhenOnlyAgentAvailable_AlwaysUsesAgent(bool? initiallyAvailableInDiscovery)
     {
-        var transports = new TelemetryTransports(
-            agentTransport: new TestTransport(),
+        var transports = new TelemetryTransportFactory(
+            agentTransportFactory: _ => new TestTransport(),
             agentlessTransport: null);
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManager(transports, discoveryService);
+        var manager = new TelemetryTransportManager(new TracerSettings().Manager, transports, discoveryService);
 
         if (initiallyAvailableInDiscovery == true)
         {
@@ -101,21 +102,21 @@ public class TelemetryTransportManagerTests
 
         // initial value
         var nextTransport = manager.GetNextTransport(null);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport); // Equivalent to "should be agent" but accounting for the fact we respond to config changes
 
         // on error
         nextTransport = manager.GetNextTransport(nextTransport);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport); // Equivalent to "should be agent" but accounting for the fact we respond to config changes
 
         // agent no longer available
         discoveryService.TriggerChange(telemetryProxyEndpoint: null);
         nextTransport = manager.GetNextTransport(nextTransport);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport); // Equivalent to "should be agent" but accounting for the fact we respond to config changes
 
         // agent available again
         discoveryService.TriggerChange();
         nextTransport = manager.GetNextTransport(nextTransport);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport); // Equivalent to "should be agent" but accounting for the fact we respond to config changes
     }
 
     [Theory]
@@ -124,9 +125,9 @@ public class TelemetryTransportManagerTests
     [InlineData(false)]
     public void WhenOnlyAgentlessAvailable_AlwaysUsesAgentless(bool? initiallyAvailableInDiscovery)
     {
-        var transports = new TelemetryTransports(agentTransport: null, agentlessTransport: new TestTransport());
+        var transports = new TelemetryTransportFactory(agentTransportFactory: _ => null, agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManager(transports, discoveryService);
+        var manager = new TelemetryTransportManager(new TracerSettings().Manager, transports, discoveryService);
 
         if (initiallyAvailableInDiscovery == true)
         {
@@ -161,9 +162,9 @@ public class TelemetryTransportManagerTests
     [InlineData(true)]
     public void WhenBothAvailable_AndInitiallyAvailableOrUnknownDiscovery_UsesAgent(bool notifyAvailable)
     {
-        var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
+        var transports = new TelemetryTransportFactory(agentTransportFactory: _ => new TestTransport(), agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManager(transports, discoveryService);
+        var manager = new TelemetryTransportManager(new TracerSettings().Manager, transports, discoveryService);
 
         if (notifyAvailable)
         {
@@ -172,15 +173,15 @@ public class TelemetryTransportManagerTests
 
         // initial value
         var nextTransport = manager.GetNextTransport(null);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport); // Equivalent to "should be agent" but accounting for the fact we respond to config changes
     }
 
     [Fact]
     public void WhenBothAvailable_AndInitiallyUnAvailable_UsesAgentless()
     {
-        var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
+        var transports = new TelemetryTransportFactory(agentTransportFactory: _ => new TestTransport(), agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManager(transports, discoveryService);
+        var manager = new TelemetryTransportManager(new TracerSettings().Manager, transports, discoveryService);
 
         discoveryService.TriggerChange(telemetryProxyEndpoint: null);
 
@@ -192,13 +193,13 @@ public class TelemetryTransportManagerTests
     [Fact]
     public void WhenBothAvailable_UsesNextExpectedTransport()
     {
-        var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
+        var transports = new TelemetryTransportFactory(agentTransportFactory: _ => new TestTransport(), agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManager(transports, discoveryService);
+        var manager = new TelemetryTransportManager(new TracerSettings().Manager, transports, discoveryService);
 
         // initial value
         var nextTransport = manager.GetNextTransport(null);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport); // Equivalent to "should be agent" but accounting for the fact we respond to config changes
 
         // we now know agent is available, but it failed, so switch to agentless
         discoveryService.TriggerChange();
@@ -207,7 +208,7 @@ public class TelemetryTransportManagerTests
 
         // agentless failed, and agent is available, so switch to agent
         nextTransport = manager.GetNextTransport(nextTransport);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport);
 
         // agent failed, so switch back to agentless
         nextTransport = manager.GetNextTransport(nextTransport);
@@ -225,7 +226,7 @@ public class TelemetryTransportManagerTests
         // Agent is available again, so switch to agent
         discoveryService.TriggerChange();
         nextTransport = manager.GetNextTransport(nextTransport);
-        nextTransport.Should().Be(transports.AgentTransport);
+        nextTransport.Should().NotBe(transports.AgentlessTransport);
 
         // And we're back to the starting point again
         nextTransport = manager.GetNextTransport(nextTransport);

@@ -9,6 +9,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
@@ -16,13 +17,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
     internal static class RedisHelper
     {
         private const string OperationName = "redis.command";
-        private const string ServiceName = "redis";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisHelper));
 
         internal static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -36,15 +37,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 return null;
             }
 
-            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(ServiceName);
+            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis);
             Scope? scope = null;
 
             try
             {
-                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateRedisTags();
+                var tags = perTraceSettings.Schema.Database.CreateRedisTags();
                 tags.InstrumentationName = integrationName;
 
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 int separatorIndex = rawCommand.IndexOf(' ');
                 string command;
 
@@ -68,8 +69,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                     tags.DatabaseIndex = databaseIndex.Value;
                 }
 
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex)

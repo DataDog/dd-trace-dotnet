@@ -1,4 +1,4 @@
-// <copyright file="QuartzActivityHandler.cs" company="Datadog">
+﻿// <copyright file="QuartzActivityHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Activity.Handlers
     /// - tracer/src/Datadog.Trace/DiagnosticListeners/QuartzDiagnosticObserver.cs
     /// - tracer/src/Datadog.Trace/Activity/Handlers/DefaultActivityHandler.cs
     /// </summary>
-    internal class QuartzActivityHandler : IActivityHandler
+    internal sealed class QuartzActivityHandler : IActivityHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzActivityHandler>();
 
@@ -45,13 +45,13 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Find the span and update it before the common handler processes it
-            string key = activity switch
+            ActivityKey key = activity switch
             {
-                IW3CActivity w3cActivity => w3cActivity.TraceId + w3cActivity.SpanId,
-                _ => activity.Id
+                IW3CActivity { TraceId: not null, SpanId: not null } w3cActivity => new(w3cActivity.TraceId, w3cActivity.SpanId),
+                _ => new(activity.Id)
             };
 
-            if (key != null && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope.Span is Span span)
+            if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out var activityMapping) && activityMapping.Scope.Span is Span span)
             {
                 Log.Debug("ActivityStopped: Processing span for activity '{ActivityId}'", activity.Id);
 

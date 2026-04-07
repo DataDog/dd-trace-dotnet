@@ -1,4 +1,4 @@
-// <copyright file="ProbeExpressionsProcessor.cs" company="Datadog">
+﻿// <copyright file="ProbeExpressionsProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,12 +9,13 @@ using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
-    internal class ProbeExpressionsProcessor
+    internal sealed class ProbeExpressionsProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionsProcessor));
 
@@ -59,7 +60,7 @@ namespace Datadog.Trace.Debugger.Expressions
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug("Successfully created probe processor for probe: {Id}", probe.Id);
-                Log.Debug("Probe definition is {Probe}", JsonConvert.SerializeObject(probe));
+                Log.Debug("Probe definition is {Probe}", JsonHelper.SerializeObject(probe));
             }
         }
 

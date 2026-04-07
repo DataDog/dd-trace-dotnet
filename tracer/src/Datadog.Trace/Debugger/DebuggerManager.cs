@@ -17,17 +17,21 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
 namespace Datadog.Trace.Debugger
 {
-    internal class DebuggerManager
+    internal sealed class DebuggerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
         private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(250);
         private static readonly TimeSpan EndpointTimeout = TimeSpan.FromMinutes(5);
+        internal static readonly Func<string> ServiceNameProvider = static () => Instance.ServiceName;
+        internal static readonly Func<string?> ProcessTagsProvider = static () => Instance.ProcessTags;
 
         private static readonly Lazy<DebuggerManager> _lazyInstance =
             new(
@@ -39,12 +43,15 @@ namespace Datadog.Trace.Debugger
         private readonly object _syncLock;
         private readonly TimeSpan _diDebounceDelay;
         private readonly TaskCompletionSource<bool> _processExit;
+        private string _serviceName;
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
         private int _symDbInitialized;
         private volatile TaskCompletionSource<bool>? _diDebounceGate;
         private volatile DynamicInstrumentation? _dynamicInstrumentation;
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
+        private TracerSettings.SettingsManager? _subscribedSettingsManager;
+        private IDisposable? _tracerSettingsSubscription;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
@@ -53,7 +60,7 @@ namespace Datadog.Trace.Debugger
             _isDebuggerEndpointAvailable = false;
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
-            ServiceName = string.Empty;
+            _serviceName = string.Empty;
             _syncLock = new();
             _diDebounceDelay = DebounceDelay;
             _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -82,18 +89,28 @@ namespace Datadog.Trace.Debugger
 
         internal ExceptionReplay? ExceptionReplay { get; private set; }
 
-        internal string ServiceName { get; private set; }
+        internal string ServiceName
+        {
+            get => Volatile.Read(ref _serviceName);
+            private set => Volatile.Write(ref _serviceName, value);
+        }
 
-        private string GetServiceName(TracerSettings tracerSettings)
+        internal string? ProcessTags
+        {
+            get => Volatile.Read(ref field);
+            private set => Volatile.Write(ref field, value);
+        }
+
+        private string GetServiceName(MutableSettings mutableSettings)
         {
             try
             {
-                return TraceUtil.NormalizeTag(tracerSettings.ServiceName ?? TracerManager.Instance.DefaultServiceName);
+                return TraceUtil.NormalizeTag(mutableSettings.DefaultServiceName);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-                return TracerManager.Instance.DefaultServiceName;
+                return mutableSettings.DefaultServiceName;
             }
         }
 
@@ -142,7 +159,8 @@ namespace Datadog.Trace.Debugger
         {
             DebuggerSnapshotSerializer.SetConfig(settings);
             Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
-            ServiceName = GetServiceName(tracerSettings);
+            ServiceName = GetServiceName(tracerSettings.Manager.InitialMutableSettings);
+            ProcessTags = tracerSettings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
         }
 
         internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
@@ -158,6 +176,7 @@ namespace Datadog.Trace.Debugger
             }
 
             OneTimeSetup(tracerSettings);
+            EnsureTracerSettingsSubscription(tracerSettings);
 
             InitializeSymbolUploaderIfNeeded(tracerSettings, newDebuggerSettings);
 
@@ -185,10 +204,63 @@ namespace Datadog.Trace.Debugger
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(tracerSettings, DebuggerSettings);
-            if (tracerSettings.StartupDiagnosticLogEnabled)
+            if (tracerSettings.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
             }
+        }
+
+        private void EnsureTracerSettingsSubscription(TracerSettings tracerSettings)
+        {
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            // If the global manager replaced, UpdateConfiguration can be called with a different instance.
+            var settingsManager = tracerSettings.Manager;
+            if (settingsManager == _subscribedSettingsManager)
+            {
+                return;
+            }
+
+            lock (_syncLock)
+            {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                if (settingsManager == _subscribedSettingsManager)
+                {
+                    return;
+                }
+
+                SafeDisposal.TryDispose(_tracerSettingsSubscription);
+                _tracerSettingsSubscription = settingsManager.SubscribeToChanges(OnTracerSettingsChanged);
+                _subscribedSettingsManager = settingsManager;
+            }
+        }
+
+        private void OnTracerSettingsChanged(TracerSettings.SettingsManager.SettingChanges changes)
+        {
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            if (changes.UpdatedMutable is not { } updatedMutable)
+            {
+                return;
+            }
+
+            ServiceName = GetServiceName(updatedMutable);
+            ProcessTags = updatedMutable.ProcessTags?.SerializedTags;
+
+            // Note: `SymbolsUploader` captures the service name on first use (symbol extraction/upload) and then keeps it fixed for its lifetime,
+            // to avoid mixing symbols across services. If the service name changes after that point, the correct behavior would be to stop and
+            // recreate the uploader, but that is expensive (symbol extraction/upload) and is intentionally deferred until we have an explicit
+            // requirement.
         }
 
         private void InitializeSymbolUploaderIfNeeded(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
@@ -197,6 +269,12 @@ namespace Datadog.Trace.Debugger
             {
                 if (_processExit.Task.IsCompleted)
                 {
+                    return;
+                }
+
+                if (ExceptionReplaySettings.AgentlessEnabled)
+                {
+                    Log.Information("Exception Replay agentless mode enabled; skipping symbol uploader initialization because it requires the Datadog Agent and Remote Configuration.");
                     return;
                 }
 
@@ -225,9 +303,9 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                // initialize symbol database uploader only if DI is enabled locally or remotely
+                // Initialize symbol database uploader only if DI is enabled locally or remotely.
                 var tracerManager = TracerManager.Instance;
-                this.SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, this.ServiceName, tracerSettings, this.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                this.SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, () => ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
                 _ = this.SymbolsUploader.StartFlushingAsync()
                         .ContinueWith(
                              t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),
@@ -474,7 +552,7 @@ namespace Datadog.Trace.Debugger
                     discoveryService,
                     RcmSubscriptionManager.Instance,
                     tracerSettings,
-                    ServiceName,
+                    () => ServiceName,
                     DebuggerSettings,
                     tracerManager.GitMetadataTagsProvider);
 
@@ -576,7 +654,7 @@ namespace Datadog.Trace.Debugger
             {
                 var stringWriter = new StringWriter();
                 var settings = DebuggerSettings;
-                using (var writer = new JsonTextWriter(stringWriter))
+                using (var writer = new JsonTextWriter(stringWriter) { ArrayPool = JsonArrayPool.Shared })
                 {
                     writer.WriteStartObject();
                     writer.WritePropertyName("dynamic_instrumentation_enabled");
@@ -614,6 +692,7 @@ namespace Datadog.Trace.Debugger
             }
 
             SafeDisposal.New()
+                        .Add(_tracerSettingsSubscription)
                         .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
                         .Add(SymbolsUploader)

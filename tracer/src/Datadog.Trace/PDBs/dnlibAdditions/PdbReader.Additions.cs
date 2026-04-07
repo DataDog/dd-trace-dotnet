@@ -1,4 +1,4 @@
-// <copyright file="PdbReader.Additions.cs" company="Datadog">
+﻿// <copyright file="PdbReader.Additions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
             }
         }
 
-        private record ResolvedSequencePoint
+        private sealed record ResolvedSequencePoint
         {
             public ResolvedSequencePoint(SymbolMethod method, SymbolSequencePoint sequencePoint)
             {
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
             public SymbolSequencePoint SequencePoint { get; }
         }
 
-        private class ResolvedSequencePointComparer : IComparer<ResolvedSequencePoint>
+        private sealed class ResolvedSequencePointComparer : IComparer<ResolvedSequencePoint>
         {
             public static readonly IComparer<ResolvedSequencePoint> Instance = new ResolvedSequencePointComparer();
 

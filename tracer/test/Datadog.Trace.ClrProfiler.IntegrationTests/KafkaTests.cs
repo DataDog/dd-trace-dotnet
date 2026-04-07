@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(KafkaTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     public class KafkaTests : TracingIntegrationTest
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;
@@ -155,6 +156,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .OnlyContain(
                     x => x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.AutoCommitConsumer1"
                       || x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.ManualCommitConsumer2");
+
+            // cluster_id is only available with Confluent.Kafka 2.3.0+ (DescribeClusterAsync)
+            var hasDescribeCluster = !string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("2.3.0");
+            if (hasDescribeCluster)
+            {
+                successfulProducerSpans.Should().OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaClusterId) && !string.IsNullOrEmpty(x.Tags[Tags.KafkaClusterId]));
+                successfulConsumerSpans.Should().OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaClusterId) && !string.IsNullOrEmpty(x.Tags[Tags.KafkaClusterId]));
+            }
 
             // Error spans are created in 1.5.3 when the broker doesn't exist yet
             // Other package versions don't error, so won't create a span,

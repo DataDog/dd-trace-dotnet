@@ -135,7 +135,19 @@ namespace Samples.RabbitMQ
                 string message = $"{messagePrefix} - Message";
                 var body = Encoding.UTF8.GetBytes(message);
 
+#if RABBITMQ_7_0
+                // Use CachedString parameters to trigger BasicPublishAsyncCachedStringsIntegration
+                var cachedExchange = new CachedString(publishExchangeName);
+                var cachedRoutingKey = new CachedString(publishRoutingKey);
+                await channel.BasicPublishAsync(
+                    exchange: cachedExchange,
+                    routingKey: cachedRoutingKey,
+                    mandatory: false,
+                    basicProperties: properties,
+                    body: body);
+#else
                 await Helper.BasicPublishAsync(channel, publishExchangeName, publishRoutingKey, body, properties);
+#endif
 
                 Console.WriteLine($"BasicPublish - Sent message: {message}");
             }
@@ -180,9 +192,19 @@ namespace Samples.RabbitMQ
                         string message = $"Send - Message #{i}";
                         var body = Encoding.UTF8.GetBytes(message);
 
+#if RABBITMQ_7_0
+                        // Use CachedString parameters to trigger BasicPublishAsyncCachedStringsIntegration
+                        var cachedExchange = new CachedString("");
+                        var cachedRoutingKey = new CachedString("hello");
+                        await channel.BasicPublishAsync(
+                            exchange: cachedExchange,
+                            routingKey: cachedRoutingKey,
+                            body: body);
+#else
                         await Helper.BasicPublishAsync (channel, exchange: "",
                                              routingKey: "hello",
                                              body: body);
+#endif
                         Console.WriteLine("[Send] - [x] Sent \"{0}\"", message);
 
 

@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class Transport_Request_Integration
+    public sealed class Transport_Request_Integration
     {
         /// <summary>
         /// OnMethodBegin callback

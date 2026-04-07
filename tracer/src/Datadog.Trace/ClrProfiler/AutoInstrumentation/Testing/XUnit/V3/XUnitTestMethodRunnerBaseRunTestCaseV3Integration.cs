@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -14,7 +15,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
@@ -141,70 +141,25 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
         switch (testCaseMetadata)
         {
-            // We retry tests if:
-            // - EarlyFlakeDetectionEnabled is true and AbortByThreshold is false, or
-            // - FlakyRetryEnabled is true, or
-            // - IsAttemptToFix is true
-            case { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } or { IsAttemptToFix: true }:
+            case { SelectedRetryMode: not TestRetryMode.None, AbortByThreshold: false }:
             {
-                var isFlakyRetryEnabled = testCaseMetadata.FlakyRetryEnabled;
-                var isAttemptToFix = testCaseMetadata.IsAttemptToFix;
                 var isFirstExecution = testCaseMetadata.ExecutionIndex == 0;
 
                 // If it's the first execution then let's calculate the total executions
                 if (isFirstExecution)
                 {
-                    // Let's make decisions regarding slow tests, retry failed test feature or an attempt to fix
-                    if (isFlakyRetryEnabled)
-                    {
-                        testCaseMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1;
-                    }
-                    else if (isAttemptToFix)
-                    {
-                        testCaseMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
-                    }
-                    else
-                    {
-                        var duration = TimeSpan.FromSeconds((double)runSummaryUnsafe.Time);
-                        testCaseMetadata.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
-                    }
-
-                    testCaseMetadata.CountDownExecutionNumber = testCaseMetadata.TotalExecutions - 1;
+                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, () => Common.GetNumberOfExecutionsForDuration(TimeSpan.FromSeconds((double)runSummaryUnsafe.Time)));
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
                 {
-                    // If we are not in the latest execution, we need to retry the test
-                    var doRetry = true;
-                    if (isFlakyRetryEnabled)
+                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummaryUnsafe.Failed > 0, hasNotRun: runSummaryUnsafe.NotRun > 0, ref _totalRetries);
+                    if (retryDecision == XUnitRetryExecutionDecision.Retry)
                     {
-                        // For flaky retry feature, we need to check if the test has failed or if the total retries are exceeded
-                        var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
-                        if (runSummaryUnsafe.Failed == 0)
+                        if (XUnitIntegration.ShouldWaitForExceptionInstrumentation(testOptimization, testCaseMetadata))
                         {
-                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
-                            doRetry = false;
-                        }
-                        else if (runSummaryUnsafe.NotRun > 0)
-                        {
-                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A NotRun test was detected, skipping the remaining executions.");
-                            doRetry = false;
-                        }
-                        else if (remainingTotalRetries < 1)
-                        {
-                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
-                            doRetry = false;
-                        }
-                    }
-
-                    if (doRetry)
-                    {
-                        // check if is the first execution and the dynamic instrumentation feature is enabled
-                        if (isFlakyRetryEnabled && isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
-                        {
-                            // let's wait for the instrumentation of an exception has been done
                             Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: First execution with an exception detected. Waiting for the exception instrumentation.");
-                            await testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
+                            await testOptimization.DynamicInstrumentationFeature!.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
                             Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Exception instrumentation was set or timed out.");
                         }
 
@@ -228,11 +183,23 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                         runSummaryUnsafe.NotRun += innerReturnValueUnsafe.NotRun;
                         runSummaryUnsafe.Time += innerReturnValueUnsafe.Time;
                     }
+                    else if (retryDecision == XUnitRetryExecutionDecision.SuccessfulExecution)
+                    {
+                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
+                    }
+                    else if (retryDecision == XUnitRetryExecutionDecision.NotRun)
+                    {
+                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A NotRun test was detected, skipping the remaining executions.");
+                    }
+                    else if (retryDecision == XUnitRetryExecutionDecision.RetryBudgetExhausted)
+                    {
+                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
+                    }
                 }
                 else
                 {
                     // If we are in the last execution, we write some debug logs
-                    if (isFlakyRetryEnabled && runSummaryUnsafe.Failed == 0)
+                    if (testCaseMetadata.IsFlakyRetry && runSummaryUnsafe.Failed == 0)
                     {
                         Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
                     }
@@ -324,6 +291,15 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
         return returnValue;
     }
+
+    /// <summary>
+    /// Read-only snapshot of remaining ATR budget for pre-close checks (XUnit v3).
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
+    /// This value is observed before retry scheduling decrements budget, so values of 1 or 0 mean no
+    /// further retry can run after the current failed execution.
+    /// </summary>
+    internal static int GetRemainingAtrBudget()
+        => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
 
     private readonly struct TestRunnerState
     {

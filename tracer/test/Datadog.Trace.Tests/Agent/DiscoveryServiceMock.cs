@@ -17,6 +17,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
     public void TriggerChange(
         string configurationEndpoint = "configurationEndpoint",
         string debuggerEndpoint = "debuggerEndpoint",
+        string debuggerV2Endpoint = "debuggerV2Endpoint",
         string diagnosticsEndpoint = "diagnosticsEndpoint",
         string symbolDbEndpoint = "symbolDbEndpoint",
         string agentVersion = "agentVersion",
@@ -25,6 +26,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
         string eventPlatformProxyEndpoint = "eventPlatformProxyEndpoint",
         string telemetryProxyEndpoint = "telemetryProxyEndpoint",
         string tracerFlareEndpoint = "tracerFlareEndpoint",
+        string containerTagsHash = "containerTagsHash",
         bool clientDropP0 = true,
         bool spanMetaStructs = true,
         bool spanEvents = true)
@@ -32,6 +34,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
             new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
+                debuggerV2Endpoint: debuggerV2Endpoint,
                 diagnosticsEndpoint: diagnosticsEndpoint,
                 symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
@@ -40,6 +43,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,
+                containerTagsHash: containerTagsHash,
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents));
@@ -60,6 +64,10 @@ internal class DiscoveryServiceMock : IDiscoveryService
     public void RemoveSubscription(Action<AgentConfiguration> callback)
     {
         Callbacks.Remove(callback);
+    }
+
+    public void SetCurrentConfigStateHash(string configStateHash)
+    {
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

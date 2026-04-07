@@ -1,4 +1,4 @@
-// <copyright file="IastSettings.cs" company="Datadog">
+﻿// <copyright file="IastSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,10 +10,11 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast.Settings;
 
-internal class IastSettings
+internal sealed class IastSettings
 {
     public const string WeakCipherAlgorithmsDefault = "DES,TRIPLEDES,RC2";
     public const string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
@@ -43,9 +44,9 @@ internal class IastSettings
     {
         var config = new ConfigurationBuilder(source, telemetry);
         WeakCipherAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakCipherAlgorithms).AsString(WeakCipherAlgorithmsDefault);
-        WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+        WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
         WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
-        WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+        WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
         Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(false);
         DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(true);
         RequestSampling = config

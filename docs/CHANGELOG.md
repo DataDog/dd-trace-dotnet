@@ -30,6 +30,923 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+## [Release 3.40.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.40.0)
+
+## Summary
+
+* [Runtime Metrics] Enables Runtime Metrics by Default for .NET 6+ (#8267)
+* [Tracing] Add interoperability between the Datadog Baggage API and the OpenTelemetry Baggage API (#7921)
+* Add support for Microsoft.Data.SqlClient 7.x.x (#8346)
+
+## Changes
+
+### Tracer
+* Refactor log directory resolution into smaller methods, add tests (#7255)
+* Adjust Log levels in OltpExporter (#8133)
+* [Metrics] Fixing sync-over-async patterns in DogStatsD Client Fork (#8265)
+* Add _dd.svc_src meta tag to track service name source (#8274)
+* Add process tags to service discovery (#8295)
+* Add "manual" service source (#8302)
+* ServiceNameSource for inferred proxy (#8309)
+
+### CI Visibility
+* [CI Visibility] honor EFD retry mode over ATR (#8288)
+
+### Continuous Profiler
+* [Profiler] Add unit tests for ManagedCodeCache (#8307)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-5317 fix snapshot stackoverflow in collection (#8310)
+* [Dynamic Instrumentation] Add detailed diagnostics for line probe resolution (#8316)
+
+### Fixes
+* More remote config performance improvements (#8241)
+* WCF cleanup and trace context extraction (#8263)
+
+### Data Streams Monitoring
+* Support adding kafka_cluster_id for Confluent.Kafka (#7702)
+* [DSM] Include container tags hash in node hash calculation (#8163)
+
+### Miscellaneous
+* [Tracing] Add interoperability between the Datadog Baggage API and the OpenTelemetry Baggage API (#7921)
+* [Process Tags] Explicit whether the service name is the default one (#8106)
+* Add an `IArrayPool<char>` implementation for vendored Newtonsoft.JSON (#8228)
+* Use `IArrayPool` in more places for JSON (#8236)
+* Remote configuration tests and performance improvements (#8237)
+* Reduce payload size sent by agent in remote config (#8238)
+* [Agent Skill] Rename to `analyze-azdo-build`, add retry support, and more (#8247)
+* [Metrics] Send Diagnostics GC Pause Time as Counter instead of Timer (#8266)
+* [Runtime Metrics] Enables Runtime Metrics by Default for .NET 6+ (#8267)
+* Rename telemetry `GetData` methods to `GetIncrementalData` (#8269)
+* Remove unnecessary use of duck typing in HTTP integrations (#8275)
+* Exclude Otel for MongoDb 3.7 (#8279)
+* Detect whether an app has been trimmed (#8281)
+* [Agent Docs] Clean up `AGENTS.md`: fix stale reference, consolidate structure (#8290)
+* Add some documentation on running system-tests (#8298)
+* Update local smoke testing docs (#8311)
+* [Tracer] Add Component Tag to Quartz Instrumentation (#8315)
+* [AI Agents] Remove plugin settings from shared Claude Code config (#8343)
+* Add support for Microsoft.Data.SqlClient 7.x.x (#8346)
+* Attempt to fix macOS runner native build (#8348)
+
+### Build / Test
+* (CI) Migrating benchmark-serverless CI job to short-lived tokens (#8219)
+* Update Wix to 5.x.x (#8268)
+* Allow generating a snapshot of the MSI contents (#8270)
+* Move running of smoke tests to Nuke (#8271)
+* Enable performance analyzers for Datadog.Trace (#8276)
+* [Test Package Versions Bump] Updating package versions (#8278)
+* Retry ChromeDriver startup in Selenium tests (#8284)
+* Fix Datadog.Trace.Annotations dependency version in Datadog.AzureFunctions nuspec (#8285)
+* Ban SetVersion/SetVersionPrefix/SetVersionSuffix in Nuke Build (#8289)
+* Only allow creating hotfix branches from a tag (#8297)
+* Bump test dependencies and add test.final_status to benchmark exporter (#8301)
+* Update `FeatureFlagsEvaluator` and Debugger `ToUUID` to not violate `CA1850` (#8303)
+* [Test Package Versions Bump] Updating package versions (#8306)
+* Relax concurrent TagsList stress test (#8317)
+* Replace our custom GitHub App Token with `dd-octo-sts` (#8318)
+* Fix `GeneratePackageVersions` so that it correctly respects `IncludePackages` and `ExcludePackages` (#8340)
+
+
+[Changes since 3.39.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.39.0...v3.40.0)
+
+## [Release 3.39.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.39.0)
+
+## Summary
+
+- [Serverless] Create and reparent span for Azure API Management (#7806)
+- [CI Visibility] Support NUnit v4.5.0
+- [Profiler] Support Windows pdb format (#8096)
+- [Profiler] Measure memory consumption (#8134)
+
+## Changes
+
+### Tracer
+* Termination signals fix (#8168)
+* [Code Origin] DEBUG-5199 Reduce per-span allocations and locks (#8197)
+* Add `Base64DecodingStream` (#8226)
+
+### CI Visibility
+* Add support for latest NUnit (#8246)
+
+### ASM
+* [ASM] Ruggerize waf GetKnownAddresses call to try to stop it crashing (#8239)
+
+### Continuous Profiler
+* [Profiler] Support Windows pdb format (#8096)
+* [Profiler] Measure memory consumption (#8134)
+
+### Serverless
+* [tracing] Create and reparent span for Azure API Management (#7806)
+
+### Miscellaneous
+* [Claude][Azure Functions] Add dev/test workflow skill and scripts (#8173)
+* [Claude] Improve `troubleshoot-ci-build` skill with scripts and heuristics (#8181)
+* [crashtracker] Improve crashtracker message (#8182)
+* [Config registry] Add release step for v2 (#8200)
+* [Config registry] Only one yaml for all (#8206)
+* Implement `app-extended-heartbeat` telemetry event (#8227)
+* Attempt to prevent crash when enumerating integration_definitions (#8230)
+* Re-write /analyze-error Claude skill (#8240)
+* Add support for ducktyping private fields and properties  from a base type (#8248)
+* Add more Claude Code files to `.gitignore` (#8249)
+
+### Build / Test
+* Disable Ryuk images (#8208)
+* [CI] Upload system-tests results to Test Optimization (#8214)
+* [Test Package Versions Bump] Updating package versions (#8233)
+* Ensure we publish all nuget packages during release (#8234)
+* Add additional TFMs to benchmarks project (#8243)
+* Ensure docker ready (#8245)
+* Bump the gh-actions-packages group across 3 directories with 3 updates (#8251)
+
+
+[Changes since 3.38.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.38.0...v3.39.0)
+
+## [Release 3.38.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.38.0)
+
+## Summary
+
+- [Test Optimization] Add `test.final_status` tag
+- [Profiler] Improve thread names and IDs
+- [Dynamic Instrumentation] Remove the 100-probe limit
+- [Feature Flags] Update Datadog.FeatureFlags.OpenFeature .NET Framework minimum version to 4.6.2, to match OpenFeature
+- [Tracing] Performance improvements
+
+## Changes
+
+### Tracer
+* Refactoring and improvements to `HttpHeaderHelpers` (#8153)
+* Improve performance of `AspNetCoreResourceNameHelper.SimplifyRouteTemplate` (#8170)
+* Improve performance of `AspNetCoreResourceNameHelper.SimplifyRoutePattern` (#8180)
+* Catch FileNotFoundException when accessing assemblies (#8185)
+* [Logging] Add tag and span information to warning log (#8191)
+* Fix broken build in Rider (#8195)
+* Remove allocations for operation name/service name versioning code (#8196)
+* Improve performance for `UriHelpers.CleanUri` (#8199)
+* Remove the `RedisObfuscationUtil.Obfuscate()` method as it's never used (#8202)
+* Reduce allocations in `HttpRequestUtils.GetUrl()` (#8203)
+* Minor aspnetcore perf improvements (#8210)
+
+### CI Visibility
+* [Test Optimization] Add `test.final_status` tag (#8091)
+* NUnit: emit test.final_status on terminal executions (#8216)
+
+### Continuous Profiler
+* [Profiler] cleanup thread names and IDs (#8169)
+* [Profiler] Fix bug in managed code cache (#8177)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-4689 Remove the 100-probe limit for Dynamic Instrumentation (#7848)
+* [SymDB] Fixed SymDB multipart event.json (#8194)
+
+### Serverless
+* [Azure Functions] Improve local NuGet build script (#8174)
+* [Azure Functions] Improve local NuGet build script, follow-up (#8188)
+
+### Fixes
+* Use built-in .NET runtime types instead of vendored types when possible (#6726)
+* Add `#nullable enable` to UriHelpers (#8166)
+
+### Miscellaneous
+* [Tracing] Instrument static methods defined in non-generic value types (#7920)
+* Make `ValueStringBuilder` available in `.NET Core 3.1` (#8167)
+* Add Claude skill for CI build troubleshooting (#8172)
+* [docs for ai] Add configuration reference docs to `AGENTS.md` (#8201)
+
+### Build / Test
+* [Test Package Versions Bump] Updating package versions (#8176)
+* Fix dd-octo-sts policy used in SLO checks (#8179)
+* [Config Registry] feat: migrate supported-configurations to V2 format (#8183)
+* Add artifacts for SLO checks to enable notifications (#8184)
+* chore(ci) update one-pipeline (#8187)
+* [Build] Support glob patterns in CI build pipeline exclude paths (#8190)
+* Fix incorrect use of namespace breaking the build (#8192)
+* [Test Package Versions Bump] Updating package versions (#8204)
+* Assign area:builds to version bump PRs (#8205)
+* Add retry for IIS ASM tests (#8207)
+* Update `nuget.org` publishing to use trusted publishing (#8209)
+* Skip NUnitTests.SubmitTraces (#8212)
+* Enable Datadog Claude Marketplace plugins (#8218)
+
+
+[Changes since 3.37.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.37.0...v3.38.0)
+
+## [Release 3.37.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.37.0)
+
+## Summary
+Performance improvements and minor fixes.
+
+## Changes
+
+### Tracer
+* Skip telemetry for span sampling rules (#8161)
+
+### CI Visibility
+* [Test Optimization] perf: logging/timing helpers (#8070)
+* [Test Optimization] ci: add run id + config keys (#8071)
+* [Test Optimization] ci: git caching + env improvements (#8072)
+* [Test Optimization] ci: client caching + feature tweaks (#8073)
+* [Test Optimization] Improve GitHub Actions `@ci.job.url` format (#8098)
+
+### ASM
+* [ASM] Added missing `appsec.waf.request` telemetry metric tags (#8113)
+* [ASM] Custom data classification (#8155)
+* [ASM] Remove unused telemetry tag from waf.request metric (#8160)
+
+### Continuous Profiler
+* [Profiler] Add managed code cache (#7956)
+* Do not mark empty frame crashes as complete (#8119)
+* [Profiler] Disable a test on x86 with Managed Code Cache (#8147)
+
+### Debugger
+* [SymDB] DEBUG-4512 Sanitize hoisted 'this' name in symbol upload (#8100)
+
+### Serverless
+* Refactor Azure Functions instrumentation before #7628 (#8079)
+* [Azure Functions] Update Datadog.Serverless.Compat version to 1.2.0 (#8108)
+
+### Fixes
+* Fix `ProcessTags.GetLastPathSegment` for some edge cases, add  tests (#8103)
+* Quick fix: write process tags as array instead of string in DSM payloads (#8114)
+* Fix TypeLoadException exception error (#8157)
+* Fix flaky test metrics tag values (#8099)
+
+### Miscellaneous
+* Read container tags hash from agent (#7893)
+* [Config Registry] 7/8 Integration names to keys  (#7937)
+* chore(ci) update one-pipeline (#8088)
+* Filter more dynamic assemblies (#8120)
+* Add a few nitpicks in `agents.md` (#8125)
+* chore(ci) update one-pipeline (#8130)
+* Update `/analyze-error` and `AGENTS.md` (#8152)
+* Convert Claude commands to skills format (#8158)
+
+### Build / Test
+* Add non-blocking SLO check jobs (#7976)
+* [Test Package Versions Bump] Updating package versions (#8032)
+* reorder `CODEOWNERS` so debugger lines override serverless (#8102)
+* Check for labels in PRs. (#8107)
+* Fix compilation issues under VS 2022 (#8111)
+* Fetch Windows macrobenchmark artifacts from S3 (#8112)
+* [Test Package Versions Bump] Updating package versions (#8116)
+* Increase timeout DiscoveryService Tests (#8118)
+* [Test Package Versions Bump] Updating package versions (#8121)
+* Bump the gh-actions-packages group across 2 directories with 7 updates (#8122)
+* Add a `review-pr` command (#8126)
+* [CI] Add CultureInvariant to a test that was failing locally (#8127)
+* [FFE] Ruggerize integration tests Remote Config retrieval (#8129)
+* [Tests] Remove empty metastruct info from snapshots (#8150)
+
+[Changes since 3.36.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.36.0...v3.37.0)
+
+## [Release 3.36.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.36.0)
+
+## Summary
+
+* [Tracer] Add Cosmos DB CRUD instrumentation (#7837)
+* [Profiler] Fix crash when calling GetAppDomainInfo (#8076)
+* Performance improvements and minor fixes.
+
+## Changes
+
+### Tracer
+* [Tracer] Add Cosmos DB CRUD instrumentation (#7837)
+* [Config Registry] 6/8 Forbid use of System.Environment methods and adapt everywhere (#7932)
+* LifetimeManager .NET10 fix (#7969)
+* [SymDB] DEBUG-4881 Fix type name in TypeProvider (#7990)
+* Various optimizations for Activity handling (#8040)
+* Reduce allocation in `ExposureApi` by serializing to stream (#8051)
+* Fix ASP.NET Core Diagnostic Observer's incorrect Activity copying (#8054)
+* Add a new single-span diagnostic observer for ASP.NET Core (#7964)
+* Don't do `DynamicMethod` based allocation-free enumeration on .NET 10 (#8058)
+* Replace remaining usages of `Environment.Version` (#8069)
+
+### ASM
+* [ASM] Fix RC configs apply order (#8066)
+* [Iast] Fix GetModuleInfo freezes (#7947)
+
+### Continuous Profiler
+* [Profiler] Provide more settings in Runtime Info (#7933)
+* [Profiler] Update benchmarks definitions (#7970)
+* [Profiler] Fix crash when calling GetAppDomainInfo (#8076)
+
+### Debugger
+* Add process tags to runtime metrics & dynamic instrumentation metric probes (#7871)
+* [Dynamic Instrumentation] Add NullByRefArgAndLocal test (#7987)
+* [Dynamic Instrumentation] DEBUG-4142 Subscribe to settings change in the debugger manager (#8048)
+* [Symbol Database] DEBUG-5045 DEBUG-5046 Fix trailing bytes in symbol uploader and performance improvements (#8097)
+* [SymDB] DEBUG-4760 Fix "Not enough space for all closure methods" (#8101)
+* [Dynamic Instrumentation] DEBUG-4871 Added a managed guard in LogLocal and LogArg to detect null byrefs (#7986)
+* [Dynamic Instrumentation] DEBUG-4786 Explicitly track open nodes (#7988)
+* [Dynamic Instrumentation] DEBUG-4877 Stabilize snapshot serializer (#7989)
+* [EL] DEBUG-4878 Fix null equality in expression language (#7991)
+* [EL] DEBUG-4884 Fix null expression when type is struct (#7993)
+* [EL] DEBUG-4879 Support multiple expression compilations (#7994)
+* [Dynamic Instrumentation] DEBUG-5018 Send logs to debugger intake (#8092)
+
+### Serverless
+* [Azure Functions] Update `Datadog.Serverless.Compat` version (#8085)
+* [SVLS-7360] Fix Exception Replay in Lambda (#8043)
+
+### Fixes
+* Remove unused properties from `MockTelemetryAgent` (#8020)
+
+### Feature Flags
+* [FFE] Change fee integration tests codeowner (#8075)
+* [FFE] Fix asserts being ignored in release builds (#8093)
+* [FFE] Cache the condition regexes (#8087)
+* [FFE] Add feature-flagging-and-experimentation-sdk as code owners for FFE code (#8095)
+* [FFE] Feature Flags SDK (#7896)
+* [FFE] Fix exposures url (#8074)
+* [FFE] OpenFeature 2.x shim package (#8077)
+* [FFE] Added support for Value evaluation type in OpenFeature (#8086)
+* [Feature Flags] Fix ISO 8601 date parsing to support variable precision (#8094)
+
+### Miscellaneous
+* Create a more optimized `AspNetCoreResourceNameHelper` (#7966)
+* Don't poll discovery service if we've received an update from the agent recently (#7979)
+* Switch to allocation-free enumeration of `Activity` objects (#8041)
+* Improve `OpenTelemetryTags` population to reduce allocation and work (#8042)
+* chore(ci) update one-pipeline (#8053)
+
+### Build / Test
+* Add benchmarks for single-span diagnostic observer for ASP.NET Core (#7965)
+* Automatic retry ASM integration tests under failure (#8011)
+* [SINT-4550] Use CI Identities in Windows CI Jobs (#8033)
+* Fix build by splitting `FleetInstaller` integration tests into their own test project (#8044)
+* Add missing permissions to release process (#8046)
+* Try disable the pull-request-freshness feature (#8049)
+* AzureServiceBusAPMTests flakiness fix. (#8050)
+* Fix benchmark projects (#8056)
+* Collect logs in arm64 macrobenchmark tests (#8057)
+* fix(tests): make sure we include the codeowners tag on all tests (#8060)
+* Update CODEOWNERS for feature flagging work (#8063)
+* [Build] Clean up `SuppressTfmSupportBuildWarnings` usage (#8078)
+* Fix Batching sink tests flakiness. (#8081)
+* Fix Benchmark tests (#8082)
+* fix benchmark code (#8104)
+
+### Data Streams Monitoring
+* [IBM MQ] Fix queue naming by removing URI prefix (#8080)
+
+
+[Changes since 3.35.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.35.0...v3.36.0)
+
+## [Release 3.35.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.35.0)
+
+## Summary
+
+* [Continuous Profiler] Fix a potential deadlock when running on Alpine
+* [Direct Log Submission] Fix handling of Serilog custom properties
+* [OpenTelemetry] Various performance improvements for Activity integration
+* [Runtime Metrics] Add experimental `System.Diagnostics.Metrics`-based runtime metrics listener
+
+## Changes
+
+### Tracer
+* Small perf tweaks for `AspNetCoreDiagnosticObserver` (#7963)
+* Stop recreating `SpanEventsManager` (#7978)
+* Fix nullable annotations on `Activity` duck types (#8038)
+* Avoid allocating a closure for `ActivityMappingById.GetOrAdd` (#8039)
+* Introduce `ActivityKey` to remove string concatenation (#8037)
+
+### Continuous Profiler
+* Add process tags to profiles (#7715)
+* [Profiler] Fix alpine deadlock 2 (#8021)
+
+### Debugger
+* [Dynamic Instrumentation] Fix DebuggerUploader adaptive flush interval (#7831)
+* [Dynamic Instrumentation] DEBUG-4758 Fix type mismatch with @duration expression (#7844)
+* [EL] DEBUG-4880 Align probe expression compilation with runtime types (#7992)
+* [Dynamic Instrumentation] Disable AppDomain related log flooding on .NET Framework (#8025)
+* [SymDB] Do not send telemetry on transient http error (#7832)
+
+### Fixes
+* Fix `DuckTypeFieldIsReadonlyException` in RabbitMQ v7+ auto-instrumentation (#8006)
+* Fix Serilog direct log submission failing when writing unknown custom properties (#8010)
+
+### Miscellaneous
+* Fix invalid telemetry when using manual config in code with dictionaries (#8022)
+* Add helper methods to `IApiWebRequest` for serializing JSON directly to a `Stream` (#8019)
+* Refacto: Make ContainerMetadata an instance class (#7898)
+* Stop storing tracer setting telemetry forever (#7914)
+* Add /analyze-crash and /analyze-error Claude commands (#7961)
+* Add a `ValueStringBuilder` for .NET 6 (#7962)
+* Add Windows Command Line Best Practices to AGENTS.md (#7980)
+* Use `IApiRequest.PostAsJson<T>` where possible (#8017)
+* Create `System.Diagnostics.Metrics`-based runtime metrics listener (#8027)
+* Support custom `LogEventPropertyValue` values in direct log submission (#8034)
+
+### Build / Test
+* Update one-pipeline version and fix automation (#7941)
+* Fix broken release scripts (#7953)
+* Improve CI resilency against connectivity errors (#7974)
+* Fix OnSupportedFrameworkInSsi_CallsForwarderWithExpectedTelemetry flakiness (#7981)
+* Reorganize serverless `CODEOWNERS` by cloud provider teams (#7985)
+* [Test Package Versions Bump] Updating package versions (#7995)
+* Add arm64 smoke tests for macOS (#7997)
+* Flaky tests: Debugger (#8000)
+* Flaky tests: Tracer (#8001)
+* [Test Package Versions Bump] Updating package versions (#8008)
+* Ensure we run the BenchmarksOpenTelemetryApi benchmarks on master (#8012)
+* Fix race condition in IpcTests (#8013)
+* Retry DownloadLibDatadog (#8014)
+* Bump the gh-actions-packages group across 2 directories with 3 updates (#8026)
+* Allow filtering when running profiler tests (#8029)
+* Update `Activity` benchmarks for stability (#8036)
+
+
+[Changes since 3.34.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.34.0...v3.35.0)
+
+## [Release 3.34.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.34.0)
+
+## Summary
+
+- [Tracing] Fix missing traces when using .NET Core 2.1 (#7955)
+- [Tracing] Don't inject into EventBridge when injection is disabled (#7919)
+- [Tracing] Bug fix for missing traces with some HotChocolate and Grpc integrations
+
+## Changes
+
+### Tracer
+* Don't use global statics where possible (#7939)
+* Don't use `System.Runtime.CompilerServices.Unsafe` in .NET Core 2.1 (#7955)
+
+### Continuous Profiler
+* [profiler] Refactor linux unwinder and remove unused one (#7917)
+
+### Fixes
+* Fix `System.InvalidCastException` in Grpc during Header Removal (#7975)
+* Fix HotChocolate duck typing error (#7930)
+* Restore null scope check to stop EventBridge injection (#7919)
+* fix(DSM): Fix race condition on DataStreamsWriter disposal (#7968)
+
+### Miscellaneous
+* [Profiler/Tracer] Bump to libdatadog v24.0.2 (#7560)
+* bump libdatadog version to v25 (#7971)
+* Downgrade DSM flush shutdown log from Error to Warning (#7984)
+* fix bug where process tags were never initialized for telemetry (#7954)
+
+### Build / Test
+* Add some documentation on updating Windows GitLab image for CI (#7782)
+* [Test Package Versions Bump] Updating package versions (#7942)
+* Update microbenchmarks to enable standard BP PR comments (#7952)
+* Pre-cache reference assemblies as package references in analyzers tests (#7959)
+* Add PR-level performance quality gates (#7967)
+* [Github] Add permission for the apm-sdks-benchmarks repo (#7972)
+* Fix sealed analyzer, and fix regressions (#7973)
+* Bump memory limit slightly (#7977)
+* [Test Package Versions Bump] Updating package versions (#7983)
+
+
+[Changes since 3.33.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.33.0...v3.34.0)
+
+## [Release 3.33.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.33.0)
+
+## Summary
+
+* Hangfire Auto Instrumentation (#6904)
+* Add support for npgsql 10 (#7855)
+* Add support for RedisServiceStack v10 (#7903)
+* [Test Optimization] - Add support for BenchmarkDotNet 0.15.x (#7909)
+* [Debugger-Test Optimization] Add agent-less support to ER (#7859)
+* Implement Serverless Service Representation (SSR) in AWS Lambda (#7850)
+* Add Defender processes to exclusion list (#7925)
+* Fixing DSM flush logic & CPU usage (#7827)
+
+## Changes
+
+### Tracer
+* [Dynamic Instrumentation] Fixed race condition with ProbeStatusPoller dispose (#6409)
+* Create `SettingsManager` for managing mutable settings and ExporterSettings (#7695)
+* Remove properties from `TracerSettings` which can change at runtime (#7723)
+* Stop using `Tracer.Instance` if we don't need to (#7744)
+* Fixing DSM flush logic & CPU usage (#7827)
+* Restructure `RuntimeMetricsWriter` for .NET Framework to fix `StackOverflowException` (#7830)
+* Update documentation to account for `MutableSettings` (#7867)
+* Nit: cache is ready state for profiler in ProfilerStatus (#7873)
+* Reduce allocations in `TraceContext` (#7874)
+* Small perf improvement for some `TagList` implementations (#7887)
+* Add support for RedisServiceStack v10 (#7903)
+* Add Defender processes to exclusion list (#7925)
+* Add testing for Microsoft.Data.Sqlite v10 (#7936)
+* Set `DataPipelineEnabled=0` by default (#7943)
+
+### CI Visibility
+* [Test Optimization] Add `branch` parameter to test management API request (#7891)
+* [Test Optimization] - Add support for BenchmarkDotNet 0.15.x (#7909)
+
+### ASM
+* [AAP] Update waf and add support for security_response_id (#7807)
+* [AAP] Rugerize waf encoder disposal (#7863)
+
+### Continuous Profiler
+* [Profiler] Generate heap snapshot (#7681)
+* [Profiler] Update liveheap handle limit (#7872)
+
+### Debugger
+* [Debugger-Test Optimization] Add agent-less support to ER (#7859)
+
+### Serverless
+* Implement Serverless Service Representation (SSR) in AWS Lambda (#7850)
+* [AWS Lambda] Cleanup from PR#7835 (#7858)
+
+### Fixes
+* Fix `DatadogLoggingScope` sometimes injecting incorrect values for `ILogger` logs injection (#7880)
+
+### Miscellaneous
+* [tracing] hangfire autoinstrumentation (#6904)
+* [ConfigRegistry] 4/6 Aliases handling and analyzers to prevent using any string key (#7689)
+* [ConfigRegistry] 3/5 Generate ConfigurationKeys with source generator (#7698)
+* Handle changes to `MutableSettings` and `ExporterSettings` without rebuilding (#7724)
+* Add process tags to remote config (#7840)
+* Simplify dataflow synchronization (#7853)
+* Add support for npgsql 10 (#7855)
+* Mark all classes as `sealed` or `static` (#7879)
+* Fix serialization allocation in .NET Framework and < .NET Core 3.1 (#7884)
+* [IAST] Use recursive_mutex instead of CS and mutex (#7890)
+* [Config Registry] 5/7 Replace manual ConfigurationKeys by generated ones in the whole solution (#7931)
+* [Config Registry] Fix source generators: downgrade System.text.json version (#7944)
+
+### Build / Test
+* Fix benchmark flakiness (#7790)
+* [Test Package Versions Bump] Updating package versions (#7824)
+* Set benchmarking jobs as interruptible when outside master (#7841)
+* Add standard output and error when a test fails and does not display it (#7847)
+* Avoid SQL connection flakines in integration tests (#7854)
+* Bump the version of `Microsoft.CodeAnalysis.CSharp` and others used in our internal analyzers (#7860)
+* Fail the gitlab job if we fail to upload the artifacts (#7861)
+* [Azure Functions] Fix Azure Functions NuGet script for Linux and macOS (#7864)
+* Add more cleanup to benchmarks (#7865)
+* Benchmark improvements (#7868)
+* Add benchmark for two scopes (#7869)
+* Fix download artifacts link in logs. Improve logging. (#7870)
+* Increase retries in Stack Exchange Submit traces test (#7875)
+* Update .gitlab/one-pipeline.locked.yaml (#7876)
+* Add SYS_PTRACE capabilities for core dumps (#7877)
+* Add "Types should be sealed" analyzer (#7878)
+* Stop testing .NET 8 on PRs (#7881)
+* Fix (and extend) `AgentWriter` benchmark (#7882)
+* Bump the gh-actions-packages group across 4 directories with 8 updates (#7888)
+* Try to fix dependabot (#7895)
+* [Test Package Versions Bump] Updating package versions (#7902)
+* Add missing assembly for <.NET Core 3.1 (#7904)
+* Only pull docker images if we need to (#7910)
+* Encode changes to vendored code added in #7884 (#7913)
+* Add data-streams-monitoring to CODEOWNERS file (#7915)
+* Try to fix dependabot again (#7918)
+* Bump the gh-actions-packages group across 3 directories with 5 updates (#7923)
+* Generate GH tokens with dd-octo-sts for Windows macrobenchmarks (#7927)
+* Fix release GitHub Actions (#7935)
+* Fix usages of `new Tracer()` which are never cleaned up (#7938)
+* add `CLAUDE.local.md` to `.gitignore` (#7945)
+
+
+[Changes since 3.32.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.32.1...v3.33.0)
+
+## [Release 3.32.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.32.0)
+
+## Summary
+
+- [Tracer] Fix orphaned spans in WCF traces
+- [AWS Lambda] Add request-id as header to Lambda start/end invocation
+
+## Changes
+
+### Tracer
+* Add process tags to client-side stats (#7791)
+
+### CI Visibility
+* Avoid allocating and preparing CI Visibility stuff in startup hot path (#7821)
+
+### Debugger
+* Add process tags to dynamic instrumentation snapshots (#7839)
+
+### Serverless
+* Respect baggage in Azure messaging integrations (#7818)
+* [AWS Lambda] Add request-id as header to Lambda start/end invocation (#7835)
+* Add `#nullable enable` and fix `NullReferenceException` in DynamoDB (#7849)
+
+### Fixes
+* Fix orphaned spans in WCF traces (#7842)
+
+### Data Streams Monitoring
+* Add process tags to DSM (#7775)
+
+### Miscellaneous
+* Add process tags to telemetry (#7780)
+* [Docs] fix CLI commands to download logs from AAS apps (#7802)
+
+### Build / Test
+* Fix microbenchmark artifacts (#7816)
+* Add testing for latest Microsoft.Extensions.Telemetry version (#7817)
+* Fix broken CI when running tests against a specific sample (#7819)
+* Publish native symbols in all DCs (#7828)
+* Update .gitlab/one-pipeline.locked.yaml (#7836)
+* Add support for VS 2026 to Nuke detection (#7843)
+
+
+[Changes since 3.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.31.0...v3.32.0)
+
+## [Release 3.31.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.31.0)
+
+## Summary
+
+* Add support for .NET 10
+* Add support for `MongoDB.Driver` v3.5+
+
+## Changes
+
+### Tracer
+* Use RuntimeHelpers.GetHashCode in IndexObject (#7678)
+* Removing V1 tags class from AWS integrations (#7746)
+* Add support for `MongoDB.Driver` v3.5+ (#7808)
+* Compress telemetry payload (#7645)
+
+### Continuous Profiler
+* [Crashtracker] Add module path to frames (#7642)
+
+### Serverless
+* [Docs] Add Azure Functions architecture docs and PowerShell debugging tools (#7639)
+
+### Fixes
+* Fix null character termination in CString abstraction. (#7785)
+* Add fix for persistent `Process.Start` version-conflict issue (#7789)
+* Protect against null LoggingEvent and Properties in log4net (#7735)
+* Fix `InvalidOperationException` in Baggage handling in Azure Functions (#7810)
+
+### Build / Test
+* Add support for .NET 10 GA (#7804)
+* Improve execution benchmark comment post (#7570)
+* Split `create_draft_release` worfklow into hotfix / normal (#7601)
+* Limit Dependabot to 1 open PR for our integration bumps (#7675)
+* [Test Package Versions Bump] Updating package versions (#7740)
+* Bump the gh-actions-packages group across 3 directories with 5 updates (#7748)
+* [ASM] Fix Asm benchmark and stop-reinitializing tracer (#7750)
+* Improve aerospike sample to avoid timeouts (#7751)
+* [Test Package Versions Bump] Updating package versions (#7757)
+* Bump softprops/action-gh-release from 2.3.3 to 2.4.1 in the gh-actions-packages group across 1 directory (#7758)
+* Fix (more) EventHubs flaky batch tests (#7768)
+* Increase debugger serialize timeout for unit tests (#7769)
+* Use `ScopedTracer` in tests (#7770)
+* Fix RedirectInput test flakyness (#7771)
+* Replace macos-13 with macos-14 in CI (#7778)
+* Add partial trust/legacy CAS detection to dd-trace and dd-dotnet (#7779)
+* Avoid exceptions in ProcessBasicChecksTests (#7781)
+* Tweak CI variables (#7784)
+* [Test Package Versions Bump] Updating package versions (#7794)
+* Fix GRPC flaky tests. (#7800)
+* [Test Package Versions Bump] Updating package versions (#7812)
+* Cosmos DB partial integration testing (#7752)
+* Dispose `ManualResetEventSlim` instances in tests (#7797)
+
+### Miscellaneous
+* Add `DD_AGENT_FEATURE_POLLING_ENABLED` setting (#7616)
+* Add helper `DictionaryExtensions.SequenceEqual` (#7722)
+* Improve exception redaction to handle Aggregate Exceptions better (#7754)
+* [Docs] Small developer docs clean-up (#7799)
+* [Logs] Fix OTLP Logs timestamp during serialization (#7814)
+* Remove more `[PublicApi]` usages and unused code (#7786)
+* Remove unused `PublicApiUsage` members (#7787)
+* Skip sending unactionable performance counters log to telemetry (#7753)
+* Repurpose `PublicApiAnalyzer` as `InternalForTestingAnalyzer`  (#7788)
+
+[Changes since 3.30.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.30.0...v3.31.0)
+
+## [Release 3.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.30.0)
+
+## Summary
+
+- [Tracer] Add support for Azure Event Hubs
+- [Test Optimization] Add support for MSTest 4.x.x
+- [OpenTelemetry] OTLP Logs API Support
+- [Continuous Profiler] Performance improvements
+
+## Changes
+
+### Tracer
+* [Tracer] Add Azure Event Hubs instrumentation  (#7620)
+* [OTEL] OTLP Logs API Support (#7680)
+* [Tracer] Add new process tags (#7651)
+* small follow up on process tags (#7743)
+* Removing Forgiven Nulls (#7745)
+* Add fix for whitespace in exporter settings and metrics URL (#7747)
+* Fix ad-hoc use of `TracerSettings` to use `MutableSettings` where appropriate (#7543)
+* Fix calls to `IsIntegrationEnabled()`,  `IsErrorStatusCode()`, and `GetIntegrationAnalyticsSampleRate()` (#7544)
+* Enforce that you can't update exporter settings to point to UDS on Windows (#7721)
+
+### CI Visibility
+* [Test Optimization] MsTest support updates (#7663)
+
+### Continuous Profiler
+* [Profiler] Perf improvements + cleanup (#7696)
+* [crashtracker] Fix native and managed callstacks merge (#7703)
+* [Profiler] Don't take tracer stable config notification when kill switch detected (#7705)
+
+### Fixes
+* Protect against `claimsPrincipal` being `null` (#7719)
+
+### Build / Test
+* [Config Registry] 1/5 Add gitlab step and json configuration file and yaml for doc (#7548)
+* managed loader: refactor for testability, add unit tests (#7594)
+* Update to .NET RC2 (#7659)
+* [Test Package Versions Bump] Updating package versions (#7673)
+* Run dsm-throughput macrobenchmarks on master push & schedule (#7686)
+* Update `.gitignore` to ignore local Claude Code settings (#7691)
+* Comment out new test agent on Windows (#7692)
+* [Test Package Versions Bump] Updating package versions (#7693)
+* Remove CodeQL workflow (#7701)
+* [Test Package Versions Bump] Updating package versions (#7712)
+* Update Linux VMs (#7718)
+* [Test Package Versions Bump] Updating package versions (#7726)
+* Split integration tests in groups (#7733)
+* [Tracer] Fix EventHubs flaky batch test (#7734)
+
+### Miscellaneous
+* [onboarding] make `DD_DOTNET_TRACER_HOME` optional in managed loader (#7568)
+* Revert "make `DD_DOTNET_TRACER_HOME` optional in managed loader (#7568)" (#7704)
+* [Config registry] 2/5 Reorganize keys, split config keys and platform keys (#7688)
+* [Docs] Improve docs on troubleshooting CI failures  (#7707)
+* Add VBCSCompiler to exclude list (#7694)
+
+[Changes since 3.29.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.29.0...v3.30.0)
+
+## [Release 3.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.29.0)
+
+## Summary
+
+- [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+- [Azure Functions] Add aas.site.kind tag to agentless logs (https://github.com/DataDog/dd-trace-dotnet/pull/7623)
+- [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+- Various other fixes and improvements
+
+## Changes
+
+### Tracer
+* Rebuild `MutableSettings` on dynamic config changes (#7525)
+* Move `DefaultServiceName` to `MutableSettings` (#7530)
+* Simplify `PerTraceSettings.GetServiceName()` (#7532)
+* [PDB] Handle exception during opening a pdb file (#7573)
+
+### CI Visibility
+* [TestOptimization] Catch IOException on the Git folder discovery (#7658)
+
+### Continuous Profiler
+* [crashtracker/profiler] Notify profiler the application is crashing (#7657)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-3695 Return correct RC apply details (#6890)
+* [Dynamic Instrumentation] Skip some debugger tests on .NET 8 or greater (#7631)
+* Minor fix in DynamicConfigurationManager update process (#7664)
+* [Dynamic Instrumentation] DEBUG 3794 Stabilize snapshot enumerable serializing (#6910)
+* [Dynamic Instrumentation] DEBUG-3959 Guard against undefined value expression (#7008)
+* [Debugger Default-On] DEBUG-4341 Forward snapshots to debugger intake (#7388)
+* [Dynamic Instrumentation] Ensure DI metric probe does not send automatic telemetry (#7621)
+* [Dynamic Instrumentation] Remove reference types value property from snapshot (#7635)
+
+### Serverless
+* [Azure Functions] Add `aas.site.kind` tag to agentless logs (#7623)
+*  [Azure Functions] Skip instrumenting orchestrator functions (#7640)
+
+### Miscellaneous
+* [OTEL] Metrics API Support - Metrics Reader & OTLP Exporter (#7514)
+* [internal docs] Add CI troubleshooting documentation (#7634)
+* [OTEL] Moves OTelMetrics Under OpenTelemetry.Metrics (#7638)
+* Minor refactor and added tests for `DynamicConfigurationManager` (#7652)
+* [OTEL] Vendoring OtlpGrpcExportClient And Enabling OTLP Metrics gRPC Tests (#7666)
+* [Code Origin] Add debug logs to code origin for entry span (#7612)
+* [Code Origin] Performance: Add Assembly Filter Caching for Code Origin (#7667)
+* Small OpenTelemetry Metrics fixes and optimizations (#7632)
+
+### Build / Test
+* Optimize `AGENTS.md` with contextual load guidance (#7625)
+* Bump timeit to v0.4.6 (#7647)
+* Improve and simplify the microbenchmarks CI setup (#7613)
+* Capture Exception when sending metrics (#7614)
+* [Test Package Versions Bump] Updating package versions (#7617)
+* Fix profiler_execution_benchmarks flakiness (#7622)
+* Fix the code freeze action (#7626)
+* Revert "[SINT-4157] sanitise ultimate-pipeline.yml" (#7627)
+* Increase Docker run step resiliency for Profiler integration tests (#7629)
+* [SINT-4157] sanitise ultimate-pipeline.yml (#7630)
+* [Azure Functions] Add `Build-AzureFunctionsNuget.ps1` helper script for local developement (#7633)
+* Update `CODEOWNERS` for consistent ownership of managed loader files (#7643)
+* [Test Package Versions Bump] Updating package versions (#7644)
+* Clone the prod dd-trace-dotnet microbenchmark branch for microbenchmarks (#7646)
+* Fix CleanObjFiles job (#7648)
+* [Test Package Versions Bump] Updating package versions (#7655)
+* [OTEL] Switches OTLP Tests To dd-apm-test-agent Instead of MockTracerAgent (#7656)
+* Fix nuget installer smoke tests (#7619)
+
+
+[Changes since 3.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.28.0...v3.29.0)
+
+## [Release 3.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.28.0)
+
+## Summary
+
+* [Tracer] Add Azure Service Bus instrumentation (#7413)
+* [Tracer] add OTEL quartz autoinstrumentation (#7192)
+* [Tracer] Add Azure Service Bus batching support  (#7553)
+* [Test Optimization] Failed Test Replay (#7102)
+* [AAP] Enable by default API Security Endpoints collection when appsec enabled (#7569)
+* [Tracer] Fix for sending duplicate logs when using Agentless Logging in Azure Function host (#7383)
+* [Code Origin] Disable code origin for exit spans (#7610)
+* Revert "Revert "[Profiler] Make `timer_create`-based CPU profiler default (#7322)"" (#7578)
+
+## Changes
+
+### Tracer
+* No longer forgive `spans.Array` from being `null` (#6878)
+* Update Datadog.Sketches vendored code (#7299)
+* [Debugger Default-On] DEBUG-3322 Debugger in-product enablement (#7366)
+* Extract `MutableSettings` from `TracerSettings` (#7522)
+* Protect against UriFormatException (#7550)
+* Update the `ProfilerSettings` enablement to ignore SSI (#7557)
+* [DI-EL] Add debug log in case evaluation result is null and it shouldn't be null (#7558)
+* [SymbDB] Ignore canceled exception (#7572)
+* [ER]- Fix ER system tests (#7576)
+
+### CI Visibility
+* [Test Optimization] Failed Test Replay (#7102)
+* fix(ci): recycle stale ServicePoint connections (#7593)
+
+### ASM
+* [AAP] Enable by default API Security Endpoints collection when appsec enabled (#7569)
+
+### Continuous Profiler
+* [Profiler] Leverage new .NET 10 allocation sampling (#6930)
+* [Profiler] Support Stable Config (#7287)
+* Update profiler availability helper to assume Windows always sets the env var (#7555)
+* [Profiler] Add Index to samples and build index vector for libdatadog (#7559)
+* Revert "Revert "[Profiler] Make `timer_create`-based CPU profiler default (#7322)"" (#7578)
+
+### Debugger
+* [Debugger Default-On] DEBUG-4406 Support multi-config merging with priorities (#7536)
+* [Debugger Default-On] Add debuger dynamic configurations keys (#7595)
+* [Dynamic Instrumentation] Skip dynamic config test net8 (#7608)
+* [Code Origin] Disable code origin for exit spans (#7610)
+
+### Serverless
+* [Azure Functions] Add Nuke targets to build local nuget for testing (#7537)
+
+### Fixes
+* Set "component" tag for ASP.NET (#6010)
+* Fix for sending duplicate logs when using Agentless Logging in Azure Function host (#7383)
+* Remove duplicate "public" APIs and `Internal` prefix/suffixes (#7546)
+* Fix log directory location for managed code in Windows nano server (#7561)
+
+### Miscellaneous
+* Fallback to `OperationName` instead of `string.Empty` for ElasticSearch `ResourceName` (#5610)
+* [tracing] add OTEL quartz autoinstrumentation (#7192)
+* [Tracer] Add Azure Service Bus instrumentation (#7413)
+* Add a code fix provider for invalid DuckType null checks (#7448)
+* [OTEL] Metrics API Support - Collection Implementation (#7511)
+* [Tracer] Add Azure Service Bus batching support  (#7553)
+* [crashtracking] Change Crashtracking filtering default value (#7598)
+* add `CLAUDE.md`, updates to `AGENTS.md` (#7602)
+* Add performance, testing, logging, Azure Functions, and glossary to `AGENTS.md` (#7609)
+
+### Build / Test
+* Replace `code-freeze/action.yml` with `pr-status-updater/action.yml` (#6702)
+* Build and run tests against .NET 10 RC 1 (#7499)
+* [Test Package Versions Bump] Updating package versions (#7515)
+* Remove the guards around M.D.SqlClient V4 in tests (#7541)
+* Skip failing TraceAnnotationsTests in .NET 6.0 (#7551)
+* Skip failing TraceAnnotationsTests in .NET 6.0 (#7552)
+* Fix flakiness in the `TraceAnnotation` tests (#7554)
+* Update CODEOWNERS (rename apm-sdk-api to apm-sdk-capabilities) (#7563)
+* Fix smoke tests for nuget tool (#7564)
+* Output MSBuild errors when publishing (#7566)
+* Improve and simplify the microbenchmarks CI setup (#7571)
+* [SINT-2273] update workflow steps (#7579)
+* [SINT-4157] sanitise ultimate-pipeline.yml (#7582)
+* Escape all paths in DownloadLibDatadog (#7583)
+* exclude api keys from sample app logs (#7592)
+* [SINT-4157] improve workflow (#7599)
+* Bump the gh-actions-packages group across 2 directories with 5 updates (#7600)
+* Mark FlakyRetriesWithExceptionReplay as flaky (#7603)
+* Increase the Gitlab Build timeout (#7604)
+* Update .gitlab/one-pipeline.locked.yaml (#7605)
+* Revert "Improve and simplify the microbenchmarks CI setup" (#7606)
+
+
+[Changes since 3.27.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.27.0...v3.28.0)
+
 ## [Release 3.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.27.0)
 
 ## Summary

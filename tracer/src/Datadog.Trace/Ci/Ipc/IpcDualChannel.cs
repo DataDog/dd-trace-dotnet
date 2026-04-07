@@ -1,4 +1,4 @@
-// <copyright file="IpcDualChannel.cs" company="Datadog">
+﻿// <copyright file="IpcDualChannel.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,8 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -14,9 +15,9 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal abstract class IpcDualChannel : IDisposable
 {
-    private readonly IChannel _recvChannel;
+    private readonly CircularChannel _recvChannel;
     private readonly IChannelReader _recvChannelReader;
-    private readonly IChannel _sendChannel;
+    private readonly CircularChannel _sendChannel;
     private readonly IChannelWriter _sendChannelWriter;
     private readonly JsonSerializer _jsonSerializer;
     private Action<object>? _callback;
@@ -51,7 +52,7 @@ internal abstract class IpcDualChannel : IDisposable
     {
         using var memoryStream = new MemoryStream(data.Array!, data.Offset, data.Count);
         using var reader = new StreamReader(memoryStream, Util.EncodingHelpers.Utf8NoBom);
-        using var jsonReader = new JsonTextReader(reader);
+        using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
         var message = _jsonSerializer.Deserialize(jsonReader);
         if (message != null)
         {
@@ -67,7 +68,7 @@ internal abstract class IpcDualChannel : IDisposable
             using var memoryStream = new MemoryStream();
             using (var writer = new StreamWriter(memoryStream, Util.EncodingHelpers.Utf8NoBom))
             {
-                using var jsonWriter = new JsonTextWriter(writer);
+                using var jsonWriter = new JsonTextWriter(writer) { ArrayPool = JsonArrayPool.Shared };
                 _jsonSerializer.Serialize(jsonWriter, message);
             }
 
@@ -87,7 +88,7 @@ internal abstract class IpcDualChannel : IDisposable
         _callback = null;
     }
 
-    private class CustomSerializationBinder : ISerializationBinder
+    private sealed class CustomSerializationBinder : ISerializationBinder
     {
         public Type BindToType(string? assemblyName, string typeName)
         {

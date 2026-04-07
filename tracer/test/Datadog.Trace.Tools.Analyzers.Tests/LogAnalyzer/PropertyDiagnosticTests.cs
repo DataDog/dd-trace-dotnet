@@ -3,15 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+extern alias AnalyzerCodeFixes;
+
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Analyzers.LogAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
+using ExceptionPositionCodeFixProvider = AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.LogAnalyzer.ExceptionPositionCodeFixProvider;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.LogAnalyzer.LogAnalyzer,
-    Datadog.Trace.Tools.Analyzers.LogAnalyzer.ExceptionPositionCodeFixProvider,
+    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.LogAnalyzer.ExceptionPositionCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests.LogAnalyzer;

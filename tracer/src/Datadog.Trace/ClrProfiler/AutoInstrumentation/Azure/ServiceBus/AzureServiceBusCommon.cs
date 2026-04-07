@@ -1,4 +1,4 @@
-// <copyright file="AzureServiceBusCommon.cs" company="Datadog">
+﻿// <copyright file="AzureServiceBusCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,12 +13,13 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
-    internal class AzureServiceBusCommon
+    internal static class AzureServiceBusCommon
     {
         private static readonly ConditionalWeakTable<object, object?> ApplicationPropertiesToMessageMap = new();
 
@@ -115,23 +116,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             IEnumerable<SpanLink>? spanLinks)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
                 return new CallTargetState(null);
             }
 
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
+            var tags = perTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
 
             tags.MessagingDestinationName = entityPath;
             tags.MessagingOperation = operationName;
             tags.MessagingSystem = "servicebus";
-            tags.InstrumentationName = "AzureServiceBus";
 
-            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureServiceBus);
             var scope = tracer.StartActiveInternal(
                 "azure_servicebus." + operationName,
                 tags: tags,
                 serviceName: serviceName,
+                serviceNameSource: serviceNameSource,
                 links: spanLinks);
             var span = scope.Span;
 
@@ -170,6 +172,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             {
                 tags.NetworkDestinationPort = networkDestinationPort;
             }
+
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
 
             return new CallTargetState(scope);
         }

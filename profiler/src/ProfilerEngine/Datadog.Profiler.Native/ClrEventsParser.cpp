@@ -41,11 +41,13 @@ void ClrEventsParser::LogGcEvent(
 ClrEventsParser::ClrEventsParser(
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
-    IGCSuspensionsListener* pGCSuspensionsListener)
+    IGCSuspensionsListener* pGCSuspensionsListener,
+    IGCDumpListener* pGCDumpListener)
     :
     _pAllocationListener{pAllocationListener},
     _pContentionListener{pContentionListener},
-    _pGCSuspensionsListener{pGCSuspensionsListener}
+    _pGCSuspensionsListener{pGCSuspensionsListener},
+    _pGCDumpListener{pGCDumpListener}
 {
     ResetGC(_gcInProgress);
     ResetGC(_currentBGC);
@@ -69,7 +71,10 @@ void ClrEventsParser::ParseEvent(
     ULONG cbEventData,
     LPCBYTE eventData)
 {
-    if (KEYWORD_GC == (keywords & KEYWORD_GC))
+    if (
+        (KEYWORD_GC == (keywords & KEYWORD_GC)) ||
+        (KEYWORD_GCHEAPDUMP == (keywords & KEYWORD_GCHEAPDUMP))  // GCBulkXXX events are treated as GC events
+        )
     {
         ParseGcEvent(timestamp, id, version, cbEventData, eventData);
     }
@@ -240,6 +245,47 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             payload.AllocationAmount64);
 
         return;
+    }
+
+    // GC dump related events
+    if (id == EVENT_GC_BULK_NODE)
+    {
+        // get the list of objects in the GC heap dump
+        LogGcEvent("OnGCBulkNode");
+
+        if (_pGCDumpListener != nullptr)
+        {
+            GCBulkNodePayload payload{0};
+            ULONG offset = 0;
+            if (!EventsParserHelper::Read<GCBulkNodePayload>(payload, pEventData, cbEventData, offset))
+            {
+                return;
+            }
+
+            // sanity check
+            _pGCDumpListener->OnBulkNodes(
+                payload.Index,
+                payload.Count,
+                (GCBulkNodeValue*)(pEventData + offset));
+        }
+    }
+    else if (id == EVENT_GC_BULK_EDGE)
+    {
+        // get the list of references between objects in the GC heap dump
+        LogGcEvent("OnGCBulkEdge");
+
+        if (_pGCDumpListener != nullptr)
+        {
+            GCBulkEdgePayload payload{0};
+            ULONG offset = 0;
+            if (!EventsParserHelper::Read<GCBulkEdgePayload>(payload, pEventData, cbEventData, offset))
+            {
+                _pGCDumpListener->OnBulkEdges(
+                    payload.Index,
+                    payload.Count,
+                    (GCBulkEdgeValue*)(pEventData + offset));
+            }
+        }
     }
 
     // the rest of events are related to garbage collections lifetime
@@ -480,11 +526,12 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
     std::chrono::nanoseconds endTimestamp,
     uint64_t gen2Size,
     uint64_t lohSize,
-    uint64_t pohSize)
+    uint64_t pohSize,
+    uint32_t memPressure)
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        LogGcEvent("OnGarbageCollectionEnd: ", number, " ", generation, " ", reason, " ", type);
+        LogGcEvent("OnGarbageCollectionEnd: #", number, " gen", generation, " ", reason, " ", type, " ", memPressure, "%");
 
         pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
@@ -497,7 +544,8 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
             endTimestamp,
             gen2Size,
             lohSize,
-            pohSize);
+            pohSize,
+            memPressure);
     }
 }
 
@@ -525,6 +573,7 @@ void ClrEventsParser::ResetGC(GCDetails& gc)
     gc.gen2Size = 0;
     gc.lohSize = 0;
     gc.pohSize = 0;
+    gc.memPressure = 0;
 }
 
 void ClrEventsParser::InitializeGC(std::chrono::nanoseconds timestamp, GCDetails& gc, GCStartPayload& payload)
@@ -541,6 +590,7 @@ void ClrEventsParser::InitializeGC(std::chrono::nanoseconds timestamp, GCDetails
     gc.gen2Size = 0;
     gc.lohSize = 0;
     gc.pohSize = 0;
+    gc.memPressure = 0;
 }
 
 void ClrEventsParser::OnGCTriggered()
@@ -623,7 +673,8 @@ void ClrEventsParser::OnGCRestartEEEnd(std::chrono::nanoseconds timestamp)
             timestamp,
             gc.gen2Size,
             gc.lohSize,
-            gc.pohSize);
+            gc.pohSize,
+            gc.memPressure);
         ResetGC(gc);
     }
 }
@@ -641,7 +692,6 @@ void ClrEventsParser::OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t
     gc.gen2Size = gen2Size;
     gc.lohSize = lohSize;
     gc.pohSize = pohSize;
-
     if (gc.HasGlobalHeapHistoryBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
@@ -658,7 +708,8 @@ void ClrEventsParser::OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t
             timestamp,
             gc.gen2Size,
             gc.lohSize,
-            gc.pohSize);
+            gc.pohSize,
+            gc.memPressure);
         ResetGC(gc);
     }
 }
@@ -673,6 +724,7 @@ void ClrEventsParser::OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, 
         return;
     }
     gc.HasGlobalHeapHistoryBeenReceived = true;
+    gc.memPressure = payload.MemPressure;
 
     // check if the collection was compacting
     gc.IsCompacting =
@@ -694,7 +746,8 @@ void ClrEventsParser::OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, 
             timestamp,
             gc.gen2Size,
             gc.lohSize,
-            gc.pohSize);
+            gc.pohSize,
+            payload.MemPressure);
         ResetGC(gc);
     }
 }

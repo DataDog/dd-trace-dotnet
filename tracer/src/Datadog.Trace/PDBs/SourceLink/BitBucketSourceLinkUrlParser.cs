@@ -1,4 +1,4 @@
-// <copyright file="BitBucketSourceLinkUrlParser.cs" company="Datadog">
+﻿// <copyright file="BitBucketSourceLinkUrlParser.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,11 +6,11 @@
 #nullable enable
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink
 {
-    internal class BitBucketSourceLinkUrlParser : SourceLinkUrlParser
+    internal sealed class BitBucketSourceLinkUrlParser : SourceLinkUrlParser
     {
         /// <summary>
         /// Extract the git commit sha and repository url from a BitBucket SourceLink mapping string.
@@ -27,14 +27,45 @@ namespace Datadog.Trace.Pdb.SourceLink
 
             try
             {
-                var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-                if (!uri.OriginalString.StartsWith(@"https://api.bitbucket.org/2.0/repositories/") || segments.Length < 6 || !IsValidCommitSha(segments[5]))
+                if (!uri.OriginalString.StartsWith(@"https://api.bitbucket.org/2.0/repositories/"))
                 {
                     return false;
                 }
 
-                repositoryUrl = $"https://bitbucket.org/{segments[2]}/{segments[3]}";
-                commitSha = segments[5];
+                ReadOnlySpan<char> org = default;
+                ReadOnlySpan<char> repo = default;
+                ReadOnlySpan<char> sha = default;
+                var segmentCount = 0;
+
+                foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+                {
+                    ReadOnlySpan<char> span = segment;
+                    if (span.IsEmpty)
+                    {
+                        continue;
+                    }
+
+                    switch (segmentCount)
+                    {
+                        case 2: org = span; break;
+                        case 3: repo = span; break;
+                        case 5: sha = span; break;
+                    }
+
+                    segmentCount++;
+                }
+
+                if (segmentCount < 6 || !IsValidCommitSha(sha))
+                {
+                    return false;
+                }
+
+#if NET6_0_OR_GREATER
+                repositoryUrl = $"https://bitbucket.org/{org}/{repo}";
+#else
+                repositoryUrl = $"https://bitbucket.org/{org.ToString()}/{repo.ToString()}";
+#endif
+                commitSha = sha.ToString();
                 return true;
             }
             catch (Exception ex)

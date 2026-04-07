@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [UsesVerify]
 [Collection(nameof(KafkaTests.KafkaTestsCollection))]
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "1")]
 public class DataStreamsMonitoringKafkaTests : TestHelper
 {
     public DataStreamsMonitoringKafkaTests(ITestOutputHelper output)
@@ -77,6 +78,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         var topicSuffix = $"{nameof(SubmitsDataStreams)}-{(enableConsumerScopeCreation ? "1" : "0")}-{(enableLegacyHeaders ? "1" : "0")}";
 
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
         SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, enableConsumerScopeCreation ? "1" : "0");
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, enableLegacyHeaders ? "1" : "0");
 
@@ -113,6 +115,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         var topicSuffix = $"{nameof(HandlesBatchProcessing)}";
 
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
         // set variable to create short spans on receive instead of spans that last until the next consume
         SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, "0");
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, "1");
@@ -160,6 +163,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         var topicSuffix = "WhenNotSupported";
 
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
 
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.Configuration = new MockTracerAgent.AgentConfiguration { Endpoints = Array.Empty<string>() };

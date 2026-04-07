@@ -1,4 +1,4 @@
-// <copyright file="AzureServiceBusTags.cs" company="Datadog">
+﻿// <copyright file="AzureServiceBusTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,10 +18,16 @@ namespace Datadog.Trace.Tagging
         private string _spanKind;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName { get; set; }
+        public string InstrumentationName => nameof(Configuration.IntegrationId.AzureServiceBus);
 
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
+
+        [Tag(Tags.MessagingSystem)]
+        public string MessagingSystem { get; set; }
+
+        [Tag(Tags.MessagingOperation)]
+        public string MessagingOperation { get; set; }
 
         [Tag(Trace.Tags.MessagingSourceName)]
         public string MessagingSourceName { get; set; }
@@ -53,21 +59,11 @@ namespace Datadog.Trace.Tagging
 
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
-
-        public void SetAnalyticsSampleRate(IntegrationId integration, TracerSettings settings, bool enabledWithGlobalSetting)
-        {
-            if (settings != null)
-            {
-#pragma warning disable 618 // App analytics is deprecated, but still used
-                AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
-#pragma warning restore 618
-            }
-        }
     }
 
-    internal partial class AzureServiceBusV1Tags : AzureServiceBusTags
+    internal sealed partial class AzureServiceBusV1Tags : AzureServiceBusTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the

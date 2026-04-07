@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class AppClientConfigurationChangedPayload : IPayload
+internal sealed class AppClientConfigurationChangedPayload : IPayload
 {
     public AppClientConfigurationChangedPayload(ICollection<ConfigurationKeyValue> configuration)
     {

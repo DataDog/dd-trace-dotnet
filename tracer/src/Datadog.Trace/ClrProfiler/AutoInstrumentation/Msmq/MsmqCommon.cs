@@ -7,7 +7,9 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
@@ -19,7 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         internal static Scope? CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
             where TMessageQueue : IMessageQueue
         {
-            if (!tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -30,8 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             try
             {
                 string operationName = GetOperationName(tracer, spanKind);
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MsmqConstants.MessagingType);
-                MsmqTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
+                var (serviceName, serviceNameSource) = perTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Msmq);
+                MsmqTags tags = perTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
 
                 tags.Command = command;
                 try
@@ -64,14 +67,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                     tags.MessageWithTransaction = isMessagePartOfTransaction.ToString();
                 }
 
-                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = $"{command} {tags.Path}";
 
                 // TODO: PBT: I think this span should be measured when span kind is consumer or producer
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MsmqConstants.IntegrationId);
             }
             catch (Exception ex)
@@ -82,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             return scope;
         }
 
-        // internal for testing
+        [TestingAndPrivateOnly]
         internal static string GetOperationName(Tracer tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
@@ -92,8 +95,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
             return spanKind switch
             {
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MsmqConstants.MessagingType),
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MsmqConstants.MessagingType),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Msmq),
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Msmq),
                 _ => MsmqConstants.MsmqCommand
             };
         }

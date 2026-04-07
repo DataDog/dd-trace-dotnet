@@ -65,6 +65,10 @@ namespace Datadog.Trace.Tests.Configuration
 
             // TODO: test that changing this changes the settings. Currently this is always false, so can't test it
             properties.Remove(nameof(MutableSettings.CustomSamplingRulesIsRemote));
+
+            // This property depends directly on ServiceName, and so isn't required to be part of the equality tests
+            // We _could_ add it though if that's preferable
+            properties.Remove(nameof(MutableSettings.DefaultServiceName));
             properties.Should().BeEmpty("should compare all properties as part of MutableSettings, but some properties were not used");
         }
 
@@ -168,7 +172,7 @@ namespace Datadog.Trace.Tests.Configuration
             var errorLog = new OverrideErrorLog();
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, errorLog);
 
-            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+            Assert.Equal(areTracesEnabled, tracerSettings.Manager.InitialMutableSettings.TraceEnabled);
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter.ToLowerInvariant(), ConfigurationKeys.TraceEnabled.ToLowerInvariant());
 
             _writerMock.Invocations.Clear();
@@ -179,7 +183,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var assertion = areTracesEnabled ? Times.Once() : Times.Never();
 
-            _writerMock.Verify(w => w.WriteTrace(It.IsAny<ArraySegment<Span>>()), assertion);
+            _writerMock.Verify(w => w.WriteTrace(in It.Ref<SpanCollection>.IsAny), assertion);
         }
 
         [Theory]
@@ -238,7 +242,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitCommitSha(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.GitCommitSha, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.GitCommitSha, value));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 
@@ -249,7 +253,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitRepositoryUrl(string value, string expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.GitRepositoryUrl, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.GitRepositoryUrl, value));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 
@@ -494,6 +498,63 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(null, null, null, 1.0d)]
+        [InlineData("0", null, null, 0.0d)]
+        [InlineData("0.5", null, null, 0.5d)]
+        [InlineData("1", null, null, 1.0d)]
+        [InlineData(null, "parentbased_traceidratio", "0.5", 0.5d)]
+        [InlineData(null, "parentbased_traceidratio", "1", 1.0d)]
+        [InlineData(null, "parentbased_traceidratio", null, 1.0d)]
+        [InlineData(null, "traceidratio", "0.5", 0.5d)]
+        [InlineData(null, "traceidratio", "1", 1.0d)]
+        [InlineData(null, "traceidratio", null, 1.0d)]
+        [InlineData(null, "parentbased_always_on", null, 1.0d)]
+        [InlineData(null, "always_on", null, 1.0d)]
+        [InlineData(null, "parentbased_always_off", null, 0.0d)]
+        [InlineData(null, "always_off", null, 0.0d)]
+        public void GlobalSamplingRateWithOtlpTracesExporter(string value, string otelSampler, string otelSampleRate, double? expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                (ConfigurationKeys.GlobalSamplingRate, value),
+                (ConfigurationKeys.OpenTelemetry.TracesSampler, otelSampler),
+                (ConfigurationKeys.OpenTelemetry.TracesSamplerArg, otelSampleRate));
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+            var mutable = GetMutableSettings(source, settings);
+
+            // confirm the logs/metrics
+            mutable.GlobalSamplingRate.Should().Be(expected);
+            var metrics = new List<(Count?, string, string)>();
+
+            if (value is not null)
+            {
+                // hidden metrics
+                if (otelSampler is not null)
+                {
+                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSampler.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
+                }
+
+                if (otelSampleRate is not null)
+                {
+                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSamplerArg.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
+                }
+            }
+            else if (otelSampler is "invalid")
+            {
+                // we _don't_ report this one as invalid, and it "prevents" reporting the invalid arg
+            }
+            else if (otelSampler is "traceidratio" or "parentbased_traceidratio"
+                  && otelSampleRate is "invalid" or null)
+            {
+                // we _only_ report this one if we need to use it
+                metrics.Add((Count.OpenTelemetryConfigInvalid, ConfigurationKeys.OpenTelemetry.TracesSamplerArg.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
+            }
+
+            errorLog.ShouldHaveExpectedOtelMetric(metrics.ToArray());
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void StartupDiagnosticLogEnabled(string value, bool expected)
         {
@@ -518,7 +579,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DisableTracerIfNoApiKeyInAas()
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 
@@ -637,6 +698,25 @@ namespace Datadog.Trace.Tests.Configuration
             mutable.LogsInjectionEnabled.Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void ProcessTagsEnabledIfPropagationEnabled(bool propagateTags)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, propagateTags.ToString()));
+            var settings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, settings);
+
+            if (propagateTags)
+            {
+                mutable.ProcessTags.Should().NotBeNull();
+            }
+            else
+            {
+                mutable.ProcessTags.Should().BeNull();
+            }
+        }
+
         private static (string Key, string Property, object Value1, object Value2)[] GetTestValues()
             =>
             [
@@ -663,14 +743,14 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.HttpServerErrorStatusCodes, nameof(MutableSettings.HttpServerErrorStatusCodes), "400-499", "400-599"),
                 (ConfigurationKeys.HttpClientErrorStatusCodes, nameof(MutableSettings.HttpClientErrorStatusCodes), "400-499", "400-599"),
                 (ConfigurationKeys.ServiceNameMappings, nameof(MutableSettings.ServiceNameMappings), "a:b", "c:d"),
-                (ConfigurationKeys.GitRepositoryUrl, nameof(MutableSettings.GitRepositoryUrl), "a", "b"),
-                (ConfigurationKeys.GitCommitSha, nameof(MutableSettings.GitCommitSha), "a", "b"),
+                (ConfigurationKeys.CIVisibility.GitRepositoryUrl, nameof(MutableSettings.GitRepositoryUrl), "a", "b"),
+                (ConfigurationKeys.CIVisibility.GitCommitSha, nameof(MutableSettings.GitCommitSha), "a", "b"),
             ];
 
         private static MutableSettings GetSettings(string key, object value)
         {
             var source = new DictionaryConfigurationSource(new Dictionary<string, string> { { key, value?.ToString() } });
-            return MutableSettings.Create(
+            return MutableSettings.CreateInitialMutableSettings(
                 source,
                 NullConfigurationTelemetry.Instance,
                 new OverrideErrorLog(),
@@ -678,7 +758,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         private static MutableSettings GetMutableSettings(IConfigurationSource source, TracerSettings tracerSettings)
-            => MutableSettings.Create(
+            => MutableSettings.CreateInitialMutableSettings(
                 source,
                 NullConfigurationTelemetry.Instance,
                 new OverrideErrorLog(),

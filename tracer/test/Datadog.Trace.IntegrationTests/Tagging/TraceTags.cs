@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -31,7 +32,7 @@ public class TraceTags
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.GlobalSamplingRate, 0 } });
 
         var testApi = new MockApi();
-        var agentWriter = new AgentWriter(testApi, statsAggregator: null, statsd: null);
+        var agentWriter = new AgentWriter(testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         await using var tracer = TracerHelper.Create(settings, agentWriter, null, null, null);
 
         using (var scope = tracer.StartActiveInternal("root"))

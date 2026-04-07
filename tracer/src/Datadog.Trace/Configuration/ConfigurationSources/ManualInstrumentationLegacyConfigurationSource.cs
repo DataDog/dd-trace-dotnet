@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources;
 /// Wraps the settings passed in from the manual instrumentation API in a configuration source, to make it easier to integrate.
 /// Only used for legacy manual instrumentation (where the integration settings are serialized as an array)
 /// </summary>
-internal class ManualInstrumentationLegacyConfigurationSource : ManualInstrumentationConfigurationSourceBase
+internal sealed class ManualInstrumentationLegacyConfigurationSource : ManualInstrumentationConfigurationSourceBase
 {
     public ManualInstrumentationLegacyConfigurationSource(IReadOnlyDictionary<string, object?> dictionary, bool useDefaultSources)
         : base(dictionary, useDefaultSources)
@@ -109,7 +110,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : ManualInstrument
     }
 
     // This list is fixed in time and doesn't need to be updated
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static IntegrationId? GetIntegrationEnabled(string key) => key switch
     {
         "DD_TRACE_HTTPMESSAGEHANDLER_ENABLED" => IntegrationId.HttpMessageHandler,
@@ -190,7 +191,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : ManualInstrument
     };
 
     // This list is fixed in time and doesn't need to be updated
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static IntegrationId? GetIntegrationAnalyticsEnabled(string key) => key switch
     {
         "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_ENABLED" => IntegrationId.HttpMessageHandler,
@@ -271,7 +272,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : ManualInstrument
     };
 
     // This list is fixed in time and doesn't need to be updated
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static IntegrationId? GetIntegrationAnalyticsSampleRate(string key) => key switch
     {
         "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_SAMPLE_RATE" => IntegrationId.HttpMessageHandler,
@@ -352,7 +353,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : ManualInstrument
     };
 
     // This list is fixed in time and doesn't need to be updated
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static PublicApiUsage? GetTelemetryKey(string key) => key switch
     {
         TracerSettingKeyConstants.AgentUriKey => PublicApiUsage.ExporterSettings_AgentUri_Set,

@@ -4,6 +4,7 @@
 // </copyright>
 #if NETCOREAPP3_0_OR_GREATER
 
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -45,7 +46,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -57,9 +58,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         // Postgres column names are all lower case
         settings.AddRegexScrubber((new Regex(@"\""details\"""), @"""Details"""));
 
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableTheory]
@@ -85,7 +84,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -93,9 +92,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         // Add a scrubber to remove the useMicrosoftDataDb value
         settings.AddRegexScrubber((new Regex(@"database=.*"), "database=...,"));
 
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableTheory]
@@ -121,7 +118,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -134,9 +131,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         // Postgres column names are all lower case
         settings.AddRegexScrubber((new Regex(@"\""details\"""), @"""Details"""));
 
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                             .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 }
 

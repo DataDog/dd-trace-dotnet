@@ -190,6 +190,10 @@ internal static class MetricTags
         // manual integration
         [Description("integration_name:datadog")]Manual,
         [Description("integration_name:opentracing")]OpenTracing,
+        [Description("integration_name:version_conflict")]VersionConflict,
+
+        // feature flags
+        [Description("integration_name:open_feature")] OpenFeature,
 
         // automatic "custom" integration
         [Description("integration_name:ciapp")]CiAppManual,
@@ -253,6 +257,7 @@ internal static class MetricTags
         [Description("integration_name:hardcodedsecret")]HardcodedSecret,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
+        [Description("integration_name:azureeventhubs")]AzureEventHubs,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
         [Description("integration_name:ibmmq")]IbmMq,
@@ -271,7 +276,8 @@ internal static class MetricTags
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
-        [Description("integration_name:protobuf")] Protobuf
+        [Description("integration_name:protobuf")] Protobuf,
+        [Description("integration_name:hangfire")] Hangfire
     }
 
     public enum InstrumentationError
@@ -288,11 +294,15 @@ internal static class MetricTags
         // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
         // It is replaced with the "real" waf_version at runtime
         // CAUTION: waf_version should aways be placed in first position
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:false")]Normal,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;request_excluded:false")]RuleTriggered,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]Normal,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]RuleTriggered,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]RuleTriggeredAndBlocked,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false")]WafTimeout,
+        // Input truncated
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] NormalTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] RuleTriggeredTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] RuleTriggeredAndBlockedTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true")] WafTimeoutTruncated,
     }
 
     public enum WafStatus
@@ -404,6 +414,18 @@ internal static class MetricTags
         [Description("framework:aspnetcore_identity;event_type:login_failure")] AspNetCoreIdentityLoginFailure,
         [Description("framework:aspnetcore_identity;event_type:signup")] AspNetCoreIdentitySignup,
         [Description("framework:unknown;event_type:signup")] Unknown,
+    }
+
+    internal enum Protocol
+    {
+        [Description("protocol:grpc")] Grpc,
+        [Description("protocol:http")] Http,
+    }
+
+    internal enum MetricEncoding
+    {
+        [Description("encoding:protobuf")] Protobuf,
+        [Description("encoding:json")] Json,
     }
 
     public enum CIVisibilityTestFramework

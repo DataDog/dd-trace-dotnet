@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.IntegrationTests
         public SpanTagTests()
         {
             _testApi = new MockApi();
-            _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+            _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         }
 
         [Fact]
@@ -213,9 +214,7 @@ namespace Datadog.Trace.IntegrationTests
 
             var spanContext = new SpanContext(4, 5, samplingPriority: null, serviceName: "serviceName");
             var span = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test" };
-            var spans = new Span[1];
-            spans[0] = span;
-            _writer.WriteTrace(new ArraySegment<Span>(spans));
+            _writer.WriteTrace(new SpanCollection(span));
             var trace = _testApi.Wait();
             trace.Should().HaveCount(1);
             trace[0].Should().HaveCount(1);

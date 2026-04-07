@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -42,6 +43,11 @@ namespace Samples.AspNetCoreMvc
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+            }
+
+            if (Environment.GetEnvironmentVariable("ADD_ACTIVITY_MIDDLEWARE") == "1")
+            {
+                app.UseMiddleware<ActivityMiddleware>();
             }
 
             app.UseMiddleware<PingMiddleware>();

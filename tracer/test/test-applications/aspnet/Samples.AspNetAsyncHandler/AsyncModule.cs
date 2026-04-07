@@ -46,22 +46,23 @@ namespace Samples.AspNetAsyncHandler
             ThreadPool.UnsafeQueueUserWorkItem(
                 _ =>
                 {
-                    var mutex = new ManualResetEventSlim(false);
+                    using (var mutex = new ManualResetEventSlim(false))
+                    {
+                        Task.Run(
+                            () =>
+                            {
+                                mutex.Set();
 
-                    Task.Run(
-                        () =>
-                        {
-                            mutex.Set();
+                                CaptureThread(app);
 
-                            CaptureThread(app);
+                                asyncResult.IsCompleted = true;
+                                asyncResult.WaitHandle.Set();
 
-                            asyncResult.IsCompleted = true;
-                            asyncResult.WaitHandle.Set();
+                                cb(asyncResult);
+                            });
 
-                            cb(asyncResult);
-                        });
-
-                    mutex.Wait();
+                        mutex.Wait();
+                    }
                 }, null);
 
             return asyncResult;
@@ -69,20 +70,21 @@ namespace Samples.AspNetAsyncHandler
 
         private void CaptureThread(HttpApplication app)
         {
-            var mutex = new ManualResetEventSlim();
-
-            ThreadPool.UnsafeQueueUserWorkItem(_ =>
+            using (var mutex = new ManualResetEventSlim(false))
             {
-                mutex.Set();
+                ThreadPool.UnsafeQueueUserWorkItem(_ =>
+                {
+                    mutex.Set();
 
-                var requestMutex = (ManualResetEventSlim)app.Context.Items[this];
+                    var requestMutex = (ManualResetEventSlim)app.Context.Items[this];
 
-                requestMutex.Wait();
+                    requestMutex.Wait();
 
-                GC.KeepAlive(app);
-            }, null);
+                    GC.KeepAlive(app);
+                }, null);
 
-            mutex.Wait();
+                mutex.Wait();
+            }
         }
 
         private void EndEvent(IAsyncResult ar)

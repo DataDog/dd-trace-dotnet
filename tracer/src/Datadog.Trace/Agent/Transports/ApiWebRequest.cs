@@ -1,4 +1,4 @@
-// <copyright file="ApiWebRequest.cs" company="Datadog">
+﻿// <copyright file="ApiWebRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,11 +11,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class ApiWebRequest : IApiRequest
+    internal sealed class ApiWebRequest : IApiRequest
     {
         private const string BoundarySeparator = $"{CrLf}--{Boundary}{CrLf}";
         private const string BoundaryTrailer = $"{CrLf}--{Boundary}--{CrLf}";
@@ -53,6 +55,27 @@ namespace Datadog.Trace.Agent.Transports
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
+            }
+
+            return await FinishAndGetResponse().ConfigureAwait(false);
+        }
+
+        public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
+            => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
+
+        public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        {
+            var contentEncoding = compression == MultipartCompression.GZip ? "gzip" : null;
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Sending {Type} data as JSON with compression '{Compression}'", typeof(T).FullName, contentEncoding ?? "none");
+            }
+
+            ResetRequest(method: "POST", contentType: MimeTypes.Json, contentEncoding: contentEncoding);
+
+            using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                await SerializationHelpers.WriteAsJson(reqStream, payload, settings, compression).ConfigureAwait(false);
             }
 
             return await FinishAndGetResponse().ConfigureAwait(false);

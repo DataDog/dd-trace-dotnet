@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
             var entry = _headers.Get(name);
             if (entry is not null)
             {
-                _headers.Remove(name);
+                _headers.Remove(entry);
             }
         }
     }

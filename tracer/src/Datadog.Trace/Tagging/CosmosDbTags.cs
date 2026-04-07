@@ -1,4 +1,4 @@
-// <copyright file="CosmosDbTags.cs" company="Datadog">
+﻿// <copyright file="CosmosDbTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -31,15 +31,27 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
+        [Tag(Trace.Tags.DbResponseStatusCode)]
+        public string ResponseStatusCode { get; set; }
+
+        [Tag(Trace.Tags.CosmosDbResponseSubStatusCode)]
+        public string ResponseSubStatusCode { get; set; }
+
+        [Tag(Trace.Tags.HttpUserAgent)]
+        public string UserAgent { get; set; }
+
+        [Tag(Trace.Tags.CosmosDbConnectionMode)]
+        public string ConnectionMode { get; set; }
+
         public virtual void SetEndpoint(Uri endpoint)
         {
             Host = endpoint?.ToString();
         }
     }
 
-    internal partial class CosmosDbV1Tags : CosmosDbTags
+    internal sealed partial class CosmosDbV1Tags : CosmosDbTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }

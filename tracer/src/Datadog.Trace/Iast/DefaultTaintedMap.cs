@@ -1,4 +1,4 @@
-// <copyright file = "DefaultTaintedMap.cs" company = "Datadog" >
+﻿// <copyright file = "DefaultTaintedMap.cs" company = "Datadog" >
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace Datadog.Trace.Iast;
 
-internal class DefaultTaintedMap : ITaintedMap
+internal sealed class DefaultTaintedMap : ITaintedMap
 {
     // Default capacity. It MUST be a power of 2.
     public const int DefaultCapacity = 1 << 14;
@@ -27,9 +27,9 @@ internal class DefaultTaintedMap : ITaintedMap
     // Map containing the tainted objects
     private ConcurrentDictionary<int, ITaintedObject> _map;
     // Bitmask for fast modulo with table length.
-    private int _lengthMask = 0;
+    private int _lengthMask;
     // Flag to ensure we do not run multiple purges concurrently.
-    private bool _isPurging = false;
+    private bool _isPurging;
     private object _purgingLock = new();
     // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
     private int _entriesCount;
@@ -47,7 +47,7 @@ internal class DefaultTaintedMap : ITaintedMap
     /// Gets a value indicating whether flat mode is enabled or not. Once this is set to true, it is not set to false again unless clear() is called.
     /// The get accessor is only intended for testing purposes.
     /// </summary>
-    public bool IsFlat { get; private set; } = false;
+    public bool IsFlat { get; private set; }
 
     /// <summary>
     /// Returns the ITaintedObject for the given input object.
@@ -228,7 +228,7 @@ internal class DefaultTaintedMap : ITaintedMap
 
     private int IndexObject(object objectStored)
     {
-        return Index(PositiveHashCode(objectStored.GetHashCode()));
+        return Index(PositiveHashCode(IastUtils.IdentityHashCode(objectStored)));
     }
 
     private int PositiveHashCode(int hash)

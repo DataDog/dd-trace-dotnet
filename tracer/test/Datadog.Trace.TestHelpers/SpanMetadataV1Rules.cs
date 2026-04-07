@@ -20,6 +20,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "AdoNet")
                 .Matches("span.kind", "client"));
@@ -36,6 +38,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("peer.service")
                 .IsOptional("_dd.peer.service.source")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "aerospike")
                 .Matches("span.kind", "client"));
 
@@ -53,6 +57,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
@@ -71,6 +77,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
@@ -98,6 +106,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
@@ -117,6 +127,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -132,350 +144,10 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet_core.page")
                 .IsPresent("aspnet_core.route")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
-
-        public static Result IsAwsDynamoDbV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.dynamodb.request")
-                .Matches(Type, "dynamodb"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("region")
-                .IsOptional("aws.region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "DynamoDB")
-                .Matches("aws_service", "DynamoDB")
-                .IsPresent("tablename")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "tablename", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "client"));
-
-        public static Result IsAwsKinesisOutboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.kinesis.send")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("region")
-                .IsOptional("aws.region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "Kinesis")
-                .Matches("aws_service", "Kinesis")
-                .IsPresent("streamname")
-                .IsOptional("aws.stream.url")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "streamname", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "producer"));
-
-        public static Result IsAwsS3RequestV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.s3.request")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "S3")
-                .Matches("aws_service", "S3")
-                .IsOptional("bucketname")
-                .IsOptional("objectkey")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsOptional("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .IsOptional("_dd.peer.service.source", "my-bucket", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "client"));
-
-        public static Result IsAwsSqsInboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.sqs.process")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "SQS")
-                .Matches("aws_service", "SQS")
-                .IsPresent("aws.queue.name")
-                .IsPresent("queuename")
-                .IsOptional("aws.queue.url")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsOptional("_dd.base_service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "consumer"));
-
-        public static Result IsAwsSqsOutboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.sqs.send")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "SQS")
-                .Matches("aws_service", "SQS")
-                .IsPresent("aws.queue.name")
-                .IsPresent("queuename")
-                .IsOptional("aws.queue.url")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .IsOptional("_dd.base_service")
-                .MatchesOneOf("_dd.peer.service.source", "queuename", "peer.service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "producer"));
-
-        public static Result IsAwsSqsRequestV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.sqs.request")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "SQS")
-                .Matches("aws_service", "SQS")
-                .IsPresent("aws.queue.name")
-                .IsPresent("queuename")
-                .IsOptional("aws.queue.url")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "queuename", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "client"));
-
-        public static Result IsAwsSnsInboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.sns.process")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "SNS")
-                .Matches("aws_service", "SNS")
-                .IsPresent("aws.topic.name")
-                .IsPresent("topicname")
-                .IsOptional("aws.topic.arn")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsOptional("_dd.base_service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "consumer"));
-
-        public static Result IsAwsSnsOutboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.sns.send")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "SNS")
-                .Matches("aws_service", "SNS")
-                .IsPresent("aws.topic.name")
-                .IsPresent("topicname")
-                .IsOptional("aws.topic.arn")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "topicname", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "producer"));
-
-        public static Result IsAwsSnsRequestV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.sns.request")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "SNS")
-                .Matches("aws_service", "SNS")
-                .IsPresent("aws.topic.name")
-                .IsPresent("topicname")
-                .IsOptional("aws.topic.arn")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "topicname", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "client"));
-
-        public static Result IsAwsEventBridgeInboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.eventbridge.process")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "EventBridge")
-                .Matches("aws_service", "EventBridge")
-                .IsPresent("rulename")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsOptional("_dd.base_service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "consumer"));
-
-        public static Result IsAwsEventBridgeOutboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.eventbridge.send")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "EventBridge")
-                .Matches("aws_service", "EventBridge")
-                .IsPresent("rulename")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "rulename", "peer.service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "producer"));
-
-        public static Result IsAwsEventBridgeRequestV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.eventbridge.request")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "EventBridge")
-                .Matches("aws_service", "EventBridge")
-                .IsPresent("rulename")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "client"));
-
-        public static Result IsAwsStepFunctionsInboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.stepfunctions.process")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "StepFunctions")
-                .Matches("aws_service", "StepFunctions")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsOptional("_dd.base_service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "consumer"));
-
-        public static Result IsAwsStepFunctionsOutboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.stepfunctions.send")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "StepFunctions")
-                .Matches("aws_service", "StepFunctions")
-                .IsPresent("statemachinename")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "statemachinename", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "producer"));
-
-        public static Result IsAwsStepFunctionsRequestV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.stepfunctions.request")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "StepFunctions")
-                .Matches("aws_service", "StepFunctions")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "statemachinename", "peer.service")
-                .Matches("component", "aws-sdk")
-                .IsOptional("_dd.base_service")
-                .Matches("span.kind", "client"));
 
         public static Result IsAzureServiceBusInboundV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
@@ -499,6 +171,8 @@ namespace Datadog.Trace.TestHelpers
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "consumer"));
 
         public static Result IsAzureServiceBusInboundAPMV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -518,6 +192,8 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "consumer"));
 
         public static Result IsAzureServiceBusOutboundV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -543,6 +219,8 @@ namespace Datadog.Trace.TestHelpers
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
         public static Result IsAzureServiceBusOutboundAPMV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -566,6 +244,8 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
         public static Result IsAzureServiceBusCreateV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -588,6 +268,8 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
         public static Result IsAzureServiceBusRequestV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -615,7 +297,78 @@ namespace Datadog.Trace.TestHelpers
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "client")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "client"));
+
+        public static Result IsAzureEventHubsOutboundV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .MatchesOneOf(Name, "azure_eventhubs.create", "azure_eventhubs.send")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "eventhubs")
+                .MatchesOneOf("messaging.operation", "create", "send")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
+                .IsOptional("network.destination.name")
+                .IsOptional("network.destination.port")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
+                .IsOptional("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .IsOptional("_dd.peer.service.source")
+                .Matches("component", "AzureEventHubs")
+                .IfPresentMatches("kind", "producer")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsAzureEventHubsCreateV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_eventhubs.create")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "eventhubs")
+                .Matches("messaging.operation", "create")
+                .IsPresent("messaging.message_id")
+                .IsPresent("network.destination.name")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "messaging.destination.name", "message_bus.destination", "peer.service")
+                .Matches("component", "AzureEventHubs")
+                .IfPresentMatches("kind", "producer")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsAzureEventHubsInboundV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_eventhubs.receive")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsOptional("messaging.source.name")
+                .IsOptional("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "eventhubs")
+                .Matches("messaging.operation", "receive")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsPresent("server.address")
+                .Matches("component", "AzureEventHubs")
+                .IfPresentMatches("kind", "consumer")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
+                .Matches("span.kind", "consumer"));
 
         public static Result IsCosmosDbV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -629,7 +382,13 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.port")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
+                .IsOptional("db.response.status_code")
+                .IsOptional("cosmosdb.response.sub_status_code")
+                .IsOptional("cosmosdb.connection.mode")
+                .IsOptional("http.useragent")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
@@ -648,6 +407,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.couchbase.seed.nodes", "out.host", "peer.service")
                 .Matches("component", "Couchbase")
                 .Matches("span.kind", "client"));
@@ -664,6 +425,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "elasticsearch-net")
                 .Matches("span.kind", "client"));
@@ -677,6 +440,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("graphql.operation.type")
                 .IsPresent("graphql.source")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "GraphQL")
                 .Matches("span.kind", "server")
                 .IsOptional("events"));
@@ -698,6 +463,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "rpc.service", "out.host", "peer.service")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "client"));
@@ -715,8 +482,22 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "server"));
+
+        public static Result IsHangfireV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .MatchesOneOf(Name,  "hangfire.perform")
+                .Matches(Type, "hangfire"))
+            .Tags(s => s
+                .Matches("_dd.base_service", "Samples.Hangfire")
+                .IsOptional("_dd.tags.process")
+                .Matches("component", "hangfire")
+                .Matches("span.kind", "internal")
+                .IsPresent("job.createdat")
+                .IsPresent("job.id"));
 
         public static Result IsHotChocolateV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -727,6 +508,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("graphql.operation.type")
                 .IsPresent("graphql.source")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "HotChocolate")
                 .Matches("span.kind", "server"));
 
@@ -743,6 +526,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
@@ -761,8 +546,11 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsOptional("messaging.kafka.cluster_id")
                 .IsPresent("messaging.destination.name")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "consumer"));
 
@@ -780,10 +568,13 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsOptional("messaging.kafka.cluster_id")
                 .IsPresent("messaging.destination.name")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "producer"));
@@ -801,6 +592,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
@@ -817,6 +610,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("msmq.queue.transactional")
                 .IsPresent("out.host")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "msmq")
                 .Matches("span.kind", "consumer"));
 
@@ -836,6 +631,8 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
         public static Result IsMsmqClientV1(this MockSpan span) => Result.FromSpan(span)
@@ -852,6 +649,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
                 .Matches("span.kind", "client"));
@@ -868,6 +667,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client")
@@ -885,6 +686,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client")
@@ -900,6 +703,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
                 .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"));
@@ -915,6 +720,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
@@ -929,6 +736,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cmd.shell")
                 .IsOptional("cmd.truncated")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "process")
                 .Matches("span.kind", "internal"));
 
@@ -939,7 +748,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent(Tags.SchemaOperation)
                 .IsPresent(Tags.SchemaId)
                 .IsPresent(Tags.SchemaDefinition)
-                .IsPresent(Tags.SchemaWeight));
+                .IsPresent(Tags.SchemaWeight)
+                .IsOptional("_dd.tags.process"));
 
         public static Result IsRabbitMQAdminV1(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Rabbit - Admin")
@@ -957,6 +767,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "RabbitMQ")
                 .Matches("span.kind", "client"));
@@ -974,6 +786,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("amqp.queue")
                 .IsOptional("message.size")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "RabbitMQ")
                 .Matches("span.kind", "consumer"));
 
@@ -993,6 +807,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "RabbitMQ")
                 .Matches("span.kind", "producer"));
@@ -1008,6 +824,8 @@ namespace Datadog.Trace.TestHelpers
                      .Matches("component", "Remoting")
                      .IfPresentMatchesOneOf("_dd.peer.service.source", "peer.service", "rpc.service")
                      .IsOptional("_dd.base_service")
+                     .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                      .MatchesOneOf("span.kind", "client", "server"));
 
         public static Result IsRemotingServerV1(this MockSpan span) => Result.FromSpan(span)
@@ -1018,6 +836,8 @@ namespace Datadog.Trace.TestHelpers
                .Matches("rpc.system", "dotnet_remoting")
                .Matches("component", "Remoting")
                .IsOptional("_dd.base_service")
+               .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                .MatchesOneOf("span.kind", "client", "server"));
 
         public static Result IsServiceRemotingClientV1(this MockSpan span) => Result.FromSpan(span)
@@ -1040,6 +860,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "service-fabric.service-remoting.service", "service-fabric.service-remoting.uri", "peer.service")
                 .Matches("span.kind", "client"));
 
@@ -1061,6 +883,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.service-remoting.interface-id")
                 .IsOptional("service-fabric.service-remoting.invocation-id")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "server"));
 
         public static Result IsServiceStackRedisV1(this MockSpan span) => Result.FromSpan(span)
@@ -1076,6 +900,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "ServiceStackRedis")
                 .Matches("span.kind", "client"));
@@ -1093,6 +919,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "StackExchangeRedis")
                 .Matches("span.kind", "client"));
@@ -1108,6 +936,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
@@ -1123,6 +953,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .IsOptional("_dd.dbm_trace_injected")
                 .IsOptional("dd.instrumentation.time_ms")
@@ -1138,6 +970,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("http.request.headers.host")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "Wcf")
                 .Matches("span.kind", "server"));
 
@@ -1154,12 +988,15 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
 
         public static Result IsQuartzV1(this MockSpan span) => Result.FromSpan(span)
           .Tags(s => s
+                .Matches("component", "quartz")
                 .IsOptional("events")
                 .IsPresent("fire.instance.id")
                 .IsPresent("job.group")
@@ -1173,6 +1010,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("scheduler.name")
                 .IsOptional("span.kind")
                 .IsPresent("trigger.group")
-                .IsPresent("trigger.name"));
+                .IsPresent("trigger.name")
+                .IsOptional("_dd.tags.process"));
     }
 }

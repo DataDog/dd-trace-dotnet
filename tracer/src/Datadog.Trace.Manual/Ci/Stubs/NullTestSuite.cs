@@ -5,7 +5,7 @@
 
 namespace Datadog.Trace.Ci.Stubs;
 
-internal class NullTestSuite : ITestSuite
+internal sealed class NullTestSuite : ITestSuite
 {
     public static readonly NullTestSuite Instance = new();
 

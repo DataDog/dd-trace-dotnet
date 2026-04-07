@@ -9,7 +9,7 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class NullMetricsTelemetryCollector
+internal sealed partial class NullMetricsTelemetryCollector
 {
 
     public void RecordDistributionSharedInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)

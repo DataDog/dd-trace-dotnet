@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tagging
         public string StatusCode { get; set; }
     }
 
-    internal partial class GrpcServerTags : GrpcTags
+    internal sealed partial class GrpcServerTags : GrpcTags
     {
         public GrpcServerTags()
             : base(SpanKinds.Server)
@@ -63,9 +63,9 @@ namespace Datadog.Trace.Tagging
         public string PeerHostname => Host;
     }
 
-    internal partial class GrpcClientV1Tags : GrpcClientTags
+    internal sealed partial class GrpcClientV1Tags : GrpcClientTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         public GrpcClientV1Tags()
             : base()

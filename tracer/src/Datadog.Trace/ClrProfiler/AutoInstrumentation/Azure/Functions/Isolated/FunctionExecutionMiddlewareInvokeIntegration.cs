@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
     IntegrationName = AzureFunctionsCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class FunctionExecutionMiddlewareInvokeIntegration
+public sealed class FunctionExecutionMiddlewareInvokeIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TFunctionContext>(TTarget instance, TFunctionContext functionContext)
         where TFunctionContext : IFunctionContext
@@ -42,6 +42,7 @@ public class FunctionExecutionMiddlewareInvokeIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
+    [PreserveContext]
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
         state.Scope?.DisposeWithException(exception);

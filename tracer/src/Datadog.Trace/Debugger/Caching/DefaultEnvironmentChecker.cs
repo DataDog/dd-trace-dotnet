@@ -1,16 +1,15 @@
-// <copyright file="DefaultEnvironmentChecker.cs" company="Datadog">
+﻿// <copyright file="DefaultEnvironmentChecker.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
-using System;
-using Datadog.Trace.Util;
+using Datadog.Trace.Serverless;
 
 namespace Datadog.Trace.Debugger.Caching;
 
-internal class DefaultEnvironmentChecker : IEnvironmentChecker
+internal sealed class DefaultEnvironmentChecker : IEnvironmentChecker
 {
     private DefaultEnvironmentChecker()
     {
@@ -24,8 +23,8 @@ internal class DefaultEnvironmentChecker : IEnvironmentChecker
     private static bool CheckServerlessEnvironment()
     {
         // Checking serverless environment based on environment variables
-        return EnvironmentHelpers.IsAwsLambda() ||
-               EnvironmentHelpers.IsAzureFunctions() ||
-               EnvironmentHelpers.IsGoogleCloudFunctions();
+        return AwsInfo.Instance.IsAwsLambda ||
+               AzureInfo.Instance.IsAzureFunction ||
+               GcpInfo.Instance.IsCloudFunction;
     }
 }

@@ -74,7 +74,7 @@ internal static class CustomErrorHandling
     /// <summary>
     /// A custom parse error reporter that prints the error message but does not print the help text.
     /// </summary>
-    internal class ParseErrorInvocationResult : IInvocationResult
+    internal sealed class ParseErrorInvocationResult : IInvocationResult
     {
         public void Apply(InvocationContext context)
         {

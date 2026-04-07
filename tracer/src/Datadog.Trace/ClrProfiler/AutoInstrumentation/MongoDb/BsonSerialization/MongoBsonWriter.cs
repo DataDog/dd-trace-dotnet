@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 /// <summary>
 /// Duck Typing interface proxy for: https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.x/src/MongoDB.Bson/IO/IBsonWriter.cs
 /// </summary>
-internal class MongoBsonWriter
+internal sealed class MongoBsonWriter
 {
     private readonly IBsonWriterProxy _bsonWriterProxy;
 

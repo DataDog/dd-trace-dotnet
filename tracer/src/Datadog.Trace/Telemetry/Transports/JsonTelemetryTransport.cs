@@ -1,4 +1,4 @@
-﻿// <copyright file="JsonTelemetryTransport.cs" company="Datadog">
+// <copyright file="JsonTelemetryTransport.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,10 +7,9 @@
 
 using System;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry.Metrics;
@@ -27,17 +26,17 @@ namespace Datadog.Trace.Telemetry.Transports
 
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
-        private readonly string? _containerId;
-        private readonly string? _entityId;
+        private readonly ContainerMetadata _containerMetadata;
         private readonly bool _enableDebug;
+        private readonly bool _telemetryGzipCompressionEnabled;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod, ContainerMetadata containerMetadata)
         {
             _requestFactory = requestFactory;
             _enableDebug = enableDebug;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            _containerMetadata = containerMetadata;
+            _telemetryGzipCompressionEnabled = telemetryCompressionMethod.Equals("gzip", StringComparison.OrdinalIgnoreCase);
         }
 
         protected string GetEndpointInfo() => _requestFactory.Info(_endpoint);
@@ -48,12 +47,7 @@ namespace Datadog.Trace.Telemetry.Transports
 
             try
             {
-                // have to buffer in memory so we know the content length
-                var serializedData = SerializeTelemetry(data);
-                var bytes = Encoding.UTF8.GetBytes(serializedData);
-
                 var request = _requestFactory.Create(_endpoint);
-
                 request.AddHeader(TelemetryConstants.ApiVersionHeader, data.ApiVersion);
                 request.AddHeader(TelemetryConstants.RequestTypeHeader, data.RequestType);
 
@@ -62,22 +56,15 @@ namespace Datadog.Trace.Telemetry.Transports
                     request.AddHeader(TelemetryConstants.DebugHeader, "true");
                 }
 
-                if (_containerId is not null)
-                {
-                    request.AddHeader(TelemetryConstants.ContainerIdHeader, _containerId);
-                }
-
-                if (_entityId is not null)
-                {
-                    request.AddHeader(TelemetryConstants.EntityIdHeader, _entityId);
-                }
+                request.AddContainerMetadataHeaders(_containerMetadata);
 
                 TelemetryFactory.Metrics.RecordCountTelemetryApiRequests(endpointMetricTag);
-                using var response = await request.PostAsync(new ArraySegment<byte>(bytes), "application/json").ConfigureAwait(false);
+
+                using var response = await request.PostAsJsonAsync(data, _telemetryGzipCompressionEnabled ? MultipartCompression.GZip : MultipartCompression.None, SerializerSettings).ConfigureAwait(false);
                 TelemetryFactory.Metrics.RecordCountTelemetryApiResponses(endpointMetricTag, response.GetTelemetryStatusCodeMetricTag());
                 if (response.StatusCode is >= 200 and < 300)
                 {
-                    Log.Debug("Telemetry sent successfully");
+                    Log.Debug("Telemetry sent successfully. CompressionEnabled {Compression}", _telemetryGzipCompressionEnabled);
                     return TelemetryPushResult.Success;
                 }
 
@@ -85,23 +72,23 @@ namespace Datadog.Trace.Telemetry.Transports
 
                 if (response.StatusCode == 404)
                 {
-                    Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint '{Endpoint}' not found", GetEndpointInfo());
+                    Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint '{Endpoint}' not found. CompressionEnabled {Compression}", GetEndpointInfo(), _telemetryGzipCompressionEnabled);
                     return TelemetryPushResult.FatalError;
                 }
 
-                Log.Debug<string, int>("Error sending telemetry to '{Endpoint}' {StatusCode} ", GetEndpointInfo(), response.StatusCode);
+                Log.Debug("Error sending telemetry to '{Endpoint}' {StatusCode} . CompressionEnabled {Compression}", GetEndpointInfo(), response.StatusCode, _telemetryGzipCompressionEnabled);
                 return TelemetryPushResult.TransientFailure;
             }
             catch (Exception ex) when (IsFatalException(ex))
             {
-                Log.Information(ex, "Error sending telemetry data, unable to communicate with '{Endpoint}'", GetEndpointInfo());
+                Log.Information(ex, "Error sending telemetry data, unable to communicate with '{Endpoint}'. CompressionEnabled {Compression}", GetEndpointInfo(), _telemetryGzipCompressionEnabled);
                 var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                 TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, tag);
                 return TelemetryPushResult.FatalError;
             }
             catch (Exception ex)
             {
-                Log.Information(ex, "Error sending telemetry data to '{Endpoint}'", GetEndpointInfo());
+                Log.Information(ex, "Error sending telemetry data to '{Endpoint}'. CompressionEnabled {Compression}", GetEndpointInfo(), _telemetryGzipCompressionEnabled);
                 var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                 TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, tag);
                 return TelemetryPushResult.TransientFailure;
@@ -109,9 +96,6 @@ namespace Datadog.Trace.Telemetry.Transports
         }
 
         public abstract string GetTransportInfo();
-
-        // Internal for testing
-        internal static string SerializeTelemetry<T>(T data) => JsonConvert.SerializeObject(data, Formatting.None, SerializerSettings);
 
         protected abstract MetricTags.TelemetryEndpoint GetEndpointMetricTag();
 

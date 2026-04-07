@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Tests">
@@ -62,6 +62,9 @@
     <ClCompile Include="LogTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ManagedCodeCacheTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="EnvironmentHelper.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
@@ -117,6 +120,9 @@
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\CrashReporting.cpp">
       <Filter>External Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp">
@@ -175,6 +181,9 @@
     <ClCompile Include="CrashReportingTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="DebugInfoStoreTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp">
       <Filter>External Sources</Filter>
     </ClCompile>
@@ -189,6 +198,21 @@
     </ClCompile>
     <ClCompile Include="CpuSampleProviderTest.cpp">
       <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SymPdbParser.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedThreadInfoTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\ManagedCodeCache.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\AutoResetEvent.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -217,7 +241,11 @@
     <ClInclude Include="FakeSamples.h">
       <Filter>Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="MockProfilerInfo.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc" />

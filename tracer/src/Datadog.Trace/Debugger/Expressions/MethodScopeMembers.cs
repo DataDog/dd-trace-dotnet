@@ -1,15 +1,14 @@
-// <copyright file="MethodScopeMembers.cs" company="Datadog">
+﻿// <copyright file="MethodScopeMembers.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
-internal class MethodScopeMembers : IPoolable<MethodScopeMembersParameters>
+internal sealed class MethodScopeMembers : IPoolable<MethodScopeMembersParameters>
 {
     private int _index;
 
@@ -23,6 +22,11 @@ internal class MethodScopeMembers : IPoolable<MethodScopeMembersParameters>
     }
 
     internal ScopeMember[] Members { get; private set; }
+
+    /// <summary>
+    /// Gets the number of valid members currently stored in <see cref="Members"/>.
+    /// </summary>
+    internal int MemberCount => _index;
 
     internal Exception Exception { get; set; }
 

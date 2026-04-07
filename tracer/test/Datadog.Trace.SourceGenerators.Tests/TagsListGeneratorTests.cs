@@ -32,7 +32,11 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""TestId"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IdBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#else
+        private static readonly byte[] IdBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -43,7 +47,7 @@ namespace MyTests.TestListNameSpace
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
@@ -107,7 +111,11 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""TestId"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IdBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#else
+        private static readonly byte[] IdBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#endif
 
         public override double? GetMetric(string key)
         {
@@ -185,9 +193,17 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdTag"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IdBytes => new byte[] { 165, 73, 100, 84, 97, 103 };
+#else
+        private static readonly byte[] IdBytes = new byte[] { 165, 73, 100, 84, 97, 103 };
+#endif
         // NameBytes = MessagePack.Serialize(""NameTag"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NameBytes => new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
+#else
+        private static readonly byte[] NameBytes = new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -199,7 +215,7 @@ namespace MyTests.TestListNameSpace
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
@@ -280,9 +296,17 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdMetric"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IdBytes => new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
+#else
+        private static readonly byte[] IdBytes = new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
+#endif
         // NameBytes = MessagePack.Serialize(""NameMetric"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NameBytes => new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
+#else
+        private static readonly byte[] NameBytes = new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
+#endif
 
         public override double? GetMetric(string key)
         {
@@ -378,11 +402,23 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdTag"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IdBytes => new byte[] { 165, 73, 100, 84, 97, 103 };
+#else
+        private static readonly byte[] IdBytes = new byte[] { 165, 73, 100, 84, 97, 103 };
+#endif
         // TestBytes = MessagePack.Serialize(""TestId"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TestBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#else
+        private static readonly byte[] TestBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#endif
         // NameBytes = MessagePack.Serialize(""NameTag"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NameBytes => new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
+#else
+        private static readonly byte[] NameBytes = new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -395,7 +431,7 @@ namespace MyTests.TestListNameSpace
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
@@ -492,11 +528,23 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdMetric"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> IdBytes => new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
+#else
+        private static readonly byte[] IdBytes = new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
+#endif
         // TestBytes = MessagePack.Serialize(""TestId"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> TestBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#else
+        private static readonly byte[] TestBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
+#endif
         // NameBytes = MessagePack.Serialize(""NameMetric"");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NameBytes => new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
+#else
+        private static readonly byte[] NameBytes = new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
+#endif
 
         public override double? GetMetric(string key)
         {

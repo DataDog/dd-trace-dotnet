@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -12,9 +13,8 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
-    internal class AerospikeCommon
+    internal sealed class AerospikeCommon
     {
-        private const string DatabaseType = "aerospike";
         private const string OperationName = "aerospike.command";
         public const string IntegrationName = nameof(Configuration.IntegrationId.Aerospike);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.Aerospike;
@@ -23,7 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -33,10 +34,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
             try
             {
-                var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateAerospikeTags();
+                var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Aerospike);
+                var tags = perTraceSettings.Schema.Database.CreateAerospikeTags();
 
-                scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
 
                 if (target.TryDuckCast<HasKey>(out var hasKey))
@@ -93,8 +94,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 span.Type = SpanTypes.Aerospike;
                 span.ResourceName = ExtractResourceName(target.GetType());
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)

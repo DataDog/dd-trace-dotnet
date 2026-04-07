@@ -45,14 +45,9 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ThreadAbortAnalyzer : DiagnosticAnalyzer
     {
-        /// <summary>
-        /// The diagnostic ID displayed in error messages
-        /// </summary>
-        public const string DiagnosticId = "DD0001";
-
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(
-            DiagnosticId,
+            Diagnostics.ThreadAbortDiagnosticId,
             title: "Potential infinite loop on ThreadAbortException",
             messageFormat: "Potential infinite loop - you should rethrow Exception in catch block",
             category: "Reliability",

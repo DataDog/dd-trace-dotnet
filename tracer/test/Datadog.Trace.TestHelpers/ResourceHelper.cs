@@ -31,4 +31,32 @@ public static class ResourceHelper
             return reader.ReadToEnd();
         }
     }
+
+    public static IEnumerable<KeyValuePair<string, string>> EnumFiles<TContainerAssembly>(string resourceName, string resourceNamespace = null)
+        where TContainerAssembly : class
+    {
+        var type = typeof(TContainerAssembly);
+        Assembly assembly = type.Assembly;
+        if (resourceNamespace == null)
+        {
+            resourceNamespace = type.Namespace;
+        }
+
+        var prefix = resourceNamespace + "." + resourceName + ".";
+
+        foreach (var name in assembly.GetManifestResourceNames())
+        {
+            if (!name.StartsWith(prefix))
+            {
+                continue;
+            }
+
+            using (Stream stream = assembly.GetManifestResourceStream(name))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                var content = reader.ReadToEnd();
+                yield return new KeyValuePair<string, string>(name.Substring(prefix.Length), content);
+            }
+        }
+    }
 }

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     IntegrationName = NUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SimpleWorkItemctorIntegration
+public sealed class SimpleWorkItemctorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTest, TFilter>(TTarget instance, ref TTest? test, ref TFilter? filter)
     {

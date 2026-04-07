@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class DataStreamsMonitoringAwsKinesisTests : TracingIntegrationTest
     {
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Producer => span.IsAwsKinesisOutbound(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAwsKinesisOutbound(),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS Kinesis integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
@@ -43,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsDsmMetrics(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-kinesis" : EnvironmentHelper.FullSampleName;

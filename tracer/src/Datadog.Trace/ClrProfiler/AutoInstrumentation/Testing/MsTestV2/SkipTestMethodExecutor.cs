@@ -8,6 +8,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -37,12 +38,17 @@ internal abstract class SkipTestMethodExecutor
         if (testMethod.TryDuckCast<ITestMethod>(out var testMethodInfo))
         {
             // Create the skip span
-            MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false)?
-               .Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
+            var test = MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false);
+            if (test is not null)
+            {
+                // Set final_status = skip for pre-execution skipped tests (ITR/attribute-based skips)
+                test.GetTags().FinalStatus = TestTags.StatusSkip;
+                test.Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
+            }
         }
     }
 
-    internal class SyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
+    internal sealed class SyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
     {
         [DuckReverseMethod(Name = "Execute", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
         public object Execute(object testMethod)
@@ -52,7 +58,7 @@ internal abstract class SkipTestMethodExecutor
         }
     }
 
-    internal class AsyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
+    internal sealed class AsyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
     {
         private object? _resultInstance;
 
@@ -69,7 +75,7 @@ internal abstract class SkipTestMethodExecutor
             public abstract object Result { get; }
         }
 
-        private class TaskTestResultArray<T>(T value) : TaskTestResultArray
+        private sealed class TaskTestResultArray<T>(T value) : TaskTestResultArray
         {
             public override object Result { get; } = Task.FromResult(value);
         }

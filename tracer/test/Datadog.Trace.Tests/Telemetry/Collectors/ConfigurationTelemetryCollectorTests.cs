@@ -46,7 +46,7 @@ public class ConfigurationTelemetryCollectorTests
             new OverrideErrorLog());
 
         collector.HasChanges().Should().BeTrue();
-        GetLatestValueFromConfig(collector.GetData(), ConfigurationKeys.ServiceVersion).Should().Be("1.2.3");
+        GetLatestValueFromConfig(collector.GetIncrementalData(), ConfigurationKeys.ServiceVersion).Should().Be("1.2.3");
 
         collector.HasChanges().Should().BeFalse();
         var settings2 = new TracerSettings(
@@ -56,7 +56,7 @@ public class ConfigurationTelemetryCollectorTests
             new OverrideErrorLog());
 
         collector.HasChanges().Should().BeTrue();
-        GetLatestValueFromConfig(collector.GetData(), ConfigurationKeys.ServiceVersion).Should().Be("2.0.0");
+        GetLatestValueFromConfig(collector.GetIncrementalData(), ConfigurationKeys.ServiceVersion).Should().Be("2.0.0");
 
         collector.HasChanges().Should().BeFalse();
     }
@@ -88,7 +88,7 @@ public class ConfigurationTelemetryCollectorTests
         // Merged changes should take precedence over existing
         secondary.CopyTo(collector);
 
-        var data = collector.GetData();
+        var data = collector.GetIncrementalData();
         GetLatestValueFromConfig(data, ConfigurationKeys.ServiceVersion).Should().Be("1.2.3");
         collector.HasChanges().Should().BeFalse();
     }
@@ -104,7 +104,7 @@ public class ConfigurationTelemetryCollectorTests
             new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.AppSec.Enabled, enabled.ToString() }, }),
             collector);
 
-        GetLatestValueFromConfig(collector.GetData(), ConfigurationKeys.AppSec.Enabled).Should().Be(enabled);
+        GetLatestValueFromConfig(collector.GetIncrementalData(), ConfigurationKeys.AppSec.Enabled).Should().Be(enabled);
     }
 
     [Theory]
@@ -118,7 +118,7 @@ public class ConfigurationTelemetryCollectorTests
             new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.Iast.Enabled, enabled.ToString() }, }),
             collector);
 
-        GetLatestValueFromConfig(collector.GetData(), ConfigurationKeys.Iast.Enabled).Should().Be(enabled);
+        GetLatestValueFromConfig(collector.GetIncrementalData(), ConfigurationKeys.Iast.Enabled).Should().Be(enabled);
     }
 
     [Theory]
@@ -133,9 +133,9 @@ public class ConfigurationTelemetryCollectorTests
         var config = new NameValueCollection
         {
             { ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "1.5.0" },
-            { ConfigurationKeys.AzureAppService.SiteNameKey, "site-name" },
-            { ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "~4" },
-            { ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated" },
+            { PlatformKeys.AzureAppService.SiteNameKey, "site-name" },
+            { PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "~4" },
+            { PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet-isolated" },
             { ConfigurationKeys.ServiceName, serviceName },
             { ConfigurationKeys.Environment, env },
             { ConfigurationKeys.ServiceVersion, serviceVersion },
@@ -148,13 +148,13 @@ public class ConfigurationTelemetryCollectorTests
 
         _ = new TracerSettings(new NameValueConfigurationSource(config), collector, new OverrideErrorLog());
 
-        var data = collector.GetData();
+        var data = collector.GetIncrementalData();
 
         using var scope = new AssertionScope();
         GetLatestValueFromConfig(data, ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).Should().Be("1.5.0");
-        GetLatestValueFromConfig(data, ConfigurationKeys.AzureAppService.SiteNameKey).Should().Be("site-name");
-        GetLatestValueFromConfig(data, ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion).Should().Be("~4");
-        GetLatestValueFromConfig(data, ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime).Should().Be("dotnet-isolated");
+        GetLatestValueFromConfig(data, PlatformKeys.AzureAppService.SiteNameKey).Should().Be("site-name");
+        GetLatestValueFromConfig(data, PlatformKeys.AzureFunctions.FunctionsExtensionVersion).Should().Be("~4");
+        GetLatestValueFromConfig(data, PlatformKeys.AzureFunctions.FunctionsWorkerRuntime).Should().Be("dotnet-isolated");
         GetLatestValueFromConfig(data, ConfigTelemetryData.AasConfigurationError).Should().BeOfType<bool>().Subject.Should().Be(!isSafeToTrace);
         GetLatestValueFromConfig(data, ConfigTelemetryData.CloudHosting).Should().Be("Azure");
         GetLatestValueFromConfig(data, ConfigTelemetryData.AasAppType).Should().Be("function");
@@ -176,7 +176,7 @@ public class ConfigurationTelemetryCollectorTests
         _ = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.ServiceVersion, "1.2.3" } }), collector, new OverrideErrorLog());
 
         collector.Clear();
-        collector.GetData().Should().BeNull();
+        collector.GetIncrementalData().Should().BeNull();
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public class ConfigurationTelemetryCollectorTests
 
         var s = new TracerSettings(NullConfigurationSource.Instance, collector, new OverrideErrorLog());
 
-        GetLatestValueFromConfig(collector.GetData(), ConfigTelemetryData.NativeTracerVersion).Should().Be("None");
+        GetLatestValueFromConfig(collector.GetIncrementalData(), ConfigTelemetryData.NativeTracerVersion).Should().Be("None");
     }
 
     [Theory]
@@ -198,26 +198,26 @@ public class ConfigurationTelemetryCollectorTests
         {
             { ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract },
             { ConfigurationKeys.PropagationStyleInject, propagationStyleInject },
-            { ConfigurationKeys.PropagationStyle, propagationStyle },
+            { "DD_TRACE_PROPAGATION_STYLE", propagationStyle },
             { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, activityListenerEnabled },
         };
 
         _ = new TracerSettings(new NameValueConfigurationSource(config), collector, new OverrideErrorLog());
 
-        var data = collector.GetData();
+        var data = collector.GetIncrementalData();
 
         using var scope = new AssertionScope();
         var (extractKey, extractValue) = (propagationStyleExtract, propagationStyle) switch
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract),
-            (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
+            (null, not null) => ("DD_TRACE_PROPAGATION_STYLE", propagationStyle),
             (null, null) => (ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage"),
         };
 
         var (injectKey, injectValue) = (propagationStyleInject, propagationStyle) switch
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleInject, propagationStyleInject),
-            (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
+            (null, not null) => ("DD_TRACE_PROPAGATION_STYLE", propagationStyle),
             (null, null) => (ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage"),
         };
 
@@ -235,7 +235,7 @@ public class ConfigurationTelemetryCollectorTests
         _ = new ProfilerSettings(source, source, collector);
         _ = new SecuritySettings(source, collector);
 
-        var data = collector.GetData();
+        var data = collector.GetIncrementalData();
 
         GetLatestValueFromConfig(data, "DD_TRACE_ENABLED", ConfigurationOrigins.Default).Should().Be(true);
         var expected = ProfilerSettings.IsProfilingSupported ? "false" : null;
@@ -243,7 +243,7 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, "DD_APPSEC_ENABLED", ConfigurationOrigins.Default).Should().Be(false);
         GetLatestValueFromConfig(data, "DD_DATA_STREAMS_ENABLED", ConfigurationOrigins.Default).Should().Be(true);
         GetLatestValueFromConfig(data, "DD_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
-        GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be(null);
+        GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be("[]");
         GetLatestValueFromConfig(data, "DD_LOGS_INJECTION", ConfigurationOrigins.Default).Should().Be(true);
         GetLatestValueFromConfig(data, "DD_TRACE_SAMPLE_RATE", ConfigurationOrigins.Default).Should().Be(1.0);
         GetLatestValueFromConfig(data, "instrumentation_source").Should().Be("manual");
@@ -259,7 +259,7 @@ public class ConfigurationTelemetryCollectorTests
         var source = new NameValueConfigurationSource(new NameValueCollection());
         _ = new TracerSettings(source, collector, new OverrideErrorLog());
         _ = new SecuritySettings(source, collector);
-        var data = collector.GetData();
+        var data = collector.GetIncrementalData();
         GetLatestValueFromConfig(data, ConfigTelemetryData.SsiInjectionEnabled).Should().Be("tracer");
         GetLatestValueFromConfig(data, ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled).Should().Be("true");
         GetLatestValueFromConfig(data, ConfigTelemetryData.InstrumentationSource).Should().Be("ssi");
@@ -274,6 +274,39 @@ public class ConfigurationTelemetryCollectorTests
         data.Should().Be(true);
     }
 #endif
+
+    [Fact]
+    public void GetDataReturnsAllValuesAfterMultipleGetFullDataCalls()
+    {
+        var collector = new ConfigurationTelemetry();
+
+        // Record first batch of config values
+        collector.Record("key1", "value1", recordValue: true, ConfigurationOrigins.EnvVars);
+
+        // Call GetFullData() - should contain the first batch
+        var fullData1 = collector.GetFullData();
+        fullData1.Should().ContainSingle().And.ContainSingle(x => x.Name == "key1" && x.Value.Equals("value1"));
+
+        // Record second batch of config values
+        collector.Record("key2", "value2", recordValue: true, ConfigurationOrigins.EnvVars);
+
+        // Call GetFullData() again - should contain all values
+        var fullData2 = collector.GetFullData();
+        fullData2.Should()
+                 .HaveCount(2)
+                 .And
+                 .ContainSingle(x => x.Name == "key1" && x.Value.Equals("value1"))
+                 .And.ContainSingle(x => x.Name == "key2" && x.Value.Equals("value2"));
+
+        // Now call GetData() - should also contain all values since
+        // GetFullData() does not update _reportedCount
+        var data = collector.GetIncrementalData();
+        data.Should()
+            .HaveCount(2)
+            .And
+            .ContainSingle(x => x.Name == "key1" && x.Value.Equals("value1"))
+            .And.ContainSingle(x => x.Name == "key2" && x.Value.Equals("value2"));
+    }
 
     private static object GetLatestValueFromConfig(ICollection<ConfigurationKeyValue> data, string key, ConfigurationOrigins? origin = null)
     {
@@ -301,7 +334,7 @@ public class ConfigurationTelemetryCollectorTests
             });
             var s = new TracerSettings(source, collector, new OverrideErrorLog());
 
-            return GetLatestValueFromConfig(collector.GetData(), ConfigTelemetryData.FullTrustAppDomain);
+            return GetLatestValueFromConfig(collector.GetIncrementalData(), ConfigTelemetryData.FullTrustAppDomain);
         }
     }
 #endif

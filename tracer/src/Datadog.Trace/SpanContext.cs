@@ -1,8 +1,9 @@
-// <copyright file="SpanContext.cs" company="Datadog">
+﻿// <copyright file="SpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -20,7 +21,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public partial class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
+    public sealed partial class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
         private static readonly string[] KeyNames =
         {
@@ -67,11 +68,10 @@ namespace Datadog.Trace
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
-        [PublicApi]
+        [TestingOnly]
         public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
             : this((TraceId)(traceId ?? 0), serviceName)
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContext_Ctor);
             // public ctor must keep accepting legacy types:
             // - traceId: ulong? => TraceId
             // - samplingPriority: SamplingPriority? => int?
@@ -198,7 +198,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
         /// </summary>
-        [PublicApi]
         public ulong TraceId => TraceId128.Lower;
 
         /// <summary>
@@ -295,6 +294,12 @@ namespace Datadog.Trace
         internal string LastParentId { get; set; }
 
         internal PathwayContext? PathwayContext { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the source that set the service name on this span.
+        /// Null when the service name is the default (not overridden by an integration).
+        /// </summary>
+        internal string ServiceNameSource { get; set; }
 
         /// <summary>
         ///  Gets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.

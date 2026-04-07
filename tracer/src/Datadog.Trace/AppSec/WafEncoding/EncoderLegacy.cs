@@ -21,7 +21,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.WafEncoding;
 
-internal class EncoderLegacy : IEncoder
+internal sealed class EncoderLegacy : IEncoder
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
     private readonly WafLibraryInvoker _wafLibraryInvoker;
@@ -315,7 +315,7 @@ internal class EncoderLegacy : IEncoder
         return sb;
     }
 
-    private class EncodeResult : IEncodeResult
+    private sealed class EncodeResult : IEncodeResult
     {
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private DdwafObjectStruct _resultDdwafObject;
@@ -327,6 +327,8 @@ internal class EncoderLegacy : IEncoder
         }
 
         public DdwafObjectStruct ResultDdwafObject => _resultDdwafObject;
+
+        public bool Truncated => false;
 
         public void Dispose() => _wafLibraryInvoker.ObjectFree(ref _resultDdwafObject);
     }

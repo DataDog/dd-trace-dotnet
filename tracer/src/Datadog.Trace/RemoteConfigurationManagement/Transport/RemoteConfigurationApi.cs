@@ -1,4 +1,4 @@
-// <copyright file="RemoteConfigurationApi.cs" company="Datadog">
+﻿// <copyright file="RemoteConfigurationApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,18 +16,19 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Util.Streams;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    internal class RemoteConfigurationApi : IRemoteConfigurationApi
+    internal sealed class RemoteConfigurationApi : IRemoteConfigurationApi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
+        private static readonly JsonSerializerSettings SerializerSettings = new();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly string? _containerId;
-        private readonly string? _entityId;
-        private string? _configEndpoint = null;
+        private readonly ContainerMetadata _containerMetadata;
+        private string? _configEndpoint;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
@@ -37,8 +39,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                     _configEndpoint = config.ConfigurationEndpoint;
                 });
 
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            _containerMetadata = ContainerMetadata.Instance;
         }
 
         public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -58,22 +59,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var uri = _apiRequestFactory.GetEndpoint(configEndpoint);
             var apiRequest = _apiRequestFactory.Create(uri);
 
-            var requestContent = JsonConvert.SerializeObject(request);
-            Log.Debug("Sending Remote Configuration Request: {Content}", requestContent);
-            var bytes = Encoding.UTF8.GetBytes(requestContent);
-            var payload = new ArraySegment<byte>(bytes);
+            apiRequest.AddContainerMetadataHeaders(_containerMetadata);
 
-            if (_containerId != null)
-            {
-                apiRequest.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                apiRequest.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
-
-            using var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+            using var apiResponse = await apiRequest.PostAsJsonAsync(request, MultipartCompression.None, SerializerSettings).ConfigureAwait(false);
             var isRcmDisabled = apiResponse.StatusCode == 404;
             if (isRcmDisabled)
             {

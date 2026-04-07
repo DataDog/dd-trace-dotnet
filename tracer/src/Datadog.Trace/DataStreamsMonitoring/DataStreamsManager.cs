@@ -1,4 +1,4 @@
-// <copyright file="DataStreamsManager.cs" company="Datadog">
+﻿// <copyright file="DataStreamsManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,6 +15,7 @@ using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
@@ -22,48 +23,107 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// <summary>
 /// Manages all the data streams monitoring behaviour
 /// </summary>
-internal class DataStreamsManager
+internal sealed class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
+    private readonly object _nodeHashUpdateLock = new();
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
-    private readonly NodeHashBase _nodeHashBase;
+    private readonly IDisposable _updateSubscription;
+    private readonly bool _isLegacyDsmHeadersEnabled;
+    private readonly IDiscoveryService _discoveryService; // only saved to be able to unsubscribe
+    private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
+    private MutableSettings _previousMutableSettings;
+    private string? _previousContainerTagsHash;
     private bool _isEnabled;
     private bool _isInDefaultState;
     private IDataStreamsWriter? _writer;
 
     public DataStreamsManager(
-        string? env,
-        string defaultServiceName,
+        TracerSettings tracerSettings,
         IDataStreamsWriter? writer,
-        bool isInDefaultState)
+        IDiscoveryService discoveryService)
     {
-        // We don't yet support primary tag in .NET yet
-        _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
         _isEnabled = writer is not null;
+        _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
-        _isInDefaultState = isInDefaultState;
+        _discoveryService = discoveryService;
+        _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
+
+        _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
+        // even though the value will probably get updated by a callback when subscriptions happen just after,
+        // we still need to initialize it to a value from initial settings in case no callback fire
+        UpdateNodeHash(_previousMutableSettings, containerTagsHash: null);
+        // subscribing to changes calls the callback immediately if a value is present
+        discoveryService.SubscribeToChanges(UpdateHashWithContainerTags);
+        _updateSubscription = tracerSettings.Manager.SubscribeToChanges(UpdateHashWithNewSettings);
     }
 
-    public bool IsEnabled => Volatile.Read(ref _isEnabled);
+    public bool IsEnabled
+    {
+        get => Volatile.Read(ref _isEnabled);
+    }
 
-    public bool IsInDefaultState => Volatile.Read(ref _isInDefaultState);
+    public bool IsInDefaultState
+    {
+        get => Volatile.Read(ref _isInDefaultState);
+    }
+
+    /// <summary> Callback for AgentConfiguration updates </summary>
+    private void UpdateHashWithContainerTags(AgentConfiguration conf)
+    {
+        lock (_nodeHashUpdateLock)
+        {
+            if (conf.ContainerTagsHash == _previousContainerTagsHash)
+            {
+                return;
+            }
+
+            UpdateNodeHash(_previousMutableSettings, conf.ContainerTagsHash);
+            _previousContainerTagsHash = conf.ContainerTagsHash;
+        }
+    }
+
+    /// <summary> Callback for MutableSettings updates </summary>
+    private void UpdateHashWithNewSettings(TracerSettings.SettingsManager.SettingChanges updates)
+    {
+        if (updates.UpdatedMutable is { } updated)
+        {
+            lock (_nodeHashUpdateLock)
+            {
+                UpdateNodeHash(updated, _previousContainerTagsHash);
+                _previousMutableSettings = updated;
+            }
+        }
+    }
+
+    private void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
+    {
+        // We don't yet support primary tag in .NET yet
+        var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, settings.ProcessTags?.SerializedTags, containerTagsHash);
+        // Working around the fact we can't do Interlocked.Exchange with the struct
+        // and also that we can't do Interlocked.Exchange with a ulong in < .NET 5
+        Interlocked.Exchange(
+            ref _nodeHashBase,
+            unchecked((long)value.Value)); // reinterpret as a long
+    }
 
     public static DataStreamsManager Create(
         TracerSettings settings,
         ProfilerSettings profilerSettings,
-        IDiscoveryService discoveryService,
-        string defaultServiceName)
+        IDiscoveryService discoveryService)
     {
         var writer = settings.IsDataStreamsMonitoringEnabled
-                         ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService, defaultServiceName)
+                         ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings.Environment, defaultServiceName, writer, settings.IsDataStreamsMonitoringInDefaultState);
+        return new DataStreamsManager(settings, writer, discoveryService);
     }
 
     public async Task DisposeAsync()
     {
+        _updateSubscription.Dispose();
+        _discoveryService.RemoveSubscription(UpdateHashWithContainerTags);
         Volatile.Write(ref _isEnabled, false);
         var writer = Interlocked.Exchange(ref _writer, null);
 
@@ -112,7 +172,7 @@ internal class DataStreamsManager
             return;
         }
 
-        DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
+        DataStreamsContextPropagator.Instance.Inject(context.Value, headers, _isLegacyDsmHeadersEnabled);
     }
 
     public void TrackBacklog(string tags, long value)
@@ -200,7 +260,9 @@ internal class DataStreamsManager
             var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
-            var nodeHash = HashHelper.CalculateNodeHash(_nodeHashBase, edgeTags);
+            // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
+            var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
+            var nodeHash = HashHelper.CalculateNodeHash(nodeHashBase, edgeTags);
             var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 

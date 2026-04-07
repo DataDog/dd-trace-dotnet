@@ -1,4 +1,4 @@
-// <copyright file="NamedPipeClientStreamFactory.cs" company="Datadog">
+﻿// <copyright file="NamedPipeClientStreamFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,12 +12,14 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent.StreamFactories
 {
-    internal class NamedPipeClientStreamFactory : IStreamFactory
+    internal sealed class NamedPipeClientStreamFactory : IStreamFactory
     {
         private const string ServerName = ".";
         private const PipeOptions PipeOptions = System.IO.Pipes.PipeOptions.Asynchronous;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NamedPipeClientStreamFactory));
 
+#if NET5_0_OR_GREATER
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NamedPipeClientStreamFactory));
+#endif
         private readonly string _pipeName;
         private readonly int _timeoutMs;
 

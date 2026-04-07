@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -18,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private const string DatadogAwsSqsServiceName = "aws-sqs";
         private const string SqsRequestOperationName = "sqs.request";
         private const string SqsServiceName = "SQS";
-        private const string SqsOperationName = "aws.sqs";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
@@ -28,7 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -38,10 +39,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             try
             {
-                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
-                string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsSqsServiceName);
+                tags = perTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
+                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsSqsServiceName);
                 string operationName = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -49,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 tags.Service = SqsServiceName;
                 tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -83,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SqsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SqsOperationName),
-                _ => $"{SqsOperationName}.request"
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.AwsSqs),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsSqs),
+                _ => "aws.sqs.request"
             };
         }
     }

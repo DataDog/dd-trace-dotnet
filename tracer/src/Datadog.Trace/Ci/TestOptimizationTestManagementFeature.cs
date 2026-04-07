@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationTestManagementFeature.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationTestManagementFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,13 +11,13 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class TestOptimizationTestManagementFeature : ITestOptimizationTestManagementFeature
+internal sealed class TestOptimizationTestManagementFeature : ITestOptimizationTestManagementFeature
 {
     public const int TestManagementAttemptToFixRetryCountDefault = 10;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationTestManagementFeature));
     private readonly bool _enabled;
-    private readonly Task<TestOptimizationClient.TestManagementResponse> _testManagementTask;
+    private readonly Task<TestOptimizationClient.TestManagementResponse>? _testManagementTask;
 
     private TestOptimizationTestManagementFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
@@ -33,7 +33,7 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
         {
             Log.Information("TestOptimizationTestManagementFeature: Test management is disabled.");
             settings.SetTestManagementEnabled(false);
-            _testManagementTask = Task.FromResult(new TestOptimizationClient.TestManagementResponse());
+            _testManagementTask = null;
             _enabled = false;
             TestManagementAttemptToFixRetryCount = settings.TestManagementAttemptToFixRetryCount ?? TestManagementAttemptToFixRetryCountDefault;
         }
@@ -49,10 +49,10 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
         }
     }
 
-    public bool Enabled => _enabled && TestManagement.Modules is not null; // Ensure that the test management response was not empty
+    public bool Enabled => _enabled && _testManagementTask is not null && TestManagement.Modules is not null; // Ensure that the test management response was not empty
 
     public TestOptimizationClient.TestManagementResponse TestManagement
-        => _testManagementTask.SafeGetResult();
+        => _testManagementTask?.SafeGetResult() ?? new();
 
     public int TestManagementAttemptToFixRetryCount { get; }
 
@@ -61,6 +61,11 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
 
     public TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestProperties(string moduleName, string testSuite, string testName)
     {
+        if (_testManagementTask is null)
+        {
+            return TestOptimizationClient.TestManagementResponseTestPropertiesAttributes.Default;
+        }
+
         if (TestManagement is { Modules: { } modules } &&
             modules.TryGetValue(moduleName, out var module) &&
             module?.Suites?.TryGetValue(testSuite, out var testSuiteProperties) == true &&

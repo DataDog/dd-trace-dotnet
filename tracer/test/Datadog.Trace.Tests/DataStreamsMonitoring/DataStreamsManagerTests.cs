@@ -8,12 +8,16 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
@@ -163,7 +167,7 @@ public class DataStreamsManagerTests
         var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, 100, 100);
         context.Should().NotBeNull();
 
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
         var nodeHash = HashHelper.CalculateNodeHash(baseHash, edgeTags);
         var hash = HashHelper.CalculatePathwayHash(nodeHash, parentHash: new PathwayHash(0));
 
@@ -182,11 +186,47 @@ public class DataStreamsManagerTests
         var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, edgeTags, 100, 100);
         context.Should().NotBeNull();
 
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
         var nodeHash = HashHelper.CalculateNodeHash(baseHash, edgeTags);
         var hash = HashHelper.CalculatePathwayHash(nodeHash, parentHash: parent.Hash);
 
         context.Value.Hash.Value.Should().Be(hash.Value);
+    }
+
+    [Fact]
+    public void ProcessTagsUsedInBaseHash()
+    {
+        var env = "foo";
+        var service = "bar";
+
+        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
+        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, "hello:world", containerTagsHash: null);
+
+        hashWith.Value.Should().NotBe(hashWithout.Value);
+    }
+
+    [Fact]
+    public void ContainerTagsHashUsedInBaseHash()
+    {
+        var env = "foo";
+        var service = "bar";
+
+        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: "hello:world", containerTagsHash: null);
+        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: "hello:world", "12345ABCDE");
+
+        hashWith.Value.Should().NotBe(hashWithout.Value);
+    }
+
+    [Fact]
+    public void ContainerTagsHashNotUsedWithoutProcessTags()
+    {
+        var env = "foo";
+        var service = "bar";
+
+        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
+        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, "12345ABCDE");
+
+        hashWith.Value.Should().Be(hashWithout.Value);
     }
 
     [Fact]
@@ -205,7 +245,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(true, out _);
         var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
-        span.SetDataStreamsCheckpoint(dsm,  CheckpointKind.Produce, new[] { "direction:out" }, 100, 0);
+        span.SetDataStreamsCheckpoint(dsm, CheckpointKind.Produce, new[] { "direction:out" }, 100, 0);
         span.Tags.GetTag("pathway.hash").Should().NotBeNull();
     }
 
@@ -300,11 +340,18 @@ public class DataStreamsManagerTests
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)
     {
         writer = enabled ? new DataStreamsWriterMock() : null;
-        return new DataStreamsManager(
-            env: "foo",
-            defaultServiceName: "bar",
-            writer,
-            isInDefaultState: false);
+        var settings = TracerSettings.Create(
+            new()
+            {
+                { ConfigurationKeys.Environment, "foo" },
+                { ConfigurationKeys.ServiceName, "bar" },
+                { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
+                // TODO: inject a deterministic value for process tags instead, to make test closer to reality
+                // there are already tests about process tags, so this one is not required to "prove" it works
+                // but it'd be cleaner not to have exclusions like this
+                { ConfigurationKeys.PropagateProcessTags, "false" }
+            });
+        return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter

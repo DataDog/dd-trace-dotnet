@@ -6,17 +6,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Agent
 {
-    internal class StatsBuffer
+    internal sealed class StatsBuffer
     {
         private readonly List<StatsAggregationKey> _keysToRemove;
 
-        private readonly ClientStatsPayload _header;
+        private ClientStatsPayload _header;
 
         public StatsBuffer(ClientStatsPayload header)
         {
@@ -27,6 +26,8 @@ namespace Datadog.Trace.Agent
         }
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
+
+        public DateTimeOffset StartTime { get; private set; }
 
         public long Start { get; private set; }
 
@@ -54,21 +55,38 @@ namespace Datadog.Trace.Agent
 
             _keysToRemove.Clear();
 
-            Start = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            StartTime = DateTimeOffset.UtcNow;
+            Start = StartTime.ToUnixTimeNanoseconds();
         }
 
         public void Serialize(Stream stream, long bucketDuration)
         {
-            MessagePackBinary.WriteMapHeader(stream, 8);
+            var count = 8;
+            var details = _header.Details;
+
+            var serializedTags = details.ProcessTags?.SerializedTags;
+            var writeTags = !StringUtil.IsNullOrEmpty(serializedTags);
+            if (writeTags)
+            {
+                count++;
+            }
+
+            MessagePackBinary.WriteMapHeader(stream, count);
 
             MessagePackBinary.WriteString(stream, "Hostname");
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Env");
-            MessagePackBinary.WriteString(stream, _header.Environment ?? string.Empty);
+            MessagePackBinary.WriteString(stream, details.Environment ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Version");
-            MessagePackBinary.WriteString(stream, _header.Version ?? string.Empty);
+            MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
+
+            if (writeTags)
+            {
+                MessagePackBinary.WriteString(stream, "ProcessTags");
+                MessagePackBinary.WriteString(stream, serializedTags);
+            }
 
             MessagePackBinary.WriteString(stream, "Stats");
             MessagePackBinary.WriteArrayHeader(stream, 1);

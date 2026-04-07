@@ -60,7 +60,6 @@ public:
     int32_t CodeHotspotsThreadsThreshold() const override;
     bool IsGarbageCollectionProfilingEnabled() const override;
     bool IsHeapProfilingEnabled() const override;
-    bool UseBacktrace2() const override;
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
     bool IsGcThreadsCpuTimeEnabled() const override;
@@ -85,6 +84,13 @@ public:
     bool IsWaitHandleProfilingEnabled() const override;
     bool IsManagedActivationEnabled() const override;
     void SetEnablementStatus(EnablementStatus status) override;
+    bool IsHeapSnapshotEnabled() const override;
+    std::chrono::minutes GetHeapSnapshotInterval() const override;
+    std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
+    uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
+    uint32_t GetHeapHandleLimit() const override;
+    bool UseManagedCodeCache() const override;
+    bool IsMemoryFootprintEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -110,6 +116,10 @@ private:
     EnablementStatus ExtractEnablementStatus();
     std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
     std::chrono::milliseconds ExtractHttpRequestDurationThreshold() const;
+    std::chrono::minutes ExtractHeapSnapshotInterval() const;
+    std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
+    std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
+    int32_t ExtractHeapHandleLimit() const;
 
 private:
     static std::string const DefaultProdSite;
@@ -123,6 +133,8 @@ private:
     static std::chrono::seconds const DefaultProdUploadInterval;
     static std::chrono::milliseconds const DefaultCpuProfilingInterval;
     static CpuProfilerType const DefaultCpuProfilerType;
+    static std::chrono::minutes const DefaultDevHeapSnapshotInterval;
+    static std::chrono::minutes const DefaultProdHeapSnapshotInterval;
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
@@ -158,7 +170,7 @@ private:
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
     int32_t _codeHotspotsThreadsThreshold;
-    bool _useBacktrace2;
+    uint32_t _heapHandleLimit;
     bool _isAllocationRecorderEnabled;
     bool _isGcThreadsCpuTimeEnabled;
     std::string _gitRepositoryUrl;
@@ -187,4 +199,11 @@ private:
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
     bool _isWaitHandleProfilingEnabled;
+
+    bool _isHeapSnapshotEnabled;
+    std::chrono::minutes _heapSnapshotInterval;
+    std::chrono::milliseconds _heapSnapshotCheckInterval;
+    uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory
+    bool _useManagedCodeCache;
+    bool _isMemoryFootprintEnabled;
 };

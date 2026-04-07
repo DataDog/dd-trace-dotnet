@@ -1,4 +1,4 @@
-// <copyright file="IgnoresAccessChecksToAttribute.cs" company="Datadog">
+﻿// <copyright file="IgnoresAccessChecksToAttribute.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ namespace System.Runtime.CompilerServices
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public class IgnoresAccessChecksToAttribute : Attribute
+    public sealed class IgnoresAccessChecksToAttribute : Attribute
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IgnoresAccessChecksToAttribute"/> class.

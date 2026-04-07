@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "PinnedLocal",
-                "value": "PinnedLocal"
+                "type": "PinnedLocal"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "PinnedLocal",
-                "value": "PinnedLocal"
+                "type": "PinnedLocal"
               }
             },
             "locals": {
@@ -44,6 +42,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "MethodWithPinnedLocal",
       "name": "Samples.Probes.TestRuns.SmokeTests.PinnedLocal",

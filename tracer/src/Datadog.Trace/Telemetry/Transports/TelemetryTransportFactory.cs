@@ -7,32 +7,52 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
-    internal class TelemetryTransportFactory
+    internal sealed class TelemetryTransportFactory
     {
-        public static TelemetryTransports Create(TelemetrySettings telemetrySettings, ExporterSettings exporterSettings)
+        public TelemetryTransportFactory(TelemetrySettings telemetrySettings)
         {
-            var agentProxy = telemetrySettings is { AgentProxyEnabled: true }
-                                 ? GetAgentFactory(exporterSettings, telemetrySettings.DebugEnabled)
-                                 : null;
+            AgentTransportFactory = telemetrySettings switch
+            {
+                { AgentProxyEnabled: true } => e => GetAgentFactory(e, telemetrySettings),
+                _ => null,
+            };
 
-            var agentless = telemetrySettings is { Agentless: { } a }
-                                ? GetAgentlessFactory(a, telemetrySettings.DebugEnabled)
-                                : null;
-
-            return new TelemetryTransports(agentProxy, agentless);
+            AgentlessTransport = telemetrySettings is { Agentless: { } a }
+                                     ? GetAgentlessFactory(a, telemetrySettings)
+                                     : null;
         }
 
-        private static ITelemetryTransport GetAgentFactory(ExporterSettings exporterSettings, bool debugEnabled)
-            => new AgentTelemetryTransport(
-                TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
-                debugEnabled: debugEnabled);
+        // Internal for testing
+        internal TelemetryTransportFactory(
+            Func<ExporterSettings, ITelemetryTransport>? agentTransportFactory,
+            ITelemetryTransport? agentlessTransport)
+        {
+            AgentTransportFactory = agentTransportFactory;
+            AgentlessTransport = agentlessTransport;
+        }
 
-        private static ITelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings, bool debugEnabled)
-            => new AgentlessTelemetryTransport(
+        public Func<ExporterSettings, ITelemetryTransport>? AgentTransportFactory { get; }
+
+        public ITelemetryTransport? AgentlessTransport { get; }
+
+        public bool HasTransports => AgentTransportFactory is not null || AgentlessTransport is not null;
+
+        private static AgentTelemetryTransport GetAgentFactory(ExporterSettings exporterSettings, TelemetrySettings telemetrySettings)
+            => new(
+                TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
+                debugEnabled: telemetrySettings.DebugEnabled,
+                telemetrySettings.CompressionMethod,
+                ContainerMetadata.Instance);
+
+        private static AgentlessTelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings, TelemetrySettings telemetrySettings)
+            => new(
                 TelemetryTransportStrategy.GetDirectIntakeFactory(agentlessSettings),
-                debugEnabled: debugEnabled);
+                debugEnabled: telemetrySettings.DebugEnabled,
+                telemetrySettings.CompressionMethod,
+                ContainerMetadata.Instance);
     }
 }

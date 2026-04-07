@@ -9,6 +9,8 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
 
@@ -26,10 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ex
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class SpanExtensionsSetUserIntegration
+public sealed class SpanExtensionsSetUserIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, string? email, string? name, string id, bool propagateId, string? sessionId, string? role, string? scope)
     {
+        TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetUser);
         if (!string.IsNullOrEmpty(id))
         {
             // Annoyingly, this takes an ISpan, so we have to do some duckTyping to make it work

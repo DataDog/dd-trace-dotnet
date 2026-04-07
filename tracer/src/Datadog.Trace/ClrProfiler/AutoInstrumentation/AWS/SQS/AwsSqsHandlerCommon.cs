@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 /// <summary>
 /// Contains the code that is shared between the integrations of sync/async and batch/single send and receive.
 /// </summary>
-internal static class AwsSqsHandlerCommon
+internal sealed class AwsSqsHandlerCommon
 {
     internal static CallTargetState BeforeSend<TSendMessageRequest>(TSendMessageRequest request, SendType sendType)
     {
@@ -160,7 +160,10 @@ internal static class AwsSqsHandlerCommon
                     var sentTime = 0;
                     if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
                     {
-                        int.TryParse(sentTimeStr, out sentTime);
+                        if (!int.TryParse(sentTimeStr, out sentTime))
+                        {
+                            sentTime = 0;
+                        }
                     }
 
                     var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
@@ -174,7 +177,7 @@ internal static class AwsSqsHandlerCommon
         return response;
     }
 
-    public class SendType
+    public sealed class SendType
     {
         public static readonly SendType SingleMessage = new("SendMessage");
 

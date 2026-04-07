@@ -29,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public GrpcLegacyTests(ITestOutputHelper output)
             : base("GrpcLegacy", output, usesAspNetCore: false)
         {
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             // the sample uses protobuf, but we are only interested in testing the grpc instrumentation,
             // so we disable the proto one which would add unexpected tags to the spans.
             SetEnvironmentVariable("DD_TRACE_PROTOBUF_ENABLED", "false");
@@ -190,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public abstract class GrpcTestsBase : TracingIntegrationTest
     {
-        private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta";
+        private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta,x-dd-propagation-failed";
         private static readonly HashSet<string> ExcludeTags = new HashSet<string>
         {
             "clientmeta",
@@ -373,6 +372,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         {
                             // May be missing in some cases
                             span.Tags["http.status_code"] = "200";
+                            span.Tags["grpc.status_code"] = "4";
                         }
 
                         // there is a race between the server cancelling a deadline and the client cancelling it
@@ -413,16 +413,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Grpc);
             }
-            catch (ExitCodeException)
+            catch (ExitCodeException ex)
             {
                 // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
                 // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
                 if (!string.IsNullOrEmpty(packageVersion)
                  && new Version(packageVersion) < new Version("2.43.0")
-                 && processResult is not null
-                 && processResult.StandardError.Contains("ObjectDisposedException"))
+                 && ex.Message.Contains("ObjectDisposedException"))
                 {
-                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
+                    throw new SkipException($"Hit race condition in GRPC deadline exceeded {ex.Message}");
                 }
 
                 throw;
@@ -457,16 +456,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Grpc);
                 }
             }
-            catch (ExitCodeException)
+            catch (ExitCodeException ex)
             {
                 // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
                 // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
                 if ((!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) < new Version("2.43.0"))
-                    && processResult is not null
-                    && processResult.StandardError.Contains("ObjectDisposedException"))
+                    && ex.Message.Contains("ObjectDisposedException"))
                 {
-                    throw new SkipException("Hit race condition in GRPC deadline exceeded");
+                    throw new SkipException($"Hit race condition in GRPC deadline exceeded {ex.Message}");
                 }
+
+                throw;
             }
         }
 

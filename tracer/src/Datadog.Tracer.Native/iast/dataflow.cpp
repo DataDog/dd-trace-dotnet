@@ -159,7 +159,7 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 //--------------------
 
 Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
-                   const RuntimeInformation& runtimeInfo) :
+                   std::vector<ModuleID> moduleIds, const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
     m_runtimeType = runtimeInfo.runtime_type;
@@ -169,32 +169,33 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
     this->_setILOnJit = trace::IsEditAndContinueEnabled();
     if (this->_setILOnJit)
     {
-        trace::Logger::Info("Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
+        trace::Logger::Info(
+            "Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
     }
 
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
     if (FAILED(hr))
     {
         _profiler = nullptr;
-        trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
+        trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. "
+                             "Disabling Dataflow. HRESULT : ",
+                             Hex(hr));
     }
+
+    _preLoadedModuleIds = moduleIds;
 }
 
 Dataflow::~Dataflow()
 {
-    _initialized = false;
     REL(_profiler);
-    DEL_MAP_VALUES(_modules);
-    DEL_MAP_VALUES(_appDomains);
-    DEL_MAP_VALUES(_moduleAspects);
 }
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
-    if (!_initialized)
-    {
-        _initialized = true;
+    CSGUARD(_cs);
 
+    if (_aspects.size() == 0)
+    {
         // Init aspects
         DBG("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " Enabled categories: ", enabledCategories, " Platform: ", platform);
 
@@ -369,11 +370,6 @@ void Dataflow::LoadSecurityControls()
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
-    if (!_initialized)
-    {
-        return S_OK;
-    }
-
     CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
@@ -388,9 +384,15 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
-    if (!_initialized)
+    CSGUARD(_cs);
+    // Retrieve all already modules at once to mimic initialization from creation behavior
+    if (_preLoadedModuleIds.size() > 0)
     {
-        return S_OK;
+        for (auto const& id : _preLoadedModuleIds)
+        {
+            GetModuleInfo(id);
+        }
+        _preLoadedModuleIds.clear();
     }
 
     GetModuleInfo(moduleId);
@@ -399,11 +401,6 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 
 HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
 {
-    if (!_initialized)
-    {
-        return S_OK;
-    }
-
     CSGUARD(_cs);
     {
         auto it = _moduleAspects.find(moduleId);
@@ -545,20 +542,21 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     }
 
     // Retrieve module information if not found
+    const int pathLen = 2048;
     LPCBYTE pbBaseLoadAddr;
-    WCHAR wszPath[300];
-    ULONG cchNameIn = 300;
-    ULONG cchNameOut;
+    ULONG pathOut;
+    WCHAR wszName[pathLen];
+    WCHAR wszPath[pathLen];
     AssemblyID assemblyId;
     AppDomainID appDomainId;
     ModuleID modIDDummy;
-    WCHAR wszName[1024];
 
     DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
+    pathOut = 0;
+    HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, pathLen, &pathOut, wszPath, &assemblyId, &dwModuleFlags);
     if (FAILED(hr))
     {
-        trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id);
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id, " hr:", Hex(hr));
         _modules[id] = nullptr; 
         return nullptr;
     }
@@ -568,10 +566,12 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
         return nullptr;
     } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
 
-    hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
+    pathOut = 0;
+    hr = _profiler->GetAssemblyInfo(assemblyId, pathLen, &pathOut, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
-        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ", assemblyId);
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
+                             assemblyId, " hr:", Hex(hr));
         _modules[id] = nullptr;
         return nullptr;
     }
@@ -608,6 +608,7 @@ ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 
 MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 {
+    CSGUARD(_cs);
     auto module = GetModuleInfo(moduleId);
     if (module)
     {
@@ -618,11 +619,6 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
-    if (!_initialized)
-    {
-        return true;
-    }
-
     auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
     if (method)
     {
@@ -632,21 +628,12 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_initialized)
-    {
-        return false;
-    }
-
     auto method = JITProcessMethod(moduleId, methodId);
     return method != nullptr;
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
-    if (!_initialized)
-    {
-        return nullptr;
-    }
-
+    CSGUARD(_cs);
     MethodInfo* method = nullptr;
     auto module = GetModuleInfo(moduleId);
     if (module && !module->IsExcluded())
@@ -783,11 +770,6 @@ void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
 
 HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
 {
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-
     auto method = JITProcessMethod(functionControl.GetModuleId(), functionControl.GetMethodId(), &functionControl);
     if (method && method->IsWritten())
     {

@@ -249,6 +249,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             stackFrame.isSuspicious = false;
 
             stackFrame.buildId = module->build_id;
+            stackFrame.modulePath = module->path;
 
             fs::path modulePath(module->path);
 
@@ -278,18 +279,6 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
     _UPT_destroy(libunwindContext);
 
     return MergeFrames(frames, managedFrames);
-}
-
-std::string CrashReportingLinux::GetSignalInfo(int32_t signal)
-{
-    auto signalInfo = strsignal(signal);
-
-    if (signalInfo == nullptr)
-    {
-        return {};
-    }
-
-    return signalInfo;
 }
 
 std::vector<std::pair<int32_t, std::string>> CrashReportingLinux::GetThreads()

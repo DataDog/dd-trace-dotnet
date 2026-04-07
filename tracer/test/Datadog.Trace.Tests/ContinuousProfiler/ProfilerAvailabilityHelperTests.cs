@@ -4,22 +4,22 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
-using ProfilerAvailabilityHelper =  Datadog.Trace.ContinuousProfiler.ProfilerAvailabilityHelper;
+using ProfilerAvailabilityHelper = Datadog.Trace.ContinuousProfiler.ProfilerAvailabilityHelper;
 
 namespace Datadog.Trace.Tests.ContinuousProfiler;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
 [EnvironmentRestorer(
-    "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
-    LambdaMetadata.FunctionNameEnvVar,
-    ConfigurationKeys.AzureAppService.SiteNameKey,
-    ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime,
-    ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion,
+    ConfigurationKeys.ContinuousProfiler.InternalProfilingNativeEnginePath,
+    PlatformKeys.Aws.LambdaFunctionName,
+    PlatformKeys.AzureAppService.SiteNameKey,
+    PlatformKeys.AzureFunctions.FunctionsWorkerRuntime,
+    PlatformKeys.AzureFunctions.FunctionsExtensionVersion,
     ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)]
 public class ProfilerAvailabilityHelperTests
 {
@@ -34,56 +34,71 @@ public class ProfilerAvailabilityHelperTests
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.X64);
 
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(ClrProfilerIsAttached).Should().BeFalse();
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(
+            ClrProfilerIsAttached,
+            new AwsInfo().IsAwsLambda,
+            new AzureInfo().IsAzureFunction).Should().BeFalse();
     }
 
     [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [PairwiseData]
     public void IsContinuousProfilerAvailable_OnSupportedPlatforms_WithNoEnvVars_ReturnsClrAttached(bool clrAttached)
     {
         SkipUnsupported();
         var attachedCheck = clrAttached ? ClrProfilerIsAttached : ClrProfilerNotAttached;
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().Be(clrAttached);
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(
+            attachedCheck,
+            new AwsInfo().IsAwsLambda,
+            new AzureInfo().IsAzureFunction).Should().Be(clrAttached);
     }
 
     [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [PairwiseData]
     public void IsContinuousProfilerAvailable_OnWindows_WithEnvVar_IgnoresAttachment_ReturnsTrue(bool clrAttached)
     {
         SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
         var attachedCheck = clrAttached ? ClrProfilerIsAttached : ClrProfilerNotAttached;
         Environment.SetEnvironmentVariable("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH", @"c:\some\path");
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().BeTrue();
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(
+            attachedCheck,
+            new AwsInfo().IsAwsLambda,
+            new AzureInfo().IsAzureFunction).Should().BeTrue();
     }
 
     [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [PairwiseData]
     public void IsContinuousProfilerAvailable_OnWindows_NoEnvVar_IgnoresAttachment_ReturnsFalse(bool clrAttached)
     {
         SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
         var attachedCheck = clrAttached ? ClrProfilerIsAttached : ClrProfilerNotAttached;
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(attachedCheck).Should().BeFalse();
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(
+            attachedCheck,
+            new AwsInfo().IsAwsLambda,
+            new AzureInfo().IsAzureFunction).Should().BeFalse();
     }
 
     [SkippableFact]
     public void IsContinuousProfilerAvailable_InLambda_IgnoresAttachment_ReturnsFalse()
     {
         SkipUnsupported();
-        Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, @"SomeFunction");
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(ClrProfilerIsAttached).Should().BeFalse();
+        Environment.SetEnvironmentVariable(PlatformKeys.Aws.LambdaFunctionName, @"SomeFunction");
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(
+            ClrProfilerIsAttached,
+            new AwsInfo().IsAwsLambda,
+            new AzureInfo().IsAzureFunction).Should().BeFalse();
     }
 
     [SkippableFact]
     public void IsContinuousProfilerAvailable_InAzureFunctions_IgnoresAttachment_ReturnsFalse()
     {
         SkipUnsupported();
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "MyApp");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet");
-        Environment.SetEnvironmentVariable(ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, "v6.0");
-        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(ClrProfilerIsAttached).Should().BeFalse();
+        Environment.SetEnvironmentVariable(PlatformKeys.AzureAppService.SiteNameKey, "MyApp");
+        Environment.SetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, "dotnet");
+        Environment.SetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, "v6.0");
+        ProfilerAvailabilityHelper.IsContinuousProfilerAvailable_TestingOnly(
+            ClrProfilerIsAttached,
+            new AwsInfo().IsAwsLambda,
+            new AzureInfo().IsAzureFunction).Should().BeFalse();
     }
 
     private static void SkipUnsupported()

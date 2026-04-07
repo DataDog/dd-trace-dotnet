@@ -1,4 +1,4 @@
-// <copyright file="TracerFlareManager.cs" company="Datadog">
+﻿// <copyright file="TracerFlareManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,14 +14,16 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
-internal class TracerFlareManager : ITracerFlareManager
+internal sealed class TracerFlareManager : ITracerFlareManager
 {
     internal const string TracerFlareInitializationLog = "Enabling debug mode due to tracer flare initialization";
     internal const string TracerFlareCompleteLog = "Disabled debug mode due to tracer flare complete";
@@ -36,7 +38,7 @@ internal class TracerFlareManager : ITracerFlareManager
 
     private string? _debugEnabledConfigPath;
     private ISubscription? _subscription;
-    private Timer? _resetTimer = null;
+    private Timer? _resetTimer;
 
     private bool _wasDebugLogEnabled;
 
@@ -52,7 +54,7 @@ internal class TracerFlareManager : ITracerFlareManager
         _discoveryService = discoveryService;
     }
 
-    public bool? CanSendTracerFlare { get; private set; } = null;
+    public bool? CanSendTracerFlare { get; private set; }
 
     public void Start()
     {
@@ -140,7 +142,7 @@ internal class TracerFlareManager : ITracerFlareManager
             {
                 // This product means "prepare for sending a tracer flare."
                 // We may consider doing more than just enabling debug mode in the future
-                _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabledInternal;
+                _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabled;
                 GlobalSettings.SetDebugEnabled(true);
 
                 // The timer is a fallback, in case we never receive a "send flare" product
@@ -251,7 +253,7 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    // internal for testing
+    [TestingAndPrivateOnly]
     internal async Task<ApplyDetails> TrySendDebugLogs(string configPath, byte[] configContents, string configId, string fileLogDirectory)
     {
         try
@@ -360,7 +362,7 @@ internal class TracerFlareManager : ITracerFlareManager
                 return true;
             }
 
-            var json = JObject.Parse(EncodingHelpers.Utf8NoBom.GetString(remoteConfig.Contents));
+            var json = JsonHelper.ParseJObject(remoteConfig.Contents, EncodingHelpers.Utf8NoBom);
 
             var logLevel = json["config"]?["log_level"]?.Value<string>();
 
@@ -418,7 +420,7 @@ internal class TracerFlareManager : ITracerFlareManager
         {
             using var stream = new MemoryStream(contents);
             using var streamReader = new StreamReader(stream);
-            using var jsonReader = new JsonTextReader(streamReader);
+            using var jsonReader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
             return JObject.Load(jsonReader);
         }
         catch (Exception ex)

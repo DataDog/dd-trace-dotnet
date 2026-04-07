@@ -1,4 +1,4 @@
-// <copyright file="DiagnosticFeatureResult.cs" company="Datadog">
+﻿// <copyright file="DiagnosticFeatureResult.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
-internal class DiagnosticFeatureResult
+internal sealed class DiagnosticFeatureResult
 {
     private DiagnosticFeatureResult(IReadOnlyList<string> loaded, IReadOnlyList<string> failed, IReadOnlyList<string> skipped, IReadOnlyDictionary<string, object> errors, IReadOnlyDictionary<string, object> warnings)
     {
@@ -47,17 +47,17 @@ internal class DiagnosticFeatureResult
         return null;
     }
 
-    private static IReadOnlyList<string> GetListKey(Dictionary<string, object> diagObject, string key)
+    private static List<string> GetListKey(Dictionary<string, object> diagObject, string key)
     {
         if (diagObject.TryGetValue(key, out var listObj) && listObj is List<object> list)
         {
             return list.Cast<string>().ToList();
         }
 
-        return new List<string>();
+        return [];
     }
 
-    private static IReadOnlyDictionary<string, object> GetDictionaryKey(Dictionary<string, object> diagObject, string key)
+    private static Dictionary<string, object> GetDictionaryKey(Dictionary<string, object> diagObject, string key)
     {
         if (diagObject.TryGetValue(key, out var dictObj) && dictObj is Dictionary<string, object> dict)
         {

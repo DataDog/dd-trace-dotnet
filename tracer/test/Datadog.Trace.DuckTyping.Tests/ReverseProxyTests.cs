@@ -24,7 +24,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             Type iLogEventEnricherType = typeof(Datadog.Trace.Vendors.Serilog.Core.ILogEventEnricher);
 
-            var resetEvent = new ManualResetEventSlim();
+            using var resetEvent = new ManualResetEventSlim();
 
             var instance = new InternalLogEventEnricherImpl(resetEvent);
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void PrivateAbstractClassReverseProxyTest()
         {
-            var resetEvent = new ManualResetEventSlim();
+            using var resetEvent = new ManualResetEventSlim();
 
             var eventInstance = new LogEventPropertyValueImpl(resetEvent);
 
@@ -62,7 +62,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             Type iLogEventEnricherType = typeof(Serilog.Core.ILogEventEnricher);
 
-            var resetEvent = new ManualResetEventSlim();
+            using var resetEvent = new ManualResetEventSlim();
 
             var instance = new PublicLogEventEnricherImpl(resetEvent);
 
@@ -81,7 +81,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void PublicAbstractClassReverseProxyTest()
         {
-            var resetEvent = new ManualResetEventSlim();
+            using var resetEvent = new ManualResetEventSlim();
 
             var eventInstance = new LogEventPropertyValueImpl(resetEvent);
 

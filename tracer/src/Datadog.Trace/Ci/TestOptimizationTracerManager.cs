@@ -13,6 +13,8 @@ using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DogStatsd;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -32,20 +34,21 @@ namespace Datadog.Trace.Ci
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IDogStatsd statsd,
+            IStatsdManager statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager)
+            ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlags,
+            ServiceRemappingHash serviceRemappingHash)
             : base(
                 settings,
                 agentWriter,
@@ -56,7 +59,6 @@ namespace Datadog.Trace.Ci
                 telemetry,
                 discoveryService,
                 dataStreamsManager,
-                defaultServiceName,
                 gitMetadataTagsProvider,
                 traceSampler,
                 spanSampler,
@@ -64,6 +66,8 @@ namespace Datadog.Trace.Ci
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
+                featureFlags,
+                serviceRemappingHash,
                 GetProcessors(settings.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
@@ -144,26 +148,27 @@ namespace Datadog.Trace.Ci
             ((IEventWriter)AgentWriter).WriteEvent(@event);
         }
 
-        internal class LockedManager : TestOptimizationTracerManager, ILockedTracer
+        internal sealed class LockedManager : TestOptimizationTracerManager, ILockedTracer
         {
             public LockedManager(
                 TracerSettings settings,
                 IAgentWriter agentWriter,
                 IScopeManager scopeManager,
-                IDogStatsd statsd,
+                IStatsdManager statsd,
                 RuntimeMetricsWriter runtimeMetricsWriter,
                 DirectLogSubmissionManager logSubmissionManager,
                 ITelemetryController telemetry,
                 IDiscoveryService discoveryService,
                 DataStreamsManager dataStreamsManager,
-                string defaultServiceName,
                 IGitMetadataTagsProvider gitMetadataTagsProvider,
                 ITraceSampler traceSampler,
                 ISpanSampler spanSampler,
                 IRemoteConfigurationManager remoteConfigurationManager,
                 IDynamicConfigurationManager dynamicConfigurationManager,
                 ITracerFlareManager tracerFlareManager,
-                ISpanEventsManager spanEventsManager)
+                ISpanEventsManager spanEventsManager,
+                FeatureFlagsModule featureFlags,
+                ServiceRemappingHash serviceRemappingHash)
             : base(
                 settings,
                 agentWriter,
@@ -174,14 +179,15 @@ namespace Datadog.Trace.Ci
                 telemetry,
                 discoveryService,
                 dataStreamsManager,
-                defaultServiceName,
                 gitMetadataTagsProvider,
                 traceSampler,
                 spanSampler,
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                spanEventsManager)
+                spanEventsManager,
+                featureFlags,
+                serviceRemappingHash)
             {
             }
         }

@@ -5,6 +5,8 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
@@ -14,15 +16,30 @@ namespace Datadog.Trace.Tests.Debugger;
 
 internal static class SnapshotHelper
 {
-    internal static string GenerateSnapshot(object instance, bool prettify = true)
+    static SnapshotHelper()
     {
-        return GenerateSnapshot(null, new object[] { }, new object[] { instance }, prettify);
+        // Configure the serializer with a high timeout for tests to prevent rare timeout failures on slow CI machines
+        var testSettings = new DebuggerSettings(
+            new NameValueConfigurationSource(new()
+            {
+                {
+                    ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000"
+                }
+            }),
+            NullConfigurationTelemetry.Instance);
+
+        DebuggerSnapshotSerializer.SetConfig(testSettings);
+    }
+
+    internal static string GenerateSnapshot(object instance, bool prettify = true, bool withProcessTags = false)
+    {
+        return GenerateSnapshot(instance: null, new object[] { }, new object[] { instance }, prettify, withProcessTags);
     }
 
     /// <summary>
     /// Generate a debugger snapshot by simulating the same flow of method calls as our instrumentation produces for a method probe.
     /// </summary>
-    private static string GenerateSnapshot(object instance, object[] args, object[] locals, bool prettify)
+    private static string GenerateSnapshot(object instance, object[] args, object[] locals, bool prettify, bool withProcessTags)
     {
         var maxInfo = new CaptureLimitInfo(
             MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
@@ -30,7 +47,7 @@ internal static class SnapshotHelper
             MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
             MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo);
+        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo, processTagsProvider: static () => null, serviceNameProvider: static () => "test-service");
         {
             // method entry
             snapshotCreator.StartEntry();
@@ -44,7 +61,7 @@ internal static class SnapshotHelper
                 snapshotCreator.CaptureArgument(args[i], "arg" + i, args[i].GetType());
             }
 
-            snapshotCreator.EndEntry(hasArgumentsOrLocals: args.Length > 0);
+            snapshotCreator.EndEntry();
         }
 
         {
@@ -65,7 +82,7 @@ internal static class SnapshotHelper
                 snapshotCreator.CaptureInstance(instance, instance.GetType());
             }
 
-            snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
+            snapshotCreator.EndReturn();
         }
 
         snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");

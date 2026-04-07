@@ -1,22 +1,24 @@
-// <copyright file="ObfuscatorTraceProcessor.cs" company="Datadog">
+﻿// <copyright file="ObfuscatorTraceProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Processors
 {
     // https://github.com/DataDog/dd-trace-java/blob/35487fa08f16503105b2ff37fb084ffa5c894f24/internal-api/src/main/java/datadog/trace/api/normalize/SQLNormalizer.java
 
-    internal class ObfuscatorTraceProcessor : ITraceProcessor
+    internal sealed class ObfuscatorTraceProcessor : ITraceProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ObfuscatorTraceProcessor>();
         private static readonly BitArray NumericLiteralPrefix = new BitArray(256, false);
         private static readonly BitArray Splitters = new BitArray(256, false);
-        private readonly ObfuscatorTagsProcessor _tagsProcessor;
 
         static ObfuscatorTraceProcessor()
         {
@@ -42,17 +44,11 @@ namespace Datadog.Trace.Processors
             }
         }
 
-        public ObfuscatorTraceProcessor(bool redisTagObfuscationEnabled)
+        public SpanCollection Process(in SpanCollection trace)
         {
-            _tagsProcessor = new(redisTagObfuscationEnabled);
-            Log.Information("ObfuscatorTraceProcessor initialized. Redis tag obfuscation enabled: {RedisObfuscation}", redisTagObfuscationEnabled);
-        }
-
-        public ArraySegment<Span> Process(ArraySegment<Span> trace)
-        {
-            for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
+            foreach (var span in trace)
             {
-                trace.Array![i] = Process(trace.Array[i]);
+                Process(span);
             }
 
             return trace;
@@ -72,7 +68,7 @@ namespace Datadog.Trace.Processors
             return span;
         }
 
-        public ITagProcessor GetTagProcessor() => _tagsProcessor;
+        public ITagProcessor? GetTagProcessor() => null;
 
         internal static string ObfuscateSqlResource(string sqlQuery)
         {

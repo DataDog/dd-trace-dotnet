@@ -1,7 +1,9 @@
-﻿# To build this file locally, starting from the root directory:
+﻿# To update and deploy this image, see UPDATING_IMAGE.md
+#
+# To build this file locally, starting from the root directory:
 # cd tracer/build/_build/docker/gitlab
-# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10-preview7 .
-# docker push datadog/dd-trace-dotnet-docker-build:dotnet10-preview7
+# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
+# docker push datadog/dd-trace-dotnet-docker-build:dotnet10
 
 ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
 FROM ${BASE_IMAGE}
@@ -31,34 +33,26 @@ RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV
 
 # Install .NET 10
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="10.0.100-rc.1.25451.107" \
-    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100-rc.1.25451.107/dotnet-sdk-10.0.100-rc.1.25451.107-win-x64.exe" \
-    DOTNET_SHA512="92926100cd94d7e3e936c9f433609707c0563dc12cdb591a2cdd92f6a332e92b312cb4ca1174956e16d68f6a42521c30214f878e492990ef3a98db08c03dc75a"
+ENV DOTNET_VERSION="10.0.100" \
+    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-win-x64.exe" \
+    DOTNET_SHA512="e9920ce4b9b2fa3ce63a35f288080bb8d2b7f5bfbf2d51588276f81eddc8858254760f172aa1d0a7211a98378816c6e8bb17b59f4844db8456988ad10a557ca9"
 
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
 
+# Copy the CI Identities GitLab Job Client
+COPY --from=registry.ddbuild.io/ci-identities/ci-identities-gitlab-job-client:v0.2.0-windows-amd64 C:/ci-identities-gitlab-job-client.exe c:/devtools/ci-identities-gitlab-job-client.exe
+
 # Java and code signing tool environment variables
-ENV JAVA_VERSION "17.0.8"
-ENV JAVA_SHA256 "db6e7e7506296b8a2338f6047fdc94bf4bbc147b7a3574d9a035c3271ae1a92b"
-ENV WINSIGN_VERSION "0.3.5"
-ENV WINSIGN_SHA256 "b2ba5127a5c5141e04d42444ca115af4c95cc053a743caaa9b33c68dd6b13f68"
-ENV PYTHON_VERSION "3.8.2"
-
-# Install Python
-COPY install_python3.ps1 .
-RUN powershell -Command .\install_python3.ps1 -Version $ENV:PYTHON_VERSION
-
-COPY requirements.txt constraints.txt install_python_packages.ps1 ./
-RUN powershell -Command .\install_python_packages.ps1
+ENV JAVA_VERSION "25.0.1"
+ENV JAVA_SHA256 "d56bed274adb2b16deea2dce3f21718d1b0dcdbe2253bc5cc332b525cbcd1fd1"
 
 # Install JAVA
 COPY helpers.ps1 install_java.ps1 ./
 RUN powershell -Command .\install_java.ps1
 
-# Install 
-COPY install_winsign.ps1 .
-RUN powershell -Command .\install_winsign.ps1
+# Install Windows Code Signer
+COPY --from=registry.ddbuild.io/windows-code-signer/go:v0.6.0-ltsc2019 c:/windows-code-signer/windows-code-signer.exe c:/devtools/windows-code-signer.exe
 
 # Copy everything else
 COPY . .

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -39,19 +39,24 @@
   <ItemGroup Label="Required files from the project(s) being tested">
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\AutoResetEvent.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\EtwEventsManager.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\ProfilerLogger.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SymPdbParser.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\CrashReporting.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\DogstatsdService.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\ManagedCodeCache.cpp" />
     <ClCompile Include="AdaptiveSamplerTest.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
@@ -61,6 +66,7 @@
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="CpuSamplePRoviderTest.cpp" />
     <ClCompile Include="CrashReportingTest.cpp" />
+    <ClCompile Include="DebugInfoStoreTest.cpp" />
     <ClCompile Include="EnabledProfilersTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />
     <ClCompile Include="ErrorCodeTest.cpp" />
@@ -70,9 +76,11 @@
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />
+    <ClCompile Include="ManagedThreadInfoTest.cpp" />
     <ClCompile Include="ProfileExporterTest.cpp" />
     <ClCompile Include="LinuxStackFramesCollectorTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
+    <ClCompile Include="ManagedCodeCacheTest.cpp" />
     <ClCompile Include="ManagedThreadListTest.cpp" />
     <ClCompile Include="MetricsRegistryTest.cpp" />
     <ClCompile Include="OpSysToolsTest.cpp" />
@@ -93,6 +101,7 @@
     <ClCompile Include="ProviderTest.cpp" />
     <ClCompile Include="ThreadsCpuManagerHelper.cpp" />
     <ClCompile Include="ChronoHelperTest.cpp" />
+    <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.h" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
@@ -101,6 +110,7 @@
     <ClInclude Include="EnvironmentHelper.h" />
     <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />
+    <ClInclude Include="MockProfilerInfo.h" />
     <ClInclude Include="ProfilerMockedInterface.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />

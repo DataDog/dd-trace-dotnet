@@ -7,7 +7,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
-    internal class Parameter
+    internal sealed class Parameter
     {
         /// <summary>
         /// Gets or sets the address containing the value that triggered the rule. For example

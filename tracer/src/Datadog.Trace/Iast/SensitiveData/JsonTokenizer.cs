@@ -1,4 +1,4 @@
-// <copyright file="JsonTokenizer.cs" company="Datadog">
+﻿// <copyright file="JsonTokenizer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,13 +9,15 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
 namespace Datadog.Trace.Iast.SensitiveData;
 
-internal class JsonTokenizer : ITokenizer
+internal sealed class JsonTokenizer : ITokenizer
 {
     private const string SourceValueRegexString = @"(?i)bearer\s+[a-z0-9\._\-]+|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}";
 
@@ -37,7 +39,7 @@ internal class JsonTokenizer : ITokenizer
 
         var redactedRanges = new List<Range>();
         using var sr = new StringReader(value);
-        using var reader = new JsonTextReader(sr);
+        using var reader = new JsonTextReader(sr) { ArrayPool = JsonArrayPool.Shared };
 
         while (reader.Read())
         {

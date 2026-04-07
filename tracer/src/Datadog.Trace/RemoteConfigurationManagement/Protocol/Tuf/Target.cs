@@ -1,20 +1,22 @@
-// <copyright file="Target.cs" company="Datadog">
+﻿// <copyright file="Target.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+#nullable enable
 
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
 {
-    internal class Target
+    internal sealed class Target
     {
         [JsonProperty("custom")]
-        public TargetCustom Custom { get; set; } = new();
+        public TargetCustom? Custom { get; set; }
 
         [JsonProperty("hashes")]
-        public Dictionary<string, string> Hashes { get; set; } = new();
+        public Dictionary<string, string>? Hashes { get; set; }
 
         [JsonProperty("length")]
         public long Length { get; set; }

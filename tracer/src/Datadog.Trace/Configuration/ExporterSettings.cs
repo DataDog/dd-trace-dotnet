@@ -11,6 +11,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -23,7 +25,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains exporter settings.
     /// </summary>
-    public partial class ExporterSettings
+    public sealed partial class ExporterSettings
     {
         /// <summary>
         /// Allows overriding of file system access for tests.
@@ -47,35 +49,25 @@ namespace Datadog.Trace.Configuration
         internal const string DefaultMetricsUnixDomainSocket = "/var/run/datadog/dsd.socket";
         internal const string UdpPrefix = "udp://";
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExporterSettings"/> class with default values.
-        /// </summary>
-        [PublicApi]
-        public ExporterSettings()
-            : this(null, new ConfigurationTelemetry())
+        [TestingOnly]
+        internal ExporterSettings()
+            : this(source: null, new ConfigurationTelemetry())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExporterSettings"/> class
-        /// using the specified <see cref="IConfigurationSource"/> to initialize values.
-        /// </summary>
-        /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <remarks>
-        /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
-        /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure(TracerSettings)"/>
-        /// </remarks>
-        [PublicApi]
-        public ExporterSettings(IConfigurationSource? source)
+        [TestingOnly]
+        internal ExporterSettings(IConfigurationSource? source)
             : this(source, File.Exists, new ConfigurationTelemetry())
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor_Source);
         }
 
         internal ExporterSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
             : this(source, File.Exists, telemetry)
+        {
+        }
+
+        internal ExporterSettings(Raw rawSettings, IConfigurationTelemetry telemetry)
+            : this(rawSettings, File.Exists, telemetry)
         {
         }
 
@@ -97,16 +89,41 @@ namespace Datadog.Trace.Configuration
             ValidationWarnings = new List<string>();
 
             var traceSettings = GetTraceTransport(
-                agentUri: rawSettings.TraceAgentUri,
-                tracesPipeName: rawSettings.TracesPipeName,
-                agentHost: rawSettings.TraceAgentHost,
-                agentPort: rawSettings.TraceAgentPort,
-                tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
+                        agentUri: rawSettings.TraceAgentUri,
+                        tracesPipeName: rawSettings.TracesPipeName,
+                        agentHost: rawSettings.TraceAgentHost,
+                        agentPort: rawSettings.TraceAgentPort,
+                        tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
 
+            TracesEncoding = TracesEncoding.DatadogV0_4;
             TracesTransport = traceSettings.Transport;
             TracesPipeName = traceSettings.PipeName;
             TracesUnixDomainSocketPath = traceSettings.UdsPath;
             AgentUri = traceSettings.AgentUri;
+
+            var otlpTraceSettings = GetOtlpTracesTransport(signalEndpoint: rawSettings.OtlpTracesEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpTracesProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
+            OtlpTracesEndpoint = otlpTraceSettings.OtlpSignalEndpoint;
+            OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
+            var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
+                                ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
+            OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpTracesTimeoutMs = rawSettings.OtlpTracesTimeoutMs;
+
+            if (rawSettings.OtelTracesExporter == "otlp")
+            {
+                TracesEncoding = otlpTraceSettings.OtlpProtocol switch
+                {
+                    OtlpProtocol.Grpc => TracesEncoding.DatadogV0_4,
+                    OtlpProtocol.HttpProtobuf => TracesEncoding.DatadogV0_4,
+                    OtlpProtocol.HttpJson => TracesEncoding.OtlpJson,
+                    _ => TracesEncoding.DatadogV0_4,
+                };
+
+                if (TracesEncoding == TracesEncoding.DatadogV0_4)
+                {
+                    ValidationWarnings.Add($"Found OTEL_TRACES_EXPORTER=otlp, but calculated OTLP protocol {otlpTraceSettings.OtlpProtocol.ToString()} is not yet supported. Falling back to Datadog v0.4 encoding.");
+                }
+            }
 
             var metricsSettings = ConfigureMetricsTransport(
                 metricsUrl: rawSettings.MetricsUrl,
@@ -123,6 +140,14 @@ namespace Datadog.Trace.Configuration
             DogStatsdPort = metricsSettings.DogStatsdPort > 0
                                 ? metricsSettings.DogStatsdPort
                                 : (rawSettings.DogStatsdPort > 0 ? rawSettings.DogStatsdPort : DefaultDogstatsdPort);
+
+            var otlpMetricsSettings = GetOtlpMetricsTransport(signalEndpoint: rawSettings.OtlpMetricsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpMetricsProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
+            OtlpMetricsEndpoint = otlpMetricsSettings.OtlpSignalEndpoint;
+            OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
+            var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')
+                                ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
+            OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
+            OtlpMetricsTimeoutMs = rawSettings.OtlpMetricsTimeoutMs;
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
@@ -167,6 +192,38 @@ namespace Datadog.Trace.Configuration
         public int TracesPipeTimeoutMs { get; }
 
         /// <summary>
+        /// Gets the OTLP protocol for emitting traces, if applicable.
+        /// Default is <c>null</c>
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpTracesProtocol { get; }
+
+        /// <summary>
+        /// Gets the OTLP traces endpoint.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
+        public Uri OtlpTracesEndpoint { get; }
+
+        /// <summary>
+        /// Gets the OTLP headers for traces export.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+#pragma warning disable CA1819 // Properties should not return arrays - This is not mutated so it's fine
+        public KeyValuePair<string, string>[]? OtlpTracesHeaders { get; }
+#pragma warning restore CA1819 // Properties should not return arrays
+
+        /// <summary>
+        /// Gets the OTLP traces timeout.
+        /// Default is <c>10000</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesTimeoutMs"/>
+        public int OtlpTracesTimeoutMs { get; }
+
+        /// <summary>
         /// Gets the windows pipe name where the Tracer can send stats.
         /// Default is <c>null</c>.
         /// </summary>
@@ -193,6 +250,15 @@ namespace Datadog.Trace.Configuration
         public int DogStatsdPort { get; }
 
         /// <summary>
+        /// Gets the encoding used to send traces to the Agent.
+        /// Default is <c>TracesEncoding.DatadogV0_4</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol"/>
+        internal TracesEncoding TracesEncoding { get; }
+
+        /// <summary>
         /// Gets the transport used to send traces to the Agent.
         /// </summary>
         internal TracesTransportType TracesTransport { get; }
@@ -202,6 +268,39 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>TransportStrategy.Tcp</c>.
         /// </summary>
         internal MetricsTransportType MetricsTransport { get; }
+
+        /// <summary>
+        /// Gets the OTLP protocol for emitting metrics, if applicable.
+        /// Default is <c>null</c>
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+        internal OtlpProtocol OtlpMetricsProtocol { get; }
+
+        /// <summary>
+        /// Gets the OTLP endpoint URL for metrics export.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
+        internal Uri OtlpMetricsEndpoint { get; }
+
+        /// <summary>
+        /// Gets the OTLP headers for metrics export.
+        /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+#pragma warning disable CA1819 // Properties should not return arrays - This is not mutated so it's fine
+        public KeyValuePair<string, string>[] OtlpMetricsHeaders { get; }
+#pragma warning restore CA1819 // Properties should not return arrays
+
+        /// <summary>
+        /// Gets the OTLP timeout for metrics export.
+        /// Default is <c>10000</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs"/>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
+        internal int OtlpMetricsTimeoutMs { get; }
 
         /// <summary>
         /// Gets the agent host to use when <see cref="MetricsTransport"/> is <see cref="TransportType.UDP"/>
@@ -214,7 +313,7 @@ namespace Datadog.Trace.Configuration
 
         internal Raw RawSettings { get; }
 
-        // internal for testing
+        [TestingOnly]
         internal static ExporterSettings Create(Dictionary<string, object?> settings)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
 
@@ -228,7 +327,7 @@ namespace Datadog.Trace.Configuration
 
         private MetricsTransportSettings ConfigureMetricsTransport(string? metricsUrl, string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
         {
-            if (!string.IsNullOrWhiteSpace(metricsUrl) && TryGetMetricsUriAndTransport(metricsUrl!, out var settingsFromUri))
+            if (!string.IsNullOrEmpty(metricsUrl) && TryGetMetricsUriAndTransport(metricsUrl!, out var settingsFromUri))
             {
                 return settingsFromUri;
             }
@@ -246,7 +345,7 @@ namespace Datadog.Trace.Configuration
 
             MetricsTransportSettings settings;
 
-            if (!string.IsNullOrWhiteSpace(traceAgentUrl)
+            if (!string.IsNullOrEmpty(traceAgentUrl)
              && !traceAgentUrl!.StartsWith(UnixDomainSocketPrefix)
              && Uri.TryCreate(traceAgentUrl, UriKind.Absolute, out var tcpUri))
             {
@@ -267,11 +366,11 @@ namespace Datadog.Trace.Configuration
                     portSource: dogStatsDPortSource,
                     out settings);
             }
-            else if (!string.IsNullOrWhiteSpace(metricsPipeName))
+            else if (!string.IsNullOrEmpty(metricsPipeName))
             {
                 settings = new MetricsTransportSettings(TransportType.NamedPipe, PipeName: metricsPipeName);
             }
-            else if (metricsUnixDomainSocketPath != null)
+            else if (!string.IsNullOrEmpty(metricsUnixDomainSocketPath))
             {
 #if NETCOREAPP3_1_OR_GREATER
                 SetUds(metricsUnixDomainSocketPath, metricsUnixDomainSocketPath, metricsUnixDomainSocketPath, ConfigurationKeys.MetricsUnixDomainSocketPath, out settings);
@@ -434,40 +533,67 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// These contain the "raw" settings loaded from config. If these don't change, the exporter settings also won't change
         /// </summary>
-        internal record Raw
+        internal sealed record Raw
         {
             public Raw(IConfigurationSource source, IConfigurationTelemetry telemetry)
             {
                 // Get values from the config
                 var config = new ConfigurationBuilder(source, telemetry);
-                TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
-                TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
-                TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
+                // NOTE: Keep this in sync with CreateUpdatedFromManualConfig below
+                TraceAgentUri = config.WithKeys(ConfigurationKeys.AgentUri).AsString()?.Trim();
+                TracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString()?.Trim();
+                TracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString()?.Trim();
 
                 TraceAgentHost = config
-                               .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
-                               .AsString();
+                               .WithKeys(ConfigurationKeys.AgentHost)
+                               .AsString()?.Trim();
 
                 TraceAgentPort = config
-                               .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
+                               .WithKeys(ConfigurationKeys.AgentPort)
                                .AsInt32();
 
-                MetricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString();
+                MetricsUrl = config.WithKeys(ConfigurationKeys.MetricsUri).AsString()?.Trim();
                 DogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
-                MetricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
-                MetricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
+                MetricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString()?.Trim();
+                MetricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString()?.Trim();
 
                 TracesPipeTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
                                      .AsInt32(500, value => value > 0)
                                      .Value;
+
+                OtelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString()?.Trim();
+
+                OtlpProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol).AsString()?.Trim();
+                OtlpEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).AsString()?.Trim();
+                OtlpTimeoutMs = config
+                    .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
+                    .AsInt32(10_000, value => value > 0)
+                    .Value;
+                OtlpHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsString()?.Trim();
+
+                OtlpMetricsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol).AsString()?.Trim();
+                OtlpMetricsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint).AsString()?.Trim();
+                OtlpMetricsTimeoutMs = config
+                    .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
+                    .AsInt32(OtlpTimeoutMs, value => value > 0)
+                    .Value;
+                OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsString()?.Trim();
+
+                OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
+                OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
+                OtlpTracesTimeoutMs = config
+                    .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesTimeoutMs)
+                    .AsInt32(OtlpTimeoutMs, value => value > 0)
+                    .Value;
+                OtlpTracesHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders).AsString()?.Trim();
             }
 
             /// <summary>
             /// Gets the Uri where the Tracer can connect to the Agent.
             /// </summary>
             /// <seealso cref="ConfigurationKeys.AgentUri"/>
-            public string? TraceAgentUri { get; }
+            public string? TraceAgentUri { get; private init; }
 
             /// <summary>
             /// Gets the host where the Tracer can connect to the Agent.
@@ -523,6 +649,136 @@ namespace Datadog.Trace.Configuration
             /// Gets the port where the DogStatsd server is listening for connections.
             /// </summary>
             public int DogStatsdPort { get; }
+
+            /// <summary>
+            /// Gets the OTEL traces exporter.
+            /// If set to "otlp", the traces will be exported using the OTLP protocol.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
+            public string? OtelTracesExporter { get; }
+
+            /// <summary>
+            /// Gets the protocol for exporting OTLP signals.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+            internal string? OtlpProtocol { get; }
+
+            /// <summary>
+            /// Gets the OTLP base endpoint URL for otlp export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
+            internal string? OtlpEndpoint { get; }
+
+            /// <summary>
+            /// Gets the OTLP headers for signal export.
+            /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+            internal string? OtlpHeaders { get; }
+
+            /// <summary>
+            /// Gets the OTLP base timeout.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
+            internal int OtlpTimeoutMs { get; }
+
+            /// <summary>
+            /// Gets the OTLP protocol for metrics export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol"/>
+            internal string? OtlpMetricsProtocol { get; }
+
+            /// <summary>
+            /// Gets the OTLP endpoint URL for metrics export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint"/>
+            internal string? OtlpMetricsEndpoint { get; }
+
+            /// <summary>
+            /// Gets the OTLP headers for metrics export.
+            /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders"/>
+            internal string? OtlpMetricsHeaders { get; }
+
+            /// <summary>
+            /// Gets the OTLP metrics timeout.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs"/>
+            internal int OtlpMetricsTimeoutMs { get; }
+
+            /// <summary>
+            /// Gets the OTLP protocol for traces export with fallback behavior.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol"/>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
+            internal string? OtlpTracesProtocol { get; }
+
+            /// <summary>
+            /// Gets the OTLP endpoint URL for traces export.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint"/>
+            internal string? OtlpTracesEndpoint { get; }
+
+            /// <summary>
+            /// Gets the OTLP headers for traces export with fallback behavior.
+            /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders"/>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+            internal string? OtlpTracesHeaders { get; }
+
+            /// <summary>
+            /// Gets the OTLP traces timeout.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesTimeoutMs"/>
+            internal int OtlpTracesTimeoutMs { get; }
+
+            /// <summary>
+            /// Creates a duplicate <see cref="Raw"/> instance, reading settings from a manual instrumentation
+            /// <see cref="IConfigurationSource"/>. Only settings which _can_ be changed in manual instrumentation
+            /// will be updated.
+            /// </summary>
+            /// <param name="rawSettings">The settings to base the new settings on</param>
+            /// <param name="manualConfig">The manual instrumentation configuration source</param>
+            /// <param name="telemetry">A telemetry instance to collect the updated telemetry</param>
+            /// <param name="useDefaultSources">If true, the current <see cref="Raw.TraceAgentUri"/> is used as a fallback,
+            /// otherwise <c>null</c> is used</param>
+            /// <returns>A new <see cref="Raw"/> instance.</returns>
+            internal static Raw CreateUpdatedFromManualConfig(
+                Raw rawSettings,
+                ManualInstrumentationConfigurationSourceBase manualConfig,
+                IConfigurationTelemetry telemetry,
+                bool useDefaultSources)
+            {
+                var config = new ConfigurationBuilder(manualConfig, telemetry);
+
+                var manualResult = config.WithKeys(ConfigurationKeys.AgentUri).AsStringResult();
+                var fallbackAgentUri = useDefaultSources ? rawSettings.TraceAgentUri : null;
+                var agentUri = GetResult(manualResult, telemetry, fallbackAgentUri);
+
+                return rawSettings with { TraceAgentUri = agentUri };
+
+                string? GetResult(
+                    ConfigurationBuilder.ClassConfigurationResultWithKey<string> classConfigurationResultWithKey,
+                    IConfigurationTelemetry configurationTelemetry,
+                    string? fallback)
+                {
+                    if (classConfigurationResultWithKey.ConfigurationResult is { IsValid: true, Result: var r1 })
+                    {
+                        return r1;
+                    }
+
+                    // Have to "re-record" the value so telemetry has the correct value
+                    // Ideally we would know the "real" source, but we don't
+                    if (classConfigurationResultWithKey.ConfigurationResult.IsPresent)
+                    {
+                        configurationTelemetry.Record(classConfigurationResultWithKey.Key, fallback, recordValue: true, ConfigurationOrigins.Calculated);
+                    }
+
+                    return fallback;
+                }
+            }
         }
     }
 }

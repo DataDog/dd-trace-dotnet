@@ -30,7 +30,7 @@ namespace Datadog.Trace.AppSec
     /// <summary>
     /// The Secure is responsible coordinating ASM
     /// </summary>
-    internal class Security : IDatadogSecurity, IDisposable
+    internal sealed class Security : IDatadogSecurity, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
         private static Security? _instance;
@@ -291,7 +291,11 @@ namespace Datadog.Trace.AppSec
                 // It will happen if the WAF version used does not support new operators defined in the rules
                 foreach (var error in errors)
                 {
+#if NETCOREAPP
+                    if (!error.Key.Contains("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+#else
                     if (!error.Key.ToLower().Contains("unknown matcher:"))
+#endif
                     {
                         return false;
                     }
@@ -306,6 +310,11 @@ namespace Datadog.Trace.AppSec
         internal BlockingAction GetBlockingAction(string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
         {
             var blockingAction = new BlockingAction();
+
+            string ReplaceSecurityResponseIdPlaceholder(string template, string? securityResponseId)
+            {
+                return template.Replace(SecurityConstants.SecurityResponseIdPlaceholder, securityResponseId);
+            }
 
             void SetAutomaticResponseContent()
             {
@@ -335,13 +344,13 @@ namespace Datadog.Trace.AppSec
             void SetJsonResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.Json;
-                blockingAction.ResponseContent = GetJsonResponse();
+                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetJsonResponse(), blockingAction.SecurityResponseId);
             }
 
             void SetHtmlResponseContent()
             {
                 blockingAction.ContentType = AspNet.MimeTypes.TextHtml;
-                blockingAction.ResponseContent = GetHtmlResponse();
+                blockingAction.ResponseContent = ReplaceSecurityResponseIdPlaceholder(GetHtmlResponse(), blockingAction.SecurityResponseId);
             }
 
             int GetStatusCode(Dictionary<string, object?> information, int defaultValue)
@@ -375,6 +384,10 @@ namespace Datadog.Trace.AppSec
                 if (blockInfo is not null)
                 {
                     blockInfo.TryGetValue("type", out var type);
+                    if (blockInfo.TryGetValue("security_response_id", out var obj) && obj is string securityResponseId)
+                    {
+                        blockingAction.SecurityResponseId = securityResponseId;
+                    }
 
                     switch (type)
                     {
@@ -401,12 +414,16 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     redirectInfo!.TryGetValue("location", out var location);
+                    if (redirectInfo.TryGetValue("security_response_id", out var obj) && obj is string securityResponseId)
+                    {
+                        blockingAction.SecurityResponseId = securityResponseId;
+                    }
 
-                    if (location is string locationString && locationString != string.Empty)
+                    if (location is string locationString && !string.IsNullOrEmpty(locationString))
                     {
                         var statusCode = GetStatusCode(redirectInfo, 303);
                         blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
-                        blockingAction.RedirectLocation = locationString;
+                        blockingAction.RedirectLocation = ReplaceSecurityResponseIdPlaceholder(locationString, blockingAction.SecurityResponseId);
                         blockingAction.IsRedirect = true;
                     }
                     else
@@ -487,7 +504,7 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
-            Encoder.Pool.Dispose();
+            Encoder.Dispose();
             _activeAddressesLocker.Dispose();
         }
 
@@ -515,6 +532,8 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmProcessorOverrides, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmProcessorOverrides));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomDataScanners, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmCustomDataScanners));
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
@@ -530,7 +549,7 @@ namespace Datadog.Trace.AppSec
             // initialization of WafLibraryInvoker
             if (_libraryInitializationResult == null)
             {
-                _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                _libraryInitializationResult = WafLibraryInvoker.Initialize(ddDotnetTracerHome: _settings.DdDotnetTracerHome, traceNativeEnginePath: _settings.InternalTraceNativeEnginePath);
                 if (!_libraryInitializationResult.Success)
                 {
                     _configurationState.AppsecEnabled = false;
@@ -548,7 +567,7 @@ namespace Datadog.Trace.AppSec
                 _settings.ObfuscationParameterValueRegex,
                 _configurationState,
                 _settings.UseUnsafeEncoder,
-                GlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
+                GlobalSettings.Instance.DebugEnabled && _settings.WafDebugEnabled);
             if (_wafInitResult.Success)
             {
                 // we don't reapply configurations to the waf here because it's all done in the subscription function, as new data might have been received at the same time as the enable command, we don't want to update twice (here and in the subscription)
@@ -602,7 +621,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal void SetTraceSamplingPriority(Span span, bool setSource = true)
+        internal bool SetTraceSamplingPriority(Span span, bool setSource = true)
         {
             if (!_settings.KeepTraces)
             {
@@ -617,7 +636,11 @@ namespace Datadog.Trace.AppSec
                 {
                     span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
                 }
+
+                return true;
             }
+
+            return false;
         }
 
         internal IContext? CreateAdditiveContext() => _waf?.CreateContext();

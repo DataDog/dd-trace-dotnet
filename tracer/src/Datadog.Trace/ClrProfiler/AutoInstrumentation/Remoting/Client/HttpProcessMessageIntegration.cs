@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
-    public class HttpProcessMessageIntegration
+    public sealed class HttpProcessMessageIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         {
             // Create a new trace_id/span_id for the child WebRequest span
             var tracer = Tracer.Instance;
-            if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
             {
                 // If we create a scope, we can update the following attributes in other automatic instrumentation methods:
                 // - Method

@@ -4,11 +4,13 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -18,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
     public class CachedWrapperDelegateTests
     {
         [Fact]
-        public void CanCreateWrapperDelegate()
+        public async Task CanCreateWrapperDelegate()
         {
             var wasOriginalInvoked = false;
             var testReport = new DeliveryReport<string, string>();
@@ -28,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
                 x.Should().BeSameAs(testReport);
             };
 
-            var tracer = GetTracer();
+            await using var tracer = GetTracer();
             var span = tracer.StartSpan("Test operation");
             var wrapper = KafkaProduceSyncDeliveryHandlerIntegration.CachedWrapperDelegate<Action<DeliveryReport<string, string>>>.CreateWrapper(original, span);
 
@@ -38,12 +40,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
         }
 
         [Fact]
-        public void CanCreateMultipleWrapperDelegates()
+        public async Task CanCreateMultipleWrapperDelegates()
         {
             var stringReport = new DeliveryReport<string, string>();
             var intReport = new DeliveryReport<int, string>();
 
-            var tracer = GetTracer();
+            await using var tracer = GetTracer();
 
             var stringSpan = tracer.StartSpan("Test string message operation");
             var stringWrapper = KafkaProduceSyncDeliveryHandlerIntegration
@@ -59,13 +61,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
             intSpan.IsFinished.Should().BeTrue();
         }
 
-        private static Tracer GetTracer()
+        private static ScopedTracer GetTracer()
         {
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
         }
     }
 }

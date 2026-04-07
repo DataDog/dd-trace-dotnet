@@ -1,4 +1,4 @@
-// <copyright file="NativeLibrary.cs" company="Datadog">
+﻿// <copyright file="NativeLibrary.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,16 +14,18 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     /// <summary>
     /// APIs for managing Native Libraries
     /// </summary>
-    internal partial class NativeLibrary
+    internal sealed partial class NativeLibrary
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NativeLibrary>();
 
+#pragma warning disable CA1805 //Member 'isPosixLike' is explicitly initialized to its default value
         private static bool isPosixLike =
 #if NETFRAMEWORK
             false;
 #else
             !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 #endif
+#pragma warning restore CA1805
 
         [Flags]
         public enum FORMAT_MESSAGE : int
@@ -178,7 +180,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             IntPtr lpSource,
             uint dwMessageId,
             uint dwLanguageId,
+#pragma warning disable CA1838 // Avoid 'StringBuilder' parameters for P/Invokes. Consider using a character buffer instead - should prob try to fix
             ref StringBuilder lpBuffer,
+#pragma warning restore CA1838
             uint nSize,
             IntPtr pArguments);
 

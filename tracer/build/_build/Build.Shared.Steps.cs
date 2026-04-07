@@ -162,9 +162,17 @@ partial class Build
         {
             DeleteDirectory(NativeLoaderProject.Directory / "bin");
 
-            var finalArchs = FastDevLoop ? "arm64" : string.Join(';', OsxArchs);
+            var finalArchs = string.Join(';', OsxArchs);
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
+
+            // Resolve the macOS SDK path so we can point the linker at it.
+            // Homebrew llvm@15 installs an x86_64-only libunwind.dylib in
+            // /usr/local/lib which shadows the system's universal version.
+            // Passing the SDK sysroot ensures the linker finds the real one.
+            var sdkProcess = ProcessTasks.StartProcess("xcrun", "--show-sdk-path");
+            sdkProcess.WaitForExit();
+            var sdkPath = sdkProcess.Output.Select(o => o.Text).First().Trim();
 
             var envVariables = new Dictionary<string, string>
             {
@@ -174,11 +182,15 @@ partial class Build
                 ["CMAKE_MAKE_PROGRAM"] = "make",
                 ["CMAKE_CXX_COMPILER"] = "clang++",
                 ["CMAKE_C_COMPILER"] = "clang",
+                // Clear Homebrew-injected flags that can cause linker failures when
+                // cross-compiling for arm64 (e.g. llvm@15's x86_64-only libunwind).
+                ["LDFLAGS"] = "",
+                ["LIBRARY_PATH"] = "",
             };
 
             // Build native
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF",
+                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF -DCMAKE_OSX_SYSROOT={sdkPath}",
                 environmentVariables: envVariables);
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
@@ -310,7 +322,7 @@ partial class Build
             // See also the ValidateNativeProfilerGlibcCompatibility Nuke task and the checks
             // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
             var expectedGlibcVersion = IsArm64
-                ? new Version(2, 18)
+                ? new Version(2, 17)
                 : new Version(2, 17);
 
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);

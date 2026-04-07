@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         IntegrationName = RabbitMQConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class BasicPublishIntegration
+    public sealed class BasicPublishIntegration
     {
         internal const string Command = "basic.publish";
 

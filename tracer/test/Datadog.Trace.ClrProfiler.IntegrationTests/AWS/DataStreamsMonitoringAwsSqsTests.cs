@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS;
 
 [Collection(nameof(AwsSqsTests.AwsSqsTestsCollection))]
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "2")]
 [UsesVerify]
 public class DataStreamsMonitoringAwsSqsTests : TestHelper
 {
@@ -50,6 +51,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
     public async Task SubmitsDsmMetrics(string packageVersion, int batch, int sameThread, int inject)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
 
         // set scenario to run
         SetEnvironmentVariable("TEST_BATCH", batch.ToString());

@@ -40,6 +40,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("/scripts/artifacts/value.js", "[\"@doctocat\",\"@octocat\"]")]
         [InlineData("/apps/octo/test.cs", "[\"@octocat\"]")]
         [InlineData("/apps/github", null)]
+        // Windows path separators
+        [InlineData(@"unexistent\path\test.cs", "[\"@global-owner1\",\"@global-owner2\"]")]
+        [InlineData(@"apps\test.cs", "[\"@octocat\"]")]
+        [InlineData(@"\docs\test.cs", "[\"@doctocat\"]")]
+        [InlineData(@"docs\getting-started.md", "[\"docs@example.com\"]")]
+        [InlineData(@"\scripts\artifacts\value.js", "[\"@doctocat\",\"@octocat\"]")]
+        [InlineData(@"\apps\github", null)]
+        [InlineData(@"\x\logs\error.txt", "[\"@octo-org/octocats\"]")]
         // New GitHub quirks
         [InlineData("/x/logs/error.txt", "[\"@octo-org/octocats\"]")] // **/logs pattern
         [InlineData("docs/getting-started.md", "[\"docs@example.com\"]")] // docs/* pattern
@@ -60,6 +68,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("/src/README", "[\"@group\",\"@group/with-nested/subgroup\"]")]
         [InlineData("/src/lib/internal.h", "[\"@lib-owner\"]")]
         [InlineData("src/ee/docs", "[\"@code\",\"@docs\",\"@multiple\",\"@owners\"]")]
+        // Windows path separators
+        [InlineData(@"apps\README.md", "[\"@code\",\"@database\",\"@docs\",\"@multiple\",\"@owners\"]")]
+        [InlineData(@"model\db", "[\"@code\",\"@database\",\"@multiple\",\"@owners\"]")]
+        [InlineData(@"\config\data.conf", "[\"@config-owner\"]")]
+        [InlineData(@"\docs\root.md", "[\"@root-docs\"]")]
+        [InlineData(@"\docs\sub\root.md", "[\"@all-docs\"]")]
+        [InlineData(@"\src\README", "[\"@group\",\"@group/with-nested/subgroup\"]")]
+        [InlineData(@"\src\lib\internal.h", "[\"@lib-owner\"]")]
+        [InlineData(@"src\ee\docs", "[\"@code\",\"@docs\",\"@multiple\",\"@owners\"]")]
+        [InlineData(@"path with spaces\example.txt", "[\"@space-owner\"]")]
+        [InlineData(@"src\app\sample.rb", "[\"@ruby-owner\"]")]
         // New GitLab quirks present in existing fixture
         [InlineData("#file_with_pound.rb", "[\"@owner-file-with-pound\"]")] // escaped # char
         [InlineData("path with spaces/example.txt", "[\"@space-owner\"]")] // escaped spaces in path

@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace Datadog.Trace.Configuration;
 
-internal class ExtraServicesProvider
+internal sealed class ExtraServicesProvider
 {
     private const int MaxExtraServices = 64;
     private const string? FakeValue = null;
@@ -20,7 +20,8 @@ internal class ExtraServicesProvider
 
     // no concurrent hash set, so use a dictionary with empty values
     private readonly ConcurrentDictionary<string, string?> _extraServices = new(StringComparer.OrdinalIgnoreCase);
-    private int _serviceCount = 0;
+    private int _serviceCount;
+    private string[] _cachedExtraServices = [];
 
     internal void AddService(string serviceName)
     {
@@ -41,12 +42,20 @@ internal class ExtraServicesProvider
     {
         // once extracted the key collection is frozen, no need to worry about an add changing it
         var keysToCopy = _extraServices.Keys;
+
         var count = keysToCopy.Count;
 
         if (count > 0)
         {
-            var result = new string[count];
-            keysToCopy.CopyTo(result, 0);
+            // Also, we're not ever changing existing values, so we can cache the array to avoid recreating it every time
+            var services = _cachedExtraServices;
+            if (services.Length == count)
+            {
+                return services;
+            }
+
+            string[] result = [..keysToCopy];
+            _cachedExtraServices = result;
             return result;
         }
 

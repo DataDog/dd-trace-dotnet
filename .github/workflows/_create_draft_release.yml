@@ -1,0 +1,192 @@
+name: Create reusable draft release
+
+on:
+  workflow_call:
+    inputs:
+      forced_commit_id:
+        description: 'Force using artifacts from specific commit? If provided, this will try and use the artifacts from the given commit, regardless of build status'
+        required: false
+        type: string
+      ignore_gitlab_failures:
+        description: "DANGER Force ignoring any issues with the GitLab artifacts or SSI. Don't use this unless you _really_ know what you're doing"
+        required: false
+        type: boolean
+        default: false
+      is_hotfix:
+        description: 'Is this a hotfix release? If true, skips vNext milestone renaming'
+        required: true
+        type: boolean
+    secrets:
+      AZURE_DEVOPS_TOKEN:
+        required: true
+      NUGET_TRUSTED_PUBLISHING_USERNAME:
+        required: true
+      DD_PUBLIC_SYMBOL_PREPROD_API_KEY:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_US1:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_US3:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_US5:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_EU1:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_AP1:
+        required: true
+      DD_PUBLIC_SYMBOL_API_KEY_AP2:
+        required: true
+
+jobs:
+  create_draft_release:
+    runs-on: ubuntu-latest
+    environment: publish-debug-symbols-env
+    # These permissions need to map to the ones demanded in create_normal_draft_release.yml and create_hotfix_draft_release.yml
+    permissions:
+      contents: write # create release
+      actions: read # read secrets
+      issues: write # change milestones 
+      id-token: write  # enable GitHub OIDC token issuance for this job
+    env:
+      # Have to use external token with explicit workflow permissions because we are creating
+      # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
+      # work in that scenario, so using an external token is required. See issue
+      # https://github.com/cli/cli/issues/9514 for more details.
+      AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set SHA
+        id: set_sha
+        run: |
+          if [ -z "${{ inputs.forced_commit_id }}" ]; then
+              commitsha="${GITHUB_SHA}"
+          else
+              commitsha="${{ inputs.forced_commit_id }}"
+          fi
+          echo "Using sha $commitsha"
+          echo "sha=${commitsha}" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          global-json-file: global.json
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      # Use the ambient GitHub token to login to NuGet and retrieve an API key
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1.0.0
+        id: nuget_login
+        with:
+          # Secret is your NuGet username (not email), e.g. andrewlock
+          user: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
+
+      - name: "Check NuGet token validity"
+        run: |
+          echo "Downloading test package"
+          if ! curl -fL -o Datadog.Trace.Annotations.1.0.0.nupkg https://www.nuget.org/api/v2/package/Datadog.Trace.Annotations/1.0.0; then
+            echo "Download failed!" >&2
+            exit 1
+          fi
+
+          echo "Pushing package to test NuGet API key validity"
+          if ! dotnet nuget push "Datadog.Trace.Annotations.1.0.0.nupkg" --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate --source https://api.nuget.org/v3/index.json; then
+           echo "Push failed - there is likely an issue with authentication." >&2
+           echo "This workflow uses Trusted Publishing: https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing" >&2
+           echo "The NUGET_TRUSTED_PUBLISHING_USERNAME contains the username that should have the trusted policy configured on nuget.org." >&2
+           echo "If this user is no longer part of the datadog organisation on nuget.org: create a new trusted policy using your nuget user " >&2
+           echo "  1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209" >&2
+           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME GitHub secret with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
+           echo "  3. Try running this release again" >&2
+            exit 1
+          fi
+          
+          echo "Push succeeded, cleaning up"
+          rm Datadog.Trace.Annotations.1.0.0.nupkg
+
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.github.create-draft-release
+
+      - name: "Check GitLab status"
+        if: ${{ !inputs.ignore_gitlab_failures }}
+        run: ./tracer/build.sh VerifyReleaseReadiness
+        env:
+          CommitSha: "${{ steps.set_sha.outputs.sha }}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
+
+      - name: "Get current version"
+        id: versions
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+      - name: "Download build assets from Azure Pipelines"
+        id: assets
+        run: ./tracer/build.sh DownloadReleaseArtifacts
+        env:
+          TargetBranch: ${{ github.ref }}
+          CommitSha: "${{ steps.set_sha.outputs.sha }}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
+
+      - name: "Generate release notes"
+        id: release_notes
+        run: ./tracer/build.sh GenerateReleaseNotes
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
+
+      - name: "Rename vNext milestone"
+        id: rename
+        # We don't rename vNext/vNext-v1 for hotfix releases
+        if: ${{ !inputs.is_hotfix }}
+        run: ./tracer/build.sh RenameVNextMilestone
+        env:
+          Version: ${{steps.versions.outputs.full_version}}
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
+        with:
+          token: "${{ steps.generate-token.outputs.token }}"
+          draft: true
+          name: "${{steps.versions.outputs.full_version}}"
+          tag_name: "v${{steps.versions.outputs.full_version}}"
+          target_commitish: "${{steps.set_sha.outputs.sha}}"
+          prerelease: ${{steps.versions.outputs.isprerelease}}
+          body: ${{steps.release_notes.outputs.release_notes}}
+          fail_on_unmatched_files: true
+          files: |
+            ${{steps.assets.outputs.artifacts_path}}/*.deb
+            ${{steps.assets.outputs.artifacts_path}}/*.rpm
+            ${{steps.assets.outputs.artifacts_path}}/*.tar.gz
+            ${{steps.assets.outputs.artifacts_path}}/*.zip
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
+            ${{steps.assets.outputs.sha_path}}
+
+      - name: "Publish nuget packages to nuget.org"
+        working-directory: ${{steps.assets.outputs.artifacts_path}}
+        run: |
+          dotnet nuget push "*.nupkg" --skip-duplicate --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
+
+      - name: "Copy gitlab artifacts to artifacts_path"
+        run: cp "${{steps.assets.outputs.gitlab_artifacts_path}}/"*.zip "${{steps.assets.outputs.artifacts_path}}/"
+
+      - name: 'Push debug symbols to datadog'
+        uses: ./.github/actions/publish-debug-symbols
+        with:
+          artifacts_path: ${{steps.assets.outputs.artifacts_path}}
+          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
+          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
+          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
+          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
+          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
+          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
+          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}

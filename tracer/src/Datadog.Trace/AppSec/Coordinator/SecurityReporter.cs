@@ -18,13 +18,14 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
-internal partial class SecurityReporter
+internal sealed partial class SecurityReporter
 {
     private const int MaxApiSecurityTagValueLength = 25000;
 
@@ -123,7 +124,7 @@ internal partial class SecurityReporter
         }
     }
 
-    internal static void RecordTelemetry(IResult? result)
+    internal static void RecordWafTelemetry(IResult? result)
     {
         if (result is null)
         {
@@ -132,19 +133,23 @@ internal partial class SecurityReporter
 
         if (result.Timeout)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.WafTimeoutTruncated : MetricTags.WafAnalysis.WafTimeout);
         }
         else if (result.ShouldBlock)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredAndBlockedTruncated : MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
         }
         else if (result.ShouldReportSecurityResult)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredTruncated : MetricTags.WafAnalysis.RuleTriggered);
         }
         else
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
         }
     }
 
@@ -231,7 +236,7 @@ internal partial class SecurityReporter
 
             if (status is not null)
             {
-                _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.Settings);
+                _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
             }
         }
 
@@ -242,7 +247,7 @@ internal partial class SecurityReporter
             bool written = false;
             foreach (var derivative in result.ExtractSchemaDerivatives)
             {
-                var serializeObject = JsonConvert.SerializeObject(derivative.Value);
+                var serializeObject = JsonHelper.SerializeObject(derivative.Value);
                 var bytes = System.Text.Encoding.UTF8.GetBytes(serializeObject);
                 if (bytes.Length <= MaxApiSecurityTagValueLength)
                 {

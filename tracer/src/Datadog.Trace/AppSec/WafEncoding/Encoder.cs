@@ -22,7 +22,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
-    internal class Encoder : IEncoder
+    internal sealed class Encoder : IEncoder
     {
         private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
@@ -47,6 +47,22 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
         }
 
+        internal static void Dispose()
+        {
+            try
+            {
+                if (_pool is { IsDisposed: false })
+                {
+                    _pool.Dispose();
+                    _pool = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "WafEncoder Crashed on shutdown.");
+            }
+        }
+
         /// <summary>
         /// For testing purposes
         /// </summary>
@@ -66,7 +82,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
         {
             var context = new EncoderContext(applySafetyLimits, Pool, new List<IntPtr>());
             var result = Encode(ref context, remainingDepth, key, o);
-            return new EncodeResult(context.Buffers, context.Pool, ref result);
+            return new EncodeResult(context.Buffers, context.Pool, ref result, context.Truncated);
         }
 
         // -----------------------------------
@@ -201,6 +217,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (context.ApplySafetyLimits && remainingDepth-- <= 0)
             {
+                context.Truncated = true;
                 TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
@@ -214,6 +231,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             {
                 if (context.ApplySafetyLimits && count > WafConstants.MaxContainerSize)
                 {
+                    context.Truncated = true;
                     TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
@@ -263,6 +281,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
             else
             {
+#pragma warning disable CA1851 // Possible multiple enumeration of collections - This _should_ be fixed, unless we verify that only non-IEnumerable types are provided
                 var childrenCount = 0;
                 // Let's enumerate first.
                 foreach (var val in enumerable)
@@ -270,6 +289,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     childrenCount++;
                     if (context.ApplySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
                     {
+                        context.Truncated = true;
                         TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
@@ -302,6 +322,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     ddwafObjectStruct.NbEntries = (ulong)childrenCount;
                     context.Buffers.Add(childrenData);
                 }
+#pragma warning restore CA1851 // Possible multiple enumeration of collections
             }
 
             return ddwafObjectStruct;
@@ -360,6 +381,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         return StringBuilderCache.GetStringAndRelease(sb);
                     }
 
+                    context.Truncated = true;
                     TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
@@ -371,6 +393,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
                 if (count > WafConstants.MaxContainerSize)
                 {
+                    context.Truncated = true;
                     TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
@@ -455,6 +478,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
             else
             {
+#pragma warning disable CA1851 // Possible multiple enumeration of collections - This _should_ be fixed, unless we verify that only non-IEnumerable types are provided
                 var itemData = childrenData;
                 var maxChildrenCount = childrenCount;
 
@@ -476,6 +500,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, elementKey, getValue(element));
                     itemData += ObjectStructSize;
                 }
+#pragma warning restore CA1851 // Possible multiple enumeration of collections
             }
 
             ddWafObjectMap.Array = childrenData;
@@ -494,7 +519,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             for (var i = 0; i < maxChildrenCount; i++)
             {
                 var originalElement = dic.ElementAt(i);
-                var element = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalElement);
+                var element = Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalElement);
                 var elementKey = getKey(element);
                 if (string.IsNullOrEmpty(elementKey))
                 {
@@ -663,23 +688,29 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 ApplySafetyLimits = applySafetyLimits;
                 Pool = pool;
                 Buffers = buffers;
+                Truncated = false;
             }
+
+            public bool Truncated { get; set; }
         }
 
-        public class EncodeResult : IEncodeResult
+        public sealed class EncodeResult : IEncodeResult
         {
             private readonly List<IntPtr> _pointers;
             private readonly UnmanagedMemoryPool _innerPool;
             private DdwafObjectStruct _result;
 
-            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, ref DdwafObjectStruct result)
+            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, ref DdwafObjectStruct result, bool truncated)
             {
                 _pointers = pointers;
                 _innerPool = pool;
                 _result = result;
+                Truncated = truncated;
             }
 
             public DdwafObjectStruct ResultDdwafObject => _result;
+
+            public bool Truncated { get; }
 
             public void Dispose()
             {

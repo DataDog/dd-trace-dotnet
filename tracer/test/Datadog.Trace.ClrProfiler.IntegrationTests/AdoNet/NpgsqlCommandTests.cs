@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [UsesVerify]
     public class NpgsqlCommandTests : TracingIntegrationTest
     {

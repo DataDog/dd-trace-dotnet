@@ -89,6 +89,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.CIVisibilityIpc\\Samples.CIVisibilityIpc.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Console\\Samples.Console.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.CosmosDb\\Samples.CosmosDb.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.CosmosDb.Vnext\\Samples.CosmosDb.Vnext.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Couchbase3\\Samples.Couchbase3.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Couchbase\\Samples.Couchbase.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Dapper\\Samples.Dapper.csproj",

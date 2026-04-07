@@ -1,10 +1,11 @@
-// <copyright file="TestParameters.cs" company="Datadog">
+﻿// <copyright file="TestParameters.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci
@@ -12,7 +13,7 @@ namespace Datadog.Trace.Ci
     /// <summary>
     /// Test parameters
     /// </summary>
-    public class TestParameters
+    public sealed class TestParameters
     {
         /// <summary>
         /// Gets or sets the test parameters metadata
@@ -28,7 +29,7 @@ namespace Datadog.Trace.Ci
 
         internal string ToJSON()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonHelper.SerializeObject(this);
         }
     }
 }

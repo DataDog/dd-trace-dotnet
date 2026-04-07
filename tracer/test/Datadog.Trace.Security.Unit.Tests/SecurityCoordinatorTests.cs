@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -13,10 +14,12 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Routing;
 #endif
 using Moq;
 using Xunit;
@@ -93,10 +96,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        public void GivenHttpTransportInstanceWithUninitializedContext_WhenRunWaf_ThenResultIsNull()
+        public async Task GivenHttpTransportInstanceWithUninitializedContext_WhenRunWaf_ThenResultIsNull()
         {
             var settings = TracerSettings.Create(new Dictionary<string, object>());
-            var tracer = new Tracer(settings, null, null, null, null);
+            await using var tracer = TracerHelper.Create(settings);
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
             var contextMoq = new Mock<HttpContext>();
@@ -104,7 +107,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var context = contextMoq.Object;
             CoreHttpContextStore.Instance.Set(context);
 
-            var securityCoordinator = TryGet(AppSec.Security.Instance, rootTestScope.Span);
+            using var security = new AppSec.Security();
+            var securityCoordinator = TryGet(security, rootTestScope.Span);
             securityCoordinator.HasValue.Should().BeTrue();
 
             var nativeResult = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
@@ -116,10 +120,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        public void GivenHttpTransportInstanceWithUninitializedContext_WhenAccessingStatusCode_ThenResultIsNull()
+        public async Task GivenHttpTransportInstanceWithUninitializedContext_WhenAccessingStatusCode_ThenResultIsNull()
         {
             var settings = TracerSettings.Create(new Dictionary<string, object>());
-            var tracer = new Tracer(settings, null, null, null, null);
+            await using var tracer = TracerHelper.Create(settings);
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
             var wafContext = new Mock<IContext>();
@@ -131,7 +135,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             contextMoq.Setup(x => x.Response.StatusCode).Throws(new NullReferenceException("Test exception"));
             contextMoq.Setup(x => x.Features).Returns(mockedFeatures.Object);
 
-            var securityCoordinator = SecurityCoordinator.Get(AppSec.Security.Instance, rootTestScope.Span, new HttpTransport(contextMoq.Object));
+            using var security = new AppSec.Security();
+            var securityCoordinator = SecurityCoordinator.Get(security, rootTestScope.Span, new HttpTransport(contextMoq.Object));
             var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, isRasp: true);
             result.Should().BeNull();
         }
@@ -140,9 +145,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void GivenSecurityCoordinatorInstanceWithNotDisposedContext_WheRunWaf_ThenResultIsNull()
         {
             var httpContextMock = new Mock<HttpContext>();
-            var httpTransportMock = new Mock<HttpTransport>(httpContextMock.Object);
-            httpTransportMock.Setup(x => x.StatusCode).Returns(200);
-            httpTransportMock.Setup(x => x.RouteData).Returns(new Dictionary<string, object>());
+            var httpResponseMock = new Mock<HttpResponse>();
+            httpResponseMock.Setup(x => x.StatusCode).Returns(200);
+            httpContextMock.Setup(x => x.Response).Returns(httpResponseMock.Object);
+            var mockRoutingData = new Mock<IRoutingFeature>();
+            mockRoutingData.Setup(x => x.RouteData).Returns(new RouteData());
+            httpContextMock.Setup(x => x.Features[typeof(IRoutingFeature)]).Returns(mockRoutingData.Object);
+            var httpTransport = new HttpTransport(httpContextMock.Object);
             var traceContext = new TraceContext(new EmptyDatadogTracer());
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
             var span = new Span(spanContext, DateTimeOffset.Now);
@@ -150,7 +159,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var waf = initResult.Waf;
             waf.Should().NotBeNull();
             var security = new AppSec.Security(waf: waf);
-            var securityCoordinator = Get(security, span, httpTransportMock.Object);
+            var securityCoordinator = Get(security, span, httpTransport);
             var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
             result.Should().NotBeNull();
         }
@@ -174,7 +183,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             headersWrittenProperty.SetValue(response, true);
 
             HttpContext.Current = new HttpContext(new HttpRequest("file", "http://localhost/benchmarks", "data=param"), response);
-            var securityCoordinator = SecurityCoordinator.TryGet(AppSec.Security.Instance, span);
+            using var security = new AppSec.Security();
+            var securityCoordinator = SecurityCoordinator.TryGet(security, span);
             securityCoordinator.Should().NotBeNull();
             var resultMock = new Mock<IResult>();
             resultMock.SetupGet(x => x.ShouldBlock).Returns(true);

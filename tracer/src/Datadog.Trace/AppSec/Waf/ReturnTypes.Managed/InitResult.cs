@@ -1,4 +1,4 @@
-// <copyright file="InitResult.cs" company="Datadog">
+﻿// <copyright file="InitResult.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,9 @@ using System.Threading;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
-    internal class InitResult
+    internal sealed class InitResult
     {
-        private int _firstReport = 0;
+        private int _firstReport;
 
         private InitResult(ref UpdateResult updateResult)
         {
@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal UpdateResult UpdateResult { get; }
 
-        internal Waf? Waf { get; } = null;
+        internal Waf? Waf { get; }
 
         internal bool Success => Waf is not null;
 

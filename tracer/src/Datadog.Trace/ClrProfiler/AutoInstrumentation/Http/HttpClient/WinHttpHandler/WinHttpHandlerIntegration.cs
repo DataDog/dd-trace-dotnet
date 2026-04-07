@@ -25,39 +25,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpH
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class WinHttpHandlerIntegration
+    public sealed class WinHttpHandlerIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
         private const IntegrationId WinHttpHandlerIntegrationId = IntegrationId.WinHttpHandler;
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TRequest">Type of the request</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="requestMessage">HttpRequest message instance</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
-        /// <returns>Calltarget state value</returns>
+#if NETCOREAPP
+        internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, in TRequest requestMessage, CancellationToken cancellationToken)
+#else
         internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
+#endif
         {
             return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, implementationIntegrationId: WinHttpHandlerIntegrationId);
         }
 
-        /// <summary>
-        /// OnAsyncMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="responseMessage">HttpResponse message instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
+#if !NETCOREAPP
             where TResponse : IHttpResponseMessage
+#endif
         {
             return HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, in state);
         }

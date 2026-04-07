@@ -1,4 +1,4 @@
-// <copyright file="CICodeCoveragePayload.cs" company="Datadog">
+﻿// <copyright file="CICodeCoveragePayload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,29 +6,26 @@
 #nullable enable
 
 using System;
-using System.Diagnostics;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads;
 
-internal class CICodeCoveragePayload : MultipartPayload
+internal sealed class CICodeCoveragePayload : MultipartPayload
 {
     private readonly IFormatterResolver _formatterResolver;
-    private readonly Stopwatch _serializationWatch;
 
-    public CICodeCoveragePayload(TestOptimizationSettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
-        : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
+    public CICodeCoveragePayload(TestOptimizationSettings settings, IFormatterResolver formatterResolver, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload)
+        : base(settings, formatterResolver, maxItemsPerPayload, maxBytesPerPayload)
     {
-        _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
-        _serializationWatch = new Stopwatch();
+        _formatterResolver = formatterResolver;
 
         // We call reset here to add the dummy event
         Reset();
@@ -62,14 +59,14 @@ internal class CICodeCoveragePayload : MultipartPayload
 
     public override bool TryProcessEvent(IEvent @event)
     {
-        _serializationWatch.Restart();
+        var sw = RefStopwatch.Create();
         var success = base.TryProcessEvent(@event);
         if (success && @event is TestCoverage)
         {
             TestCoverageEventsCount++;
         }
 
-        TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, _serializationWatch.Elapsed.TotalMilliseconds);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, sw.ElapsedMilliseconds);
         return success;
     }
 

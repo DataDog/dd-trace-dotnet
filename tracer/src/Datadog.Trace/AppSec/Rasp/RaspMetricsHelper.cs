@@ -1,4 +1,4 @@
-// <copyright file="RaspMetricsHelper.cs" company="Datadog">
+﻿// <copyright file="RaspMetricsHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,12 +8,12 @@ using Datadog.Trace.Tagging;
 #nullable enable
 namespace Datadog.Trace.AppSec.Rasp;
 
-internal class RaspMetricsHelper
+internal sealed class RaspMetricsHelper
 {
-    private ulong _raspWafDuration = 0;
-    private ulong _raspWafAndBindingsDuration = 0;
-    private uint _raspRuleEval = 0;
-    private bool _raspTimeout = false;
+    private ulong _raspWafDuration;
+    private ulong _raspWafAndBindingsDuration;
+    private uint _raspRuleEval;
+    private bool _raspTimeout;
 
     public void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
     {

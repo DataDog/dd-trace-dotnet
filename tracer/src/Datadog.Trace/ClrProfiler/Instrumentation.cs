@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,13 +17,11 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
-using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -74,10 +73,17 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            var profilerSettings = Profiler.Instance.Settings;
+            if (!profilerSettings.IsManagedActivationEnabled)
+            {
+                Log.Debug("Set Stable Configuration in Continuous Profiler native library is disabled.");
+                return;
+            }
+
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
             var tracer = Tracer.Instance;
             var tracerSettings = tracer.Settings;
-            var profilerSettings = Profiler.Instance.Settings;
+            var mutableSettings = tracerSettings.Manager.InitialMutableSettings;
 
             NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
             {
@@ -88,15 +94,20 @@ namespace Datadog.Trace.ClrProfiler
                     _ => NativeInterop.ProfilingEnabled.Disabled
                 },
 
-                TracingEnabled = tracerSettings.TraceEnabled,
+                TracingEnabled = mutableSettings.TraceEnabled,
                 IastEnabled = Iast.Iast.Instance.Settings.Enabled,
                 RaspEnabled = Security.Instance.Settings.RaspEnabled,
                 DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
                 RuntimeId = RuntimeId.Get(),
-                Environment = tracerSettings.Environment,
-                ServiceName = tracer.DefaultServiceName,
-                Version = tracerSettings.ServiceVersion
+                Environment = mutableSettings.Environment,
+                ServiceName = mutableSettings.DefaultServiceName,
+                Version = mutableSettings.ServiceVersion
             };
+
+            if (tracerSettings.PropagateProcessTags)
+            {
+                config.ProcessTags = mutableSettings.ProcessTags?.SerializedTags;
+            }
 
             // Make sure nothing bubbles up, even if there are issues
             try
@@ -114,6 +125,8 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static void Initialize()
         {
+            using var cd = CodeDurationRef.Create();
+
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
                 // Initialize() was already called before
@@ -124,10 +137,10 @@ namespace Datadog.Trace.ClrProfiler
             {
                 TracerDebugger.WaitForDebugger();
 
-                var swTotal = Stopwatch.StartNew();
+                var swTotal = RefStopwatch.Create();
                 Log.Debug("Initialization started.");
 
-                var sw = Stopwatch.StartNew();
+                var sw = RefStopwatch.Create();
 
                 bool versionMismatch = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
                 if (versionMismatch)
@@ -136,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
-                    InitializeNoNativeParts(sw);
+                    InitializeNoNativeParts(ref sw);
 
                     try
                     {
@@ -187,7 +200,7 @@ namespace Datadog.Trace.ClrProfiler
                     TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
                     sw.Restart();
 
-                    InitializeTracer(sw);
+                    InitializeTracer(ref sw);
                 }
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
@@ -238,7 +251,7 @@ namespace Datadog.Trace.ClrProfiler
                 try
                 {
                     // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
-                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                    return !string.IsNullOrEmpty(EnvironmentHelpersNoLogging.SsiDeployedEnvVar());
                 }
                 catch
                 {
@@ -254,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler
             NativeCallTargetUnmanagedMemoryHelper.Free();
         }
 
-        internal static void InitializeNoNativeParts(Stopwatch sw = null)
+        internal static void InitializeNoNativeParts(ref RefStopwatch sw)
         {
             if (Interlocked.Exchange(ref _firstNonNativePartsInitialization, 0) != 1)
             {
@@ -282,6 +295,21 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Error(ex, "Error printing assembly metadata");
             }
+
+#if NET6_0_OR_GREATER
+            if (TrimmingDetector.DetectedTrimmingState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile)
+            {
+                Log.Warning(
+                    "Application trimming detected: a standard .NET type could not be loaded. "
+                  + "Some Datadog instrumentation may not work correctly. "
+                  + "To make your app compatible with trimming, add a reference to the "
+                  + "Datadog.Trace.Trimming NuGet package.");
+            }
+#endif
+
+            // Eagerly initialize the root session ID so child processes
+            // inherit it even if spawned before the first telemetry flush.
+            _ = RuntimeId.GetRootSessionId();
 
             try
             {
@@ -311,7 +339,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing Security");
             }
 
-#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
@@ -334,7 +361,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 // ignore
             }
-
+#if !NETFRAMEWORK
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
@@ -358,7 +385,7 @@ namespace Datadog.Trace.ClrProfiler
                     // ignore
                 }
             }
-#endif
+#endif // #if !NETFRAMEWORK
 
             try
             {
@@ -376,25 +403,20 @@ namespace Datadog.Trace.ClrProfiler
 #if NET6_0_OR_GREATER
             try
             {
-                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
+                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
                 {
-                    if (Tracer.Instance.Settings.OpenTelemetryMeterNames.Length > 0)
-                    {
-                        Log.Debug("Initializing OTel Metrics Exporter.");
-                        OTelMetrics.OtlpMetricsExporter.Initialize();
-                        Log.Debug("Initializing OTel Metrics Reader.");
-                        OTelMetrics.MetricReader.Initialize();
-                    }
+                    Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
+                    OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing OTel Metrics Reader");
+                Log.Error(ex, "Error initializing OTel Metrics collection.");
             }
 #else
             if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
             {
-                Log.Information("Unable to initialize OTel Metrics collection, this is only available starting with .NET 6.0.");
+                Log.Information("Unable to initialize Opentelemetry Protocol Metrics collection, this is only available starting with .NET 6.0.");
             }
 #endif
 
@@ -419,14 +441,11 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Tracer.Instance is null after InitializeNoNativeParts was invoked");
             }
 
-            if (sw != null)
-            {
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
-                sw.Restart();
-            }
+            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
+            sw.Restart();
         }
 
-        private static void InitializeTracer(Stopwatch sw)
+        private static void InitializeTracer(ref RefStopwatch sw)
         {
             var tracer = Tracer.Instance;
             if (tracer is null)
@@ -465,32 +484,49 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
 
-            // get environment variables directly so we don't access Trace.Instance yet
-            var functionsExtensionVersion = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion);
-            var functionsWorkerRuntime = EnvironmentHelpers.GetEnvironmentVariable(Datadog.Trace.Configuration.ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime);
+#if !NETFRAMEWORK
+            if (!SkipAspNetCoreDiagnosticObserver())
+            {
+                observers.Add(GetAspNetCoreDiagnosticObserver());
+            }
+#endif
 
-            if (!string.IsNullOrEmpty(functionsExtensionVersion) && !string.IsNullOrEmpty(functionsWorkerRuntime))
-            {
-                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for in-process Azure Functions.
-                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal.
-                // This is because user code is loaded within the functions host in a separate context.
-                // Even in isolated functions, we don't want the AspNetCore spans to be created.
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver in Azure Functions.");
-            }
-            else
-            {
-                observers.Add(new AspNetCoreDiagnosticObserver());
-                observers.Add(new QuartzDiagnosticObserver());
-            }
+            observers.Add(new QuartzDiagnosticObserver());
 
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();
             DiagnosticManager.Instance = diagnosticManager;
+        }
+
+#if !NETFRAMEWORK
+#if NET6_0_OR_GREATER
+        private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
+#else
+        private static AspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver()
+#endif
+        {
+            // Tracer and Security should both have been initialized by now.
+            // Iast hasn't yet, but doing it now is fine.
+            // SpanCodeOrigin is _not_ initialized yet, and we can't guarantee it will be, so just be lazy instead.
+#if NET6_0_OR_GREATER
+            if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
+            {
+                return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
+            }
+#endif // #if NET6_0_OR_GREATER
+
+            return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
+        }
+
+        [Pure]
+        private static bool SkipAspNetCoreDiagnosticObserver()
+        {
+            // this is extremely simple now, but will get more complex soon...
+            return AzureInfo.Instance.IsAzureFunction;
         }
 #endif
 

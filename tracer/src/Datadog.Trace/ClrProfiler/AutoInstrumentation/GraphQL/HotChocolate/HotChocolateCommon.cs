@@ -1,4 +1,4 @@
-// <copyright file="HotChocolateCommon.cs" company="Datadog">
+﻿// <copyright file="HotChocolateCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
-    internal class HotChocolateCommon : GraphQLCommonBase
+    internal sealed class HotChocolateCommon : GraphQLCommonBase
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.HotChocolate);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HotChocolate;
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static Scope CreateScopeFromQueryRequest<T>(Tracer tracer, in T request)
             where T : IQueryRequest
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static Scope CreateScopeFromOperationRequest<T>(Tracer tracer, in T request)
             where T : IOperationRequest
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
         internal static void UpdateScopeFromExecuteAsync(Tracer tracer, string operationType, string operationName)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return;
@@ -198,11 +198,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
                     }
 
-                    var path = executionError.Path.Name;
+                    var path = executionError.Path;
                     if (path != null)
                     {
-                        var pathName = path is NameStringProxy proxy ? proxy.Value : path.ToString();
-                        eventAttributes.Add(new KeyValuePair<string, object>("path", new[] { pathName }));
+                        var pathList = path.ToList();
+                        if (pathList is { Count: > 0 })
+                        {
+                            var pathArray = new string[pathList.Count];
+                            for (int j = 0; j < pathList.Count; j++)
+                            {
+                                pathArray[j] = pathList[j]?.ToString();
+                            }
+
+                            eventAttributes.Add(new KeyValuePair<string, object>("path", pathArray));
+                        }
                     }
 
                     var code = executionError.Code;

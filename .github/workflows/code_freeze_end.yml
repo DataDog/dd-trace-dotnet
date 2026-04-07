@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - name: Clone dd-trace-dotnet repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
       name: 'Close Code Freeze Milestone'
@@ -40,5 +40,5 @@ jobs:
       name: 'Unfreeze PRs'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        state: failure
+        state: success
         workflow_name: code_freeze_end.yml # this allows for a click through to go to the action

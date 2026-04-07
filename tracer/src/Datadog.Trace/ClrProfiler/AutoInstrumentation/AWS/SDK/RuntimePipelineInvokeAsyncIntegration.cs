@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         IntegrationName = AwsConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class RuntimePipelineInvokeAsyncIntegration
+    public sealed class RuntimePipelineInvokeAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -51,6 +52,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext?.ClientConfig?.RegionEndpoint?.SystemName;
+                bool isOutbound = (tags.SpanKind == SpanKinds.Client) || (tags.SpanKind == SpanKinds.Producer);
+                if (isOutbound)
+                {
+                    PeerServiceHelpers.DerivePeerService(tags, AwsInfo.Instance.IsAwsLambda);
+                }
+
+                Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
             }
 
             return new CallTargetState(scope, state: executionContext);
@@ -94,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (response.Instance is not null)
                 {
                     tags.RequestId = response.ResponseMetadata?.RequestId;
-                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.Settings);
+                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
                 }
             }
 

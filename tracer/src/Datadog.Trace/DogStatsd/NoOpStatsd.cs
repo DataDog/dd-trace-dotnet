@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd
 {
-    internal class NoOpStatsd : IDogStatsd
+    internal sealed class NoOpStatsd : IDogStatsd
     {
+        public static readonly NoOpStatsd Instance = new();
+
         public ITelemetryCounters TelemetryCounters => null;
 
         public void Configure(StatsdConfig config)
@@ -74,11 +77,9 @@ namespace Datadog.Trace.DogStatsd
         {
         }
 
-        public void Dispose()
-        {
-        }
+        public Task DisposeAsync() => Task.CompletedTask;
 
-        private class NoOpTimer : IDisposable
+        private sealed class NoOpTimer : IDisposable
         {
             internal static readonly NoOpTimer Instance = new NoOpTimer();
 

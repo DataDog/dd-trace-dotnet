@@ -1,81 +1,71 @@
-// <copyright file="ConfigurationUpdater.cs" company="Datadog">
+﻿// <copyright file="ConfigurationUpdater.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
-    internal class ConfigurationUpdater
+    internal sealed class ConfigurationUpdater
     {
-        private const int MaxAllowedLogProbes = 100;
-        private const int MaxAllowedMetricProbes = 100;
-        private const int MaxAllowedSpanProbes = 100;
-        private const int MaxAllowedSpanDecorationProbes = 100;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationUpdater>();
 
         private readonly string? _env;
         private readonly string? _version;
+        private readonly int _maxProbesPerType;
 
         private ProbeConfiguration _currentConfiguration;
 
-        private ConfigurationUpdater(string? env, string? version)
+        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType)
         {
             _env = env;
             _version = version;
+            _maxProbesPerType = maxProbesPerType;
             _currentConfiguration = new ProbeConfiguration();
         }
 
-        public static ConfigurationUpdater Create(string? environment, string? serviceVersion)
+        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType)
         {
-            return new ConfigurationUpdater(environment, serviceVersion);
+            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType);
         }
 
-        public bool AcceptAdded(ProbeConfiguration configuration)
+        public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
+        {
+            var result = new List<UpdateResult>();
+            var filteredConfiguration = ApplyConfigurationFilters(configuration);
+            var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
+
+            if (comparer.HasProbeRelatedChanges)
+            {
+                result = HandleAddedProbesChanges(comparer);
+            }
+
+            if (comparer.HasRateLimitChanged)
+            {
+                HandleRateLimitChanged(comparer);
+            }
+
+            _currentConfiguration = configuration;
+
+            return result;
+        }
+
+        public void AcceptRemoved(List<RemoteConfigurationPath> paths)
         {
             try
             {
-                var filteredConfiguration = ApplyConfigurationFilters(configuration);
-                var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
-
-                if (comparer.HasProbeRelatedChanges)
-                {
-                    HandleAddedProbesChanges(comparer);
-                }
-
-                if (comparer.HasRateLimitChanged)
-                {
-                    HandleRateLimitChanged(comparer);
-                }
-
-                _currentConfiguration = configuration;
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to add configurations");
-                return false;
-            }
-        }
-
-        public bool AcceptRemoved(string[] removedProbesIds)
-        {
-            try
-            {
-                HandleRemovedProbesChanges(removedProbesIds);
-                return true;
+                HandleRemovedProbesChanges(paths);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to remove configurations");
-                return false;
             }
         }
 
@@ -84,21 +74,26 @@ namespace Datadog.Trace.Debugger.Configurations
             return new ProbeConfiguration()
             {
                 ServiceConfiguration = configuration.ServiceConfiguration,
-                LogProbes = Filter(configuration.LogProbes, MaxAllowedLogProbes),
-                MetricProbes = Filter(configuration.MetricProbes, MaxAllowedMetricProbes),
-                SpanProbes = Filter(configuration.SpanProbes, MaxAllowedSpanProbes),
-                SpanDecorationProbes = Filter(configuration.SpanDecorationProbes, MaxAllowedSpanDecorationProbes)
+                LogProbes = Filter(configuration.LogProbes),
+                MetricProbes = Filter(configuration.MetricProbes),
+                SpanProbes = Filter(configuration.SpanProbes),
+                SpanDecorationProbes = Filter(configuration.SpanDecorationProbes)
             };
 
-            T[] Filter<T>(T[] probes, int maxAllowedProbes)
+            T[] Filter<T>(T[] probes)
                 where T : ProbeDefinition
             {
-                return
+                var filtered =
                     probes
                        .Where(probe => probe.Language == TracerConstants.Language)
-                       .Where(IsEnvAndVersionMatch)
-                       .Take(maxAllowedProbes)
-                       .ToArray();
+                       .Where(IsEnvAndVersionMatch);
+
+                if (_maxProbesPerType > 0)
+                {
+                    filtered = filtered.Take(_maxProbesPerType);
+                }
+
+                return filtered.ToArray();
 
                 bool IsEnvAndVersionMatch(ProbeDefinition probe)
                 {
@@ -122,19 +117,21 @@ namespace Datadog.Trace.Debugger.Configurations
             }
         }
 
-        private void HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
+        private List<UpdateResult> HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions);
+            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions) ?? [];
         }
 
-        private void HandleRemovedProbesChanges(string[] removedProbesIds)
+        private void HandleRemovedProbesChanges(List<RemoteConfigurationPath> paths)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(removedProbesIds);
+            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths);
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)
         {
             // todo handle rate limited changes
         }
+
+        internal sealed record UpdateResult(string Id, string? Error);
     }
 }

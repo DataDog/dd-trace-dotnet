@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -11,6 +12,7 @@ using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -180,7 +182,7 @@ public class RemoteConfigurationApiTests
         requestFactory.RequestsSent.Should().ContainSingle();
 
         AssertTargetsDeserialization(result);
-        result.TargetFiles.Should().BeEmpty();
+        result.TargetFiles.Should().BeNullOrEmpty();
         result.ClientConfigs.Should().NotBeNullOrEmpty().And.NotContainNulls();
     }
 
@@ -199,8 +201,8 @@ public class RemoteConfigurationApiTests
         requestFactory.RequestsSent.Should().ContainSingle();
 
         AssertTargetsDeserialization(result);
-        result.TargetFiles.Should().BeEmpty();
-        result.ClientConfigs.Should().BeEmpty();
+        result.TargetFiles.Should().BeNullOrEmpty();
+        result.ClientConfigs.Should().BeNullOrEmpty();
     }
 
     [Fact]
@@ -237,34 +239,34 @@ public class RemoteConfigurationApiTests
     {
         // We don't really care about this being "real" data, as long as it has the right shape,
         // but we'll keep it reasonable here for the sake of it
-        var tracer = new RcmClientTracer(
+        var tracer = RcmClientTracer.Create(
             runtimeId: Guid.NewGuid().ToString(),
             tracerVersion: TracerConstants.ThreePartVersion,
             service: nameof(RemoteConfigurationApiTests),
             env: "RCM Test",
             appVersion: "1.0.0",
-            tags: []);
+            globalTags: ReadOnlyDictionary.Empty,
+            processTags: ["a.b:c", "x.y:z"]);
 
-        var state = new RcmClientState(
-            rootVersion: 1,
-            targetsVersion: 0,
-            configStates: [], // e.g. first request
-            hasError: false,
-            error: null,
-            backendClientState: backendClientStage);
+        var state = new RcmClientState
+        {
+            RootVersion = 1,
+            TargetsVersion = 0,
+            BackendClientState = backendClientStage
+        };
 
         // make sure we test with something valid at least
         var rcm = new RcmSubscriptionManager();
         rcm.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);
         var capabilities = rcm.GetCapabilities();
 
-        var client = new RcmClient(
-            Guid.NewGuid().ToString(),
-            products: [RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested],
-            tracer,
-            state,
-            capabilities);
+        var client = new RcmClient(Guid.NewGuid().ToString(), state)
+        {
+            Products = [RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested],
+            ClientTracer = tracer,
+            Capabilities = capabilities,
+        };
 
-        return new GetRcmRequest(client, cachedTargetFiles: []);
+        return new GetRcmRequest(client);
     }
 }

@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -29,28 +29,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         IntegrationName = nameof(IntegrationId.AzureServiceBus))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ServiceBusSenderSendMessageBatchAsyncIntegration
+    public sealed class ServiceBusSenderSendMessageBatchAsyncIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TBatch>(TTarget instance, TBatch messageBatch, CancellationToken cancellationToken)
             where TTarget : IServiceBusSender, IDuckType
             where TBatch : IServiceBusMessageBatch, IDuckType
         {
-            IEnumerable<SpanLink>? spanLinks = null;
-            if (messageBatch?.Instance != null)
-            {
-                var messageSpanContexts = ServiceBusBatchSpanContext.ExtractMessageSpanContexts(messageBatch.Instance);
-                if (messageSpanContexts.Length > 0)
-                {
-                    var links = new List<SpanLink>(messageSpanContexts.Length);
-                    foreach (var spanContext in messageSpanContexts)
-                    {
-                        links.Add(new SpanLink(spanContext));
-                    }
-
-                    spanLinks = links;
-                }
-            }
-
+            var spanLinks = BatchSpanContextStorage.ExtractSpanContexts(messageBatch?.Instance);
             return AzureServiceBusCommon.CreateSenderSpan(instance, "send", messageCount: messageBatch?.Count, spanLinks: spanLinks);
         }
 

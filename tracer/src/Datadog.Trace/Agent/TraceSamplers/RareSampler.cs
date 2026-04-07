@@ -11,19 +11,22 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
-    internal class RareSampler : ITraceChunkSampler
+    internal sealed class RareSampler : ITraceChunkSampler
     {
         private const int CacheLimit = 200; // Uses default value of 200 as found in the trace agent
 
         private readonly HashSet<StatsAggregationKey> _keys = new();
         private readonly Queue<StatsAggregationKey> _cache = new();
 
-        public RareSampler(TracerSettings settings)
+        public RareSampler(TracerSettings settings, bool isOtlp)
         {
             IsEnabled = settings.IsRareSamplerEnabled;
+            IsOtlp = isOtlp;
         }
 
         public bool IsEnabled { get; }
+
+        public bool IsOtlp { get; }
 
         /// <summary>
         /// Samples the trace chunk with the following rules:
@@ -34,27 +37,26 @@ namespace Datadog.Trace.Agent.TraceSamplers
         /// </summary>
         /// <param name="traceChunk">The input trace chunk</param>
         /// <returns>true when a rare span is found, false otherwise</returns>
-        public bool Sample(ArraySegment<Span> traceChunk)
+        public bool Sample(in SpanCollection traceChunk)
         {
             if (!IsEnabled)
             {
                 return false;
             }
 
-            if (SamplingHelpers.IsKeptBySamplingPriority(traceChunk))
+            if (SamplingHelpers.IsKeptBySamplingPriority(in traceChunk))
             {
-                UpdateSeenSpans(traceChunk);
+                UpdateSeenSpans(in traceChunk);
                 return false;
             }
 
-            return SampleSpansAndUpdateSeenSpansIfKept(traceChunk);
+            return SampleSpansAndUpdateSeenSpansIfKept(in traceChunk);
         }
 
-        private void UpdateSeenSpans(ArraySegment<Span> trace)
+        private void UpdateSeenSpans(in SpanCollection trace)
         {
-            for (int i = 0; i < trace.Count; i++)
+            foreach (var span in trace)
             {
-                var span = trace.Array![i + trace.Offset];
                 if (span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0 || span.GetMetric(Tags.PartialSnapshot) > 0)
                 {
                     UpdateSpan(span);
@@ -62,13 +64,12 @@ namespace Datadog.Trace.Agent.TraceSamplers
             }
         }
 
-        private bool SampleSpansAndUpdateSeenSpansIfKept(ArraySegment<Span> trace)
+        private bool SampleSpansAndUpdateSeenSpansIfKept(in SpanCollection trace)
         {
             bool rareSpanFound = false;
 
-            for (int i = 0; i < trace.Count; i++)
+            foreach (var span in trace)
             {
-                var span = trace.Array![i + trace.Offset];
                 if (span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0 || span.GetMetric(Tags.PartialSnapshot) > 0)
                 {
                     // Follow agent implementation to mark and exit on first sampled span
@@ -91,7 +92,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private bool SampleSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span);
+            var key = StatsAggregator.BuildKey(span, IsOtlp);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)
@@ -105,7 +106,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private void UpdateSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span);
+            var key = StatsAggregator.BuildKey(span, IsOtlp);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)

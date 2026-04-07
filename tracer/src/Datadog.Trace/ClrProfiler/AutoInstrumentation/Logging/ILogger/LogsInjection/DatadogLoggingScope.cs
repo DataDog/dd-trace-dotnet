@@ -1,4 +1,4 @@
-// <copyright file="DatadogLoggingScope.cs" company="Datadog">
+﻿// <copyright file="DatadogLoggingScope.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,10 +9,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
-    internal class DatadogLoggingScope : IReadOnlyList<KeyValuePair<string, object>>
+    internal sealed class DatadogLoggingScope : IReadOnlyList<KeyValuePair<string, object>>
     {
         private readonly string _service;
         private readonly string _env;
@@ -21,17 +22,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         private readonly bool _use128Bits;
         private readonly string _cachedFormat;
 
-        public DatadogLoggingScope()
-            : this(Tracer.Instance)
+        public DatadogLoggingScope(Tracer tracer, MutableSettings settings)
         {
-        }
-
-        internal DatadogLoggingScope(Tracer tracer)
-        {
+            Settings = settings;
             _tracer = tracer;
-            _service = tracer.DefaultServiceName ?? string.Empty;
-            _env = tracer.Settings.Environment ?? string.Empty;
-            _version = tracer.Settings.ServiceVersion ?? string.Empty;
+            _service = settings.DefaultServiceName;
+            _env = settings.Environment ?? string.Empty;
+            _version = settings.ServiceVersion ?? string.Empty;
             _use128Bits = _tracer.Settings.TraceId128BitLoggingEnabled;
 
             _cachedFormat = string.Format(
@@ -41,6 +38,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                 _env,
                 _version);
         }
+
+        public MutableSettings Settings { get; }
 
         public int Count => 5;
 

@@ -1,4 +1,4 @@
-// <copyright file="EndpointFeatureProxy.cs" company="Datadog">
+﻿// <copyright file="EndpointFeatureProxy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,9 @@ namespace Datadog.Trace.DiagnosticListeners
     /// explicitly, e.g. by https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Servers/Kestrel/Core/src/Internal/Http/HttpProtocol.FeatureCollection.cs
     /// Also see AspNetCoreDiagnosticObserver.EndpointFeatureStruct
     /// </summary>
+#pragma warning  disable DDSEAL001 // Types should be sealed where possible. Types used for duck-typing cannot be sealed.
     internal class EndpointFeatureProxy
+#pragma warning restore DDSEAL001
     {
         /// <summary>
         /// Delegates to IEndpointFeature.Endpoint;

@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tools.Runner
                         }
                     }
 
-                    if (GlobalSettings.Instance.DebugEnabledInternal)
+                    if (GlobalSettings.Instance.DebugEnabled)
                     {
                         Console.WriteLine("Running: {0}", cmdLine);
                     }

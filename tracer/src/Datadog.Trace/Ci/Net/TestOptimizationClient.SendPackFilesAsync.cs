@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationClient.SendPackFilesAsync.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationClient.SendPackFilesAsync.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,6 +16,8 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 // ReSharper disable ConvertToPrimaryConstructor
@@ -46,7 +48,7 @@ internal sealed partial class TestOptimizationClient
 
         _packFileUrl ??= GetUriFromPath(PackFileUrlPath);
 
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, null), _repositoryUrl), SerializerSettings);
+        var jsonPushedSha = JsonHelper.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, null), _repositoryUrl), SerializerSettings);
         Log.Debug("TestOptimizationClient: ObjPack.JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -193,7 +195,7 @@ internal sealed partial class TestOptimizationClient
             }
         }
 
-        var packObjectsSha = packObjectsResultCommand.Output.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        var packObjectsSha = packObjectsResultCommand.Output.Split(Separators.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         // We try to return an array with the path in the same order as has been returned by the git command.
         var tempFolder = Path.GetDirectoryName(temporaryPath) ?? string.Empty;
@@ -241,7 +243,7 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    private class ObjectPackFilesResult
+    private sealed class ObjectPackFilesResult
     {
         public ObjectPackFilesResult(string[] files, string temporaryFolder)
         {

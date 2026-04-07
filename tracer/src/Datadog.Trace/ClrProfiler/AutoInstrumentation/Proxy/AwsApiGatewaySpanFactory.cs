@@ -1,4 +1,4 @@
-// <copyright file="AwsApiGatewaySpanFactory.cs" company="Datadog">
+﻿// <copyright file="AwsApiGatewaySpanFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// <summary>
 /// Creates spans representing requests handled by AWS API Gateway.
 /// </summary>
-internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
+internal sealed class AwsApiGatewaySpanFactory : IInferredSpanFactory
 {
     private const string OperationName = "aws.apigateway";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AwsApiGatewaySpanFactory>();
@@ -24,7 +24,7 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
     {
         try
         {
-            var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
 
             var tags = new InferredProxyTags
             {
@@ -36,8 +36,8 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
                 InferredSpan = 1,
             };
 
-            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
-            scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod.ToUpperInvariant()} {resourceUrl}";
+            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: "aws-apigateway");
+            scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod} {resourceUrl}";
             scope.Span.Type = SpanTypes.Web;
 
             return scope;

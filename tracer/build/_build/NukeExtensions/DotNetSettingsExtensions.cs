@@ -137,12 +137,14 @@ internal static partial class DotNetSettingsExtensions
         catch
         {
             Logger.Information("MSBuild auto-detection failed, checking fallback paths");
-            // favour the Preview version and x64 versions first 
+            // favour the Preview version, x64, and VS 2026 versions first 
             var editions = new[] { "Preview", "Enterprise", "Professional", "Community", "BuildTools", };
             var programFiles = new[] { EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles), EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFilesX86)! };
+            var vsVersions = new[] { "18", "2022" };
             var allPaths = (from edition in editions
                             from root in programFiles
-                            select Path.Combine(root, $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe")).ToList();
+                            from version in vsVersions
+                            select Path.Combine(root, $@"Microsoft Visual Studio\{version}\{edition}\MSBuild\Current\Bin\msbuild.exe")).ToList();
             toolPath = allPaths.FirstOrDefault(File.Exists);
             if (toolPath is null)
             {

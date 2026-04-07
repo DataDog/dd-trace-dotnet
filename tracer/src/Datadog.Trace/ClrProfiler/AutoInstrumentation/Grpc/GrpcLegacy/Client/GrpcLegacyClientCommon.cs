@@ -8,6 +8,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -56,8 +57,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     out var parentContext);
 
                 var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
-                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
-                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
+                var (serviceName, serviceNameSource) = clientSchema.GetServiceNameMetadata(ClientSchema.Component.Grpc);
                 var tags = clientSchema.CreateGrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
@@ -71,12 +72,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     spanId: existingSpanContext?.SpanId ?? 0,
                     traceId: existingSpanContext?.TraceId128 ?? default,
                     serviceName: serviceName,
+                    serviceNameSource: serviceNameSource,
                     startTime: startTime);
 
                 span.Type = SpanTypes.Grpc;
                 span.ResourceName = methodFullName;
 
-                span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
+                span.SetHeaderTags(requestMetadataWrapper, tracer.CurrentTraceSettings.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
                 scope = tracer.ActivateSpan(span);
 
                 if (setSamplingPriority && existingSpanContext?.SamplingPriority is { } samplingPriority)
@@ -98,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         public static void InjectHeaders<TMethod, TCallOptions>(Tracer tracer, TMethod method, ref TCallOptions callOptionsInstance)
             where TMethod : IMethod
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || callOptionsInstance is null)
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || callOptionsInstance is null)
             {
                 return;
             }
@@ -242,13 +244,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
         {
-            var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
-            var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
-            var tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
-            tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);
-            tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            var operationName = perTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
+            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Client.GetServiceNameMetadata(ClientSchema.Component.Grpc);
+            var tags = perTraceSettings.Schema.Client.CreateGrpcClientTags();
+            tags.SetAnalyticsSampleRate(IntegrationId.Grpc, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            perTraceSettings.Schema.RemapPeerService(tags);
 
-            var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
+            var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, serviceNameSource: serviceNameSource, addToTraceContext: false);
             span.Type = SpanTypes.Grpc;
             span.ResourceName = methodFullName;
 

@@ -1,4 +1,4 @@
-// <copyright file="NullConfigurationSource.cs" company="Datadog">
+﻿// <copyright file="NullConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
-internal class NullConfigurationSource : IConfigurationSource
+internal sealed class NullConfigurationSource : IConfigurationSource
 {
     public static readonly NullConfigurationSource Instance = new();
 

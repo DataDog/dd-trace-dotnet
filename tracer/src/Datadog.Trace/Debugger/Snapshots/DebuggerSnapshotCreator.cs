@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -11,12 +12,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
@@ -25,7 +26,6 @@ namespace Datadog.Trace.Debugger.Snapshots
     internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator, IDisposable
     {
         private const string LoggerVersion = "2";
-        private const string DDSource = "dd_debugger";
         private const string UnknownValue = "Unknown";
 
 #pragma warning disable SA1401
@@ -35,38 +35,62 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
+        private readonly Func<string> _serviceNameProvider;
+        private readonly Func<string?> _processTagsProvider;
 
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
         private CaptureBehaviour _captureBehaviour;
-        private string _message;
-        private List<EvaluationError> _errors;
-        private string _snapshotId;
+        private string? _message;
+        private List<EvaluationError>? _errors;
+        private string? _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
+        // Track opened JSON containers explicitly to avoid using JsonWriter.Path (allocations + heuristic parsing).
+        // This class is on the hot path, so these flags should stay extremely cheap.
+        private bool _debuggerOpen;
+        private bool _snapshotOpen;
+        private bool _capturesOpen;
+        private bool _entryOpen;
+        private bool _returnOpen;
+        private bool _linesOpen;
+        private bool _lineNumberOpen;
+        private LocalsOrArgsContainer _localsOrArgsOpen;
+
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire();
-            JsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
-            MethodScopeMembers = default;
+            JsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString)) { ArrayPool = JsonArrayPool.Shared };
+            MethodScopeMembers = null;
             _captureBehaviour = CaptureBehaviour.Capture;
             _errors = null;
             _message = null;
             ProbeHasCondition = hasCondition;
             Tags = tags;
             _limitInfo = limitInfo;
+            _processTagsProvider = processTagsProvider;
+            _serviceNameProvider = serviceNameProvider;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo)
-            : this(isFullSnapshot, location, hasCondition, tags, limitInfo)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
+            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, processTagsProvider, serviceNameProvider)
         {
             MethodScopeMembers = methodScopeMembers;
         }
+
+        private enum LocalsOrArgsContainer : byte
+        {
+            None = 0,
+            Arguments = 1,
+            Locals = 2,
+        }
+
+        internal virtual string DebuggerProduct => DebuggerTags.DebuggerProduct.DI;
 
         internal string SnapshotId
         {
@@ -77,7 +101,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal MethodScopeMembers MethodScopeMembers { get; private set; }
+        internal MethodScopeMembers? MethodScopeMembers { get; private set; }
 
         internal bool ProbeHasCondition { get; }
 
@@ -193,7 +217,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             else
             {
-                MethodScopeMembers = _scopeMembersPool.Get(new MethodScopeMembersParameters(info.LocalsCount.Value, info.ArgumentsCount.Value));
+                MethodScopeMembers = _scopeMembersPool.Get(new MethodScopeMembersParameters(info.LocalsCount ?? 0, info.ArgumentsCount ?? 0));
             }
         }
 
@@ -225,7 +249,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void SetDuration()
         {
-            MethodScopeMembers.Duration = new ScopeMember("duration", typeof(double), _accumulatedDuration.TotalMilliseconds, ScopeMemberKind.Duration);
+            if (MethodScopeMembers is not null)
+            {
+                MethodScopeMembers.Duration = new ScopeMember("duration", typeof(double), _accumulatedDuration.TotalMilliseconds, ScopeMemberKind.Duration);
+            }
         }
 
         internal void Initialize()
@@ -243,91 +270,176 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             JsonWriter.WritePropertyName("debugger");
             JsonWriter.WriteStartObject();
+            _debuggerOpen = true;
         }
 
         internal void StartSnapshot()
         {
             JsonWriter.WritePropertyName("snapshot");
             JsonWriter.WriteStartObject();
+            _snapshotOpen = true;
         }
 
         internal void StartCaptures()
         {
             JsonWriter.WritePropertyName("captures");
             JsonWriter.WriteStartObject();
+            _capturesOpen = true;
         }
 
         internal void StartEntry()
         {
             JsonWriter.WritePropertyName("entry");
             JsonWriter.WriteStartObject();
+            _entryOpen = true;
         }
 
         internal void StartLines(int lineNumber)
         {
-            JsonWriter.WritePropertyName("lines");
-            JsonWriter.WriteStartObject();
-
-            JsonWriter.WritePropertyName(lineNumber.ToString());
-            JsonWriter.WriteStartObject();
-        }
-
-        internal void EndEntry(bool hasArgumentsOrLocals)
-        {
-            if (hasArgumentsOrLocals)
-            {
-                // end arguments or locals
-                JsonWriter.WriteEndObject();
-            }
-
-            // end entry
-            JsonWriter.WriteEndObject();
-        }
-
-        internal void StartReturn()
-        {
-            if (!_isFullSnapshot)
+            // For non-full snapshots we still want "captures", but it might not have been started yet.
+            if (!_isFullSnapshot && !_capturesOpen)
             {
                 StartCaptures();
             }
 
-            JsonWriter.WritePropertyName("return");
+            JsonWriter.WritePropertyName("lines");
             JsonWriter.WriteStartObject();
+            _linesOpen = true;
+
+            JsonWriter.WritePropertyName(lineNumber.ToString());
+            JsonWriter.WriteStartObject();
+            _lineNumberOpen = true;
         }
 
-        internal void EndReturn(bool hasArgumentsOrLocals)
+        internal void EndEntry()
         {
-            if (hasArgumentsOrLocals)
+            // Some instrumentations intentionally skip capturing args/locals (e.g. methods with byref-like args),
+            // and closing a non-open container corrupts the JsonWriter state ("No token to close").
+            CloseLocalsOrArgsIfOpen();
+
+            if (_entryOpen)
             {
-                // end arguments or locals
                 JsonWriter.WriteEndObject();
+                _entryOpen = false;
+            }
+        }
+
+        internal void StartReturn()
+        {
+            // StartCaptures is done during Initialize() for full snapshots. For non-full snapshots, we need it here,
+            // but only once.
+            if (!_isFullSnapshot && !_capturesOpen)
+            {
+                StartCaptures();
             }
 
-            // end line number or method return
-            JsonWriter.WriteEndObject();
+            // Defensive: depending on capture behaviour and delayed snapshots, StartReturn can be called more than once.
+            // Ensure we do not start nested "return".
+            if (_returnOpen)
+            {
+                return;
+            }
+
+            // Close any open locals/arguments container, then close "entry" if it's still open.
+            CloseLocalsOrArgsIfOpen();
+            if (_entryOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _entryOpen = false;
+            }
+
+            JsonWriter.WritePropertyName("return");
+            JsonWriter.WriteStartObject();
+            _returnOpen = true;
+        }
+
+        internal void EndReturn()
+        {
+            // Some instrumentations intentionally skip capturing args/locals (e.g. methods with byref-like args),
+            // and closing a non-open container corrupts the JsonWriter state ("No token to close").
+            CloseLocalsOrArgsIfOpen();
+
+            // Close the innermost container for this phase:
+            // - method probes: close "return"
+            // - line probes: close the line number object (lines.<n>)
+            if (_returnOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _returnOpen = false;
+            }
+            else if (_lineNumberOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _lineNumberOpen = false;
+            }
+
             if (_probeLocation == ProbeLocation.Line)
             {
-                // end lines
-                JsonWriter.WriteEndObject();
+                if (_linesOpen)
+                {
+                    JsonWriter.WriteEndObject();
+                    _linesOpen = false;
+                }
             }
 
-            // end captures
             EndCapture();
         }
 
         internal void EndCapture()
         {
-            JsonWriter.WriteEndObject();
+            if (_capturesOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _capturesOpen = false;
+            }
         }
 
         internal DebuggerSnapshotCreator EndDebugger()
         {
-            JsonWriter.WriteEndObject();
+            if (_debuggerOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _debuggerOpen = false;
+            }
+
             return this;
         }
 
         internal virtual DebuggerSnapshotCreator EndSnapshot()
         {
+            // If any capture containers are still open for any reason, close them first (do not over-close).
+            CloseLocalsOrArgsIfOpen();
+
+            if (_entryOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _entryOpen = false;
+            }
+
+            if (_returnOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _returnOpen = false;
+            }
+
+            if (_lineNumberOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _lineNumberOpen = false;
+            }
+
+            if (_linesOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _linesOpen = false;
+            }
+
+            if (_capturesOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _capturesOpen = false;
+            }
+
             JsonWriter.WritePropertyName("id");
             JsonWriter.WriteValue(SnapshotId);
 
@@ -340,8 +452,22 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WritePropertyName("language");
             JsonWriter.WriteValue(TracerConstants.Language);
 
-            JsonWriter.WriteEndObject();
+            if (_snapshotOpen)
+            {
+                JsonWriter.WriteEndObject();
+                _snapshotOpen = false;
+            }
+
             return this;
+        }
+
+        private void CloseLocalsOrArgsIfOpen()
+        {
+            if (_localsOrArgsOpen != LocalsOrArgsContainer.None)
+            {
+                JsonWriter.WriteEndObject();
+                _localsOrArgsOpen = LocalsOrArgsContainer.None;
+            }
         }
 
         internal void CaptureInstance<TInstance>(TInstance instance, Type type)
@@ -366,14 +492,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal void CaptureArgument<TArg>(TArg value, string name, Type type = null)
+        internal void CaptureArgument<TArg>(TArg value, string name, Type? type = null)
         {
             StartLocalsOrArgsIfNeeded("arguments");
             // in case TArg is object and we have the concrete type, use it
             DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, JsonWriter, _limitInfo);
         }
 
-        internal void CaptureLocal<TLocal>(TLocal value, string name, Type type = null)
+        internal void CaptureLocal<TLocal>(TLocal value, string name, Type? type = null)
         {
             StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
@@ -401,10 +527,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureStaticFields(ref info);
         }
 
-        internal void CaptureEntryMethodEndMarker<TTarget>(TTarget value, Type type, bool hasArgumentsOrLocal)
+        internal void CaptureEntryMethodEndMarker<TTarget>(TTarget value, Type type)
         {
             CaptureInstance(value, type);
-            EndEntry(hasArgumentsOrLocal || value != null);
+            EndEntry();
         }
 
         internal void CaptureExitMethodStartMarker<TReturnOrException>(ref CaptureInfo<TReturnOrException> info)
@@ -433,9 +559,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 case MethodState.ExitStartAsync:
                 case MethodState.ExitStart:
-                    if (info.MemberKind == ScopeMemberKind.Exception && info.Value != null)
+                    if (info.MemberKind == ScopeMemberKind.Exception && info.Value is Exception exception)
                     {
-                        CaptureException(info.Value as Exception);
+                        CaptureException(exception);
                         CaptureLocal(info.Value, "@exception", info.Type);
                     }
                     else if (info.MemberKind == ScopeMemberKind.Return)
@@ -446,12 +572,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                     break;
                 case MethodState.ExitEndAsync:
                 case MethodState.ExitEnd:
-                    if (MethodScopeMembers.Exception != null)
+                    if (MethodScopeMembers?.Exception != null)
                     {
                         CaptureException(MethodScopeMembers.Exception);
                         CaptureLocal(MethodScopeMembers.Exception, "@exception", MethodScopeMembers.Exception.GetType());
                     }
-                    else if (MethodScopeMembers.Return.Type != null)
+                    else if (MethodScopeMembers?.Return.Type != null)
                     {
                         CaptureLocal(MethodScopeMembers.Return.Value, "@return", MethodScopeMembers.Return.Type);
                     }
@@ -470,14 +596,14 @@ namespace Datadog.Trace.Debugger.Snapshots
                 CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
             }
 
-            EndReturn(info.HasLocalOrArgument.Value);
+            EndReturn();
         }
 
         internal void CaptureEntryAsyncMethod<T>(ref CaptureInfo<T> info)
         {
             CaptureEntryMethodStartMarker(ref info);
-            bool hasArgument = CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
-            CaptureEntryMethodEndMarker(info.Value, info.Type, hasArgument);
+            CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
+            CaptureEntryMethodEndMarker(info.Value, info.Type);
         }
 
         internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
@@ -486,10 +612,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             _errors = evaluationResult.Errors;
         }
 
-        private bool CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
+        private void CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
         {
             // capture hoisted arguments
-            var hasArgument = false;
             for (var index = 0; index < asyncHoistedArguments.Length; index++)
             {
                 ref var argument = ref asyncHoistedArguments[index];
@@ -500,10 +625,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 var argumentValue = argument.GetValue(moveNextInvocationTarget);
                 CaptureArgument(argumentValue, argument.Name, argumentValue?.GetType() ?? argument.FieldType);
-                hasArgument = true;
             }
-
-            return hasArgument;
         }
 
         private void ExitAsyncMethodStart<T>(ref CaptureInfo<T> info)
@@ -556,7 +678,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private void EndLine<TTarget>(ref CaptureInfo<TTarget> info)
         {
             CaptureInstance(info.Value, info.Type);
-            EndReturn(info.HasLocalOrArgument.Value);
+            EndReturn();
         }
 
         private void EndAsyncLine<TTarget>(ref CaptureInfo<TTarget> info)
@@ -564,7 +686,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureAsyncMethodLocals(info.AsyncCaptureInfo.HoistedLocals, info.AsyncCaptureInfo.MoveNextInvocationTarget);
             CaptureInstance(info.AsyncCaptureInfo.KickoffInvocationTarget, info.AsyncCaptureInfo.KickoffInvocationTargetType);
             CaptureAsyncMethodArguments(info.AsyncCaptureInfo.HoistedArguments, info.AsyncCaptureInfo.MoveNextInvocationTarget);
-            EndReturn(info.HasLocalOrArgument.Value);
+            EndReturn();
         }
 
         internal bool ProcessDelayedSnapshot<TCapture>(ref CaptureInfo<TCapture> captureInfo, bool hasCondition)
@@ -584,7 +706,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         break;
                     case MethodState.ExitEndAsync:
                         CaptureExitMethodStartMarker(ref captureInfo);
-                        CaptureScopeMembers(MethodScopeMembers.Members, ScopeMemberKind.Local);
+                        CaptureScopeMembers(MethodScopeMembers?.Members, ScopeMemberKind.Local);
                         return true;
                     case MethodState.EndLine:
                     case MethodState.EndLineAsync:
@@ -594,15 +716,20 @@ namespace Datadog.Trace.Debugger.Snapshots
                         throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);
                 }
 
-                CaptureScopeMembers(MethodScopeMembers.Members);
+                CaptureScopeMembers(MethodScopeMembers?.Members);
                 return true;
             }
 
             return false;
         }
 
-        internal void CaptureScopeMembers(ScopeMember[] members, ScopeMemberKind? kind = null)
+        internal void CaptureScopeMembers(ScopeMember[]? members, ScopeMemberKind? kind = null)
         {
+            if (members is null)
+            {
+                return;
+            }
+
             foreach (var member in members)
             {
                 if (member.Type == null)
@@ -643,27 +770,27 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private void StartLocalsOrArgsIfNeeded(string newParent)
         {
-            var currentParent = JsonWriter.Path.Split('.').LastOrDefault(p => p is "locals" or "arguments");
-            if (currentParent == newParent)
+            var desired =
+                newParent == "arguments"
+                    ? LocalsOrArgsContainer.Arguments
+                    : LocalsOrArgsContainer.Locals;
+
+            if (_localsOrArgsOpen == desired)
             {
                 // We're already there!
                 return;
             }
 
             // "locals" should always come after "arguments"
-            if ((currentParent == "locals" && newParent == "arguments") ||
-                (currentParent == "arguments" && newParent == "locals"))
-            {
-                // We need to close the previous node first.
-                JsonWriter.WriteEndObject();
-            }
+            CloseLocalsOrArgsIfOpen();
 
             JsonWriter.WritePropertyName(newParent);
             JsonWriter.WriteStartObject();
+            _localsOrArgsOpen = desired;
         }
 
         // Finalize snapshot
-        internal string FinalizeLineSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
+        internal string FinalizeLineSnapshot<T>(string? probeId, int probeVersion, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -691,7 +818,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal string FinalizeMethodSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
+        internal string FinalizeMethodSnapshot<T>(string? probeId, int probeVersion, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -718,7 +845,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
+        internal void FinalizeSnapshot(string? methodName, string? typeFullName, string? probeFilePath)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
 
@@ -730,7 +857,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(DebuggerManager.Instance.ServiceName, traceId, spanId)
+            .AddGeneralInfo(_serviceNameProvider(), _processTagsProvider(), traceId, spanId)
             .AddMessage()
             .Complete();
         }
@@ -758,7 +885,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddProbeInfo<T>(string probeId, int probeVersion, T methodNameOrLineNumber, string typeFullNameOrFilePath)
+        internal DebuggerSnapshotCreator AddProbeInfo<T>(string? probeId, int probeVersion, T methodNameOrLineNumber, string? typeFullNameOrFilePath)
         {
             JsonWriter.WritePropertyName("probe");
             JsonWriter.WriteStartObject();
@@ -787,7 +914,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 JsonWriter.WritePropertyName("lines");
                 JsonWriter.WriteStartArray();
-                JsonWriter.WriteValue(methodNameOrLineNumber.ToString());
+                JsonWriter.WriteValue(methodNameOrLineNumber?.ToString());
                 JsonWriter.WriteEndArray();
             }
 
@@ -797,9 +924,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        private static string SanitizePath(string probeFilePath)
+        private static string? SanitizePath(string? probeFilePath)
         {
-            return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath.Replace('\\', '/');
+            return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath!.Replace('\\', '/');
         }
 
         private DebuggerSnapshotCreator AddStackInfo()
@@ -820,29 +947,29 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        private void AddFrames(StackFrame[] frames)
+        private void AddFrames(StackFrame?[] frames)
         {
             foreach (var frame in frames)
             {
                 JsonWriter.WriteStartObject();
                 JsonWriter.WritePropertyName("function");
-                var frameMethod = frame.GetMethod();
+                var frameMethod = frame?.GetMethod();
                 JsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
 
-                var fileName = frame.GetFileName();
+                var fileName = frame?.GetFileName();
                 if (fileName != null)
                 {
                     JsonWriter.WritePropertyName("fileName");
-                    JsonWriter.WriteValue(frame.GetFileName());
+                    JsonWriter.WriteValue(fileName);
                 }
 
                 JsonWriter.WritePropertyName("lineNumber");
-                JsonWriter.WriteValue(frame.GetFileLineNumber());
+                JsonWriter.WriteValue(frame?.GetFileLineNumber());
                 JsonWriter.WriteEndObject();
             }
         }
 
-        internal DebuggerSnapshotCreator AddLoggerInfo(string methodName, string typeFullName, string probeFilePath)
+        internal DebuggerSnapshotCreator AddLoggerInfo(string? methodName, string? typeFullName, string? probeFilePath)
         {
             JsonWriter.WritePropertyName("logger");
             JsonWriter.WriteStartObject();
@@ -868,19 +995,31 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string traceId, string spanId)
+        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string? processTags, string? traceId, string? spanId)
         {
             JsonWriter.WritePropertyName("service");
             JsonWriter.WriteValue(service ?? UnknownValue);
 
+            if (!string.IsNullOrEmpty(processTags))
+            {
+                JsonWriter.WritePropertyName("process_tags");
+                JsonWriter.WriteValue(processTags);
+            }
+
             JsonWriter.WritePropertyName("ddsource");
-            JsonWriter.WriteValue(DDSource);
+            JsonWriter.WriteValue(DebuggerTags.DDSource);
 
             JsonWriter.WritePropertyName("dd.trace_id");
             JsonWriter.WriteValue(traceId);
 
             JsonWriter.WritePropertyName("dd.span_id");
             JsonWriter.WriteValue(spanId);
+
+            JsonWriter.WritePropertyName("debugger.type");
+            JsonWriter.WriteValue(DebuggerTags.DebuggerType.Snapshot);
+
+            JsonWriter.WritePropertyName("debugger.product");
+            JsonWriter.WriteValue(DebuggerProduct);
 
             return this;
         }
@@ -894,8 +1033,58 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public DebuggerSnapshotCreator Complete()
         {
-            JsonWriter.WriteEndObject();
-            return this;
+            // Finalization must be resilient: depending on the capture flow (delayed snapshots, skipped sections, etc.)
+            // we may already be at the root/start state. In that case, attempting to close again throws JsonWriterException.
+            // We still need to ensure the payload is a complete JSON document before GetSnapshotJson() is called
+            try
+            {
+                if (JsonWriter is null)
+                {
+                    return this;
+                }
+
+                // Close *all* open containers, not just the innermost one.
+                // WriteState only reflects the current writer position; if we're inside an array, closing it once
+                // can still leave us inside one or more outer objects.
+                // Cap the number of iterations.
+                for (var i = 0; i < 32; i++)
+                {
+                    switch (JsonWriter.WriteState)
+                    {
+                        case WriteState.Start:
+                        case WriteState.Closed:
+                            // Nothing open to close (already completed)
+                            return this;
+
+                        case WriteState.Property:
+                            // If we ended up mid-property, write a null value to complete it and continue closing.
+                            JsonWriter.WriteNull();
+                            break;
+
+                        case WriteState.Object:
+                            JsonWriter.WriteEndObject();
+                            break;
+
+                        case WriteState.Array:
+                            JsonWriter.WriteEndArray();
+                            break;
+
+                        default:
+                            // Fallback to Close(), which will attempt to auto-complete the JSON.
+                            JsonWriter.Close();
+                            return this;
+                    }
+                }
+
+                // Best-effort: if we still haven't reached Start/Closed, let Json.NET try to auto-complete.
+                JsonWriter.Close();
+                return this;
+            }
+            catch (JsonWriterException)
+            {
+                // Best-effort: never fail probe processing due to a close mismatch.
+                return this;
+            }
         }
 
         internal string GetSnapshotJson()

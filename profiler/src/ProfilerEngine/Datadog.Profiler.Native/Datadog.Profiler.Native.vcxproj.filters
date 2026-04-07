@@ -54,6 +54,9 @@
     <Filter Include="Network">
       <UniqueIdentifier>{6c3f1e16-c431-45e0-bfef-43a6c925f1f4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="HeapSnapshot">
+      <UniqueIdentifier>{98823685-380d-47c7-ab99-ce5bd24a3b00}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -128,6 +131,9 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="IManagedThreadList.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="IMemoryFootprintProvider.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="IService.h" />
@@ -446,9 +452,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="LinkedList.hpp" />
-    <ClInclude Include="TelemetryMetricsWorker.h">
-      <Filter>libdatadog</Filter>
-    </ClInclude>
     <ClInclude Include="Callstack.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
@@ -494,6 +497,18 @@
     </ClInclude>
     <ClInclude Include="RawSampleTransformer.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="IHeapSnapshotManager.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="HeapSnapshotManager.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="IGCDumpListener.h" />
+    <ClInclude Include="INativeThreadList.h" />
+    <ClInclude Include="NativeThreadList.h" />
+    <ClInclude Include="IGcSettingsProvider.h">
+      <Filter>GarbageCollections</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -725,9 +740,6 @@
     <ClCompile Include="ServiceBase.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="TelemetryMetricsWorker.cpp">
-      <Filter>libdatadog</Filter>
-    </ClCompile>
     <ClCompile Include="Callstack.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
@@ -759,6 +771,12 @@
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="RawSampleTransformer.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="HeapSnapshotManager.cpp">
+      <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeThreadList.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

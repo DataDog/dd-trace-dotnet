@@ -1,4 +1,4 @@
-// <copyright file="IntegrationSettingsCollection.cs" company="Datadog">
+﻿// <copyright file="IntegrationSettingsCollection.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// A collection of <see cref="IntegrationSettings"/> instances, referenced by name.
     /// </summary>
-    public class IntegrationSettingsCollection
+    public sealed class IntegrationSettingsCollection
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IntegrationSettingsCollection>();
 
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Configuration
         {
             var integrations = new IntegrationSettings[IntegrationRegistry.Names.Length];
 
-            for (int i = 0; i < integrations.Length; i++)
+            for (var i = 0; i < integrations.Length; i++)
             {
                 var name = IntegrationRegistry.Names[i];
 

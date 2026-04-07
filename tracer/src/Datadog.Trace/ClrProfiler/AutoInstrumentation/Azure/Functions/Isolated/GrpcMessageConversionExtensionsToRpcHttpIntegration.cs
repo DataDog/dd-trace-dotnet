@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcMessageConversionExtensionsToRpcHttpIntegration.cs" company="Datadog">
+// <copyright file="GrpcMessageConversionExtensionsToRpcHttpIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
     IntegrationName = AzureFunctionsCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class GrpcMessageConversionExtensionsToRpcHttpIntegration
+public sealed class GrpcMessageConversionExtensionsToRpcHttpIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TLogger, TGrpcCapabilities>(TTarget nullInstance, HttpRequest request, TLogger logger, TGrpcCapabilities capabilities)
     {
@@ -49,7 +49,7 @@ public class GrpcMessageConversionExtensionsToRpcHttpIntegration
         }
 
         var tracer = Tracer.Instance;
-        if (!tracer.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId)
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId)
          || tracer.ActiveScope is not Scope { Span: { OperationName: AzureFunctionsCommon.OperationName } span })
         {
             return returnValue;

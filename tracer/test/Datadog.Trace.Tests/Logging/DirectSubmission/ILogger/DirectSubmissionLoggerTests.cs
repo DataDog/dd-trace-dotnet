@@ -303,9 +303,8 @@ public class DirectSubmissionLoggerTests
 
         var rawLogger = new DirectSubmissionLogger(
             name: nameof(DirectSubmissionLoggerTests),
-            scopeProvider: null,
+            logEventCreator: new DatadogLogEventCreator(Formatter, scopeProvider: null),
             sink: sink,
-            logFormatter: Formatter,
             minimumLogLevel: DirectSubmissionLogLevel.Debug);
 
         var logger = (Microsoft.Extensions.Logging.ILogger)rawLogger.DuckImplement(typeof(Microsoft.Extensions.Logging.ILogger));

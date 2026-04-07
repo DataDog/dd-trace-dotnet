@@ -1,4 +1,4 @@
-// <copyright file="CIVisibilityProtocolWriter.cs" company="Datadog">
+﻿// <copyright file="CIVisibilityProtocolWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.EventModel;
@@ -73,7 +74,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
     public CIVisibilityProtocolWriter(
         TestOptimizationSettings settings,
         ICIVisibilityProtocolWriterSender sender,
-        IFormatterResolver? formatterResolver = null,
+        IFormatterResolver formatterResolver,
         int? concurrency = null,
         int batchInterval = DefaultBatchInterval,
         int maxItemsInQueue = DefaultMaxItemsInQueue)
@@ -89,15 +90,15 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         {
             var buffers = new Buffers(
                 sender,
-                new CITestCyclePayload(settings, formatterResolver: formatterResolver),
-                new CICodeCoveragePayload(settings, formatterResolver: formatterResolver));
+                new CITestCyclePayload(settings, formatterResolver),
+                new CICodeCoveragePayload(settings, formatterResolver));
             _buffersArray[i] = buffers;
             var tskFlush = Task.Run(() => InternalFlushEventsAsync(this, buffers));
             tskFlush.ContinueWith(t => Log.Error(t.Exception, "CIVisibilityProtocolWriter: Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
             _buffersArray[i].SetFlushTask(tskFlush);
         }
 
-        Log.Information<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
+        Log.Debug<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
     }
 
     public void WriteEvent(IEvent @event)
@@ -158,15 +159,12 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         return Task.FromResult(true);
     }
 
-    public void WriteTrace(ArraySegment<Span> trace)
+    public void WriteTrace(in SpanCollection trace)
     {
         // Transform spans to events
-        for (var i = trace.Offset; i < trace.Count; i++)
+        foreach (var span in trace)
         {
-            if (trace.Array is { } array)
-            {
-                WriteEvent(CIVisibilityEventsFactory.FromSpan(array[i]));
-            }
+            WriteEvent(CIVisibilityEventsFactory.FromSpan(span));
         }
     }
 
@@ -300,7 +298,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         }
     }
 
-    internal class WatermarkEvent : IEvent
+    internal sealed class WatermarkEvent : IEvent
     {
         public WatermarkEvent(AsyncCountdownEvent countdownEvent)
         {
@@ -310,7 +308,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         public AsyncCountdownEvent Countdown { get; }
     }
 
-    private class Buffers
+    private sealed class Buffers
     {
         private static int _globalIndexes;
         private readonly ICIVisibilityProtocolWriterSender _sender;
@@ -351,7 +349,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         public Task FlushCiTestCycleBufferWhenTimeElapsedAsync(int batchInterval)
         {
-            return CiTestCycleBufferWatch.ElapsedMilliseconds >= batchInterval ?
+            return CiTestCycleBufferWatch.GetElapsedMilliseconds() >= batchInterval ?
                        FlushCiTestCycleBufferAsync() : Task.CompletedTask;
         }
 
@@ -369,7 +367,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         public Task FlushCiCodeCoverageBufferWhenTimeElapsedAsync(int batchInterval)
         {
-            return CiCodeCoverageBufferWatch.ElapsedMilliseconds >= batchInterval ?
+            return CiCodeCoverageBufferWatch.GetElapsedMilliseconds() >= batchInterval ?
                        FlushCiCodeCoverageBufferAsync() : Task.CompletedTask;
         }
 

@@ -44,9 +44,9 @@ Write-Host -ForegroundColor Green 'java --version'; java --version
 
 ## need to have more rigorous download at some point, but
 #$jsignjarsrc = "https://s3.amazonaws.com/dd-agent-omnibus/jsign/jsign-4.2.jar"
-$jsignjarsrc = "https://github.com/ebourg/jsign/releases/download/5.0/jsign-5.0.jar"
+$jsignjarsrc = "https://github.com/ebourg/jsign/releases/download/7.4/jsign-7.4.jar"
 $jsignjardir = "c:\devtools\jsign"
-$jsignout = "$($jsignjardir)\jsign-5.0.jar"
+$jsignout = "$($jsignjardir)\jsign-7.4.jar"
 if (-Not (test-path $jsignjardir)) {
     mkdir $jsignjardir
 }

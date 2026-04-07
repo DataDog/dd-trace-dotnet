@@ -119,32 +119,43 @@ namespace Samples.Wcf
             cf.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
 
             var sampleHelper = new ActivitySourceHelper("Samples.Wcf");
-            using var scope = sampleHelper.CreateScope("WebClient");
             var calculator = cf.CreateChannel();
 
-            Console.WriteLine();
-            LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerSyncAddJson(1, 2)");
-            var result = calculator.ServerSyncAddJson("1", "2");
-            AssertResult(result);
-            LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            using (sampleHelper.CreateScope("ServerSyncAddJson"))
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerSyncAddJson(1, 2)");
+                var result = calculator.ServerSyncAddJson("1", "2");
+                AssertResult(result);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
 
-            Console.WriteLine();
-            LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerSyncAddXml(1, 2)");
-            result = calculator.ServerSyncAddXml("1", "2");
-            AssertResult(result);
-            LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            using (sampleHelper.CreateScope("ServerSyncAddXml"))
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerSyncAddXml(1, 2)");
+                var result = calculator.ServerSyncAddXml("1", "2");
+                AssertResult(result);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
 
-            Console.WriteLine();
-            LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerTaskAddPost(1, 2)");
-            result = await calculator.ServerTaskAddPost(new() { Arg1 = 1, Arg2 = 2 });
-            AssertResult(result);
-            LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            using (sampleHelper.CreateScope("ServerTaskAddPost"))
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerTaskAddPost(1, 2)");
+                var result = await calculator.ServerTaskAddPost(new() { Arg1 = 1, Arg2 = 2 });
+                AssertResult(result);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
 
-            Console.WriteLine();
-            LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerSyncAddWrapped(1, 2)");
-            result = calculator.ServerSyncAddWrapped("1", "2");
-            AssertResult(result);
-            LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            using (sampleHelper.CreateScope("ServerSyncAddWrapped"))
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerSyncAddWrapped(1, 2)");
+                var result = calculator.ServerSyncAddWrapped("1", "2");
+                AssertResult(result);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
         }
 
         private static void AssertResult(double result)

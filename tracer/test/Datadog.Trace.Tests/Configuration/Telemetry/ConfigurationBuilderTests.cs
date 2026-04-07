@@ -35,7 +35,8 @@ public class ConfigurationBuilderTests
                 var data = new NameValueCollection();
                 foreach (var kvp in values)
                 {
-                    data.Add(kvp.Key, kvp.Value?.ToString());
+                    // use FormattableString.Invariant as europeans might have 1.23.ToString()=1,23 which makes tests fail
+                    data.Add(kvp.Key, kvp.Value is null ? null : FormattableString.Invariant($"{kvp.Value}"));
                 }
 
                 return new NameValueConfigurationSource(data);
@@ -629,7 +630,7 @@ public class ConfigurationBuilderTests
                              converter: _nullableConverter);
 
             actual.Should().Be(_default);
-            var finalValue = telemetry.GetData()
+            var finalValue = telemetry.GetIncrementalData()
                                       .Where(x => x.Name == key)
                                       .OrderByDescending(x => x.SeqId)
                                       .FirstOrDefault()
@@ -657,7 +658,7 @@ public class ConfigurationBuilderTests
                              converter: _nullableConverter);
 
             actual.Should().Be(_default);
-            var finalValue = telemetry.GetData()
+            var finalValue = telemetry.GetIncrementalData()
                                       .Where(x => x.Name == key)
                                       .OrderByDescending(x => x.SeqId)
                                       .FirstOrDefault()
@@ -909,7 +910,7 @@ public class ConfigurationBuilderTests
                         .WithDefault(expected);
 
             actual.Should().Be(expected);
-            telemetry.GetData()
+            telemetry.GetIncrementalData()
                      .Should()
                      .ContainSingle()
                      .Which.Should()
@@ -1159,7 +1160,7 @@ public class ConfigurationBuilderTests
                         .WithDefault(new(null, expected));
 
             actual.Should().BeNull();
-            telemetry.GetData()
+            telemetry.GetIncrementalData()
                      .Should()
                      .ContainSingle()
                      .Which.Should()

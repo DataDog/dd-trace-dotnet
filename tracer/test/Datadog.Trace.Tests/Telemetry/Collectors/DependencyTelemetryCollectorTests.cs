@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyName, moduleVersionId);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
 
             var dependency = data.Should().ContainSingle().Subject;
             dependency.Name.Should().Be(name);
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(thisAssembly);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
 
             var dependency = data.Should().ContainSingle().Subject;
             dependency.Name.Should().Be("Datadog.Trace.Tests");
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var collector = new DependencyTelemetryCollector();
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             data.Should().BeNull();
             collector.HasChanges().Should().BeFalse();
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             collector.HasChanges().Should().BeTrue();
 
-            data = collector.GetData();
+            data = collector.GetIncrementalData();
             data.Should()
                 .HaveCount(1)
                 .And.ContainSingle(x => x.Name == "Datadog.Trace.Tests");
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.AssemblyLoaded(assembly);
             collector.HasChanges().Should().BeTrue();
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assembly);
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("454845b558934321ad350977dd095960")]
         [InlineData("41e68894e3e54239abe61eb16cb0e158")]
         [InlineData("a1bc683e730d425c9de5fdf00dbdc003")]
-        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHas32CharName(string name)
+        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHas32CharHexName(string name)
         {
             var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
 
@@ -203,6 +203,60 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
         }
 
+        [Theory]
+        [InlineData("a43d8b99ea")]
+        [InlineData("1234567890")]
+        [InlineData("abcdef0123")]
+        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHas10CharHexName(string name)
+        {
+            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(ignoredName, "some-guid");
+
+            collector.HasChanges().Should().BeFalse($"{name} has a zero version and 10 hex chars");
+
+            var nonIgnoredName = CreateAssemblyName(new Version(1, 0, 0, 0), name: name);
+            collector.AssemblyLoaded(nonIgnoredName, "some-guid");
+            collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
+        }
+
+        [Theory]
+        [InlineData("dynamicclasses1")]
+        [InlineData("dynamicclasses254")]
+        [InlineData("dynamicclasses99999")]
+        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndIsDynamicClassesPattern(string name)
+        {
+            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(ignoredName, "some-guid");
+
+            collector.HasChanges().Should().BeFalse($"{name} has a zero version and matches dynamicclasses pattern");
+
+            var nonIgnoredName = CreateAssemblyName(new Version(1, 0, 0, 0), name: name);
+            collector.AssemblyLoaded(nonIgnoredName, "some-guid");
+            collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
+        }
+
+        [Theory]
+        [InlineData("dynamicclasses")]    // No digits
+        [InlineData("dynamicclassesabc")] // Letters instead of digits
+        [InlineData("dynamicclasses12a")] // Mixed digits and letters
+        [InlineData("mydynamicclasses1")] // Prefix before dynamicclasses
+        [InlineData("dynamic123")]        // Different prefix
+        [InlineData("DynamicClasses123")] // Wrong case (uppercase D and C)
+        [InlineData("DYNAMICCLASSES456")] // All uppercase
+        public void HasChangesWhenAssemblyNameIsNotValidDynamicClassesPattern(string name)
+        {
+            var validName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(validName, "some-guid");
+
+            collector.HasChanges().Should().BeTrue($"{name} should not be filtered as it doesn't match dynamicclasses pattern");
+        }
+
         [Fact]
         public void HasChangesWhenAddingSameAssemblyWithDifferentVersion()
         {
@@ -211,12 +265,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyV1, "mvid");
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assemblyV2, "mvid");
             collector.HasChanges().Should().BeTrue();
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             data.Should().NotBeNull();
             data.Should()
                 .NotBeNullOrEmpty()
@@ -233,12 +287,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyName, assemblyV1ModuleVersionId);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assemblyName, assemblyV2ModuleVersionId);
             collector.HasChanges().Should().BeTrue();
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             data.Should().NotBeNull();
             data.Should()
                 .NotBeNullOrEmpty()

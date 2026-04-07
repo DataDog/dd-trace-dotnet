@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationClient.GetKnownTestsAsync.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationClient.GetKnownTestsAsync.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 // ReSharper disable ConvertToPrimaryConstructor
@@ -40,7 +41,7 @@ internal sealed partial class TestOptimizationClient
                 new KnownTestsQuery(_serviceName, _environment, _repositoryUrl, GetTestConfigurations())),
             null);
 
-        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
         Log.Debug("TestOptimizationClient: KnownTests.JSON RQ = {Json}", jsonQuery);
 
         string? queryResponse;
@@ -61,7 +62,7 @@ internal sealed partial class TestOptimizationClient
             return default;
         }
 
-        var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<KnownTestsResponse>?>>(queryResponse);
+        var deserializedResult = JsonHelper.DeserializeObject<DataEnvelope<Data<KnownTestsResponse>?>>(queryResponse);
         var finalResponse = deserializedResult.Data?.Attributes ?? default;
 
         // Count the number of tests for telemetry
@@ -139,11 +140,11 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("tests")]
         public readonly KnownTestsModules? Tests;
 
-        public class KnownTestsSuites : Dictionary<string, string[]?>
+        public sealed class KnownTestsSuites : Dictionary<string, string[]?>
         {
         }
 
-        public class KnownTestsModules : Dictionary<string, KnownTestsSuites?>
+        public sealed class KnownTestsModules : Dictionary<string, KnownTestsSuites?>
         {
         }
     }

@@ -17,16 +17,19 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryController : ITelemetryController
+internal sealed class TelemetryController : ITelemetryController
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryController>();
     private readonly TelemetryDataBuilder _dataBuilder = new();
@@ -44,18 +47,20 @@ internal class TelemetryController : ITelemetryController
     private readonly TagBuilder _logTagBuilder = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
+    private readonly IDisposable _settingsSubscription;
     private TelemetryTransportManager _transportManager;
-    private bool _sendTelemetry;
     private bool _isStarted;
     private string? _namingVersion;
 
     internal TelemetryController(
+        TracerSettings tracerSettings,
         IConfigurationTelemetry configuration,
         IDependencyTelemetryCollector dependencies,
         IMetricsTelemetryCollector metrics,
         RedactedErrorLogCollector? redactedErrorLogs,
         TelemetryTransportManager transportManager,
-        TimeSpan flushInterval)
+        TimeSpan flushInterval,
+        TimeSpan extendedHeartbeatInterval)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
@@ -65,7 +70,7 @@ internal class TelemetryController : ITelemetryController
         // We use Task.Delay(Timeout.Infinite) here as "a Task that never completes".
         // It simplifies some of the logic we need to do in the scheduler
         var redactedErrorLogsTask = () => _redactedErrorLogs?.WaitForLogsAsync() ?? Task.Delay(Timeout.Infinite);
-        _scheduler = new(flushInterval, redactedErrorLogsTask, _processExit);
+        _scheduler = new(flushInterval, extendedHeartbeatInterval, redactedErrorLogsTask, _processExit);
 
         try
         {
@@ -84,29 +89,34 @@ internal class TelemetryController : ITelemetryController
             Log.Warning(ex, "Unable to register a callback to the AppDomain.AssemblyLoad event. Telemetry collection of loaded assemblies will be disabled.");
         }
 
+        RecordTracerSettings(tracerSettings);
+        _settingsSubscription = tracerSettings.Manager.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedMutable is { } updated)
+            {
+                _application.RecordMutableSettings(tracerSettings, updated);
+                _integrations.RecordTracerSettings(updated);
+            }
+        });
+
         _flushTask = Task.Run(PushTelemetryLoopAsync);
         _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in telemetry flush task"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
-    public void RecordTracerSettings(TracerSettings settings, string defaultServiceName)
+    public void RecordTracerSettings(TracerSettings settings)
     {
-        // Note that this _doesn't_ clear the configuration held by ImmutableTracerSettings
-        // that's necessary because users could reconfigure the tracer to re-use an old
-        // ImmutableTracerSettings, at which point that config would become "current", so we
-        // need to keep it around
-        settings.Telemetry.CopyTo(_configuration);
-        _application.RecordTracerSettings(settings, defaultServiceName);
+        _application.RecordTracerSettings(settings);
+        _integrations.RecordTracerSettings(settings.Manager.InitialMutableSettings);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _logTagBuilder.Update(settings);
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
     }
 
     public void RecordGitMetadata(GitMetadata gitMetadata)
     {
         _application.RecordGitMetadata(gitMetadata);
 
-        _configuration.Record(ConfigurationKeys.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
-        _configuration.Record(ConfigurationKeys.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(ConfigurationKeys.CIVisibility.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(ConfigurationKeys.CIVisibility.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
     public void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints)
@@ -152,13 +162,9 @@ internal class TelemetryController : ITelemetryController
 
     public async Task DisposeAsync()
     {
+        _settingsSubscription.Dispose();
         TerminateLoop();
         await _flushTask.ConfigureAwait(false);
-    }
-
-    public void DisableSending()
-    {
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.DisableSending, null));
     }
 
     public void SetTransportManager(TelemetryTransportManager manager)
@@ -192,10 +198,10 @@ internal class TelemetryController : ITelemetryController
 
             // fetch the "complete" values, and make sure to not impact real telemetry push
             var input = new TelemetryInput(
-                configuration: null, // we don't store this indefinitely, so no way of dumping full config
+                _configuration.GetFullData(),
                 _dependencies.GetFullData(),
                 _integrations.GetFullData(),
-                _appEndpoints.GetData(),
+                _appEndpoints.GetIncrementalData(),
                 metrics: null,
                 _products.GetFullData(),
                 sendAppStarted: false);
@@ -208,7 +214,8 @@ internal class TelemetryController : ITelemetryController
             var serializer = JsonSerializer.Create(JsonTelemetryTransport.SerializerSettings);
             using var file = File.Open(filePath, FileMode.Create, FileAccess.Write);
             using var writer = new StreamWriter(file);
-            serializer.Serialize(writer, data);
+            using var jsonWriter = new JsonTextWriter(writer) { ArrayPool = JsonArrayPool.Shared };
+            serializer.Serialize(jsonWriter, data);
             await writer.FlushAsync().ConfigureAwait(false);
             Log.Debug("Telemetry dump complete");
         }
@@ -259,12 +266,6 @@ internal class TelemetryController : ITelemetryController
                     case WorkItem.ItemType.SetTracerStarted:
                         _isStarted = true;
                         break;
-                    case WorkItem.ItemType.EnableSending:
-                        _sendTelemetry = true;
-                        break;
-                    case WorkItem.ItemType.DisableSending:
-                        _sendTelemetry = false;
-                        break;
                     case WorkItem.ItemType.SetFlushInterval:
                         _scheduler.SetFlushInterval((TimeSpan)item.State!);
                         break;
@@ -278,9 +279,12 @@ internal class TelemetryController : ITelemetryController
                 await _metrics.DisposeAsync().ConfigureAwait(false);
             }
 
-            if (_isStarted && _sendTelemetry && _scheduler.ShouldFlushTelemetry)
+            if (_isStarted && _scheduler.ShouldFlushTelemetry)
             {
-                await PushTelemetry(includeLogs: _scheduler.ShouldFlushRedactedErrorLogs, sendAppClosing: isFinalPush).ConfigureAwait(false);
+                await PushTelemetry(
+                    includeLogs: _scheduler.ShouldFlushRedactedErrorLogs,
+                    sendAppClosing: isFinalPush,
+                    sendExtendedHeartbeat: _scheduler.ShouldSendExtendedHeartbeat).ConfigureAwait(false);
             }
 
             if (isFinalPush)
@@ -294,7 +298,7 @@ internal class TelemetryController : ITelemetryController
         }
     }
 
-    private async Task PushTelemetry(bool includeLogs, bool sendAppClosing)
+    private async Task PushTelemetry(bool includeLogs, bool sendAppClosing, bool sendExtendedHeartbeat)
     {
         try
         {
@@ -302,14 +306,6 @@ internal class TelemetryController : ITelemetryController
             // need to make sure we clear the buffers. If we don't we could get overflows.
             // We will lose these metrics if the endpoint errors, but better than growing too much.
             MetricResults? metrics = _metrics.GetMetrics();
-
-            if (!_sendTelemetry)
-            {
-                // sending is currently disabled, so don't fetch the other data or attempt to send
-                Log.Debug("Telemetry pushing currently disabled, skipping");
-                return;
-            }
-
             var application = _application.GetApplicationData();
             var host = _application.GetHostData();
             if (application is null || host is null)
@@ -328,14 +324,29 @@ internal class TelemetryController : ITelemetryController
                 }
             }
 
+            if (sendExtendedHeartbeat)
+            {
+                Log.Debug("Pushing extended heartbeat telemetry");
+                // Not including dependencies in the extended heartbeat to reduce
+                // payload size and to avoid the 2000 dependency limit
+                var payload = _dataBuilder.BuildExtendedHeartbeatData(
+                    application,
+                    host,
+                    _configuration.GetFullData(),
+                    dependencies: null,
+                    _integrations.GetFullData(),
+                    _namingVersion);
+                await _transportManager.TryPushTelemetry(payload).ConfigureAwait(false);
+            }
+
             // use values from previous failed attempt if necessary
             var input = _aggregator.Combine(
-                _configuration.GetData(),
-                _dependencies.GetData(),
-                _integrations.GetData(),
-                _appEndpoints.GetData(),
+                _configuration.GetIncrementalData(),
+                _dependencies.GetIncrementalData(),
+                _integrations.GetIncrementalData(),
+                _appEndpoints.GetIncrementalData(),
                 in metrics,
-                _products.GetData());
+                _products.GetIncrementalData());
 
             var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion, sendAppClosing);
 
@@ -361,8 +372,6 @@ internal class TelemetryController : ITelemetryController
         {
             SetTransportManager,
             SetFlushInterval,
-            EnableSending,
-            DisableSending,
             SetTracerStarted
         }
 
@@ -371,7 +380,7 @@ internal class TelemetryController : ITelemetryController
         public object? State { get; }
     }
 
-    internal class TagBuilder
+    internal sealed class TagBuilder
     {
         private bool _isCiVisEnabled;
         private bool _isAsmEnabled;
@@ -431,11 +440,19 @@ internal class TelemetryController : ITelemetryController
             if (_isUpdateRequired || _tags is null)
             {
                 _isUpdateRequired = false;
+#if NET6_0_OR_GREATER
+                var trimState = TrimmingDetector.DetectedTrimmingState;
+#endif
                 // using 1/0 to save bytes!
                 _tags = $"ci:{(_isCiVisEnabled ? '1' : '0')}" +
                         $",asm:{(_isAsmEnabled ? '1' : '0')}" +
                         $",prof:{(_isProfilingEnabled ? '1' : '0')}" +
                         $",dyn:{(_isDynamicInstrumentationEnabled ? '1' : '0')}" +
+#if NET6_0_OR_GREATER
+                        $",trim:{(trimState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile
+                                      ? "err"
+                                      : trimState == TrimmingDetector.TrimState.TrimmedAppUsingTrimmingFile ? "yes" : "no")}" +
+#endif
                         $"{_cloudEnv}";
             }
 
@@ -446,7 +463,7 @@ internal class TelemetryController : ITelemetryController
     /// <summary>
     /// Internal for testing
     /// </summary>
-    internal class Scheduler
+    internal sealed class Scheduler
     {
         private const int DelayTaskIndex = 0;
         private const int ProcessTaskIndex = 1;
@@ -459,25 +476,28 @@ internal class TelemetryController : ITelemetryController
         private readonly Func<Task> _logQueueTaskGenerator;
         private readonly IClock _clock;
         private readonly IDelayFactory _delayFactory;
+        private readonly TimeSpan _extendedHeartbeatInterval;
         private TimeSpan _flushInterval;
         private DateTime _lastFlush;
-        private bool _initializationFlushExecuted = false;
+        private DateTime _lastExtendedFlush;
+        private bool _initializationFlushExecuted;
 
-        public Scheduler(TimeSpan flushInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource)
-            : this(flushInterval, logQueueTaskGenerator, processExitSource, new Clock(), new DelayFactory())
+        public Scheduler(TimeSpan flushInterval, TimeSpan extendHeartbeatInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource)
+            : this(flushInterval, extendHeartbeatInterval, logQueueTaskGenerator, processExitSource, new Clock(), new DelayFactory())
         {
         }
 
-        // For testing only
-        public Scheduler(TimeSpan flushInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
+        [TestingAndPrivateOnly]
+        public Scheduler(TimeSpan flushInterval, TimeSpan extendHeartbeatInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
         {
             _clock = clock;
             _delayFactory = delayFactory;
             _processExitSource = processExitSource;
             _flushInterval = flushInterval;
+            _extendedHeartbeatInterval = extendHeartbeatInterval;
             _logQueueTaskGenerator = logQueueTaskGenerator;
             ShouldFlushTelemetry = false; // wait for initialization before flushing metrics
-            _lastFlush = _clock.UtcNow;
+            _lastFlush = _lastExtendedFlush = _clock.UtcNow;
 
             // Using a task array instead of overloads to avoid allocating the array every loop
             _tasks = new Task[4];
@@ -494,6 +514,8 @@ internal class TelemetryController : ITelemetryController
 
         public bool ShouldFlushTelemetry { get; private set; }
 
+        public bool ShouldSendExtendedHeartbeat { get; private set; }
+
         public bool ShouldFlushRedactedErrorLogs { get; private set; }
 
         public void SetFlushInterval(TimeSpan flushInterval)
@@ -509,7 +531,7 @@ internal class TelemetryController : ITelemetryController
         public async Task WaitForNextInterval()
         {
             // Calculate how long before the next flush. Accounts for the fact that it might
-            // take a long time to push telemetry if the network is slow or faulty
+            // take a long time to push telemetry if the network is slow or faulty.
 
             var nextFlush = _lastFlush.Add(_flushInterval);
 
@@ -542,6 +564,7 @@ internal class TelemetryController : ITelemetryController
 
             // Reset variables
             ShouldFlushTelemetry = false;
+            ShouldSendExtendedHeartbeat = false;
             ShouldFlushRedactedErrorLogs = false;
             var now = _clock.UtcNow;
 
@@ -572,15 +595,21 @@ internal class TelemetryController : ITelemetryController
             if (ShouldFlushTelemetry)
             {
                 _lastFlush = now;
+
+                if (_lastExtendedFlush.Add(_extendedHeartbeatInterval) <= now)
+                {
+                    ShouldSendExtendedHeartbeat = true;
+                    _lastExtendedFlush = now;
+                }
             }
         }
 
-        private class Clock : IClock
+        private sealed class Clock : IClock
         {
             public DateTime UtcNow => DateTime.UtcNow;
         }
 
-        private class DelayFactory : IDelayFactory
+        private sealed class DelayFactory : IDelayFactory
         {
             public Task Delay(TimeSpan delay) => Task.Delay(delay);
         }

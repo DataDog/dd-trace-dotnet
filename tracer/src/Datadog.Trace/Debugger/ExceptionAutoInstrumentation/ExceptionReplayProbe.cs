@@ -1,4 +1,4 @@
-// <copyright file="ExceptionReplayProbe.cs" company="Datadog">
+﻿// <copyright file="ExceptionReplayProbe.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,17 +11,18 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionReplayProbe
+    internal sealed class ExceptionReplayProbe
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionReplayProbe>();
         private readonly int _hashCode;
         private readonly object _locker = new();
         private readonly List<ExceptionCase> _exceptionCases = new();
-        private int _isInstrumented = 0;
+        private int _isInstrumented;
         private int _maxFramesToCapture;
 
         public ExceptionReplayProbe(MethodUniqueIdentifier method, int maxFramesToCapture)
@@ -72,7 +73,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private bool CheckIfMethodMayBeOmittedFromCallStack()
         {
             return ExceptionTrackManager.IsEditAndContinueFeatureEnabled &&
-                   FrameworkDescription.Instance.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && Method.Method.DeclaringType?.Assembly != null && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
+                   FrameworkDescription.Instance.RuntimeVersion.Major >= 6 && Method.Method.DeclaringType?.Assembly != null && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
         }
 
         private void ProcessCase(ExceptionCase @case)

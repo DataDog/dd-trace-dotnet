@@ -25,6 +25,9 @@
 #include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
 #include "dd_profiler_version.h"
+#include "IHeapSnapshotManager.h"
+#include "IGcSettingsProvider.h"
+#include "MetadataProvider.h"
 
 #include <cassert>
 #include <fstream>
@@ -69,6 +72,10 @@ std::string const ProfileExporter::MetricsFilename = "metrics.json";
 
 std::string const ProfileExporter::AllocationsExtension = ".balloc";
 
+std::string const ProfileExporter::ClassHistogramFilename = "histogram.json";
+
+std::string const ProfileExporter::StartTime = OsSpecificApi::GetProcessStartTime();
+
 ProfileExporter::ProfileExporter(
     std::vector<SampleValueType> sampleTypeDefinitions,
     IConfiguration* configuration,
@@ -78,7 +85,9 @@ ProfileExporter::ProfileExporter(
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
     ISsiManager* ssiManager,
-    IAllocationsRecorder* allocationsRecorder) :
+    IAllocationsRecorder* allocationsRecorder,
+    IHeapSnapshotManager* heapSnapshotManager)
+    :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
@@ -86,7 +95,9 @@ ProfileExporter::ProfileExporter(
     _metadataProvider{metadataProvider},
     _configuration{configuration},
     _runtimeInfo{runtimeInfo},
-    _ssiManager{ssiManager}
+    _ssiManager{ssiManager},
+    ProviderList{GetEnabledProfilers(enabledProfilers)},
+    _heapSnapshotManager{heapSnapshotManager}
 {
     _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -177,6 +188,12 @@ void ProfileExporter::RegisterApplication(std::string_view runtimeId)
     GetOrCreateInfo(runtimeId);
 }
 
+void ProfileExporter::RegisterGcSettingsProvider(IGcSettingsProvider* provider)
+{
+    _gcSettingsProvider = provider;
+}
+
+
 libdatadog::Tags ProfileExporter::CreateFixedTags(
     IConfiguration* configuration,
     IRuntimeInfo* runtimeInfo,
@@ -192,13 +209,6 @@ libdatadog::Tags ProfileExporter::CreateFixedTags(
     tags.Add("process_id", ProcessId);
     tags.Add("host", configuration->GetHostname());
 
-    // list of enabled profilers
-    std::string profilersTag = GetEnabledProfilersTag(enabledProfilers);
-    tags.Add("profiler_list", profilersTag);
-
-    // runtime_platform (os and version later)
-    tags.Add("runtime_os", runtimeInfo->GetOs());
-
     for (auto const& [name, value] : configuration->GetUserTags())
     {
         tags.Add(name, value);
@@ -207,7 +217,7 @@ libdatadog::Tags ProfileExporter::CreateFixedTags(
     return tags;
 }
 
-std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers)
+std::string ProfileExporter::GetEnabledProfilers(IEnabledProfilers* enabledProfilers)
 {
     const char* separator = "_"; // ',' are not allowed and +/SPACE would be transformed into '_' anyway
     std::stringstream buffer;
@@ -303,6 +313,16 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
             buffer << separator;
         }
         buffer << "threadsLifetime";
+        emptyList = false;
+    }
+
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::HeapSnapshot))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "heapsnapshot";
         emptyList = false;
     }
 
@@ -577,6 +597,10 @@ bool ProfileExporter::Export(bool lastCall)
     // Process-level samples
     auto processSamples = GetProcessSamples();
 
+    // additional content to be sent along the .pprof
+    auto metricsFileContent = CreateMetricsFileContent();
+    auto classHistogramContent = CreateClassHistogramContent();
+
     for (auto& runtimeId : keys)
     {
         std::unique_ptr<libdatadog::Profile> profile;
@@ -624,18 +648,14 @@ bool ProfileExporter::Export(bool lastCall)
         AddUpscalingRules(profile.get(), upscalingInfos);
         AddUpscalingPoissonRules(profile.get(), upscalingPoissonInfos);
 
-
+        std::string runtimeIdString = std::string(runtimeId);
         auto additionalTags = libdatadog::Tags{{"env", applicationInfo.Environment},
                                                {"version", applicationInfo.Version},
                                                {"service", applicationInfo.ServiceName},
-                                               {"runtime-id", std::string(runtimeId)},
+                                               {"runtime-id", runtimeIdString},
                                                {"profile_seq", std::to_string(exportsCount - 1)},
                                                // Optim we can cache the number of cores in a string
                                                {"number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount())}};
-
-        // .NET Framework version is known AFTER the ProfilerExporter gets created
-        // so we need to add it here
-        additionalTags.Add("runtime_version", _runtimeInfo->GetClrString());
 
         if (!applicationInfo.RepositoryUrl.empty())
         {
@@ -648,16 +668,22 @@ bool ProfileExporter::Export(bool lastCall)
 
         auto filesToSend = std::vector<std::pair<std::string, std::string>>{};
 
-        auto metricsFileContent = CreateMetricsFileContent();
         if (!metricsFileContent.empty())
         {
             filesToSend.emplace_back(MetricsFilename, std::move(metricsFileContent));
         }
 
-        std::string metadataJson = GetMetadata();
-        std::string infoJson = GetInfo();
+        if (!classHistogramContent.empty())
+        {
+            filesToSend.emplace_back(ClassHistogramFilename, std::move(classHistogramContent));
+            additionalTags.Add("profile_has_class_histogram", "true");
+        }
 
-        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson));
+        std::string metadataJson = GetMetadataJson();
+        std::string infoJson = GetInfoJson(runtimeIdString);
+        std::string processTags = applicationInfo.ProcessTags;
+
+        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson), std::move(processTags));
         if (!error_code)
         {
             Log::Error(error_code.message());
@@ -700,7 +726,28 @@ std::string ProfileExporter::CreateMetricsFileContent() const
     return builder.str();
 }
 
-std::string ProfileExporter::GetMetadata() const
+std::string ProfileExporter::CreateClassHistogramContent() const
+{
+    if (_heapSnapshotManager == nullptr)
+    {
+        return "";
+    }
+
+    // TODO: is it a problem to have the manager responsible for the serialization format?
+    // Otherwhise, we would need to return the map while clearing it
+    auto heapSnapshot = _heapSnapshotManager->GetAndClearHeapSnapshotText();
+    if (!heapSnapshot.empty())
+    {
+        // prepare class histogram to be sent
+        std::stringstream builder;
+        builder << heapSnapshot;
+        return builder.str();
+    }
+
+    return "";
+}
+
+std::string ProfileExporter::GetMetadataJson() const
 {
     // in tests, the metadata provider might be null
     if (_metadataProvider == nullptr)
@@ -721,49 +768,39 @@ std::string ProfileExporter::GetMetadata() const
 
     // the json schema is supposed to send sections under the systemInfo element
     std::stringstream builder;
-    builder << "{ \"systemInfo\": ";
     builder << "{";
+    ElementStart(builder, "systemInfo");
     for (auto const& [section, kvp] : metadata)
     {
         currentSection++;
 
-        builder << "\"";
-        builder << section;
-        builder << "\":";
-        builder << "{";
-
+        ElementStart(builder, section);
         auto keyCount = kvp.size();
         auto currentKey = 0;
         for (auto const& [key, value] : kvp)
         {
             currentKey++;
-            builder << "\"";
-            builder << key;
-            builder << "\":";
-            builder << "\"";
-            builder << value;
-            builder << "\"";
+            AppendValue(builder, key, value);
 
             if (currentKey < keyCount)
             {
                 builder << ", ";
             }
         }
-        builder << "}";
+        ElementEnd(builder);
 
         if (currentSection < sectionCount)
         {
             builder << ", ";
         }
     }
-    builder << "}}";
+    ElementEnd(builder);
+    builder << "}";
 
     return builder.str();
 }
 
-
-
-// Example of expected info json with SSI data:
+// Example of expected info json with SSI data and other runtime info:
 //  "info": {
 //     ...,
 //     "profiler": {
@@ -771,11 +808,23 @@ std::string ProfileExporter::GetMetadata() const
 //        "ssi" : {
 //           "mechanism": "injected_agent",
 //         },
-//        "activation": "injection"
+//        "activation": "injection",
+//        "provider_list": "walltime_cpu_exceptions_allocations_lock_gc_heap_http_cpugc_threadslifetime",
+//        "runtime" : {
+//           "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+//           "os": "windows",
+//           "version": "core-10.0",
+//        }
+//     },
+//     "GC Config": {
+//       list GC configuration (workstation/server/unknown today but maybe more via P/Invoke)
+//     }
+//     "System Properties": {
+//        list overriden environment variables
 //     }
 //  }
 //
-std::string ProfileExporter::GetInfo() const
+std::string ProfileExporter::GetInfoJson(std::string& runtimeId) const
 {
     // in tests, the metadata provider might be null
     if (_ssiManager == nullptr)
@@ -796,56 +845,135 @@ std::string ProfileExporter::GetInfo() const
 
     // the json schema is supposed to send sections under the systemInfo element
     std::stringstream builder;
-    builder << "{ \"profiler\": ";
     builder << "{";
-        // version value
-        builder << "\"version\":";
-        builder << "\"";
-        builder << PROFILER_VERSION;
-        builder << "\",";
-
-        // ssi sub section
-        builder << "\"ssi\":";
-        builder << "{";
-            builder << "\"mechanism\": ";
-            builder << "\"";
-            if (_ssiManager->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
-            {
-                builder << "injected_agent";
-            }
-            else
-            {
-                builder << "none";
-            }
-            builder << "\"";
-        builder << "},";
-
-        // activation value
-        builder << "\"activation\":";
-        builder << "\"";
-        if (_configuration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
-        {
-            builder << "manual";
-        }
-        else
-        if (_configuration->GetEnablementStatus() == EnablementStatus::Auto)
-        {
-            builder << "auto";
-        }
-        else
-        if (_configuration->GetEnablementStatus() == EnablementStatus::Standby)
-        {
-            builder << "standby"; // should never occur because the managed layer did not set the activation status
-        }
-        else
-        {
-            builder << "none";
-        }
-        builder << "\"";
-    builder << "}}";
+        AppendProfilerInfo(builder, runtimeId);
+    builder << ",";
+        AppendGcConfig(builder);
+    builder << ",";
+        AppendEnvVars(builder);
+    builder << "}";
 
     return builder.str();
 }
+
+void ProfileExporter::AppendProfilerInfo(std::stringstream& builder, std::string& runtimeId) const
+{
+    std::string activationValue;
+    if (_configuration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
+    {
+        activationValue = "manual";
+    }
+    else if (_configuration->GetEnablementStatus() == EnablementStatus::Auto)
+    {
+        activationValue = "auto";
+    }
+    else if (_configuration->GetEnablementStatus() == EnablementStatus::Standby)
+    {
+        activationValue = "standby"; // should never occur because the managed layer did not set the activation status
+    }
+    else
+    {
+        activationValue = "none";
+    }
+
+    ElementStart(builder, "profiler");
+        AppendValue(builder, "version", PROFILER_VERSION);
+        builder << ",";
+        ElementStart(builder, "ssi");
+            AppendValue(builder, "mechanism",
+                (_ssiManager->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation) ? "injected_agent" : "none");
+        ElementEnd(builder);
+        builder << ",";
+        AppendValue(builder, "activation", activationValue);
+        builder << ",";
+        AppendValue(builder, "provider_list", ProviderList);
+        builder << ",";
+        ElementStart(builder, "runtime");
+            AppendValue(builder, "os", _runtimeInfo->GetOs());
+            builder << ",";
+            AppendValue(builder, "version", _runtimeInfo->GetClrString());
+            builder << ",";
+            AppendValue(builder, "runtime-id", runtimeId);
+            builder << ",";
+            AppendValue(builder, "start time", StartTime);
+        ElementEnd(builder);
+    ElementEnd(builder);
+}
+
+void ProfileExporter::AppendValueList(const tags& kvp, std::stringstream& builder) const
+{
+    auto keyCount = kvp.size();
+    auto currentKey = 0;
+    for (auto const& [key, value] : kvp)
+    {
+        currentKey++;
+        AppendValue(builder, key, value);
+        if (currentKey < keyCount)
+        {
+            builder << ", ";
+        }
+    }
+}
+
+bool ProfileExporter::AppendEnvVars(std::stringstream& builder) const
+{
+    auto const& metadata = _metadataProvider->Get();
+    if (metadata.empty())
+    {
+        return false;
+    }
+
+    bool firstSection = true;
+    for (auto const& [section, kvp] : metadata)
+    {
+        if (section == MetadataProvider::SectionEnvVars)
+        {
+            if (!firstSection)
+            {
+                builder << ", ";
+            }
+            ElementStart(builder, "System Properties");
+            AppendValueList(kvp, builder);
+            ElementEnd(builder);
+            firstSection = false;
+        }
+        else if (section == MetadataProvider::SectionOverrides)
+        {
+            if (!firstSection)
+            {
+                builder << ", ";
+            }
+            ElementStart(builder, "System Overrides");
+            AppendValueList(kvp, builder);
+            ElementEnd(builder);
+            firstSection = false;
+        }
+        else
+        {
+            // skip Runtime Settings and others
+            continue;
+        }
+    }
+
+    return true;
+}
+
+void ProfileExporter::AppendGcConfig(std::stringstream& builder) const
+{
+    // for .NET Framework, _gcSettingsProvider will be null
+    std::string gcMode = "Unknown";
+
+    if (_gcSettingsProvider != nullptr)
+    {
+        gcMode = (_gcSettingsProvider->GetMode() == GCMode::Server) ? "Server" : "Workstation";
+    }
+
+    // TODO: list GC settings  a "GC Config" node
+    ElementStart(builder, "GC Config");
+        AppendValue(builder, "GC Mode", gcMode);
+    ElementEnd(builder);
+}
+
 
 fs::path ProfileExporter::CreatePprofOutputPath(IConfiguration* configuration)
 {

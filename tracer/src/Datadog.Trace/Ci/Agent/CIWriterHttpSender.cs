@@ -16,6 +16,7 @@ using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -33,8 +34,8 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
     public CIWriterHttpSender(IApiRequestFactory apiRequestFactory)
     {
         _apiRequestFactory = apiRequestFactory;
-        _isDebugEnabled = GlobalSettings.Instance.DebugEnabledInternal;
-        Log.Information("CIWriterHttpSender Initialized.");
+        _isDebugEnabled = GlobalSettings.Instance.DebugEnabled;
+        Log.Debug("CIWriterHttpSender Initialized.");
     }
 
     public Task SendPayloadAsync(EventPlatformPayload payload)
@@ -146,7 +147,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
             }
             finally
             {
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.GetElapsedMilliseconds());
                 if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
                 {
                     TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);

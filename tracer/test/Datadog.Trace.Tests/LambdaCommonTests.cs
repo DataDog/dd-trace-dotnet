@@ -9,6 +9,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -91,7 +92,7 @@ namespace Datadog.Trace.Tests
 
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
-            Assert.Throws<WebException>(() => LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()));
+            Assert.Throws<WebException>(() => LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", null));
         }
 
         [Fact]
@@ -110,7 +111,7 @@ namespace Datadog.Trace.Tests
 
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
-            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()).Should().BeNull();
+            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", null).Should().BeNull();
         }
 
         [Fact]
@@ -129,7 +130,7 @@ namespace Datadog.Trace.Tests
 
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
-            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()).Should().NotBeNull();
+            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", null).Should().NotBeNull();
         }
 
         [Fact]
@@ -139,6 +140,8 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } }.Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -148,9 +151,9 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Throws(new WebException());
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
-            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(stateObject, true)).Returns(httpRequest.Object);
 
-            Assert.Throws<WebException>(() => LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}"));
+            Assert.Throws<WebException>(() => LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, stateObject, true, "{}"));
         }
 
         [Fact]
@@ -160,6 +163,8 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } }.Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -169,10 +174,10 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
-            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(stateObject, true)).Returns(httpRequest.Object);
             var output = new StringWriter();
             Console.SetOut(output);
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}");
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, stateObject, true, "{}");
             httpRequest.Verify(r => r.GetResponse(), Times.Once);
             Assert.Empty(output.ToString());
         }
@@ -184,6 +189,8 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } }.Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
+            var state = "example-aws-request-id";
+            var stateObject = new CallTargetState(scope, state);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -193,10 +200,10 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
-            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
+            _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(stateObject, true)).Returns(httpRequest.Object);
             var output = new StringWriter();
             Console.SetOut(output);
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}");
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, stateObject, true, "{}");
             httpRequest.Verify(r => r.GetResponse(), Times.Once);
             Assert.Contains("Extension does not send a status 200 OK", output.ToString());
         }

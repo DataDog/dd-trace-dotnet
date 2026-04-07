@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
     IntegrationName = KafkaConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class KafkaConsumerCommitIntegration
+public sealed class KafkaConsumerCommitIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object offsets)
     {
@@ -37,15 +37,17 @@ public class KafkaConsumerCommitIntegration
         var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
         if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance != null)
         {
-            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);
+            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _, out var clusterId);
 
             foreach (var offset in offsets)
             {
                 if (offset.TryDuckCast<ITopicPartitionOffset>(out var item))
                 {
-                    dataStreams.TrackBacklog(
-                        $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit",
-                        item.Offset.Value);
+                    var backlogTags = StringUtil.IsNullOrEmpty(clusterId)
+                        ? $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit"
+                        : $"consumer_group:{groupId},kafka_cluster_id:{clusterId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
+
+                    dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
                 }
             }
         }

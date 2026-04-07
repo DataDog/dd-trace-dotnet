@@ -10,9 +10,9 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Result : IResult
+    internal sealed class Result : IResult
     {
-        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false)
+        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false, bool truncated = false)
         {
             ReturnCode = returnCode;
 
@@ -76,6 +76,8 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 Timeout = timeoutValue;
             }
+
+            Truncated = truncated;
         }
 
         public WafReturnCode ReturnCode { get; }
@@ -124,6 +126,8 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ShouldReportSecurityResult { get; }
 
         public bool Timeout { get; }
+
+        public bool Truncated { get; }
 
         private void BuildDerivatives(Dictionary<string, object?> derivatives)
         {

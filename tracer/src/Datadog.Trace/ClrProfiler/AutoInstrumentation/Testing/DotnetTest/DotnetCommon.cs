@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
 
-        internal static bool DotnetTestIntegrationEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
+        internal static bool DotnetTestIntegrationEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
         internal static bool IsDataCollectorDomain
         {
@@ -44,7 +44,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
 
                 // If the AppDomainName contains "DataCollector" we are in the data collector domain
+#if NETCOREAPP
+                return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.Contains("datacollector", StringComparison.OrdinalIgnoreCase)).Value;
+#else
                 return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.ToLowerInvariant().Contains("datacollector")).Value;
+#endif
             }
         }
 
@@ -115,13 +119,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             if (agentless || isEvpProxy)
             {
                 // Try to load the command line propagated from the dd-trace ci run command
-                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable) is not { Length: > 0 } commandLine)
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand) is not { Length: > 0 } commandLine)
                 {
                     commandLine = Environment.CommandLine;
                 }
 
                 // Try to load the working directory propagated from the dd-trace ci run command
-                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable) is not { Length: > 0 } workingDirectory)
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory) is not { Length: > 0 } workingDirectory)
                 {
                     workingDirectory = Environment.CurrentDirectory;
                 }
@@ -370,7 +374,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 var cleanItem = item.Replace(collectProperty, string.Empty)
                                     .Replace("\"", string.Empty);
                 Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing clean collect property values: {CollectProperty}", cleanItem);
-                var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
+                var values = cleanItem.Split(Separators.SemiColon, StringSplitOptions.None);
 
                 if (!values.Contains(datadogCoverageCollector, StringComparer.OrdinalIgnoreCase))
                 {
@@ -399,7 +403,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     var cleanItem = item.Replace(testAdapterPathProperty, string.Empty)
                                         .Replace("\"", string.Empty);
                     Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing testAdapter property values: {CollectProperty}", cleanItem);
-                    var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
+                    var values = cleanItem.Split(Separators.SemiColon, StringSplitOptions.None);
 
                     if (!values.Contains(codeCoverageCollectorPath))
                     {

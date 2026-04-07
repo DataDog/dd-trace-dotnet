@@ -54,6 +54,51 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_Depth_AppliesToCollectionsAtMaxDepth()
+        {
+            var snapshot = SnapshotHelper.GenerateSnapshot(new CollectionAtMaxDepth(), prettify: false);
+
+            Assert.Contains("\"Items\":{", snapshot);
+            Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+            Assert.DoesNotContain("deep-value", snapshot);
+        }
+
+        [Fact]
+        public void Limits_CollectionElements_DoNotIncreaseDepth()
+        {
+            var snapshot = SnapshotHelper.GenerateSnapshot(new CollectionElementDepthRoot(), prettify: false);
+
+            Assert.Contains("\"Street\":{\"type\":\"String\",\"value\":\"Harlem\"}", snapshot);
+            Assert.Contains("\"City\":{\"type\":\"CollectionElementDepthPlace\",\"notCapturedReason\":\"depth\"}", snapshot);
+        }
+
+        [Fact]
+        public void Limits_SelfReferencingEnumerable_DoesNotStackOverflow()
+        {
+            var list = new List<object>();
+            list.Add(list);
+
+            var snapshot = SnapshotHelper.GenerateSnapshot(list, prettify: false);
+
+            Assert.NotNull(snapshot);
+            Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+        }
+
+        [Fact]
+        public void Limits_IndirectCycleEnumerable_DoesNotStackOverflow()
+        {
+            var listA = new List<object>();
+            var listB = new List<object>();
+            listA.Add(listB);
+            listB.Add(listA);
+
+            var snapshot = SnapshotHelper.GenerateSnapshot(listA, prettify: false);
+
+            Assert.NotNull(snapshot);
+            Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+        }
+
+        [Fact]
         public async Task ObjectStructure_Null()
         {
             await ValidateSingleValue(null);
@@ -96,7 +141,7 @@ namespace Datadog.Trace.Tests.Debugger
         /// </summary>
         internal async Task ValidateSingleValue(object local)
         {
-            var snapshot = SnapshotHelper.GenerateSnapshot(local);
+            var snapshot = SnapshotHelper.GenerateSnapshot(local, withProcessTags: true);
 
             output.WriteLine("Snapshot: " + snapshot);
             var verifierSettings = new VerifySettings();
@@ -1119,6 +1164,43 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly int _numField998 = 998;
             private readonly int _numField999 = 999;
             private readonly int _numField1000 = 1000;
+        }
+
+        private class CollectionAtMaxDepth
+        {
+            public NestedCollectionLevel1 Inner { get; } = new();
+        }
+
+        private class NestedCollectionLevel1
+        {
+            public NestedCollectionLevel2 Inner { get; } = new();
+        }
+
+        private class NestedCollectionLevel2
+        {
+            public List<string> Items { get; } = new() { "deep-value" };
+        }
+
+        private class CollectionElementDepthRoot
+        {
+            public List<CollectionElementDepthChild> Children { get; } = new() { new() };
+        }
+
+        private class CollectionElementDepthChild
+        {
+            public CollectionElementDepthAddress Adrs { get; } = new();
+        }
+
+        private class CollectionElementDepthAddress
+        {
+            public CollectionElementDepthPlace City { get; } = new();
+
+            public string Street { get; } = "Harlem";
+        }
+
+        private class CollectionElementDepthPlace
+        {
+            public string Name { get; } = "New York";
         }
     }
 }

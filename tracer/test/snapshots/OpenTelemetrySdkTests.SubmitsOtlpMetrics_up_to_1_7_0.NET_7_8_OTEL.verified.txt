@@ -1,0 +1,205 @@
+﻿[
+  {
+    "resource_metrics": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "string_value": "sdk-name"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "string_value": "dotnet"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "string_value": "sdk-version"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "string_value": "unknown_service:dotnet"
+              }
+            }
+          ]
+        },
+        "scope_metrics": [
+          {
+            "scope": {
+              "name": "OpenTelemetryMetricsMeter",
+              "version": "1.0"
+            },
+            "metrics": [
+              {
+                "name": "example.async.counter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "22"
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "example.async.gauge",
+                "gauge": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_double": 88.0
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "example.async.upDownCounter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "66"
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "example.counter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "11",
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "example.histogram",
+                "histogram": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "count": "1",
+                      "sum": 33.0,
+                      "bucket_counts": [
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "1",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0",
+                        "0"
+                      ],
+                      "explicit_bounds": [
+                        0.0,
+                        5.0,
+                        10.0,
+                        25.0,
+                        50.0,
+                        75.0,
+                        100.0,
+                        250.0,
+                        500.0,
+                        750.0,
+                        1000.0,
+                        2500.0,
+                        5000.0,
+                        7500.0,
+                        10000.0
+                      ],
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ],
+                      "min": 33.0,
+                      "max": 33.0
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "example.upDownCounter",
+                "sum": {
+                  "data_points": [
+                    {
+                      "start_time_unix_nano": "0",
+                      "time_unix_nano": "0",
+                      "as_int": "55",
+                      "attributes": [
+                        {
+                          "key": "http.method",
+                          "value": {
+                            "string_value": "GET"
+                          }
+                        },
+                        {
+                          "key": "rid",
+                          "value": {
+                            "string_value": "1234567890"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

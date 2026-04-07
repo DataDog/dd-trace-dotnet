@@ -17,7 +17,7 @@ class Program
         var trySendMessageMethod = ipcClientType.GetMethod("TrySendMessage");
         using var ipcClient = (IDisposable)Activator.CreateInstance(ipcClientType, sessionId)!;
 
-        var responseManualResetEvent = new ManualResetEventSlim();
+        using var responseManualResetEvent = new ManualResetEventSlim();
         
         void SendMessage(object message)
         {

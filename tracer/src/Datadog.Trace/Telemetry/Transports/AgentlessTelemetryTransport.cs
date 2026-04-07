@@ -5,14 +5,15 @@
 
 #nullable enable
 using Datadog.Trace.Agent;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry.Transports;
 
-internal class AgentlessTelemetryTransport : JsonTelemetryTransport
+internal sealed class AgentlessTelemetryTransport : JsonTelemetryTransport
 {
-    public AgentlessTelemetryTransport(IApiRequestFactory requestFactory, bool debugEnabled)
-        : base(requestFactory, debugEnabled)
+    public AgentlessTelemetryTransport(IApiRequestFactory requestFactory, bool debugEnabled, string telemetryCompressionMethod, ContainerMetadata containerMetadata)
+        : base(requestFactory, debugEnabled, telemetryCompressionMethod, containerMetadata)
     {
     }
 

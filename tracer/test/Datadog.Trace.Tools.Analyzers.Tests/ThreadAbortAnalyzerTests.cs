@@ -3,20 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+extern alias AnalyzerCodeFixes;
+
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortAnalyzer,
-    Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortCodeFixProvider,
+    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests
 {
     public class ThreadAbortAnalyzerTests
     {
-        private const string DiagnosticId = ThreadAbortAnalyzer.ThreadAbortAnalyzer.DiagnosticId;
+        private const string DiagnosticId = ThreadAbortAnalyzer.Diagnostics.ThreadAbortDiagnosticId;
 
         public static TheoryData<string> GetExceptions() => new() { "Exception", "SystemException", "ThreadAbortException" };
 

@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(expected, tracerSettings.Exporter.AgentUri.ToString());
+            Assert.Equal(expected, tracerSettings.Manager.InitialExporterSettings.AgentUri.ToString());
         }
 
         [Theory]
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void Constructor_HandlesEmptyource()
+        public void Constructor_HandlesEmptySource()
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
             tracerSettings.Should().NotBeNull();
@@ -152,13 +152,24 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
         [InlineData("A", "none", false)]
-        [InlineData("A", "otlp", false)]
         [InlineData("", "none", false)]
-        [InlineData("", "otlp", false)]
-        [InlineData(null, "none", false)]
+        [InlineData(null, "none", false)] // OTEL_METRICS_EXPORTER=none always disables, regardless of runtime
+        // Runtime metrics are enabled by default on .NET 6+
+#if NET6_0_OR_GREATER
+        [InlineData(null, "random", true)]
+        [InlineData(null, "otlp", true)]
+        [InlineData(null, null, true)]
+        [InlineData("", "otlp", true)]
+        [InlineData("A", "otlp", true)]
+        [InlineData("", null, true)]
+#else
         [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
+        [InlineData("", "otlp", false)]
+        [InlineData("A", "otlp", false)]
+        [InlineData("", null, false)]
+#endif
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
             var source = CreateConfigurationSource(
@@ -178,6 +189,80 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter.ToLowerInvariant(), ConfigurationKeys.RuntimeMetricsEnabled.ToLowerInvariant());
+        }
+
+#if NET6_0_OR_GREATER
+        [Fact]
+        public void RuntimeMetrics_DefaultsToDiagnosticsOnNet6Plus_WhenNotExplicitlySet()
+        {
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void RuntimeMetrics_InvalidValue_TreatedAsUnset_DefaultsToDiagnostics()
+        {
+            // An invalid value like "blah" should be treated the same as unset:
+            // on .NET 6+ runtime metrics default to enabled with Diagnostics listener.
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "blah"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("true", "true", true)]
+        [InlineData("true", "false", false)]
+        public void RuntimeMetrics_ExplicitEnable_RespectsExplicitDiagnosticsFlag(string runtimeMetrics, string diagnosticsApi, bool expectedDiagnostics)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, runtimeMetrics),
+                (ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, diagnosticsApi));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().Be(expectedDiagnostics);
+        }
+
+#if NET8_0_OR_GREATER
+        [Fact]
+        public void RuntimeMetrics_ExplicitEnable_DefaultsToDiagnosticsOnNet8Plus()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+#else
+        [Fact]
+        public void RuntimeMetrics_ExplicitEnable_DefaultsToEventListenerOnNet6And7()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeFalse();
+        }
+#endif
+
+#endif
+
+        [Fact]
+        public void RuntimeMetrics_ExplicitDisable_OverridesDefault()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "false"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeFalse();
         }
 
         [Theory]
@@ -423,7 +508,7 @@ namespace Datadog.Trace.Tests.Configuration
                 var source = CreateConfigurationSource(
                     (ConfigurationKeys.PropagationStyleInject, value),
                     (legacyKey, legacyValue),
-                    (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    ("DD_TRACE_PROPAGATION_STYLE", fallbackValue),
                     (otelKey, otelValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
@@ -439,7 +524,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => null,
                 };
 
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), ConfigurationKeys.PropagationStyle.ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
             }
         }
 
@@ -463,7 +548,7 @@ namespace Datadog.Trace.Tests.Configuration
                 var source = CreateConfigurationSource(
                     (ConfigurationKeys.PropagationStyleExtract, value),
                     (legacyKey, legacyValue),
-                    (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    ("DD_TRACE_PROPAGATION_STYLE", fallbackValue),
                     (otelKey, otelValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
@@ -479,7 +564,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => null,
                 };
 
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), ConfigurationKeys.PropagationStyle.ToLowerInvariant());
+                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), "DD_TRACE_PROPAGATION_STYLE".ToLowerInvariant());
             }
         }
 
@@ -582,7 +667,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, false)]
         public void IsRunningInAzureAppService(string value, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, value));
+            var source = CreateConfigurationSource((PlatformKeys.AzureAppService.SiteNameKey, value));
             var settings = new TracerSettings(source);
 
             settings.IsRunningInAzureAppService.Should().Be(expected);
@@ -595,9 +680,9 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsRunningInAzureFunctions(string value, bool expected)
         {
             var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.SiteNameKey, value),
-                (ConfigurationKeys.AzureFunctions.FunctionsWorkerRuntime, value),
-                (ConfigurationKeys.AzureFunctions.FunctionsExtensionVersion, value));
+                (PlatformKeys.AzureAppService.SiteNameKey, value),
+                (PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, value),
+                (PlatformKeys.AzureFunctions.FunctionsExtensionVersion, value));
 
             var settings = new TracerSettings(source);
 
@@ -667,7 +752,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (isRunningInAas)
             {
-                configPairs.Add((ConfigurationKeys.AzureAppService.SiteNameKey, "site-name"));
+                configPairs.Add((PlatformKeys.AzureAppService.SiteNameKey, "site-name"));
             }
 
             var settings = new TracerSettings(CreateConfigurationSource(configPairs.ToArray()));
@@ -680,10 +765,9 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void RecordsTelemetryAboutTfm()
         {
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData();
+            var telemetry = new ConfigurationTelemetry();
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, telemetry);
+            var data = telemetry.GetIncrementalData();
             var value = data
                        .GroupBy(x => x.Name)
                        .Should()
@@ -788,10 +872,9 @@ namespace Datadog.Trace.Tests.Configuration
             var expected = new[] { "MongoDb", "Msmq", "GraphQL", "Wcf", "StackExchangeRedis" };
 
             var telemetry = new ConfigurationTelemetry();
-            var tracerSettings = new TracerSettings(source, telemetry, new());
+            _ = new TracerSettings(source, telemetry, new());
 
-            var config = tracerSettings
-                        .Telemetry
+            var config = telemetry
                         .Should()
                         .BeOfType<ConfigurationTelemetry>()
                         .Subject;
@@ -891,11 +974,10 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("invalid", null, OtlpProtocol.HttpProtobuf)]
-        [InlineData("grpc", null, OtlpProtocol.Grpc)]
+        [InlineData(null, null, OtlpProtocol.Grpc)]
+        [InlineData("invalid", null, OtlpProtocol.Grpc)]
+        [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
         [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
-        [InlineData(null, "http/json", OtlpProtocol.HttpJson)]
         public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
         {
             var source = CreateConfigurationSource(
@@ -911,8 +993,6 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
         [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/metrics")]
         [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/metrics")]
-        [InlineData("http/json", "http://base:4333/", "http://base:4333/", "http://metrics:4333/", "http://metrics:4333/")]
-        [InlineData("http/json", null, "http://localhost:4318/", "http://localhost:4318/proxy/metrics", "http://localhost:4318/proxy/metrics")]
         public void OtlpMetricsEndpoint(string protocol, string baseInput, string baseOutput, string metricsInput, string metricsOutput)
         {
             var source = CreateConfigurationSource(
@@ -939,17 +1019,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("DELTA", OtlpTemporality.Delta)]
-        [InlineData("cumulative", OtlpTemporality.Cumulative)]
-        [InlineData("loWmemOry", OtlpTemporality.LowMemory)]
-        [InlineData(null, OtlpTemporality.Delta)]
-        [InlineData("bad-value", OtlpTemporality.Delta)]
-        public void OtlpTemporalityPreference(string value, object expected)
+        [InlineData("DELTA", OtlpTemporalityPreference.Delta)]
+        [InlineData("cumulative", OtlpTemporalityPreference.Cumulative)]
+        [InlineData("loWmemOry", OtlpTemporalityPreference.LowMemory)]
+        [InlineData(null, OtlpTemporalityPreference.Delta)]
+        [InlineData("bad-value", OtlpTemporalityPreference.Delta)]
+        public void OtlpMetricsTemporalityPreference(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, value));
             var settings = new TracerSettings(source);
 
-            settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporality)expected);
+            settings.OtlpMetricsTemporalityPreference.Should().Be((OtlpTemporalityPreference)expected);
         }
 
         [Theory]
@@ -986,6 +1066,101 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", value));
             var settings = new TracerSettings(source);
             settings.PartialFlushMinSpans.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, null, OtlpProtocol.Grpc)]
+        [InlineData("invalid", null, OtlpProtocol.Grpc)]
+        [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
+        [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
+        public void OtlpLogsProtocolFallbacks(string logsProtocol, string generalProtocol, object expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol, logsProtocol),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, generalProtocol));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpLogsProtocol.Should().Be((OtlpProtocol)expected);
+        }
+
+        [Theory]
+        [InlineData("grpc", null, "http://localhost:4317/", null, "http://localhost:4317/")]
+        [InlineData("grpc", "http://base:4333/", "http://base:4333/", null, "http://base:4333/")]
+        [InlineData("http/protobuf", null, "http://localhost:4318/", null, "http://localhost:4318/v1/logs")]
+        [InlineData("http/protobuf", "http://base:4333/", "http://base:4333/", null, "http://base:4333/v1/logs")]
+        public void OtlpLogsEndpoint(string protocol, string baseInput, string baseOutput, string logsInput, string logsOutput)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol, protocol),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint, baseInput),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint, logsInput));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new());
+
+            var baseEndpointEntries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            var logsEndpointEntries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsEndpoint })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            baseEndpointEntries[0].StringValue.Should().Be(baseOutput);
+            logsEndpointEntries[0].StringValue.Should().Be(logsOutput);
+            settings.OtlpEndpoint.ToString().Should().Be(baseOutput);
+            settings.OtlpLogsEndpoint.ToString().Should().Be(logsOutput);
+        }
+
+        [Theory]
+        [InlineData("api-key=secret,auth=token", null, new[] { "api-key=secret", "auth=token" })]
+        [InlineData(null, "key1 = value1 , key2 = value2 ", new[] { "key1=value1", "key2=value2" })]
+        [InlineData("valid=value,invalid-no-equals,another=valid", "fallback-key=fallback-value", new[] { "valid=value", "another=valid" })]
+        public void OtlpLogsHeadersParsing(string primaryValue, string fallbackValue, string[] expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, primaryValue),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, fallbackValue));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpLogsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
+        }
+
+        [Theory]
+        [InlineData(null, 10000)]
+        [InlineData("5000", 5000)]  // User custom value
+        [InlineData("30000", 30000)]  // OTel spec default
+        public void OtlpLogsTimeoutMs(string logsTimeout, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs, logsTimeout));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpLogsTimeoutMs.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("5000", null, 5000)]   // Logs-specific value takes precedence
+        [InlineData(null, "15000", 15000)] // Falls back to general timeout
+        [InlineData(null, null, 10000)]    // Uses default
+        public void OtlpLogsTimeoutMsFallback(string logsTimeout, string generalTimeout, int expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs, logsTimeout),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs, generalTimeout));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpLogsTimeoutMs.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void ProcessTagsEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, value));
+            var settings = new TracerSettings(source);
+
+            settings.PropagateProcessTags.Should().Be(expected);
         }
     }
 }

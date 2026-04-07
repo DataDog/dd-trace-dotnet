@@ -15,6 +15,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -29,25 +30,13 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JsonConfigurationSource));
         private readonly JToken? _configuration;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonConfigurationSource"/>
-        /// class with the specified JSON string.
-        /// </summary>
-        /// <param name="json">A JSON string that contains configuration values.</param>
-        [PublicApi]
-        public JsonConfigurationSource(string json)
-            : this(json, ConfigurationOrigins.Code)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.JsonConfigurationSource_Ctor_Json);
-        }
-
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
-            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
         {
         }
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string? filename)
-            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
         {
             JsonConfigurationFilePath = filename;
         }
@@ -268,7 +257,7 @@ namespace Datadog.Trace.Configuration
                 {
                     JTokenType.Null or JTokenType.None or JTokenType.Undefined => null, // handle null-like values
                     JTokenType.String => token.Value<string>(), // return the underlying string value
-                    _ => token.ToString(Formatting.None) // serialize back into json
+                    _ => JsonHelper.TokenToString(token, Formatting.None) // serialize back into json
                 }
             };
         }

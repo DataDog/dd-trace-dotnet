@@ -7,11 +7,11 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
-internal class GitHubSourceLinkUrlParser : SourceLinkUrlParser
+internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 {
     /// <summary>
     /// Extract the git commit sha and repository url from a GitHub SourceLink mapping string.
@@ -28,15 +28,45 @@ internal class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
-            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (uri.Host != "raw.githubusercontent.com" || segments.Length != 4 || !IsValidCommitSha(segments[2]))
+            if (uri.Host != "raw.githubusercontent.com")
             {
                 return false;
             }
 
-            repositoryUrl = $"https://github.com/{segments[0]}/{segments[1]}";
-            commitSha = segments[2];
+            ReadOnlySpan<char> org = default;
+            ReadOnlySpan<char> repo = default;
+            ReadOnlySpan<char> sha = default;
+            var segmentCount = 0;
+
+            foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+            {
+                ReadOnlySpan<char> span = segment;
+                if (span.IsEmpty)
+                {
+                    continue;
+                }
+
+                switch (segmentCount)
+                {
+                    case 0: org = span; break;
+                    case 1: repo = span; break;
+                    case 2: sha = span; break;
+                }
+
+                segmentCount++;
+            }
+
+            if (segmentCount != 4 || !IsValidCommitSha(sha))
+            {
+                return false;
+            }
+
+#if NET6_0_OR_GREATER
+            repositoryUrl = $"https://github.com/{org}/{repo}";
+#else
+            repositoryUrl = $"https://github.com/{org.ToString()}/{repo.ToString()}";
+#endif
+            commitSha = sha.ToString();
             return true;
         }
         catch (Exception ex)

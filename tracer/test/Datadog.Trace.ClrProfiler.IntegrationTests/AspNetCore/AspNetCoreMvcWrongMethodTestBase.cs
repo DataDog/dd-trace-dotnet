@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -23,11 +24,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         private readonly AspNetCoreTestFixture fixture;
         private readonly string _testName;
 
-        public AspNetCoreMvcWrongMethodTestBase(string testName, string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output)
+        protected AspNetCoreMvcWrongMethodTestBase(string testName, string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool singleSpan = false)
             : base(sampleName, output)
         {
             this.fixture = fixture;
             _testName = testName;
+
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, singleSpan.ToString());
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>

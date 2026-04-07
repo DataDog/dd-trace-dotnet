@@ -15,11 +15,42 @@ public:
 
 public:
     // Inherited via IAppDomainStore
-    bool GetInfo(AppDomainID appDomainId, ProcessID& pid, std::string& appDomainName) override;
+    std::string_view GetName(AppDomainID appDomainId) override;
+
+    // For now we do not deregister app domains
+    // .NET Core enforces one and only app domain per process.
+    // The only exception is .NET Framework (IIS case).
+    // There can be hundreds of them but most of the time their lifetime is tied to the process lifetime.
+    void Register(AppDomainID appDomainId) override;
+
+    // Memory measurement (IMemoryFootprintProvider)
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
 
 private:
     ICorProfilerInfo4* _pProfilerInfo;
 
-    std::mutex _lock;
-    std::unordered_map<AppDomainID, std::pair<ProcessID, std::string>> _appDomainToInfo;
+private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t mapSize;
+        size_t entryCount;
+        size_t mapBuckets;
+        size_t stringsSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + mapSize + stringsSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
+    // no need for a shared mutex:
+    // GetInfo is called by only one thread at a time (read)
+    // Register is called by multiple threads (write)
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _lock;
+    std::unordered_map<AppDomainID, std::string> _appDomainToName;
 };

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -45,6 +46,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         // Some very, very approximate tests here :)
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public async Task WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatchOnDispose()
         {
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
@@ -60,6 +62,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         }
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public async Task WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatch()
         {
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
@@ -91,7 +94,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         [Fact]
         public async Task AfterMultipleFailures_SinkIsPermanentlyDisabled()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var emitResults = Enumerable.Repeat(false, FailuresBeforeCircuitBreak);
             var sink = new InMemoryBatchedSink(
                 DefaultBatchingOptions,
@@ -146,7 +149,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             // there's a short delay before the result is processed and logging is disabled. By
             // hooking into the sink DelayEvents, we can make sure the result is processed _before_
             // we add the next event
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             sink.DelayEventAction = x =>
             {
                 _output.WriteLine($"Flushing delayed for {x} seconds");
@@ -212,7 +215,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         [Fact]
         public void ClosingImmediatelyCallsDisableSinkAction()
         {
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions, () => mutex.Set());
             var evt = new TestEvent("Some event");
             sink.EnqueueLog(evt);

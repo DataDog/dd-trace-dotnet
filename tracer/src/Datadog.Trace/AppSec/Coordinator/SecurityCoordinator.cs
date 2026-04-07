@@ -28,7 +28,7 @@ internal readonly partial struct SecurityCoordinator
 {
     private const string ReportedExternalWafsRequestHeadersStr = "ReportedExternalWafsRequestHeaders";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityCoordinator>();
-    private static bool _nullContextReported = false;
+    private static bool _nullContextReported;
     private readonly Security _security;
     private readonly Span _localRootSpan;
     private readonly HttpTransportBase _httpTransport;
@@ -74,7 +74,7 @@ internal readonly partial struct SecurityCoordinator
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
             SetErrorInformation(isRasp, result);
-            SecurityReporter.RecordTelemetry(result);
+            SecurityReporter.RecordWafTelemetry(result);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
@@ -140,7 +140,7 @@ internal readonly partial struct SecurityCoordinator
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
                 SetErrorInformation(false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
-                RecordTelemetry(result);
+                SecurityReporter.RecordWafTelemetry(result);
 
                 if (_localRootSpan.Context.TraceContext is not null)
                 {
@@ -163,24 +163,6 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return result;
-    }
-
-    private static void RecordTelemetry(IResult? result)
-    {
-        if (result == null)
-        {
-            return;
-        }
-
-        var metric = result switch
-        {
-            { Timeout: true } => MetricTags.WafAnalysis.WafTimeout,
-            { ShouldBlock: true } => MetricTags.WafAnalysis.RuleTriggeredAndBlocked,
-            { ShouldReportSecurityResult: true } => MetricTags.WafAnalysis.RuleTriggered,
-            _ => MetricTags.WafAnalysis.Normal,
-        };
-
-        TelemetryFactory.Metrics.RecordCountWafRequests(metric);
     }
 
     public void AddResponseHeadersToSpan()
@@ -233,7 +215,9 @@ internal readonly partial struct SecurityCoordinator
         return null;
     }
 
+#pragma warning disable CA1859 // Use concrete types where possible for improved performance - It's not actually possible here
     private static Dictionary<string, object>? ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
+#pragma warning restore CA1859
     {
         if (keys.Count > 0)
         {

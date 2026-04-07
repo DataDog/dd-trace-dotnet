@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.DiscoveryService;
 
-internal class NullDiscoveryService : IDiscoveryService
+internal sealed class NullDiscoveryService : IDiscoveryService
 {
     public static readonly NullDiscoveryService Instance = new();
 
@@ -22,6 +22,10 @@ internal class NullDiscoveryService : IDiscoveryService
     }
 
     public void RemoveSubscription(Action<AgentConfiguration> callback)
+    {
+    }
+
+    public void SetCurrentConfigStateHash(string configStateHash)
     {
     }
 

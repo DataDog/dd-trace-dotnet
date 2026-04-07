@@ -17,7 +17,6 @@ namespace Samples
         private static readonly Type SpanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
         private static readonly Type SpanContextExtractorType = Type.GetType("Datadog.Trace.SpanContextExtractor, Datadog.Trace");
         private static readonly Type SpanContextInjectorType = Type.GetType("Datadog.Trace.SpanContextInjector, Datadog.Trace");
-        private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.CorrelationIdentifier, Datadog.Trace");
         private static readonly Type SpanCreationSettingsType = Type.GetType("Datadog.Trace.SpanCreationSettings, Datadog.Trace");
         private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
         private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace");
@@ -43,7 +42,6 @@ namespace Samples
         private static readonly MethodInfo GetOrMakeSamplingDecisionMethod = SpanContextType?.GetMethod("GetOrMakeSamplingDecision", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo SpanContextProperty = SpanType?.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
-        private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
         private static readonly MethodInfo SetServiceNameProperty = SpanType?.GetProperty("ServiceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -222,14 +220,14 @@ namespace Samples
             genericMethod.Invoke(null, new object[] { tracer, carrier, setter, scope, messageType, target });
         }
 
-        public static ulong GetTraceId(IDisposable scope)
+        public static ulong GetTraceId(IDisposable scope = null)
         {
-            return (ulong)TraceIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
+            return (ulong)TraceIdProperty.Invoke(scope ?? GetActiveSpanContext(), Array.Empty<object>());
         }
 
-        public static ulong GetSpanId(IDisposable scope)
+        public static ulong GetSpanId(IDisposable scope = null)
         {
-            return (ulong)SpanIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
+            return (ulong)SpanIdProperty.Invoke(scope ?? GetActiveSpanContext(), Array.Empty<object>());
         }
 
         public static int? GetOrMakeSamplingDecision()
@@ -268,16 +266,6 @@ namespace Samples
 
             var span = SpanProperty.Invoke(GetActiveScope(), Array.Empty<object>());
             return SpanContextProperty.Invoke(span, Array.Empty<object>());
-        }
-
-        public static ulong GetCorrelationIdentifierTraceId()
-        {
-            if (CorrelationIdentifierTraceIdProperty is null)
-            {
-                return 0;
-            }
-
-            return (ulong)CorrelationIdentifierTraceIdProperty.Invoke(null, Array.Empty<object>());
         }
 
         public static void TrySetResourceName(object scope, string resourceName)

@@ -1,4 +1,4 @@
-﻿// <copyright file="AppSecBenchmarkUtils.cs" company="Datadog">
+// <copyright file="AppSecBenchmarkUtils.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,14 +15,27 @@ internal class AppSecBenchmarkUtils
 {
     internal static void SetupDummyAgent()
     {
-        var settings = TracerSettings.Create(new()
+        TracerHelper.SetGlobalTracer(new()
         {
             { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
 #pragma warning disable CS0618 // Type or member is obsolete
             { ConfigurationKeys.MaxTracesSubmittedPerSecond, 0 },
 #pragma warning restore CS0618 // Type or member is obsolete
+            { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, false }, // disable remote config
+            { ConfigurationKeys.AgentFeaturePollingEnabled, false }, // disable discovery service
+            { ConfigurationKeys.Telemetry.Enabled, false }, // disable telemetry
         });
-        Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
+    }
+
+    internal static void CleanupDummyAgent()
+    {
+        TracerHelper.CleanupGlobalTracer();
+    }
+
+    internal static void CleanupWafLibraryInvoker()
+    {
+        Environment.SetEnvironmentVariable("DD_TRACE_LOGGING_RATE", null);
+        Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", null);
     }
 
     internal static WafLibraryInvoker CreateWafLibraryInvoker()
@@ -62,8 +75,7 @@ internal class AppSecBenchmarkUtils
         }
 
         Environment.SetEnvironmentVariable("DD_TRACE_LOGGING_RATE", "60");
-        Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", path);
-        var libInitResult = WafLibraryInvoker.Initialize();
+        var libInitResult = WafLibraryInvoker.Initialize(ddDotnetTracerHome: path, traceNativeEnginePath: path);
         if (!libInitResult.Success)
         {
             throw new ArgumentException("Waf could not load");

@@ -6,23 +6,25 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.Debugger.Caching;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOrigin
+    internal sealed class SpanCodeOrigin
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
         private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
+        private readonly ConcurrentDictionary<Assembly, bool> _assemblySkipCache = new();
         private readonly CodeOriginTags _tags;
 
         internal SpanCodeOrigin(DebuggerSettings settings)
@@ -36,6 +38,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
+            if (span?.Tags is WebTags { SpanKind: SpanKinds.Server })
+            {
+                // entry span
+                Log.Debug("SetCodeOriginForExitSpan: Skipping server entry span {SpanID}. Code origin will be added later. Service {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ServiceName, span.ResourceName, span.OperationName);
+                return;
+            }
+
             if (ShouldSkipExitSpan())
             {
                 return;
@@ -44,13 +53,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             if (span == null)
             {
                 Log.Debug("Can not add code origin for exit span when span is null");
-                return;
-            }
-
-            if (span.Tags is WebTags { SpanKind: SpanKinds.Server })
-            {
-                // entry span
-                Log.Debug("Skipping span {SpanID}, we will add entry span code origin for it later. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
             }
 
@@ -101,23 +103,51 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
 
                 var assembly = type.Assembly;
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, Settings.SymDbThirdPartyDetectionExcludes, Settings.SymDbThirdPartyDetectionIncludes))
+                if (ShouldSkipAssembly(assembly))
                 {
-                    // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     return;
                 }
 
-                span.Tags.SetTag(_tags.Type, "entry");
-                span.Tags.SetTag(_tags.Index[0], "0");
-                span.Tags.SetTag(_tags.Method[0], methodName);
-                span.Tags.SetTag(_tags.TypeName[0], typeFullName);
+                var sp = GetPdbInfo(assembly, method);
 
-                var sp = GetPdbInfo(assembly, method!);
-                if (sp != null)
+                // Add code origin tags to entry span
+                // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
+                // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
+                if (span.Tags is TagsList tagsList)
                 {
-                    span.Tags.SetTag(_tags.File[0], sp.Value.URL);
-                    span.Tags.SetTag(_tags.Line[0], sp.Value.StartLine.ToString());
-                    span.Tags.SetTag(_tags.Column[0], sp.Value.StartColumn.ToString());
+                    if (sp is { } cached)
+                    {
+                        tagsList.SetTags(
+                            new(_tags.Type, "entry"),
+                            new(_tags.Index[0], "0"),
+                            new(_tags.Method[0], methodName),
+                            new(_tags.TypeName[0], typeFullName),
+                            new(_tags.File[0], cached.Url),
+                            new(_tags.Line[0], cached.Line),
+                            new(_tags.Column[0], cached.Column));
+                    }
+                    else
+                    {
+                        tagsList.SetTags(
+                            new(_tags.Type, "entry"),
+                            new(_tags.Index[0], "0"),
+                            new(_tags.Method[0], methodName),
+                            new(_tags.TypeName[0], typeFullName));
+                    }
+                }
+                else
+                {
+                    span.Tags.SetTag(_tags.Type, "entry");
+                    span.Tags.SetTag(_tags.Index[0], "0");
+                    span.Tags.SetTag(_tags.Method[0], methodName);
+                    span.Tags.SetTag(_tags.TypeName[0], typeFullName);
+
+                    if (sp is { } cached)
+                    {
+                        span.Tags.SetTag(_tags.File[0], cached.Url);
+                        span.Tags.SetTag(_tags.Line[0], cached.Line);
+                        span.Tags.SetTag(_tags.Column[0], cached.Column);
+                    }
                 }
             }
             catch (Exception ex)
@@ -126,8 +156,23 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
         }
 
-        private DatadogMetadataReader.DatadogSequencePoint? GetPdbInfo(Assembly assembly, MethodInfo method)
+        private CachedSequencePoint? GetPdbInfo(Assembly assembly, MethodInfo method)
         {
+            // Design Decision: Read ALL endpoint sequence points upfront per assembly
+            //
+            // Current approach: Opens PDB once, reads all endpoint sequence points (~50-200 methods),
+            // closes immediately. One-time cost per assembly, then instant cache hits.
+            //
+            // Alternatives considered:
+            // - Lazy loading: Would reopen PDB repeatedly (expensive I/O, unpredictable latency spikes)
+            // - Keep PDB open: File handle leaks, resource limits, complex lifecycle management
+            // - Background/async: Race conditions, thundering herd, testing complexity
+            //
+            // Trade-off: Slightly higher first-request latency for simplicity, predictability, and no resource leaks.
+            // Memory cost is negligible: 50-200 endpoints × ~150 bytes = 7.5-30 KB per assembly.
+            //
+            // Note: Will revisit if profiling shows significant performance impact.
+
             var pdbInfo = _assemblyPdbCache.GetOrAdd(
                 assembly,
                 asm =>
@@ -142,19 +187,44 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     {
                         var endpointMethodTokens = EndpointDetector.GetEndpointMethodTokens(reader);
 
-                        // Build dictionary of sequence points only for endpoint methods
-                        var builder = ImmutableDictionary.CreateBuilder<int, DatadogMetadataReader.DatadogSequencePoint?>();
+                        // Build dictionary of sequence points for ALL detected endpoint methods in one pass
+                        // This avoids reopening the PDB file on subsequent endpoint calls
+                        var builder = ImmutableDictionary.CreateBuilder<int, CachedSequencePoint?>();
 
                         foreach (var token in endpointMethodTokens)
                         {
                             try
                             {
                                 var sequencePoint = reader.GetMethodSourceLocation(token);
-                                builder.Add(token, sequencePoint);
+                                if (sequencePoint is { } sp)
+                                {
+                                    // If we don't have a source URL, the sequence point isn't useful for code origin tags
+                                    // (line/column without a file doesn't provide actionable info).
+                                    if (StringUtil.IsNullOrEmpty(sp.URL))
+                                    {
+                                        builder.Add(token, null);
+                                        continue;
+                                    }
+
+                                    // Precompute string representations once during per-assembly cache population (stored per endpoint token)
+                                    // to avoid per-span allocations (ToString()) for line/column.
+                                    builder.Add(
+                                        token,
+                                        new CachedSequencePoint(
+                                            sp.URL,
+                                            sp.StartLine.ToString(CultureInfo.InvariantCulture),
+                                            sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
+                                }
+                                else
+                                {
+                                    builder.Add(token, null);
+                                }
                             }
                             catch (Exception ex)
                             {
                                 Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, asm.FullName);
+                                // Add null to dictionary to avoid retrying on every call
+                                builder.Add(token, null);
                             }
                         }
 
@@ -167,7 +237,18 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     }
                 });
 
-            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<DatadogMetadataReader.DatadogSequencePoint?>(method.MetadataToken);
+            int metadataToken;
+            try
+            {
+                metadataToken = method.MetadataToken;
+            }
+            catch
+            {
+                // Some MethodInfo implementations do not support MetadataToken.
+                return null;
+            }
+
+            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<CachedSequencePoint?>(metadataToken);
         }
 
         private void AddExitSpanTags(Span span)
@@ -247,9 +328,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, Settings.ThirdPartyDetectionExcludes, Settings.ThirdPartyDetectionIncludes))
+                if (ShouldSkipAssembly(assembly))
                 {
-                    // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     continue;
                 }
 
@@ -259,17 +339,29 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             return count;
         }
 
+        private bool ShouldSkipAssembly(Assembly assembly)
+        {
+            return _assemblySkipCache.GetOrAdd(
+                assembly,
+                asm => AssemblyFilter.ShouldSkipAssembly(
+                    asm,
+                    Settings.ThirdPartyDetectionExcludes,
+                    Settings.ThirdPartyDetectionIncludes));
+        }
+
         private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
 
-        private sealed class AssemblyPdbInfo(ImmutableDictionary<int, DatadogMetadataReader.DatadogSequencePoint?> sequencePoints)
+        private readonly record struct CachedSequencePoint(string Url, string Line, string Column);
+
+        private sealed class AssemblyPdbInfo(ImmutableDictionary<int, CachedSequencePoint?> sequencePoints)
         {
-            public ImmutableDictionary<int, DatadogMetadataReader.DatadogSequencePoint?> MethodSequencePoints { get; } = sequencePoints;
+            public ImmutableDictionary<int, CachedSequencePoint?> MethodSequencePoints { get; } = sequencePoints;
         }
 
         /// <summary>
-        /// avoid string concatenations and reduce GC pressure in hot path
+        /// Avoid string concatenations and reduce GC pressure in hot path
         /// </summary>
-        internal class CodeOriginTags
+        internal sealed class CodeOriginTags
         {
             private const string CodeOriginTag = "_dd.code_origin";
             private const string FramesPrefix = "frames";

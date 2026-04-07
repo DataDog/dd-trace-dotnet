@@ -20,7 +20,7 @@ namespace Datadog.Trace.Iast.Aspects;
 /// <summary> SecurityControlsAspect </summary>
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class SecurityControlsAspect
+public sealed class SecurityControlsAspect
 {
     /// <summary>
     /// String.Trim aspect

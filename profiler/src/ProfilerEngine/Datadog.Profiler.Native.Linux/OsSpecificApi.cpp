@@ -25,6 +25,7 @@
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 
+#include "Backtrace2Unwinder.h"
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
 #include "LinuxStackFramesCollector.h"
@@ -63,8 +64,9 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     CallstackProvider* callstackProvider,
     MetricsRegistry& metricsRegistry)
 {
+    static auto pUnwinder = std::make_unique<Backtrace2Unwinder>();
     return std::make_unique<LinuxStackFramesCollector>(
-        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry);
+        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry, pUnwinder.get());
 }
 
 // https://linux.die.net/man/5/proc

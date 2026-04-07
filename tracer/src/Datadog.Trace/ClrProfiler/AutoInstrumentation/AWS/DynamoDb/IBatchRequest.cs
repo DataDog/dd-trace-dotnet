@@ -3,18 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
+
+/// <summary>
+/// BatchRequest interface for duck typing.
+/// </summary>
+internal interface IBatchRequest
 {
     /// <summary>
-    /// BatchRequest interface for duck typing.
+    /// Gets or sets the RequestItems of a Batch request.
     /// </summary>
-    internal interface IBatchRequest
-    {
-        /// <summary>
-        /// Gets or sets the RequestItems of a Batch request.
-        /// </summary>
-        IDictionary RequestItems { get; set; }
-    }
+    IDictionary? RequestItems { get; set; }
 }

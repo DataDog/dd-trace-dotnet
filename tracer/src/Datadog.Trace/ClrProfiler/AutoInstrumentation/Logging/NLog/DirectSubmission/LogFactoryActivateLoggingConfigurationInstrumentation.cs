@@ -26,10 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     IntegrationName = NLogConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class LogFactoryActivateLoggingConfigurationInstrumentation
+public sealed class LogFactoryActivateLoggingConfigurationInstrumentation
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogFactoryActivateLoggingConfigurationInstrumentation));
-
     internal static CallTargetState OnMethodBegin<TTarget, TConfig>(TTarget instance, ref TConfig? configuration)
     {
         var tracerManager = TracerManager.Instance;
@@ -40,7 +38,7 @@ public class LogFactoryActivateLoggingConfigurationInstrumentation
             return CallTargetState.GetDefault();
         }
 
-        if (tracerManager.Settings.LogsInjectionEnabled)
+        if (tracerManager.PerTraceSettings.Settings.LogsInjectionEnabled)
         {
             LogsInjectionHelper<TTarget>.ConfigureLogsInjectionForLoggerConfiguration(configuration);
         }

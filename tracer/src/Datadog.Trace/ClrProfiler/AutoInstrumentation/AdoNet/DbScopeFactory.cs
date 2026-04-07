@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -24,50 +25,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     internal static class DbScopeFactory
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
-        private static bool _dbCommandCachingLogged = false;
+        private static bool _dbCommandCachingLogged;
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, string? baseHash, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
-            var scope = CreateDbCommandScope(tracer, command.CommandText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString, out var sqlTags);
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
+            {
+                return null;
+            }
+
+            var scope = CreateDbCommandScope(tracer, command.CommandText, integrationId, dbType, operationName, serviceName, serviceNameSource, ref tagsFromConnectionString, out var sqlTags);
 
             if (scope == null || sqlTags == null)
             {
                 return null;
             }
 
-            if (ShouldInjectDbmInfo(tracer, integrationId, command.CommandText, scope.Span.Context))
-            {
-                try
-                {
-                    // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
-                    // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                    var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
-                    // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                    var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
-
-                    if (traceParentInjectedInComment || traceParentInjectedInContext)
-                    {
-                        sqlTags.DbmTraceInjected = "true";
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error propagating span data for DBM");
-                }
-
-                // we have to start the span before doing the DBM propagation work (to have the span ID)
-                // but ultimately, we don't want to measure the time spent instrumenting.
-                scope.Span.ResetStartTime();
-            }
-
+            InjectDbmInfo(tracer, command, integrationId, tagsFromConnectionString, scope, sqlTags, baseHash);
             return scope;
         }
 
 #if NET6_0_OR_GREATER
-        private static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, string? baseHash, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             var allCommandsText = string.Join(";", batch.BatchCommands.Select(c => c.CommandText.TrimEnd(';')));
-            var scope = CreateDbCommandScope(tracer, allCommandsText, integrationId, dbType, operationName, serviceName, ref tagsFromConnectionString, out var sqlTags);
+            var scope = CreateDbCommandScope(tracer, allCommandsText, integrationId, dbType, operationName, serviceName, serviceNameSource, ref tagsFromConnectionString, out var sqlTags);
 
             if (scope == null || sqlTags == null)
             {
@@ -76,22 +59,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             sqlTags.BatchSize = batch.BatchCommands.Count.ToString();
 
-            if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
+            try
             {
-                try
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
                     var traceParentInjectedInComment = false;
                     foreach (var command in batch.BatchCommands)
                     {
-                        // we need to run the check for every single command because we look for already injected comments in them
                         if (ShouldInjectDbmInfo(tracer, integrationId, command.CommandText, scope.Span.Context))
                         {
-                            // I consider that injecting at least one comment is enough to say injection happened
-                            traceParentInjectedInComment |= DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
+                            if (baseHash != null)
+                            {
+                                sqlTags.BaseHash = baseHash;
+                            }
+
+                            traceParentInjectedInComment |= DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
                         }
                     }
 
-                    // context injection is done only once for the whole batch (not once per command)
                     var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, batch, scope.Span);
 
                     if (traceParentInjectedInComment || traceParentInjectedInContext)
@@ -99,25 +84,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         sqlTags.DbmTraceInjected = "true";
                     }
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error propagating span data for DBM");
-                }
-
-                // we have to start the span before doing the DBM propagation work (to have the span ID)
-                // but ultimately, we don't want to measure the time spent instrumenting.
-                scope.Span.ResetStartTime();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error propagating span data for DBM");
             }
 
+            scope.Span.ResetStartTime();
             return scope;
         }
 #endif
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, string? commandText, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString, out SqlTags? sqlTags)
+        private static Scope? CreateDbCommandScope(Tracer tracer, string? commandText, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, ref DbCommandCache.TagsCacheItem tagsFromConnectionString, out SqlTags? tags)
         {
-            sqlTags = null;
+            tags = null;
+
             // commandText is null when a Batch query is wrapped in an IDbCommand inside the framework (happens at least for npgsql)
             if (commandText == null || !ShouldCreateScope(tracer, integrationId, dbType, commandText))
+            {
+                return null;
+            }
+
+            var perTraceSettings = tracer.CurrentTraceSettings;
+            if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
                 return null;
             }
@@ -129,17 +118,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 // We might block the SQL call from RASP depending on the query
                 VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
-                sqlTags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
-                sqlTags.DbType = dbType;
-                sqlTags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
-                sqlTags.DbName = tagsFromConnectionString.DbName;
-                sqlTags.DbUser = tagsFromConnectionString.DbUser;
-                sqlTags.OutHost = tagsFromConnectionString.OutHost;
+                tags = perTraceSettings.Schema.Database.CreateSqlTags();
+                tags.DbType = dbType;
+                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
+                tags.DbName = tagsFromConnectionString.DbName;
+                tags.DbUser = tagsFromConnectionString.DbUser;
+                tags.OutHost = tagsFromConnectionString.OutHost;
 
-                sqlTags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(sqlTags);
+                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                perTraceSettings.Schema.RemapPeerService(tags);
 
-                scope = tracer.StartActiveInternal(operationName, tags: sqlTags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
@@ -222,7 +211,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <summary>
         /// Returns the modified command text, with extra data injected for DBM if necessary.
         /// </summary>
-        private static void InjectDbmInfo(Tracer tracer, IDbCommand command, IntegrationId integrationId, DbCommandCache.TagsCacheItem tagsFromConnectionString, Scope scope, SqlTags tags)
+        private static void InjectDbmInfo(Tracer tracer, IDbCommand command, IntegrationId integrationId, DbCommandCache.TagsCacheItem tagsFromConnectionString, Scope scope, SqlTags tags, string? baseHash)
         {
             try
             {
@@ -252,9 +241,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
+                        if (baseHash != null)
+                        {
+                            // note: it's ok that we don't write the basehash in the span if "alreadyInjected" because we only need one span to get the tag values
+                            tags.BaseHash = baseHash;
+                        }
+
+                        // PropagateDataViaComment (service) - this injects various trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
                         var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
 
@@ -276,6 +271,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         public static bool TryGetIntegrationDetails(
+            HashSet<string> disabledAdoNetCommandTypes,
             string? commandTypeFullName,
             [NotNullWhen(true)] out IntegrationId? integrationId,
             [NotNullWhen(true)] out string? dbType)
@@ -310,7 +306,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return true;
                 default:
                     string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (IsDisabledCommandType(commandTypeName))
+                    if (IsDisabledCommandType(commandTypeName, disabledAdoNetCommandTypes))
                     {
                         integrationId = null;
                         dbType = null;
@@ -338,14 +334,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
-        internal static bool IsDisabledCommandType(string commandTypeName)
+        internal static bool IsDisabledCommandType(string commandTypeName, HashSet<string> disabledAdoNetCommandTypes)
         {
             if (string.IsNullOrEmpty(commandTypeName))
             {
                 return false;
             }
 
-            var disabledTypes = Tracer.Instance.Settings.DisabledAdoNetCommandTypes;
+            var disabledTypes = disabledAdoNetCommandTypes;
 
             if (disabledTypes is null || disabledTypes.Count == 0)
             {
@@ -373,7 +369,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             private static readonly IntegrationId IntegrationId;
 
             // ServiceName cache
-            private static KeyValuePair<string, string> _serviceNameCache;
+            private static KeyValuePair<string, ServiceNameMetadata> _serviceNameCache;
 
             // ConnectionString tags cache
             private static KeyValuePair<string, DbCommandCache.TagsCacheItem> _tagsByConnectionStringCache;
@@ -383,7 +379,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 CommandType = typeof(TCommand);
 
-                if (TryGetIntegrationDetails(CommandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(Tracer.Instance.Settings.DisabledAdoNetCommandTypes, CommandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     // cache values for this TCommand type
                     DbTypeName = dbTypeName;
@@ -395,35 +391,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
+                var baseHash = tracer.Settings.PropagateProcessTags && tracer.Settings.DbmInjectSqlBasehash
+                                   ? tracer.TracerManager.ServiceRemappingHash?.Base64Value
+                                   : null; // null if disabled
 
                 if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
                     // and we successfully called TryGetIntegrationDetails() in the ctor
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    var (cachedServiceName, cachedServiceNameSource) = GetServiceNameMetadata(tracer, DbTypeName);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
                         command: command,
                         integrationId: IntegrationId,
                         dbType: DbTypeName,
                         operationName: OperationName,
-                        serviceName: GetServiceName(tracer, DbTypeName),
+                        serviceName: cachedServiceName,
+                        serviceNameSource: cachedServiceNameSource,
+                        baseHash: baseHash,
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
                 // defined in a base class like DbCommand and we can't use the cached values
-                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(tracer.Settings.DisabledAdoNetCommandTypes, commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    var (resolvedServiceName, resolvedServiceNameSource) = GetServiceNameMetadata(tracer, dbTypeName);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
                         command: command,
                         integrationId: integrationId.Value,
                         dbType: dbTypeName,
                         operationName: operationName,
-                        serviceName: GetServiceName(tracer, dbTypeName),
+                        serviceName: resolvedServiceName,
+                        serviceNameSource: resolvedServiceNameSource,
+                        baseHash: baseHash,
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
@@ -434,70 +439,80 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public static Scope? CreateDbBatchScope(Tracer tracer, DbBatch batch)
             {
                 var commandType = batch.GetType();
+                var baseHash = tracer.Settings.PropagateProcessTags && tracer.Settings.DbmInjectSqlBasehash
+                                   ? tracer.TracerManager.ServiceRemappingHash?.Base64Value
+                                   : null; // null if disabled
 
                 if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
                     var tagsFromConnectionString = GetTagsFromConnectionString(batch);
+                    var (cachedServiceName, cachedServiceNameSource) = GetServiceNameMetadata(tracer, DbTypeName);
                     return DbScopeFactory.CreateDbBatchScope(
-                        tracer,
-                        batch,
-                        IntegrationId,
-                        DbTypeName,
-                        OperationName,
-                        GetServiceName(tracer, DbTypeName),
-                        ref tagsFromConnectionString);
+                        tracer: tracer,
+                        batch: batch,
+                        integrationId: IntegrationId,
+                        dbType: DbTypeName,
+                        operationName: OperationName,
+                        serviceName: cachedServiceName,
+                        serviceNameSource: cachedServiceNameSource,
+                        baseHash: baseHash,
+                        tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
                 // defined in a base class and we can't use the cached values
                 // TODO: since DbBatch is _already_ a base class and not an interface, do we really need this ?
-                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(tracer.Settings.DisabledAdoNetCommandTypes, commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
                     var tagsFromConnectionString = GetTagsFromConnectionString(batch);
+                    var (resolvedServiceName, resolvedServiceNameSource) = GetServiceNameMetadata(tracer, dbTypeName);
                     return DbScopeFactory.CreateDbBatchScope(
-                        tracer,
-                        batch,
-                        integrationId.Value,
-                        dbTypeName,
-                        operationName,
-                        GetServiceName(tracer, dbTypeName),
-                        ref tagsFromConnectionString);
+                        tracer: tracer,
+                        batch: batch,
+                        integrationId: integrationId.Value,
+                        dbType: dbTypeName,
+                        operationName: operationName,
+                        serviceName: resolvedServiceName,
+                        serviceNameSource: resolvedServiceNameSource,
+                        baseHash: baseHash,
+                        tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
                 return null;
             }
 #endif
-
-            private static string GetServiceName(Tracer tracer, string dbTypeName)
+            private static ServiceNameMetadata GetServiceNameMetadata(Tracer tracer, string dbTypeName)
             {
-                if (!tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out var serviceName))
+                if (tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out var serviceName))
                 {
-                    if (DbTypeName != dbTypeName)
-                    {
-                        // We cannot cache in the base class
-                        return tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
-                    }
-
-                    var serviceNameCache = _serviceNameCache;
-
-                    // If not a base class
-                    if (serviceNameCache.Key == tracer.DefaultServiceName)
-                    {
-                        // Service has not changed
-                        // Fastpath
-                        return serviceNameCache.Value;
-                    }
-
-                    // We create or replace the cache with the new service name
-                    // Slowpath
-                    var defaultServiceName = tracer.DefaultServiceName;
-                    serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
-                    _serviceNameCache = new KeyValuePair<string, string>(defaultServiceName, serviceName);
+                    return new ServiceNameMetadata(serviceName, ServiceNameMetadata.OptServiceMapping);
                 }
 
-                return serviceName;
+                if (DbTypeName != dbTypeName)
+                {
+                    // We cannot cache in the base class
+                    return tracer.CurrentTraceSettings.GetServiceNameMetadata(dbTypeName);
+                }
+
+                var serviceNameCache = _serviceNameCache;
+
+                // If not a base class
+                if (serviceNameCache.Key == tracer.DefaultServiceName)
+                {
+                    // Service has not changed
+                    // Fastpath
+                    return serviceNameCache.Value;
+                }
+
+                // We create or replace the cache with the new service name
+                // Slowpath
+                var defaultServiceName = tracer.DefaultServiceName;
+                var metadata = tracer.CurrentTraceSettings.GetServiceNameMetadata(dbTypeName);
+                _serviceNameCache = new KeyValuePair<string, ServiceNameMetadata>(defaultServiceName, metadata);
+
+                return metadata;
             }
 
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command)

@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
     IntegrationName = IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class YarpForwarderHttpClientFactoryIntegration
+public sealed class YarpForwarderHttpClientFactoryIntegration
 {
     private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
     private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
@@ -46,7 +46,8 @@ public class YarpForwarderHttpClientFactoryIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, ref TArg1 context, ref System.Net.Http.SocketsHttpHandler handler)
     {
         // If our HttpClient and SocketsHttpHandler integrations are not enabled, do not modify the factory behavior
-        if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || !Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId))
+        var settings = Tracer.Instance.CurrentTraceSettings.Settings;
+        if (!settings.IsIntegrationEnabled(IntegrationId) || !settings.IsIntegrationEnabled(SocketHandlerIntegrationId))
         {
             return CallTargetState.GetDefault();
         }

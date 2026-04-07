@@ -4,11 +4,14 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -16,6 +19,8 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -26,8 +31,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     {
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
 
-        public const string OperationName = "azure_functions.invoke";
+        public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
         public const string SpanType = SpanTypes.Serverless;
+        public const string AzureApim = AzureFunctionsConstants.AzureApimName;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -37,21 +43,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
-                 && tracer.InternalActiveScope is null)
-                {
-                    // in a "timer" trigger, or similar. Context won't be propagated to child, so no
-                    // need to create the scope etc.
-                    return CallTargetState.GetDefault();
-                }
-
-                var scope = CreateScope(tracer, instanceParam);
-                return new CallTargetState(scope);
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
+             && tracer.InternalActiveScope is null)
+            {
+                // in a "timer" trigger, or similar. Context won't be propagated to child, so no
+                // need to create the scope etc.
+                return CallTargetState.GetDefault();
+            }
+
+            var scope = CreateScope(tracer, instanceParam);
+            return new CallTargetState(scope);
         }
 
         internal static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
@@ -115,7 +121,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
-
+                // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
+                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -124,18 +131,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // otherwise it is essentially a duplicate of the span created inside the
                     // isolated app, but we _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
-                    var rootSpan = activeScope.Root.Span;
-                    // The shortname is prefixed with "Functions.", so strip that off
-                    var remoteFunctionName = functionName?.StartsWith("Functions.") == true
-                                                 ? functionName.Substring(10)
-                                                 : functionName;
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
-                        shortName: remoteFunctionName,
-                        fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
-                    rootSpan.Type = SpanType;
+                    if (!isProxySpan)
+                    {
+                        var rootSpan = activeScope.Root.Span;
+                        // The shortname is prefixed with "Functions.", so strip that off
+                        var remoteFunctionName = functionName?.StartsWith("Functions.") == true
+                                                     ? functionName.Substring(10)
+                                                     : functionName;
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan,
+                            shortName: remoteFunctionName,
+                            fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                        rootSpan.Type = SpanType;
+                    }
+
                     return null;
                 }
 
@@ -150,21 +161,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     };
 
                     // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags);
                 }
                 else
                 {
                     scope = tracer.StartActiveInternal(OperationName);
-                    AzureFunctionsTags.SetRootSpanTags(
-                        scope.Root.Span,
-                        shortName: functionName,
-                        fullName: instanceParam.FunctionDescriptor.FullName,
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
+
+                    if (!isProxySpan)
+                    {
+                        AzureFunctionsTags.SetRootSpanTags(
+                            scope.Root.Span,
+                            shortName: functionName,
+                            fullName: instanceParam.FunctionDescriptor.FullName,
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                    }
                 }
 
-                scope.Root.Span.Type = SpanType;
+                if (!isProxySpan)
+                {
+                    scope.Root.Span.Type = SpanType;
+                }
+
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
                 scope.Span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -184,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 var scope = CreateIsolatedFunctionScope(tracer, functionContext);
 
@@ -197,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        internal static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T context)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -207,8 +226,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
                 PropagationContext extractedContext = default;
+
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
-                foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
+                foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
                     var binding = entry.Value.DuckCast<BindingMetadata>();
@@ -220,56 +240,58 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     var type = binding.BindingType;
                     triggerType = type switch
                     {
-                        _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http", // Microsoft.Azure.Functions.Worker.Extensions.Http
-                        _ when type.Equals("timerTrigger", StringComparison.OrdinalIgnoreCase) => "Timer", // Microsoft.Azure.Functions.Worker.Extensions.Timer
+                        _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http",             // Microsoft.Azure.Functions.Worker.Extensions.Http
+                        _ when type.Equals("timerTrigger", StringComparison.OrdinalIgnoreCase) => "Timer",           // Microsoft.Azure.Functions.Worker.Extensions.Timer
                         _ when type.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) => "ServiceBus", // Microsoft.Azure.Functions.Worker.Extensions.ServiceBus
-                        _ when type.Equals("queue", StringComparison.OrdinalIgnoreCase) => "Queue", // Microsoft.Azure.Functions.Worker.Extensions.Queues
-                        _ when type.StartsWith("blob", StringComparison.OrdinalIgnoreCase) => "Blob", // Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs
-                        _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
-                        _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos", // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
-                        _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid", // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
-                        _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
+                        _ when type.Equals("queue", StringComparison.OrdinalIgnoreCase) => "Queue",                  // Microsoft.Azure.Functions.Worker.Extensions.Queues
+                        _ when type.StartsWith("blob", StringComparison.OrdinalIgnoreCase) => "Blob",                // Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs
+                        _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub",        // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
+                        _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos",          // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
+                        _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+                        _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
-                    // need to extract the headers from the context.
-                    // We currently only support httpTrigger, but other triggers may also propagate context,
-                    // e.g. Cosmos + ServiceBus, so we should handle those too
-                    if (triggerType == "Http")
+                    switch (triggerType)
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                    }
-                    else if (triggerType == "ServiceBus" && tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus, false))
-                    {
-                        extractedContext = ExtractPropagatedContextFromServiceBus(context).MergeBaggageInto(Baggage.Current);
+                        case "Http":
+                            extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                            break;
+
+                        case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
+
+                        case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
+                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
+                            break;
                     }
 
                     break;
                 }
 
-                var functionName = context.FunctionDefinition.Name;
-
-                var tags = new AzureFunctionsTags
-                {
-                    TriggerType = triggerType,
-                    ShortName = functionName,
-                    FullName = context.FunctionDefinition.EntryPoint,
-                };
-
+                var functionName = functionContext.FunctionDefinition.Name;
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                    var tags = new AzureFunctionsTags
+                    {
+                        TriggerType = triggerType,
+                        ShortName = functionName,
+                        FullName = functionContext.FunctionDefinition.EntryPoint,
+                    };
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
                 else
                 {
                     // shouldn't be hit, but better safe than sorry
                     scope = tracer.StartActiveInternal(OperationName);
+
                     var rootSpan = scope.Root.Span;
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
                         shortName: functionName,
-                        fullName: context.FunctionDefinition.EntryPoint,
+                        fullName: functionContext.FunctionDefinition.EntryPoint,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
                         triggerType: triggerType);
                 }
@@ -340,83 +362,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static PropagationContext ExtractPropagatedContextFromServiceBus<T>(T context)
+        internal static PropagationContext ExtractPropagatedContextFromMessaging<T>(T context, string singlePropertyKey, string batchPropertyKey)
             where T : IFunctionContext
         {
             try
             {
-                if (context.Features == null)
-                {
-                    return default;
-                }
-
-                GrpcBindingsFeatureStruct? bindingsFeature = null;
-                foreach (var kvp in context.Features)
-                {
-                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
-                        break;
-                    }
-                }
-
+                var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
                 if (bindingsFeature == null)
                 {
                     return default;
                 }
 
                 var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
-                var spanContexts = new List<SpanContext>();
+                var extractedContexts = new List<PropagationContext>();
 
-                // Extract from single message UserProperties
-                if (triggerMetadata?.TryGetValue("UserProperties", out var singlePropsObj) == true &&
+                // Extract from single message properties
+                if (triggerMetadata?.TryGetValue(singlePropertyKey, out var singlePropsObj) == true &&
                     TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
                 {
-                    if (ExtractSpanContextFromProperties(singleProps) is { } singleContext)
+                    var singleContext = Shared.AzureMessagingCommon.ExtractContext(singleProps);
+                    if (singleContext.SpanContext != null)
                     {
-                        spanContexts.Add(singleContext);
+                        extractedContexts.Add(singleContext);
                     }
                 }
 
-                // Extract from batch UserPropertiesArray
-                if (triggerMetadata?.TryGetValue("UserPropertiesArray", out var arrayPropsObj) == true &&
+                // Extract from batch properties array
+                if (triggerMetadata?.TryGetValue(batchPropertyKey, out var arrayPropsObj) == true &&
                     TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray) && propsArray != null)
                 {
                     foreach (var props in propsArray)
                     {
-                        if (ExtractSpanContextFromProperties(props) is { } batchContext)
+                        var batchContext = Shared.AzureMessagingCommon.ExtractContext(props);
+                        if (batchContext.SpanContext != null)
                         {
-                            spanContexts.Add(batchContext);
+                            extractedContexts.Add(batchContext);
                         }
                     }
                 }
 
-                if (spanContexts.Count == 0)
+                if (extractedContexts.Count == 0)
                 {
                     return default;
                 }
 
-                bool areAllTheSame = spanContexts.Count == 1 ||
-                                     (spanContexts.Count > 1 && AreAllContextsIdentical(spanContexts));
+                bool areAllTheSame = extractedContexts.Count == 1 ||
+                                     (extractedContexts.Count > 1 && AreAllSpanContextsIdentical(extractedContexts));
 
                 if (!areAllTheSame)
                 {
-                    Log.Warning("Multiple different contexts found in ServiceBus messages. Using first context for parentship.");
+                    Log.Warning("Multiple different contexts found in messages. Using first context for parentship.");
                 }
 
-                return new PropagationContext(spanContexts[0], Baggage.Current, null);
+                return extractedContexts[0];
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error extracting propagated context from ServiceBus binding");
+                Log.Error(ex, "Error extracting propagated context from messaging binding");
                 return default;
             }
-        }
-
-        private static SpanContext? ExtractSpanContextFromProperties(Dictionary<string, object> userProperties)
-        {
-            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(userProperties, default(ServiceBus.ContextPropagation));
-            return extractedContext.SpanContext;
         }
 
         private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)
@@ -430,7 +434,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                result = JsonConvert.DeserializeObject<T>(jsonString);
+                result = JsonHelper.DeserializeObject<T>(jsonString);
                 return result != null;
             }
             catch (Exception ex)
@@ -440,17 +444,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static bool AreAllContextsIdentical(List<SpanContext> contexts)
+        // Checks if all SpanContexts are identical (ignores baggage)
+        private static bool AreAllSpanContextsIdentical(List<PropagationContext> contexts)
         {
             if (contexts.Count <= 1)
             {
                 return true;
             }
 
-            var first = contexts[0];
+            var first = contexts[0].SpanContext;
             return contexts.All(ctx =>
-                ctx.TraceId128.Equals(first.TraceId128) &&
-                ctx.SpanId == first.SpanId);
+                ctx.SpanContext != null &&
+                ctx.SpanContext.TraceId128 == first!.TraceId128 &&
+                ctx.SpanContext.SpanId == first.SpanId);
+        }
+
+        private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
+            where T : IFunctionContext
+            where TFeature : struct
+        {
+            if (context.Features == null)
+            {
+                return null;
+            }
+
+            foreach (var kvp in context.Features)
+            {
+                if (kvp.Key.FullName == featureTypeName)
+                {
+                    return kvp.Value?.TryDuckCast<TFeature>(out var feature) == true ? feature : null;
+                }
+            }
+
+            return null;
         }
     }
 }

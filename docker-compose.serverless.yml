@@ -179,17 +179,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSync"
     image: dd-trace-dotnet/serverless-lambda-no-param-sync
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-no-param-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-one-param-sync:
     build:
@@ -202,17 +210,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSync"
     image: dd-trace-dotnet/serverless-lambda-one-param-sync
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-one-param-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-two-params-sync:
     build:
@@ -225,17 +241,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSync"
     image: dd-trace-dotnet/serverless-lambda-two-params-sync
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-two-params-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-no-param-sync-with-context:
     build:
@@ -248,17 +272,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-no-param-sync-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-no-param-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-one-param-sync-with-context:
     build:
@@ -271,17 +303,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-one-param-sync-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-one-param-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-two-params-sync-with-context:
     build:
@@ -294,17 +334,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-two-params-sync-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-two-params-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-no-param-async:
     build:
@@ -317,17 +365,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamAsync"
     image: dd-trace-dotnet/serverless-lambda-two-params-sync-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-no-param-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-one-param-async:
     build:
@@ -340,17 +396,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamAsync"
     image: dd-trace-dotnet/serverless-lambda-one-param-async
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-one-param-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-two-params-async:
     build:
@@ -363,17 +427,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsAsync"
     image: dd-trace-dotnet/serverless-lambda-two-params-async
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-two-params-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-no-param-void:
     build:
@@ -386,17 +458,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamVoid"
     image: dd-trace-dotnet/serverless-lambda-no-param-void
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-no-param-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-one-param-void:
     build:
@@ -409,17 +489,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamVoid"
     image: dd-trace-dotnet/serverless-lambda-one-param-void
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-one-param-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-two-params-void:
     build:
@@ -432,17 +520,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsVoid"
     image: dd-trace-dotnet/serverless-lambda-two-params-void
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-two-params-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
   
   serverless-lambda-base-no-param-sync:
     build:
@@ -455,17 +551,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerNoParamSync"
     image: dd-trace-dotnet/serverless-lambda-base-no-param-sync
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-base-no-param-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-base-two-params-sync:
     build:
@@ -478,17 +582,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsSync"
     image: dd-trace-dotnet/serverless-lambda-base-two-params-sync
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-base-two-params-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-base-one-param-sync-with-context:
     build:
@@ -501,17 +613,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-base-one-param-sync-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-base-one-param-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-base-one-param-async:
     build:
@@ -524,17 +644,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamAsync"
     image: dd-trace-dotnet/serverless-lambda-base-one-param-async
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-base-one-param-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-base-two-params-void:
     build:
@@ -547,17 +675,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsVoid"
     image: dd-trace-dotnet/serverless-lambda-base-two-params-void
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-base-two-params-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-struct-param:
     build:
@@ -570,17 +706,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerStructParam"
     image: dd-trace-dotnet/serverless-lambda-struct-param
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-struct-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-nested-class-param:
     build:
@@ -593,17 +737,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedClassParam"
     image: dd-trace-dotnet/serverless-lambda-nested-class-param
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-nested-class-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-nested-struct-param:
     build:
@@ -616,17 +768,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedStructParam"
     image: dd-trace-dotnet/serverless-lambda-nested-struct-param
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-nested-struct-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-dict-param:
     build:
@@ -639,17 +799,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerGenericDictionaryParam"
     image: dd-trace-dotnet/serverless-lambda-generic-dict-param
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-generic-dict-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-nested-generic-dict-param:
     build:
@@ -662,17 +830,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedGenericDictionaryParam"
     image: dd-trace-dotnet/serverless-lambda-nested-generic-dict-param
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-nested-generic-dict-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-doubly-nested-generic-dict-param:
     build:
@@ -685,17 +861,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerDoublyNestedGenericDictionaryParam"
     image: dd-trace-dotnet/serverless-lambda-doubly-nested-generic-dict-param
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-doubly-nested-generic-dict-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-throwing:
     build:
@@ -708,17 +892,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandler"
     image: dd-trace-dotnet/serverless-lambda-throwing
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-throwing:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-throwing-async:
     build:
@@ -731,17 +923,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsync"
     image: dd-trace-dotnet/serverless-lambda-throwing-async
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-throwing-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-throwing-async-task:
     build:
@@ -754,17 +954,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsyncTask"
     image: dd-trace-dotnet/serverless-lambda-throwing-async-task
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-throwing-async-task:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-throwing-with-context:
     build:
@@ -777,17 +985,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandler"
     image: dd-trace-dotnet/serverless-lambda-throwing-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-throwing-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-throwing-async-with-context:
     build:
@@ -800,17 +1016,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsync"
     image: dd-trace-dotnet/serverless-lambda-throwing-async-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-throwing-async-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-throwing-async-task-with-context:
     build:
@@ -823,17 +1047,25 @@ services:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsyncTask"
     image: dd-trace-dotnet/serverless-lambda-throwing-async-task-with-context
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+    - SYS_PTRACE
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - COMPlus_DbgEnableMiniDump=1
+    - COMPlus_DbgMiniDumpType=4
+    - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+    - DOTNET_EnableCrashReport=1
     ports:
     - "8080"
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs/serverless-lambda-throwing-async-task-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic:
     build:
@@ -846,17 +1078,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::GenericBaseType1"
     image: dd-trace-dotnet/serverless-lambda-generic
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-async:
     build:
@@ -869,17 +1109,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::GenericBaseType2"
     image: dd-trace-dotnet/serverless-lambda-generic-async
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic-async:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-virtual:
     build:
@@ -892,17 +1140,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::VirtualGenericBaseType3"
     image: dd-trace-dotnet/serverless-lambda-generic-virtual
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic-virtual:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-virtual-async:
     build:
@@ -915,17 +1171,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::VirtualGenericBaseType4"
     image: dd-trace-dotnet/serverless-lambda-generic-virtual-async
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic-virtual-async:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-abstract:
     build:
@@ -938,17 +1202,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::AbstractGenericBaseType5"
     image: dd-trace-dotnet/serverless-lambda-generic-abstract
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic-abstract:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-abstract-async:
     build:
@@ -961,17 +1233,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::AbstractGenericBaseType6"
     image: dd-trace-dotnet/serverless-lambda-generic-abstract-async
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic-abstract-async:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-complex:
     build:
@@ -984,17 +1264,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::ComplexNestedGeneric"
     image: dd-trace-dotnet/serverless-lambda-generic-complex
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic-complex:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-generic-complex-nested:
     build:
@@ -1007,17 +1295,25 @@ services:
       - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation+NestedDerived::ComplexNestedGeneric"
     image: dd-trace-dotnet/serverless-lambda-generic-complex-nested
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-generic-complex-nested:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   serverless-lambda-toplevel-statement:
     build:
@@ -1030,17 +1326,25 @@ services:
       - serverless-dummy-api
     command: "Samples.Amazon.Lambda.RuntimeSupport"
     image: dd-trace-dotnet/serverless-lambda-toplevel-statement
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    cap_add:
+      - SYS_PTRACE
     environment:
       - DD_TRACE_AGENT_URL=http://integrationtests:5002
       - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
       - DUMMY_API_HOST=http://serverless-dummy-api:9005
       - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
       - DD_TRACE_DEBUG=1
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
+      - DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+      - DOTNET_EnableCrashReport=1
     ports:
       - "8080"
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-toplevel-statement:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
 
   # The serverless function calls this API, which always returns 200 OK
   serverless-dummy-api:

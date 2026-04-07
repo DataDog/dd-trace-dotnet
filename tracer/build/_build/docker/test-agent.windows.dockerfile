@@ -3,6 +3,6 @@
 WORKDIR /
 
 # Pin to older test agent versions to try to avoid breakages in the future
-RUN pip install --no-cache-dir "ddapm-test-agent==1.28.0" "ddsketch==3.0.1" "ddsketch[serialization]==3.0.1"
+RUN pip install --no-cache-dir "ddapm-test-agent==1.32.0" "ddsketch==3.0.1" "ddsketch[serialization]==3.0.1"
 
 ENTRYPOINT [ "ddapm-test-agent", "--port=8126" ]

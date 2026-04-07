@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class TraceAnnotationsIntegration
+    public sealed class TraceAnnotationsIntegration
     {
         internal static readonly IntegrationId IntegrationId = IntegrationId.TraceAnnotations;
         private static readonly ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo>();

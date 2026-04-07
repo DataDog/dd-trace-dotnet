@@ -1,4 +1,4 @@
-// <copyright file="ShadowStackHolder.cs" company="Datadog">
+﻿// <copyright file="ShadowStackHolder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.Logging;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ShadowStackHolder
+    internal sealed class ShadowStackHolder
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ShadowStackHolder>();
         private static readonly AsyncLocal<ShadowStackTree?> ShadowStackTree = new();
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public static void DisableShadowStackTracking()
         {
-            Logger.Information("DisableShadowStackTracking called on threadID {ManagedThreadId} and taskId {CurrentId}.", Thread.CurrentThread.ManagedThreadId, Task.CurrentId);
+            Logger.Information("DisableShadowStackTracking called on threadID {ManagedThreadId} and taskId {CurrentId}.", Environment.CurrentManagedThreadId, Task.CurrentId);
             ShadowStackTree.Value = null;
             _lastShadowStackTreeOnThisThread = null;
         }

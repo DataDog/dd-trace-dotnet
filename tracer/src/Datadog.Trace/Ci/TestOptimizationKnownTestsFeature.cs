@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationKnownTestsFeature.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationKnownTestsFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,11 +11,11 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFeature
+internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationKnownTestsFeature));
     private readonly bool _enabled;
-    private readonly Task<TestOptimizationClient.KnownTestsResponse> _knownTestsTask;
+    private readonly Task<TestOptimizationClient.KnownTestsResponse>? _knownTestsTask;
 
     private TestOptimizationKnownTestsFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
@@ -31,7 +31,7 @@ internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFe
             Log.Information("TestOptimizationKnownTestsFeature: Known tests is disabled.");
             settings.SetKnownTestsEnabled(false);
             settings.SetEarlyFlakeDetectionEnabled(false);
-            _knownTestsTask = Task.FromResult(default(TestOptimizationClient.KnownTestsResponse));
+            _knownTestsTask = null;
             _enabled = false;
         }
 
@@ -46,16 +46,21 @@ internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFe
         }
     }
 
-    public bool Enabled => _enabled && KnownTests.Tests is not null; // Ensure that the known tests response was not empty
+    public bool Enabled => _enabled && _knownTestsTask is not null && KnownTests.Tests is not null; // Ensure that the known tests response was not empty
 
     public TestOptimizationClient.KnownTestsResponse KnownTests
-        => _knownTestsTask.SafeGetResult();
+        => _knownTestsTask?.SafeGetResult() ?? default;
 
     public static ITestOptimizationKnownTestsFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationKnownTestsFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public bool IsAKnownTest(string moduleName, string testSuite, string testName)
     {
+        if (_knownTestsTask is null)
+        {
+            return false;
+        }
+
         if (KnownTests is { Tests: { } knownTests } &&
             knownTests.TryGetValue(moduleName, out var knownTestsSuites) &&
             knownTestsSuites?.TryGetValue(testSuite, out var knownTestsArray) == true &&

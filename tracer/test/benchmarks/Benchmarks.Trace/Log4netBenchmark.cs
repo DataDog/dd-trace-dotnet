@@ -13,25 +13,19 @@ using log4net.Repository.Hierarchy;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent4]
-    [BenchmarkCategory(Constants.TracerCategory)]
+    [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class Log4netBenchmark
     {
-        private static readonly Tracer LogInjectionTracer;
-        private static readonly log4net.ILog Logger;
+        private log4net.ILog _logger;
 
-        static Log4netBenchmark()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
-            var logInjectionSettings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                { ConfigurationKeys.LogsInjectionEnabled, true },
-                { ConfigurationKeys.Environment, "env" },
-                { ConfigurationKeys.ServiceVersion, "version" },
-            });
-
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
+            var config = TracerHelper.DefaultConfig;
+            config[ConfigurationKeys.LogsInjectionEnabled] = true;
+            config[ConfigurationKeys.Environment] = "env";
+            config[ConfigurationKeys.ServiceVersion] = "version";
+            TracerHelper.SetGlobalTracer(config);
 
             var repository = (Hierarchy)log4net.LogManager.GetRepository();
             var patternLayout = new PatternLayout { ConversionPattern = "%date [%thread] %-5level %logger {dd.env=%property{dd.env}, dd.service=%property{dd.service}, dd.version=%property{dd.version}, dd.trace_id=%property{dd.trace_id}, dd.span_id=%property{dd.span_id}} - %message%newline" };
@@ -51,17 +45,23 @@ namespace Benchmarks.Trace
             repository.Root.Level = Level.Info;
             repository.Configured = true;
 
-            Logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
+            _logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            TracerHelper.CleanupGlobalTracer();
         }
 
         [Benchmark]
         public void EnrichedLog()
         {
-            using (LogInjectionTracer.StartActive("Test"))
+            using (Tracer.Instance.StartActive("Test"))
             {
-                using (LogInjectionTracer.StartActive("Child"))
+                using (Tracer.Instance.StartActive("Child"))
                 {
-                    Logger.Info("Hello");
+                    _logger.Info("Hello");
                 }
             }
         }

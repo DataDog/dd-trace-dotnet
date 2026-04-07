@@ -1,4 +1,4 @@
-// <copyright file="AzureServiceBusActivityHandler.cs" company="Datadog">
+﻿// <copyright file="AzureServiceBusActivityHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Activity.Handlers
     /// This Activity handler captures the "Message" Activity objects, whose span context
     /// is injected into the AzureServiceBus message's properties.
     /// </summary>
-    internal class AzureServiceBusActivityHandler : IActivityHandler
+    internal sealed class AzureServiceBusActivityHandler : IActivityHandler
     {
         public bool ShouldListenTo(string sourceName, string? version)
             => sourceName.StartsWith("Azure.Messaging.ServiceBus");
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && dataStreamsManager.IsEnabled
                 && activity.Instance is not null
                 && activity.OperationName == "Message"
@@ -46,17 +47,13 @@ namespace Datadog.Trace.Activity.Handlers
                 // then we can retrieve the active message object using our mapping. With access to the message
                 // object, we can accurately calculate the payload size for the DataStreamsCheckpoint
 
-                string key;
-                if (activity is IW3CActivity w3cActivity)
+                ActivityKey key = activity switch
                 {
-                    key = w3cActivity.TraceId + w3cActivity.SpanId;
-                }
-                else
-                {
-                    key = activity.Id;
-                }
+                    IW3CActivity { TraceId: not null, SpanId: not null } w3cActivity => new(w3cActivity.TraceId, w3cActivity.SpanId),
+                    _ => new(activity.Id)
+                };
 
-                if (ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out ActivityMapping activityMapping)
+                if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out ActivityMapping activityMapping)
                     && activityMapping.Scope?.Span is Span span)
                 {
                     // Copy over the data to our Span object so we can do an efficient tags lookup
@@ -81,7 +78,7 @@ namespace Datadog.Trace.Activity.Handlers
                         payloadSize ?? 0,
                         0);
 
-                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new ServiceBusHeadersCollectionAdapter(applicationProperties));
+                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new AzureHeadersCollectionAdapter(applicationProperties));
 
                     // Close the scope and return so we bypass the common code path
                     span.Finish(activity.StartTimeUtc.Add(activity.Duration));

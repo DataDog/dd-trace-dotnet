@@ -81,8 +81,9 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
-                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -197,8 +198,10 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
+
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -305,8 +308,9 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -398,8 +402,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -444,8 +449,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -483,8 +489,9 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 }
 
 TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
@@ -524,8 +531,9 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
     IMetadataProvider* metadataProvider = nullptr;
     EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(::testing::ByMove(std::make_unique<FakeSamples>())));
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 
     exporter.RegisterProcessSamplesProvider(static_cast<ISamplesProvider*>(&processSamplesProvider));
 
@@ -568,8 +576,9 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);
@@ -591,7 +600,7 @@ TEST(ProfileExporterTest, CheckNoEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -607,7 +616,7 @@ TEST(ProfileExporterTest, CheckAllEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("walltime") != std::string::npos);
     ASSERT_TRUE(tag.find("cpu") != std::string::npos);
@@ -627,7 +636,7 @@ TEST(ProfileExporterTest, CheckCpuIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "cpu");
 }
@@ -641,7 +650,7 @@ TEST(ProfileExporterTest, CheckWalltimeIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "walltime");
 }
@@ -655,7 +664,7 @@ TEST(ProfileExporterTest, CheckExceptionIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "exceptions");
 }
@@ -669,7 +678,7 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "allocations");
 }
@@ -683,7 +692,7 @@ TEST(ProfileExporterTest, CheckAllocationIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -697,7 +706,7 @@ TEST(ProfileExporterTest, CheckLockContentionIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "lock");
 }
@@ -711,7 +720,7 @@ TEST(ProfileExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -725,7 +734,7 @@ TEST(ProfileExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag == "gc");
 }
@@ -739,7 +748,7 @@ TEST(ProfileExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -752,7 +761,7 @@ TEST(ProfileExporterTest, CheckHeapIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("heap") != std::string::npos);
 }
@@ -765,7 +774,7 @@ TEST(ProfileExporterTest, CheckHeapIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, true); // this should never happen but test it anyway
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
@@ -778,7 +787,7 @@ TEST(ProfileExporterTest, CheckHeapIsDisabledWhenHeapIsNotEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("heap") == std::string::npos);
 }
@@ -791,7 +800,7 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("allocations") != std::string::npos);
     ASSERT_TRUE(tag.find("heap") != std::string::npos);

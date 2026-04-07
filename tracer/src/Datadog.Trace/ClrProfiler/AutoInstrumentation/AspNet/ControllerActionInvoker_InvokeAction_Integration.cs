@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ControllerActionInvoker_InvokeAction_Integration
+    public sealed class ControllerActionInvoker_InvokeAction_Integration
     {
         private const string AssemblyName = "System.Web.Mvc";
         private const string ActionResultTypeName = "System.Web.Mvc.ActionResult";
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private const string IntegrationName = nameof(IntegrationId.AspNetMvc);
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ControllerActionInvoker_InvokeAction_Integration>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ControllerActionInvoker_InvokeAction_Integration));
 
         /// <summary>
         /// OnMethodBegin callback

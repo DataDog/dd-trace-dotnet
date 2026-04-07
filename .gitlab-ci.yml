@@ -7,12 +7,16 @@ stages:
   - benchmarks
 
 include:
-  - local: .gitlab/one-pipeline.locked.yaml
+  - local: .gitlab/one-pipeline.locked.yml
 
 variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
+  CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
+  SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
+  OCI_PACKAGE_MAX_SIZE_BYTES: 40000000
+  LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 40000000
 
 build:
   except:
@@ -29,7 +33,7 @@ build:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - |
-      docker run --rm -m 8192M `
+      docker run --rm -m 10240M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
         -e ENABLE_MULTIPROCESSOR_COMPILATION=false `
@@ -37,7 +41,9 @@ build:
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
-        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:dotnet10-rc1 `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:ci-identities `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
@@ -48,6 +54,9 @@ build:
     expire_in: 2 weeks
     paths:
     - artifacts-out
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
 
 publish:
   only:
@@ -67,19 +76,17 @@ publish:
     pre_get_sources_script:
       - git config --system core.longpaths true
   script:
-    - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
-    - $resultjson = $result | convertfrom-json
-    - $credentials = $($resultjson.Credentials)
-    - $Env:AWS_ACCESS_KEY_ID="$($credentials.AccessKeyId)"
-    - $Env:AWS_SECRET_ACCESS_KEY="$($credentials.SecretAccessKey)"
-    - $Env:AWS_SESSION_TOKEN="$($credentials.SessionToken)"
+    # TODO remove the aws s3 cp command
+    # when the client is installed in the Windows runner image
+    - aws s3 cp --only-show-errors ${CI_IDENTITIES_CLIENT_URL} ./ci-identities-gitlab-job-client.exe
+    - ./ci-identities-gitlab-job-client.exe assume-role
     - |
       $i = 0
       do {
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
               aws s3 cp artifacts-out/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --include "telemetry_forwarder.exe" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
-              If ($LASTEXITCODE -eq 0) { 
+              If ($LASTEXITCODE -eq 0) {
                 return
               }
 
@@ -92,6 +99,15 @@ publish:
               Start-Sleep -Milliseconds 100
           }
       } while ($i -lt 3)
+      # If we got here, all retries failed – fail the job:
+      Write-Error "Failed to upload artifacts to S3 after $i attempts."
+      exit 1
+  variables:
+    AWS_SHARED_CREDENTIALS_FILE: ${CI_PROJECT_DIR}\.aws\credentials-by-job-id\${CI_JOB_ID}
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
 
 download-single-step-artifacts:
   stage: package
@@ -180,7 +196,17 @@ benchmark-serverless:
   needs:
     - benchmark-serverless-trigger
   script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools && cd ./serverless-tools
+    - curl -OL "binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
+    - mv "authanywhere-linux-amd64" /bin/authanywhere 
+    - chmod +x /bin/authanywhere
+    - BTI_CI_API_TOKEN=$(authanywhere --audience rapid-devex-ci)
+    - >-
+      BTI_RESPONSE=$(curl --silent --request GET \
+        --header "$BTI_CI_API_TOKEN" \  --header "Content-Type: application/vnd.api+json" \
+        "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=DataDog&repository=serverless-tools")
+    - GITLAB_TOKEN=$(echo "$BTI_RESPONSE" | jq -r '.token // empty')
+    - git clone https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools
+    - cd ./serverless-tools
     - ./ci/check_trigger_status.sh
 
 benchmark-serverless-trigger:
@@ -203,9 +229,29 @@ benchmark-serverless-trigger:
 
 macrobenchmarks:
   stage: benchmarks
-  needs: [ ]
+  needs: []
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+      when: always
+    - when: manual
+
+microbenchmarks:
+  stage: benchmarks
+  needs: []
+  trigger:
+    include: .gitlab/benchmarks/microbenchmarks.yml
+    strategy: depend
+  allow_failure: true
+
+dsm_throughput:
+  stage: benchmarks
+  trigger:
+    include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
@@ -214,15 +260,19 @@ macrobenchmarks:
       when: always
     - when: manual
 
-microbenchmarks:
-  stage: benchmarks
-  needs: [ ]
-  trigger:
-    include: .gitlab/benchmarks/microbenchmarks.yml
-  allow_failure: true
 
-dsm_throughput:
-  stage: benchmarks
-  trigger:
-    include: .gitlab/benchmarks/dsm-throughput.yml
-  allow_failure: true
+validate_supported_configurations_v2_local_file:
+  stage: build
+  rules:
+    - when: on_success
+  extends: .validate_supported_configurations_v2_local_file
+  variables:
+    LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
+    BACKFILLED: true
+  
+update_central_configurations_version_range_v2:
+  extends: .update_central_configurations_version_range_v2
+  variables:
+    LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
+    LANGUAGE_NAME: "dotnet"
+    SEND_ALIASES: true

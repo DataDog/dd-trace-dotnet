@@ -172,6 +172,7 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
             {
                 stackFrame.moduleAddress = module->startAddress;
                 stackFrame.buildId = module->buildId;
+                stackFrame.modulePath = module->path;
 
                 std::ostringstream methodName;
                 methodName << module->path << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - module->startAddress);
@@ -203,11 +204,6 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
     }
 
     return MergeFrames(frames, managedFrames);
-}
-
-std::string CrashReportingWindows::GetSignalInfo(int32_t signal)
-{
-    return std::string();
 }
 
 std::vector<ModuleInfo> CrashReportingWindows::GetModules()

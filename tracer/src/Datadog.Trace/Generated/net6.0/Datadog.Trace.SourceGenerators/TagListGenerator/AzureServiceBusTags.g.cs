@@ -15,29 +15,79 @@ namespace Datadog.Trace.Tagging
     partial class AzureServiceBusTags
     {
         // AnalyticsSampleRateBytes = MessagePack.Serialize("_dd1.sr.eausr");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> AnalyticsSampleRateBytes => new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
+#else
+        private static readonly byte[] AnalyticsSampleRateBytes = new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
+#endif
         // MessageQueueTimeMsBytes = MessagePack.Serialize("message.queue_time_ms");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#else
+        private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+#endif
         // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
+        // MessagingSystemBytes = MessagePack.Serialize("messaging.system");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MessagingSystemBytes => new byte[] { 176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109 };
+#else
+        private static readonly byte[] MessagingSystemBytes = new byte[] { 176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109 };
+#endif
+        // MessagingOperationBytes = MessagePack.Serialize("messaging.operation");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MessagingOperationBytes => new byte[] { 179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] MessagingOperationBytes = new byte[] { 179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+#endif
         // MessagingSourceNameBytes = MessagePack.Serialize("messaging.source.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessagingSourceNameBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] MessagingSourceNameBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
+#endif
         // MessagingDestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> MessagingDestinationNameBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] MessagingDestinationNameBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#endif
         // LegacyMessageBusDestinationBytes = MessagePack.Serialize("message_bus.destination");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> LegacyMessageBusDestinationBytes => new byte[] { 183, 109, 101, 115, 115, 97, 103, 101, 95, 98, 117, 115, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] LegacyMessageBusDestinationBytes = new byte[] { 183, 109, 101, 115, 115, 97, 103, 101, 95, 98, 117, 115, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110 };
+#endif
         // NetworkDestinationNameBytes = MessagePack.Serialize("network.destination.name");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NetworkDestinationNameBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] NetworkDestinationNameBytes = new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#endif
         // NetworkDestinationPortBytes = MessagePack.Serialize("network.destination.port");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> NetworkDestinationPortBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
+#else
+        private static readonly byte[] NetworkDestinationPortBytes = new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
+#endif
         // ServerAddressBytes = MessagePack.Serialize("server.address");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ServerAddressBytes => new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+#else
+        private static readonly byte[] ServerAddressBytes = new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+#endif
 
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "component" => InstrumentationName,
+                "messaging.system" => MessagingSystem,
+                "messaging.operation" => MessagingOperation,
                 "messaging.source.name" => MessagingSourceName,
                 "messaging.destination.name" => MessagingDestinationName,
                 "message_bus.destination" => LegacyMessageBusDestination,
@@ -48,12 +98,15 @@ namespace Datadog.Trace.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {
-                case "component": 
-                    InstrumentationName = value;
+                case "messaging.system": 
+                    MessagingSystem = value;
+                    break;
+                case "messaging.operation": 
+                    MessagingOperation = value;
                     break;
                 case "messaging.source.name": 
                     MessagingSourceName = value;
@@ -73,6 +126,9 @@ namespace Datadog.Trace.Tagging
                 case "server.address": 
                     ServerAddress = value;
                     break;
+                case "component": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AzureServiceBusTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
@@ -84,6 +140,16 @@ namespace Datadog.Trace.Tagging
             if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (MessagingSystem is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.system", MessagingSystem, MessagingSystemBytes));
+            }
+
+            if (MessagingOperation is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.operation", MessagingOperation, MessagingOperationBytes));
             }
 
             if (MessagingSourceName is not null)
@@ -125,6 +191,20 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
+                  .Append(',');
+            }
+
+            if (MessagingSystem is not null)
+            {
+                sb.Append("messaging.system (tag):")
+                  .Append(MessagingSystem)
+                  .Append(',');
+            }
+
+            if (MessagingOperation is not null)
+            {
+                sb.Append("messaging.operation (tag):")
+                  .Append(MessagingOperation)
                   .Append(',');
             }
 

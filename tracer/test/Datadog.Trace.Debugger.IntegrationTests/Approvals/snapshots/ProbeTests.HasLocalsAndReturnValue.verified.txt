@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -19,8 +19,7 @@
                     "value": "7"
                   }
                 },
-                "type": "HasLocalsAndReturnValue",
-                "value": "HasLocalsAndReturnValue"
+                "type": "HasLocalsAndReturnValue"
               }
             }
           },
@@ -37,8 +36,7 @@
                     "value": "7"
                   }
                 },
-                "type": "HasLocalsAndReturnValue",
-                "value": "HasLocalsAndReturnValue"
+                "type": "HasLocalsAndReturnValue"
               }
             },
             "locals": {
@@ -68,6 +66,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
@@ -95,8 +95,7 @@
                       "value": "7"
                     }
                   },
-                  "type": "HasLocalsAndReturnValue",
-                  "value": "HasLocalsAndReturnValue"
+                  "type": "HasLocalsAndReturnValue"
                 }
               }
             }
@@ -119,6 +118,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
@@ -146,8 +147,7 @@
                       "value": "7"
                     }
                   },
-                  "type": "HasLocalsAndReturnValue",
-                  "value": "HasLocalsAndReturnValue"
+                  "type": "HasLocalsAndReturnValue"
                 }
               }
             }
@@ -170,6 +170,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Run",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",
@@ -201,8 +203,7 @@
                       "value": "7"
                     }
                   },
-                  "type": "HasLocalsAndReturnValue",
-                  "value": "HasLocalsAndReturnValue"
+                  "type": "HasLocalsAndReturnValue"
                 }
               },
               "locals": {
@@ -231,6 +232,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
       "name": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndReturnValue",

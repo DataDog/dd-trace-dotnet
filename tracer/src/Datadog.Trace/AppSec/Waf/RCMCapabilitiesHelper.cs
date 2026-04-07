@@ -31,6 +31,8 @@ internal static class RCMCapabilitiesHelper
         { RcmCapabilitiesIndices.AsmRaspCmd, new Version(1, 21) },
         { RcmCapabilitiesIndices.AsmDdMulticonfig, new Version(1, 27) },
         { RcmCapabilitiesIndices.AsmTraceTaggingRules, new Version(1, 27) },
+        { RcmCapabilitiesIndices.AsmProcessorOverrides, new Version(1, 17) },
+        { RcmCapabilitiesIndices.AsmCustomDataScanners, new Version(1, 17) },
     };
 
     internal static bool WafSupportsCapability(BigInteger capability, string? wafVersion)

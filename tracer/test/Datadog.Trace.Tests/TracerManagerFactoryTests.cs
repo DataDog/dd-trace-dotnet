@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerManagerFactoryTests.cs" company="Datadog">
+// <copyright file="TracerManagerFactoryTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,12 +13,14 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.PlatformHelpers;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -103,6 +105,29 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         _manager.TracerFlareManager.Should().BeOfType<NullTracerFlareManager>();
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DiscoveryServiceCanBeDisabled(bool enabled)
+    {
+        var source = CreateConfigurationSource((ConfigurationKeys.AgentFeaturePollingEnabled, enabled.ToString()));
+        var settings = new TracerSettings(source);
+
+        settings.AgentFeaturePollingEnabled.Should().Be(enabled);
+
+        var factory = new TracerManagerFactory();
+        var discoveryService = factory.GetDiscoveryService(settings, new ServiceRemappingHash(null));
+
+        if (enabled)
+        {
+            discoveryService.Should().BeOfType<DiscoveryService>();
+        }
+        else
+        {
+            discoveryService.Should().BeSameAs(NullDiscoveryService.Instance);
+        }
+    }
+
     private static TracerManager CreateTracerManager(TracerSettings settings)
     {
         return new TracerManagerFactory().CreateTracerManager(
@@ -110,30 +135,32 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
             Mock.Of<IScopeManager>(),
-            Mock.Of<IDogStatsd>(),
+            new TestStatsdManager(Mock.Of<IDogStatsd>()),
             BuildRuntimeMetrics(),
             BuildLogSubmissionManager(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>(),
-            new DataStreamsManager("env", "service", Mock.Of<IDataStreamsWriter>(), isInDefaultState: false),
+            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>()),
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,
-            spanEventsManager: null);
+            spanEventsManager: null,
+            featureFlags: null);
 
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(
-                previous: null,
-                settings: new TracerSettings(NullConfigurationSource.Instance),
+                settings: TracerSettings.Create(new()
+                {
+                    { ConfigurationKeys.Environment, "test" },
+                    { ConfigurationKeys.ServiceName, "test" },
+                    { ConfigurationKeys.ServiceVersion, "test" },
+                }),
                 directLogSettings: new TracerSettings().LogSubmissionSettings,
                 azureAppServiceSettings: null,
-                serviceName: "test",
-                env: "test",
-                serviceVersion: "test",
                 gitMetadataTagsProvider: Mock.Of<IGitMetadataTagsProvider>());
 
         static RuntimeMetricsWriter BuildRuntimeMetrics()
-            => new(Mock.Of<IDogStatsd>(), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, (_, _, _) => Mock.Of<IRuntimeMetricsListener>());
+            => new(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, useDiagnosticsApiListener: false, initializeListener: (_, _, _, _) => Mock.Of<IRuntimeMetricsListener>());
     }
 
     private static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)

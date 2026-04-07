@@ -1,4 +1,4 @@
-﻿// <copyright file="MutableSettings.cs" company="Datadog">
+// <copyright file="MutableSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,11 +9,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Processors;
@@ -34,6 +36,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
 
     private MutableSettings(
+        bool isInitialSettings,
         bool traceEnabled,
         string? customSamplingRules,
         bool customSamplingRulesIsRemote,
@@ -44,6 +47,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         bool startupDiagnosticLogEnabled,
         string? environment,
         string? serviceName,
+        string defaultServiceName,
         string? serviceVersion,
         HashSet<string> disabledIntegrationNames,
         ReadOnlyDictionary<string, string> grpcTags,
@@ -58,8 +62,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         string? gitRepositoryUrl,
         string? gitCommitSha,
         OverrideErrorLog errorLog,
-        IConfigurationTelemetry telemetry)
+        bool propagateProcessTags)
     {
+        IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
         CustomSamplingRules = customSamplingRules;
         CustomSamplingRulesIsRemote = customSamplingRulesIsRemote;
@@ -70,6 +75,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         StartupDiagnosticLogEnabled = startupDiagnosticLogEnabled;
         Environment = environment;
         ServiceName = serviceName;
+        DefaultServiceName = defaultServiceName;
         ServiceVersion = serviceVersion;
         DisabledIntegrationNames = disabledIntegrationNames;
         GrpcTags = grpcTags;
@@ -86,7 +92,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         GitRepositoryUrl = gitRepositoryUrl;
         GitCommitSha = gitCommitSha;
         ErrorLog = errorLog;
-        Telemetry = telemetry;
+        ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), defaultServiceName) : null;
     }
 
     // Settings that can be set via remote config
@@ -154,10 +160,18 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     public string? Environment { get; }
 
     /// <summary>
-    /// Gets the service name applied to top-level spans and used to build derived service names.
+    /// Gets the user-specified service name for the application. You should typically
+    /// favor <see cref="DefaultServiceName"/> which includes the calculated application
+    /// name where an explicit service name is not provided.
     /// </summary>
     /// <seealso cref="ConfigurationKeys.ServiceName"/>
     public string? ServiceName { get; }
+
+    /// <summary>
+    /// Gets the service name applied to top-level spans and used to build derived service names.
+    /// Composed based on <see cref="ServiceName"/> if provided, or a fallback value
+    /// </summary>
+    public string DefaultServiceName { get; }
 
     /// <summary>
     /// Gets the version tag applied to all spans.
@@ -235,27 +249,38 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// <summary>
     /// Gets the application's git repository url.
     /// </summary>
-    /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+    /// <seealso cref="ConfigurationKeys.CIVisibility.GitRepositoryUrl"/>
     public string? GitRepositoryUrl { get; }
 
     /// <summary>
     /// Gets the application's git commit hash.
     /// </summary>
-    /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+    /// <seealso cref="ConfigurationKeys.CIVisibility.GitCommitSha"/>
     public string? GitCommitSha { get; }
 
     // Infra
+    internal bool IsInitialSettings { get; }
+
     internal OverrideErrorLog ErrorLog { get; }
 
-    internal IConfigurationTelemetry Telemetry { get; }
+    /// <summary>
+    /// Gets the process tags instance including the service_name.user_defined tag.
+    /// Will be null if propagateProcessTags is null
+    /// </summary>
+    internal ProcessTags? ProcessTags { get; }
 
-    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
+    internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(in ConfigurationBuilder.HasKeys key, bool headerTagsNormalizationFixEnabled)
+        => InitializeHeaderTags(
+            key.AsDictionaryResult(allowOptionalMappings: true),
+            headerTagsNormalizationFixEnabled);
+
+    private static ReadOnlyDictionary<string, string>? InitializeHeaderTags(
+        ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> configurationResult,
+        bool headerTagsNormalizationFixEnabled)
     {
-        var configurationDictionary = config
-                                     .WithKeys(key)
-                                     .AsDictionary(allowOptionalMappings: true, defaultValue: null, "[]");
+        var configurationDictionary = configurationResult.WithDefault(new DefaultResult<IDictionary<string, string>>(null!, "[]"));
 
-        if (configurationDictionary == null)
+        if (configurationDictionary == null!)
         {
             return null;
         }
@@ -396,6 +421,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                KafkaCreateConsumerScopeEnabled == other.KafkaCreateConsumerScopeEnabled &&
                GitRepositoryUrl == other.GitRepositoryUrl &&
                GitCommitSha == other.GitCommitSha &&
+               ProcessTags?.SerializedTags == other.ProcessTags?.SerializedTags &&
                // Do collection comparisons at the end, as generally more expensive
                AreEqual(GlobalTags, other.GlobalTags) &&
                AreEqual(HeaderTags, other.HeaderTags) &&
@@ -495,6 +521,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // hashCode.Add(ServiceNameMappings);
         hashCode.Add(GitRepositoryUrl);
         hashCode.Add(GitCommitSha);
+        hashCode.Add(ProcessTags?.SerializedTags);
         return hashCode.ToHashCode();
     }
 
@@ -533,14 +560,252 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
     }
 
+    private static void RemoveDisallowedGlobalTags(IDictionary<string, string> globalTags)
+    {
+        globalTags.Remove(Tags.Service);
+        globalTags.Remove(Tags.Env);
+        globalTags.Remove(Tags.Version);
+        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
+        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+    }
+
     /// <summary>
-    /// Create an instance of <see cref="MutableSettings"/>
+    /// Create an instance of <see cref="MutableSettings"/> based on dynamic configuration sources
+    /// </summary>
+    /// <param name="dynamicSource">The <see cref="IConfigurationSource"/> for dynamic config</param>
+    /// <param name="manualSource">The <see cref="IConfigurationSource"/> for manual configuration</param>
+    /// <param name="initialSettings">The initial mutable settings created from static sources </param>
+    /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
+    /// <param name="telemetry">The <see cref="IConfigurationTelemetry"/> for recording telemetry updates</param>
+    /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
+    /// <returns>The <see cref="MutableSettings"/> updated images</returns>
+    public static MutableSettings CreateUpdatedMutableSettings(
+        IConfigurationSource dynamicSource,
+        ManualInstrumentationConfigurationSourceBase manualSource,
+        MutableSettings initialSettings, // Might be the "real" initial mutable settings or the "null" version
+        TracerSettings tracerSettings,
+        IConfigurationTelemetry telemetry,
+        OverrideErrorLog errorLog)
+    {
+        // For most configs we can do "combined" config where dynamic config has higher precedence
+        var config = new ConfigurationBuilder(new CompositeConfigurationSource([dynamicSource, manualSource]), telemetry);
+
+        var traceEnabled = GetResult(
+            config.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult().ConfigurationResult,
+            initialSettings.TraceEnabled);
+
+        var logsInjectionEnabled = GetResult(
+            config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBoolResult().ConfigurationResult,
+            initialSettings.LogsInjectionEnabled);
+
+        // We can't use the `GetResult` helper because of nullability annoyances. Meh.
+        var globalSamplingRateResult = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult().ConfigurationResult;
+        var globalSamplingRate = globalSamplingRateResult is { IsValid: true, Result: var result } ? result : initialSettings.GlobalSamplingRate;
+
+        var headerTags = GetHeaderTagsResult(
+            config.WithKeys(ConfigurationKeys.HeaderTags).AsDictionaryResult(allowOptionalMappings: true),
+            headerTagsNormalizationFixEnabled: true,
+            initialSettings.HeaderTags);
+
+        // No point checking the fallback keys, they're not used
+        // TODO: should we be checking for experimental tags format here?
+        // Also, note that this _prevents_ customers from setting service etc via the tags collection
+        // They have to set it via the specific properties instead
+        var globalTags = GetDictionaryResult(
+            config.WithKeys(ConfigurationKeys.GlobalTags).AsDictionaryResult(),
+            initialSettings.GlobalTags,
+            removeGlobalTags: true);
+
+        // The remaining properties are only exposed via manual config, so that's all we need to check
+        var startupDiagnosticLogEnabled = GetResult(
+            config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBoolResult().ConfigurationResult,
+            initialSettings.StartupDiagnosticLogEnabled);
+
+        var environment = GetResult(
+            config.WithKeys(ConfigurationKeys.Environment).AsStringResult().ConfigurationResult,
+            initialSettings.Environment);
+
+        var serviceName = GetResult(
+            config.WithKeys(ConfigurationKeys.ServiceName).AsStringResult().ConfigurationResult,
+            initialSettings.ServiceName);
+
+        var serviceVersion = GetResult(
+            config.WithKeys(ConfigurationKeys.ServiceVersion).AsStringResult().ConfigurationResult,
+            initialSettings.ServiceVersion);
+
+        var disabledIntegrationNameResult = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
+                                                        .AsStringResult();
+        var disabledIntegrationNames = initialSettings.DisabledIntegrationNames;
+        if (disabledIntegrationNameResult.ConfigurationResult is { IsValid: true, Result: var stringResult })
+        {
+            // If Activity support is enabled, we shouldn't enable the OTel listener
+            var disabledIntegrationNamesArray = stringResult.Split([';'], StringSplitOptions.RemoveEmptyEntries);
+            disabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
+                                           ? new HashSet<string>(disabledIntegrationNamesArray, StringComparer.OrdinalIgnoreCase)
+                                           : new HashSet<string>([..disabledIntegrationNamesArray, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
+        }
+
+        var integrations = new IntegrationSettingsCollection(manualSource, disabledIntegrationNames, initialSettings.Integrations);
+
+        var grpcTags = GetHeaderTagsResult(
+            config.WithKeys(ConfigurationKeys.GrpcTags).AsDictionaryResult(allowOptionalMappings: true),
+            headerTagsNormalizationFixEnabled: true,
+            initialSettings.GrpcTags);
+
+        var tracerMetricsEnabled = GetResult(
+            config.WithKeys(ConfigurationKeys.TracerMetricsEnabled).AsBoolResult().ConfigurationResult,
+            initialSettings.TracerMetricsEnabled);
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+        var analyticsEnabled = GetResult(
+            config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled).AsBoolResult().ConfigurationResult,
+            initialSettings.AnalyticsEnabled);
+#pragma warning restore 618
+
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+        var maxTracesSubmittedPerSecond = GetResult(
+            config.WithKeys(ConfigurationKeys.MaxTracesSubmittedPerSecond).AsInt32Result().ConfigurationResult,
+            initialSettings.MaxTracesSubmittedPerSecond);
+#pragma warning restore 618
+
+        var kafkaCreateConsumerScopeEnabled = GetResult(
+            config.WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled).AsBoolResult().ConfigurationResult,
+            initialSettings.KafkaCreateConsumerScopeEnabled);
+
+        var httpServerErrorStatusCodes = GetStatusCodesResult(
+            config.WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes).AsStringResult(),
+            initialSettings.HttpServerErrorStatusCodes);
+
+        var httpClientErrorStatusCodes = GetStatusCodesResult(
+            config.WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes).AsStringResult(),
+            initialSettings.HttpClientErrorStatusCodes);
+
+        var serviceNamesResult = config.WithKeys(ConfigurationKeys.ServiceNameMappings).AsDictionaryResult();
+        var serviceNameMappings = GetDictionaryResult(
+            serviceNamesResult,
+            initialSettings.ServiceNameMappings,
+            removeGlobalTags: false);
+
+        // These behave differently depending on which source the telemetry came from, so inspect them separately
+        // Reading the manual value first is important to ensure correct telemetry
+        var manualConfig = new ConfigurationBuilder(manualSource, telemetry);
+        var dynamicConfig = new ConfigurationBuilder(dynamicSource, telemetry);
+        var manualCustomSamplingRules = manualConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).AsStringResult();
+        // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
+        // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
+        var remoteCustomSamplingRules = dynamicConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClassResult<string>(validator: null, converter: s => s);
+        string? customSamplingRules;
+        bool customSamplingRulesIsRemote;
+
+        if (remoteCustomSamplingRules.ConfigurationResult is { IsValid: true, Result: var remoteRules })
+        {
+            customSamplingRules = remoteRules;
+            customSamplingRulesIsRemote = true;
+        }
+        else if (manualCustomSamplingRules.ConfigurationResult is { IsValid: true, Result: var manualRules })
+        {
+            customSamplingRules = manualRules;
+            customSamplingRulesIsRemote = false;
+        }
+        else
+        {
+            customSamplingRules = initialSettings.CustomSamplingRules;
+            customSamplingRulesIsRemote = initialSettings.CustomSamplingRulesIsRemote;
+        }
+
+        // These can't actually be changed in code right now, so just set them to the same values
+        var gitRepositoryUrl = initialSettings.GitRepositoryUrl;
+        var gitCommitSha = initialSettings.GitCommitSha;
+
+        return new MutableSettings(
+            isInitialSettings: false,
+            traceEnabled: traceEnabled,
+            customSamplingRules: customSamplingRules,
+            customSamplingRulesIsRemote: customSamplingRulesIsRemote,
+            globalSamplingRate: globalSamplingRate,
+            logsInjectionEnabled: logsInjectionEnabled,
+            globalTags: globalTags,
+            headerTags: headerTags,
+            startupDiagnosticLogEnabled: startupDiagnosticLogEnabled,
+            environment: environment,
+            serviceName: serviceName,
+            defaultServiceName: serviceName ?? tracerSettings.FallbackApplicationName,
+            serviceVersion: serviceVersion,
+            disabledIntegrationNames: disabledIntegrationNames,
+            grpcTags: grpcTags,
+            tracerMetricsEnabled: tracerMetricsEnabled,
+            integrations: integrations,
+            analyticsEnabled: analyticsEnabled,
+            maxTracesSubmittedPerSecond: maxTracesSubmittedPerSecond,
+            kafkaCreateConsumerScopeEnabled: kafkaCreateConsumerScopeEnabled,
+            httpServerErrorStatusCodes: httpServerErrorStatusCodes,
+            httpClientErrorStatusCodes: httpClientErrorStatusCodes,
+            serviceNameMappings: serviceNameMappings,
+            gitRepositoryUrl: gitRepositoryUrl,
+            gitCommitSha: gitCommitSha,
+            errorLog: errorLog,
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
+
+        static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
+            bool headerTagsNormalizationFixEnabled,
+            ReadOnlyDictionary<string, string> fallback)
+        {
+            if (result.ConfigurationResult is { IsValid: true })
+            {
+                // Non-null return if result is valid, but play it safe
+                return InitializeHeaderTags(result, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+            }
+
+            return fallback;
+        }
+
+        static ReadOnlyDictionary<string, string> GetDictionaryResult(
+            ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
+            ReadOnlyDictionary<string, string> fallback,
+            bool removeGlobalTags)
+        {
+            return result.ConfigurationResult is { IsValid: true, Result: var r1 }
+                       ? FixupDictionary(r1, removeGlobalTags)
+                       : fallback;
+
+            static ReadOnlyDictionary<string, string> FixupDictionary(IDictionary<string, string>? r1, bool removeGlobalTags)
+            {
+                if (r1 is null)
+                {
+                    return ReadOnlyDictionary.Empty;
+                }
+
+                // Filter out tags with empty keys or empty values, and trim whitespace
+                r1 = r1
+                    .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+
+                if (removeGlobalTags)
+                {
+                    RemoveDisallowedGlobalTags(r1);
+                }
+
+                return new(r1);
+            }
+        }
+
+        static bool[] GetStatusCodesResult(ConfigurationBuilder.ClassConfigurationResultWithKey<string> result, bool[] fallback)
+            => result.ConfigurationResult is { IsValid: true, Result: var codes } ? ParseHttpCodesToArray(codes) : fallback;
+
+        static T? GetResult<T>(ConfigurationResult<T> configResult, T? fallback)
+            => configResult is { IsValid: true, Result: var result } ? result : fallback;
+    }
+
+    /// <summary>
+    /// Create an instance of <see cref="MutableSettings"/> based on static source
     /// </summary>
     /// <param name="source">The global, static, <see cref="IConfigurationSource"/></param>
     /// <param name="telemetry">The <see cref="IConfigurationTelemetry"/> for recording telemetry updates</param>
     /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
     /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
-    public static MutableSettings Create(
+    /// <returns>The initial, static settings. These are fixed for the lifetime of the application</returns>
+    public static MutableSettings CreateInitialMutableSettings(
         IConfigurationSource source,
         IConfigurationTelemetry telemetry,
         OverrideErrorLog errorLog,
@@ -607,7 +872,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             };
 
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult(parser: updatedTagsParser)
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -621,7 +886,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         else
         {
             globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                        .WithKeys(ConfigurationKeys.GlobalTags)
                         .AsDictionaryResult()
                         .OverrideWith(
                              RemapOtelTags(in otelTags),
@@ -642,7 +907,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
         var serviceName = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                         .WithKeys(ConfigurationKeys.ServiceName)
                          .AsStringResult()
                          .OverrideWith(in otelServiceName, errorLog);
 
@@ -680,24 +945,26 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         serviceVersion = GetExplicitSettingOrTag(serviceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion, telemetry);
 
         var gitCommitSha = config
-                          .WithKeys(ConfigurationKeys.GitCommitSha)
+                          .WithKeys(ConfigurationKeys.CIVisibility.GitCommitSha)
                           .AsString();
 
         // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha, telemetry);
+        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.CIVisibility.GitCommitSha, telemetry);
 
         var gitRepositoryUrl = config
-                              .WithKeys(ConfigurationKeys.GitRepositoryUrl)
+                              .WithKeys(ConfigurationKeys.CIVisibility.GitRepositoryUrl)
                               .AsString();
 
         // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl, telemetry);
+        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.CIVisibility.GitRepositoryUrl, telemetry);
 
         var otelTraceEnabled = config
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
                               .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                          ? ParsingResult<bool>.Success(result: false)
-                                                         : ParsingResult<bool>.Failure());
+                                                         : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
+                                                           ? ParsingResult<bool>.Success(result: true)
+                                                           : ParsingResult<bool>.Failure());
         var traceEnabled = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBoolResult()
@@ -728,28 +995,26 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
         var maxTracesSubmittedPerSecond = config
-                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit)
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
         // mutate dictionary to remove without "env", "version", "git.commit.sha" or "git.repository.url" tags
         // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
         // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-        globalTags.Remove(Tags.Service);
-        globalTags.Remove(Tags.Env);
-        globalTags.Remove(Tags.Version);
-        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
-        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+        RemoveDisallowedGlobalTags(globalTags);
 
         var headerTagsNormalizationFixEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
                                                .AsBool(defaultValue: true);
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
+        var headerTagsConfig = config.WithKeys(ConfigurationKeys.HeaderTags);
+        var headerTags = InitializeHeaderTags(in headerTagsConfig, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
         // Filter out tags with empty keys or empty values, and trim whitespaces
-        var grpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
+        var grpcTagsConfig = config.WithKeys(ConfigurationKeys.GrpcTags);
+        var grpcTags = InitializeHeaderTags(in grpcTagsConfig, headerTagsNormalizationFixEnabled: true) ?? ReadOnlyDictionary.Empty;
 
         var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
@@ -768,29 +1033,26 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var kafkaCreateConsumerScopeEnabled = config
                                              .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                              .AsBool(defaultValue: true);
-        var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings) ?? ReadOnlyDictionary.Empty;
+        var serviceNameMappings = TracerSettings.TrimConfigKeysValues(config.WithKeys(ConfigurationKeys.ServiceNameMappings)) ?? ReadOnlyDictionary.Empty;
 
         var tracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
                                   .AsBool(defaultValue: false);
 
         var httpServerErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
                                               .AsString(defaultValue: "500-599");
 
         var httpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodesString);
 
         var httpClientErrorStatusCodesString = config
-#pragma warning disable 618 // This config key has been replaced but may still be used
-                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
-#pragma warning restore 618
+                                              .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
                                               .AsString(defaultValue: "400-499");
 
         var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);
 
         return new MutableSettings(
+            isInitialSettings: true,
             traceEnabled: traceEnabled,
             customSamplingRules: customSamplingRules,
             customSamplingRulesIsRemote: false, // Can't be remote as these are static sources
@@ -801,6 +1063,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             startupDiagnosticLogEnabled: startupDiagnosticLogEnabled,
             environment: environment,
             serviceName: serviceName,
+            defaultServiceName: serviceName ?? tracerSettings.FallbackApplicationName,
             serviceVersion: serviceVersion,
             disabledIntegrationNames: disabledIntegrationNames,
             grpcTags: grpcTags,
@@ -815,8 +1078,27 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
             errorLog: errorLog,
-            telemetry: telemetry);
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
     }
+
+    /// <summary>
+    /// Creates an instance of <see cref="MutableSettings"/> built
+    /// by excluding all the default sources. Effectively gives all the settings their default
+    /// values. Should only be used with the manual instrumentation source
+    /// </summary>
+    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings, ConfigurationTelemetry telemetry)
+        => CreateInitialMutableSettings(
+            NullConfigurationSource.Instance,
+            telemetry,
+            new OverrideErrorLog(),
+            tracerSettings);
+
+    public static MutableSettings CreateForTesting(TracerSettings tracerSettings, Dictionary<string, object?> settings)
+        => CreateInitialMutableSettings(
+            new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
+            new ConfigurationTelemetry(),
+            new OverrideErrorLog(),
+            tracerSettings);
 
     private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
         in ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> original)
@@ -872,6 +1154,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
         var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
         var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
+        var otlpTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsStringResult();
 
         double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
 
@@ -936,6 +1219,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             }
 
             log.LogInvalidConfiguration(otelSampleRate.Key);
+        }
+
+        if (!ddSampleRate.ConfigurationResult.IsPresent &&
+                otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
+                 && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
+        {
+            return 1.0;
         }
 
         return ddResult;

@@ -58,6 +58,8 @@ public static class ErrorHelpers
 
     public static async Task SendMetric(ITestOutputHelper outputHelper, string metricName, EnvironmentHelper environmentHelper)
     {
+        const int maxTestFullNameLength = 200;
+
         var envKey = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
         if (string.IsNullOrEmpty(envKey))
         {
@@ -71,7 +73,12 @@ public static class ErrorHelpers
         var type = outputHelper.GetType();
         var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
         var test = (ITest)testMember?.GetValue(outputHelper);
-        var testFullName = type.FullName + test?.TestCase.DisplayName;
+        var displayName = test?.TestCase.DisplayName ?? string.Empty;
+        var testFullName = (displayName.StartsWith(type.FullName) ?
+            displayName :
+            $"{type.FullName}.{displayName}").Trim();
+
+        testFullName = testFullName.Substring(0, Math.Min(testFullName.Length, maxTestFullNameLength));
 
         // In addition to logging, send a metric that will help us get more information through tags
         var srcBranch = Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH");
@@ -79,7 +86,7 @@ public static class ErrorHelpers
         var tags = $$"""
                          "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
                          "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                         "target.framework:{{SanitizeTagValue(environmentHelper.GetTargetFramework())}}",
+                         "target.framework:{{environmentHelper.GetTargetFramework()}}",
                          "test.name:{{SanitizeTagValue(testFullName)}}",
                          "git.branch:{{SanitizeTagValue(srcBranch)}}"
                      """;
@@ -101,12 +108,20 @@ public static class ErrorHelpers
                         """;
 
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
-        var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
-        var responseContent = await response.Content.ReadAsStringAsync();
 
-        if (response.StatusCode != HttpStatusCode.Accepted)
+        try
         {
-            outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.Accepted)
+            {
+                outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            }
+        }
+        catch (Exception ex)
+        {
+            outputHelper.WriteLine($"Failed to submit metric {metricName}. Exception: {ex.ToString()} Payload: \"{payload}\"");
         }
     }
 

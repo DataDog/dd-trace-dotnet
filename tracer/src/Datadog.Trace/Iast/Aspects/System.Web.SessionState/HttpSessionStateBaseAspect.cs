@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Web.SessionState;
 [AspectClass("System.Web", AspectType.Sink, VulnerabilityType.TrustBoundaryViolation)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class HttpSessionStateBaseAspect
+public sealed class HttpSessionStateBaseAspect
 {
     /// <summary>
     /// Launches a SSRF vulnerability if the url string is tainted

@@ -25,12 +25,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
     IntegrationName = KafkaConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class KafkaConsumerConstructorIntegration
+public sealed class KafkaConsumerConstructorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TConsumerBuilder>(TTarget instance, TConsumerBuilder consumer)
         where TConsumerBuilder : IConsumerBuilder
     {
-        if (Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+        var tracer = Tracer.Instance;
+        if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
         {
             string groupId = null;
             string bootstrapServers = null;
@@ -53,7 +54,7 @@ public class KafkaConsumerConstructorIntegration
                 }
             }
 
-            if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+            if (tracer.TracerManager.DataStreamsManager.IsEnabled)
             {
                 // add handler to track committed offsets
                 consumer.OffsetsCommittedHandler = consumer.OffsetsCommittedHandler.Instrument(new OffsetsCommittedCallbacks(groupId));
@@ -62,9 +63,7 @@ public class KafkaConsumerConstructorIntegration
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
-                // Save the map between this consumer and a consumer group
-                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers);
-                return new CallTargetState(scope: null, state: instance);
+                return new CallTargetState(scope: null, state: new Config(groupId, bootstrapServers));
             }
         }
 
@@ -73,13 +72,19 @@ public class KafkaConsumerConstructorIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        // This method is called in the Consumer constructor, so if we have an exception
-        // the consumer won't be created, so no point recording it.
-        if (exception is not null && state is { State: { } consumer })
+        if (exception is null && state is { State: Config config })
         {
-            ConsumerCache.RemoveConsumerGroup(consumer);
+            var clusterId = KafkaHelper.GetClusterId(config.BootstrapServers, instance);
+            ConsumerCache.SetConsumerGroup(instance, config.GroupId, config.BootstrapServers, clusterId);
         }
 
         return CallTargetReturn.GetDefault();
+    }
+
+    private sealed class Config(string groupId, string bootstrapServers)
+    {
+        public string GroupId { get; } = groupId;
+
+        public string BootstrapServers { get; } = bootstrapServers;
     }
 }

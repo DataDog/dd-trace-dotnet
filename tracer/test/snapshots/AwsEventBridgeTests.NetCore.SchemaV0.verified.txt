@@ -36,7 +36,8 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -62,10 +63,13 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: MyEventBus,
       rulename: MyEventBus,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      span.kind: producer,
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.peer.service.source: rulename,
+      _dd.svc_src: aws-eventbridge
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -90,7 +94,8 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0

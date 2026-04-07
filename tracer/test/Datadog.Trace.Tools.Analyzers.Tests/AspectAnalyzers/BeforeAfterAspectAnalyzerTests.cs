@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+extern alias AnalyzerCodeFixes;
 
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Analyzers.AspectAnalyzers;
@@ -10,14 +11,14 @@ using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.AspectAnalyzers.BeforeAfterAspectAnalyzer,
-    Datadog.Trace.Tools.Analyzers.AspectAnalyzers.BeforeAfterAspectCodeFixProvider,
+    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.AspectAnalyzers.BeforeAfterAspectCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests.AspectAnalyzers;
 
 public class BeforeAfterAspectAnalyzerTests
 {
-    private const string DiagnosticId = BeforeAfterAspectAnalyzer.DiagnosticId;
+    private const string DiagnosticId = Diagnostics.BeforeAfterAspectDiagnosticId;
     private const DiagnosticSeverity Severity = BeforeAfterAspectAnalyzer.Severity;
 
     // No diagnostics expected to show up

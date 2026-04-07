@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.Agent.DiscoveryService
 {
     /// <summary>
-    /// Queries datadog-agent and discovers which version we are running against and what endpoints it supports.
+    /// Queries the Datadog Agent and discovers which version we are running against and which endpoints it supports.
     /// </summary>
     internal interface IDiscoveryService
     {
@@ -27,6 +27,12 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// object passed to <see cref="SubscribeToChanges"/>
         /// </summary>
         void RemoveSubscription(Action<AgentConfiguration> callback);
+
+        /// <summary>
+        /// Report the current config state hash, as returned in a header from the agent.
+        /// </summary>
+        /// <param name="configStateHash">The sha256 hash of the config state, as returned by the agent</param>
+        void SetCurrentConfigStateHash(string configStateHash);
 
         Task DisposeAsync();
     }

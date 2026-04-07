@@ -1,4 +1,4 @@
-// <copyright file="DynamicConfigConfigurationSource.cs" company="Datadog">
+﻿// <copyright file="DynamicConfigConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,12 +8,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources
 {
-    internal class DynamicConfigConfigurationSource : JsonConfigurationSource
+    internal sealed class DynamicConfigConfigurationSource : JsonConfigurationSource
     {
         private static readonly Dictionary<string, string> Mapping = new()
         {
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 
         private static JToken? Deserialize(string config)
         {
-            var jobject = JsonConvert.DeserializeObject(config) as JObject;
+            var jobject = JsonHelper.DeserializeObject(config) as JObject;
 
             if (jobject != null)
             {

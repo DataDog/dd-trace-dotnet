@@ -9,7 +9,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Util.Streams;
 
@@ -17,11 +16,11 @@ namespace Datadog.Trace.Util.Streams;
 /// A stream that only buffers a portion of the initial stream in memory, so that it can be
 /// retrieved again later if needed (for example if deserialization fails)
 /// </summary>
-internal class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
+internal sealed class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
 {
     internal const int MaxInitialBufferSize = 128;
 
-    private ArraySegment<byte>? _buffer = null;
+    private ArraySegment<byte>? _buffer;
 
     public string? GetBufferedContent()
     {
@@ -59,6 +58,15 @@ internal class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegating
                    : base.ReadAsync(buffer, offset, count, cancellationToken);
     }
 
+#if NETCOREAPP
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        return _buffer is null
+                   ? ReadAndSaveBufferAsync(buffer, cancellationToken)
+                   : base.ReadAsync(buffer, cancellationToken);
+    }
+#endif
+
     protected override void Dispose(bool disposing)
     {
         ReturnBuffer();
@@ -95,6 +103,23 @@ internal class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegating
 
         _buffer = new ArraySegment<byte>(localBuffer, offset: 0, count: bufferSize);
     }
+
+#if NETCOREAPP
+    private async ValueTask<int> ReadAndSaveBufferAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+    {
+        var bytesRead = await base.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+        SaveToLocalBuffer(buffer.Span.Slice(0, bytesRead));
+        return bytesRead;
+    }
+
+    private void SaveToLocalBuffer(ReadOnlySpan<byte> data)
+    {
+        var bufferSize = Math.Min(MaxInitialBufferSize, data.Length);
+        var localBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+        data.Slice(0, bufferSize).CopyTo(localBuffer);
+        _buffer = new ArraySegment<byte>(localBuffer, offset: 0, count: bufferSize);
+    }
+#endif
 
     private void ReturnBuffer()
     {

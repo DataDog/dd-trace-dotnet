@@ -11,13 +11,16 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using static Datadog.Trace.Agent.Api;
 
 namespace Datadog.Trace.LibDatadog.DataPipeline;
 
-internal class TraceExporter : SafeHandle, IApi
+internal sealed class TraceExporter : SafeHandle, IApi
 {
+    private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
+
     private readonly IDatadogLogger _log;
     private readonly Action<Dictionary<string, float>> _updateSampleRates;
     private string _cachedResponse;
@@ -39,13 +42,17 @@ internal class TraceExporter : SafeHandle, IApi
 
     public override bool IsInvalid => handle == IntPtr.Zero;
 
-    public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
+    public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0_4;
+
+    public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0, true);
+
+    public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled)
     {
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
         try
         {
-            using var response = Send(traces, numberOfTraces);
+            using var response = Send(traces);
 
             if (response.IsInvalid)
             {
@@ -63,7 +70,7 @@ internal class TraceExporter : SafeHandle, IApi
                 {
                     try
                     {
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+                        var apiResponse = JsonHelper.DeserializeObject<ApiResponse>(json);
                         _updateSampleRates(apiResponse.RateByService);
                         _cachedResponse = json;
                     }
@@ -104,7 +111,7 @@ internal class TraceExporter : SafeHandle, IApi
         return true;
     }
 
-    private unsafe TraceExporterResponse Send(ArraySegment<byte> traces, int numberOfTraces)
+    private unsafe TraceExporterResponse Send(ArraySegment<byte> traces)
     {
         fixed (byte* ptr = traces.Array)
         {
@@ -117,7 +124,7 @@ internal class TraceExporter : SafeHandle, IApi
             var responsePtr = IntPtr.Zero;
             try
             {
-                using var error = NativeInterop.Exporter.Send(this, traceSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+                using var error = NativeInterop.Exporter.Send(this, traceSlice, ref responsePtr);
                 if (!error.IsInvalid)
                 {
                     var ex = error.ToException();

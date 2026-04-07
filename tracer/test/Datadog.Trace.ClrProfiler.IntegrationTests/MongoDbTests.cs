@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class MongoDbTests : TracingIntegrationTest
     {
@@ -47,7 +48,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-mongodb" : EnvironmentHelper.FullSampleName;

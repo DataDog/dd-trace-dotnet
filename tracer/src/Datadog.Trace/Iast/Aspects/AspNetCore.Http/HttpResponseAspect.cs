@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects.AspNetCore.Http;
 [AspectClass("Microsoft.AspNetCore.Http", AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class HttpResponseAspect
+public sealed class HttpResponseAspect
 {
     /// <summary>
     /// Redirect aspect

@@ -5,15 +5,18 @@
 
 #if NETFRAMEWORK
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using SkipException = Xunit.SkipException;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -21,49 +24,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class WcfTests : TracingIntegrationTest
     {
         private const string ServiceVersion = "1.0.0";
-
-        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
-        {
-            "custom-tag",
-        };
+        private static readonly HashSet<string> ExcludeTags = ["custom-tag"];
 
         public WcfTests(ITestOutputHelper output)
             : base("Wcf", output)
         {
             SetServiceVersion(ServiceVersion);
-        }
-
-        public static string[] Bindings => new string[]
-        {
-            "WSHttpBinding",
-            "BasicHttpBinding",
-            "NetTcpBinding",
-            "Custom",
-        };
-
-        public static IEnumerable<object[]> GetData()
-        {
-            foreach (var binding in Bindings)
-            {
-                // When using the binding example, it is expected that Old WCF fails,
-                // so only test New WCF
-                if (binding == "Custom")
-                {
-                    yield return new object[] { "v0", binding, true, true };
-                    yield return new object[] { "v1", binding, true, true };
-                    continue;
-                }
-
-                yield return new object[] { "v0", binding, false, true };
-                yield return new object[] { "v0", binding, false, false };
-                yield return new object[] { "v0", binding, true, true };
-                yield return new object[] { "v0", binding, true, false };
-
-                yield return new object[] { "v1", binding, false, true };
-                yield return new object[] { "v1", binding, false, false };
-                yield return new object[] { "v1", binding, true, true };
-                yield return new object[] { "v1", binding, true, false };
-            }
+            EnvironmentHelper.DebugModeEnabled = true;
         }
 
         public static TheoryData<string, bool, bool> GetWebHttpData() => new()
@@ -85,21 +52,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(GetData))]
-        public async Task SubmitsTraces(string metadataSchemaVersion, string binding, bool enableNewWcfInstrumentation, bool enableWcfObfuscation)
+        [CombinatorialOrPairwiseData]
+        public async Task SubmitsTraces(
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [CombinatorialValues("WSHttpBinding", "BasicHttpBinding", "NetTcpBinding", "Custom")] string binding,
+            bool enableNewWcfInstrumentation,
+            bool enableWcfObfuscation,
+            bool useOtelClientInstrumentation)
         {
+            // skip invalid combinations
+            if (binding == "Custom" && !(enableNewWcfInstrumentation && enableWcfObfuscation))
+            {
+                throw new SkipException("Custom binding sample only supports 'New' WCF");
+            }
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", enableNewWcfInstrumentation ? "true" : "false");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, enableWcfObfuscation ? "true" : "false");
+
+            if (useOtelClientInstrumentation)
+            {
+                SetEnvironmentVariable("USE_OTEL_CLIENT_INSTRUMENTATION", "1");
+            }
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
             var expectedSpanCount = binding switch
             {
-                "Custom" => 1,
-                _ => 14,
+                "Custom" => 26,
+                "NetTcpBinding" => 44,
+                "BasicHttpBinding" => 57,
+                "WSHttpBinding" => 64,
+                _ => throw new InvalidOperationException("Unknown binding " + binding),
             };
 
             using var telemetry = this.ConfigureTelemetry();
@@ -108,16 +93,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, arguments: $"{binding} Port={wcfPort}"))
             {
-                // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
-                // so we can wait on the exact number of spans we expect.
-                agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-
-                // The test adds a custom span to show that propagation works with WCF headers
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
-                var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation);
+                var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation, useOtelClientInstrumentation);
 
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseMethodName("_");
@@ -134,7 +113,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task WebHttp(string metadataSchemaVersion, bool enableNewWcfInstrumentation, bool enableWebHttpResourceNames)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             // When using the WebHttpBinding (not a real binding) we don't
             // care about ofuscation really, as it on(it doesn't do anything)
@@ -143,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
-            var expectedSpanCount = 5;
+            var expectedSpanCount = 16;
 
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
@@ -151,11 +129,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, arguments: $"WebHttpBinding Port={wcfPort}"))
             {
-                // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
-                // so we can wait on the exact number of spans we expect.
-                agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-                // The test adds a custom span to show that propagation works with WCF headers
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 

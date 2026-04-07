@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "1")]
 public class DataStreamsMonitoringRabbitMQTests : TestHelper
 {
     public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
@@ -35,6 +36,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
     public async Task HandleProduceAndConsume(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, "1");
 
         using var assertionScope = new AssertionScope();
@@ -59,6 +61,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
     public async Task ValidateSpanTags(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, "1");
 
         using var assertionScope = new AssertionScope();

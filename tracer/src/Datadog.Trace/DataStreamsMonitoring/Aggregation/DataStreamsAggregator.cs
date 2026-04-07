@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 
@@ -16,7 +17,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
 /// Aggregates multiple <see cref="StatsPoint"/>s into their correct buckets
 /// Note that this class is *not* thread safe
 /// </summary>
-internal class DataStreamsAggregator
+internal sealed class DataStreamsAggregator
 {
     // The inner dictionary is constrained in size by the number of unique hashes seen by the app
     // Unique hashes are unique paths from origin to here, which could be unbounded if there are loops
@@ -111,8 +112,8 @@ internal class DataStreamsAggregator
 
     /// <summary>
     /// Exports the currently aggregated stats
-    /// Internal for testing
     /// </summary>
+    [TestingAndPrivateOnly]
     internal List<SerializableStatsBucket>? Export(long maxBucketFlushTimeNs)
     {
         // we don't have overlapping buckets so any buckets with a start time greater than

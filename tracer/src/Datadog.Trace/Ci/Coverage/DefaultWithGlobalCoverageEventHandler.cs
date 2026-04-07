@@ -1,4 +1,4 @@
-// <copyright file="DefaultWithGlobalCoverageEventHandler.cs" company="Datadog">
+﻿// <copyright file="DefaultWithGlobalCoverageEventHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,12 +13,14 @@ using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
+internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
 {
     private readonly List<CoverageContextContainer> _coverages = new();
 
@@ -54,7 +56,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         {
             lock (_coverages)
             {
-                var sw = Stopwatch.StartNew();
+                var sw = RefStopwatch.Create();
                 var globalCoverage = new GlobalCoverageInfo();
 
                 IEnumerable<ModuleValue> GetModuleValues()
@@ -145,13 +147,13 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Global Coverage payload: {Payload}", JsonConvert.SerializeObject(globalCoverage));
+                    Log.Debug("Global Coverage payload: {Payload}", JsonHelper.SerializeObject(globalCoverage));
                 }
 
                 // Clean coverages
                 Clear();
 
-                Log.Information("Total time to calculate global coverage: {TotalMilliseconds}ms", sw.Elapsed.TotalMilliseconds);
+                Log.Information("Total time to calculate global coverage: {TotalMilliseconds}ms", sw.ElapsedMilliseconds);
                 return globalCoverage;
             }
         }

@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class KafkaProduceSyncDeliveryHandlerIntegration
+    public sealed class KafkaProduceSyncDeliveryHandlerIntegration
     {
-        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KafkaProduceSyncDeliveryHandlerIntegration>();
+        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(KafkaProduceSyncDeliveryHandlerIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -147,9 +147,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         if (!isError)
                         {
                             var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                            dataStreams.TrackBacklog(
-                                $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce",
-                                report.Offset.Value);
+                            var backlogTags = tags.ClusterId is null
+                                ? $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce"
+                                : $"kafka_cluster_id:{tags.ClusterId},partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce";
+
+                            dataStreams.TrackBacklog(backlogTags, report.Offset.Value);
                         }
                     }
 
@@ -169,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// Helper class for creating a <typeparamref name="TActionDelegate"/> that wraps an <see cref="Action{T}"/>,
         /// </summary>
         /// <typeparam name="TActionDelegate">Makes the assumption that TActionDelegate is an <see cref="Action{T}"/></typeparam>
-        internal static class CachedWrapperDelegate<TActionDelegate>
+        internal sealed class CachedWrapperDelegate<TActionDelegate>
         {
             private static readonly CreateWrapperDelegate _createWrapper;
 

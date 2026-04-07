@@ -1,4 +1,4 @@
-// <copyright file="AppEndpointsTelemetryCollector.cs" company="Datadog">
+﻿// <copyright file="AppEndpointsTelemetryCollector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry.Collectors;
 
-internal class AppEndpointsTelemetryCollector
+internal sealed class AppEndpointsTelemetryCollector
 {
     private ICollection<AppEndpointData>? _endpoints;
 
@@ -26,7 +26,7 @@ internal class AppEndpointsTelemetryCollector
     /// Returns the collected endpoints and clears the internal state.
     /// </summary>
     /// <returns>The collected endpoints.</returns>
-    public ICollection<AppEndpointData>? GetData()
+    public ICollection<AppEndpointData>? GetIncrementalData()
     {
         var endpoints = _endpoints;
         _endpoints = null;

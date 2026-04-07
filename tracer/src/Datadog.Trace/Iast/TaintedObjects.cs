@@ -1,4 +1,4 @@
-// <copyright file="TaintedObjects.cs" company="Datadog">
+﻿// <copyright file="TaintedObjects.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,10 +11,12 @@ using static InlineIL.IL.Emit;
 
 namespace Datadog.Trace.Iast
 {
-    internal class TaintedObjects
+    internal sealed class TaintedObjects
     {
-        private static readonly bool _largeNumericCache = false;
-        private readonly ITaintedMap _map;
+#pragma warning disable CA1802 // Use literals where appropriate - this looks like a literal, but it isn't really
+        private static readonly bool _largeNumericCache;
+#pragma warning restore CA1802
+        private readonly DefaultTaintedMap _map;
 
         static TaintedObjects()
         {
@@ -65,7 +67,7 @@ namespace Datadog.Trace.Iast
             if (objectToTaint is not null)
             {
                 var objectAsString = objectToTaint as string;
-                if (objectAsString is null || objectAsString != string.Empty)
+                if (objectAsString is null || !string.IsNullOrEmpty(objectAsString))
                 {
                     _map.Put(new TaintedObject(objectToTaint, ranges));
                 }

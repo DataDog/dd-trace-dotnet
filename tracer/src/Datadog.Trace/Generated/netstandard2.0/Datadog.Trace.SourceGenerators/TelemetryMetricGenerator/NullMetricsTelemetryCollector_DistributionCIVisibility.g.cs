@@ -9,7 +9,7 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class NullMetricsTelemetryCollector
+internal sealed partial class NullMetricsTelemetryCollector
 {
 
     public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)

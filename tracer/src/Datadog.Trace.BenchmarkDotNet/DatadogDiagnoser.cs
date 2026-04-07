@@ -72,9 +72,6 @@ public class DatadogDiagnoser : IDiagnoser
     public RunMode GetRunMode(BenchmarkCase benchmarkCase) => _enableProfiler && !ShouldIgnoreProfiler(benchmarkCase) ? RunMode.ExtraRun : RunMode.NoOverhead;
 
     /// <inheritdoc />
-    public bool RequiresBlockingAcknowledgments(BenchmarkCase benchmarkCase) => false;
-
-    /// <inheritdoc />
     public void Handle(HostSignal signal, DiagnoserActionParameters parameters)
     {
         var utcNow = DateTime.UtcNow;
@@ -132,7 +129,7 @@ public class DatadogDiagnoser : IDiagnoser
     private static IEnumerable<string?> GetHomeFolderPaths(DiagnoserActionParameters parameters)
     {
         // try to locate it from the environment variable
-        yield return EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+        yield return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DotNetTracerHome);
 
         // try to locate it inside the running benchmark folder
         yield return Path.Combine(parameters.Process.StartInfo.WorkingDirectory, "datadog");
@@ -216,12 +213,12 @@ public class DatadogDiagnoser : IDiagnoser
 
         if (!environment.TryGetValue(ConfigurationKeys.Environment, out _))
         {
-            environment[ConfigurationKeys.Environment] = tracer.Settings.Environment;
+            environment[ConfigurationKeys.Environment] = tracer.CurrentTraceSettings.Settings.Environment;
         }
 
         if (!environment.TryGetValue(ConfigurationKeys.ServiceVersion, out _))
         {
-            environment[ConfigurationKeys.ServiceVersion] = tracer.Settings.ServiceVersion;
+            environment[ConfigurationKeys.ServiceVersion] = tracer.CurrentTraceSettings.Settings.ServiceVersion;
         }
 
         const string ProfilerId = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";

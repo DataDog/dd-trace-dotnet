@@ -22,11 +22,11 @@ namespace Datadog.Trace.Sampling
 
         private int _refreshing;
 
-        private int _windowChecks = 0;
-        private int _windowAllowed = 0;
+        private int _windowChecks;
+        private int _windowAllowed;
 
-        private int _previousWindowChecks = 0;
-        private int _previousWindowAllowed = 0;
+        private int _previousWindowChecks;
+        private int _previousWindowAllowed;
 
         protected RateLimiter(int? maxTracesPerInterval, int? intervalMilliseconds = null)
         {

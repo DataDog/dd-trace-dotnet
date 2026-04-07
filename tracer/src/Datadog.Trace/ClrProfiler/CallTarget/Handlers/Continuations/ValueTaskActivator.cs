@@ -11,6 +11,7 @@ using System.Reflection.Emit;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
@@ -35,7 +36,7 @@ internal static class ValueTaskActivator<TValueTask>
         }
     }
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static Func<Task, TValueTask> CreateActivator()
     {
         var valueTaskType = typeof(TValueTask);
@@ -56,7 +57,7 @@ internal static class ValueTaskActivator<TValueTask>
         return (Func<Task, TValueTask>)createValueTaskMethod.CreateDelegate(typeof(Func<Task, TValueTask>));
     }
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static TValueTask FallbackActivator(Task task)
         => (TValueTask)System.Activator.CreateInstance(typeof(TValueTask), task)!;
 

@@ -1,4 +1,4 @@
-// <copyright file="BlockingAction.cs" company="Datadog">
+﻿// <copyright file="BlockingAction.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,7 @@ using System.Net;
 
 namespace Datadog.Trace.AppSec;
 
-internal record BlockingAction
+internal sealed record BlockingAction
 {
     public const string BlockDefaultActionName = "block";
 
@@ -26,4 +26,6 @@ internal record BlockingAction
     public string RedirectLocation { get; set; }
 
     public bool IsRedirect { get; set; }
+
+    public string SecurityResponseId { get; set; }
 }

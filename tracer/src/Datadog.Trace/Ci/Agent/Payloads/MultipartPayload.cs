@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -21,11 +20,9 @@ internal abstract class MultipartPayload : EventPlatformPayload
 
     private readonly EventsBuffer<IEvent> _events;
     private readonly List<MultipartFormItem> _items;
-    private readonly IFormatterResolver _formatterResolver;
     private readonly int _maxItemsPerPayload;
-    private readonly int _maxBytesPerPayload;
 
-    public MultipartPayload(TestOptimizationSettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
+    public MultipartPayload(TestOptimizationSettings settings, IFormatterResolver formatterResolver, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload)
         : base(settings)
     {
         if (maxBytesPerPayload < HeaderSize)
@@ -34,12 +31,10 @@ internal abstract class MultipartPayload : EventPlatformPayload
         }
 
         _maxItemsPerPayload = maxItemsPerPayload;
-        _maxBytesPerPayload = maxBytesPerPayload;
-        _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
         _items = new List<MultipartFormItem>(Math.Min(maxItemsPerPayload, DefaultMaxItemsPerPayload));
 
         // Because we don't know the size of the events array envelope we left 1024kb for that.
-        _events = new EventsBuffer<IEvent>(Math.Min(_maxBytesPerPayload, DefaultMaxBytesPerPayload) - HeaderSize, _formatterResolver);
+        _events = new EventsBuffer<IEvent>(Math.Min(maxBytesPerPayload, DefaultMaxBytesPerPayload) - HeaderSize, formatterResolver);
     }
 
     public override bool HasEvents => _events.Count > 0;

@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ba
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class Baggage_SetCurrent_Integration
+public sealed class Baggage_SetCurrent_Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref IDictionary<string, string?>? value)
     {

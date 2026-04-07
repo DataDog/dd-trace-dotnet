@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+extern alias AnalyzerCodeFixes;
+
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Analyzers.AspectAnalyzers;
 using Microsoft.CodeAnalysis;
@@ -10,14 +12,14 @@ using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.AspectAnalyzers.ReplaceAspectAnalyzer,
-    Datadog.Trace.Tools.Analyzers.AspectAnalyzers.ReplaceAspectCodeFixProvider,
+    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.AspectAnalyzers.ReplaceAspectCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Datadog.Trace.Tools.Analyzers.Tests.AspectAnalyzers;
 
 public class ReplaceAspectAnalyzerTests
 {
-    private const string DiagnosticId = ReplaceAspectAnalyzer.DiagnosticId;
+    private const string DiagnosticId = Diagnostics.ReplaceAspectDiagnosticId;
     private const DiagnosticSeverity Severity = ReplaceAspectAnalyzer.Severity;
 
     // No diagnostics expected to show up

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TestExtensionsSetBenchmarkMetadataIntegration
+public sealed class TestExtensionsSetBenchmarkMetadataIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTest, THostInfo, TJobInfo>(TTest test, in THostInfo hostInfo, in TJobInfo jobInfo)
         where THostInfo : IBenchmarkHostInfo

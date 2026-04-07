@@ -11,6 +11,7 @@ using System.Reflection.Emit;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 #pragma warning disable SA1649 // File name must match first type name
@@ -40,7 +41,7 @@ internal static class ValueTaskActivator<TValueTask, TResult>
         }
     }
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static Func<Task<TResult>, TValueTask> CreateTaskActivator()
     {
         var valueTaskType = typeof(TValueTask);
@@ -61,7 +62,7 @@ internal static class ValueTaskActivator<TValueTask, TResult>
         return (Func<Task<TResult>, TValueTask>)createValueTaskMethod.CreateDelegate(typeof(Func<Task<TResult>, TValueTask>));
     }
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static Func<TResult, TValueTask> CreateResultActivator()
     {
         var valueTaskType = typeof(TValueTask);
@@ -82,7 +83,7 @@ internal static class ValueTaskActivator<TValueTask, TResult>
         return (Func<TResult, TValueTask>)createValueTaskMethod.CreateDelegate(typeof(Func<TResult, TValueTask>));
     }
 
-    // Internal for testing
+    [TestingAndPrivateOnly]
     internal static TValueTask FallbackTaskActivator(Task<TResult> task)
         => (TValueTask)Activator.CreateInstance(typeof(TValueTask), task)!;
 

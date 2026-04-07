@@ -1,4 +1,4 @@
-// <copyright file="GraphQLCommon.cs" company="Datadog">
+﻿// <copyright file="GraphQLCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
-    internal class GraphQLCommon : GraphQLCommonBase
+    internal sealed class GraphQLCommon : GraphQLCommonBase
     {
         internal const string ExecuteAsyncMethodName = "ExecuteAsync";
         internal const string ReturnTypeName = "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>";
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
         internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -55,14 +55,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             try
             {
                 var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
-                string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
-                scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
+                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(ServiceName);
+                scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.GraphQL;
                 tags.Source = documentSource;
 
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
         internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IExecutionContext executionContext)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
         internal static Scope CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7 executionContext)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;

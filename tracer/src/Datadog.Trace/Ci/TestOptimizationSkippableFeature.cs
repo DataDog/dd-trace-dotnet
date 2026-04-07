@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationSkippableFeature.cs" company="Datadog">
+﻿// <copyright file="TestOptimizationSkippableFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
@@ -14,10 +13,10 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeature
+internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
-    private readonly Task<SkippableTestsDictionary> _skippableTestsTask;
+    private readonly Task<SkippableTestsDictionary>? _skippableTestsTask;
 
     private TestOptimizationSkippableFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
@@ -36,7 +35,7 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
         else
         {
             Log.Information("TestOptimizationSkippableFeature: Test skipping is disabled.");
-            _skippableTestsTask = Task.FromResult(new SkippableTestsDictionary());
+            _skippableTestsTask = null;
             Enabled = false;
         }
 
@@ -71,7 +70,7 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
             }
 
             skippableTestsBySuiteAndName.CorrelationId = skippeableTests.CorrelationId;
-            Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built.");
+            Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built. CorrelationId: {CorrelationId}", skippableTestsBySuiteAndName.CorrelationId);
             return skippableTestsBySuiteAndName;
         }
     }
@@ -85,7 +84,7 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
     {
         try
         {
-            _skippableTestsTask.SafeWait();
+            _skippableTestsTask?.SafeWait();
         }
         catch (Exception ex)
         {
@@ -95,17 +94,23 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
 
     public IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
     {
-        WaitForSkippableTaskToFinish();
-        return InternalGetSkippableTestsFromSuiteAndName(suite, name);
-    }
-
-    private IList<SkippableTest> InternalGetSkippableTestsFromSuiteAndName(string suite, string name)
-    {
-        var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
-        if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
-            testsInSuite.TryGetValue(name, out var tests))
+        if (_skippableTestsTask is null)
         {
-            return tests;
+            return [];
+        }
+
+        try
+        {
+            var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
+            if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
+                testsInSuite.TryGetValue(name, out var tests))
+            {
+                return tests;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "TestOptimizationSkippableFeature: Error waiting for skippable tests task to finish.");
         }
 
         return [];
@@ -113,17 +118,27 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
 
     public bool HasSkippableTests()
     {
+        if (_skippableTestsTask is null)
+        {
+            return false;
+        }
+
         var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
         return skippableTestsBySuiteAndName.Count > 0;
     }
 
     public string? GetCorrelationId()
     {
+        if (_skippableTestsTask is null)
+        {
+            return null;
+        }
+
         var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
         return skippableTestsBySuiteAndName.CorrelationId;
     }
 
-    internal class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
+    internal sealed class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
     {
         public string? CorrelationId { get; set; }
     }

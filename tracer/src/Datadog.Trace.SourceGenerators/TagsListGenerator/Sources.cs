@@ -88,12 +88,24 @@ namespace ");
                       .Append(@""");");
 
                     sb.Append(
-                            @"
+                           @"
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ")
-                        .Append(property.PropertyName)
-                        .Append(@"Bytes => new byte[] { ")
-                        .Append(tagByteArray)
-                        .Append(@" };");
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes => new byte[] { ")
+                      .Append(tagByteArray)
+                      .Append(@" };")
+                      .Append(
+                           @"
+#else
+        private static readonly byte[] ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes = new byte[] { ")
+                      .Append(tagByteArray)
+                      .Append(@" };")
+                      .Append(
+                           @"
+#endif");
                 }
             }
 
@@ -112,12 +124,24 @@ namespace ");
                       .Append(@""");");
 
                     sb.Append(
-                            @"
+                           @"
+#if NETCOREAPP
         private static ReadOnlySpan<byte> ")
-                        .Append(property.PropertyName)
-                        .Append(@"Bytes => new byte[] { ")
-                        .Append(tagByteArray)
-                        .Append(@" };");
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes => new byte[] { ")
+                      .Append(tagByteArray)
+                      .Append(@" };")
+                      .Append(
+                           @"
+#else
+        private static readonly byte[] ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes = new byte[] { ")
+                      .Append(tagByteArray)
+                      .Append(@" };")
+                      .Append(
+                           @"
+#endif");
                 }
 
                 sb.Append(
@@ -146,7 +170,7 @@ namespace ");
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

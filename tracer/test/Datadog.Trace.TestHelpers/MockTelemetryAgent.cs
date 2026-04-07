@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -73,13 +74,6 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public bool OptionalHeaders { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to skip serialization of traces.
-        /// </summary>
-        public bool ShouldDeserializeTraces { get; set; } = true;
-
         /// <summary>
         /// Gets the TCP port that this Agent is listening on.
         /// Can be different from <see cref="MockTelemetryAgent"/>'s <c>initialPort</c>
@@ -129,25 +123,29 @@ namespace Datadog.Trace.TestHelpers
             _listener?.Close();
         }
 
-        internal static TelemetryData DeserializeResponse(Stream inputStream, string apiVersion, string requestType)
+        internal static TelemetryData DeserializeResponse(Stream inputStream, string apiVersion, string requestType, bool compressed)
         {
             return apiVersion switch
             {
-                TelemetryConstants.ApiVersionV2 => DeserializeV2(inputStream, requestType),
+                TelemetryConstants.ApiVersionV2 => DeserializeV2(inputStream, requestType, compressed),
                 _ => throw new Exception($"Unknown telemetry api version: {apiVersion}"),
             };
 
-            static TelemetryData DeserializeV2(Stream inputStream, string requestType)
+            static TelemetryData DeserializeV2(Stream inputStream, string requestType, bool compressed)
             {
                 if (!TelemetryConverter.V2Serializers.TryGetValue(requestType, out var serializer))
                 {
                     throw new Exception($"Unknown V2 telemetry request type {requestType}");
                 }
 
-                using var sr = new StreamReader(inputStream);
-                var text = sr.ReadToEnd();
-                var tr = new StringReader(text);
-                using var jsonTextReader = new JsonTextReader(tr);
+                if (compressed)
+                {
+                    inputStream = new GZipStream(inputStream, CompressionMode.Decompress, leaveOpen: true);
+                }
+
+                using var sr = new StreamReader(inputStream, Encoding.UTF8);
+                using var jsonTextReader = new JsonTextReader(sr);
+
                 var telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
 
                 return telemetry;
@@ -158,21 +156,9 @@ namespace Datadog.Trace.TestHelpers
         {
             var apiVersion = ctx.Request.Headers[TelemetryConstants.ApiVersionHeader];
             var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
+            var compressed = ctx.Request.Headers["Content-Encoding"].Equals("gzip", StringComparison.OrdinalIgnoreCase);
 
-            var inputStream = ctx.Request.InputStream;
-
-            if (OptionalHeaders && (apiVersion == null || requestType == null))
-            {
-                using var sr = new StreamReader(inputStream);
-                var text = sr.ReadToEnd();
-
-                var json = JObject.Parse(text);
-                apiVersion = json["api_version"].Value<string>();
-                requestType = json["request_type"].Value<string>();
-                inputStream = new MemoryStream(Encoding.UTF8.GetBytes(text));
-            }
-
-            var telemetry = DeserializeResponse(inputStream, apiVersion, requestType);
+            var telemetry = DeserializeResponse(ctx.Request.InputStream, apiVersion, requestType, compressed);
             Telemetry.Push(telemetry);
 
             lock (this)

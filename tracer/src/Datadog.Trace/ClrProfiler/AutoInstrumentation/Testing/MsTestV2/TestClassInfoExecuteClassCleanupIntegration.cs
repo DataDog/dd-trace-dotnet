@@ -81,3 +81,41 @@ public static class TestClassInfoExecuteClassCleanupIntegrationV3_9
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo.ExecuteClassCleanup() calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = ["Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    MethodName = "ExecuteClassCleanupAsync",
+    ReturnTypeName = ClrNames.Ignore,
+    ParameterTypeNames = [ClrNames.Ignore],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    MethodName = "ExecuteClassCleanupAsync",
+    ReturnTypeName = ClrNames.Ignore,
+    ParameterTypeNames = [ClrNames.Ignore],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestClassInfoExecuteClassCleanupAsyncIntegration
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TArg>(TTarget instance, TArg? arg)
+        where TTarget : ITestClassInfo
+        => TestClassInfoExecuteClassCleanupIntegration.OnMethodBegin(instance);
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, state);
+        return returnValue;
+    }
+}

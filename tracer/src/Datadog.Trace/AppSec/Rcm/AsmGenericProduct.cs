@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class AsmGenericProduct : IAsmConfigUpdater
+internal sealed class AsmGenericProduct : IAsmConfigUpdater
 {
     private readonly Func<Dictionary<string, JToken>> _getCollection;
 
@@ -22,21 +22,33 @@ internal class AsmGenericProduct : IAsmConfigUpdater
         _getCollection = getCollection;
     }
 
-    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfigurationPath>? removedConfigs, List<RemoteConfiguration>? files)
     {
         var collection = _getCollection();
-        foreach (var file in files)
+
+        if (removedConfigs is { Count: > 0 })
         {
-            var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<JToken>();
-            if (payload.TypedFile == null)
+            foreach (var configurationPath in removedConfigs)
             {
-                continue;
+                collection.Remove(configurationPath.Path);
             }
+        }
 
-            var asmConfig = payload.TypedFile;
-            var asmConfigName = payload.Name;
+        if (files is { Count: > 0 })
+        {
+            foreach (var file in files)
+            {
+                var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<JToken>();
+                if (payload.TypedFile == null)
+                {
+                    continue;
+                }
 
-            collection[asmConfigName] = asmConfig;
+                var asmConfig = payload.TypedFile;
+                var asmConfigName = payload.Name;
+
+                collection[asmConfigName] = asmConfig;
+            }
         }
     }
 

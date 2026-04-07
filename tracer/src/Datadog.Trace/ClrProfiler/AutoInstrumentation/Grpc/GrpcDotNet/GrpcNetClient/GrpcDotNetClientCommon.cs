@@ -9,6 +9,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -22,10 +23,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetClientCommon));
 
+#if NETCOREAPP
+        public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
+#else
         public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
             where TRequest : IHttpRequestMessage
+#endif
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
+            var settings = tracer.CurrentTraceSettings.Settings;
+            if (!settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
             {
                 return null;
             }
@@ -43,11 +49,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 tags.Host = HttpRequestUtils.GetNormalizedHost(grpcCall.Channel.Address.Host);
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
-                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
-                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
+                var (serviceName, serviceNameSource) = clientSchema.GetServiceNameMetadata(ClientSchema.Component.Grpc);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
-                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
+                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, startTime: null);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Grpc;
@@ -56,13 +62,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 // add distributed tracing headers to the HTTP request
                 // These will be overwritten by the HttpClient integration if that is enabled, per the RFC
                 var context = new PropagationContext(span.Context, Baggage.Current);
-                tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(requestMessage.Headers));
+#if NETCOREAPP
+                var headers = (requestMessage as System.Net.Http.HttpRequestMessage)?.Headers;
+#else
+                var headers = requestMessage.Headers;
+#endif
+                tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
                 // Add the request metadata as tags
                 if (grpcCall.Options.Headers is { Count: > 0 })
                 {
                     var metadata = new MetadataHeadersCollection(grpcCall.Options.Headers);
-                    span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
@@ -77,7 +88,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
         public static void RecordResponseMetadataAndStatus<TGrpcCall>(Tracer tracer, TGrpcCall instance, int grpcStatusCode, string errorMessage, Exception? ex)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
+            var settings = tracer.CurrentTraceSettings.Settings;
+            if (!settings.IsIntegrationEnabled(IntegrationId.Grpc)
              || instance is null
              || tracer.ActiveScope?.Span is not Span { Tags: GrpcClientTags } span)
             {
@@ -90,20 +102,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             if (grpcCall.HttpResponse is { Headers: { } responseHeaders })
             {
                 var metadata = new HttpResponseHeadersCollection(responseHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             // Note that this will be null if they haven't read the response body yet, but we can't force that on users
             if (grpcCall.TryGetTrailers(out var trailers) && trailers is { Count: > 0 })
             {
                 var metadata = new MetadataHeadersCollection(trailers);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
+#if NETCOREAPP
+            else if (grpcCall.HttpResponse is { TrailingHeaders: { } trailingHeaders })
+#else
             else if (grpcCall.HttpResponse is { } httpResponse
                   && httpResponse.DuckCast<HttpResponseStruct>().TrailingHeaders is { } trailingHeaders)
+#endif
             {
                 var metadata = new HttpResponseHeadersCollection(trailingHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             GrpcCommon.RecordFinalClientSpanStatus(Tracer.Instance, grpcStatusCode, errorMessage, ex);

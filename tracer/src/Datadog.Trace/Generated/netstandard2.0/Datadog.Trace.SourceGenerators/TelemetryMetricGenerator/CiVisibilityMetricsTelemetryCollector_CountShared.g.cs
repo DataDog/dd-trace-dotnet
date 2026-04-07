@@ -9,9 +9,9 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class CiVisibilityMetricsTelemetryCollector
+internal sealed partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountSharedLength = 320;
+    private const int CountSharedLength = 336;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> values.
@@ -28,6 +28,14 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:opentracing", "error_type:invoker" }),
             new(new[] { "integration_name:opentracing", "error_type:execution" }),
             new(new[] { "integration_name:opentracing", "error_type:missing_member" }),
+            new(new[] { "integration_name:version_conflict", "error_type:duck_typing" }),
+            new(new[] { "integration_name:version_conflict", "error_type:invoker" }),
+            new(new[] { "integration_name:version_conflict", "error_type:execution" }),
+            new(new[] { "integration_name:version_conflict", "error_type:missing_member" }),
+            new(new[] { "integration_name:open_feature", "error_type:duck_typing" }),
+            new(new[] { "integration_name:open_feature", "error_type:invoker" }),
+            new(new[] { "integration_name:open_feature", "error_type:execution" }),
+            new(new[] { "integration_name:open_feature", "error_type:missing_member" }),
             new(new[] { "integration_name:ciapp", "error_type:duck_typing" }),
             new(new[] { "integration_name:ciapp", "error_type:invoker" }),
             new(new[] { "integration_name:ciapp", "error_type:execution" }),
@@ -264,6 +272,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:azureservicebus", "error_type:invoker" }),
             new(new[] { "integration_name:azureservicebus", "error_type:execution" }),
             new(new[] { "integration_name:azureservicebus", "error_type:missing_member" }),
+            new(new[] { "integration_name:azureeventhubs", "error_type:duck_typing" }),
+            new(new[] { "integration_name:azureeventhubs", "error_type:invoker" }),
+            new(new[] { "integration_name:azureeventhubs", "error_type:execution" }),
+            new(new[] { "integration_name:azureeventhubs", "error_type:missing_member" }),
             new(new[] { "integration_name:systemrandom", "error_type:duck_typing" }),
             new(new[] { "integration_name:systemrandom", "error_type:invoker" }),
             new(new[] { "integration_name:systemrandom", "error_type:execution" }),
@@ -340,6 +352,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:protobuf", "error_type:invoker" }),
             new(new[] { "integration_name:protobuf", "error_type:execution" }),
             new(new[] { "integration_name:protobuf", "error_type:missing_member" }),
+            new(new[] { "integration_name:hangfire", "error_type:duck_typing" }),
+            new(new[] { "integration_name:hangfire", "error_type:invoker" }),
+            new(new[] { "integration_name:hangfire", "error_type:execution" }),
+            new(new[] { "integration_name:hangfire", "error_type:missing_member" }),
         };
 
     /// <summary>
@@ -348,7 +364,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountSharedEntryCounts { get; }
-        = new int[]{ 320, };
+        = new int[]{ 336, };
 
     public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {

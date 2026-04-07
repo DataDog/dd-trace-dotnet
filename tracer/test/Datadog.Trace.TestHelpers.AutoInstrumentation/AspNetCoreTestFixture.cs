@@ -86,7 +86,7 @@ namespace Datadog.Trace.TestHelpers
                 WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}");
                 Process = await helper.StartSample(Agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
 
-                var mutex = new ManualResetEventSlim();
+                using var mutex = new ManualResetEventSlim();
 
                 int? port = null;
 

@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class KafkaConsumerConsumeIntegration
+    public sealed class KafkaConsumerConsumeIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     consumeResult.Offset,
                     consumeResult.Message);
 
-                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled)
+                if (!Tracer.Instance.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // Close and dispose the scope immediately
                     scope.DisposeWithException(exception);

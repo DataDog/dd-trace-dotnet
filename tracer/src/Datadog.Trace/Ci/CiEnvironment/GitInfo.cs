@@ -1,4 +1,4 @@
-// <copyright file="GitInfo.cs" company="Datadog">
+﻿// <copyright file="GitInfo.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,11 +12,12 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
-internal class GitInfo : IGitInfo
+internal sealed class GitInfo : IGitInfo
 {
+    private const string DatadogTraceToolsRunnerAssembly = "Datadog.Trace.Tools.Runner.dll";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitInfo));
+    private static readonly string? RuntimeFolder = Path.GetDirectoryName(typeof(string).Assembly.Location);
     private static IGitInfoProvider[] _gitInfoProviders = [
-        ManualParserGitInfoProvider.Instance,
         GitCommandGitInfoProvider.Instance,
     ];
 
@@ -121,8 +122,30 @@ internal class GitInfo : IGitInfo
     public static IGitInfo GetCurrent()
     {
         List<string>? errors = null;
-        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
+        List<string> searchPaths = new();
+
+        var baseDirectory = AppContext.BaseDirectory;
+        if (!baseDirectory.Contains("/dotnet/sdk") && !string.IsNullOrWhiteSpace(RuntimeFolder) && !baseDirectory.Contains(RuntimeFolder))
+        {
+            if (!File.Exists(Path.Combine(baseDirectory, DatadogTraceToolsRunnerAssembly)))
+            {
+                searchPaths.Add(baseDirectory);
+            }
+        }
+
+        searchPaths.Add(Environment.CurrentDirectory);
+
+        DirectoryInfo? gitDirectory = null;
+        foreach (var sp in searchPaths)
+        {
+            Log.Information("GitInfo: Using directory: {Directory}", sp);
+            gitDirectory = GetParentGitFolder(sp);
+            if (gitDirectory is not null)
+            {
+                break;
+            }
+        }
+
         if (gitDirectory != null)
         {
             foreach (var provider in _gitInfoProviders)
@@ -190,6 +213,11 @@ internal class GitInfo : IGitInfo
             catch (DirectoryNotFoundException ex)
             {
                 Log.Warning(ex, "Get directories failed with DirectoryNotFoundException");
+                return null;
+            }
+            catch (IOException ex)
+            {
+                Log.Warning(ex, "Get directories failed with IOException");
                 return null;
             }
             catch (UnauthorizedAccessException ex)

@@ -27,6 +27,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
+    MethodName = "RunAssemblyInitialize",
+    ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.TestContext"],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestAssemblyInfoRunAssemblyInitializeIntegration

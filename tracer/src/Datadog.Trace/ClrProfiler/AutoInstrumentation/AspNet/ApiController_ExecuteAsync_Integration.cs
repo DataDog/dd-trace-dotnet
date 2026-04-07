@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ApiController_ExecuteAsync_Integration
+    public sealed class ApiController_ExecuteAsync_Integration
     {
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             else
             {
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(HttpContext.Current, scope);
-                scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true, Tracer.Instance.Settings);
+                scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
                 scope.Dispose();
             }
 
@@ -136,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private static void OnRequestCompletedAfterException(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-            scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+            scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
             scope.Span.Finish(finishTime);
         }
     }

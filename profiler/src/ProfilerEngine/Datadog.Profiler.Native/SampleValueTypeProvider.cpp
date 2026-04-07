@@ -16,23 +16,28 @@ std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::GetOrRegis
 {
     std::vector<Offset> offsets;
     offsets.reserve(valueTypes.size());
+    bool incrementIndex = false;
 
     for (auto& valueType : valueTypes)
     {
-        // set the same index for all
-        valueType.Index = _nextIndex;
-
         size_t idx = GetOffset(valueType);
         if (idx == -1)
         {
+            incrementIndex = true;
+            // set the same index for all
+            valueType.Index = _nextIndex;
+
             idx = _sampleTypeDefinitions.size();
             _sampleTypeDefinitions.push_back(valueType);
         }
         offsets.push_back(idx);
     }
 
-    // the next set of SampleValueType will have a different index
-    _nextIndex++;
+    if (incrementIndex)
+    {
+        // the next set of SampleValueType will have a different index
+        _nextIndex++;
+    }
 
     return offsets;
 }

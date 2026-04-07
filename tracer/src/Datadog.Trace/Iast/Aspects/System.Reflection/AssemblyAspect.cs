@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Reflection;
 [AspectClass("mscorlib,netstandard,System.Runtime", AspectType.Sink, VulnerabilityType.ReflectionInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class AssemblyAspect
+public sealed class AssemblyAspect
 {
     /// <summary>
     /// System.Reflection Assembly.Load aspects

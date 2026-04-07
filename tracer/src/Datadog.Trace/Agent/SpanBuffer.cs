@@ -12,13 +12,11 @@ using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Agent
 {
-    internal class SpanBuffer
+    internal sealed class SpanBuffer
     {
-        internal const int HeaderSize = 5;
         internal const int InitialBufferSize = 64 * 1024;
 
-        private readonly IMessagePackFormatter<TraceChunkModel> _formatter;
-        private readonly IFormatterResolver _formatterResolver;
+        private readonly ISpanBufferSerializer _serializer;
         private readonly object _syncRoot = new();
         private readonly int _maxBufferSize;
 
@@ -26,18 +24,17 @@ namespace Datadog.Trace.Agent
         private bool _locked;
         private int _offset;
 
-        public SpanBuffer(int maxBufferSize, IFormatterResolver formatterResolver)
+        public SpanBuffer(int maxBufferSize, ISpanBufferSerializer serializer)
         {
-            if (maxBufferSize < HeaderSize)
+            if (maxBufferSize < serializer.HeaderSize)
             {
-                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {HeaderSize}", nameof(maxBufferSize));
+                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {serializer.HeaderSize}", nameof(maxBufferSize));
             }
 
             _maxBufferSize = maxBufferSize;
-            _offset = HeaderSize;
+            _offset = serializer.HeaderSize;
             _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
-            _formatterResolver = formatterResolver;
-            _formatter = _formatterResolver.GetFormatter<TraceChunkModel>();
+            _serializer = serializer;
         }
 
         public enum WriteStatus
@@ -71,9 +68,9 @@ namespace Datadog.Trace.Agent
         internal bool IsLocked => _locked;
 
         // For tests only
-        internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
+        internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
 
-        public WriteStatus TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
+        public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
         {
             bool lockTaken = false;
 
@@ -91,20 +88,11 @@ namespace Datadog.Trace.Agent
                 // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
                 // the idea is that as we refactor further, we can pass more than just the spans,
                 // and these values can come directly from the trace context.
-                var traceChunk = new TraceChunkModel(spans, samplingPriority);
+                var traceChunk = new TraceChunkModel(in spans, samplingPriority, isFirstChunkInPayload: TraceCount == 0);
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
-                int size;
-
-                if (_formatter is SpanMessagePackFormatter spanFormatter)
-                {
-                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver, maxSize: _maxBufferSize);
-                }
-                else
-                {
-                    size = _formatter.Serialize(ref temporaryBuffer, 0, traceChunk, _formatterResolver);
-                }
+                int size = _serializer.SerializeSpans(ref temporaryBuffer, 0, traceChunk, _offset, maxSize: _maxBufferSize);
 
                 if (size == 0)
                 {
@@ -145,7 +133,9 @@ namespace Datadog.Trace.Agent
                 }
 
                 // Use a fixed-size header
-                MessagePackBinary.WriteArrayHeaderForceArray32Block(ref _buffer, 0, (uint)TraceCount);
+                _serializer.WriteHeader(ref _buffer, 0, TraceCount);
+                int addedBytes = _serializer.FinishBody(ref _buffer, _offset, _maxBufferSize);
+                _offset += addedBytes;
                 _locked = true;
 
                 return true;
@@ -156,7 +146,7 @@ namespace Datadog.Trace.Agent
         {
             lock (_syncRoot)
             {
-                _offset = HeaderSize;
+                _offset = _serializer.HeaderSize;
                 TraceCount = 0;
                 SpanCount = 0;
                 IsFull = false;

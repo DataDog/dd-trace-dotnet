@@ -1,4 +1,4 @@
-// <copyright file="AssemblyFilter.cs" company="Datadog">
+﻿// <copyright file="AssemblyFilter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,11 +9,10 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
-    internal class AssemblyFilter
+    internal static class AssemblyFilter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyFilter));
 

@@ -31,4 +31,17 @@ internal class TrackingNames
     public const string AssemblyCallTargetDefinitionSource = nameof(AssemblyCallTargetDefinitionSource);
     public const string AdoNetCallTargetDefinitionSource = nameof(AdoNetCallTargetDefinitionSource);
     public const string AdoNetSignatures = nameof(AdoNetSignatures);
+
+    // Configuration key matcher
+    public const string ConfigurationKeysAdditionalText = nameof(ConfigurationKeysAdditionalText);
+    public const string ConfigurationKeysYamlFile = nameof(ConfigurationKeysYamlFile);
+    public const string ConfigurationKeysParseYaml = nameof(ConfigurationKeysParseYaml);
+    public const string ConfigurationKeysParseConfiguration = nameof(ConfigurationKeysParseConfiguration);
+    public const string ConfigurationKeyMatcherDiagnostics = nameof(ConfigurationKeyMatcherDiagnostics);
+    public const string ConfigurationKeyMatcherValidData = nameof(ConfigurationKeyMatcherValidData);
+
+    // Configuration key generator
+    public const string ConfigurationKeysGenYamlFile = nameof(ConfigurationKeysGenYamlFile);
+    public const string ConfigurationKeysGenParseYaml = nameof(ConfigurationKeysGenParseYaml);
+    public const string ConfigurationKeysGenParseConfiguration = nameof(ConfigurationKeysGenParseConfiguration);
 }

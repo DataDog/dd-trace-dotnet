@@ -13,6 +13,9 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -27,7 +30,7 @@ namespace Datadog.Trace.Tests.Agent
             const int bucketDurationSeconds = 1;
             var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
 
-            var mutex = new ManualResetEventSlim();
+            using var mutex = new ManualResetEventSlim();
 
             int invocationCount = 0;
 
@@ -44,7 +47,7 @@ namespace Datadog.Trace.Tests.Agent
                 .Returns(Task.FromResult(true));
 
             // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
-            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), new StubDiscoveryService());
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), new StubDiscoveryService(), isOtlp: false);
 
             try
             {
@@ -79,7 +82,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // First, validate that Flush does call SendStatsAsync even if disposed
             // If this behavior change then the test needs to be rewritten
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService());
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), isOtlp: false);
 
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
@@ -93,7 +96,7 @@ namespace Datadog.Trace.Tests.Agent
             api.Reset();
 
             // Now the actual test
-            aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService());
+            aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), isOtlp: false);
             await aggregator.DisposeAsync();
 
             await aggregator.Flush();
@@ -112,7 +115,7 @@ namespace Datadog.Trace.Tests.Agent
             ulong id = 0;
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
 
             try
             {
@@ -171,7 +174,7 @@ namespace Datadog.Trace.Tests.Agent
                 span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
 
                 span.ResourceName = resourceName;
-                span.ServiceName = serviceName;
+                span.SetService(serviceName, null);
                 span.OperationName = operationName;
                 span.Type = type;
                 span.SetTag(Tags.HttpStatusCode, httpStatusCode);
@@ -192,7 +195,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
 
             try
             {
@@ -201,15 +204,15 @@ namespace Datadog.Trace.Tests.Agent
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
-                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 childSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 measuredChildSpan1.OperationName = "child.op1";
                 measuredChildSpan1.SetTag(Tags.Measured, "1");
                 measuredChildSpan1.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 measuredChildSpan2.OperationName = "child.op2";
                 measuredChildSpan2.SetTag(Tags.Measured, "1");
                 measuredChildSpan2.SetDuration(TimeSpan.FromMilliseconds(100));
@@ -255,7 +258,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
 
             try
             {
@@ -271,7 +274,7 @@ namespace Datadog.Trace.Tests.Agent
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
                 // Create a new child span that is a service entry span, which means it will have stats computed for it
-                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service-http-client"), start);
+                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service-http-client"), start);
                 httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
                 aggregator.Add(simpleSpan, parentSpan, snapshotSpan, httpClientServiceSpan);
@@ -325,7 +328,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
 
             try
             {
@@ -368,7 +371,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
 
             try
             {
@@ -414,6 +417,45 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
+        [Fact]
+        public void CreateStatsAggregator_Otlp_AlwaysComputesStats()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            aggregator.CanComputeStats.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Otlp_ShouldKeepTraces_TrueWhenTraceSampled()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoKeep, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Otlp_ShouldKeepTraces_FalseWhenTraceNotSampled()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoReject, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(traceChunk).Should().BeFalse();
+        }
+
         private static TracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
         {
             var settings = statsComputationIntervalSeconds.HasValue
@@ -447,6 +489,7 @@ namespace Datadog.Trace.Tests.Agent
                 callback(new AgentConfiguration(
                              configurationEndpoint: "configurationEndpoint",
                              debuggerEndpoint: "debuggerEndpoint",
+                             debuggerV2Endpoint: "debuggerV2Endpoint",
                              diagnosticsEndpoint: "diagnosticsEndpoint",
                              symbolDbEndpoint: "symbolDbEndpoint",
                              agentVersion: "agentVersion",
@@ -455,6 +498,7 @@ namespace Datadog.Trace.Tests.Agent
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                              telemetryProxyEndpoint: "telemetryProxyEndpoint",
                              tracerFlareEndpoint: "tracerFlareEndpoint",
+                             containerTagsHash: "containerTagsHash",
                              clientDropP0: true,
                              spanMetaStructs: true,
                              spanEvents: true));
@@ -465,6 +509,10 @@ namespace Datadog.Trace.Tests.Agent
             }
 
             public Task DisposeAsync() => Task.CompletedTask;
+
+            public void SetCurrentConfigStateHash(string configStateHash)
+            {
+            }
         }
     }
 }

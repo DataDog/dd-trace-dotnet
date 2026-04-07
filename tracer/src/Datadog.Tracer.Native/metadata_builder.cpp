@@ -64,14 +64,24 @@ HRESULT MetadataBuilder::FindIntegrationTypeRef(const IntegrationDefinition& int
 
     HRESULT hr;
     type_ref = mdTypeRefNil;
+    bool is_same_assembly = false;
 
     if (metadata_.assemblyName == integration_definition.integration_type.assembly.name)
     {
-        // type is defined in this assembly
-        hr = metadata_emit_->DefineTypeRefByName(module_, integration_definition.integration_type.name.c_str(),
+        // Name matches, now check the version, in case we have multiple versions of the assembly loaded
+        // TODO: we should already have this data, so should probably just pass that data through,
+        // but it's a bit of a pain, to thread that needle right now
+        const auto& current_assembly_metadata = GetAssemblyImportMetadata(assembly_import_);
+        if (current_assembly_metadata.version == integration_definition.integration_type.assembly.version)
+        {
+            // type is defined in this assembly (same name AND version)
+            hr = metadata_emit_->DefineTypeRefByName(module_, integration_definition.integration_type.name.c_str(),
                                                  &type_ref);
+            is_same_assembly = true;
+        }
     }
-    else
+
+    if (!is_same_assembly)
     {
         // type is defined in another assembly,
         // find a reference to the assembly where type lives

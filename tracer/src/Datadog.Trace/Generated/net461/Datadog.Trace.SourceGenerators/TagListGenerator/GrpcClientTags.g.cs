@@ -15,9 +15,17 @@ namespace Datadog.Trace.Tagging
     partial class GrpcClientTags
     {
         // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
         // PeerHostnameBytes = MessagePack.Serialize("peer.hostname");
+#if NETCOREAPP
         private static ReadOnlySpan<byte> PeerHostnameBytes => new byte[] { 173, 112, 101, 101, 114, 46, 104, 111, 115, 116, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] PeerHostnameBytes = new byte[] { 173, 112, 101, 101, 114, 46, 104, 111, 115, 116, 110, 97, 109, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -29,7 +37,7 @@ namespace Datadog.Trace.Tagging
             };
         }
 
-        public override void SetTag(string key, string value)
+        public override void SetTag(string key, string? value)
         {
             switch(key)
             {

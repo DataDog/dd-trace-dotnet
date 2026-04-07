@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         IntegrationName = IbmMqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class GetIntegration
+    public sealed class GetIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TOptions>(TTarget instance, TMessage msg, TOptions options, int maxSize)
         {
@@ -57,7 +57,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                             Log.Error(ex, "Error extracting PathwayContext from IbmMq message");
                         }
 
-                        var edgeTags = new[] { "direction:in", $"topic:{instance.Name}", $"type:{IbmMqConstants.QueueType}" };
+                        var queueName = IbmMqHelper.SanitizeQueueName(instance.Name);
+                        var edgeTags = new[] { "direction:in", $"topic:{queueName}", $"type:{IbmMqConstants.QueueType}" };
 
                         scope.Span.SetDataStreamsCheckpoint(
                             dataStreams,

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncVoid"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncVoid"
               }
             },
             "locals": {
@@ -44,6 +42,8 @@
         "timestamp": "ScrubbedValue"
       }
     },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
     "logger": {
       "method": "VoidTaskMethod",
       "name": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid",

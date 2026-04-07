@@ -15,12 +15,29 @@ using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 
+internal static class IntegrationOptions
+{
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void RestoreScopeFromAsyncExecution(in CallTargetState state)
+    {
+        // Restore previous scope and the previous DistributedTrace if there is a continuation
+        // This is used to mimic the ExecutionContext copy from the StateMachine
+        if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+        {
+            rawAccess.Active = state.PreviousScope;
+            DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
+        }
+    }
+}
+
+#pragma warning disable SA1402
 internal static class IntegrationOptions<TIntegration, TTarget>
+#pragma warning restore SA1402
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationOptions<TIntegration, TTarget>));
 
     private static readonly Lazy<IntegrationId?> _integrationId = new(() => InstrumentationDefinitions.GetIntegrationId(typeof(TIntegration).FullName, typeof(TTarget)));
-    private static volatile bool _disableIntegration = false;
+    private static volatile bool _disableIntegration;
 
     internal static bool IsIntegrationEnabled => !_disableIntegration;
 

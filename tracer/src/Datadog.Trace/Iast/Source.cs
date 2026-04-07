@@ -1,4 +1,4 @@
-// <copyright file="Source.cs" company="Datadog">
+﻿// <copyright file="Source.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
-internal class Source
+internal sealed class Source
 {
     private const string RedactedSensitiveBuffer = "****************";
     private const string RedactedSourceBuffer = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -89,7 +89,7 @@ internal class Source
 
     private static int ComputeLength(string value)
     {
-        if (value == null || value == string.Empty)
+        if (string.IsNullOrEmpty(value))
         {
             return 0;
         }

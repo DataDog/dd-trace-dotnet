@@ -5,7 +5,6 @@
     <DefineConstants Condition="'$(ApiVersion)'&lt;'3.1.2'">$(DefineConstants);COUCHBASE_3_0</DefineConstants>
     <OutputType>Exe</OutputType>
     <RequiresDockerDependency>All</RequiresDockerDependency>
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 

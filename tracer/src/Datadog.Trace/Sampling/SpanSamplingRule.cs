@@ -1,4 +1,4 @@
-// <copyright file="SpanSamplingRule.cs" company="Datadog">
+﻿// <copyright file="SpanSamplingRule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling
@@ -15,7 +16,7 @@ namespace Datadog.Trace.Sampling
     /// <summary>
     /// Represents a sampling rules for single span ingestion.
     /// </summary>
-    internal class SpanSamplingRule : ISpanSamplingRule
+    internal sealed class SpanSamplingRule : ISpanSamplingRule
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanSamplingRule>();
 
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Sampling
         private readonly Regex _resourceNameRegex;
         private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
-        private readonly IRateLimiter _limiter;
+        private readonly SpanRateLimiter _limiter;
         private bool _regexTimedOut;
 
         /// <summary>
@@ -100,7 +101,7 @@ namespace Datadog.Trace.Sampling
             try
             {
                 if (!string.IsNullOrWhiteSpace(configuration) &&
-                    JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
+                    JsonHelper.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
                 {
                     var samplingRules = new List<SpanSamplingRule>(rules.Count);
 
@@ -122,7 +123,7 @@ namespace Datadog.Trace.Sampling
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to parse the span sampling rules.");
+                Log.ErrorSkipTelemetry(e, "Unable to parse the span sampling rules.");
             }
 
             return [];
@@ -178,7 +179,7 @@ namespace Datadog.Trace.Sampling
         }
 
         [Serializable]
-        internal class SpanSamplingRuleConfig
+        internal sealed class SpanSamplingRuleConfig
         {
             [JsonProperty(PropertyName = "service")]
             public string ServiceNameGlob { get; set; } = "*";

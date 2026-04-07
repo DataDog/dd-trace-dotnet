@@ -1,4 +1,4 @@
-// <copyright file="TelemetrySettings.cs" company="Datadog">
+﻿// <copyright file="TelemetrySettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class TelemetrySettings
+    internal sealed class TelemetrySettings
     {
         public TelemetrySettings(
             bool telemetryEnabled,
@@ -21,18 +21,22 @@ namespace Datadog.Trace.Telemetry
             AgentlessSettings? agentlessSettings,
             bool agentProxyEnabled,
             TimeSpan heartbeatInterval,
+            TimeSpan extendedHeartbeatInterval,
             bool dependencyCollectionEnabled,
             bool metricsEnabled,
-            bool debugEnabled)
+            bool debugEnabled,
+            string compressionMethod)
         {
             TelemetryEnabled = telemetryEnabled;
             ConfigurationError = configurationError;
             Agentless = agentlessSettings;
             AgentProxyEnabled = agentProxyEnabled;
             HeartbeatInterval = heartbeatInterval;
+            ExtendedHeartbeatInterval = extendedHeartbeatInterval;
             DependencyCollectionEnabled = dependencyCollectionEnabled;
             MetricsEnabled = metricsEnabled;
             DebugEnabled = debugEnabled;
+            CompressionMethod = compressionMethod;
         }
 
         /// <summary>
@@ -47,6 +51,8 @@ namespace Datadog.Trace.Telemetry
 
         public TimeSpan HeartbeatInterval { get; }
 
+        public TimeSpan ExtendedHeartbeatInterval { get; }
+
         public bool AgentProxyEnabled { get; }
 
         public bool DependencyCollectionEnabled { get; }
@@ -54,6 +60,8 @@ namespace Datadog.Trace.Telemetry
         public bool DebugEnabled { get; }
 
         public bool MetricsEnabled { get; }
+
+        public string CompressionMethod { get; }
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, TracerSettings tracerSettings, bool? isAgentAvailable)
             => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctions || tracerSettings.IsRunningInGCPFunctions);
@@ -137,7 +145,14 @@ namespace Datadog.Trace.Telemetry
                                    .AsDouble(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
                                    .Value;
 
+            var extendedHeartbeatInterval = config
+                                           .WithKeys(ConfigurationKeys.Telemetry.ExtendedHeartbeatIntervalSeconds)
+                                           .AsInt32(defaultValue: 86400, rawInterval => rawInterval is > 0 and <= 604800)
+                                           .Value;
+
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
+
+            var telemetryCompressionMethod = config.WithKeys(ConfigurationKeys.Telemetry.TelemetryCompressionMethod).AsString("gzip");
 
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
@@ -162,12 +177,14 @@ namespace Datadog.Trace.Telemetry
                 agentless,
                 agentProxyEnabled,
                 TimeSpan.FromSeconds(heartbeatInterval),
+                TimeSpan.FromSeconds(extendedHeartbeatInterval),
                 dependencyCollectionEnabled,
                 metricsEnabled,
-                debugEnabled);
+                debugEnabled,
+                telemetryCompressionMethod);
         }
 
-        public class AgentlessSettings
+        public sealed class AgentlessSettings
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="AgentlessSettings"/> class.
@@ -198,18 +215,18 @@ namespace Datadog.Trace.Telemetry
             public static AgentlessSettings Create(Uri agentlessUri, string apiKey)
             {
                 CloudSettings? cloud = null;
-                if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.GcpServiceVariable) is { Length: >0 } gcp)
+                if (EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.GcpFunction.FunctionNameKey) is { Length: >0 } gcp)
                 {
                     cloud = new("GCP", "GCPCloudRun", gcp);
                 }
-                else if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureContainerAppVariable) is { Length: >0 } aca)
+                else if (EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName) is { Length: >0 } aca)
                 {
                     cloud = new("Azure", "AzureContainerApp", aca);
                 }
-                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable1))
-                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable2)))
+                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.RunFromZipKey))
+                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.AppServiceApplogsTraceEnabledKey)))
                 {
-                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceIdentifierVariable));
+                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.SiteNameKey));
                 }
 
                 // TODO: Handle AWS Lambda. We don't currently have a good way to get the ARN as the identifier so skip for now
@@ -217,7 +234,7 @@ namespace Datadog.Trace.Telemetry
                 return new AgentlessSettings(agentlessUri, apiKey, cloud);
             }
 
-            public class CloudSettings
+            public sealed class CloudSettings
             {
                 public CloudSettings(
                     string provider,

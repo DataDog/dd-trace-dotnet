@@ -5,10 +5,12 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -30,14 +32,14 @@ public class AwsStepFunctionsCommonTests
 
     [Theory]
     [MemberData(nameof(SchemaSpanKindOperationNameData))]
-    public void GetCorrectOperationName(string schemaVersion, string spanKind, string expected)
+    public async Task GetCorrectOperationName(string schemaVersion, string spanKind, string expected)
     {
-        var tracer = GetTracer(schemaVersion);
+        await using var tracer = GetTracer(schemaVersion);
 
         AwsStepFunctionsCommon.GetOperationName(tracer, spanKind).Should().Be(expected);
     }
 
-    private static Tracer GetTracer(string schemaVersion)
+    private static ScopedTracer GetTracer(string schemaVersion)
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -45,6 +47,6 @@ public class AwsStepFunctionsCommonTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 
-        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
     }
 }

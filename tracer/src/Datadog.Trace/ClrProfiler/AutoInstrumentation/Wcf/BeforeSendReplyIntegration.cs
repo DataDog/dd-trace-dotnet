@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class BeforeSendReplyIntegration
+    public sealed class BeforeSendReplyIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -42,16 +42,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TMessageRpc>(TTarget instance, ref TMessageRpc rpc, ref Exception exception, ref bool thereIsAnUnhandledException)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
 
             var rpcProxy = rpc.DuckCast<MessageRpcStruct>();
-            if (((IDuckType?)rpcProxy.OperationContext.RequestContext)?.Instance is object requestContextInstance
+            if (rpcProxy.OperationContext.RequestContext?.Instance is { } requestContextInstance
                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
             {
-                return new CallTargetState(scope);
+                return new CallTargetState(scope, requestContextInstance);
             }
 
             return CallTargetState.GetDefault();
@@ -65,9 +65,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
+            if (state.State is { } requestContextInstance)
+            {
+                WcfCommon.Scopes.Remove(requestContextInstance);
+            }
+
             return CallTargetReturn.GetDefault();
         }
     }

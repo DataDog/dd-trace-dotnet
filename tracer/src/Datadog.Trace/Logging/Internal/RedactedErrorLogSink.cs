@@ -14,7 +14,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging.Internal;
 
-internal class RedactedErrorLogSink : ILogEventSink
+internal sealed class RedactedErrorLogSink : ILogEventSink
 {
     private readonly RedactedErrorLogCollector _collector;
 

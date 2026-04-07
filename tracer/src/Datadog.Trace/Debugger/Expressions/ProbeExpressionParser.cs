@@ -11,6 +11,8 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
@@ -81,13 +83,10 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters)
     {
-        Expression Combine(Expression leftOperand, Expression rightOperand) =>
-            leftOperand == null ? rightOperand : combiner(leftOperand, rightOperand.Type != ProbeExpressionParserHelper.UndefinedValueType ? rightOperand : Expression.Constant(true));
-
         _arrayStack++;
         reader.Read();
         var right = ParseTree(reader, parameters, null);
-        var left = Combine(null, right);
+        var left = Combine(null, right, combiner);
 
         while (reader.Read())
         {
@@ -113,10 +112,22 @@ internal partial class ProbeExpressionParser<T>
             }
 
             right = ParseTree(reader, parameters, null, false);
-            left = Combine(left, right);
+            left = Combine(left, right, combiner);
         }
 
         return left;
+    }
+
+    private Expression Combine(Expression leftOperand, Expression rightOperand, Combiner combiner)
+    {
+        return leftOperand is null ? AsBoolean(rightOperand) : combiner(AsBoolean(leftOperand), AsBoolean(rightOperand));
+
+        Expression AsBoolean(Expression operand)
+        {
+            return operand?.Type == ProbeExpressionParserHelper.UndefinedValueType
+                       ? Expression.Constant(true)
+                       : operand;
+        }
     }
 
     private Expression ParseTree(
@@ -432,7 +443,15 @@ internal partial class ProbeExpressionParser<T>
     {
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
-            return finalExpr;
+            // If the expression type is already exactly T, return as-is.
+            if (finalExpr.Type == typeof(T))
+            {
+                return finalExpr;
+            }
+
+            // When the expression type is assignable to T but different (e.g., value type -> object),
+            // we need an explicit conversion.
+            return Expression.Convert(finalExpr, typeof(T));
         }
 
         if (typeof(T).IsNumeric()
@@ -461,7 +480,13 @@ internal partial class ProbeExpressionParser<T>
             }
 
             var argOrLocal = argsOrLocals[index];
-            var variable = Expression.Variable(argOrLocal.Type, argOrLocal.Name);
+
+            // CRITICAL: Use runtime type (Value.GetType()) instead of declared type (Type).
+            // The compilation must use the same types as runtime.
+            // If declared type is Int32 but actual value is Int64, using declared type
+            // would cause InvalidCastException when the lambda is executed.
+            var runtimeType = argOrLocal.Value?.GetType() ?? argOrLocal.Type;
+            var variable = Expression.Variable(runtimeType, argOrLocal.Name);
             scopeMembers.Add(variable);
 
             expressions.Add(
@@ -473,15 +498,15 @@ internal partial class ProbeExpressionParser<T>
                                 argsOrLocalsParameterExpression,
                                 Expression.Constant(index)),
                             "Value"),
-                        argOrLocal.Type)));
+                        runtimeType)));
         }
     }
 
-    private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, MethodScopeMembers methodScopeMembers)
+    private ExpressionBodyAndParameters ParseProbeExpression(string expressionJson, MethodScopeMembers methodScopeMembers, Type thisTypeOverride)
     {
         var argsOrLocals = methodScopeMembers.Members;
         var @this = methodScopeMembers.InvocationTarget;
-        var thisType = @this.Type ?? @this.Value?.GetType();
+        var thisType = thisTypeOverride;
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
             var ex = new ArgumentException("Method has been called with an invalid argument");
@@ -535,7 +560,7 @@ internal partial class ProbeExpressionParser<T>
         var result = Expression.Variable(typeof(T), "$dd_el_result");
         scopeMembers.Add(result);
 
-        var reader = new JsonTextReader(new StringReader(expressionJson));
+        using var reader = new JsonTextReader(new StringReader(expressionJson)) { ArrayPool = JsonArrayPool.Shared };
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);
@@ -555,7 +580,28 @@ internal partial class ProbeExpressionParser<T>
     {
         var parameterExpression = Expression.Parameter(scopeMember.GetType());
         var variable = Expression.Variable(type, name);
-        expressions.Add(Expression.Assign(variable, Expression.Convert(Expression.Field(parameterExpression, "Value"), type)));
+        var valueField = Expression.Field(parameterExpression, "Value");
+
+        // For value types, we need to handle null gracefully to avoid NullReferenceException during unboxing.
+        // When ScopeMember.Value is null and type is a struct, unboxing throws NRE.
+        // For reference types, Convert handles null correctly (returns null).
+        Expression assignmentValue;
+        if (type.IsValueType)
+        {
+            // If value is null, use default; otherwise unbox
+            var isNull = Expression.ReferenceEqual(valueField, Expression.Constant(null, typeof(object)));
+            assignmentValue = Expression.Condition(
+                isNull,
+                Expression.Default(type),
+                Expression.Convert(valueField, type));
+        }
+        else
+        {
+            // Reference types: Convert handles null correctly, throws on type mismatch
+            assignmentValue = Expression.Convert(valueField, type);
+        }
+
+        expressions.Add(Expression.Assign(variable, assignmentValue));
         scopeMembers.Add(variable);
         return parameterExpression;
     }
@@ -567,12 +613,25 @@ internal partial class ProbeExpressionParser<T>
 
     internal static CompiledExpression<T> ParseExpression(string expressionJson, MethodScopeMembers scopeMembers)
     {
+        // Extract thisType here to ensure consistency - use runtime type over declared type
+        var thisType = scopeMembers.InvocationTarget.Value?.GetType() ?? scopeMembers.InvocationTarget.Type ?? typeof(object);
+        return ParseExpression(expressionJson, scopeMembers, thisType);
+    }
+
+    internal static CompiledExpression<T> ParseExpression(string expressionJson, MethodScopeMembers scopeMembers, Type thisTypeOverride)
+    {
         var parser = new ProbeExpressionParser<T>();
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {
-            parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers);
-            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(parsedExpression.ExpressionBody, parsedExpression.ThisParameterExpression, parsedExpression.ReturnParameterExpression, parsedExpression.DurationParameterExpression, parsedExpression.ExceptionParameterExpression, parsedExpression.ArgsAndLocalsParameterExpression);
+            parsedExpression = parser.ParseProbeExpression(expressionJson, scopeMembers, thisTypeOverride);
+            var expression = Expression.Lambda<Func<ScopeMember, ScopeMember, ScopeMember, Exception, ScopeMember[], T>>(
+                parsedExpression.ExpressionBody,
+                parsedExpression.ThisParameterExpression,
+                parsedExpression.ReturnParameterExpression,
+                parsedExpression.DurationParameterExpression,
+                parsedExpression.ExceptionParameterExpression,
+                parsedExpression.ArgsAndLocalsParameterExpression);
             var compiled = expression.Compile();
             return new CompiledExpression<T>(compiled, expression, expressionJson, parser._errors?.ToArray());
         }

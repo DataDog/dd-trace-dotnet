@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AsyncControllerActionInvoker_EndInvokeAction_Integration
+    public sealed class AsyncControllerActionInvoker_EndInvokeAction_Integration
     {
         private const string AssemblyName = "System.Web.Mvc";
         private const string MinimumVersion = "4";
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private const string IntegrationName = nameof(IntegrationId.AspNetMvc);
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AsyncControllerActionInvoker_EndInvokeAction_Integration>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncControllerActionInvoker_EndInvokeAction_Integration));
 
         /// <summary>
         /// OnMethodEnd callback
@@ -94,12 +94,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 else
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
 
                     if (proxyScope?.Span != null)
                     {
                         HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
-                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
                     }
 
                     scope.Dispose();
@@ -129,12 +129,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (proxyScope?.Span != null)
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
-                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
+                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
                     proxyScope.Span.Finish(finishTime);
                 }
 
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
+                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
                 scope.Span.Finish(finishTime);
             }
             catch (Exception ex)

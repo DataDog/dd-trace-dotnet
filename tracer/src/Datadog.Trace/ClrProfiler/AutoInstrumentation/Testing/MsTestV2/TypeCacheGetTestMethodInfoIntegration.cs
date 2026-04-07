@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class TypeCacheGetTestMethodInfoIntegration
+public sealed class TypeCacheGetTestMethodInfoIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TTestContext>(TTarget instance, ref TTestMethod? testMethod, ref TTestContext? testContext, ref bool captureDebugTraces)
         => TypeCacheGetTestMethodInfoIntegrationV3_9.OnMethodBegin(instance, ref testMethod, ref testContext);
@@ -45,10 +45,19 @@ public class TypeCacheGetTestMethodInfoIntegration
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache",
+    MethodName = "GetTestMethodInfo",
+    ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod", "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext"],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1402
-public class TypeCacheGetTestMethodInfoIntegrationV3_9
+public sealed class TypeCacheGetTestMethodInfoIntegrationV3_9
 #pragma warning restore SA1402
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TTestContext>(TTarget instance, ref TTestMethod? testMethod, ref TTestContext? testContext)

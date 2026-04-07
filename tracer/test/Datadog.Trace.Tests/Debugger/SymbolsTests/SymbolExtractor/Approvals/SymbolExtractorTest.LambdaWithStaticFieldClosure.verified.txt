@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -102,7 +102,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithStaticFieldClosure+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithStaticFieldClosure",
                       "symbol_type": "arg",
                       "line": 0
                     }

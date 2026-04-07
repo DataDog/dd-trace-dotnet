@@ -50,7 +50,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string MvcOperationName = "aspnet_core_mvc.request";
 
+#if NETCOREAPP
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
+#endif
 
         private static readonly Type EndpointFeatureType =
             Assembly.GetAssembly(typeof(RouteValueDictionary))
@@ -70,11 +72,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _hostingHttpRequestInStopEventKey;
         private string _routingEndpointMatchedKey;
 
-        public AspNetCoreDiagnosticObserver()
-            : this(null, null, null, null)
-        {
-        }
-
         public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, SpanCodeOrigin spanCodeOrigin)
         {
             _tracer = tracer;
@@ -85,12 +82,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
-        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
-
-        private Security CurrentSecurity => _security ?? Security.Instance;
-
-        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
-
+        // TODO: Once SpanCodeOrigin initialization is synchronous
+        // just set this on startup instead of having the properties
         private SpanCodeOrigin CurrentCodeOrigin => _spanCodeOrigin ?? DebuggerManager.Instance.CodeOrigin;
 
 #if NETCOREAPP
@@ -413,7 +406,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 rootSpan.ResourceName = span.ResourceName;
-                rootSpanTags.HttpRoute = aspNetRoute;
             }
 
             return span;
@@ -421,12 +413,10 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var tracer = CurrentTracer;
-            var security = CurrentSecurity;
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.AppsecEnabled;
+            var integrationEnabled = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
+            var appsecEnabled = _security.AppsecEnabled;
 
-            if (!shouldTrace && !shouldSecure)
+            if (!integrationEnabled && !appsecEnabled)
             {
                 return;
             }
@@ -434,19 +424,19 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
                 var httpContext = requestStruct.HttpContext;
-                if (shouldTrace)
+                if (integrationEnabled)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
                     // If the app is using resource-based sampling rules, then we need to set a resource straight
                     // away, so force that by using null.
-                    var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName);
-                    if (shouldSecure)
+                    var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(_tracer, _security, _iast, httpContext, resourceName);
+                    if (appsecEnabled)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
                         var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
-                        securityReporter.ReportWafInitInfoOnce(security.WafInitResult);
+                        securityReporter.ReportWafInitInfoOnce(_security.WafInitResult);
                     }
                 }
             }
@@ -454,17 +444,15 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnRoutingEndpointMatched(object arg)
         {
-            var tracer = CurrentTracer;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !tracer.Settings.RouteTemplateResourceNamesEnabled)
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
+                !_tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
             }
 
             if (arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
                 {
@@ -533,7 +521,12 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                     else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
                     {
+                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
                         CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                    }
+                    else
+                    {
+                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
                     }
                 }
 
@@ -569,7 +562,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     areaName: areaName,
                     controllerName: controllerName,
                     actionName: actionName,
-                    tracer.Settings.ExpandRouteTemplatesEnabled);
+                    _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
@@ -577,18 +570,17 @@ namespace Datadog.Trace.DiagnosticListeners
                 // But instead we re-extract them in the MVC endpoint as these are MVC
                 // constructs. this is likely marginally less efficient, but simplifies the
                 // already complex logic in the MVC handler
-                // Overwrite the route in the parent span
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
+                    // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    tags.HttpRoute = normalizedRoute;
                 }
 
-                CurrentSecurity.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
+                _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
 
-                if (CurrentIast.Settings.Enabled)
+                if (_iast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
@@ -597,58 +589,63 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var tracer = CurrentTracer;
-            var security = CurrentSecurity;
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.AppsecEnabled;
-            var shouldUseIast = CurrentIast.Settings.Enabled;
+            var integrationEnabled = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
+            var appsecEnabled = _security.AppsecEnabled;
+            var iastEnabled = _iast.Settings.Enabled;
             var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
-            if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
+            if (!integrationEnabled && !appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
             {
                 return;
             }
 
             if (arg.TryDuckCast<BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 HttpRequest request = httpContext.Request;
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
                 Span span = null;
-                if (shouldTrace)
+                if (integrationEnabled)
                 {
-                    if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
+                    if (!_tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
                         // override the parent's resource name with the simplified MVC route template
                         rootSpan.ResourceName = GetLegacyResourceName(typedArg);
                     }
                     else
                     {
-                        span = StartMvcCoreSpan(tracer, trackingFeature, typedArg, httpContext, request);
+                        span = StartMvcCoreSpan(_tracer, trackingFeature, typedArg, httpContext, request);
                     }
                 }
 
                 if (span is not null)
                 {
-                    if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    if (isCodeOriginEnabled)
                     {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        if (TryGetTypeAndMethod(typedArg, out var type, out var method))
+                        {
+                            CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        }
+                        else
+                        {
+                            Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
+                        }
                     }
 
-                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                    _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
-                if (shouldUseIast)
+                if (iastEnabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }
 
-        private bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, out Type type, out MethodInfo method)
+        internal static bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type type, [NotNullWhen(true)] out MethodInfo method)
         {
             try
             {
@@ -663,14 +660,22 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     foreach (var part in compiledPageActionDescriptor.HandlerMethods)
                     {
-                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc)
-                         && string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc))
                         {
-                            type = compiledPageActionDescriptor.HandlerTypeInfo;
-                            method = methodDesc.MethodInfo;
-                            return true;
+                            if (string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                            {
+                                type = compiledPageActionDescriptor.HandlerTypeInfo;
+                                method = methodDesc.MethodInfo;
+                                return true;
+                            }
+                            else
+                            {
+                                Log.Debug("Ignoring handler method {Method} for HTTP method {HttpMethod}", methodDesc.MethodInfo.Name, methodDesc.HttpMethod);
+                            }
                         }
                     }
+
+                    Log.Debug("No matching handler method found for HTTP method {HttpMethod}", beforeAction.HttpContext.Request.Method);
                 }
             }
             catch (Exception e)
@@ -685,9 +690,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcAfterAction(object arg)
         {
-            var tracer = CurrentTracer;
+            var tracer = _tracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -697,47 +702,21 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
-                try
-                {
-                    // Extract data from the Activity
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-                    if (activity is not null)
-                    {
-                        foreach (var activityTag in activity.Tags)
-                        {
-                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
-                        }
-
-                        foreach (var activityBag in activity.Baggage)
-                        {
-                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
-                        }
-                    }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting activity data.");
-                }
-
                 scope.Dispose();
             }
         }
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            var tracer = CurrentTracer;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
 
             if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope: { } rootScope })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope: { } rootScope })
             {
-                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext);
             }
 
             CoreHttpContextStore.Instance.Remove();
@@ -746,18 +725,16 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingUnhandledException(object arg)
         {
-            var tracer = CurrentTracer;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
 
             if (arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct)
              && unhandledStruct.HttpContext is { } httpContext
-             && httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>() is { RootScope.Span: { } rootSpan })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
+                AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception);
             }
 
             // If we don't have a span, no need to call Handle exception

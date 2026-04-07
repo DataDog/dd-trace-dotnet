@@ -1,4 +1,4 @@
-// <copyright file="WafConfigurator.cs" company="Datadog">
+﻿// <copyright file="WafConfigurator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -21,7 +22,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf.Initialization
 {
-    internal class WafConfigurator
+    internal sealed class WafConfigurator
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
         private readonly WafLibraryInvoker _wafLibraryInvoker;
@@ -64,7 +65,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.rule-set.json");
         }
 
-        private static Stream? GetRulesFileStream(string rulesFile)
+        private static FileStream? GetRulesFileStream(string rulesFile)
         {
             if (!File.Exists(rulesFile))
             {
@@ -95,7 +96,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
 
                 using var reader = new StreamReader(stream);
-                using var jsonReader = new JsonTextReader(reader);
+                using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
                 root = JToken.ReadFrom(jsonReader);
                 LogRuleDetailsIfDebugEnabled(root);
             }

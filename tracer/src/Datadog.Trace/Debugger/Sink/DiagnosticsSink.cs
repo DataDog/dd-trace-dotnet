@@ -12,20 +12,20 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink
 {
-    internal class DiagnosticsSink
+    internal sealed class DiagnosticsSink
     {
         private const int QueueLimit = 1000;
         private readonly ConcurrentDictionary<string, TimedMessage> _diagnostics;
 
-        private readonly string _serviceName;
+        private readonly Func<string> _serviceNameProvider;
         private readonly int _batchSize;
         private readonly TimeSpan _interval;
 
         private BoundedConcurrentQueue<ProbeStatus> _queue;
 
-        protected DiagnosticsSink(string serviceName, int batchSize, TimeSpan interval)
+        private DiagnosticsSink(Func<string> serviceNameProvider, int batchSize, TimeSpan interval)
         {
-            _serviceName = serviceName;
+            _serviceNameProvider = serviceNameProvider;
             _batchSize = batchSize;
             _interval = interval;
 
@@ -33,12 +33,12 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<ProbeStatus>(QueueLimit);
         }
 
-        public static DiagnosticsSink Create(string serviceName, DebuggerSettings settings)
+        public static DiagnosticsSink Create(Func<string> serviceNameProvider, DebuggerSettings settings)
         {
-            return new DiagnosticsSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
+            return new DiagnosticsSink(serviceNameProvider, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
 
-        public virtual void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception? exception = null, string? errorMessage = null)
+        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception? exception = null, string? errorMessage = null)
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Debugger.Sink
                 return;
             }
 
-            var next = new ProbeStatus(_serviceName, probeId, status, probeVersion, exception, errorMessage);
+            var next = new ProbeStatus(_serviceNameProvider(), probeId, status, probeVersion, exception, errorMessage);
             var timedMessage = new TimedMessage
             {
                 LastEmit = Clock.UtcNow,
@@ -100,12 +100,12 @@ namespace Datadog.Trace.Debugger.Sink
             return queue;
         }
 
-        public virtual void Remove(string probeId)
+        public void Remove(string probeId)
         {
             _diagnostics.TryRemove(probeId, out _);
         }
 
-        public virtual List<ProbeStatus> GetDiagnostics()
+        public List<ProbeStatus> GetDiagnostics()
         {
             var now = Clock.UtcNow;
             foreach (var timedMessage in _diagnostics.Values)

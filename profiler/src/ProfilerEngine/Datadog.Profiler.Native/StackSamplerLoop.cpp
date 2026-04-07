@@ -555,8 +555,13 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
     PROFILING_TYPE profilingType)
 {
+    if (pSnapshotResult == nullptr)
+    {
+        return;
+    }
+
     auto callstack = pSnapshotResult->GetCallstack();
-    if (pSnapshotResult == nullptr || callstack.Size() == 0)
+    if (callstack.Size() == 0)
     {
         return;
     }

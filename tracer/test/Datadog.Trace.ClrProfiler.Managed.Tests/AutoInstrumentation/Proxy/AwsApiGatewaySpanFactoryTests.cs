@@ -6,7 +6,9 @@
 #nullable enable
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -14,22 +16,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
 public class AwsApiGatewaySpanFactoryTests
 {
-    private readonly AwsApiGatewaySpanFactory _factory;
-    private readonly Tracer _tracer; // this is a mocked instance of the tracer
-
-    public AwsApiGatewaySpanFactoryTests()
-    {
-        _factory = new AwsApiGatewaySpanFactory();
-        _tracer = ProxyTestHelpers.GetMockTracer();
-    }
-
     [Fact]
-    public void CreateSpan_CreatesSpanWithCorrectProperties()
+    public async Task CreateSpan_CreatesSpanWithCorrectProperties()
     {
+        var factory = new AwsApiGatewaySpanFactory();
+        await using var tracer = ProxyTestHelpers.GetMockTracer();
         var startTime = DateTimeOffset.UtcNow;
-        var data = new InferredProxyData("aws-apigateway", startTime, "test.api.com", "GET", "/api/test", "prod");
 
-        var scope = _factory.CreateSpan(_tracer, data);
+        var data = new InferredProxyData("aws-apigateway", startTime, "test.api.com", "GET", "/api/test", "prod", null);
+
+        var scope = factory.CreateSpan(tracer, data);
 
         scope.Should().NotBeNull();
         var span = scope!.Span;

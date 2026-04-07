@@ -9,10 +9,11 @@ using System.Net;
 using Datadog.Trace.Util;
 
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
+#pragma warning disable SYSLIB0014 // 'WebRequest.Create(string)' is obsolete: 'WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.'
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class ApiWebRequestFactory : IApiRequestFactory
+    internal sealed class ApiWebRequestFactory : IApiRequestFactory
     {
         private readonly KeyValuePair<string, string>[] _defaultHeaders;
         private readonly Uri _baseEndpoint;

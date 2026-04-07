@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -22,7 +24,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("1.23.0")]
         public void ShouldNotInitialize(string version)
         {
-            var libraryInitializationResult = WafLibraryInvoker.Initialize(version);
+            var libraryInitializationResult = WafLibraryInvoker.Initialize(null, null, version);
             libraryInitializationResult.Success.Should().BeFalse();
             libraryInitializationResult.WafLibraryInvoker.Should().BeNull();
         }

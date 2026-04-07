@@ -11,12 +11,14 @@ using System.Text.RegularExpressions;
 using K4os.Compression.LZ4.Streams;
 using Perftools.Profiles;
 using Xunit;
+using ZstdSharp;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     public static class SamplesHelper
     {
         private static readonly byte[] Lz4MagicNumber = BitConverter.GetBytes(0x184D2204);
+        private static readonly byte[] ZstdMagicNumber = BitConverter.GetBytes(0xFD2FB528);
 
         public static int GetSamplesCount(string directory)
         {
@@ -88,7 +90,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public static HashSet<int> GetThreadIds(string directory)
         {
             HashSet<int> ids = new();
-            var regex = new Regex(@"<[0-9]+> \[#(?<OsId>[0-9]+)\]", RegexOptions.Compiled);
             foreach (var profile in GetProfiles(directory))
             {
                 foreach (var sample in profile.Sample)
@@ -97,8 +98,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     {
                         if (label.Name == "thread id")
                         {
-                            var match = regex.Match(label.Value);
-                            ids.Add(int.Parse(match.Groups["OsId"].Value));
+                            ids.Add(int.Parse(label.Value));
                             continue;
                         }
                     }
@@ -212,6 +212,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (Lz4MagicNumber.SequenceEqual(buffer))
             {
                 return LZ4Stream.Decode(s);
+            }
+            else if (ZstdMagicNumber.SequenceEqual(buffer))
+            {
+                return new DecompressionStream(s);
             }
             else
             {

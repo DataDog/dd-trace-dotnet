@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.Datadog.Sketches.Stores;
 
 namespace Datadog.Trace.Agent
 {
-    internal class StatsBucket
+    internal sealed class StatsBucket
     {
         public StatsBucket(StatsAggregationKey key)
         {
@@ -42,6 +42,8 @@ namespace Datadog.Trace.Agent
             ErrorSummary.Clear();
         }
 
+        // TODO: For OTLP, we amy want to use the AGENT_RELATIVE_ACCURACY
+        // Currently, we only use the BACKEND_GAMMA and BACKEND_INDEX_OFFSET
         private static DDSketch CreateSketch()
         {
             return new DDSketch(

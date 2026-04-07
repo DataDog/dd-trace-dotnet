@@ -28,10 +28,32 @@ public:
     ~ApplicationStore();
 
     ApplicationInfo GetApplicationInfo(const std::string& runtimeId) override;
-    void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version) override;
+    void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version, const std::string& processTags) override;
     void SetGitMetadata(std::string runtimeId, std::string repositoryUrl, std::string commitSha) override;
 
     const char* GetName() override;
+
+    // Memory measurement (IMemoryFootprintProvider)
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
+
+private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t mapSize;
+        size_t entryCount;
+        size_t mapBuckets;
+        size_t keysSize;
+        size_t appInfosSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + mapSize + keysSize + appInfosSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
 
 private:
     const char* _serviceName = "ApplicationStore";
@@ -42,5 +64,6 @@ private:
     IConfiguration* const _pConfiguration;
     IRuntimeInfo* _pRuntimeInfo;
     std::unordered_map<std::string, ApplicationInfo> _infos;
-    std::mutex _infosLock;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _infosLock;
 };

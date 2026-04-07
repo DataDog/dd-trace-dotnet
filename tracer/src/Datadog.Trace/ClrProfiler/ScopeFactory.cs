@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -88,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId) ||
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(integrationId) ||
                 PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer.InternalActiveScope) ||
                 HttpBypassHelper.UriContainsAnyOf(requestUri, tracer.Settings.HttpClientExcludedUrlSubstrings))
             {
@@ -110,11 +111,11 @@ namespace Datadog.Trace.ClrProfiler
 
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
 
-                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
-                var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
+                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Http);
+                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Client.GetServiceNameMetadata(ClientSchema.Component.Http);
                 tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
 
-                span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
+                span = tracer.StartSpan(operationName, tags, serviceName: serviceName, serviceNameSource: serviceNameSource, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
@@ -128,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
-                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
             }
             catch (Exception ex)

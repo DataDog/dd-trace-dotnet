@@ -33,6 +33,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
         private static readonly NameValueCollection Defaults = new()
         {
             { ConfigurationKeys.ApiKey, "some_value" },
+            { ConfigurationKeys.Environment, Env },
+            { ConfigurationKeys.ServiceName, Service },
+            { ConfigurationKeys.ServiceVersion, Version },
             { ConfigurationKeys.DirectLogSubmission.Host, Host },
             { ConfigurationKeys.DirectLogSubmission.Source, Source },
             { ConfigurationKeys.DirectLogSubmission.Url, "http://localhost" },
@@ -159,9 +162,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                 _tracerSettings,
                 _directLogSettings,
                 aasSettings: aasSettings,
-                serviceName: Service,
-                env: Env,
-                version: Version,
                 gitMetadataTagsProvider: new NullGitMetadataProvider());
 
             formatter.FormatLog(sb, state, timestamp, message, eventId: null, logLevel, exception: null, RenderProperties);
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             (string Key, string Value)[] expectedTags = (isInAas, hasRenderedTags) switch
             {
                 (_, true) => null, // if the log itself adds this, we don't add the global tags currently
-                (true, false) => [("aas.resource.id", aasSettings!.ResourceId), ("Key1", "Value1"), ("Key2", "Value2")],
+                (true, false) => [("aas.resource.id", aasSettings!.ResourceId), ("aas.site.kind", aasSettings.SiteKind), ("Key1", "Value1"), ("Key2", "Value2")],
                 (false, false) => [("Key1", "Value1"), ("Key2", "Value2")],
             };
 

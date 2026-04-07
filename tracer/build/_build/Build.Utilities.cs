@@ -59,6 +59,9 @@ partial class Build
     [Parameter("Only update package versions for packages with the following names")]
     readonly string[] IncludePackages;
 
+    [Parameter("Minimum age in days a NuGet package version must have been published before auto-including. Defaults to 2 days, or 0 when --IncludePackages is set")]
+    readonly int? PackageVersionCooldownDays;
+
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")]
@@ -230,22 +233,111 @@ partial class Build
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
            var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
-           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotFolder);
-           Logger.Information("Found {CurrentDependenciesCount} existing dependencies", currentDependencies.Count);
-           var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
-                                         {
-                                             (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
-                                             ({ } include, _) => currentDependencies.Where(x => !IncludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
-                                             _ => Enumerable.Empty<(string NugetName, Version LatestTestedVersion)>()
-                                         }).ToDictionary(x => x.NugetName, x => x.LatestTestedVersion, StringComparer.OrdinalIgnoreCase);
+           var supportedVersionsPath = BuildDirectory / "supported_versions.json";
 
-           foreach (var dep in excludedFromUpdates)
+           // Build the shouldQueryNuGet predicate from include/exclude filters
+           Func<string, bool> shouldUpdatePackage = (IncludePackages, ExcludePackages) switch
            {
-               Logger.Information("Excluding package {NugetName} from update. Fixing at {Version}", dep.Key, dep.Value);
+               ({ } include, _) => name => include.Contains(name, StringComparer.OrdinalIgnoreCase),
+               (_, { } exclude) => name => !exclude.Contains(name, StringComparer.OrdinalIgnoreCase),
+               _ => _ => true
+           };
+
+           // Load caches for both pipelines
+           var cacheFilePath = BuildDirectory / "nuget_version_cache.json";
+           var previousVersionCache = await NuGetVersionCache.Load(cacheFilePath);
+           Logger.Information("Loaded NuGet version cache with {Count} entries", previousVersionCache.Count);
+           var previousSupportedVersions = await GenerateSupportMatrix.LoadPreviousVersions(supportedVersionsPath);
+           Logger.Information("Loaded previous supported versions with {Count} entries", previousSupportedVersions.Count);
+
+           // Derive baseline from supported_versions.json: the max tested version per package
+           // acts as a floor to prevent cooldown filtering from downgrading previously accepted versions.
+           // We collect all max tested versions per package (not just the global max) so that
+           // split-range packages (e.g., GraphQL 4.x-6.x and 7.x-9.x) get a per-range baseline.
+           var baseline = previousSupportedVersions
+               .Where(kvp => kvp.Value.MaxVersionTestedInclusive is not null)
+               .GroupBy(kvp => kvp.Key.PackageName)
+               .ToDictionary(
+                   g => g.Key,
+                   g => g.Select(kvp => new Version(kvp.Value.MaxVersionTestedInclusive!)).ToList());
+           Logger.Information("Derived version baseline with {Count} entries from supported_versions.json", baseline.Count);
+
+           // Resolve effective cooldown:
+           //  - Explicit --PackageVersionCooldownDays wins
+           //  - --IncludePackages without explicit cooldown defaults to 0
+           var effectiveCooldownDays = PackageVersionCooldownDays ?? (IncludePackages is not null ? 0 : 2);
+
+           // Pipeline A: generate .g.props/.g.cs files
+           Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, shouldUpdatePackage, previousVersionCache, effectiveCooldownDays, baseline);
+           var testedVersions = await versionGenerator.GenerateVersions(Solution);
+           await NuGetVersionCache.Save(cacheFilePath, versionGenerator.VersionCache);
+
+           // Log version changes: bumps, unchanged, and overridden
+           var versionCache = versionGenerator.VersionCache;
+           var bumped = 0;
+           var unchanged = 0;
+           foreach (var tested in testedVersions)
+           {
+               var packageName = tested.NugetPackageSearchName;
+               baseline.TryGetValue(packageName, out var previousMaxVersions);
+               var previousMax = previousMaxVersions?
+                   .Where(v => v >= tested.MinVersion && v <= tested.MaxVersion)
+                   .OrderByDescending(v => v)
+                   .FirstOrDefault();
+
+               if (previousMax is null || tested.MaxVersion > previousMax)
+               {
+                   bumped++;
+                   var publishedDate = "(unknown)";
+                   if (versionCache.TryGetValue(packageName, out var cachedVersions))
+                   {
+                       var match = cachedVersions.FirstOrDefault(v => v.Version == tested.MaxVersion.ToString());
+                       if (match?.Published is not null)
+                       {
+                           publishedDate = match.Published.Value.ToString("yyyy-MM-dd");
+                       }
+                   }
+
+                   Logger.Information(
+                       "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
+                       packageName,
+                       previousMax?.ToString() ?? "(new)",
+                       tested.MaxVersion,
+                       publishedDate,
+                       packageName,
+                       tested.MaxVersion);
+               }
+               else
+               {
+                   unchanged++;
+               }
            }
 
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, excludedFromUpdates);
-           var testedVersions = await versionGenerator.GenerateVersions(Solution);
+           Logger.Information("{Bumped} package(s) bumped, {Unchanged} unchanged", bumped, unchanged);
+
+           if (versionGenerator.CooldownReport.HasEntries)
+           {
+               Logger.Warning(
+                   "{Count} package version(s) were excluded due to the {Days}-day cooldown period",
+                   versionGenerator.CooldownReport.Entries.Count,
+                   effectiveCooldownDays);
+
+               foreach (var entry in versionGenerator.CooldownReport.Entries)
+               {
+                   var resolvedText = entry.ResolvedVersion is not null ? $"using: {entry.ResolvedVersion}" : "skipped";
+                   Logger.Warning(
+                       "  {Package} {Version} overridden (published {Date}, {Resolved})",
+                       entry.PackageName,
+                       entry.OverriddenVersion,
+                       entry.PublishedDate?.ToString("yyyy-MM-dd") ?? "unknown",
+                       resolvedText);
+               }
+
+               var reportPath = TemporaryDirectory / "cooldown_report.md";
+               await versionGenerator.CooldownReport.SaveToFile(reportPath);
+               Logger.Information("Cooldown report saved to {Path}", reportPath);
+           }
 
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
@@ -253,7 +345,12 @@ partial class Build
                            .ToList();
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
-           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
+
+           // Pipeline B: generate dependabot files + supported_versions.json
+           // TestedVersions are cooldown-filtered but the baseline prevents downgrades,
+           // so they accurately reflect what we're testing.
+           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
+               integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
 
            await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
 
@@ -430,6 +527,11 @@ partial class Build
                .Description("Regenerates the 'build' solutions based on the 'master' solution")
                .Executes(() =>
                 {
+                    if (FastDevLoop)
+                    {
+                        return;
+                    }
+                    
                     // Create a copy of the "full solution"
                     var sln = ProjectModelTasks.CreateSolution(
                         fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
@@ -684,6 +786,14 @@ partial class Build
         }
 
         throw new Exception("Failed to download telemetry forwarder");
+    }
+
+    static string GetDotnetSdkVersion(AbsolutePath rootDirectory)
+    {
+        var globalJsonPath = rootDirectory / "global.json";
+        var json = JsonDocument.Parse(File.ReadAllText(globalJsonPath));
+        return json.RootElement.GetProperty("sdk").GetProperty("version").GetString()
+            ?? throw new InvalidOperationException("Could not read sdk.version from global.json");
     }
 
     static string GetSha512Hash(string filePath)

@@ -1,4 +1,4 @@
-// <copyright file="SmallCacheOrNoCache.cs" company="Datadog">
+﻿// <copyright file="SmallCacheOrNoCache.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Util;
 /// A wrapper around a ConcurrentDictionary that disables caching if there is too many entries.
 /// To be used in situations where we expect a low cardinality, but where uncommon setups could break that assumption
 /// </summary>
-internal class SmallCacheOrNoCache<TKey, TValue>
+internal sealed class SmallCacheOrNoCache<TKey, TValue>
     where TKey : notnull
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SmallCacheOrNoCache<TKey, TValue>));

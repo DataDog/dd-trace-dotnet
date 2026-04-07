@@ -14,6 +14,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         private static Scope? CreateScope(string filename, IDictionary<string, string?>? environmentVariables, bool useShellExecute, string arguments, Collection<string>? argumentList = null)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -71,9 +72,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(ServiceName);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 scope.Span.ResourceName = filename;
                 scope.Span.Type = SpanTypes.System;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -175,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     finalCommandExec.Insert(0, filename);
 
                     // Serialized as JSON array string because tracer only supports string values
-                    tags.CommandExec = JsonConvert.SerializeObject(finalCommandExec);
+                    tags.CommandExec = JsonHelper.SerializeObject(finalCommandExec);
                 }
                 else if (argumentList is not null && argumentList.Count > 0)
                 {
@@ -201,11 +202,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     }
 
                     // Serialized as JSON array string because tracer only supports string values
-                    tags.CommandExec = JsonConvert.SerializeObject(finalCommandExec);
+                    tags.CommandExec = JsonHelper.SerializeObject(finalCommandExec);
                 }
                 else
                 {
-                    tags.CommandExec = JsonConvert.SerializeObject(new[] { filename });
+                    tags.CommandExec = JsonHelper.SerializeObject(new[] { filename });
                 }
 
                 tags.Truncated = truncated ? "true" : null;

@@ -9,7 +9,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -27,29 +26,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class AsyncMethodInvoker_InvokeBegin_Integration
+    public sealed class AsyncMethodInvoker_InvokeBegin_Integration
     {
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object? instanceArg, object[]? inputs, ref AsyncCallback? callback, object? state)
         {
-            if (exception is not null)
+            var tracer = Tracer.Instance;
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !tracer.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
-                var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
-
-                if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
-                {
-                    var requestContext = operationContextProxy.RequestContext;
-
-                    // Retrieve the scope that we saved during InvokeBegin
-                    if (((IDuckType?)requestContext)?.Instance is object requestContextInstance
-                        && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
-                    {
-                        // Add the exception but do not dispose the span.
-                        // BeforeSendReplyIntegration is responsible for closing the span.
-                        scope.Span?.SetException(exception);
-                    }
-                }
+                return CallTargetState.GetDefault();
             }
 
+            return WcfCommon.ActivateScopeFromContext();
+        }
+
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+        {
+            if (state.Scope is not null && exception is not null)
+            {
+                // Add the exception but do not dispose the scope.
+                // BeforeSendReplyIntegration is responsible for closing the span.
+                state.Scope.Span.SetException(exception);
+            }
+
+            WcfCommon.RestorePreviousScope(in state);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

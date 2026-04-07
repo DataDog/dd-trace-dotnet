@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         IntegrationName = KafkaConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class KafkaProduceSyncIntegration
+    public sealed class KafkaProduceSyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -65,7 +65,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     scope.Span,
                     Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
-                    message);
+                    message,
+                    instance);
                 return new CallTargetState(scope);
             }
 

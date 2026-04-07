@@ -23,59 +23,77 @@ using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Debugger;
 
-internal class DebuggerFactory
+internal sealed class DebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerFactory));
 
-    internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, Func<string> serviceNameProvider, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
-        var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
-        var diagnosticsSink = DiagnosticsSink.Create(serviceName, debuggerSettings);
+        var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
-        var debuggerUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), snapshotStatusSink);
+        var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
+        var logUploader = CreateLogUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType);
 
-        var statsd = GetDogStatsd(tracerSettings, serviceName);
+        var statsd = GetDogStatsd(tracerSettings);
 
         return new DynamicInstrumentation(
             settings: debuggerSettings,
             discoveryService: discoveryService,
             remoteConfigurationManager: remoteConfigurationManager,
             lineProbeResolver: lineProbeResolver,
-            snapshotUploader: debuggerUploader,
+            snapshotUploader: snapshotUploader,
+            logUploader: logUploader,
             diagnosticsUploader: diagnosticsUploader,
             probeStatusPoller: probeStatusPoller,
             configurationUpdater: configurationUpdater,
             dogStats: statsd);
     }
 
-    private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings, string serviceName)
+    private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings)
     {
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
-         && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
+         && tracerSettings.Manager.InitialExporterSettings.MetricsTransport == TransportType.UDS)
         {
             Log.Information("Metric probes are not supported on Windows when transport type is UDS");
-            statsd = new NoOpStatsd();
+            statsd = NoOpStatsd.Instance;
         }
         else
         {
-            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, constantTags: null, DebuggerSettings.DebuggerMetricPrefix);
+            // TODO: use StatsdManager to get automatic updating on exporter and other setting changes
+            statsd = StatsdFactory.CreateDogStatsdClient(
+                tracerSettings.Manager.InitialMutableSettings,
+                tracerSettings.Manager.InitialExporterSettings,
+                includeDefaultTags: false,
+                prefix: DebuggerSettings.DebuggerMetricPrefix);
         }
 
         return statsd;
     }
 
-    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotStatusSink)
+    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
     {
         var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
 
-        var debuggerSink = SnapshotUploader.Create(snapshotStatusSink, snapshotBatchUploader, debuggerSettings);
+        var debuggerSink = SnapshotUploader.Create(snapshotSink, snapshotBatchUploader, debuggerSettings);
+
+        return debuggerSink;
+    }
+
+    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
+    {
+        var logUploaderApi = DebuggerUploadApiFactory.CreateLogUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+        var logBatchUploader = BatchUploader.Create(logUploaderApi);
+
+        var debuggerSink = SnapshotUploader.Create(snapshotSink, logBatchUploader, debuggerSettings);
 
         return debuggerSink;
     }
@@ -90,10 +108,10 @@ internal class DebuggerFactory
         return debuggerSink;
     }
 
-    internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, string serviceName, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceName, settings.SymbolDatabaseCompressionEnabled);
-        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, tracerSettings, settings, serviceName);
+        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceNameProvider, settings.SymbolDatabaseCompressionEnabled);
+        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, tracerSettings, settings, serviceNameProvider);
         return symbolsUploader;
     }
 
@@ -101,11 +119,9 @@ internal class DebuggerFactory
     {
         // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
-            tracerSettings.Exporter,
+            tracerSettings.Manager.InitialExporterSettings,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
-            AgentHttpHeaderNames.MinimalHeaders,
-            isMultipart ? () => new MultipartAgentHeaderHelper() : () => new MinimalAgentHeaderHelper(),
-            uri => uri);
+            httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
     }
 }

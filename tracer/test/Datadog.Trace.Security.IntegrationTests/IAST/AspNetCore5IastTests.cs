@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -61,9 +62,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 
     // When the request is finished without the header Strict-Transport-Security or with an invalid value on it, we should detect the vulnerability and send it to the agent when these conditions happens:
@@ -99,9 +98,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 
     [Fact]
@@ -118,9 +115,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -133,13 +128,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -153,13 +146,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -172,13 +163,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
 #if !NETFRAMEWORK && NETCOREAPP3_1_OR_GREATER
@@ -192,12 +181,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 #endif
 
@@ -211,13 +198,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [Theory]
@@ -233,13 +218,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableTheory]
@@ -267,13 +250,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
         var agent = newFixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -290,16 +271,14 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
-    #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [SkippableFact]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
@@ -312,13 +291,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
     #endif
 
@@ -334,14 +311,12 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing(forceMetaStruct: true);
 
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -363,14 +338,12 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url1, url2, url1, url2, url1, url2]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && x.Name == "aspnet_core.request").ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && x.Name == "aspnet_core.request").ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing(forceMetaStruct: true);
 
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 }
 
@@ -419,9 +392,7 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
             }
         }
 
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(fileName)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: fileName);
     }
 }
 
@@ -444,13 +415,11 @@ public class AspNetCore5IastTestsCompatEditAndContinue : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 3, new string[] { url });
-        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToList();
+        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 }
 
@@ -473,14 +442,12 @@ public class AspNetCore5IastTestsCompat : AspNetCore5IastTestsCompatEditAndConti
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToList();
+        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
         settings.AddRegexScrubber(new Regex(@"_dd.agent_psr: .{1,3},"), string.Empty);
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 }
 
@@ -501,13 +468,11 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -521,13 +486,11 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [Fact]
@@ -544,9 +507,7 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -563,13 +524,11 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
 
         var agent = newFixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -585,13 +544,11 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing(forceMetaStruct: true);
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 }
 
@@ -673,9 +630,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -714,9 +669,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         settings.AddRegexScrubber(pathRegex);
         settings.AddRegexScrubber(methodRegex);
 
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -747,9 +700,7 @@ public class AspNetCore5IastTestsStandaloneBillingIastEnabled : AspNetCore5IastT
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 }
 
@@ -791,9 +742,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -809,9 +758,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -825,12 +772,10 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableTheory]
@@ -852,14 +797,12 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         var nameRegex = new Regex(@"""name"": ""(\w+)""");
         settings.AddRegexScrubber(nameRegex, string.Empty);
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -874,13 +817,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -895,13 +836,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -915,13 +854,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -935,13 +872,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -956,16 +891,14 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing()
             .AddRegexScrubber((new Regex("\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController\\+.*"), "\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController+\""))
             .AddRegexScrubber((new Regex("\"hash\": .*"), "\"hash\": 9515978"))
             .AddRegexScrubber((new Regex("\"method\": \"<Ldap>g__PerformLdapQuery\\|.\""), "\"method\": \"<Ldap>g__PerformLdapQuery|0\""));
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -980,13 +913,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1001,13 +932,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [Trait("Category", "EndToEnd")]
@@ -1023,13 +952,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [Trait("Category", "EndToEnd")]
@@ -1050,13 +977,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1069,13 +994,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1088,13 +1011,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1108,13 +1029,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, IastEnabled ? 6 : 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1128,13 +1047,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 1, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1148,13 +1065,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 4, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1168,15 +1083,13 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
         settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableTheory]
@@ -1191,7 +1104,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -1200,9 +1113,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         (Regex RegexPattern, string Replacement) scrubber = (new Regex(@"\?param=[^ ]+"), "?param=...,\n");
         settings.AddRegexScrubber(scrubber);
 
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     // In header injections, we should exclude some headers to prevent false positives:
@@ -1268,13 +1179,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 1, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
     [SkippableFact]
@@ -1288,13 +1197,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 }
 
@@ -1367,9 +1274,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spans, settings, fileNameOverride: filename);
     }
 }
 

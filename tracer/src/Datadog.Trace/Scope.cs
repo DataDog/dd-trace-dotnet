@@ -1,9 +1,12 @@
-// <copyright file="Scope.cs" company="Datadog">
+﻿// <copyright file="Scope.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
+
+using System;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
@@ -13,8 +16,9 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    internal partial class Scope : IScope
+    internal sealed partial class Scope : IScope
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Scope>();
         private readonly IScopeManager _scopeManager;
         private bool _finishOnClose;
 
@@ -44,10 +48,9 @@ namespace Datadog.Trace
             {
                 Close();
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore disposal exceptions here...
-                // TODO: Log? only in test/debug? How should Close() concerns be handled (i.e. independent?)
+                Log.Error(ex, "Exception thrown while disposing scope");
             }
         }
 
