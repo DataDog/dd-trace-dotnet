@@ -132,22 +132,25 @@ public sealed class RemoveNumericToStringCodeFixProvider : CodeFixProvider
             return document.WithSyntaxRoot(root);
         }
 
-        // Build the new type argument list, replacing the type at the right index
-        var typeArgs = methodSymbol.TypeArguments
-            .Select((t, i) => i == typeArgIndex ? numericKeyword : GetTypeKeyword(t))
-            .Select(keyword => SyntaxFactory.ParseTypeName(keyword))
-            .ToArray();
-
-        var newTypeArgList = SyntaxFactory.TypeArgumentList(
-            SyntaxFactory.SeparatedList(typeArgs));
-
         // Check if the log call already has explicit generic type arguments
         if (logInvocation.Expression is MemberAccessExpressionSyntax logMemberAccess
             && logMemberAccess.Name is GenericNameSyntax existingGenericName)
         {
-            // Update existing explicit type args
-            var newGenericName = existingGenericName.WithTypeArgumentList(
-                newTypeArgList.WithTriviaFrom(existingGenericName.TypeArgumentList));
+            // Preserve existing type arg syntax nodes, only replace the one being fixed
+            var existingTypeArgs = existingGenericName.TypeArgumentList.Arguments;
+            var newTypeArgs = new TypeSyntax[existingTypeArgs.Count];
+            for (var i = 0; i < existingTypeArgs.Count; i++)
+            {
+                newTypeArgs[i] = i == typeArgIndex
+                    ? SyntaxFactory.ParseTypeName(numericKeyword).WithTriviaFrom(existingTypeArgs[i])
+                    : existingTypeArgs[i];
+            }
+
+            var newTypeArgList = SyntaxFactory.TypeArgumentList(
+                SyntaxFactory.SeparatedList(newTypeArgs))
+                .WithTriviaFrom(existingGenericName.TypeArgumentList);
+
+            var newGenericName = existingGenericName.WithTypeArgumentList(newTypeArgList);
 
             var nodesToReplace = new SyntaxNode[]
             {
@@ -169,7 +172,15 @@ public sealed class RemoveNumericToStringCodeFixProvider : CodeFixProvider
         else if (logInvocation.Expression is MemberAccessExpressionSyntax simpleMemberAccess
                  && simpleMemberAccess.Name is IdentifierNameSyntax identifierName)
         {
-            // No explicit generic type args — add them to avoid overload ambiguity
+            // No explicit generic type args — build from method symbol and add them
+            var typeArgs = methodSymbol.TypeArguments
+                .Select((t, i) => i == typeArgIndex ? numericKeyword : GetTypeKeyword(t))
+                .Select(keyword => SyntaxFactory.ParseTypeName(keyword))
+                .ToArray();
+
+            var newTypeArgList = SyntaxFactory.TypeArgumentList(
+                SyntaxFactory.SeparatedList(typeArgs));
+
             var newGenericName = SyntaxFactory.GenericName(identifierName.Identifier, newTypeArgList);
 
             var newLogExpression = simpleMemberAccess.WithName(newGenericName);
