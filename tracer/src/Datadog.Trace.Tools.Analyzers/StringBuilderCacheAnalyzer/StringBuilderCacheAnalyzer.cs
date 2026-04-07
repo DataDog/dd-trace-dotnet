@@ -7,6 +7,8 @@
 
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -84,7 +86,7 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
 
         // Suppress if there are multiple StringBuilder allocations in the same scope
         // (StringBuilderCache only caches one instance per thread)
-        if (enclosingFunction is not null && CountStringBuilderCreations(enclosingFunction) > 1)
+        if (enclosingFunction is not null && CountStringBuilderCreations(enclosingFunction, context.SemanticModel, stringBuilderType, context.CancellationToken) > 1)
         {
             return;
         }
@@ -124,11 +126,43 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsAssignedToFieldOrProperty(SyntaxNodeAnalysisContext context)
-    {
-        var node = context.Node;
+        => IsAssignedToFieldOrProperty(context.Node, context.SemanticModel, context.CancellationToken);
 
-        // Case 1: Field initializer — e.g., StringBuilder _sb = new(...);
-        // Walk up: ObjectCreation -> EqualsValueClause -> VariableDeclarator -> VariableDeclaration -> FieldDeclaration/PropertyDeclaration
+    private static int CountStringBuilderCreations(
+        SyntaxNode functionNode,
+        SemanticModel semanticModel,
+        INamedTypeSymbol stringBuilderType,
+        CancellationToken cancellationToken)
+    {
+        var count = 0;
+
+        // Use descendIntoChildren to skip nested function scopes — they are analyzed independently
+        foreach (var node in functionNode.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == functionNode))
+        {
+            ITypeSymbol? createdType = node switch
+            {
+                ObjectCreationExpressionSyntax creation => semanticModel.GetTypeInfo(creation, cancellationToken).Type,
+                ImplicitObjectCreationExpressionSyntax creation => semanticModel.GetTypeInfo(creation, cancellationToken).Type,
+                _ => null,
+            };
+
+            if (createdType is not null
+                && SymbolEqualityComparer.Default.Equals(createdType, stringBuilderType)
+                && !IsAssignedToFieldOrProperty(node, semanticModel, cancellationToken))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static bool IsAssignedToFieldOrProperty(
+        SyntaxNode node,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        // Case 1: Field/property initializer
         for (var current = node.Parent; current is not null; current = current.Parent)
         {
             if (current is FieldDeclarationSyntax or PropertyDeclarationSyntax)
@@ -136,7 +170,6 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
-            // Stop walking if we hit a statement or member boundary
             if (current is StatementSyntax or MemberDeclarationSyntax)
             {
                 break;
@@ -147,7 +180,7 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
         if (node.Parent is AssignmentExpressionSyntax assignment
             && assignment.Right == node)
         {
-            var symbol = context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol;
+            var symbol = semanticModel.GetSymbolInfo(assignment.Left, cancellationToken).Symbol;
             if (symbol is IFieldSymbol or IPropertySymbol)
             {
                 return true;
@@ -157,37 +190,29 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static int CountStringBuilderCreations(SyntaxNode functionNode)
-    {
-        var count = 0;
-
-        // Use descendIntoChildren to skip nested function scopes — they are analyzed independently
-        foreach (var node in functionNode.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == functionNode))
-        {
-            if (node is ObjectCreationExpressionSyntax creation
-                && creation.Type is IdentifierNameSyntax { Identifier.Text: "StringBuilder" } or
-                    QualifiedNameSyntax { Right.Identifier.Text: "StringBuilder" })
-            {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
     private static bool ContainsStringBuilderCacheAcquireCall(SyntaxNode functionNode)
     {
-        foreach (var invocation in functionNode.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        // Use descendIntoChildren to skip nested function scopes — they are analyzed independently
+        foreach (var invocation in functionNode.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == functionNode).OfType<InvocationExpressionSyntax>())
         {
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess
                 && memberAccess.Name.Identifier.Text == "Acquire"
-                && memberAccess.Expression is IdentifierNameSyntax identifier
-                && identifier.Identifier.Text == "StringBuilderCache")
+                && ExpressionEndsWithStringBuilderCache(memberAccess.Expression))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool ExpressionEndsWithStringBuilderCache(ExpressionSyntax expression)
+    {
+        return expression switch
+        {
+            IdentifierNameSyntax { Identifier.Text: "StringBuilderCache" } => true,
+            MemberAccessExpressionSyntax { Name.Identifier.Text: "StringBuilderCache" } => true,
+            _ => false,
+        };
     }
 }
