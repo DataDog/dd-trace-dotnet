@@ -14,6 +14,11 @@
 
 set -e
 
+if [ "$CI_COMMIT_REF_NAME" = "master" ]; then
+    echo "Skipping PR comment on master branch."
+    exit 0
+fi
+
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 UNCONFIDENCE_THRESHOLD="${UNCONFIDENCE_THRESHOLD:-5.0}"
 

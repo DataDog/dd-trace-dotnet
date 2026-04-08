@@ -71,6 +71,10 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
   when: manual
   timeout: 3h
   variables:
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
     AWS_REGION: "us-east-1"
 
     # Branch containing a provision for building the macrobenchmarks AMI
@@ -533,6 +537,10 @@ profiler_cpu_timer_create-arm64:
       - reports/
     expire_in: 3 months
   variables:
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
     RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
 
     # Allows ephemeral instances to read content from benchmarking-platform
