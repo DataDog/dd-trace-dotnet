@@ -116,4 +116,53 @@ public class DataStreamsTransactionInfoTest
         bytes[9].Should().Be(255);
         bytes.Length.Should().Be(10 + 255);
     }
+
+    [Fact]
+    public void LongTransactionId_WithMultiByteChars_IsTruncatedAtOrBelow255Bytes()
+    {
+        // 253 ASCII bytes + a 3-byte Chinese char: total 256 bytes, needs truncation.
+        // With char-boundary truncation (Encoder.Convert), the Chinese char does not fit
+        // in the remaining 2 bytes, so only 253 bytes are stored (not a partial sequence).
+        var id = new string('a', 253) + "中";
+        var transaction = new DataStreamsTransactionInfo(id, 1L, "cp");
+        var bytes = transaction.GetBytes();
+
+        var storedLength = bytes[9];
+        storedLength.Should().BeLessOrEqualTo(255);
+        bytes.Length.Should().Be(10 + storedLength);
+        transaction.GetByteCount().Should().Be(bytes.Length);
+    }
+
+    [Fact]
+    public void GetCacheBytes_MultipleEntries_SerializesAllEntries()
+    {
+        DataStreamsTransactionInfo.ClearCacheForTesting();
+        _ = new DataStreamsTransactionInfo("t1", 1, "alpha");
+        _ = new DataStreamsTransactionInfo("t2", 2, "beta");
+        _ = new DataStreamsTransactionInfo("t3", 3, "gamma");
+
+        var cache = DataStreamsTransactionInfo.GetCacheBytes();
+
+        // Each entry: [1 byte id] [1 byte name length] [N bytes name]
+        // "alpha" = 5 bytes → 7 bytes total
+        // "beta"  = 4 bytes → 6 bytes total
+        // "gamma" = 5 bytes → 7 bytes total
+        // Total = 20 bytes
+        cache.Length.Should().Be(20);
+
+        // Entry 1: id=1, len=5, "alpha"
+        cache[0].Should().Be(1);
+        cache[1].Should().Be(5);
+        System.Text.Encoding.UTF8.GetString(cache, 2, 5).Should().Be("alpha");
+
+        // Entry 2: id=2, len=4, "beta"
+        cache[7].Should().Be(2);
+        cache[8].Should().Be(4);
+        System.Text.Encoding.UTF8.GetString(cache, 9, 4).Should().Be("beta");
+
+        // Entry 3: id=3, len=5, "gamma"
+        cache[13].Should().Be(3);
+        cache[14].Should().Be(5);
+        System.Text.Encoding.UTF8.GetString(cache, 15, 5).Should().Be("gamma");
+    }
 }

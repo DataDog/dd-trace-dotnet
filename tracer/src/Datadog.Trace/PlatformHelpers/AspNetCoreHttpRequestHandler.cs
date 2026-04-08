@@ -16,6 +16,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
@@ -149,7 +150,7 @@ namespace Datadog.Trace.PlatformHelpers
                         {
                             foreach (var headerValue in headerValues)
                             {
-                                dataStreamsManager.TrackTransaction(headerValue, extractor.Name);
+                                scope.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
                             }
                         }
                     }

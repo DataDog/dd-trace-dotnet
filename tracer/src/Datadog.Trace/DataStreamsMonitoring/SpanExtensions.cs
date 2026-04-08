@@ -27,6 +27,16 @@ internal static class SpanExtensions
         manager.TrackTransaction(transactionId, checkpointName);
     }
 
+    internal static void TrackTransaction(this Span span, DataStreamsManager? manager, byte[] transactionIdBytes, string checkpointName)
+    {
+        if (manager is null || !manager.IsTransactionTrackingEnabled)
+        {
+            return;
+        }
+
+        manager.TrackTransaction(transactionIdBytes, checkpointName);
+    }
+
     /// <summary>
     /// Sets a DataStreams checkpoint and adds pathway tag to the span
     /// </summary>

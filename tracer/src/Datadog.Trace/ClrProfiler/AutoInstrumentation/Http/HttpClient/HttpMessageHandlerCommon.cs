@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                             {
                                 foreach (var headerValue in headerValues)
                                 {
-                                    dataStreamsManager.TrackTransaction(headerValue, extractor.Name);
+                                    scope?.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
                                 }
                             }
                         }

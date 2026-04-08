@@ -292,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     if (dataStreamsManager.IsTransactionTrackingEnabled)
                     {
-                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaConsumeHeaders, message);
+                        ApplyDataStreamsExtractors(span, dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaConsumeHeaders, message);
                     }
                 }
             }
@@ -334,6 +334,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         }
 
         internal static void ApplyDataStreamsExtractors<TMessage>(
+            Span span,
             DataStreamsManager dataStreamsManager,
             DataStreamsTransactionExtractor.ExtractorType extractorType,
             TMessage? message)
@@ -351,7 +352,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     if (message.Headers.TryGetLastBytes(extractor.Value, out var transactionId))
                     {
-                        dataStreamsManager.TrackTransaction(transactionId, extractor.Name);
+                        span.TrackTransaction(dataStreamsManager, transactionId, extractor.Name);
                     }
                 }
             }
@@ -424,7 +425,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                     if (dataStreamsManager.IsTransactionTrackingEnabled)
                     {
-                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaProduceHeaders, message);
+                        ApplyDataStreamsExtractors(span, dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaProduceHeaders, message);
                     }
                 }
             }
