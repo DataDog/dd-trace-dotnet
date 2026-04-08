@@ -133,6 +133,10 @@ dotnet_diagnostic.CA5374.severity = error # Do Not Use XslTransform
 dotnet_diagnostic.CA5375.severity = error # Do not use account shared access signature
 dotnet_diagnostic.CA5376.severity = error # Use SharedAccessProtocol HttpsOnly
 dotnet_diagnostic.CA5377.severity = error # Use container level access policy
+dotnet_diagnostic.CA5378.severity = error # Do not disable ServicePointManagerSecurityProtocols
+dotnet_diagnostic.CA5379.severity = error # Ensure key derivation function algorithm is sufficiently strong
+dotnet_diagnostic.CA5380.severity = error # Do not add certificates to root store
+dotnet_diagnostic.CA5381.severity = error # Ensure certificates are not added to root store
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
