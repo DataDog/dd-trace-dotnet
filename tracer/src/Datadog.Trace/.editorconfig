@@ -141,6 +141,7 @@ dotnet_diagnostic.CA5382.severity = error # Use secure cookies in ASP.NET Core
 dotnet_diagnostic.CA5383.severity = error # Ensure use secure cookies in ASP.NET Core
 dotnet_diagnostic.CA5384.severity = error # Do not use digital signature algorithm (DSA)
 dotnet_diagnostic.CA5385.severity = error # Use RSA algorithm with sufficient key size
+dotnet_diagnostic.CA5386.severity = error # Avoid hardcoding SecurityProtocolType value
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
