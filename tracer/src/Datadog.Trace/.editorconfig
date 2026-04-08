@@ -148,6 +148,7 @@ dotnet_diagnostic.CA5389.severity = error # Do not add archive item's path to th
 dotnet_diagnostic.CA5390.severity = error # Do not hard-code encryption key
 dotnet_diagnostic.CA5391.severity = error # Use antiforgery tokens in ASP.NET Core MVC controllers
 # dotnet_diagnostic.CA5392.severity = error # Use DefaultDllImportSearchPaths attribute for P/Invokes - too many P/Invoke methods to fix
+dotnet_diagnostic.CA5393.severity = error # Do not use unsafe DllImportSearchPath value
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
@@ -156,4 +157,5 @@ dotnet_diagnostic.CA2301.severity = none
 dotnet_diagnostic.CA2302.severity = none
 dotnet_diagnostic.CA5350.severity = none
 dotnet_diagnostic.CA5351.severity = none
+dotnet_diagnostic.CA5393.severity = none
 
