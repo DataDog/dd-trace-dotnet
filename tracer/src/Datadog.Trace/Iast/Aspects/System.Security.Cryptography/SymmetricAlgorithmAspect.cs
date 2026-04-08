@@ -80,7 +80,9 @@ public sealed class SymmetricAlgorithmAspect
     [AspectCtorReplace("System.Security.Cryptography.TripleDESCryptoServiceProvider::.ctor()")]
     public static TripleDESCryptoServiceProvider InitTripleDES()
     {
+#pragma warning disable CA5350 // Intentional: IAST aspect replaces weak crypto constructor to detect its usage
         var target = new TripleDESCryptoServiceProvider();
+#pragma warning restore CA5350
         try
         {
             ProcessCipherClassCreation(target);
