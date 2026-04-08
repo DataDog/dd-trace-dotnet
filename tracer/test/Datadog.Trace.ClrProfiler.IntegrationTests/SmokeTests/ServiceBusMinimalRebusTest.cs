@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,7 +13,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
-    public class ServiceBusMinimalRebusTest : SmokeTestBase, IClassFixture<SqlServerFixture>
+    [Collection(SqlServerCollection.Name)]
+    public class ServiceBusMinimalRebusTest : SmokeTestBase
     {
         public ServiceBusMinimalRebusTest(ITestOutputHelper output, SqlServerFixture sqlServerFixture)
             : base(output, "ServiceBus.Minimal.Rebus", maxTestRunSeconds: 90)
