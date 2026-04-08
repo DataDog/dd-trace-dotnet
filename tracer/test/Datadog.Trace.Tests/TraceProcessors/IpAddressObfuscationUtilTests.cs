@@ -31,7 +31,10 @@ namespace Datadog.Trace.Tests.TraceProcessors
             { "2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF", "blocked-ip-address" },      // IPv6 full
             { "2001:db8:3c4d:15::1a2f:1a2b", "blocked-ip-address" },                 // IPv6 compressed
             { "[fe80::1ff:fe23:4567:890a]:8080", "blocked-ip-address:8080" },         // IPv6 bracket+port
+            { "[::1]:8080", "::1:8080" },                                             // Allowed IPv6 bracket+port
             { "192.168.1.1:1234", "blocked-ip-address:1234" },                        // IPv4+port
+            { "192.168.1.1:999999", "blocked-ip-address:999999" },                    // IPv4+invalid port
+            { "192.168.1.1:abcd", "blocked-ip-address:abcd" },                        // IPv4+invalid port
             { "dnspoll:///10.21.120.145:6400", "dnspoll:///blocked-ip-address:6400" }, // scheme prefix
             { "dnspoll:///abc.cluster.local:50051", "dnspoll:///abc.cluster.local:50051" }, // scheme+hostname preserved
             { "http://10.21.120.145:6400", "http://blocked-ip-address:6400" },
