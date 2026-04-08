@@ -178,4 +178,4 @@ check-big-regressions:
     expire_in: "30 days"
   script: |
     export ARTIFACTS_DIR="$(pwd)/artifacts"
-    bp-runner bp-runner.fail-on-regression.yml --debug
+    bp-runner .gitlab/benchmarks/bp-runner.fail-on-regression.yml --debug
