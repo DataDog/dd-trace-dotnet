@@ -22,18 +22,18 @@ public class DataStreamsTransactionExtractorTests
     [InlineData("",                      0)]
     public void ExtractorType_ReturnsCorrectType_ForTypeString(string stringType, int expectedInt)
     {
-        var expected = (DataStreamsTransactionExtractor.Type)expectedInt;
+        var expected = (DataStreamsTransactionExtractor.ExtractorType)expectedInt;
         var json = $"[{{\"name\": \"n\", \"type\": \"{stringType}\", \"value\": \"v\"}}]";
         var registry = new DataStreamsExtractorRegistry(json);
         registry.GetExtractorsByType(expected).Should().ContainSingle()
-                .Which.ExtractorType.Should().Be(expected);
+                .Which.ParsedType.Should().Be(expected);
     }
 
     [Fact]
     public void ExtractorType_ReturnsSameValue_OnMultipleCalls()
     {
         var registry = new DataStreamsExtractorRegistry("[{\"name\": \"n\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v\"}]");
-        var extractor = registry.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders)!.Single();
-        extractor.ExtractorType.Should().Be(extractor.ExtractorType);
+        var extractor = registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders)!.Single();
+        extractor.ParsedType.Should().Be(extractor.ParsedType);
     }
 }

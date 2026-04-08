@@ -20,15 +20,15 @@ public class DataStreamsExtractorRegistryTest
     {
         var registry = new DataStreamsExtractorRegistry(json);
 
-        registry.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders).Should().BeNull();
-        registry.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpInHeaders).Should().BeNull();
+        registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders).Should().BeNull();
+        registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders).Should().BeNull();
     }
 
     [Fact]
     public void DeserializeCorrectly()
     {
         var registry = new DataStreamsExtractorRegistry("[{\"name\": \"transaction-origin\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"transaction-id\"}]");
-        registry.AsJson().Should().Be("{\"HttpOutHeaders\":[{\"name\":\"transaction-origin\",\"type\":\"HTTP_OUT_HEADERS\",\"value\":\"transaction-id\",\"ExtractorType\":1}]}");
+        registry.AsJson().Should().Be("{\"HttpOutHeaders\":[{\"name\":\"transaction-origin\",\"type\":\"HTTP_OUT_HEADERS\",\"value\":\"transaction-id\",\"ParsedType\":1}]}");
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class DataStreamsExtractorRegistryTest
             "{\"name\": \"n2\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v2\"}" +
             "]");
 
-        var extractors = registry.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders);
+        var extractors = registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders);
 
         extractors.Should().HaveCount(2);
         extractors.Should().Contain(e => e.Name == "n1" && e.Value == "v1");
@@ -53,6 +53,6 @@ public class DataStreamsExtractorRegistryTest
         var registry = new DataStreamsExtractorRegistry(
             "[{\"name\": \"n1\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v1\"}]");
 
-        registry.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpInHeaders).Should().BeNull();
+        registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders).Should().BeNull();
     }
 }

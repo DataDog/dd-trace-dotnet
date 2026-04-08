@@ -11,17 +11,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
 internal sealed class DataStreamsTransactionExtractor
 {
-    private static readonly Dictionary<string, Type> TypeMap = new(System.StringComparer.Ordinal)
-    {
-        ["HTTP_OUT_HEADERS"] = Type.HttpOutHeaders,
-        ["HTTP_IN_HEADERS"] = Type.HttpInHeaders,
-        ["KAFKA_CONSUME_HEADERS"] = Type.KafkaConsumeHeaders,
-        ["KAFKA_PRODUCE_HEADERS"] = Type.KafkaProduceHeaders,
-    };
+    private ExtractorType? _cachedType;
 
-    private Type? _cachedType;
-
-    public enum Type
+    public enum ExtractorType
     {
         Unknown,
 
@@ -43,13 +35,20 @@ internal sealed class DataStreamsTransactionExtractor
     [JsonProperty(PropertyName = "value")]
     public string Value { get; private set; } = string.Empty;
 
-    public Type ExtractorType
+    public ExtractorType ParsedType
     {
         get
         {
             if (_cachedType is null)
             {
-                _cachedType = TypeMap.TryGetValue(StringType, out var t) ? t : Type.Unknown;
+                _cachedType = StringType switch
+                {
+                    "HTTP_OUT_HEADERS" => ExtractorType.HttpOutHeaders,
+                    "HTTP_IN_HEADERS" => ExtractorType.HttpInHeaders,
+                    "KAFKA_CONSUME_HEADERS" => ExtractorType.KafkaConsumeHeaders,
+                    "KAFKA_PRODUCE_HEADERS" => ExtractorType.KafkaProduceHeaders,
+                    _ => ExtractorType.Unknown,
+                };
             }
 
             return _cachedType.Value;

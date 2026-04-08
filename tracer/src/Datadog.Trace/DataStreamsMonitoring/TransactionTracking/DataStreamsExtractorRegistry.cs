@@ -15,7 +15,7 @@ internal sealed class DataStreamsExtractorRegistry
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsExtractorRegistry>();
 
-    private readonly Dictionary<DataStreamsTransactionExtractor.Type, List<DataStreamsTransactionExtractor>> _extractors = new();
+    private readonly Dictionary<DataStreamsTransactionExtractor.ExtractorType, List<DataStreamsTransactionExtractor>> _extractors = new();
 
     internal DataStreamsExtractorRegistry(string extractorsJson)
     {
@@ -42,9 +42,9 @@ internal sealed class DataStreamsExtractorRegistry
 
         foreach (var extractor in deserialized)
         {
-            var list = _extractors.GetValueOrDefault(extractor.ExtractorType) ?? new();
+            var list = _extractors.GetValueOrDefault(extractor.ParsedType) ?? new();
             list.Add(extractor);
-            _extractors[extractor.ExtractorType] = list;
+            _extractors[extractor.ParsedType] = list;
         }
     }
 
@@ -53,7 +53,7 @@ internal sealed class DataStreamsExtractorRegistry
         return JsonHelper.SerializeObject(_extractors);
     }
 
-    internal List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.Type extractorType)
+    internal List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType extractorType)
     {
         return _extractors.GetValueOrDefault(extractorType);
     }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Propagators;
 
@@ -46,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
                 if (dataStreamsManager.IsTransactionTrackingEnabled)
                 {
-                    var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders);
+                    var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders);
                     if (extractors != null)
                     {
                         foreach (var extractor in extractors)

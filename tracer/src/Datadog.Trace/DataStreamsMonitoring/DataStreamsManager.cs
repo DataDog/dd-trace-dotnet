@@ -53,7 +53,11 @@ internal sealed class DataStreamsManager
         IsInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
         _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
 
-        Log.Debug(@"Data Streams extractors loaded: {AsJson}", _registry.AsJson());
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Debug("Data Streams extractors loaded: {Value}", _registry.AsJson());
+        }
+
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
         // even though the value will probably get updated by a callback when subscriptions happen just after,
         // we still need to initialize it to a value from initial settings in case no callback fire
@@ -165,7 +169,7 @@ internal sealed class DataStreamsManager
         where TCarrier : IBinaryHeadersCollection
         => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
 
-    public List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.Type extractorType)
+    public List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType extractorType)
     {
         return _registry.GetExtractorsByType(extractorType);
     }
@@ -202,7 +206,7 @@ internal sealed class DataStreamsManager
 
     public void TrackTransaction(byte[] transactionIdBytes, string checkpointName)
     {
-        if (!IsEnabled)
+        if (!IsTransactionTrackingEnabled)
         {
             return;
         }

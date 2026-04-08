@@ -140,7 +140,7 @@ namespace Datadog.Trace.PlatformHelpers
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager.IsTransactionTrackingEnabled)
             {
-                var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpInHeaders);
+                var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders);
                 if (extractors != null)
                 {
                     foreach (var extractor in extractors)

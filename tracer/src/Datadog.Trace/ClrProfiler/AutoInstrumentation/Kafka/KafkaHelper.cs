@@ -292,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     if (!dataStreamsManager.IsInDefaultState)
                     {
-                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.Type.KafkaConsumeHeaders, message);
+                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaConsumeHeaders, message);
                     }
                 }
             }
@@ -335,7 +335,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static void ApplyDataStreamsExtractors<TMessage>(
             DataStreamsManager dataStreamsManager,
-            DataStreamsTransactionExtractor.Type extractorType,
+            DataStreamsTransactionExtractor.ExtractorType extractorType,
             TMessage? message)
             where TMessage : IMessage
         {
@@ -424,7 +424,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                     if (!dataStreamsManager.IsInDefaultState)
                     {
-                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.Type.KafkaProduceHeaders, message);
+                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaProduceHeaders, message);
                     }
                 }
             }
