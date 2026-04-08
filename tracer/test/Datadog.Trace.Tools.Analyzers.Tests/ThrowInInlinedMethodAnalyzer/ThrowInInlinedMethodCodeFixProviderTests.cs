@@ -22,35 +22,25 @@ public class ThrowInInlinedMethodCodeFixProviderTests
 {
     private const string DiagnosticId = Analyzers.ThrowInInlinedMethodAnalyzer.Diagnostics.DiagnosticId;
 
-    // Minimal ThrowHelper stub so the fixed code compiles in the test harness
+    // Minimal ThrowHelper stub matching real signatures so the fixed code compiles in the test harness
     private const string ThrowHelperStub = """
 
         namespace Datadog.Trace.Util
         {
             internal static class ThrowHelper
             {
-                internal static void ThrowArgumentNullException() => throw new System.ArgumentNullException();
                 internal static void ThrowArgumentNullException(string paramName) => throw new System.ArgumentNullException(paramName);
-                internal static void ThrowArgumentOutOfRangeException() => throw new System.ArgumentOutOfRangeException();
                 internal static void ThrowArgumentOutOfRangeException(string paramName) => throw new System.ArgumentOutOfRangeException(paramName);
                 internal static void ThrowArgumentOutOfRangeException(string paramName, string message) => throw new System.ArgumentOutOfRangeException(paramName, message);
                 internal static void ThrowArgumentOutOfRangeException(string paramName, object actualValue, string message) => throw new System.ArgumentOutOfRangeException(paramName, actualValue, message);
-                internal static void ThrowArgumentException() => throw new System.ArgumentException();
                 internal static void ThrowArgumentException(string message) => throw new System.ArgumentException(message);
                 internal static void ThrowArgumentException(string message, string paramName) => throw new System.ArgumentException(message, paramName);
-                internal static void ThrowInvalidOperationException() => throw new System.InvalidOperationException();
                 internal static void ThrowInvalidOperationException(string message) => throw new System.InvalidOperationException(message);
-                internal static void ThrowException() => throw new System.Exception();
                 internal static void ThrowException(string message) => throw new System.Exception(message);
-                internal static void ThrowInvalidCastException() => throw new System.InvalidCastException();
                 internal static void ThrowInvalidCastException(string message) => throw new System.InvalidCastException(message);
-                internal static void ThrowIndexOutOfRangeException() => throw new System.IndexOutOfRangeException();
                 internal static void ThrowIndexOutOfRangeException(string message) => throw new System.IndexOutOfRangeException(message);
-                internal static void ThrowNotSupportedException() => throw new System.NotSupportedException();
                 internal static void ThrowNotSupportedException(string message) => throw new System.NotSupportedException(message);
-                internal static void ThrowKeyNotFoundException() => throw new System.Collections.Generic.KeyNotFoundException();
                 internal static void ThrowKeyNotFoundException(string message) => throw new System.Collections.Generic.KeyNotFoundException(message);
-                internal static void ThrowNullReferenceException() => throw new System.NullReferenceException();
                 internal static void ThrowNullReferenceException(string message) => throw new System.NullReferenceException(message);
             }
         }
@@ -271,8 +261,10 @@ public class ThrowInInlinedMethodCodeFixProviderTests
     }
 
     [Fact]
-    public async Task ShouldFixZeroArgConstructor()
+    public async Task ShouldNotFixZeroArgConstructor()
     {
+        // Zero-arg constructors have no matching ThrowHelper overload, so no fix should be offered.
+        // The diagnostic is still reported, but the source is unchanged.
         const string source = """
             using System;
             using System.Runtime.CompilerServices;
@@ -287,25 +279,11 @@ public class ThrowInInlinedMethodCodeFixProviderTests
             }
             """;
 
-        const string fix = """
-            using System;
-            using System.Runtime.CompilerServices;
-            using Datadog.Trace.Util;
-
-            class TestClass
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                void TestMethod()
-                {
-                    ThrowHelper.ThrowInvalidOperationException();
-                }
-            }
-            """;
-
         var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithArguments("TestMethod");
-        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
+
+        await Verifier.VerifyCodeFixAsync(source, expected, source);
     }
 
     [Fact]

@@ -29,20 +29,20 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
     {
         private const string ThrowHelperUsingNamespace = "Datadog.Trace.Util";
 
-        private static readonly Dictionary<string, (string MethodName, int MaxArgs)> SupportedExceptions
-            = new Dictionary<string, (string, int)>
+        private static readonly Dictionary<string, (string MethodName, int MinArgs, int MaxArgs)> SupportedExceptions
+            = new Dictionary<string, (string, int, int)>
             {
-                ["System.ArgumentNullException"] = ("ThrowArgumentNullException", 1),
-                ["System.ArgumentOutOfRangeException"] = ("ThrowArgumentOutOfRangeException", 3),
-                ["System.ArgumentException"] = ("ThrowArgumentException", 2),
-                ["System.InvalidOperationException"] = ("ThrowInvalidOperationException", 1),
-                ["System.Exception"] = ("ThrowException", 1),
-                ["System.InvalidCastException"] = ("ThrowInvalidCastException", 1),
-                ["System.IndexOutOfRangeException"] = ("ThrowIndexOutOfRangeException", 1),
-                ["System.NotSupportedException"] = ("ThrowNotSupportedException", 1),
-                ["System.Collections.Generic.KeyNotFoundException"] = ("ThrowKeyNotFoundException", 1),
-                ["System.NullReferenceException"] = ("ThrowNullReferenceException", 1),
-                ["System.ObjectDisposedException"] = ("ThrowObjectDisposedException", 1),
+                ["System.ArgumentNullException"] = ("ThrowArgumentNullException", 1, 1),
+                ["System.ArgumentOutOfRangeException"] = ("ThrowArgumentOutOfRangeException", 1, 3),
+                ["System.ArgumentException"] = ("ThrowArgumentException", 1, 2),
+                ["System.InvalidOperationException"] = ("ThrowInvalidOperationException", 1, 1),
+                ["System.Exception"] = ("ThrowException", 1, 1),
+                ["System.InvalidCastException"] = ("ThrowInvalidCastException", 1, 1),
+                ["System.IndexOutOfRangeException"] = ("ThrowIndexOutOfRangeException", 1, 1),
+                ["System.NotSupportedException"] = ("ThrowNotSupportedException", 1, 1),
+                ["System.Collections.Generic.KeyNotFoundException"] = ("ThrowKeyNotFoundException", 1, 1),
+                ["System.NullReferenceException"] = ("ThrowNullReferenceException", 1, 1),
+                ["System.ObjectDisposedException"] = ("ThrowObjectDisposedException", 1, 1),
             };
 
         /// <inheritdoc />
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
             }
 
             var argCount = creation.ArgumentList?.Arguments.Count ?? 0;
-            if (argCount > entry.MaxArgs)
+            if (argCount < entry.MinArgs || argCount > entry.MaxArgs)
             {
                 return false;
             }
