@@ -59,10 +59,7 @@ namespace Datadog.Trace.FeatureFlags
                         defaultValue,
                         EvaluationReason.Error,
                         error: "No config loaded",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "PROVIDER_NOT_READY"
-                        });
+                        errorCode: EvaluationErrorCode.ProviderNotReady);
                 }
 
                 if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag) || flag is null)
@@ -72,10 +69,7 @@ namespace Datadog.Trace.FeatureFlags
                         defaultValue,
                         EvaluationReason.Error,
                         error: "Flag not found",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "FLAG_NOT_FOUND"
-                        });
+                        errorCode: EvaluationErrorCode.FlagNotFound);
                 }
 
                 if (flag.Enabled != true)
@@ -93,10 +87,7 @@ namespace Datadog.Trace.FeatureFlags
                         defaultValue,
                         EvaluationReason.Error,
                         error: "Type mismatch",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "TYPE_MISMATCH"
-                        });
+                        errorCode: EvaluationErrorCode.TypeMismatch);
                 }
 
                 if (flag.Allocations is null or { Count: 0 })
@@ -189,10 +180,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: ex.Message,
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "PARSE_ERROR"
-                    });
+                    errorCode: EvaluationErrorCode.ParseError);
             }
             catch (MissingTargetingKeyException)
             {
@@ -201,10 +189,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: "Targeting key missing",
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "TARGETING_KEY_MISSING"
-                    });
+                    errorCode: EvaluationErrorCode.TargetingKeyMissing);
             }
             catch (Exception ex)
             {
@@ -213,11 +198,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: ex.Message,
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "GENERAL",
-                        ["message"] = ex.Message
-                    });
+                    errorCode: EvaluationErrorCode.General);
             }
         }
 
@@ -683,10 +664,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: error,
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "PARSE_ERROR"
-                    });
+                    errorCode: EvaluationErrorCode.ParseError);
             }
         }
 

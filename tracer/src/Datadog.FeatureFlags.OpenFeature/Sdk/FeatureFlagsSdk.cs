@@ -85,7 +85,7 @@ internal static class FeatureFlagsSdk
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
             (T)value,
-            ToErrorType(evaluation.FlagMetadata),
+            ToErrorType(evaluation.ErrorCode),
             ToOpenFeatureReason(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
@@ -105,26 +105,23 @@ internal static class FeatureFlagsSdk
         _ => Reason.Unknown,
     };
 
-    private static ErrorType ToErrorType(IDictionary<string, string>? metadata)
+    /// <summary>
+    /// Converts our internal EvaluationErrorCode enum to OpenFeature's ErrorType.
+    /// Using an enum (value type) ensures reliable duck-typing across assemblies,
+    /// unlike reference types (string, IDictionary) which may return null through duck-typing proxies.
+    /// </summary>
+    private static ErrorType ToErrorType(EvaluationErrorCode errorCode) => errorCode switch
     {
-        if (metadata is null || !metadata.TryGetValue("errorCode", out var errorCode))
-        {
-            return ErrorType.None;
-        }
-
-        return errorCode switch
-        {
-            "FLAG_NOT_FOUND" => ErrorType.FlagNotFound,
-            "INVALID_CONTEXT" => ErrorType.InvalidContext,
-            "PARSE_ERROR" => ErrorType.ParseError,
-            "PROVIDER_FATAL" => ErrorType.ProviderFatal,
-            "PROVIDER_NOT_READY" => ErrorType.ProviderNotReady,
-            "TARGETING_KEY_MISSING" => ErrorType.TargetingKeyMissing,
-            "TYPE_MISMATCH" => ErrorType.TypeMismatch,
-            "GENERAL" => ErrorType.General,
-            _ => ErrorType.None,
-        };
-    }
+        EvaluationErrorCode.FlagNotFound => ErrorType.FlagNotFound,
+        EvaluationErrorCode.InvalidContext => ErrorType.InvalidContext,
+        EvaluationErrorCode.ParseError => ErrorType.ParseError,
+        EvaluationErrorCode.ProviderFatal => ErrorType.ProviderFatal,
+        EvaluationErrorCode.ProviderNotReady => ErrorType.ProviderNotReady,
+        EvaluationErrorCode.TargetingKeyMissing => ErrorType.TargetingKeyMissing,
+        EvaluationErrorCode.TypeMismatch => ErrorType.TypeMismatch,
+        EvaluationErrorCode.General => ErrorType.General,
+        _ => ErrorType.None,
+    };
 
     private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
     {

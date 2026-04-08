@@ -72,10 +72,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: "No config loaded",
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "PROVIDER_NOT_READY"
-                    });
+                    errorCode: EvaluationErrorCode.ProviderNotReady);
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");

@@ -115,7 +115,7 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal(23, result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.Equal("No config loaded", result.Error);
-        Assert.Equal("PROVIDER_NOT_READY", result.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationErrorCode.ProviderNotReady, result.ErrorCode);
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.Equal("Targeting key missing", result.Error);
-        Assert.Equal("TARGETING_KEY_MISSING", result.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationErrorCode.TargetingKeyMissing, result.ErrorCode);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.Equal("Flag not found", result.Error);
-        Assert.Equal("FLAG_NOT_FOUND", result.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationErrorCode.FlagNotFound, result.ErrorCode);
     }
 
     [Fact]
@@ -187,12 +187,12 @@ public partial class FeatureFlagsEvaluatorTests
         var result1 = evaluator.Evaluate("null-allocation", Trace.FeatureFlags.ValueType.Boolean, 23, ctx);
         Assert.Equal(23, result1.Value);
         Assert.Equal(EvaluationReason.Error, result1.Reason);
-        Assert.Equal("TYPE_MISMATCH", result1.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationErrorCode.TypeMismatch, result1.ErrorCode);
 
         var result2 = evaluator.Evaluate("empty-allocation", Trace.FeatureFlags.ValueType.Numeric, 23, ctx);
         Assert.Equal(23, result2.Value);
         Assert.Equal(EvaluationReason.Error, result2.Reason);
-        Assert.Equal("TYPE_MISMATCH", result2.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationErrorCode.TypeMismatch, result2.ErrorCode);
     }
 
     [Fact]
@@ -456,7 +456,7 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.NotNull(result.Error); // Contains the date parsing exception message
-        Assert.Equal("PARSE_ERROR", result.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationErrorCode.ParseError, result.ErrorCode);
     }
 
     [Theory]
@@ -486,7 +486,7 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.NotNull(result.Error); // Contains the regex parsing exception message
-        Assert.Equal("PARSE_ERROR", result.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationErrorCode.ParseError, result.ErrorCode);
     }
 
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)
