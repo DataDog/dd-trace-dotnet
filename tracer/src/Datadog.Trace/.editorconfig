@@ -82,6 +82,10 @@ dotnet_diagnostic.CA2315.severity = error # Do not use insecure deserializer Obj
 dotnet_diagnostic.CA2321.severity = error # Do not deserialize with JavaScriptSerializer using SimpleTypeResolver
 dotnet_diagnostic.CA2322.severity = error # Ensure JavaScriptSerializer is not initialized with SimpleTypeResolver
 dotnet_diagnostic.CA2326.severity = error # Do not use TypeNameHandling values other than None
+dotnet_diagnostic.CA2327.severity = error # Do not use insecure JsonSerializerSettings
+dotnet_diagnostic.CA2328.severity = error # Ensure that JsonSerializerSettings are secure
+dotnet_diagnostic.CA2329.severity = error # Do not deserialize with JsonSerializer using insecure configuration
+dotnet_diagnostic.CA2330.severity = error # Ensure JsonSerializer has secure configuration when deserializing
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
