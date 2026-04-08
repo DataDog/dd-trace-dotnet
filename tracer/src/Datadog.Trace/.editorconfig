@@ -156,6 +156,9 @@ dotnet_diagnostic.CA5397.severity = error # Do not use deprecated SslProtocols v
 dotnet_diagnostic.CA5398.severity = error # Avoid hardcoded SslProtocols values
 dotnet_diagnostic.CA5399.severity = error # Definitely disable HttpClient certificate revocation list check
 dotnet_diagnostic.CA5400.severity = error # Ensure HttpClient certificate revocation list check is not disabled
+dotnet_diagnostic.CA5401.severity = error # Do not use CreateEncryptor with non-default IV
+dotnet_diagnostic.CA5402.severity = error # Use CreateEncryptor with the default IV
+dotnet_diagnostic.CA5403.severity = error # Do not hard-code certificate
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
@@ -166,4 +169,5 @@ dotnet_diagnostic.CA5350.severity = none
 dotnet_diagnostic.CA5351.severity = none
 dotnet_diagnostic.CA5393.severity = none
 dotnet_diagnostic.CA5394.severity = none
+dotnet_diagnostic.CA5401.severity = none
 
