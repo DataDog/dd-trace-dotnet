@@ -54,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 expectedSpanCount += 6;
             }
+
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 

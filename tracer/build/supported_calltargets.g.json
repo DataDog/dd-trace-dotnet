@@ -12436,220 +12436,6 @@
   {
     "IntegrationName": "MySql",
     "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteDbDataReader",
-    "TargetReturnType": "System.Data.Common.DbDataReader",
-    "TargetParameterTypes": [
-      "System.Data.CommandBehavior"
-    ],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
-    "TargetParameterTypes": [
-      "System.Data.CommandBehavior",
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteNonQuery",
-    "TargetReturnType": "System.Int32",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
-    "TargetParameterTypes": [
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteReader",
-    "TargetReturnType": "MySql.Data.MySqlClient.MySqlDataReader",
-    "TargetParameterTypes": [
-      "System.Data.CommandBehavior"
-    ],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
-    "TargetParameterTypes": [
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
-    "TargetParameterTypes": [
-      "System.Data.CommandBehavior",
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteScalar",
-    "TargetReturnType": "System.Object",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlBatch",
-    "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
-    "TargetParameterTypes": [
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 0,
-      "Item2": 61,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 0,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteDbDataReader",
     "TargetReturnType": "System.Data.Common.DbDataReader",
@@ -12844,7 +12630,7 @@
       "System.Data.CommandBehavior"
     ],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -12869,7 +12655,7 @@
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -12891,7 +12677,7 @@
     "TargetReturnType": "System.Int32",
     "TargetParameterTypes": [],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -12915,7 +12701,7 @@
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -12939,7 +12725,7 @@
       "System.Data.CommandBehavior"
     ],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -12963,7 +12749,7 @@
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -12988,7 +12774,7 @@
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -13010,7 +12796,7 @@
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },
@@ -13034,7 +12820,7 @@
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 0,
       "Item3": 0
     },

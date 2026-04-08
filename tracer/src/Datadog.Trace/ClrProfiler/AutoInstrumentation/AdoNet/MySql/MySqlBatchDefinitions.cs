@@ -11,38 +11,8 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 #pragma warning disable SA1118 // parameter spans multiple lines
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySqlConnector",
-    TypeName = "MySql.Data.MySqlClient.MySqlBatch", // legacy type
-    MinimumVersion = "0.61.0", // Batch support was added in 0.57, but 0.61 is the earliest we instrument & test
-    MaximumVersion = "0.*.*",
-    IntegrationName = nameof(IntegrationId.MySql),
-    DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
-    TargetMethodAttributes = new[]
-    {
-        // protected DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
-        typeof(BatchExecuteDbDataReaderWithBehaviorAttribute),
-        // protected Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
-        typeof(BatchExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
-        // public int ExecuteNonQuery()
-        typeof(BatchExecuteNonQueryAttribute),
-        // public Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = null)
-        typeof(BatchExecuteNonQueryAsyncAttribute),
-        // public MySqlDataReader ExecuteReader(CommandBehavior behavior = null)
-        typeof(BatchExecuteReaderWithBehaviorAttribute),
-        // public Task<MySqlDataReader> ExecuteReaderAsync(CancellationToken cancellationToken = null)
-        typeof(BatchExecuteReaderWithCancellationAsyncAttribute),
-        // public Task<MySqlDataReader> ExecuteReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken = null)
-        typeof(BatchExecuteReaderWithBehaviorAndCancellationAsyncAttribute),
-        // public object? ExecuteScalar()
-        typeof(BatchExecuteScalarAttribute),
-        // public Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken = null)
-        typeof(BatchExecuteScalarAsyncAttribute)
-    })]
-
-[assembly: AdoNetClientInstrumentMethods(
-    AssemblyName = "MySqlConnector",
     TypeName = "MySqlConnector.MySqlBatch",
-    MinimumVersion = "1.0.0",
+    MinimumVersion = "2.0.0", // matches the .NET 6 DbBatch API
     MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.MySql),
     DataReaderType = "MySqlConnector.MySqlDataReader",

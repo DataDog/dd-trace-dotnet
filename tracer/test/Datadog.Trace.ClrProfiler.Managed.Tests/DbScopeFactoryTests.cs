@@ -769,7 +769,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("System.Data.SqlClient.SqlCommand", "SqlClient", "sql-server")]
         [InlineData("Microsoft.Data.SqlClient.SqlBatch", "SqlClient", "sql-server")]
         [InlineData("MySql.Data.MySqlClient.MySqlCommand", "MySql", "mysql")]
-        [InlineData("MySql.Data.MySqlClient.MySqlBatch", "MySql", "mysql")]
         [InlineData("MySqlConnector.MySqlBatch", "MySql", "mysql")]
         [InlineData("Npgsql.NpgsqlCommand", "Npgsql", "postgres")]
         [InlineData("Npgsql.NpgsqlBatch", "Npgsql", "postgres")]

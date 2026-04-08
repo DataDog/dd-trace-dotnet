@@ -664,6 +664,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("db.user")
                 .IsPresent("out.host")
                 .Matches("db.type", "mysql")
+                .IsOptional("db.operation.batch.size")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")

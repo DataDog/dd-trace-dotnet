@@ -819,6 +819,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("db.type", "mysql")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client")
+                .IsOptional("db.operation.batch.size")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
