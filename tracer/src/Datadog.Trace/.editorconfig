@@ -114,6 +114,7 @@ dotnet_diagnostic.CA3147.severity = error # Mark verb handlers with ValidateAnti
 dotnet_diagnostic.CA5350.severity = error # Do Not Use Weak Cryptographic Algorithms
 dotnet_diagnostic.CA5351.severity = error # Do Not Use Broken Cryptographic Algorithms
 dotnet_diagnostic.CA5358.severity = error # Do Not Use Unsafe Cipher Modes
+dotnet_diagnostic.CA5359.severity = error # Do not disable certificate validation
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
