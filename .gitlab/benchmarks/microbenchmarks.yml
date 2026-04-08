@@ -156,7 +156,6 @@ run-benchmarks:
       when: always
     - interruptible: true
       when: always
-  allow_failure: true  # Allowed to fail since we don't want it to block PRs yet
   artifacts:
     name: "artifacts"
     when: always
@@ -166,22 +165,11 @@ run-benchmarks:
   variables:
     BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
 
-    # Regex to ignore benchmarks identified as unstable
-    IGNORED_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.CIVisibilityProtocolWriterBenchmark"
+    # Benchmarks matching this regex are marked as flaky by benchmark_analyzer
+    # and excluded from gating decisions (regression and SLO breach checks).
+    FLAKY_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.Asm.AppSecEncodeBenchmark|Trace.CIVisibilityProtocolWriterBenchmark|Trace.AgentWriterBenchmark|Trace.AspNetCoreBenchmark|Trace.SingleSpanAspNetCoreBenchmark|Trace.ElasticsearchBenchmark|Trace.GraphQLBenchmark|Trace.Log4netBenchmark|Trace.SerilogBenchmark|Trace.RedisBenchmark|Trace.ILoggerBenchmark"
   script: |
     export ARTIFACTS_DIR="$(pwd)/artifacts"
-
-    if [ -n "${IGNORED_BENCHMARKS_REGEX}" ]; then
-      echo "Adding the 'ignored.' prefix to benchmarks matching IGNORED_BENCHMARKS_REGEX:"
-      echo "    ${IGNORED_BENCHMARKS_REGEX}"
-      for file in "${ARTIFACTS_DIR}"/*.converted.json; do
-        file_basename=$(basename "${file}")
-        if [[ "${file_basename}" =~ ${IGNORED_BENCHMARKS_REGEX} ]]; then
-          echo "    ${file_basename} -> ignored.${file_basename}"
-          mv "${file}" "${ARTIFACTS_DIR}/ignored.${file_basename}"
-        fi
-      done
-    fi
 
     git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform
     bp-runner /platform/bp-runner.fail-on-regression.yml --debug
@@ -189,9 +177,3 @@ run-benchmarks:
 check-big-regressions:
   extends: .check-big-regressions
 
-# TODO: Remove once the decision to consider or ignore benchmarks identified as 
-# unstable has been made
-check-big-regressions-no-ignored-benchmarks:
-  extends: .check-big-regressions
-  variables:
-    IGNORED_BENCHMARKS_REGEX: ""
