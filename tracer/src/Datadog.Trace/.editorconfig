@@ -71,4 +71,9 @@ dotnet_diagnostic.CA2100.severity = error # Review SQL queries for security vuln
 dotnet_diagnostic.CA2109.severity = error # Review visible event handlers
 dotnet_diagnostic.CA2119.severity = error # Seal methods that satisfy private interfaces
 dotnet_diagnostic.CA2153.severity = error # Avoid handling corrupted state exceptions
+dotnet_diagnostic.CA2300.severity = error # Do not use insecure deserializer BinaryFormatter
+
+# Disable security analyzers for vendored third-party code
+[Vendors/**/*.{cs,vb}]
+dotnet_diagnostic.CA2300.severity = none
 
