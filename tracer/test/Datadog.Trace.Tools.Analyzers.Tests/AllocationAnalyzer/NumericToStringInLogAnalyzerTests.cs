@@ -19,6 +19,13 @@ public class NumericToStringInLogAnalyzerTests
     private const string DiagnosticId = Diagnostics.NumericToStringInLogDiagnosticId;
     private const DiagnosticSeverity Severity = DiagnosticSeverity.Warning;
 
+    [Fact]
+    public async Task EmptySourceShouldNotHaveDiagnostics()
+    {
+        var test = string.Empty;
+        await Verifier.VerifyAnalyzerAsync(test);
+    }
+
     [Theory]
     [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]
     public async Task ShouldFlag_IntToString(string logMethod)
