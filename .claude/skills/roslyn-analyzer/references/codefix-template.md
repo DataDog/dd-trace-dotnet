@@ -67,3 +67,13 @@ public class <Name>CodeFixProvider : CodeFixProvider
 - Link `Diagnostics.cs` from the analyzer project into the CodeFixes `.csproj` (see SKILL.md Step 3c for the XML snippet and rationale).
 - Apply `Formatter.Annotation` to modified nodes so the formatter cleans up spacing.
 - When generating type names, use `Simplifier.Annotation` to reduce fully-qualified names.
+
+## Critical: Code fixes must never generate uncompilable code
+
+A code fix that produces broken code is worse than no code fix. Apply these guards:
+
+- **Verify target methods/overloads exist**: Before generating a call like `ThrowHelper.ThrowFoo(args)`, use the semantic model to confirm the exact overload exists in the compilation with matching parameter count and types. Don't assume a method exists based on naming conventions alone.
+- **Preserve existing syntax where possible**: When modifying a list (e.g., generic type arguments), keep the original syntax nodes and only replace the one being changed. Rebuilding from `ISymbol` data can lose `using` context and produce unqualified names that don't compile.
+- **Handle nullable value types in rewrites**: When rewriting `x ?? throw ...` into `if (x is null) ...; use x;`, the result drops the nullable unwrapping. Use `.Value` or a cast for nullable value types.
+- **Guard against unsupported constructor signatures**: If the fix rewrites `new Type(args)` into `Helper(args)`, verify the helper accepts those parameter types. Only offer the fix for supported overloads.
+- **Scope isolation**: When collecting nodes to rewrite (e.g., all `.ToString()` calls on a variable), stay within the current scope — skip nested lambdas and local functions, and match the exact symbol, not just the identifier text.

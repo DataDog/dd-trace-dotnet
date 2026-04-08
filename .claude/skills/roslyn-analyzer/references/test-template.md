@@ -88,6 +88,7 @@ using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
 - Prefer `[Theory]` with `[MemberData]`/`[InlineData]` for variations over duplicated `[Fact]` methods.
 - Wrap code fragments in a `GetTestCode` helper that provides `using` directives and class scaffolding.
 - For analyzers depending on Datadog.Trace types, provide stub type definitions so the analyzer can resolve them (see `ConfigurationAnalyzers/AnalyzerTestHelper.cs`).
+- **Stub types must exactly match real production signatures.** If the test stub includes methods/overloads that don't exist in the real code, tests will pass but the code fix will generate uncompilable code in practice. Read the actual production type (e.g., `ThrowHelper.cs`, `StringBuilderCache.cs`) and mirror its signatures exactly.
 - The `extern alias AnalyzerCodeFixes` is required because the analyzer and code fix projects share the same root namespace. The alias is configured in the test `.csproj`:
 
 ```xml

@@ -49,6 +49,8 @@ Gather the following (if not already provided):
 3. **Category**: Reliability, CodeQuality, Performance, Usage, or Maintainability
 4. **Severity**: Error, Warning, or Info
 
+**Before creating a new analyzer**, check whether an existing analyzer already does similar analysis that could be extended. Adding a new rule to an existing analyzer avoids duplicating expensive work (e.g., type lookups, descendant traversals) and keeps IDE responsiveness high. Browse the analyzers in `tracer/src/Datadog.Trace.Tools.Analyzers/` to see if your detection fits an existing category.
+
 ### Step 2: Assign a Diagnostic ID
 
 Read existing diagnostic constant files to find the next available ID (including duck-typing diagnostics):
@@ -114,6 +116,12 @@ Every analyzer requires:
 - Register for the most specific `SyntaxKind`/`SymbolKind` — never register broadly and filter inside the callback
 - Pass `context.CancellationToken` to all semantic model calls — the IDE cancels analysis frequently
 
+**Correctness tips:**
+- **Prefer semantic model over syntax matching** for type/method resolution. Syntax-only checks (e.g., matching `IdentifierNameSyntax.Text == "StringBuilder"`) miss qualified names like `System.Text.StringBuilder` or `Util.StringBuilderCache.Acquire()`. Use `SemanticModel.GetTypeInfo()` or `GetSymbolInfo()` instead.
+- **Scope isolation**: When traversing descendants (e.g., `DescendantNodes()`), skip nested lambdas and local functions — they have their own scope. Use `descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == rootNode`.
+- **Handle implicit object creation**: Register for both `ObjectCreationExpressionSyntax` (`new Type()`) and `ImplicitObjectCreationExpressionSyntax` (`new()`) when detecting allocations.
+- **Enable diagnostics by default**: Use `isEnabledByDefault: true`. Rules should generally be errors, not warnings. Only disable by default if the analyzer requires a migration period with many existing violations.
+
 #### 3c. Code Fix Provider (if applicable)
 
 See `references/codefix-template.md` for the full template.
@@ -178,6 +186,8 @@ When reviewing an analyzer, check all of the following:
 - `FixableDiagnosticIds` matches the analyzer's diagnostic ID(s)
 - Diagnostics.cs linked (not duplicated) in CodeFixes `.csproj`
 - Trivia (whitespace, comments) preserved in syntax transformations
+- **Fix never generates uncompilable code**: target method overloads verified via semantic model, nullable types handled, constructor args matched to target API signatures
+- Existing syntax preserved where possible (don't rebuild from symbol data when original syntax nodes can be reused)
 
 ### Thread Safety
 - No shared mutable state in syntax/symbol action callbacks
@@ -192,6 +202,11 @@ When reviewing an analyzer, check all of the following:
 - Edge cases covered
 - Uses `extern alias AnalyzerCodeFixes` for code fix verifier
 - Uses `[Theory]` with `[MemberData]`/`[InlineData]` for variations instead of duplicated `[Fact]` methods
+- **Stub types match real production signatures** — no extra overloads that don't exist in the actual codebase
+
+### Suppressions
+- When adding `#pragma warning disable <ID>`, always include a comment explaining **why** the suppression is needed (e.g., `// IAST aspects intentionally replace customer StringBuilder allocations — cannot use StringBuilderCache`)
+- `.editorconfig` severity should match the PR description and rollout intent
 
 ### Datadog.Trace Type Dependencies
 - Uses `Diagnostics.IsTypeNullAndReportForDatadogTrace` when depending on internal types (see Pattern 4 in `references/analysis-patterns.md`)
