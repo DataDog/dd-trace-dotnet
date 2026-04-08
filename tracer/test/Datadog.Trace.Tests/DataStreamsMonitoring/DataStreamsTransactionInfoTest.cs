@@ -159,26 +159,24 @@ public class DataStreamsTransactionInfoTest
 
         var cache = DataStreamsTransactionInfo.GetCacheBytes();
 
-        // Each entry: [1 byte id] [1 byte name length] [N bytes name]
-        // "alpha" = 5 bytes → 7 bytes total
-        // "beta"  = 4 bytes → 6 bytes total
-        // "gamma" = 5 bytes → 7 bytes total
-        // Total = 20 bytes
+        // Total: 3 entries × (1 id + 1 len) + 5 + 4 + 5 name bytes = 20 bytes
         cache.Length.Should().Be(20);
 
-        // Entry 1: id=1, len=5, "alpha"
-        cache[0].Should().Be(1);
-        cache[1].Should().Be(5);
-        System.Text.Encoding.UTF8.GetString(cache, 2, 5).Should().Be("alpha");
+        // Parse the blob into a id→name map; ConcurrentDictionary.ToArray() has no guaranteed order,
+        // so we verify contents without assuming a fixed serialization order.
+        var byId = new Dictionary<byte, string>();
+        var pos = 0;
+        while (pos < cache.Length)
+        {
+            var id = cache[pos++];
+            var len = cache[pos++];
+            byId[id] = System.Text.Encoding.UTF8.GetString(cache, pos, len);
+            pos += len;
+        }
 
-        // Entry 2: id=2, len=4, "beta"
-        cache[7].Should().Be(2);
-        cache[8].Should().Be(4);
-        System.Text.Encoding.UTF8.GetString(cache, 9, 4).Should().Be("beta");
-
-        // Entry 3: id=3, len=5, "gamma"
-        cache[13].Should().Be(3);
-        cache[14].Should().Be(5);
-        System.Text.Encoding.UTF8.GetString(cache, 15, 5).Should().Be("gamma");
+        byId.Should().HaveCount(3);
+        byId[1].Should().Be("alpha");
+        byId[2].Should().Be("beta");
+        byId[3].Should().Be("gamma");
     }
 }
