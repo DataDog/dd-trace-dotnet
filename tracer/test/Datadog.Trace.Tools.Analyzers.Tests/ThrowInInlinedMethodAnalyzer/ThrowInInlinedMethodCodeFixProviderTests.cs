@@ -558,4 +558,29 @@ public class ThrowInInlinedMethodCodeFixProviderTests
             .WithArguments("TestMethod");
         await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
     }
+
+    [Fact]
+    public async Task ShouldNotFixNullCoalesceWithNullableValueType()
+    {
+        // int? ?? throw produces int, but the fix would produce int? — skip the fix
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                int TestMethod(int? value)
+                {
+                    return value ?? {|#0:throw new ArgumentNullException(nameof(value))|};
+                }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestMethod");
+
+        await Verifier.VerifyCodeFixAsync(source, expected, source);
+    }
 }

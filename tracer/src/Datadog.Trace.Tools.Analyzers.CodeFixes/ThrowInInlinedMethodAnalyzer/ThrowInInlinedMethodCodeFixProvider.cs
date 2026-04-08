@@ -85,7 +85,8 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
             else if (node is ThrowExpressionSyntax throwExpression
                      && throwExpression.Expression is ObjectCreationExpressionSyntax creation2
                      && TryGetThrowHelperMethod(semanticModel, creation2, context.CancellationToken, out var methodName2)
-                     && CanConvertThrowExpression(throwExpression))
+                     && CanConvertThrowExpression(throwExpression)
+                     && !IsNullableValueTypeCoalesce(semanticModel, throwExpression, context.CancellationToken))
             {
                 context.RegisterCodeFix(
                     CodeAction.Create(
@@ -154,6 +155,24 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
             // Must be inside a statement within a block (so we can insert the if-statement)
             var statement = parent.FirstAncestorOrSelf<StatementSyntax>();
             return statement?.Parent is BlockSyntax;
+        }
+
+        private static bool IsNullableValueTypeCoalesce(
+            SemanticModel semanticModel,
+            ThrowExpressionSyntax throwExpression,
+            CancellationToken cancellationToken)
+        {
+            if (throwExpression.Parent is BinaryExpressionSyntax coalesce
+                && coalesce.IsKind(SyntaxKind.CoalesceExpression))
+            {
+                var typeInfo = semanticModel.GetTypeInfo(coalesce.Left, cancellationToken);
+                if (typeInfo.Type is INamedTypeSymbol { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T })
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool IsSimpleExpression(ExpressionSyntax expression)
