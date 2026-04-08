@@ -40,7 +40,9 @@ public sealed class SymmetricAlgorithmAspect
     [AspectCtorReplace("System.Security.Cryptography.DESCryptoServiceProvider::.ctor()")]
     public static DESCryptoServiceProvider InitDES()
     {
+#pragma warning disable CA5351 // Intentional: IAST aspect replaces weak crypto constructor to detect its usage
         var target = new DESCryptoServiceProvider();
+#pragma warning restore CA5351
         try
         {
             ProcessCipherClassCreation(target);
@@ -60,7 +62,9 @@ public sealed class SymmetricAlgorithmAspect
     [AspectCtorReplace("System.Security.Cryptography.RC2CryptoServiceProvider::.ctor()")]
     public static RC2CryptoServiceProvider InitRC2()
     {
+#pragma warning disable CA5351 // Intentional: IAST aspect replaces weak crypto constructor to detect its usage
         var target = new RC2CryptoServiceProvider();
+#pragma warning restore CA5351
         try
         {
             ProcessCipherClassCreation(target);

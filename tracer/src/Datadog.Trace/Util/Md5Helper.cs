@@ -9,6 +9,8 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
+#pragma warning disable CA5351 // Intentional: this helper exists specifically to compute MD5 hashes
+
 namespace Datadog.Trace.Util;
 
 internal static class Md5Helper
