@@ -117,6 +117,7 @@ dotnet_diagnostic.CA5358.severity = error # Do Not Use Unsafe Cipher Modes
 dotnet_diagnostic.CA5359.severity = error # Do not disable certificate validation
 dotnet_diagnostic.CA5360.severity = error # Do not call dangerous methods in deserialization
 dotnet_diagnostic.CA5361.severity = error # Do not disable SChannel use of strong crypto
+dotnet_diagnostic.CA5362.severity = error # Potential reference cycle in deserialized object graph
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
