@@ -128,6 +128,11 @@ dotnet_diagnostic.CA5369.severity = error # Use XmlReader for Deserialize
 dotnet_diagnostic.CA5370.severity = error # Use XmlReader for validating reader
 dotnet_diagnostic.CA5371.severity = error # Use XmlReader for schema read
 dotnet_diagnostic.CA5372.severity = error # Use XmlReader for XPathDocument
+dotnet_diagnostic.CA5373.severity = error # Do not use obsolete key derivation function
+dotnet_diagnostic.CA5374.severity = error # Do Not Use XslTransform
+dotnet_diagnostic.CA5375.severity = error # Do not use account shared access signature
+dotnet_diagnostic.CA5376.severity = error # Use SharedAccessProtocol HttpsOnly
+dotnet_diagnostic.CA5377.severity = error # Use container level access policy
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
