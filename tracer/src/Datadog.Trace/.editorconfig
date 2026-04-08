@@ -66,3 +66,6 @@ dotnet_diagnostic.CA1870.severity = error # Use a cached SearchValues instance
 dotnet_diagnostic.CA1871.severity = error # Do not pass a nullable struct to ArgumentNullException.ThrowIfNull.
 dotnet_diagnostic.CA1872.severity = error # Prefer Convert.ToHexString over BitConverter.ToString
 
+# Microsoft security analyzers
+dotnet_diagnostic.CA2100.severity = error # Review SQL queries for security vulnerabilities
+
