@@ -159,6 +159,8 @@ dotnet_diagnostic.CA5400.severity = error # Ensure HttpClient certificate revoca
 dotnet_diagnostic.CA5401.severity = error # Do not use CreateEncryptor with non-default IV
 dotnet_diagnostic.CA5402.severity = error # Use CreateEncryptor with the default IV
 dotnet_diagnostic.CA5403.severity = error # Do not hard-code certificate
+dotnet_diagnostic.CA5404.severity = error # Do not disable token validation checks
+dotnet_diagnostic.CA5405.severity = error # Do not always skip token validation in delegates
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
