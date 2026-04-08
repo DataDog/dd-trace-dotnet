@@ -137,6 +137,10 @@ dotnet_diagnostic.CA5378.severity = error # Do not disable ServicePointManagerSe
 dotnet_diagnostic.CA5379.severity = error # Ensure key derivation function algorithm is sufficiently strong
 dotnet_diagnostic.CA5380.severity = error # Do not add certificates to root store
 dotnet_diagnostic.CA5381.severity = error # Ensure certificates are not added to root store
+dotnet_diagnostic.CA5382.severity = error # Use secure cookies in ASP.NET Core
+dotnet_diagnostic.CA5383.severity = error # Ensure use secure cookies in ASP.NET Core
+dotnet_diagnostic.CA5384.severity = error # Do not use digital signature algorithm (DSA)
+dotnet_diagnostic.CA5385.severity = error # Use RSA algorithm with sufficient key size
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
