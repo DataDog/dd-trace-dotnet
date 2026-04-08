@@ -68,12 +68,13 @@ namespace Datadog.Trace.Processors
                 var rawOffset = position;
                 position += entry.Length + 1; // +1 for comma separator
 
-                if (IsBlockedIp(entry, out var prefixLength, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
+                if (IsBlockedIp(entry, out var prefixLength, out var isHostBracketed, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
                 {
                     // Blocked IP: check duplicate by comparing the variable parts (prefix, suffix, port)
                     // as spans of the original string — the "blocked-ip-address" middle is constant.
                     var afterOffset = rawOffset + prefixLength;
-                    var parts = new BlockedIpParts(rawOffset, prefixLength, afterOffset + hostEnd, suffixEnd - hostEnd, afterOffset + portStart, portEnd - portStart);
+                    var regionEnd = isHostBracketed ? hostEnd + 1 : hostEnd;
+                    var parts = new BlockedIpParts(rawOffset, prefixLength, afterOffset + regionEnd, suffixEnd - regionEnd, afterOffset + portStart, portEnd - portStart);
                     if (seenBlocked is null || !IsDuplicateBlocked(raw, in parts, seenBlocked))
                     {
                         if (sb.Length > 0)
@@ -81,7 +82,7 @@ namespace Datadog.Trace.Processors
                             sb.Append(',');
                         }
 
-                        AppendBlockedIp(sb, entry, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
+                        AppendQuantizedEntry(sb, entry, prefixLength, isHostBracketed, hostEnd, suffixEnd, portStart, portEnd, blocked: true);
                         seenBlocked ??= new();
                         seenBlocked.Add(parts);
                     }
@@ -96,7 +97,7 @@ namespace Datadog.Trace.Processors
 
                     seenRaw ??= new();
                     seenRaw.Add(new KeyValuePair<int, int>(rawOffset, entry.Length));
-                    sb.Append(entry);
+                    AppendQuantizedEntry(sb, entry, prefixLength, isHostBracketed, hostEnd, suffixEnd, portStart, portEnd, blocked: false);
                 }
             }
 
@@ -114,13 +115,16 @@ namespace Datadog.Trace.Processors
             }
 
             var span = raw.AsSpan();
-            if (!IsBlockedIp(span, out var prefixLength, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
+            var blocked = IsBlockedIp(span, out var prefixLength, out var isHostBracketed, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd);
+
+            if (!blocked && !isHostBracketed)
             {
+                // No change needed — return original string (zero-alloc fast path)
                 return raw;
             }
 
             var sb = StringBuilderCache.Acquire();
-            AppendBlockedIp(sb, span, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
+            AppendQuantizedEntry(sb, span, prefixLength, isHostBracketed, hostEnd, suffixEnd, portStart, portEnd, blocked);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
@@ -128,10 +132,13 @@ namespace Datadog.Trace.Processors
         /// Determines whether an entry contains a non-allowed IP that should be blocked.
         /// When true, the output indices describe the prefix, host, suffix, and port regions
         /// relative to the after-prefix portion of <paramref name="raw"/> for building the blocked result.
+        /// <paramref name="isHostBracketed"/> indicates the host was wrapped in brackets (e.g. "[::1]:8080");
+        /// callers use this to skip '[' and ']' when building output.
         /// </summary>
         private static bool IsBlockedIp(
             ReadOnlySpan<char> raw,
             out int prefixLength,
+            out bool isHostBracketed,
             out int hostEnd,
             out int suffixEnd,
             out int portStart,
@@ -140,31 +147,49 @@ namespace Datadog.Trace.Processors
             prefixLength = GetPrefixLength(raw);
             var after = raw.Slice(prefixLength);
 
-            if (!ParseIpAndPort(after, out hostEnd, out suffixEnd, out portStart, out portEnd))
+            if (!ParseIpAndPort(after, out var hostStart, out hostEnd, out suffixEnd, out portStart, out portEnd))
             {
+                isHostBracketed = false;
                 return false;
             }
 
-            return !IsAllowedIp(after.Slice(0, hostEnd));
+            isHostBracketed = hostStart > 0;
+            return !IsAllowedIp(after.Slice(hostStart, hostEnd - hostStart));
         }
 
         /// <summary>
-        /// Appends the blocked IP result (prefix + "blocked-ip-address" + suffix + port) to <paramref name="sb"/>.
-        /// The indices are relative to the after-prefix portion of <paramref name="raw"/>.
+        /// Appends the quantized entry to <paramref name="sb"/>.
+        /// For blocked IPs, replaces the host with "blocked-ip-address".
+        /// For allowed entries, outputs the original host content (without brackets).
+        /// When <paramref name="isHostBracketed"/> is true, '[' before the host and ']' after it are skipped.
         /// </summary>
-        private static void AppendBlockedIp(
+        private static void AppendQuantizedEntry(
             StringBuilder sb,
             ReadOnlySpan<char> raw,
             int prefixLength,
+            bool isHostBracketed,
             int hostEnd,
             int suffixEnd,
             int portStart,
-            int portEnd)
+            int portEnd,
+            bool blocked)
         {
             var after = raw.Slice(prefixLength);
+            var hostStart = isHostBracketed ? 1 : 0;
+            var regionEnd = isHostBracketed ? hostEnd + 1 : hostEnd;
+
             sb.Append(raw.Slice(0, prefixLength));
-            sb.Append(BlockedIpAddress);
-            sb.Append(after.Slice(hostEnd, suffixEnd - hostEnd));
+
+            if (blocked)
+            {
+                sb.Append(BlockedIpAddress);
+            }
+            else
+            {
+                sb.Append(after.Slice(hostStart, hostEnd - hostStart));
+            }
+
+            sb.Append(after.Slice(regionEnd, suffixEnd - regionEnd));
             if (portEnd > portStart)
             {
                 sb.Append(':');
@@ -260,9 +285,11 @@ namespace Datadog.Trace.Processors
         /// Parses input into host, suffix, and port regions AND determines whether the host is an IP address.
         /// Returns true if the host is a recognized IP address, false if it's a hostname or other non-IP string.
         /// All output indices are relative to <paramref name="input"/>:
-        /// host=[0..hostEnd), suffix=[hostEnd..suffixEnd), port=[portStart..portEnd).
+        /// host=[hostStart..hostEnd), suffix=[regionEnd..suffixEnd), port=[portStart..portEnd).
+        /// For bracketed IPv6, hostStart skips '[' and hostEnd stops before ']';
+        /// regionEnd (= hostStart > 0 ? hostEnd + 1 : hostEnd) skips past ']' for suffix positioning.
         /// </summary>
-        private static bool ParseIpAndPort(ReadOnlySpan<char> input, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
+        private static bool ParseIpAndPort(ReadOnlySpan<char> input, out int hostStart, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
         {
             // Bracketed IPv6: [host]:port — brackets definitively indicate IPv6
             if (input.Length > 0 && input[0] == '[')
@@ -274,11 +301,12 @@ namespace Datadog.Trace.Processors
                     var inner = input.Slice(1, closeBracket - 1);
                     if (!IsIPv6(inner))
                     {
-                        return SetDefault(input.Length, out hostEnd, out suffixEnd, out portStart, out portEnd);
+                        return SetDefault(input.Length, out hostStart, out hostEnd, out suffixEnd, out portStart, out portEnd);
                     }
 
-                    // Host includes brackets; callers use it only for allowed-IP checks and building the result
-                    hostEnd = closeBracket + 1;
+                    // hostStart/hostEnd exclude brackets; callers derive regionEnd to skip past ']'
+                    hostStart = 1;
+                    hostEnd = closeBracket;
                     suffixEnd = closeBracket + 1;
                     if (closeBracket + 1 < input.Length && input[closeBracket + 1] == ':')
                     {
@@ -294,6 +322,8 @@ namespace Datadog.Trace.Processors
                     return true;
                 }
             }
+
+            hostStart = 0;
 
             // Try dot-separated IPv4 — handles "1.2.3.4", "1.2.3.4:port", and "1.2.3.4.suffix"
             if (ParseIPv4(input, '.', out var ipEnd))
@@ -334,12 +364,12 @@ namespace Datadog.Trace.Processors
                 return true;
             }
 
-            // Try host:port for non-IP hosts (e.g. "foo.dog:1234")
+            // Try host:port for non-IP hosts (e.g. "foo.dog:1234").
+            // All IP formats (IPv4 dotted/underscore/hyphen, bracketed IPv6, bare IPv6)
+            // have already been tried above, so this is a hostname with a port.
             var colonIndex = input.IndexOf(':');
             if (colonIndex > 0 && IsValidPort(input.Slice(colonIndex + 1)))
             {
-                // Check if the host part is an IP — this handles "10.0.0.1:8080" when it
-                // didn't match the dot-IPv4 path above (shouldn't happen, but be safe)
                 hostEnd = colonIndex;
                 suffixEnd = colonIndex;
                 portStart = colonIndex + 1;
@@ -347,11 +377,12 @@ namespace Datadog.Trace.Processors
                 return false;
             }
 
-            return SetDefault(input.Length, out hostEnd, out suffixEnd, out portStart, out portEnd);
+            return SetDefault(input.Length, out hostStart, out hostEnd, out suffixEnd, out portStart, out portEnd);
         }
 
-        private static bool SetDefault(int inputLength, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
+        private static bool SetDefault(int inputLength, out int hostStart, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
         {
+            hostStart = 0;
             hostEnd = inputLength;
             suffixEnd = inputLength;
             portStart = 0;
@@ -378,7 +409,8 @@ namespace Datadog.Trace.Processors
             }
             else
             {
-                suffixEnd = colonIndex > 0 ? colonIndex : input.Length;
+                // No valid port — treat everything after IP end as suffix (including invalid ports like ":999999")
+                suffixEnd = input.Length;
                 portStart = 0;
                 portEnd = 0;
             }
