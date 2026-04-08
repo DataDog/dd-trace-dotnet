@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -21,12 +22,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
+    [Collection(ServiceStackRedisCollection.Name)]
     public class ServiceStackRedisTests : TracingIntegrationTest
     {
-        public ServiceStackRedisTests(ITestOutputHelper output)
+        private readonly ServiceStackRedisFixture _redisFixture;
+
+        public ServiceStackRedisTests(ITestOutputHelper output, ServiceStackRedisFixture redisFixture)
             : base("ServiceStack.Redis", output)
         {
+            _redisFixture = redisFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(redisFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -64,9 +70,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 spans.Count.Should().Be(expectedSpans);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                var host = Environment.GetEnvironmentVariable("SERVICESTACK_REDIS_HOST") ?? "localhost:6379";
-                var port = host.Substring(host.IndexOf(':') + 1);
-                host = host.Substring(0, host.IndexOf(':'));
+                var redisHost = _redisFixture.GetEnvironmentVariables().First(kvp => kvp.Key == "SERVICESTACK_REDIS_HOST").Value;
+                var port = redisHost.Substring(redisHost.IndexOf(':') + 1);
+                var host = redisHost.Substring(0, redisHost.IndexOf(':'));
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(ServiceStackRedisTests)}.RunServiceStack" + $".Schema{metadataSchemaVersion.ToUpper()}");
