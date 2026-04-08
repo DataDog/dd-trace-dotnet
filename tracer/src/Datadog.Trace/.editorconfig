@@ -150,6 +150,8 @@ dotnet_diagnostic.CA5391.severity = error # Use antiforgery tokens in ASP.NET Co
 # dotnet_diagnostic.CA5392.severity = error # Use DefaultDllImportSearchPaths attribute for P/Invokes - too many P/Invoke methods to fix
 dotnet_diagnostic.CA5393.severity = error # Do not use unsafe DllImportSearchPath value
 dotnet_diagnostic.CA5394.severity = error # Do not use insecure randomness
+dotnet_diagnostic.CA5395.severity = error # Miss HttpVerb attribute for action methods
+dotnet_diagnostic.CA5396.severity = error # Set HttpOnly to true for HttpCookie
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
