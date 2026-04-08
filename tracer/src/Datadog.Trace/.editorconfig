@@ -124,6 +124,10 @@ dotnet_diagnostic.CA5365.severity = error # Do Not Disable HTTP Header Checking
 dotnet_diagnostic.CA5366.severity = error # Use XmlReader For DataSet Read XML
 dotnet_diagnostic.CA5367.severity = error # Do Not Serialize Types With Pointer Fields
 dotnet_diagnostic.CA5368.severity = error # Set ViewStateUserKey For Classes Derived From Page
+dotnet_diagnostic.CA5369.severity = error # Use XmlReader for Deserialize
+dotnet_diagnostic.CA5370.severity = error # Use XmlReader for validating reader
+dotnet_diagnostic.CA5371.severity = error # Use XmlReader for schema read
+dotnet_diagnostic.CA5372.severity = error # Use XmlReader for XPathDocument
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
