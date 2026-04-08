@@ -42,6 +42,7 @@ public class ThrowInInlinedMethodCodeFixProviderTests
                 internal static void ThrowNotSupportedException(string message) => throw new System.NotSupportedException(message);
                 internal static void ThrowKeyNotFoundException(string message) => throw new System.Collections.Generic.KeyNotFoundException(message);
                 internal static void ThrowNullReferenceException(string message) => throw new System.NullReferenceException(message);
+                internal static void ThrowObjectDisposedException(string objectName) => throw new System.ObjectDisposedException(objectName);
             }
         }
         """;
