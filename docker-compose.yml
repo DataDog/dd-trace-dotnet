@@ -33,7 +33,7 @@ services:
     - MYSQL_USER=mysqldb
     - MYSQL_PASSWORD=mysqldb
     ports:
-    - "3306"
+    - "127.0.0.1:3307:3306"
 
   postgres_arm64:
     image: postgres:10.5-alpine
