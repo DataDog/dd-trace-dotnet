@@ -45,7 +45,8 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
     // Traverse the object graph from this root iteratively.
     // rootNode is the tree position; children will be added under it.
     // Depth starts at 1 (the root itself).
-    TraverseObjectGraph(root.address, rootNode, 1);
+    // Pass the pre-resolved classID/size so the first frame skips redundant profiler calls.
+    TraverseObjectGraph(root.address, rootNode, 1, root.classID, root.objectSize);
 
     _rootsProcessed++;
     _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
@@ -72,7 +73,9 @@ void ReferenceChainTraverser::LogStats() const
 void ReferenceChainTraverser::TraverseObjectGraph(
     uintptr_t objectAddress,
     TypeTreeNode* currentNode,
-    uint32_t depth)
+    uint32_t depth,
+    ClassID rootClassID,
+    SIZE_T rootObjectSize)
 {
     _traversalStack.clear();
 
@@ -81,7 +84,8 @@ void ReferenceChainTraverser::TraverseObjectGraph(
     // from 3 per new object (IsVisited miss + IsVisited miss + MarkVisited)
     // to 1 (MarkIfAbsent), and prevents duplicate stack entries.
     _visited.MarkVisited(objectAddress);
-    _traversalStack.push_back({objectAddress, currentNode, depth});
+    _visited.StoreInfo(objectAddress, rootClassID, rootObjectSize);
+    _traversalStack.push_back({objectAddress, currentNode, depth, rootClassID, rootObjectSize});
 
     while (!_traversalStack.empty())
     {
@@ -95,19 +99,11 @@ void ReferenceChainTraverser::TraverseObjectGraph(
 
         _objectsTraversed++;
 
-        ClassID classID = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassFromObject(frame.objectAddress, &classID);
-        if (FAILED(hr) || classID == 0)
-        {
-            continue;
-        }
-
-        SIZE_T objectSize = 0;
-        hr = _pCorProfilerInfo->GetObjectSize2(frame.objectAddress, &objectSize);
-        if (FAILED(hr) || objectSize == 0)
-        {
-            continue;
-        }
+        // classID and objectSize were pre-resolved before pushing:
+        //  - root frame: from HeapSnapshotManager (GetClassFromObject + GetObjectSize2)
+        //  - child frames: from the discovery site that called GetClassFromObject + GetObjectSize2
+        ClassID classID = frame.classID;
+        SIZE_T objectSize = frame.objectSize;
 
         const ClassLayoutCache::ClassLayoutData* layout = _layoutCache.GetLayout(classID);
         if (layout == nullptr)
@@ -134,7 +130,7 @@ void ReferenceChainTraverser::TraverseObjectGraph(
                 if (_visited.MarkIfAbsent(fieldValue))
                 {
                     ClassID targetClassID = 0;
-                    hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
+                    HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
                     if (FAILED(hr) || targetClassID == 0)
                     {
                         continue;
@@ -151,7 +147,7 @@ void ReferenceChainTraverser::TraverseObjectGraph(
 
                     TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(targetClassID);
                     childNode->AddInstance(targetSize);
-                    _traversalStack.push_back({fieldValue, childNode, frame.depth + 1});
+                    _traversalStack.push_back({fieldValue, childNode, frame.depth + 1, targetClassID, targetSize});
                 }
                 else
                 {
@@ -315,7 +311,7 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
 
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(elementClassID);
             childNode->AddInstance(elementSizeBytes);
-            _traversalStack.push_back({elementAddress, childNode, depth + 1});
+            _traversalStack.push_back({elementAddress, childNode, depth + 1, elementClassID, elementSizeBytes});
         }
         else
         {
@@ -383,7 +379,7 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
 
                 TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
                 childNode->AddInstance(targetSize);
-                _traversalStack.push_back({fieldValue, childNode, depth + 1});
+                _traversalStack.push_back({fieldValue, childNode, depth + 1, targetClassID, targetSize});
             }
             else
             {
@@ -444,7 +440,7 @@ void ReferenceChainTraverser::EnqueueInlineValueTypeReferences(
 
                 TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
                 childNode->AddInstance(targetSize);
-                _traversalStack.push_back({fieldValue, childNode, depth + 1});
+                _traversalStack.push_back({fieldValue, childNode, depth + 1, targetClassID, targetSize});
             }
             else
             {

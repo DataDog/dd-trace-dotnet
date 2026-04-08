@@ -30,6 +30,8 @@ public:
         uintptr_t objectAddress;
         TypeTreeNode* treeNode;
         uint32_t depth;
+        ClassID classID;
+        SIZE_T objectSize;
     };
 
     ReferenceChainTraverser(
@@ -49,7 +51,8 @@ public:
 private:
     // Iterative object graph traversal using an explicit stack.
     // Seeds the stack with the initial frame and processes until empty.
-    void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth);
+    void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth,
+                             ClassID rootClassID, SIZE_T rootObjectSize);
 
     // Enqueue array element children onto _traversalStack.
     // Handles reference type arrays, value type arrays with reference fields,

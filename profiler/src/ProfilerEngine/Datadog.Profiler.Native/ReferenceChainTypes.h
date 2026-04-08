@@ -5,7 +5,6 @@
 
 #include "corprof.h"
 #include <cstddef>
-#include <string>
 
 // Root category enumeration
 // Follow Perfview categories for consistency
@@ -56,17 +55,17 @@ struct RootInfo
     ClassID classID;
     uint64_t objectSize;
 
-    // For static roots: the name of the static field (e.g., "_staticOrders").
-    // Empty for non-static roots.
-    std::string fieldName;
+    // For static roots: pointer to the UTF-16 field name from the event buffer (e.g., L"_staticOrders").
+    // nullptr for non-static roots.  Valid only during the GC callback that created this RootInfo.
+    const WCHAR* fieldName;
 
-    RootInfo(uintptr_t addr, RootCategory cat, ClassID typeID, uint64_t size, std::string field = "")
+    RootInfo(uintptr_t addr, RootCategory cat, ClassID typeID, uint64_t size, const WCHAR* field = nullptr)
         :
         address(addr),
         category(cat),
         classID(typeID),
         objectSize(size),
-        fieldName(std::move(field))
+        fieldName(field)
     {
     }
 };

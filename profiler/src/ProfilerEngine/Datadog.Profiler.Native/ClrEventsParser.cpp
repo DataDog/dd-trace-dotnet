@@ -344,11 +344,10 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
                     break;
                 }
 
-                // Skip the null-terminated UTF-16 variable name that follows each entry
+                // Read the null-terminated UTF-16 variable name that follows each entry
                 auto fieldName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
 
-                auto fieldNameStr = shared::ToString(fieldName);
-                _pGCDumpListener->OnBulkRootStaticVar(value, fieldNameStr);
+                _pGCDumpListener->OnBulkRootStaticVar(value, fieldName);
             }
         }
     }

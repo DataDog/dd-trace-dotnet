@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <string>
+#include "cor.h"
 
 #pragma pack(1)
 
@@ -121,7 +121,7 @@ public:
 
     virtual void OnBulkRootStaticVar(
         const GCBulkRootStaticVarValue& root,
-        const std::string& fieldName) = 0;
+        const WCHAR* fieldName) = 0;
 
     virtual ~IGCDumpListener() = default;
 };

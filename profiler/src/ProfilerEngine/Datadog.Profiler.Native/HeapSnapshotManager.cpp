@@ -395,7 +395,7 @@ void HeapSnapshotManager::OnBulkRootEdges(
     Log::Debug("OnBulkRootEdges: batch done, success=", successCount, " failed=", failCount);
 }
 
-void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& root, const std::string& fieldName)
+void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& root, const WCHAR* fieldName)
 {
     std::lock_guard lock(_histogramLock);
 
@@ -408,7 +408,7 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
         {
             std::string typeName;
             _pFrameStore->GetTypeName(static_cast<ClassID>(root.TypeID), typeName);
-            Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", fieldName,
+            Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", shared::ToString(fieldName),
                        "' type='", typeName, "' hr=", hr);
         }
         return;

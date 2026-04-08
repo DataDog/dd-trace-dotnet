@@ -6,6 +6,7 @@
 #include "cor.h"
 #include "corprof.h"
 #include "ReferenceChainTypes.h"
+#include "shared/src/native-src/string.h"
 #include <unordered_map>
 #include <memory>
 #include <string>
@@ -95,12 +96,12 @@ struct TypeRootNode
     {
     }
 
-    void AddInstance(uint64_t size, const std::string& field = "")
+    void AddInstance(uint64_t size, const WCHAR* field = nullptr)
     {
         node.AddInstance(size);
-        if (!field.empty() && fieldName.empty())
+        if (field != nullptr && *field != L'\0' && fieldName.empty())
         {
-            fieldName = field;
+            fieldName = shared::ToString(field);
         }
     }
 };
@@ -116,7 +117,7 @@ public:
 
     // Add or update a root for the given (type, category).
     // Returns a pointer to the root's TypeTreeNode for use during traversal.
-    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size, const std::string& fieldName = "")
+    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size, const WCHAR* fieldName = nullptr)
     {
         RootKey key{typeID, category};
         auto [it, inserted] = _roots.try_emplace(key, nullptr);

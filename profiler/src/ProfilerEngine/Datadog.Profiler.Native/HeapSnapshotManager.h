@@ -122,7 +122,7 @@ protected:
         GCBulkRootEdgeValue* pRoots) override;
     void OnBulkRootStaticVar(
         const GCBulkRootStaticVarValue& root,
-        const std::string& fieldName) override;
+        const WCHAR* fieldName) override;
 
     // Inherited via ServiceBase
     bool StartImpl() override;
