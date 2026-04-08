@@ -682,11 +682,11 @@ again:
             //      handlers are nested, the most deeply nested try blocks shall come before the try blocks that enclose them."
             // If we will not follow that, we might face InvalidProgramException.
             // That's why we order the Exception Clauses right before applying them.
+            //
+            // Per ECMA-335 II.19, nesting includes a clause's try region being inside
+            // another clause's try region OR handler region.
 
-            std::sort(m_pEH, m_pEH + m_nEH, [](EHClause a, EHClause b) {
-                return a.m_pTryBegin->m_offset > b.m_pTryBegin->m_offset &&
-                       a.m_pTryEnd->m_offset < b.m_pTryEnd->m_offset;
-            });
+            SortEHClauses(m_pEH, m_nEH);
 
             for (unsigned iEH = 0; iEH < m_nEH; iEH++)
             {
@@ -818,4 +818,72 @@ bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
         return true;
         default:return false;
     }
+}
+
+void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
+{
+    if (nEH <= 1)
+    {
+        return;
+    }
+
+    // Compute nesting depth for each clause. A clause's depth is the number of
+    // other clauses whose try or handler region encloses this clause's try region.
+    // Per ECMA-335 II.19, nesting includes a clause's protected block being inside
+    // another clause's protected block OR handler block.
+    auto* depth = new unsigned[nEH]();
+
+    for (unsigned i = 0; i < nEH; i++)
+    {
+        auto iTryBegin = pEH[i].m_pTryBegin->m_offset;
+        auto iTryEnd = pEH[i].m_pTryEnd->m_offset;
+
+        for (unsigned j = 0; j < nEH; j++)
+        {
+            if (i == j) continue;
+
+            auto jTryBegin = pEH[j].m_pTryBegin->m_offset;
+            auto jTryEnd = pEH[j].m_pTryEnd->m_offset;
+            auto jHandlerBegin = pEH[j].m_pHandlerBegin->m_offset;
+            auto jHandlerEnd = pEH[j].m_pHandlerEnd->m_pNext->m_offset;
+
+            // Is clause i's try block strictly inside clause j's try block?
+            bool inTry = (iTryBegin >= jTryBegin && iTryEnd <= jTryEnd)
+                         && !(iTryBegin == jTryBegin && iTryEnd == jTryEnd);
+
+            // Is clause i's try block strictly inside clause j's handler block?
+            bool inHandler = (iTryBegin >= jHandlerBegin && iTryEnd <= jHandlerEnd)
+                             && !(iTryBegin == jHandlerBegin && iTryEnd == jHandlerEnd);
+
+            if (inTry || inHandler)
+            {
+                depth[i]++;
+            }
+        }
+    }
+
+    // Sort by (depth descending, try offset ascending). This is a total order,
+    // so it satisfies strict weak ordering required by std::sort. Deeper-nested
+    // clauses sort first, satisfying the ECMA-335 requirement.
+    auto* indices = new unsigned[nEH];
+    for (unsigned i = 0; i < nEH; i++) indices[i] = i;
+
+    std::sort(indices, indices + nEH, [&](unsigned a, unsigned b) {
+        if (depth[a] != depth[b]) return depth[a] > depth[b];
+        return pEH[a].m_pTryBegin->m_offset < pEH[b].m_pTryBegin->m_offset;
+    });
+
+    auto* sorted = new EHClause[nEH];
+    for (unsigned i = 0; i < nEH; i++)
+    {
+        sorted[i] = pEH[indices[i]];
+    }
+    for (unsigned i = 0; i < nEH; i++)
+    {
+        pEH[i] = sorted[i];
+    }
+
+    delete[] sorted;
+    delete[] indices;
+    delete[] depth;
 }
