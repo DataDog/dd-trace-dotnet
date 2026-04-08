@@ -32,6 +32,10 @@ build-dd-trace-dotnet-microbenchmarks-ami:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   variables:
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
     # Allows ephemeral instances to read content from dd-trace-dotnet
     # This is not strictly necessary in the current AMI build
     DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
@@ -95,6 +99,10 @@ run-benchmarks:
       - artifacts/
     expire_in: 3 months
   variables:
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
     # Benchmarks matching this regex are marked as flaky by benchmark_analyzer
     # and excluded from gating decisions (regression and SLO breach checks).
     FLAKY_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.Asm.AppSecEncodeBenchmark|Trace.CIVisibilityProtocolWriterBenchmark|Trace.AgentWriterBenchmark|Trace.AspNetCoreBenchmark|Trace.SingleSpanAspNetCoreBenchmark|Trace.ElasticsearchBenchmark|Trace.GraphQLBenchmark|Trace.Log4netBenchmark|Trace.SerilogBenchmark|Trace.RedisBenchmark|Trace.ILoggerBenchmark"
