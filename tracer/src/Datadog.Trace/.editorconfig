@@ -152,6 +152,8 @@ dotnet_diagnostic.CA5393.severity = error # Do not use unsafe DllImportSearchPat
 dotnet_diagnostic.CA5394.severity = error # Do not use insecure randomness
 dotnet_diagnostic.CA5395.severity = error # Miss HttpVerb attribute for action methods
 dotnet_diagnostic.CA5396.severity = error # Set HttpOnly to true for HttpCookie
+dotnet_diagnostic.CA5397.severity = error # Do not use deprecated SslProtocols values
+dotnet_diagnostic.CA5398.severity = error # Avoid hardcoded SslProtocols values
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
