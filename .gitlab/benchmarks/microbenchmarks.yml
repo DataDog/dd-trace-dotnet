@@ -142,7 +142,7 @@ run-benchmarks:
 # This repository is using PR-level performance quality gates.
 # Verify that the check-big-regressions CI job has passed. If any regression happened, merging this PR will be blocked.
 # If bypassing is necessary, see https://datadoghq.atlassian.net/wiki/x/8YFzMwE for more details.
-.check-big-regressions:
+check-big-regressions:
   stage: gate
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
@@ -169,7 +169,3 @@ run-benchmarks:
   script: |
     export ARTIFACTS_DIR="$(pwd)/artifacts"
     bp-runner bp-runner.fail-on-regression.yml --debug
-
-check-big-regressions:
-  extends: .check-big-regressions
-
