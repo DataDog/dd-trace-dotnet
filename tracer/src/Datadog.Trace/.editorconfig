@@ -76,6 +76,9 @@ dotnet_diagnostic.CA2301.severity = error # Do not call BinaryFormatter.Deserial
 dotnet_diagnostic.CA2302.severity = error # Ensure BinaryFormatter.Binder is set before calling Deserialize
 dotnet_diagnostic.CA2305.severity = error # Do not use insecure deserializer LosFormatter
 dotnet_diagnostic.CA2310.severity = error # Do not use insecure deserializer NetDataContractSerializer
+dotnet_diagnostic.CA2311.severity = error # Do not deserialize without first setting NetDataContractSerializer.Binder
+dotnet_diagnostic.CA2312.severity = error # Ensure NetDataContractSerializer.Binder is set before deserializing
+dotnet_diagnostic.CA2315.severity = error # Do not use insecure deserializer ObjectStateFormatter
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
