@@ -25,7 +25,7 @@ public class ThrowInInlinedMethodAnalyzer : DiagnosticAnalyzer
 
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        => ImmutableArray.Create(Diagnostics.ThrowInAggressiveInliningRule);
+        => ImmutableArray.Create(Diagnostics.ThrowInAggressiveInliningRule, Diagnostics.RethrowInAggressiveInliningRule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -56,13 +56,16 @@ public class ThrowInInlinedMethodAnalyzer : DiagnosticAnalyzer
         if (HasAggressiveInlining(methodSymbol))
         {
             var memberName = GetMemberDisplayName(containingMember);
-            var diagnostic = Diagnostic.Create(
-                Diagnostics.ThrowInAggressiveInliningRule,
-                throwNode.GetLocation(),
-                memberName);
+            var rule = IsRethrow(throwNode)
+                ? Diagnostics.RethrowInAggressiveInliningRule
+                : Diagnostics.ThrowInAggressiveInliningRule;
+            var diagnostic = Diagnostic.Create(rule, throwNode.GetLocation(), memberName);
             context.ReportDiagnostic(diagnostic);
         }
     }
+
+    private static bool IsRethrow(SyntaxNode throwNode)
+        => throwNode is ThrowStatementSyntax { Expression: null };
 
     private static SyntaxNode? GetContainingMember(SyntaxNode node)
     {

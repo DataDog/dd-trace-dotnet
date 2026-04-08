@@ -27,5 +27,14 @@ public static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: false,
         description: "throw statements prevent the JIT from inlining a method. Move the throw to a separate helper method marked with [MethodImpl(MethodImplOptions.NoInlining)] and [DoesNotReturn].");
+
+    internal static readonly DiagnosticDescriptor RethrowInAggressiveInliningRule = new(
+        DiagnosticId,
+        title: "Avoid throw in AggressiveInlining method",
+        messageFormat: "Method '{0}' is marked [AggressiveInlining] but contains a rethrow statement, which prevents inlining. Extract the try/catch block to a separate non-inlined method.",
+        category: "Performance",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: false,
+        description: "throw statements (including rethrows) prevent the JIT from inlining a method. Move the try/catch block to a separate method marked with [MethodImpl(MethodImplOptions.NoInlining)].");
 #pragma warning restore RS2008
 }

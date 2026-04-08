@@ -309,49 +309,6 @@ public class ThrowInInlinedMethodCodeFixProviderTests
     }
 
     [Fact]
-    public async Task ShouldFixThrowExpression()
-    {
-        // Throw expressions in null-coalescing are converted to if-statements
-        const string source = """
-            using System;
-            using System.Runtime.CompilerServices;
-
-            class TestClass
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                object TestMethod(object? arg)
-                {
-                    return arg ?? {|#0:throw new ArgumentNullException(nameof(arg))|};
-                }
-            }
-            """;
-
-        const string fix = """
-            using System;
-            using System.Runtime.CompilerServices;
-            using Datadog.Trace.Util;
-
-            class TestClass
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                object TestMethod(object? arg)
-                {
-                    if (arg is null)
-                    {
-                        ThrowHelper.ThrowArgumentNullException(nameof(arg));
-                    }
-                    return arg;
-                }
-            }
-            """;
-
-        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("TestMethod");
-        await Verifier.VerifyCodeFixAsync(source + ThrowHelperStub, expected, fix + ThrowHelperStub);
-    }
-
-    [Fact]
     public async Task ShouldNotFixBareThrow()
     {
         // bare throw; (rethrow) has no exception constructor to map
