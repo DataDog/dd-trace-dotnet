@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -50,7 +51,7 @@ internal readonly struct DataStreamsTransactionInfo
 
     internal DataStreamsTransactionInfo(string id, long timestamp, string checkpoint)
     {
-        _idBytes = EncodeId(id);
+        _idBytes = EncodeAndTruncate(id);
         _timestamp = timestamp;
         _checkpointId = GetOrAddCheckpointId(checkpoint);
     }
@@ -86,28 +87,27 @@ internal readonly struct DataStreamsTransactionInfo
         return Cache.GetOrAdd(checkpoint, _ => Interlocked.Increment(ref _counter));
     }
 
-    private static byte[] EncodeId(string id)
+    // Encodes a string to UTF-8, truncating to MaxIdBytes if necessary.
+    // GetMaxByteCount is O(1) arithmetic — used as a fast pre-check for the common case.
+    // On modern runtimes, truncation stops at a code-point boundary, ensuring valid UTF-8 output.
+    private static byte[] EncodeAndTruncate(string value)
     {
-        // GetMaxByteCount is arithmetic, simply return bytes if the string is small enough.
-        // In practice this should be the majority of cases, as uuids are typically used for transaction ids
-        if (Encoding.UTF8.GetMaxByteCount(id.Length) <= MaxIdBytes)
+        if (Encoding.UTF8.GetMaxByteCount(value.Length) <= MaxIdBytes)
         {
-            return Encoding.UTF8.GetBytes(id);
+            return Encoding.UTF8.GetBytes(value);
         }
 
-        // compute the exact byte size, and return if there's no need to truncate the identifier
-        var byteCount = Encoding.UTF8.GetByteCount(id);
-        if (byteCount <= MaxIdBytes)
+        if (Encoding.UTF8.GetByteCount(value) <= MaxIdBytes)
         {
-            return Encoding.UTF8.GetBytes(id);
+            return Encoding.UTF8.GetBytes(value);
         }
 
 #if NETCOREAPP3_1_OR_GREATER
         Span<byte> temp = stackalloc byte[MaxIdBytes];
-        Encoding.UTF8.GetEncoder().Convert(id.AsSpan(), temp, flush: false, out _, out var bytesUsed, out _);
+        Encoding.UTF8.GetEncoder().Convert(value.AsSpan(), temp, flush: false, out _, out var bytesUsed, out _);
         return temp[..bytesUsed].ToArray();
 #else
-        var encoded = Encoding.UTF8.GetBytes(id);
+        var encoded = Encoding.UTF8.GetBytes(value);
         var result = new byte[MaxIdBytes];
         Array.Copy(encoded, result, MaxIdBytes);
         return result;
@@ -128,39 +128,23 @@ internal readonly struct DataStreamsTransactionInfo
 
     internal static byte[] GetCacheBytes()
     {
-        // Snapshot so we can safely do two passes (entries are only ever added, never removed).
         var entries = Cache.ToArray();
         if (entries.Length == 0)
         {
             return [];
         }
 
-        // First pass: compute the exact size needed, avoiding resize and trim allocations.
-        var totalSize = 0;
-        foreach (var pair in entries)
-        {
-            totalSize += 2 + Encoding.UTF8.GetByteCount(pair.Key);
-        }
-
-        var result = new byte[totalSize];
+        // Pre-encode all names so we can size the buffer exactly and avoid a second encoding pass.
+        var encodedNames = Array.ConvertAll(entries, p => EncodeAndTruncate(p.Key));
+        var result = new byte[encodedNames.Sum(n => 2 + n.Length)];
         var index = 0;
 
-        // Second pass: write entries.
-        foreach (var pair in entries)
+        for (var i = 0; i < entries.Length; i++)
         {
-            result[index++] = (byte)pair.Value;
-#if NETCOREAPP3_1_OR_GREATER
-            // Encode the key name directly into the result buffer — no intermediate byte[] allocation.
-            var lenPos = index++;
-            var bytesWritten = Encoding.UTF8.GetBytes(pair.Key.AsSpan(), result.AsSpan(index));
-            result[lenPos] = (byte)bytesWritten;
-            index += bytesWritten;
-#else
-            var keyBytes = Encoding.UTF8.GetBytes(pair.Key);
-            result[index++] = (byte)keyBytes.Length;
-            Array.Copy(keyBytes, 0, result, index, keyBytes.Length);
-            index += keyBytes.Length;
-#endif
+            result[index++] = (byte)entries[i].Value;
+            result[index++] = (byte)encodedNames[i].Length;
+            Array.Copy(encodedNames[i], 0, result, index, encodedNames[i].Length);
+            index += encodedNames[i].Length;
         }
 
         return result;

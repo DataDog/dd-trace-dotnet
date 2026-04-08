@@ -134,6 +134,22 @@ public class DataStreamsTransactionInfoTest
     }
 
     [Fact]
+    public void GetCacheBytes_LongCheckpointName_IsTruncatedTo255Bytes()
+    {
+        DataStreamsTransactionInfo.ClearCacheForTesting();
+        // Checkpoint name of 300 ASCII bytes — exceeds MaxIdBytes (255)
+        var longName = new string('x', 300);
+        _ = new DataStreamsTransactionInfo("t1", 1, longName);
+
+        var cache = DataStreamsTransactionInfo.GetCacheBytes();
+
+        // Entry: [1 byte id] [1 byte name length (must be <= 255)] [N bytes name]
+        cache.Length.Should().Be(2 + 255, "first pass must cap at 255 bytes, not 300");
+        cache[0].Should().Be(1);
+        cache[1].Should().Be(255, "length byte must not wrap");
+    }
+
+    [Fact]
     public void GetCacheBytes_MultipleEntries_SerializesAllEntries()
     {
         DataStreamsTransactionInfo.ClearCacheForTesting();
