@@ -69,4 +69,5 @@ dotnet_diagnostic.CA1872.severity = error # Prefer Convert.ToHexString over BitC
 # Microsoft security analyzers
 dotnet_diagnostic.CA2100.severity = error # Review SQL queries for security vulnerabilities
 dotnet_diagnostic.CA2109.severity = error # Review visible event handlers
+dotnet_diagnostic.CA2119.severity = error # Seal methods that satisfy private interfaces
 
