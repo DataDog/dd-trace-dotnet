@@ -74,7 +74,6 @@ namespace Datadog.Trace.Agent
                 && IsSyntheticsRequest == other.IsSyntheticsRequest
                 && IsError == other.IsError
                 && IsTopLevel == other.IsTopLevel
-                && IsSyntheticsRequest == other.IsSyntheticsRequest
                 && SpanKind == other.SpanKind
                 && IsTraceRoot == other.IsTraceRoot
                 && HttpMethod == other.HttpMethod

@@ -139,14 +139,8 @@ namespace Datadog.Trace.Agent
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
-            var fieldCount = 18;
+            var fieldCount = 17;
             if (bucket.PeerTags.Count != 0)
-            {
-                fieldCount++;
-            }
-
-            var hasServiceSource = !string.IsNullOrEmpty(bucket.Key.ServiceSource);
-            if (hasServiceSource)
             {
                 fieldCount++;
             }
@@ -210,12 +204,9 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "GRPCStatusCode");
             MessagePackBinary.WriteString(stream, bucket.Key.GrpcStatusCode);
 
-            if (hasServiceSource)
-            {
-                // Wire name is "srv_src" per the Go agent's generated msgpack code
-                MessagePackBinary.WriteString(stream, "srv_src");
-                MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
-            }
+            // Wire name is "srv_src" per the Go agent's generated msgpack code
+            MessagePackBinary.WriteString(stream, "srv_src");
+            MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
 
             // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/span_concentrator.go#L53-L99
             if (bucket.PeerTags.Count != 0)
