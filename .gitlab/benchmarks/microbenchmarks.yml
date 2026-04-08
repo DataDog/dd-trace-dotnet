@@ -166,10 +166,6 @@ check-big-regressions:
     paths:
       - artifacts/
     expire_in: "30 days"
-  variables:
-    # Benchmarks matching this regex are marked as flaky by benchmark_analyzer
-    # and excluded from gating decisions (regression and SLO breach checks).
-    FLAKY_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.Asm.AppSecEncodeBenchmark|Trace.CIVisibilityProtocolWriterBenchmark|Trace.AgentWriterBenchmark|Trace.AspNetCoreBenchmark|Trace.SingleSpanAspNetCoreBenchmark|Trace.ElasticsearchBenchmark|Trace.GraphQLBenchmark|Trace.Log4netBenchmark|Trace.SerilogBenchmark|Trace.RedisBenchmark|Trace.ILoggerBenchmark"
   script: |
     export ARTIFACTS_DIR="$(pwd)/artifacts"
     bp-runner bp-runner.fail-on-regression.yml --debug
