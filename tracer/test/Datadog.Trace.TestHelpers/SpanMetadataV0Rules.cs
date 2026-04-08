@@ -1038,6 +1038,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.svc_src")
                 .IsOptional("_dd.dbm_trace_injected")
                 .IsOptional("dd.instrumentation.time_ms")
+                .IsOptional("db.operation.batch.size")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));

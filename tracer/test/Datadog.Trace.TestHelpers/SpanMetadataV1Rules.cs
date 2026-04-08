@@ -951,6 +951,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .IsPresent("out.host")
                 .Matches("db.type", "sql-server")
+                .IsOptional("db.operation.batch.size")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
