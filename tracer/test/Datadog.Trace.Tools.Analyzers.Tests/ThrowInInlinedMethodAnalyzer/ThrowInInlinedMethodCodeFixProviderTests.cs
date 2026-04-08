@@ -515,6 +515,35 @@ public class ThrowInInlinedMethodCodeFixProviderTests
     }
 
     [Fact]
+    public async Task ShouldNotFixNullCoalesceWithMemberAccessLeftSide()
+    {
+        // obj.Value could be a property with side effects — can't be evaluated twice safely
+        const string source = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class TestClass
+            {
+                private object? _inner;
+
+                object Inner => _inner;
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                object TestMethod()
+                {
+                    return this.Inner ?? {|#0:throw new InvalidOperationException("no value")|};
+                }
+            }
+            """;
+
+        var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestMethod");
+
+        await Verifier.VerifyCodeFixAsync(source, expected, source);
+    }
+
+    [Fact]
     public async Task ShouldNotAddDuplicateUsingDirective()
     {
         const string source = """

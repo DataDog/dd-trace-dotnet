@@ -181,7 +181,6 @@ namespace Datadog.Trace.Tools.Analyzers.ThrowInInlinedMethodAnalyzer
             {
                 IdentifierNameSyntax => true,
                 ThisExpressionSyntax => true,
-                MemberAccessExpressionSyntax ma => IsSimpleExpression(ma.Expression),
                 _ => false,
             };
         }
