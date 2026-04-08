@@ -14,6 +14,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -587,7 +588,10 @@ namespace Datadog.Trace.Configuration
 
             DataStreamsTransactionExtractors = config
                                                   .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
-                                                  .AsString(string.Empty);
+                                                  .GetAs(
+                                                       defaultValue: new DefaultResult<IReadOnlyList<DataStreamsTransactionExtractor>>([], "[]"),
+                                                       converter: json => ParsingResult<IReadOnlyList<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
+                                                       validator: null);
 
             // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
@@ -1215,7 +1219,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a raw value for DSM extractors
         /// </summary>
-        internal string DataStreamsTransactionExtractors { get; }
+        internal IReadOnlyList<DataStreamsTransactionExtractor> DataStreamsTransactionExtractors { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams schema extraction is enabled or not.

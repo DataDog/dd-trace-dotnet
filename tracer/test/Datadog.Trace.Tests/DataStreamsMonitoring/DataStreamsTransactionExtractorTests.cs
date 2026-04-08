@@ -18,21 +18,30 @@ public class DataStreamsTransactionExtractorTests
     [InlineData("HTTP_IN_HEADERS",       2)]
     [InlineData("KAFKA_CONSUME_HEADERS", 3)]
     [InlineData("KAFKA_PRODUCE_HEADERS", 4)]
-    [InlineData("UNKNOWN_STUFF",         0)]
-    [InlineData("",                      0)]
-    public void ExtractorType_ReturnsCorrectType_ForTypeString(string stringType, int expectedInt)
+    public void ExtractorType_ReturnsCorrectType_ForKnownTypeString(string stringType, int expectedInt)
     {
         var expected = (DataStreamsTransactionExtractor.ExtractorType)expectedInt;
         var json = $"[{{\"name\": \"n\", \"type\": \"{stringType}\", \"value\": \"v\"}}]";
-        var registry = new DataStreamsExtractorRegistry(json);
+        var registry = new DataStreamsExtractorRegistry(DataStreamsTransactionExtractor.ParseList(json));
         registry.GetExtractorsByType(expected).Should().ContainSingle()
                 .Which.ParsedType.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("UNKNOWN_STUFF")]
+    [InlineData("")]
+    public void ExtractorType_SkipsItem_ForUnknownTypeString(string stringType)
+    {
+        var json = $"[{{\"name\": \"n\", \"type\": \"{stringType}\", \"value\": \"v\"}}]";
+        var registry = new DataStreamsExtractorRegistry(DataStreamsTransactionExtractor.ParseList(json));
+        registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.Unknown).Should().BeNull();
     }
 
     [Fact]
     public void ExtractorType_ReturnsSameValue_OnMultipleCalls()
     {
-        var registry = new DataStreamsExtractorRegistry("[{\"name\": \"n\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v\"}]");
+        var json = "[{\"name\": \"n\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v\"}]";
+        var registry = new DataStreamsExtractorRegistry(DataStreamsTransactionExtractor.ParseList(json));
         var extractor = registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders)!.Single();
         extractor.ParsedType.Should().Be(extractor.ParsedType);
     }

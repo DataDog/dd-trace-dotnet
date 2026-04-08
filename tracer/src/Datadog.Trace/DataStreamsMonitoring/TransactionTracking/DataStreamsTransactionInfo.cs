@@ -58,9 +58,7 @@ internal readonly struct DataStreamsTransactionInfo
         _checkpointId = Cache.GetOrAdd(checkpoint, _ => Interlocked.Increment(ref _counter));
     }
 
-    internal long TimestampNs { get => _timestamp; }
-
-    internal string TransactionId { get => Encoding.UTF8.GetString(_idBytes); }
+    internal long TimestampNs => _timestamp;
 
     private static byte[] Truncate(byte[] source)
     {

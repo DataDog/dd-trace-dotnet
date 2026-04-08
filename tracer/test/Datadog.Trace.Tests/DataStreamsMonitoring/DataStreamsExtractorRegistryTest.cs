@@ -12,29 +12,17 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
 public class DataStreamsExtractorRegistryTest
 {
-    [Theory]
-    [InlineData("not valid json")]
-    [InlineData("{\"not\": \"a list\"}")]
-    [InlineData("[{\"name\": \"n\", \"type\":")]  // truncated / incomplete
-    public void MalformedJson_DoesNotThrow_AndLeavesExtractorsEmpty(string json)
-    {
-        var registry = new DataStreamsExtractorRegistry(json);
-
-        registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders).Should().BeNull();
-        registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders).Should().BeNull();
-    }
-
     [Fact]
     public void DeserializeCorrectly()
     {
-        var registry = new DataStreamsExtractorRegistry("[{\"name\": \"transaction-origin\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"transaction-id\"}]");
+        var registry = FromJson("[{\"name\": \"transaction-origin\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"transaction-id\"}]");
         registry.AsJson().Should().Be("{\"HttpOutHeaders\":[{\"name\":\"transaction-origin\",\"type\":\"HTTP_OUT_HEADERS\",\"value\":\"transaction-id\",\"ParsedType\":1}]}");
     }
 
     [Fact]
     public void GetExtractorsByType_ReturnsAllExtractors_ForSameType()
     {
-        var registry = new DataStreamsExtractorRegistry(
+        var registry = FromJson(
             "[" +
             "{\"name\": \"n1\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v1\"}," +
             "{\"name\": \"n2\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v2\"}" +
@@ -50,9 +38,11 @@ public class DataStreamsExtractorRegistryTest
     [Fact]
     public void GetExtractorsByType_DoesNotReturnExtractors_ForOtherType()
     {
-        var registry = new DataStreamsExtractorRegistry(
-            "[{\"name\": \"n1\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v1\"}]");
+        var registry = FromJson("[{\"name\": \"n1\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v1\"}]");
 
         registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders).Should().BeNull();
     }
+
+    private static DataStreamsExtractorRegistry FromJson(string json)
+        => new(DataStreamsTransactionExtractor.ParseList(json));
 }

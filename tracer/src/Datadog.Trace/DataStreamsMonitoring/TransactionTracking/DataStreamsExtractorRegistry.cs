@@ -4,43 +4,19 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
 internal sealed class DataStreamsExtractorRegistry
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsExtractorRegistry>();
+    private readonly Dictionary<DataStreamsTransactionExtractor.ExtractorType, List<DataStreamsTransactionExtractor>> _extractors;
 
-    private readonly Dictionary<DataStreamsTransactionExtractor.ExtractorType, List<DataStreamsTransactionExtractor>> _extractors = new();
-
-    internal DataStreamsExtractorRegistry(string extractorsJson)
+    internal DataStreamsExtractorRegistry(IReadOnlyList<DataStreamsTransactionExtractor> extractors)
     {
-        if (string.IsNullOrWhiteSpace(extractorsJson))
-        {
-            return;
-        }
-
-        List<DataStreamsTransactionExtractor>? deserialized;
-        try
-        {
-            deserialized = JsonHelper.DeserializeObject<List<DataStreamsTransactionExtractor>>(extractorsJson);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to parse DD_DATA_STREAMS_TRANSACTION_EXTRACTORS value. Transaction tracking extractors will be disabled.");
-            return;
-        }
-
-        if (deserialized == null)
-        {
-            return;
-        }
-
-        foreach (var extractor in deserialized)
+        _extractors = new(extractors.Count);
+        foreach (var extractor in extractors)
         {
             var list = _extractors.GetValueOrDefault(extractor.ParsedType) ?? new();
             list.Add(extractor);

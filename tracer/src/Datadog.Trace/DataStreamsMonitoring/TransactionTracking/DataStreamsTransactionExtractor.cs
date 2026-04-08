@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
@@ -52,6 +53,20 @@ internal sealed class DataStreamsTransactionExtractor
             }
 
             return _cachedType.Value;
+        }
+    }
+
+    public static IReadOnlyList<DataStreamsTransactionExtractor> ParseList(string json)
+    {
+        try
+        {
+            return JsonHelper.DeserializeObject<List<DataStreamsTransactionExtractor>>(json)
+                            ?.FindAll(e => e.ParsedType != ExtractorType.Unknown)
+                   ?? [];
+        }
+        catch
+        {
+            return [];
         }
     }
 }
