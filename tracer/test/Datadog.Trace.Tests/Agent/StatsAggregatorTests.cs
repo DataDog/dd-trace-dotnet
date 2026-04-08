@@ -748,12 +748,12 @@ namespace Datadog.Trace.Tests.Agent
             {
                 var span1 = CreateTopLevelSpan(start, "svc");
                 span1.OperationName = "op";
-                span1.SetTag(Tags.ServiceNameSource, "integration");
+                span1.Context.ServiceNameSource = "integration";
                 span1.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 var span2 = CreateTopLevelSpan(start, "svc");
                 span2.OperationName = "op";
-                span2.SetTag(Tags.ServiceNameSource, "user");
+                span2.Context.ServiceNameSource = "user";
                 span2.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 aggregator.Add(span1, span2);

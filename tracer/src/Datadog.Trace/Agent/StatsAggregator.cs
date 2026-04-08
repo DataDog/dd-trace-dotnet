@@ -253,7 +253,6 @@ namespace Datadog.Trace.Agent
             var isTraceRoot = span.Context.ParentId is null or 0;
             var httpMethod = span.GetTag(Tags.HttpMethod) ?? string.Empty;
             var httpEndpoint = span.GetTag(Tags.HttpRoute) ?? string.Empty;
-            var serviceName = span.ServiceName;
 
             // Normalize service source to match trace serialization behavior:
             // clear the source when service name equals the default, unless it's
@@ -262,7 +261,7 @@ namespace Datadog.Trace.Agent
             var serviceNameEqualsDefault = string.Equals(span.ServiceName, span.Context.TraceContext?.Tracer?.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
             if (serviceNameEqualsDefault && serviceSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
             {
-                serviceSource = null;
+                serviceSource = string.Empty;
             }
 
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L53-L99
