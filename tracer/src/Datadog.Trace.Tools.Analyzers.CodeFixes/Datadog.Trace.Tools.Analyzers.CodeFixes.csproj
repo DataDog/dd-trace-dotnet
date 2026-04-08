@@ -17,7 +17,6 @@
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\AspectAnalyzers\Diagnostics.cs" Link="AspectAnalyzers\Diagnostics.cs" />
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\DuckTypeAnalyzer\DuckDiagnostics.cs" Link="DuckTypeAnalyzer\DuckDiagnostics.cs" />
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\Helpers\RoslynHelper.cs" Link="Helpers\RoslynHelper.cs" />
-    <Compile Include="..\Datadog.Trace.Tools.Analyzers\AllocationAnalyzer\Diagnostics.cs" Link="AllocationAnalyzer\Diagnostics.cs" />
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\LogAnalyzer\Diagnostics.cs" Link="LogAnalyzer\Diagnostics.cs" />
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\ThreadAbortAnalyzer\Diagnostics.cs" Link="ThreadAbortAnalyzer\Diagnostics.cs" />
     <Compile Include="..\Datadog.Trace.Tools.Analyzers\SealedAnalyzer\Diagnostics.cs" Link="SealedAnalyzer\Diagnostics.cs" />

@@ -6,21 +6,21 @@
 extern alias AnalyzerCodeFixes;
 
 using System.Threading.Tasks;
-using Datadog.Trace.Tools.Analyzers.AllocationAnalyzer;
+using Datadog.Trace.Tools.Analyzers.LogAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
-    Datadog.Trace.Tools.Analyzers.AllocationAnalyzer.NumericToStringInLogAnalyzer,
-    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.AllocationAnalyzer.RemoveNumericToStringCodeFixProvider,
+    Datadog.Trace.Tools.Analyzers.LogAnalyzer.LogAnalyzer,
+    AnalyzerCodeFixes::Datadog.Trace.Tools.Analyzers.LogAnalyzer.RemoveNumericToStringCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
-namespace Datadog.Trace.Tools.Analyzers.Tests.AllocationAnalyzer;
+namespace Datadog.Trace.Tools.Analyzers.Tests.LogAnalyzer;
 
 public class RemoveNumericToStringCodeFixTests
 {
     private const string DiagnosticId = Diagnostics.NumericToStringInLogDiagnosticId;
-    private const DiagnosticSeverity Severity = DiagnosticSeverity.Warning;
+    private const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
 
     [Theory]
     [MemberData(nameof(Helpers.LogMethods), MemberType = typeof(Helpers))]

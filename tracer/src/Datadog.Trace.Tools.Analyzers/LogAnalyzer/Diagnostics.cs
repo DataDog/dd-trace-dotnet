@@ -58,6 +58,11 @@ public class Diagnostics
     /// </summary>
     public const string UseDatadogLoggerDiagnosticId = "DDLOG009";
 
+    /// <summary>
+    /// The DiagnosticID for <see cref="NumericToStringInLogRule"/>
+    /// </summary>
+    public const string NumericToStringInLogDiagnosticId = "DDLOG010";
+
     internal static readonly DiagnosticDescriptor ExceptionRule = new(
         ExceptionDiagnosticId,
         title: "Exception not passed as first argument",
@@ -138,4 +143,13 @@ public class Diagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "You should use the IDatadogLogger wrapper for logging.");
+
+    internal static readonly DiagnosticDescriptor NumericToStringInLogRule = new(
+        NumericToStringInLogDiagnosticId,
+        title: "Unnecessary ToString() on numeric type in log call",
+        messageFormat: "Remove unnecessary '{0}.ToString()' call — the generic log overload handles numeric formatting without allocating a string",
+        category: "Performance",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Calling .ToString() on numeric types when passing them as log arguments causes an unnecessary string allocation. The generic log overloads handle formatting directly.");
 }

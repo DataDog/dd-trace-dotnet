@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Datadog.Trace.Tools.Analyzers.AllocationAnalyzer;
+namespace Datadog.Trace.Tools.Analyzers.LogAnalyzer;
 
 /// <summary>
 /// Code fix that removes unnecessary .ToString() calls on numeric types in log arguments

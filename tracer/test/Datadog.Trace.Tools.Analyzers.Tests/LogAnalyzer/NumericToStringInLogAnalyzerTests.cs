@@ -4,20 +4,20 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Datadog.Trace.Tools.Analyzers.AllocationAnalyzer;
+using Datadog.Trace.Tools.Analyzers.LogAnalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
-    Datadog.Trace.Tools.Analyzers.AllocationAnalyzer.NumericToStringInLogAnalyzer,
+    Datadog.Trace.Tools.Analyzers.LogAnalyzer.LogAnalyzer,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
-namespace Datadog.Trace.Tools.Analyzers.Tests.AllocationAnalyzer;
+namespace Datadog.Trace.Tools.Analyzers.Tests.LogAnalyzer;
 
 public class NumericToStringInLogAnalyzerTests
 {
     private const string DiagnosticId = Diagnostics.NumericToStringInLogDiagnosticId;
-    private const DiagnosticSeverity Severity = DiagnosticSeverity.Warning;
+    private const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
 
     [Fact]
     public async Task EmptySourceShouldNotHaveDiagnostics()
@@ -456,12 +456,14 @@ public class NumericToStringInLogAnalyzerTests
                 public static void Test()
                 {
                     int count = 42;
-                    Log.Debug("Count is {Count}", count.ToString());
+                    {|#0:Log.Debug("Count is {Count}", count.ToString())|};
                 }
             }
             """;
 
-        await Verifier.VerifyAnalyzerAsync(src);
+        // Expect DDLOG009 (UseDatadogLoggerRule) on the Serilog call, but NOT DDLOG010 (NumericToStringInLog)
+        var expected = new DiagnosticResult(Diagnostics.UseDatadogLoggerDiagnosticId, DiagnosticSeverity.Warning).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(src, expected);
     }
 
     [Theory]
