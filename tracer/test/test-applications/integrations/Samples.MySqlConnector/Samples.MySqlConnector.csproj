@@ -3,6 +3,7 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.3.13</ApiVersion>
     <RequiresDockerDependency>All</RequiresDockerDependency>
+    <DefineConstants Condition="'$(ApiVersion)' >= '0.61.0'">$(DefineConstants);HAS_BATCH_SUPPORT</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

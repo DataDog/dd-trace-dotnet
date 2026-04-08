@@ -292,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     integrationId = IntegrationId.Npgsql;
                     dbType = DbType.PostgreSql;
                     return true;
-                case "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand" or "MySqlConnector.MySqlBatch":
+                case "MySql.Data.MySqlClient.MySqlCommand" or "MySql.Data.MySqlClient.MySqlBatch" or "MySqlConnector.MySqlCommand" or "MySqlConnector.MySqlBatch":
                     integrationId = IntegrationId.MySql;
                     dbType = DbType.MySql;
                     return true;

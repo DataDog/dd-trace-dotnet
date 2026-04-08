@@ -52,6 +52,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<MySqlCommand>-netstandard: 7 spans (1 group * 7 spans)
+            //
+            // BATCH (v0.61+): +6 spans
             int expectedSpanCount = GetSpanCount(packageVersion); // The following versions expect 143 spans: 0.67.0,0.68.1,0.69.10
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
@@ -94,19 +96,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         private static int GetSpanCount(string packageVersionString)
         {
             const int defaultCount = 147;
+            const int batchSpanCount = 6;
             if (string.IsNullOrEmpty(packageVersionString))
             {
                 // Default version in Samples.MySqlConnector.csproj is 1.3.13
-                return defaultCount;
+                return defaultCount + batchSpanCount;
             }
 
             var version = new Version(packageVersionString);
-            return version switch
+            var count = version switch
             {
                 _ when version >= new Version(1, 0, 0) => 147,
                 _ when version >= new Version(0, 67, 0) => defaultCount - 4,
                 _ => 147,
             };
+
+            if (Environment.Version.Major >= 6 && version >= new Version(0, 61, 0))
+            {
+                count += batchSpanCount;
+            }
+
+            return count;
         }
     }
 }

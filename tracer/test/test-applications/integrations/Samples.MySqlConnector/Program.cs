@@ -24,6 +24,15 @@ namespace Samples.MySqlConnector
             using (var connection = OpenConnection(typeof(MySqlConnection)))
             {
                 await RelationalDatabaseTestHarness.RunAllAsync<MySqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+#if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
+                var batchCommandHandler = new MySqlBatchCommandHandler();
+                await RelationalDatabaseTestHarness.RunBatchAsync(
+                    connection,
+                    commandFactory,
+                    batchCommandHandler,
+                    cts.Token);
+#endif
             }
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile

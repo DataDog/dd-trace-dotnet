@@ -739,6 +739,15 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
@@ -747,6 +756,15 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
@@ -835,6 +853,15 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteWithCommandBehaviorAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.BatchExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
@@ -968,6 +995,15 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlDataReader" }
                     or { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlDataReader" }
                     or { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlDataReader" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlBatch" }
                     or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
@@ -976,6 +1012,15 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
+                    or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlBatch" }
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlCommand" }
@@ -1067,7 +1112,16 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "Oracle.ManagedDataAccess", Value: "Oracle.ManagedDataAccess.Client.OracleDataReader" }
                     or { Key: "Oracle.ManagedDataAccess", Value: "Oracle.ManagedDataAccess.Client.OracleDataReader" }
                     => Datadog.Trace.Configuration.IntegrationId.Oracle,
-                    { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlCommand" }
+                    { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlBatch" }
+                    or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlCommand" }
                     or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlCommand" }
                     or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlCommand" }
                     or { Key: "Microsoft.Data.SqlClient", Value: "Microsoft.Data.SqlClient.SqlCommand" }

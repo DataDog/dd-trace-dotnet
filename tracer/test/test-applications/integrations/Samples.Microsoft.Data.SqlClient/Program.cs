@@ -25,6 +25,15 @@ namespace Samples.Microsoft.Data.SqlClient
                 }
 
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+#if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
+                var batchCommandHandler = new SqlBatchCommandHandler();
+                await RelationalDatabaseTestHarness.RunBatchAsync(
+                    connection,
+                    commandFactory,
+                    batchCommandHandler,
+                    cts.Token);
+#endif
             }
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile

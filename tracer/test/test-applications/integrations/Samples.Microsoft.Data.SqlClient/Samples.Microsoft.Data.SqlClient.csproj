@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.1</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)' >= '5.2.0'">$(DefineConstants);HAS_BATCH_SUPPORT</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

@@ -47,8 +47,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // CALLTARGET: +14 spans
             // - IDbCommandGenericConstraint<SqlCommand>: 7 spans (1 group * 7 spans)
             // - IDbCommandGenericConstraint<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-
+            //
+            // BATCH (v5.2+): +6 spans
             var expectedSpanCount = 147;
+            if (HasBatchSupport(packageVersion))
+            {
+                expectedSpanCount += 6;
+            }
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
@@ -88,6 +93,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             Assert.NotEmpty(spans);
             spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.SqlClient);
+        }
+
+        private static bool HasBatchSupport(string packageVersion)
+        {
+            // DbBatch is only available on .NET 6.0+
+            if (Environment.Version.Major < 6 || string.IsNullOrEmpty(packageVersion))
+            {
+                return false;
+            }
+
+            return Version.TryParse(packageVersion, out var version) && version >= new Version(5, 2, 0);
         }
     }
 }
