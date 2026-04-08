@@ -228,8 +228,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             // Load Code Coverage from the file.
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(filePath);
+            var xmlDoc = new XmlDocument() { XmlResolver = null };
+            using (var reader = XmlReader.Create(filePath, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
+            {
+                xmlDoc.Load(reader);
+            }
 
             if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
                 double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))

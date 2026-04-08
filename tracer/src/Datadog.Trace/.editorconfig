@@ -107,6 +107,7 @@ dotnet_diagnostic.CA3010.severity = error # Review code for XAML injection vulne
 dotnet_diagnostic.CA3011.severity = error # Review code for DLL injection vulnerabilities
 dotnet_diagnostic.CA3012.severity = error # Review code for regex injection vulnerabilities
 dotnet_diagnostic.CA3061.severity = error # Do not add schema by URL
+dotnet_diagnostic.CA3075.severity = error # Insecure DTD Processing
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
