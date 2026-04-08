@@ -11,7 +11,7 @@ using Datadog.Trace.Util;
 
 #nullable enable
 
-// Putting these in System, because they are polyfills for methods available directly on char in
+// Putting these in System, because they are polyfills for methods available directly on char in newer frameworks
 
 // ReSharper disable once CheckNamespace
 namespace System;

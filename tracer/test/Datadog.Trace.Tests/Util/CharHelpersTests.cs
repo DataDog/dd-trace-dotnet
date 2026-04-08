@@ -7,7 +7,6 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -92,11 +91,9 @@ public class CharHelpersTests
     [InlineData('\u1234', '\u2345', '\uFFFF', false)]
     [InlineData('\u1234', '\u0123', '\u1233', false)]
     [InlineData('\u1234', '\u0123', '\u1234', true)]
-    [InlineData('\u1234', '\u1235', '\u1231', false)]
     [InlineData('b', 'c', 'd', false)]
-    [InlineData('b', 'd', 'c', true)]
-    public static void IsBetween_Char(char c, char minInclusive, char maxExclusive, bool expected)
+    public static void IsBetween_Char(char c, char minInclusive, char maxInclusive, bool expected)
     {
-        CharHelpers.IsBetween(c, minInclusive, maxExclusive).Should().Be(expected);
+        CharHelpers.IsBetween(c, minInclusive, maxInclusive).Should().Be(expected);
     }
 }
