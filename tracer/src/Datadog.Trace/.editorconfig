@@ -81,6 +81,7 @@ dotnet_diagnostic.CA2312.severity = error # Ensure NetDataContractSerializer.Bin
 dotnet_diagnostic.CA2315.severity = error # Do not use insecure deserializer ObjectStateFormatter
 dotnet_diagnostic.CA2321.severity = error # Do not deserialize with JavaScriptSerializer using SimpleTypeResolver
 dotnet_diagnostic.CA2322.severity = error # Ensure JavaScriptSerializer is not initialized with SimpleTypeResolver
+dotnet_diagnostic.CA2326.severity = error # Do not use TypeNameHandling values other than None
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
