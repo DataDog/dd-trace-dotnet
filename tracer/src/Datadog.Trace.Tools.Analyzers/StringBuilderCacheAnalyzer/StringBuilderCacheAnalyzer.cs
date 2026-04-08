@@ -43,13 +43,17 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // May be null in projects that don't reference Datadog.Trace.Util — the
+        // "scope already uses Acquire" suppression simply won't fire in that case.
+        var stringBuilderCacheType = context.Compilation.GetTypeByMetadataName("Datadog.Trace.Util.StringBuilderCache");
+
         context.RegisterSyntaxNodeAction(
-            ctx => AnalyzeObjectCreation(ctx, stringBuilderType),
+            ctx => AnalyzeObjectCreation(ctx, stringBuilderType, stringBuilderCacheType),
             SyntaxKind.ObjectCreationExpression,
             SyntaxKind.ImplicitObjectCreationExpression);
     }
 
-    private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context, INamedTypeSymbol stringBuilderType)
+    private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context, INamedTypeSymbol stringBuilderType, INamedTypeSymbol? stringBuilderCacheType)
     {
         var symbolInfo = context.SemanticModel.GetSymbolInfo(context.Node, context.CancellationToken);
         if (symbolInfo.Symbol is not IMethodSymbol constructorSymbol)
@@ -87,7 +91,7 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
         var enclosingFunction = GetEnclosingFunction(context.Node);
 
         // Suppress if the enclosing function-like scope already calls StringBuilderCache.Acquire()
-        if (enclosingFunction is not null && ContainsStringBuilderCacheAcquireCall(enclosingFunction))
+        if (enclosingFunction is not null && ContainsStringBuilderCacheAcquireCall(enclosingFunction, stringBuilderCacheType, context.SemanticModel, context.CancellationToken))
         {
             return;
         }
@@ -247,29 +251,28 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
         return constantValue is { HasValue: true, Value: int capacity } && capacity > maxBuilderSize;
     }
 
-    private static bool ContainsStringBuilderCacheAcquireCall(SyntaxNode functionNode)
+    private static bool ContainsStringBuilderCacheAcquireCall(
+        SyntaxNode functionNode,
+        INamedTypeSymbol? stringBuilderCacheType,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
+        if (stringBuilderCacheType is null)
+        {
+            return false;
+        }
+
         // Use descendIntoChildren to skip nested function scopes — they are analyzed independently
         foreach (var invocation in functionNode.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == functionNode).OfType<InvocationExpressionSyntax>())
         {
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.Text == "Acquire"
-                && ExpressionEndsWithStringBuilderCache(memberAccess.Expression))
+            var symbol = semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol;
+            if (symbol is IMethodSymbol { Name: "Acquire" } method
+                && SymbolEqualityComparer.Default.Equals(method.ContainingType, stringBuilderCacheType))
             {
                 return true;
             }
         }
 
         return false;
-    }
-
-    private static bool ExpressionEndsWithStringBuilderCache(ExpressionSyntax expression)
-    {
-        return expression switch
-        {
-            IdentifierNameSyntax { Identifier.Text: "StringBuilderCache" } => true,
-            MemberAccessExpressionSyntax { Name.Identifier.Text: "StringBuilderCache" } => true,
-            _ => false,
-        };
     }
 }
