@@ -154,6 +154,8 @@ dotnet_diagnostic.CA5395.severity = error # Miss HttpVerb attribute for action m
 dotnet_diagnostic.CA5396.severity = error # Set HttpOnly to true for HttpCookie
 dotnet_diagnostic.CA5397.severity = error # Do not use deprecated SslProtocols values
 dotnet_diagnostic.CA5398.severity = error # Avoid hardcoded SslProtocols values
+dotnet_diagnostic.CA5399.severity = error # Definitely disable HttpClient certificate revocation list check
+dotnet_diagnostic.CA5400.severity = error # Ensure HttpClient certificate revocation list check is not disabled
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
