@@ -35,6 +35,7 @@ internal sealed class DataStreamsManager
     private readonly DataStreamsExtractorRegistry _registry;
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
+    private readonly bool _isInDefaultState;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
     private string? _previousContainerTagsHash;
@@ -50,7 +51,7 @@ internal sealed class DataStreamsManager
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
         _discoveryService = discoveryService;
-        IsInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
+        _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
         _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
 
         if (Log.IsEnabled(LogEventLevel.Debug))
@@ -72,11 +73,11 @@ internal sealed class DataStreamsManager
         get => Volatile.Read(ref _isEnabled);
     }
 
-    public bool IsInDefaultState { get; }
+    public bool IsInDefaultState => _isInDefaultState;
 
     public bool IsTransactionTrackingEnabled
     {
-        get => !IsInDefaultState && IsEnabled;
+        get => !_isInDefaultState && IsEnabled;
     }
 
     /// <summary> Callback for AgentConfiguration updates </summary>

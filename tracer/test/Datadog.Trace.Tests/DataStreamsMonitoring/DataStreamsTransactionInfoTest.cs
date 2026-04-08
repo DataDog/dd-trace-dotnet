@@ -15,7 +15,7 @@ public class DataStreamsTransactionInfoTest
     [Fact]
     public void TransactionInfoSerializesCorrectly()
     {
-        DataStreamsTransactionInfo.ClearCache();
+        DataStreamsTransactionInfo.ClearCacheForTesting();
         var transaction = new DataStreamsTransactionInfo("1", 1, "1");
         transaction.TimestampNs.Should().Be(1);
         transaction.GetBytes().Should().BeEquivalentTo(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 49 });
@@ -24,7 +24,7 @@ public class DataStreamsTransactionInfoTest
     [Fact]
     public void TransactionInfoCacheSerializesCorrectly()
     {
-        DataStreamsTransactionInfo.ClearCache();
+        DataStreamsTransactionInfo.ClearCacheForTesting();
         _ = new DataStreamsTransactionInfo("1", 1, "1");
         var cacheBytes = DataStreamsTransactionInfo.GetCacheBytes();
         cacheBytes.Should().BeEquivalentTo(new byte[] { 1, 1, 49 });
@@ -67,7 +67,7 @@ public class DataStreamsTransactionInfoTest
     [Fact]
     public void CheckpointId_DoesNotIncrement_WhenCheckpointAlreadyCached()
     {
-        DataStreamsTransactionInfo.ClearCache();
+        DataStreamsTransactionInfo.ClearCacheForTesting();
 
         // First use of "cp-a" gets id 1, first use of "cp-b" gets id 2.
         var a1 = new DataStreamsTransactionInfo("tx1", 1, "cp-a");

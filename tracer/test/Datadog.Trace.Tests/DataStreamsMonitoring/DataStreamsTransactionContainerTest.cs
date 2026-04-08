@@ -16,7 +16,7 @@ public class DataStreamsTransactionContainerTest
     [Fact]
     public void ZerosAreTrimmedWhenSerialized()
     {
-        DataStreamsTransactionInfo.ClearCache();
+        DataStreamsTransactionInfo.ClearCacheForTesting();
         var container = new DataStreamsTransactionContainer(1024);
         container.GetDataAndReset().Should().BeEmpty();
 

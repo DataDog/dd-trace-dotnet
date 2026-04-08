@@ -49,6 +49,11 @@ internal sealed class DataStreamsTransactionContainer
 
     public byte[] GetDataAndReset()
     {
+        if (_size == 0)
+        {
+            return [];
+        }
+
         // trim zeros
         var result = new byte[_size];
         Array.Copy(_data, 0, result, 0, _size);

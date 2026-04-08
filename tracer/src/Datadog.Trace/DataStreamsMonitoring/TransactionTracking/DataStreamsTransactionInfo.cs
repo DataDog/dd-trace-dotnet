@@ -102,8 +102,7 @@ internal readonly struct DataStreamsTransactionInfo
         return trimmed;
     }
 
-    // ClearCache is for using in tests only — resets both the map and the counter so IDs are deterministic
-    internal static void ClearCache()
+    internal static void ClearCacheForTesting()
     {
         Cache.Clear();
         Interlocked.Exchange(ref _counter, 0);

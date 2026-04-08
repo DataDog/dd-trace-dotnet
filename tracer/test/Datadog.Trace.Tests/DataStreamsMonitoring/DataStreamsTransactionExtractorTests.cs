@@ -36,13 +36,4 @@ public class DataStreamsTransactionExtractorTests
         var registry = new DataStreamsExtractorRegistry(DataStreamsTransactionExtractor.ParseList(json));
         registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.Unknown).Should().BeNull();
     }
-
-    [Fact]
-    public void ExtractorType_ReturnsSameValue_OnMultipleCalls()
-    {
-        var json = "[{\"name\": \"n\", \"type\": \"HTTP_OUT_HEADERS\", \"value\": \"v\"}]";
-        var registry = new DataStreamsExtractorRegistry(DataStreamsTransactionExtractor.ParseList(json));
-        var extractor = registry.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders)!.Single();
-        extractor.ParsedType.Should().Be(extractor.ParsedType);
-    }
 }

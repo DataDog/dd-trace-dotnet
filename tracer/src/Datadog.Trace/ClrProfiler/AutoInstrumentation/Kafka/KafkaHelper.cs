@@ -290,7 +290,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
                     }
 
-                    if (!dataStreamsManager.IsInDefaultState)
+                    if (dataStreamsManager.IsTransactionTrackingEnabled)
                     {
                         ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaConsumeHeaders, message);
                     }
@@ -422,7 +422,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
 
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
-                    if (!dataStreamsManager.IsInDefaultState)
+                    if (dataStreamsManager.IsTransactionTrackingEnabled)
                     {
                         ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaProduceHeaders, message);
                     }
