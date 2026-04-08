@@ -182,12 +182,25 @@ upload_results:
         if ($env:CI_COMMIT_REF_NAME -eq "master") {
             $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
             Write-Output "Updating latest master results at s3://$s3Bucket/$latestPrefix"
-            Write-S3Object `
-                -BucketName $s3Bucket `
-                -KeyPrefix $latestPrefix `
-                -Folder $artifactsDir `
-                -CannedACLName "bucket-owner-full-control" `
-                -Recurse
+            Write-Output "  Bucket: $s3Bucket"
+            Write-Output "  Prefix: $latestPrefix"
+            Write-Output "  Source: $artifactsDir"
+            Write-Output "  File count: $($files.Count)"
+            try {
+                Write-S3Object `
+                    -BucketName $s3Bucket `
+                    -KeyPrefix $latestPrefix `
+                    -Folder $artifactsDir `
+                    -CannedACLName "bucket-owner-full-control" `
+                    -Recurse
+                Write-Output "_latest update complete!"
+            }
+            catch {
+                Write-Output "ERROR updating _latest: $_"
+                Write-Output "Exception type: $($_.Exception.GetType().FullName)"
+                Write-Output "Stack trace: $($_.ScriptStackTrace)"
+                throw
+            }
         }
     } else {
         Write-Warning "No files found in $artifactsDir"
