@@ -247,7 +247,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        if (await _flushSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false))
+        if (await _flushSemaphore.WaitAsync(_flushSemaphoreWaitTime).ConfigureAwait(false))
         {
             try
             {
