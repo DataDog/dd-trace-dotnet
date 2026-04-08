@@ -15,6 +15,94 @@
               "RequiresDuplicateDetection": false,
               "RequiresSession": false
             }
+          },
+          {
+            "Name": "dsm-direct-queue",
+            "Properties": {
+              "DeadLetteringOnMessageExpiration": false,
+              "DefaultMessageTimeToLive": "PT1H",
+              "LockDuration": "PT1M",
+              "MaxDeliveryCount": 10,
+              "EnablePartitioning": false,
+              "RequiresDuplicateDetection": false,
+              "RequiresSession": false
+            }
+          }
+        ],
+        "Topics": [
+          {
+            "Name": "dsm-topic-subscription-filters",
+            "Properties": {
+              "DefaultMessageTimeToLive": "PT1H"
+            },
+            "Subscriptions": [
+              {
+                "Name": "subscription1",
+                "Properties": {
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 10
+                },
+                "Rules": [
+                  {
+                    "Name": "typeFilter",
+                    "Properties": {
+                      "FilterType": "Correlation",
+                      "CorrelationFilter": {
+                        "Label": "order"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "Name": "subscription2",
+                "Properties": {
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 10
+                },
+                "Rules": [
+                  {
+                    "Name": "typeFilter",
+                    "Properties": {
+                      "FilterType": "Correlation",
+                      "CorrelationFilter": {
+                        "Label": "order"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Name": "dsm-topic2",
+            "Properties": {
+              "DefaultMessageTimeToLive": "PT1H"
+            },
+            "Subscriptions": [
+              {
+                "Name": "subscription",
+                "Properties": {
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 10
+                }
+              }
+            ]
+          },
+          {
+            "Name": "dsm-topic3",
+            "Properties": {
+              "DefaultMessageTimeToLive": "PT1H"
+            },
+            "Subscriptions": [
+              {
+                "Name": "subscription",
+                "Properties": {
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 10
+                }
+              }
+            ]
           }
         ]
       }

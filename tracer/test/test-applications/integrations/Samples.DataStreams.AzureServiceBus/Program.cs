@@ -15,6 +15,7 @@ namespace Samples.DataStreams.AzureServiceBus
     public static class Program
     {
         private static readonly string ConnectionString = Environment.GetEnvironmentVariable("ASB_CONNECTION_STRING");
+        private static readonly bool UseEmulator = ConnectionString?.Contains("UseDevelopmentEmulator=true") == true;
         private static readonly ServiceBusClient Client = new(ConnectionString);
         private static readonly ServiceBusAdministrationClient AdminClient = new(ConnectionString);
 
@@ -99,6 +100,13 @@ namespace Samples.DataStreams.AzureServiceBus
 
         private static async Task InitializeServiceBusAsync()
         {
+            if (UseEmulator)
+            {
+                // Entities are pre-created via the emulator config (servicebus-emulator-config.json)
+                Console.WriteLine("Using emulator — skipping admin API entity creation");
+                return;
+            }
+
             // Create queue
             await AdminClient.CreateQueueAsync(QueueName);
 
@@ -189,10 +197,13 @@ namespace Samples.DataStreams.AzureServiceBus
 
         private static async Task DisposeServiceBusAsync()
         {
-            await AdminClient.DeleteQueueAsync(QueueName); // Delete so each test is self-contained
-            await AdminClient.DeleteTopicAsync(TopicWithFiltersName); // Delete so each test is self-contained
-            await AdminClient.DeleteTopicAsync(Topic2Name); // Delete so each test is self-contained
-            await AdminClient.DeleteTopicAsync(Topic3Name); // Delete so each test is self-contained
+            if (!UseEmulator)
+            {
+                await AdminClient.DeleteQueueAsync(QueueName); // Delete so each test is self-contained
+                await AdminClient.DeleteTopicAsync(TopicWithFiltersName); // Delete so each test is self-contained
+                await AdminClient.DeleteTopicAsync(Topic2Name); // Delete so each test is self-contained
+                await AdminClient.DeleteTopicAsync(Topic3Name); // Delete so each test is self-contained
+            }
 
             await Client.DisposeAsync();
         }
