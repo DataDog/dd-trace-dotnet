@@ -146,6 +146,8 @@ dotnet_diagnostic.CA5387.severity = error # Do not use weak key derivation funct
 dotnet_diagnostic.CA5388.severity = error # Ensure sufficient iteration count when using weak key derivation function
 dotnet_diagnostic.CA5389.severity = error # Do not add archive item's path to the target file system path
 dotnet_diagnostic.CA5390.severity = error # Do not hard-code encryption key
+dotnet_diagnostic.CA5391.severity = error # Use antiforgery tokens in ASP.NET Core MVC controllers
+# dotnet_diagnostic.CA5392.severity = error # Use DefaultDllImportSearchPaths attribute for P/Invokes - too many P/Invoke methods to fix
 
 # Disable security analyzers for vendored third-party code
 [Vendors/**/*.{cs,vb}]
