@@ -39,6 +39,8 @@ dsm_throughput:
   script:
     - source build-id.txt
     - export ARTIFACTS_DIR="$(pwd)/artifacts" && (mkdir "${ARTIFACTS_DIR}" || :)
+    # Note: the GitHub-side pattern (github.com/DataDog/) is hardcoded because it must match URLs used inside benchmarking-platform scripts.
+    # If internal repos move to a different GitHub org, this pattern may need a second entry for the new org.
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/".insteadOf "https://github.com/DataDog/"
     - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
