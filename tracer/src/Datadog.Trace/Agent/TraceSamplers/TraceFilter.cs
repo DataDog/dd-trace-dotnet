@@ -20,19 +20,54 @@ namespace Datadog.Trace.Agent.TraceSamplers;
 /// </summary>
 internal sealed class TraceFilter
 {
-    private readonly List<string> _filterTagsRequire;
-    private readonly List<string> _filterTagsReject;
+    private readonly List<string> _filterTagKeysRequire;
+    private readonly List<KeyValuePair<string, string>> _filterTagKeyValuesRequire;
+    private readonly List<string> _filterTagKeysReject;
+    private readonly List<KeyValuePair<string, string>> _filterTagKeyValuesReject;
     private readonly List<RegexTagFilter> _filterTagsRegexRequire;
     private readonly List<RegexTagFilter> _filterTagsRegexReject;
     private readonly List<Regex> _ignoreResources;
+    private readonly bool _hasFilters;
 
     public TraceFilter(AgentTraceFilterConfig config)
     {
-        _filterTagsRequire = config.FilterTagsRequire ?? [];
-        _filterTagsReject = config.FilterTagsReject ?? [];
+        BuildFilterTags(config.FilterTagsRequire, out _filterTagKeysRequire, out _filterTagKeyValuesRequire);
+        BuildFilterTags(config.FilterTagsReject, out _filterTagKeysReject, out _filterTagKeyValuesReject);
         _filterTagsRegexRequire = CompileTagFilters(config.FilterTagsRegexRequire);
         _filterTagsRegexReject = CompileTagFilters(config.FilterTagsRegexReject);
         _ignoreResources = CompilePatterns(config.IgnoreResources);
+
+        // Short circuit because these are _relatively_ rare, so we can avoid all the work if needs be
+        _hasFilters = _filterTagKeysRequire.Count > 0
+                   || _filterTagKeyValuesRequire.Count > 0
+                   || _filterTagKeysReject.Count > 0
+                   || _filterTagKeyValuesReject.Count > 0
+                   || _filterTagsRegexRequire.Count > 0
+                   || _filterTagsRegexReject.Count > 0
+                   || _ignoreResources.Count > 0;
+
+        static void BuildFilterTags(List<string>? filters, out List<string> keyFilters, out List<KeyValuePair<string, string>> keyValueFilters)
+        {
+            keyFilters = [];
+            keyValueFilters = [];
+            if (filters is not null)
+            {
+                foreach (var filter in filters)
+                {
+                    var colonIndex = filter.IndexOf(':');
+                    if (colonIndex < 0)
+                    {
+                        keyFilters.Add(filter);
+                    }
+                    else
+                    {
+                        var key = filter.Substring(0, colonIndex);
+                        var value = filter.Substring(colonIndex + 1);
+                        keyValueFilters.Add(new(key, value));
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -41,6 +76,11 @@ internal sealed class TraceFilter
     /// </summary>
     public bool ShouldKeepTrace(Span rootSpan)
     {
+        if (!_hasFilters)
+        {
+            return true;
+        }
+
         // 1. Resource filtering: reject if resource matches any ignore_resources pattern
         if (_ignoreResources.Count > 0 && !string.IsNullOrEmpty(rootSpan.ResourceName))
         {
@@ -53,10 +93,20 @@ internal sealed class TraceFilter
             }
         }
 
-        // 2. Reject filtering: reject if any tag matches reject filters
-        foreach (var filter in _filterTagsReject)
+        // 2a. Reject filtering: reject if any tag matches reject filters
+        foreach (var filter in _filterTagKeysReject)
         {
-            if (MatchesExactFilter(rootSpan, filter))
+            // Key-only filter: matches if tag key exists with any value
+            if (rootSpan.GetTag(filter) is not null)
+            {
+                return false;
+            }
+        }
+
+        foreach (var filter in _filterTagKeyValuesReject)
+        {
+            // Key-Value filter: matches if tag key exists with specific value
+            if (rootSpan.GetTag(filter.Key) == filter.Value)
             {
                 return false;
             }
@@ -71,9 +121,19 @@ internal sealed class TraceFilter
         }
 
         // 3. Require filtering: ALL require filters must match
-        foreach (var filter in _filterTagsRequire)
+        foreach (var filter in _filterTagKeysRequire)
         {
-            if (!MatchesExactFilter(rootSpan, filter))
+            // Key-only filter: matches if tag key exists with any value
+            if (rootSpan.GetTag(filter) is null)
+            {
+                return false;
+            }
+        }
+
+        foreach (var filter in _filterTagKeyValuesRequire)
+        {
+            // Key-Value filter: matches if tag key exists with specific value
+            if (rootSpan.GetTag(filter.Key) != filter.Value)
             {
                 return false;
             }
@@ -88,24 +148,6 @@ internal sealed class TraceFilter
         }
 
         return true;
-    }
-
-    /// <summary>
-    /// Matches an exact filter against span tags.
-    /// Filter format: "key" (matches any tag with this key) or "key:value" (matches specific key-value).
-    /// </summary>
-    private static bool MatchesExactFilter(Span span, string filter)
-    {
-        var colonIndex = filter.IndexOf(':');
-        if (colonIndex < 0)
-        {
-            // Key-only filter: matches if tag key exists with any value
-            return span.GetTag(filter) is not null;
-        }
-
-        var key = filter.Substring(0, colonIndex);
-        var value = filter.Substring(colonIndex + 1);
-        return span.GetTag(key) == value;
     }
 
     /// <summary>
