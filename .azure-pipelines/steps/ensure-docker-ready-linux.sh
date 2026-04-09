@@ -115,9 +115,12 @@ wait_for_docker()
             restart_count=$((restart_count + 1))
             log "Docker service is ${svc_status}. Attempting restart ${restart_count}/${DOCKER_MAX_RESTARTS}..."
             try_restart_docker
+            sleep 2
             consecutive_failures=0
         elif [ "${should_restart}" = true ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
-            log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted"
+            log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted — giving up"
+            log_diagnostics
+            return 1
         fi
 
         log "Docker not ready yet (${elapsed}s elapsed), retrying in ${DOCKER_READY_CHECK_INTERVAL_SECONDS}s..."
