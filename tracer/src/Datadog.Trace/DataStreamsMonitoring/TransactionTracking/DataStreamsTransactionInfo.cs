@@ -174,10 +174,11 @@ internal readonly struct DataStreamsTransactionInfo
         buffer[offset + 8] = (byte)_timestamp;
 
         // id size, up to 255 bytes
-        buffer[offset + 9] = (byte)_idBytes.Length;
+        var idLength = Math.Min(_idBytes.Length, MaxIdBytes);
+        buffer[offset + 9] = (byte)idLength;
 
         // copy the ID
-        Array.Copy(_idBytes, 0, buffer, offset + 10, _idBytes.Length);
+        Array.Copy(_idBytes, 0, buffer, offset + 10, idLength);
     }
 
     internal byte[] GetBytes()

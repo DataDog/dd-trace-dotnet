@@ -13,14 +13,18 @@ internal sealed class DataStreamsExtractorRegistry
 {
     private readonly Dictionary<DataStreamsTransactionExtractor.ExtractorType, List<DataStreamsTransactionExtractor>> _extractors;
 
-    internal DataStreamsExtractorRegistry(IReadOnlyList<DataStreamsTransactionExtractor> extractors)
+    internal DataStreamsExtractorRegistry(List<DataStreamsTransactionExtractor> extractors)
     {
         _extractors = new(extractors.Count);
         foreach (var extractor in extractors)
         {
-            var list = _extractors.GetValueOrDefault(extractor.ParsedType) ?? new();
+            if (!_extractors.TryGetValue(extractor.ParsedType, out var list))
+            {
+                list = new();
+                _extractors[extractor.ParsedType] = list;
+            }
+
             list.Add(extractor);
-            _extractors[extractor.ParsedType] = list;
         }
     }
 

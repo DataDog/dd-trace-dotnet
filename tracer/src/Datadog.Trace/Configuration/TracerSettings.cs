@@ -589,8 +589,8 @@ namespace Datadog.Trace.Configuration
             DataStreamsTransactionExtractors = config
                                                   .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
                                                   .GetAs(
-                                                       defaultValue: new DefaultResult<IReadOnlyList<DataStreamsTransactionExtractor>>([], "[]"),
-                                                       converter: json => ParsingResult<IReadOnlyList<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
+                                                       defaultValue: new DefaultResult<List<DataStreamsTransactionExtractor>>([], "[]"),
+                                                       converter: json => ParsingResult<List<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
                                                        validator: null);
 
             // no legacy headers if we are in "enbaled by default" state
@@ -1219,7 +1219,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a raw value for DSM extractors
         /// </summary>
-        internal IReadOnlyList<DataStreamsTransactionExtractor> DataStreamsTransactionExtractors { get; }
+        internal List<DataStreamsTransactionExtractor> DataStreamsTransactionExtractors { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams schema extraction is enabled or not.

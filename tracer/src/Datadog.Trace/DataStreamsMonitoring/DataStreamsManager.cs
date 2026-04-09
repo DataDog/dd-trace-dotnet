@@ -75,10 +75,7 @@ internal sealed class DataStreamsManager
 
     public bool IsInDefaultState => _isInDefaultState;
 
-    public bool IsTransactionTrackingEnabled
-    {
-        get => !_isInDefaultState && IsEnabled;
-    }
+    public bool IsTransactionTrackingEnabled => !_isInDefaultState && IsEnabled;
 
     /// <summary> Callback for AgentConfiguration updates </summary>
     private void UpdateHashWithContainerTags(AgentConfiguration conf)
@@ -193,7 +190,7 @@ internal sealed class DataStreamsManager
 
     public void TrackTransaction(string transactionId, string checkpointName)
     {
-        if (!IsEnabled)
+        if (!IsTransactionTrackingEnabled)
         {
             return;
         }

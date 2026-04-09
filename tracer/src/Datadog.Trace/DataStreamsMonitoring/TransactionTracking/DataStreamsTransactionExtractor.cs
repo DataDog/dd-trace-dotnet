@@ -17,13 +17,9 @@ internal sealed class DataStreamsTransactionExtractor
     public enum ExtractorType
     {
         Unknown,
-
         HttpOutHeaders,
-
         HttpInHeaders,
-
         KafkaConsumeHeaders,
-
         KafkaProduceHeaders,
     }
 
@@ -56,7 +52,7 @@ internal sealed class DataStreamsTransactionExtractor
         }
     }
 
-    public static IReadOnlyList<DataStreamsTransactionExtractor> ParseList(string json)
+    public static List<DataStreamsTransactionExtractor> ParseList(string json)
     {
         try
         {
