@@ -116,8 +116,6 @@ run-benchmarks:
     CLEANUP: "true"
     # Set to "true" to skip actual benchmarks and use _latest results (for testing the pipeline)
     BP_INFRA_TEST: "false"
-    # TODO: Remove after debugging _latest update failure
-    CI_COMMIT_REF_NAME: "master"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
