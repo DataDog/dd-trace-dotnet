@@ -937,7 +937,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.0.2",
+        "minVersionTestedInclusive": "2.30.0",
         "maxVersionSupportedInclusive": "3.5.2",
         "maxVersionAvailableInclusive": "3.9.0",
         "maxVersionTestedInclusive": "3.8.1"
@@ -1267,7 +1267,7 @@
         "name": "Serilog",
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
-        "minVersionTestedInclusive": "1.4.214",
+        "minVersionTestedInclusive": "2.12.0",
         "maxVersionSupportedInclusive": "4.3.1",
         "maxVersionAvailableInclusive": "4.3.1",
         "maxVersionTestedInclusive": "4.3.1"
@@ -1291,7 +1291,7 @@
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
-        "minVersionTestedInclusive": "4.5.14",
+        "minVersionTestedInclusive": "6.1.0",
         "maxVersionSupportedInclusive": "10.0.6",
         "maxVersionAvailableInclusive": "10.0.6",
         "maxVersionTestedInclusive": "10.0.6"

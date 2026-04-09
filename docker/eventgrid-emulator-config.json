@@ -1,0 +1,7 @@
+{
+  "Topics": {
+    "samples-eventgrid-topic": [
+      "http://dummy-webhook/api/events"
+    ]
+  }
+}
