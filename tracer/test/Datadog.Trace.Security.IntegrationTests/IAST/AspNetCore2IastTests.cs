@@ -567,49 +567,6 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
-
-    [SkippableFact(Skip = "End point missing due to changes in Samples.Security.AspNetCore2 - refactoring in progess to restore")]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredXssRequest()
-    {
-        var filename = "Iast.StoredXss.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/StoredXss";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(aspNetCorePathScrubber);
-        settings.AddRegexScrubber(hashScrubber);
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
-    }
-
-    [SkippableFact(Skip = "End point missing due to changes in Samples.Security.AspNetCore2 - refactoring in progess to restore")]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredXssEscapedRequest()
-    {
-        var filename = "Iast.StoredXssEscaped.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/StoredXssEscaped";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
-    }
 }
 
 public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests

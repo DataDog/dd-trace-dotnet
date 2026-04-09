@@ -51,7 +51,7 @@ public abstract class AspNetWebFormsWithIast : AspNetBase, IClassFixture<IisFixt
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
-        _testName = "Security." + nameof(AspNetWebForms)
+        _testName = "Security.AspNetWebForms"
                  + (classicMode ? ".Classic" : ".Integrated")
                  + ".enableSecurity=" + enableSecurity;
     }

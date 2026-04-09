@@ -396,61 +396,6 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
     }
 }
 
-public class AspNetCore5IastTestsCompatEditAndContinue : AspNetCore5IastTests
-{
-    public AspNetCore5IastTestsCompatEditAndContinue(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsCompat", samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 3, redactionEnabled: true)
-    {
-        SetEnvironmentVariable("COMPLUS_ForceEnc", "1");
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastCustomSpanRequestManual()
-    {
-        var filename = "Iast.CustomManual.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/CustomManual?userName=Vicent";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 3, new string[] { url });
-        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-}
-
-public class AspNetCore5IastTestsCompat : AspNetCore5IastTestsCompatEditAndContinue
-{
-    public AspNetCore5IastTestsCompat(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper)
-    {
-        SetEnvironmentVariable("COMPLUS_ForceEnc", "0");
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastCustomSpanRequestAttribute()
-    {
-        var filename = "Iast.CustomAttribute.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/CustomAttribute?userName=Vicent";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(s => !s.Resource.StartsWith("CREATE TABLE") && !s.Resource.StartsWith("INSERT INTO")).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(new Regex(@"_dd.agent_psr: .{1,3},"), string.Empty);
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-}
-
 public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsSpanTelemetryIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)

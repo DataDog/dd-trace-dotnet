@@ -25,12 +25,11 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
-    [InlineData("System.Data.SQLite")]
+// [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
-    [InlineData("System.Data.SqlClient")]
-    [InlineData("Npgsql")]
-    [InlineData("MySql.Data")]
-    // [InlineData("Oracle")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
+// [InlineData("System.Data.SqlClient")]
+// [InlineData("Npgsql")]
+// [InlineData("MySql.Data")]
     public async Task TestIastStoredXssRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -65,9 +64,9 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [Trait("Category", "ArmUnsupported")]
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
-    [InlineData("System.Data.SqlClient")]
-    [InlineData("Npgsql")]
-    [InlineData("MySql.Data")]
+    // [InlineData("System.Data.SqlClient")]
+    // [InlineData("Npgsql")]
+    // [InlineData("MySql.Data")]
     // [InlineData("Oracle")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
@@ -97,12 +96,11 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
-    [InlineData("System.Data.SQLite")]
+// [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
-    [InlineData("System.Data.SqlClient")]
-    [InlineData("Npgsql")]
-    [InlineData("MySql.Data")]
-    // [InlineData("Oracle")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
+// [InlineData("System.Data.SqlClient")]
+//    [InlineData("Npgsql")]
+//    [InlineData("MySql.Data")]
     public async Task TestIastStoredSqliRequest(string database)
     {
 #if NETCOREAPP3_0

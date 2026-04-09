@@ -14,7 +14,8 @@
       "tracer\\test\\test-applications\\integrations\\Samples.WeakCipher\\Samples.WeakCipher.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.ProcessStart\\Samples.ProcessStart.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.InstrumentedTests\\Samples.InstrumentedTests.csproj",
-      "tracer\\test\\test-applications\\integrations\\Samples.Deduplication\\Samples.Deduplication.csproj"
+      "tracer\\test\\test-applications\\integrations\\Samples.Deduplication\\Samples.Deduplication.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.GrpcDotNet\\Samples.GrpcDotNet.csproj"
     ]
   }
 }

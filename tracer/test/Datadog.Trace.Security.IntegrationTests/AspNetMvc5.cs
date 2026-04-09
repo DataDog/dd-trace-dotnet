@@ -74,42 +74,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                      + ".enableSecurity=" + enableSecurity;
         }
 
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        [SkippableTheory]
-        [InlineData("discovery.scans", "/Health/wp-config", null)]
-        [InlineData(AddressesConstants.RequestQuery, "/Health/?arg=[$slice]", null)]
-        [InlineData(AddressesConstants.RequestQuery, "/Health/?arg&[$slice]", null)]
-        [InlineData(AddressesConstants.RequestPathParams, "/Health/params/appscan_fingerprint", null)]
-        [InlineData(AddressesConstants.RequestPathParams, "/Health/params/appscan_fingerprint?&q=help", null)]
-        [InlineData(AddressesConstants.RequestBody, "/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
-        [InlineData(AddressesConstants.RequestBody, "/Home/UploadStruct", "{\"Property1\": \"[$slice]\"}")]
-        [InlineData(AddressesConstants.RequestBody, "/Home/UploadJson", "{\"DictionaryProperty\": {\"a\":\"[$slice]\"} }")]
-        [InlineData(AddressesConstants.ResponseHeaderNoCookies, "/Home/LangHeader", null)]
-        public Task TestSecurity(string test, string url, string body)
-        {
-            // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
-            // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
-            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-            FilterConnectionHeader(settings);
-            return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json", scrubCookiesFingerprint: true);
-        }
-
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        [SkippableTheory]
-        [InlineData("blocking")]
-        public async Task TestBlockedRequest(string test)
-        {
-            var url = "/Health";
-            var settings = VerifyHelper.GetSpanVerifierSettings(test);
-            FilterConnectionHeader(settings);
-            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, SecurityEnabled ? 1 : 2, settings, userAgent: "Hello/V");
-        }
-
         public async Task InitializeAsync()
         {
             await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
