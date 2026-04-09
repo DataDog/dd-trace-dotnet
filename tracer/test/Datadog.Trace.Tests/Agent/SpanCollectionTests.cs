@@ -214,9 +214,80 @@ public class SpanCollectionTests
         array!.Value.Array!.Length.Should().Be(16);
     }
 
-    private static Span CreateSpan(string operationName = "test-span")
+    [Fact]
+    public void ContainsSpanId_DefaultCollection_ReturnsFalse()
     {
-        var spanContext = new SpanContext(traceId: 1UL, spanId: 2, samplingPriority: SamplingPriority.AutoKeep);
+        SpanCollection collection = default;
+
+        collection.ContainsSpanId(1, 0).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContainsSpanId_SingleSpan_FindsMatch()
+    {
+        var span = CreateSpan(spanId: 42);
+        var collection = new SpanCollection(span);
+
+        collection.ContainsSpanId(42, 0).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ContainsSpanId_SingleSpan_NoMatch()
+    {
+        var span = CreateSpan(spanId: 42);
+        var collection = new SpanCollection(span);
+
+        collection.ContainsSpanId(99, 0).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContainsSpanId_SingleSpan_IgnoresStartIndex()
+    {
+        var span = CreateSpan(spanId: 42);
+        var collection = new SpanCollection(span);
+
+        // startIndex is irrelevant for single-span collections
+        collection.ContainsSpanId(42, 5).Should().BeTrue();
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void ContainsSpanId_Array_FindsMatch(
+        [CombinatorialValues(10, 20, 30)]ulong spanToFind,
+        [CombinatorialValues(0, 1, 2, 3, 4)]int spanIndex)
+    {
+        var collection = new SpanCollection(
+            [CreateSpan(spanId: 10), CreateSpan(spanId: 20), CreateSpan(spanId: 30)]);
+
+        collection.ContainsSpanId(spanToFind, spanIndex).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ContainsSpanId_Array_NoMatch()
+    {
+        var collection = new SpanCollection(
+            [CreateSpan(spanId: 10), CreateSpan(spanId: 20), CreateSpan(spanId: 30)]);
+
+        collection.ContainsSpanId(99, 0).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContainsSpanId_ArrayWithCount_OnlySearchesWithinCount()
+    {
+        // Array has 4 slots but only 2 are logically populated.
+        // ContainsSpanId should only search within Count, not the entire backing array.
+        var collection = new SpanCollection(
+            [CreateSpan(spanId: 10), CreateSpan(spanId: 20), CreateSpan(spanId: 30), CreateSpan(spanId: 40)], count: 2);
+
+        collection.ContainsSpanId(10, 0).Should().BeTrue();
+        collection.ContainsSpanId(20, 0).Should().BeTrue();
+        collection.ContainsSpanId(30, 0).Should().BeFalse();
+        collection.ContainsSpanId(40, 0).Should().BeFalse();
+    }
+
+    private static Span CreateSpan(string operationName = "test-span", ulong spanId = 2)
+    {
+        var spanContext = new SpanContext(traceId: 1UL, spanId: spanId, samplingPriority: SamplingPriority.AutoKeep);
         return new Span(spanContext, DateTimeOffset.UtcNow)
         {
             OperationName = operationName
