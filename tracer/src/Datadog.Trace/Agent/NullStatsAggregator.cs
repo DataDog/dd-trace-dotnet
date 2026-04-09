@@ -46,15 +46,15 @@ namespace Datadog.Trace.Agent
                 span.OperationName,
                 span.Type,
                 httpStatusCode,
-                span.Context.Origin?.StartsWith("synthetics") == true,
-                string.Empty,
+                isSyntheticsRequest: span.Context.Origin?.StartsWith("synthetics") == true,
+                spanKind: string.Empty,
                 isError: false,
                 isTopLevel: false,
                 isTraceRoot: false,
-                string.Empty,
-                string.Empty,
+                httpMethod: string.Empty,
+                httpEndpoint: string.Empty,
                 grpcStatusCode: string.Empty,
-                string.Empty,
+                serviceSource: string.Empty,
                 peerTagsHash: 0);
         }
     }
