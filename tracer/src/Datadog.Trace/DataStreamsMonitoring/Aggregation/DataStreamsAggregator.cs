@@ -69,9 +69,9 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
         }
     }
 
-    public void AddTransaction(in DataStreamsTransactionInfo transaction)
+    public bool AddTransaction(in DataStreamsTransactionInfo transaction)
     {
-        _dataStreamsTransactionContainer.Add(transaction);
+        return _dataStreamsTransactionContainer.Add(transaction);
     }
 
     /// <summary>

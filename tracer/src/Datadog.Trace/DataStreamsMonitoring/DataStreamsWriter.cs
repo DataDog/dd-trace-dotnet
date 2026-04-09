@@ -263,7 +263,10 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
                 while (_transactionBuffer.TryDequeue(out var transactionPoint))
                 {
-                    _aggregator.AddTransaction(transactionPoint);
+                    if (!_aggregator.AddTransaction(transactionPoint))
+                    {
+                        Interlocked.Increment(ref _pointsDropped);
+                    }
                 }
             }
             catch (Exception ex)
@@ -370,7 +373,10 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
                 while (_transactionBuffer.TryDequeue(out var transactionPoint))
                 {
-                    _aggregator.AddTransaction(transactionPoint);
+                    if (!_aggregator.AddTransaction(transactionPoint))
+                    {
+                        Interlocked.Increment(ref _pointsDropped);
+                    }
                 }
 
                 if (_aggregator.ShouldFlushTransactions)

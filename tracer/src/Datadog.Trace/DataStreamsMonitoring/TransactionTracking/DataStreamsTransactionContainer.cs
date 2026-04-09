@@ -16,6 +16,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 internal sealed class DataStreamsTransactionContainer
 {
     private const int MaxSizeBytes = 512 * 1024;
+    private const int MaxDropSizeBytes = 2 * 1024 * 1024;
 
     private readonly int _initialByteSize;
 
@@ -30,8 +31,13 @@ internal sealed class DataStreamsTransactionContainer
 
     internal bool ShouldFlush => _size >= MaxSizeBytes;
 
-    public void Add(DataStreamsTransactionInfo transactionInfo)
+    public bool Add(DataStreamsTransactionInfo transactionInfo)
     {
+        if (_size >= MaxDropSizeBytes)
+        {
+            return false;
+        }
+
         var byteCount = transactionInfo.GetByteCount();
 
         if (_data.Length - _size < byteCount)
@@ -43,6 +49,7 @@ internal sealed class DataStreamsTransactionContainer
 
         transactionInfo.WriteTo(_data, _size);
         _size += byteCount;
+        return true;
     }
 
     public int Size() => _size;
