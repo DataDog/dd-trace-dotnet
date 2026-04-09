@@ -239,7 +239,7 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
-            // Check gRPC status code tags in priority order per CSS v1.3.0 spec.
+            // Check gRPC status code tags in priority order per CSS v1.2.0 spec.
             // Stored as string to match the Go agent's wire format (GRPCStatusCode is a string field).
             // This preserves the distinction between "0" (gRPC OK) and "" (no gRPC status).
             var grpcStatusCode = span.GetTag("rpc.grpc.status_code")

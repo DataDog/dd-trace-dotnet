@@ -246,7 +246,7 @@ namespace Datadog.Trace.Tests.Agent
 
             await api.SendStatsAsync(statsBuffer, 1, 0);
 
-            // Stats are fire-and-forget (no retries per CSS v1.3.0 spec), so only 1 attempt
+            // Stats are fire-and-forget (no retries per CSS v1.2.0 spec), so only 1 attempt
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
 
