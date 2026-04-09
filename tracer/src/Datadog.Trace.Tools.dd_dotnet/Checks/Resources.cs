@@ -56,11 +56,25 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string ContinuousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";
         public const string ContinuousProfilerWithoutLoader = "The continuous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
 
+        public const string RuntimeVersionNotDetected = "Could not detect the runtime version. Compatibility checks will be skipped.";
+
         public const string LdPreloadNotSet = "The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
 
         private static int _checkNumber = 1;
 
         public static void ResetChecks() => _checkNumber = 1;
+
+        public static string DetectedRuntimeVersion(string version) => $"Detected runtime: {version}";
+
+        public static string KnownBadNet6Version(string version) => $"{version} has a known runtime bug that can cause crashes when the tracer is attached. Upgrade to .NET 6.0.13 or later. See: https://github.com/dotnet/runtime/pull/78670";
+
+        public static string EolNetCoreVersion(string version) => $"{version} has reached end of life and is not supported by the tracer. Instrumentation may not work correctly. See: https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/";
+
+        public static string UnsupportedNewerNetVersion(string version, int maxSupported) => $"{version} is newer than the maximum supported version (.NET {maxSupported}). The tracer may not work correctly until a newer tracer version is released.";
+
+        public static string UnsupportedNetFrameworkVersion(string version) => $"{version} is below the minimum supported version (.NET Framework 4.6.1). The tracer requires .NET Framework 4.6.1 or later. See: https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-framework/";
+
+        public static string RuntimeVersionCheck() => $"{_checkNumber++}. Checking runtime version compatibility:";
 
         public static string EnableDiagnosticsSet(string key) => $"The environment variable {key} is set to 0, which disables profiling. No tracing, profiling, or security data will be collected until is set to 1.";
 

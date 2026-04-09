@@ -405,3 +405,8 @@ tools/dumps/
 
 # test optimization temp/run folder
 .dd/
+repro/APMS-19196/tracer/
+repro/APMS-19196/logs/
+repro/APMS-19196/eh_sort_repro
+repro/APMS-19196/bin/
+repro/APMS-19196/obj/
