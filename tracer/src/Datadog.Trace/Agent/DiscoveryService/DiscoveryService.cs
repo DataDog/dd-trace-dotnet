@@ -349,7 +349,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var spanMetaStructs = jObject["span_meta_structs"]?.Value<bool>() ?? false;
             var spanEvents = jObject["span_events"]?.Value<bool>() ?? false;
             var peerTags = (jObject["peer_tags"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x).ToList();
-            var spanKindsStatsComputed = (jObject["span_kinds_stats_computed"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
             var obfuscationVersion = jObject["obfuscation_version"]?.Value<int>() ?? 0;
 
             // Parse trace filter configuration
@@ -456,7 +455,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents,
                 peerTags: peerTags!,
-                spanKindsStatsComputed: spanKindsStatsComputed!,
                 obfuscationVersion: obfuscationVersion,
                 traceFilterConfig: traceFilterConfig);
 

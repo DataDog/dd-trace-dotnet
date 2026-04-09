@@ -57,14 +57,6 @@ namespace Datadog.Trace.Agent
         private int _tracerObfuscationVersion;
         private TraceFilter _traceFilter;
         private List<string> _peerTagKeys = [];
-        // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L213
-        private List<string> _spanKindsStatsComputed =
-        [
-            SpanKinds.Client,
-            SpanKinds.Server,
-            SpanKinds.Producer,
-            SpanKinds.Consumer,
-        ];
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
@@ -410,7 +402,7 @@ namespace Datadog.Trace.Agent
         {
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L217
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
-            var isSpanKindEligible = !string.IsNullOrEmpty(spanKind) && _spanKindsStatsComputed.Contains(spanKind);
+            var isSpanKindEligible = spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Consumer or SpanKinds.Producer;
 
             if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
                 && (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
@@ -479,11 +471,6 @@ namespace Datadog.Trace.Agent
         private void HandleConfigUpdate(AgentConfiguration config)
         {
             CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint) && config.ClientDropP0s == true;
-
-            if (config.SpanKindsStatsComputed is not null)
-            {
-                Interlocked.Exchange(ref _spanKindsStatsComputed, config.SpanKindsStatsComputed);
-            }
 
             if (config.PeerTags is not null)
             {

@@ -924,8 +924,7 @@ namespace Datadog.Trace.Tests.Agent
                              clientDropP0: true,
                              spanMetaStructs: true,
                              spanEvents: true,
-                             peerTags: [Tags.PeerService],
-                             spanKindsStatsComputed: [SpanKinds.Client, SpanKinds.Server, SpanKinds.Producer, SpanKinds.Consumer]));
+                             peerTags: [Tags.PeerService]));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)
