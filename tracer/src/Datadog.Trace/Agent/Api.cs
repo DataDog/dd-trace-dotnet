@@ -220,7 +220,7 @@ namespace Datadog.Trace.Agent
 
             if (state.TracerObfuscationVersion > 0)
             {
-                request.AddHeader("Datadog-Obfuscation-Version", state.TracerObfuscationVersion.ToString());
+                request.AddHeader("Datadog-Obfuscation-Version", state.TracerObfuscationVersion.ToString(CultureInfo.InvariantCulture));
             }
 
             using var stream = new MemoryStream();
