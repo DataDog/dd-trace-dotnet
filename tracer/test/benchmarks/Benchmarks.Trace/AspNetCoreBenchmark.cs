@@ -33,6 +33,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+    [IterationTime(500)]
     public class AspNetCoreBenchmark
     {
         private HttpClient _client;
@@ -106,6 +107,7 @@ namespace Benchmarks.Trace
 #if NET6_0_OR_GREATER
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+    [IterationTime(500)]
     public class SingleSpanAspNetCoreBenchmark
     {
         private HttpClient _client;

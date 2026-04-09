@@ -191,6 +191,16 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
+            // Normalize service source to match trace serialization behavior:
+            // clear the source when service name equals the default, unless it's
+            // a configuration-driven override (opt.*).
+            var serviceNameSource = span.Context.ServiceNameSource;
+            var serviceNameEqualsDefault = string.Equals(span.ServiceName, span.Context.TraceContext?.Tracer?.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
+            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
+            {
+                serviceNameSource = null;
+            }
+
             // When submitting trace metrics over OTLP, we must create inidividual timeseries
             // timeseries for each unique set of attributes, including the Error and IsTopLevel attributes.
             // As a result, we must create distinct Aggregation keys (and consequently, unique stats) by these attributes.
@@ -200,7 +210,7 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                span.Context.ServiceNameSource,
+                serviceNameSource,
                 httpStatusCode,
                 span.Context.Origin == "synthetics",
                 isOtlp ? span.Error : false,
