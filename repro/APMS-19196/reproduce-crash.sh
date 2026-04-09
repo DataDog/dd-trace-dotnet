@@ -1,5 +1,5 @@
 #!/bin/bash
-
+pkill -f "dotnet.*ReproApp" 2>/dev/null || true
 echo "=== APMS-19196 Crash Reproduction Script ==="
 echo "This script will reproduce the InvalidProgramException crash"
 echo
@@ -11,9 +11,16 @@ rm -rf ~/wsl-repro 2>/dev/null
 mkdir -p ~/wsl-repro/datadog
 cd ~/wsl-repro
 
-# Download tracer v3.41.0 (buggy version)
-echo "Downloading Datadog tracer v3.41.0..."
-wget -q https://github.com/DataDog/dd-trace-dotnet/releases/download/v3.41.0/datadog-dotnet-apm-3.41.0.tar.gz
+# Download tracer v3.41.0 (affected version) - cache if already downloaded
+if [ ! -f "datadog-dotnet-apm-3.41.0.tar.gz" ]; then
+    echo "Downloading Datadog tracer v3.41.0..."
+    wget -q https://github.com/DataDog/dd-trace-dotnet/releases/download/v3.41.0/datadog-dotnet-apm-3.41.0.tar.gz
+else
+    echo "Using cached Datadog tracer v3.41.0..."
+fi
+
+# Extract tracer (always extract to ensure clean state)
+echo "Extracting tracer..."
 tar -C datadog -xzf datadog-dotnet-apm-3.41.0.tar.gz
 find datadog -name '*.so' -exec chmod 755 {} \;
 mkdir -p ~/logs/datadog/dotnet
@@ -22,7 +29,6 @@ mkdir -p ~/logs/datadog/dotnet
 echo "Copying source code..."
 cp -r /mnt/c/repositories/dd-trace-dotnet/repro/APMS-19196/*.csproj .
 cp -r /mnt/c/repositories/dd-trace-dotnet/repro/APMS-19196/Program.cs .
-cp -r /mnt/c/repositories/dd-trace-dotnet/repro/APMS-19196/Middlewares .
 
 # Build app
 echo "Building application..."
@@ -39,7 +45,7 @@ export DD_INJECTION_ENABLED=tracer
 
 # CRITICAL CRASH SETTINGS:
 export DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL=true  # Key: Instruments at JIT time
-export DD_EXCEPTION_REPLAY_ENABLED=true
+export DD_EXCEPTION_REPLAY_ENABLED=false
 export DD_TRACE_DEBUG=false                      # Key: No debug logs!
 
 # Disable other features for clean reproduction
@@ -59,5 +65,13 @@ echo "App will start normally, but every HTTP request will crash with InvalidPro
 echo "Press Ctrl+C to stop"
 echo
 
-# Start the app (this will crash on first HTTP request)
-dotnet bin/Release/net9.0/ReproApp.dll
+# Start the app in background (this will crash on first HTTP request)
+dotnet bin/Release/net9.0/ReproApp.dll &
+APP_PID=$!
+
+echo "Waiting for app to start..."
+sleep 3
+
+echo "Making HTTP request that will trigger the crash..."
+wget -qO- http://localhost:5000 || echo "Request failed - crash occurred!"
+
