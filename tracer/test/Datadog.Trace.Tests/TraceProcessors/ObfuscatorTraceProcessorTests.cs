@@ -45,6 +45,17 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "SELECT * FROM TABLE WHERE col!='excluded'", "SELECT * FROM TABLE WHERE col != ?" };
             yield return new object[] { "SELECT * FROM TABLE WHERE col<>'other'", "SELECT * FROM TABLE WHERE col <> ?" };
 
+            // Multi-character comparison operators: <=, >=
+            // Based on Go agent test cases from pkg/obfuscate/sql_test.go
+            yield return new object[] { "SELECT * FROM users WHERE age>=18", "SELECT * FROM users WHERE age >= ?" };
+            yield return new object[] { "SELECT * FROM users WHERE age<=100", "SELECT * FROM users WHERE age <= ?" };
+            yield return new object[] { "SELECT id FROM jq_jobs WHERE schedulable_at<=1555367948 AND queue_name='order_jobs'", "SELECT id FROM jq_jobs WHERE schedulable_at <= ? AND queue_name = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE a>=1 AND b<=2 AND c!='x' AND d<>'y'", "SELECT * FROM t WHERE a >= ? AND b <= ? AND c != ? AND d <> ?" };
+
+            // Multi-character operators with spaces already present (should be preserved as-is)
+            yield return new object[] { "SELECT * FROM users WHERE age >= 18", "SELECT * FROM users WHERE age >= ?" };
+            yield return new object[] { "SELECT * FROM users WHERE age <= 100", "SELECT * FROM users WHERE age <= ?" };
+
             // Arithmetic and other operators as splitters (no space normalization for non-comparison operators)
             yield return new object[] { "SELECT col*2 FROM TABLE", "SELECT col*? FROM TABLE" };
             yield return new object[] { "SELECT col/2 FROM TABLE", "SELECT col/? FROM TABLE" };
