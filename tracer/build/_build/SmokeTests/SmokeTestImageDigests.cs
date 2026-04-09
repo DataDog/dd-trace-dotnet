@@ -11,12 +11,26 @@ using Logger = Serilog.Log;
 namespace SmokeTests;
 
 /// <summary>
-/// Reads pinned Docker image digests from the smoke-test-images docker-compose file.
+/// Reads pinned Docker image digests from a smoke-test-images docker-compose file.
 /// This file is maintained by Dependabot and maps each repo:tag to a specific digest.
 /// </summary>
-public static class SmokeTestImageDigests
+public class SmokeTestImageDigests
 {
-    static readonly Lazy<Dictionary<string, string>> LazyDigests = new(LoadDigests);
+    readonly Dictionary<string, string> Digests;
+
+    public SmokeTestImageDigests(AbsolutePath tracerDirectory)
+    {
+        var imageDigestsFile = tracerDirectory / "build" / "_build" / "SmokeTests" / "smoke-test-images.docker-compose.yml";
+        if (!File.Exists(imageDigestsFile))
+        {
+            throw new FileNotFoundException(
+                $"Smoke test image digest file not found at '{imageDigestsFile}'. "
+              + "This file is required for pinning Docker images by digest.",
+                imageDigestsFile);
+        }
+
+        Digests = LoadDigests(imageDigestsFile);
+    }
 
     /// <summary>
     /// Returns the full image reference including the pinned digest for the given repo:tag.
@@ -24,15 +38,14 @@ public static class SmokeTestImageDigests
     /// "mcr.microsoft.com/dotnet/aspnet:9.0-noble@sha256:abc123...".
     /// Throws if the image is not found in the docker-compose file.
     /// </summary>
-    public static string GetImageWithDigest(string repoTag)
+    public string GetImageWithDigest(string repoTag)
     {
-        var digests = LazyDigests.Value;
-        if (digests.TryGetValue(repoTag, out var imageWithDigest))
+        if (Digests.TryGetValue(repoTag, out var imageWithDigest))
         {
             return imageWithDigest;
         }
 
-        var available = string.Join(Environment.NewLine, digests.Keys.OrderBy(k => k));
+        var available = string.Join(Environment.NewLine, Digests.Keys.OrderBy(k => k));
         throw new InvalidOperationException(
             $"Image '{repoTag}' not found in smoke-test-images.docker-compose.yml. "
           + $"Add an entry for this image to the docker-compose file and resolve its digest. "
@@ -41,15 +54,14 @@ public static class SmokeTestImageDigests
 
     /// <summary>
     /// Validates that every unique runtime image in the given scenarios has a corresponding
-    /// digest entry. Throws if images are missing
+    /// digest entry. Throws if images are missing.
     /// </summary>
-    public static void VerifyAllImagesAreTracked(IEnumerable<SmokeTestScenario> scenarios)
+    public void VerifyAllImagesAreTracked(IEnumerable<SmokeTestScenario> scenarios)
     {
-        var digests = LazyDigests.Value;
         var missing = scenarios
             .Select(s => s.RuntimeImage)
             .Distinct(StringComparer.Ordinal)
-            .Where(img => !digests.ContainsKey(img))
+            .Where(img => !Digests.ContainsKey(img))
             .OrderBy(img => img)
             .ToList();
 
@@ -63,23 +75,11 @@ public static class SmokeTestImageDigests
                 + "  docker buildx imagetools inspect <image> --format '{{json .Manifest.Digest}}'");
         }
 
-        Logger.Information("All {Count} smoke test images have pinned digests", digests.Keys.Count);
+        Logger.Information("All {Count} smoke test images have pinned digests", Digests.Keys.Count);
     }
 
-    static Dictionary<string, string> LoadDigests()
+    static Dictionary<string, string> LoadDigests(string filePath)
     {
-        // Walk up from the executing assembly to find the SmokeTests directory
-        var smokeTestsDir = FindSmokeTestsDirectory();
-        var filePath = Path.Combine(smokeTestsDir, "smoke-test-images.docker-compose.yml");
-
-        if (!File.Exists(filePath))
-        {
-            throw new FileNotFoundException(
-                $"Smoke test image digest file not found at '{filePath}'. "
-              + "This file is required for pinning Docker images by digest.",
-                filePath);
-        }
-
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
@@ -110,9 +110,9 @@ public static class SmokeTestImageDigests
             if (atIndex < 0)
             {
                 // No digest - store as-is (maps to itself)
-                const string message = "Missing sha256 digest for service {ServiceName} ({Image})"
-                                       + "Add entries for these images to smoke-test-images.docker-compose.yml, and resolve their digests with:\n"
-                                       + "  docker buildx imagetools inspect <image> --format '{{json .Manifest.Digest}}'";
+                const string message = "Missing sha256 digest for service {ServiceName} ({Image}). "
+                                     + "Add entries for these images to smoke-test-images.docker-compose.yml, and resolve their digests with:\n"
+                                     + "  docker buildx imagetools inspect <image> --format '{{json .Manifest.Digest}}'";
                 Logger.Warning(message, serviceName, image);
                 result[image] = image;
                 continue;
@@ -123,30 +123,6 @@ public static class SmokeTestImageDigests
         }
 
         return result;
-    }
-
-    static string FindSmokeTestsDirectory()
-    {
-        // Try relative to the current directory first (typical for Nuke builds)
-        var candidates = new[]
-        {
-            Path.Combine(Environment.CurrentDirectory, "tracer", "build", "_build", "SmokeTests"),
-            Path.Combine(Environment.CurrentDirectory, "build", "_build", "SmokeTests"),
-            Path.GetDirectoryName(typeof(SmokeTestImageDigests).Assembly.Location) ?? "",
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (Directory.Exists(candidate) &&
-                File.Exists(Path.Combine(candidate, "smoke-test-images.docker-compose.yml")))
-            {
-                return candidate;
-            }
-        }
-
-        throw new DirectoryNotFoundException(
-            "Could not locate the SmokeTests directory containing smoke-test-images.docker-compose.yml. "
-          + $"Searched: {string.Join(", ", candidates)}");
     }
 
     // YAML model for docker-compose file

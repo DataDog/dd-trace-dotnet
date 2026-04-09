@@ -565,7 +565,8 @@ partial class Build : NukeBuild
                         }))
                         .ToList();
 
-                    SmokeTests.SmokeTestImageDigests.VerifyAllImagesAreTracked(scenarioDict.SelectMany(x => x.Value.Values));
+                    var imageDigests = new SmokeTests.SmokeTestImageDigests(TracerDirectory);
+                    imageDigests.VerifyAllImagesAreTracked(scenarioDict.SelectMany(x => x.Value.Values));
 
                     // Emit per-stage matrices grouped by download pattern and pool
                     EmitMatrix("smoke_x64_installer_matrix",
