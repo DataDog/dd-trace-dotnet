@@ -20,6 +20,11 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
         [Theory]
         [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
+        [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;UserID=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
+        [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;User=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
+        [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;Uid=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
+        [InlineData("Host=myServerName;Database=myDataBase;Username=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName")]
+        [InlineData("Data Source=myServerName;Initial Catalog=myDataBase;User Name=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName")]
         [InlineData(@"Server=myServerName\myInstanceName;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", @"myServerName\myInstanceName")]
         [InlineData(@"Server=.\SQLExpress;AttachDbFilename=|DataDirectory|mydbfile.mdf;Database=dbname;Trusted_Connection=Yes;", "dbname", null, @".\SQLExpress")]
         public void ExtractProperTagsFromConnectionString(
