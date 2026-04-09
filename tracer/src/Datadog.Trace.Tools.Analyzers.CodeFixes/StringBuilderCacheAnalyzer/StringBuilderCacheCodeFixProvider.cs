@@ -76,6 +76,13 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        // Bail out for unsupported constructor overloads (e.g., (capacity, maxCapacity)) where
+        // rewriting would silently change runtime semantics.
+        if (AnalyzeConstructorArgs(creationNode, semanticModel, cancellationToken) is null)
+        {
+            return document;
+        }
+
         var variableName = GetAssignedVariableName(creationNode);
 
         SyntaxNode newRoot;
@@ -365,7 +372,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        var (capacityArg, appendArgs) = AnalyzeConstructorArgs(creationNode, semanticModel, cancellationToken);
+        var (capacityArg, appendArgs) = AnalyzeConstructorArgs(creationNode, semanticModel, cancellationToken)!.Value;
 
         var acquireAccess = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
@@ -392,7 +399,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         return result.WithTriviaFrom(creationNode);
     }
 
-    private static (ArgumentSyntax? CapacityArg, ImmutableArray<ArgumentSyntax> AppendArgs) AnalyzeConstructorArgs(
+    private static (ArgumentSyntax? CapacityArg, ImmutableArray<ArgumentSyntax> AppendArgs)? AnalyzeConstructorArgs(
         SyntaxNode creationNode,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
@@ -440,11 +447,13 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         }
 
         // StringBuilder(int capacity, int maxCapacity)
+        // StringBuilderCache.Acquire() has no maxCapacity parameter — rewriting would silently
+        // drop the capacity bound and change runtime semantics, so skip the code fix for this overload.
         if (paramCount == 2
             && constructor.Parameters[0].Type.SpecialType == SpecialType.System_Int32
             && constructor.Parameters[1].Type.SpecialType == SpecialType.System_Int32)
         {
-            return (args[0], ImmutableArray<ArgumentSyntax>.Empty);
+            return null;
         }
 
         // StringBuilder(string? value, int startIndex, int length, int capacity)
