@@ -49,7 +49,9 @@ Gather the following (if not already provided):
 3. **Category**: Reliability, CodeQuality, Performance, Usage, or Maintainability
 4. **Severity**: Error, Warning, or Info
 
-**Before creating a new analyzer**, check whether an existing analyzer already does similar analysis that could be extended. Adding a new rule to an existing analyzer avoids duplicating expensive work (e.g., type lookups, descendant traversals) and keeps IDE responsiveness high. Browse the analyzers in `tracer/src/Datadog.Trace.Tools.Analyzers/` to see if your detection fits an existing category.
+**Before creating a new analyzer**, research whether an existing analyzer already does similar analysis that could be extended, and whether similar analyzers exist in the ecosystem (e.g., Serilog, ILogger analyzers for logging rules). Adding a new rule to an existing analyzer avoids duplicating expensive work (e.g., type lookups, descendant traversals) and keeps IDE responsiveness high. Browse the analyzers in `tracer/src/Datadog.Trace.Tools.Analyzers/` to see if your detection fits an existing category.
+
+**Challenge narrow scope**: When designing what the analyzer detects, think about whether the rule is too narrow. For example, if flagging `int.ToString()` in log calls, consider whether *all* `.ToString()` calls are unwanted there, not just numeric ones. A broader rule may catch more real issues and be simpler to implement.
 
 ### Step 2: Assign a Diagnostic ID
 
