@@ -181,13 +181,25 @@ upload_results:
         # Also update _latest if on master branch
         if ($env:CI_COMMIT_REF_NAME -eq "master") {
             $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
-            Write-Output "Updating latest master results at s3://$s3Bucket/$latestPrefix"
-            Write-S3Object `
-                -BucketName $s3Bucket `
-                -KeyPrefix $latestPrefix `
-                -Folder $artifactsDir `
-                -CannedACLName "bucket-owner-full-control" `
-                -Recurse
+            Write-Output "=== Uploading latest benchmark results to S3 ==="
+            Write-Output "Artifacts directory: $artifactsDir"
+            Write-Output "S3 destination: s3://$s3Bucket/$latestPrefix"
+            Write-Output "Will upload the same files listed above."
+            try {
+                Write-S3Object `
+                    -BucketName $s3Bucket `
+                    -KeyPrefix $latestPrefix `
+                    -Folder $artifactsDir `
+                    -CannedACLName "bucket-owner-full-control" `
+                    -Recurse
+                Write-Output "Latest results upload complete!"
+            }
+            catch {
+                Write-Output "ERROR uploading latest results: $_"
+                Write-Output "Exception type: $($_.Exception.GetType().FullName)"
+                Write-Output "Stack trace: $($_.ScriptStackTrace)"
+                throw
+            }
         }
     } else {
         Write-Warning "No files found in $artifactsDir"

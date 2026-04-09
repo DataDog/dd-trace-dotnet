@@ -103,6 +103,10 @@ run-benchmarks:
     # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
     DD_METRICS_TAGS: "managed-by:bp-infra"
 
+    # Benchmarks matching this regex are marked as flaky by benchmark_analyzer
+    # and excluded from the check-big-regressions job.
+    FLAKY_BENCHMARKS_REGEX: "ActivityBenchmark|SpanBenchmark|TraceAnnotationsBenchmark|StringAspectsBenchmark|CharSliceBenchmark|AppSecWafBenchmark|AppSecBodyBenchmark|AppSecEncoderBenchmark|CIVisibilityProtocolWriterBenchmark|AgentWriterBenchmark|AspNetCoreBenchmark|SingleSpanAspNetCoreBenchmark|ElasticsearchBenchmark|GraphQLBenchmark|Log4netBenchmark|SerilogBenchmark|RedisBenchmark|ILoggerBenchmark"
+
     # Scope for dd-octo-sts to get GitHub token for cloning dd-trace-dotnet
     DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
@@ -150,7 +154,7 @@ run-benchmarks:
 # This repository is using PR-level performance quality gates.
 # Verify that the check-big-regressions CI job has passed. If any regression happened, merging this PR will be blocked.
 # If bypassing is necessary, see https://datadoghq.atlassian.net/wiki/x/8YFzMwE for more details.
-.check-big-regressions:
+check-big-regressions:
   stage: gate
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
@@ -164,42 +168,12 @@ run-benchmarks:
       when: always
     - interruptible: true
       when: always
-  allow_failure: true  # Allowed to fail since we don't want it to block PRs yet
   artifacts:
     name: "artifacts"
     when: always
     paths:
       - artifacts/
     expire_in: "30 days"
-  variables:
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
-
-    # Regex to ignore benchmarks identified as unstable
-    IGNORED_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.CIVisibilityProtocolWriterBenchmark"
   script: |
     export ARTIFACTS_DIR="$(pwd)/artifacts"
-
-    if [ -n "${IGNORED_BENCHMARKS_REGEX}" ]; then
-      echo "Adding the 'ignored.' prefix to benchmarks matching IGNORED_BENCHMARKS_REGEX:"
-      echo "    ${IGNORED_BENCHMARKS_REGEX}"
-      for file in "${ARTIFACTS_DIR}"/*.converted.json; do
-        file_basename=$(basename "${file}")
-        if [[ "${file_basename}" =~ ${IGNORED_BENCHMARKS_REGEX} ]]; then
-          echo "    ${file_basename} -> ignored.${file_basename}"
-          mv "${file}" "${ARTIFACTS_DIR}/ignored.${file_basename}"
-        fi
-      done
-    fi
-
-    git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform
-    bp-runner /platform/bp-runner.fail-on-regression.yml --debug
-
-check-big-regressions:
-  extends: .check-big-regressions
-
-# TODO: Remove once the decision to consider or ignore benchmarks identified as 
-# unstable has been made
-check-big-regressions-no-ignored-benchmarks:
-  extends: .check-big-regressions
-  variables:
-    IGNORED_BENCHMARKS_REGEX: ""
+    bp-runner .gitlab/benchmarks/bp-runner.fail-on-regression.yml --debug
