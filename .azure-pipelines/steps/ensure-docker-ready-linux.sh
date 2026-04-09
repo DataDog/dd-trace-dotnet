@@ -69,10 +69,8 @@ wait_for_docker()
     log "Waiting up to ${DOCKER_READY_TIMEOUT_SECONDS}s for Docker daemon (will attempt up to ${DOCKER_MAX_RESTARTS} service restarts)..."
 
     # Quick check — if Docker is already healthy, nothing to do
-    local info_output
-    if info_output=$(docker info 2>&1); then
+    if docker info >/dev/null 2>&1; then
         log "Docker daemon is ready"
-        echo "${info_output}"
         return 0
     fi
 
@@ -92,9 +90,8 @@ wait_for_docker()
     local DOCKER_READY_FORCE_RESTART_AFTER=3
 
     while [ "${elapsed}" -lt "${DOCKER_READY_TIMEOUT_SECONDS}" ]; do
-        if info_output=$(docker info 2>&1); then
+        if docker info >/dev/null 2>&1; then
             log "Docker daemon is ready (waited ${elapsed}s, ${restart_count} restart(s) performed)"
-            echo "${info_output}"
             return 0
         fi
 
