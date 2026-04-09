@@ -364,16 +364,14 @@ namespace Datadog.Trace.Agent
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
 
-                if (buffer.HasHits())
+                if (buffer.HasHits() && CanComputeStats == true)
                 {
-                    // Push the metrics
-                    if (CanComputeStats == true)
-                    {
-                        await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds(), Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
-                    }
-
-                    buffer.Reset();
+                    await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds(), Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                 }
+
+                // Always reset the buffer so Start is re-aligned and stale keys are pruned,
+                // even when no hits were recorded this interval.
+                buffer.Reset();
             }
             while (!_processExit.Task.IsCompleted);
         }
