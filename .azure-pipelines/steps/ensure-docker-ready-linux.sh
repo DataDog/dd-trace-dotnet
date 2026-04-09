@@ -73,12 +73,24 @@ wait_for_docker()
 
     log "Waiting up to ${DOCKER_READY_TIMEOUT_SECONDS}s for Docker daemon (will attempt up to ${DOCKER_MAX_RESTARTS} service restarts)..."
 
-    # Log initial service state
-    if command -v systemctl >/dev/null 2>&1; then
-        local initial_status
-        initial_status=$(systemctl is-active docker 2>&1 || true)
-        log "Docker service initial state: ${initial_status}"
+    # Quick check — if Docker is already healthy, nothing to do
+    if docker info >/dev/null 2>&1; then
+        log "Docker daemon is ready"
+        docker info
+        return 0
     fi
+
+    # If we can't restart Docker, there's no point looping
+    if ! command -v systemctl >/dev/null 2>&1; then
+        log "Docker is not responding and systemctl is not available — cannot recover"
+        log_diagnostics
+        return 1
+    fi
+
+    # Log initial service state
+    local initial_status
+    initial_status=$(systemctl is-active docker 2>&1 || true)
+    log "Docker service initial state: ${initial_status}"
 
     while [ "${elapsed}" -lt "${DOCKER_READY_TIMEOUT_SECONDS}" ]; do
         if docker info >/dev/null 2>&1; then
@@ -88,18 +100,14 @@ wait_for_docker()
         fi
 
         # If Docker is not responding, try restarting the service
-        if command -v systemctl >/dev/null 2>&1; then
-            local svc_status
-            svc_status=$(systemctl is-active docker 2>&1 || true)
-            if [ "${svc_status}" != "active" ] && [ "${restart_count}" -lt "${DOCKER_MAX_RESTARTS}" ]; then
-                restart_count=$((restart_count + 1))
-                log "Docker service is ${svc_status}. Attempting restart ${restart_count}/${DOCKER_MAX_RESTARTS}..."
-                try_restart_docker
-            elif [ "${svc_status}" != "active" ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
-                log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted"
-            fi
-        else
-            log "systemctl not available, cannot attempt Docker service restart"
+        local svc_status
+        svc_status=$(systemctl is-active docker 2>&1 || true)
+        if [ "${svc_status}" != "active" ] && [ "${restart_count}" -lt "${DOCKER_MAX_RESTARTS}" ]; then
+            restart_count=$((restart_count + 1))
+            log "Docker service is ${svc_status}. Attempting restart ${restart_count}/${DOCKER_MAX_RESTARTS}..."
+            try_restart_docker
+        elif [ "${svc_status}" != "active" ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
+            log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted"
         fi
 
         log "Docker not ready yet (${elapsed}s elapsed), retrying in ${DOCKER_READY_CHECK_INTERVAL_SECONDS}s..."
