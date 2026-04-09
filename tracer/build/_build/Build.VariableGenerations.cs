@@ -554,7 +554,8 @@ partial class Build : NukeBuild
 
                 void GenerateNukeSmokeTestsMatrices()
                 {
-                    var allScenarios = SmokeTests.SmokeTestScenarios.GetAllScenarios()
+                    var scenarioDict = SmokeTests.SmokeTestScenarios.GetAllScenarios();
+                    var allScenarios = scenarioDict
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
                         .Where(x => !IsPrerelease || !x.details.ExcludeWhenPrerelease)
                         .Select(x => (x.category, x.scenario, entry: (object)new
@@ -563,6 +564,8 @@ partial class Build : NukeBuild
                             scenario = x.scenario,
                         }))
                         .ToList();
+
+                    SmokeTests.SmokeTestImageDigests.VerifyAllImagesAreTracked(scenarioDict.SelectMany(x => x.Value.Values));
 
                     // Emit per-stage matrices grouped by download pattern and pool
                     EmitMatrix("smoke_x64_installer_matrix",

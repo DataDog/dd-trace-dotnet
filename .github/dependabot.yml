@@ -101,6 +101,22 @@ updates:
 
     cooldown:
       default-days: 2
+
+  # Docker images used in smoke tests - Dependabot updates pinned digests
+  - package-ecosystem: "docker"
+    directory: "/tracer/build/_build/SmokeTests"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "area:dependabot"
+    groups:
+      smoke-test-images:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 2
+
   - package-ecosystem: "github-actions"
     directories:
       - "/"

@@ -57,7 +57,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["INSTALL_CMD"] = scenario.InstallCommand,
                 };
@@ -74,7 +74,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                 };
 
@@ -99,7 +99,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["TOOL_VERSION"] = toolVersion,
                     ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
@@ -120,7 +120,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["INSTALL_CMD"] = installCmd,
                 };
@@ -143,7 +143,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["INSTALL_CMD"] = installCmd,
                     ["TOOL_VERSION"] = toolVersion,
@@ -160,7 +160,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["INSTALL_CMD"] = scenario.InstallCommand,
                 };
@@ -181,7 +181,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["INSTALL_CMD"] = scenario.InstallCommand,
                     ["TOOL_VERSION"] = toolVersion + (scenario.PackageVersionSuffix ?? ""),
@@ -202,10 +202,11 @@ public static partial class SmokeTestRunner
 
                 // Build the standard MSI image
                 const string dockerfilePath = "build/_build/docker/smoke.windows.dockerfile";
+                var runtimeImage = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage);
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = runtimeImage,
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
                 };
@@ -218,7 +219,7 @@ public static partial class SmokeTestRunner
                 var ddDotnetBuildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = runtimeImage,
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["CHANNEL_32_BIT"] = "",
                 };
@@ -237,10 +238,11 @@ public static partial class SmokeTestRunner
             {
                 // Build the standard NuGet image
                 const string dockerfilePath = "build/_build/docker/smoke.windows.nuget.dockerfile";
+                var runtimeImage = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage);
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = runtimeImage,
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["TOOL_VERSION"] = toolVersion,
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
@@ -261,7 +263,7 @@ public static partial class SmokeTestRunner
                 var ddDotnetBuildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = runtimeImage,
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["TOOL_VERSION"] = toolVersion,
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
@@ -287,7 +289,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
                 };
@@ -307,7 +309,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
                     ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
@@ -332,7 +334,7 @@ public static partial class SmokeTestRunner
                 var buildArgs = new Dictionary<string, string>
                 {
                     ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
-                    ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+                    ["RUNTIME_IMAGE"] = SmokeTestImageDigests.GetImageWithDigest(scenario.RuntimeImage),
                     ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
                     ["CHANNEL"] = channel,
                     ["TARGET_PLATFORM"] = scenario.TargetPlatform,
