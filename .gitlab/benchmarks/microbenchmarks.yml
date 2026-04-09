@@ -105,7 +105,7 @@ run-benchmarks:
 
     # Benchmarks matching this regex are marked as flaky by benchmark_analyzer
     # and excluded from the check-big-regressions job.
-    FLAKY_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.Asm.AppSecEncoderBenchmark|Trace.CIVisibilityProtocolWriterBenchmark|Trace.AgentWriterBenchmark|Trace.AspNetCoreBenchmark|Trace.SingleSpanAspNetCoreBenchmark|Trace.ElasticsearchBenchmark|Trace.GraphQLBenchmark|Trace.Log4netBenchmark|Trace.SerilogBenchmark|Trace.RedisBenchmark|Trace.ILoggerBenchmark"
+    FLAKY_BENCHMARKS_REGEX: "Trace.ActivityBenchmark|Trace.SpanBenchmark|Trace.TraceAnnotationsBenchmark|Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.Asm.AppSecEncoderBenchmark|Trace.CIVisibilityProtocolWriterBenchmark|Trace.AgentWriterBenchmark|Trace.AspNetCoreBenchmark|Trace.SingleSpanAspNetCoreBenchmark|Trace.ElasticsearchBenchmark|Trace.GraphQLBenchmark|Trace.Log4netBenchmark|Trace.SerilogBenchmark|Trace.RedisBenchmark|Trace.ILoggerBenchmark"
 
     # Scope for dd-octo-sts to get GitHub token for cloning dd-trace-dotnet
     DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
