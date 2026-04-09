@@ -470,7 +470,16 @@ namespace Datadog.Trace.Agent
 
         private void HandleConfigUpdate(AgentConfiguration config)
         {
-            CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint) && config.ClientDropP0s == true;
+            // Client-side stats requires agent >= 7.65.0 which has full CSS v1.2.0 support.
+            // However, if the version is not parseable (e.g. test agents returning "test"), we don't
+            // block stats — the presence of the stats endpoint and client_drop_p0s is sufficient.
+
+            CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint)
+                           && config.ClientDropP0s
+                           && (config.AgentVersion is null
+                            || !Version.TryParse(config.AgentVersion, out var parsedVersion)
+                            || parsedVersion.Major >= 8
+                            || (parsedVersion.Major == 7 && parsedVersion.Minor >= 65));
 
             if (config.PeerTags is not null)
             {

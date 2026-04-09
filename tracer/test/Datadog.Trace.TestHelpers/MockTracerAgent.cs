@@ -1082,7 +1082,7 @@ namespace Datadog.Trace.TestHelpers
             public bool ClientDropP0s { get; set; } = true;
 
             [JsonProperty("version")]
-            public string AgentVersion { get; set; }
+            public string AgentVersion { get; set; } = "7.65.0";
 
             [JsonProperty("span_meta_structs")]
             public bool SpanMetaStructs { get; set; } = true;
