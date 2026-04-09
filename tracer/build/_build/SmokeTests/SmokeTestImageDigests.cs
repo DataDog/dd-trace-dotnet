@@ -95,20 +95,25 @@ public static class SmokeTestImageDigests
             return result;
         }
 
-        foreach (var (_, service) in compose.Services)
+        foreach (var (serviceName, details) in compose.Services)
         {
-            if (string.IsNullOrEmpty(service?.Image))
+            if (string.IsNullOrEmpty(details.Image))
             {
+                Logger.Warning("Missing image details for service {ServiceName}", serviceName);
                 continue;
             }
 
-            var image = service!.Image!;
+            var image = details.Image;
 
             // Extract the repo:tag portion (before @sha256:)
             var atIndex = image.IndexOf('@');
             if (atIndex < 0)
             {
                 // No digest - store as-is (maps to itself)
+                const string message = "Missing sha256 digest for service {ServiceName} ({Image})"
+                                       + "Add entries for these images to smoke-test-images.docker-compose.yml, and resolve their digests with:\n"
+                                       + "  docker buildx imagetools inspect <image> --format '{{json .Manifest.Digest}}'";
+                Logger.Warning(message, serviceName, image);
                 result[image] = image;
                 continue;
             }
