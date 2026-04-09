@@ -687,6 +687,16 @@
     }
   },
   "appsec": {
+    "enabled": {
+      "tags": [
+        "origin"
+      ],
+      "metric_type": "gauge",
+      "data_type": "boolean",
+      "description": "Gauge to track enabled services, a service must emit this gauge with a value of 1 on every heartbeat (or a fixed interval)",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "waf.init": {
       "tags": [
         "waf_version",
