@@ -1,8 +1,0 @@
-{
-    "dsl": "The collection has {len(ref CollectionLocal)} items",
-    "len": [
-        {
-            "ref": "CollectionLocal"
-        }
-    ]
-}

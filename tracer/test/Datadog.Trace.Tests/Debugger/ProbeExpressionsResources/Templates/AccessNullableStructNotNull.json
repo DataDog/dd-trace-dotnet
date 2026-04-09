@@ -1,9 +1,0 @@
-{
-    "dsl": "{this.NullableNotNullValue}",
-    "getmember": [
-        {
-            "ref": "this"
-        },
-        "NullableNotNullValue"
-    ]
-}

@@ -839,7 +839,7 @@ partial class Build
             {
                 // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
                 DotNetPublish(s => s
-                    .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                    .SetProject(Solution.GetProject(Projects.DatadogTrace))
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .EnableNoBuild()
@@ -867,13 +867,13 @@ partial class Build
 
             // Needed as we need to restore with the RuntimeIdentifier
             DotNetRestore(s => s
-                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTrace))
                 .SetPublishReadyToRun(true)
                 .SetRuntime(RuntimeIdentifier)
             );
 
             DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                .SetProject(Solution.GetProject(Projects.DatadogTrace))
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
                 .SetPublishReadyToRun(true)
@@ -2380,10 +2380,13 @@ partial class Build
         });
 
     Target CreateTrimmingFile => _ => _
-       .Description("Create Datadog.Trace.Trimming.xml file")
+       .Description("Create Datadog.Trace.Trimming.xml file (disabled for standalone IAST)")
        .After(CompileManagedSrc)
        .Executes(() =>
         {
+            Logger.Information("CreateTrimmingFile skipped — Trimming project removed for standalone IAST");
+            return;
+#pragma warning disable CS0162
             var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
             List<(string Assembly, string Type)> datadogTraceTypes = new();
             foreach (var tfm in AppTrimmingTFMs)
@@ -2513,6 +2516,7 @@ partial class Build
                     }
                 }
             }
+#pragma warning restore CS0162
         });
 
     Target CheckBuildLogsForErrors => _ => _

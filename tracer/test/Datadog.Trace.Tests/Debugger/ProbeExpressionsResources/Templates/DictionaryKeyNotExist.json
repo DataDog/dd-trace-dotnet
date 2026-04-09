@@ -1,9 +1,0 @@
-{
-    "dsl": "The value of key 'not exist' is {index(ref DictionayLocal, not exist)}",
-    "index": [
-        {
-            "ref": "DictionaryLocal"
-        },
-        "not exist"
-    ]
-}

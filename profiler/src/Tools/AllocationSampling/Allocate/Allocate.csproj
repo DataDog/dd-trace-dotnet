@@ -1,9 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <!-- should be .NET 10 when available in CI -->
-    <TargetFramework>net9.0</TargetFramework>
-  </PropertyGroup>
-
-</Project>

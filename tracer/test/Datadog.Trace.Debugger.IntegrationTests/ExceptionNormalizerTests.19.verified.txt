@@ -1,4 +1,0 @@
-System.FormatException
-   at MyApp.Utilities.StringExtensions.ToInt32(String input)
-   at MyApp.Controllers.DataController.ConvertStringToInt(String value)
-Resulting Hash: 1935132282

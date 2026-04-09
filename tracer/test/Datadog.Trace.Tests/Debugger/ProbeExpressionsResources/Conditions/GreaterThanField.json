@@ -1,9 +1,0 @@
-{
-  "dsl": "ref IntNumber > 2",
-  "gt": [
-    {
-      "ref": "IntNumber"
-    },
-    2
-  ]
-}

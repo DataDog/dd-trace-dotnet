@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Datadog.Profiler.IntegrationTests": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

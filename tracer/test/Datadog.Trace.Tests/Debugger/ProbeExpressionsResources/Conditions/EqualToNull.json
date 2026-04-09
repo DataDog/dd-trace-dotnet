@@ -1,9 +1,0 @@
-{
-  "dsl": "ref SomeString == null",
-  "eq": [
-    {
-      "ref": "StringLocal"
-    },
-    null
-  ]
-}

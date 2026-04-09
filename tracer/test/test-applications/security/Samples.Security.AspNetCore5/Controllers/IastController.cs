@@ -1166,7 +1166,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content(result, "text/html");
         }
 
-        [Datadog.Trace.Annotations.Trace(OperationName = "span.custom.attribute", ResourceName = "IastController.GetCustomString")]
         private string GetCustomString(string userName)
         {
             var fileInfo = new System.IO.FileInfo(userName);

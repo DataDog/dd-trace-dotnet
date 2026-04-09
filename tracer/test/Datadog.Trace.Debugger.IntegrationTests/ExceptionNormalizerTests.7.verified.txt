@@ -1,4 +1,0 @@
-System.NullReferenceException
-   at MyApp.Services.UserService.GetUserById(Int32 id)
-   at MyApp.Controllers.UserController.GetUser(Int32 id)
-Resulting Hash: -2064745795

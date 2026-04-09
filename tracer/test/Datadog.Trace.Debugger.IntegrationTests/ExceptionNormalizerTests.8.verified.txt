@@ -1,5 +1,0 @@
-System.InvalidOperationException
-   at MyApp.Data.DatabaseContext.SaveChanges()
-   at MyApp.Services.UserService.CreateUser(User user)
-   at MyApp.Services.UserService.CreateUser(User user)
-Resulting Hash: -1962392110

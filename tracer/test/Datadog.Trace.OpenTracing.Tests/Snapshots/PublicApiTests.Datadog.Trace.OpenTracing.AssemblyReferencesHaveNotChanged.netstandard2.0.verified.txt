@@ -1,1 +1,0 @@
-OpenTracing, Version=0.12.1.0, Culture=neutral, PublicKeyToken=61503406977abdaf

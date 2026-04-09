@@ -1,8 +1,0 @@
-<Project>
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-
-  <PropertyGroup>
-    <!--  The SQL persistence task gets very unhappy if we have absolute paths in the intermediate path  -->
-    <ArtifactsPath>../../../../../artifacts</ArtifactsPath>
-  </PropertyGroup>
-</Project>

@@ -1,4 +1,0 @@
-System.AggregateException
-System.Net.Http.HttpRequestException
-   at MyApp.Controllers.UserController.CreateUserAsync(User user)
-Resulting Hash: -738183772

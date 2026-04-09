@@ -1,8 +1,0 @@
-*:*/coreclr/*
-*:*/spdlog/*
-*:*/test/*
-*:*/_deps/*
-// This error is an issue with cppcheck. So do not report this one specifically
-preprocessorErrorDirective:*/logging.h
-cppcheckError:*/StackSamplerLoopManager.cpp
-missingIncludeSystem:*

@@ -1,7 +1,0 @@
-System.ArgumentException
-System.InvalidOperationException
-   at MyApp.Data.DatabaseContext.GetUserById(Int32 id)
-   at MyApp.Services.UserService.CreateUser(User user)
-   at MyApp.Controllers.UserController.CreateUser(User user)
-   at MyApp.Data.DatabaseContext.SaveChanges()
-Resulting Hash: -1159361028

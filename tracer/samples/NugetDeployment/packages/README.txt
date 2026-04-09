@@ -1,1 +1,0 @@
-Place the Datadog.Trace.Bundle package in here so that it can be restored in the Docker image

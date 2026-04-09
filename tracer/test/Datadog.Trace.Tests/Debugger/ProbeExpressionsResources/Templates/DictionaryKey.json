@@ -1,9 +1,0 @@
-{
-    "dsl": "The value of key 'hello' is {index(ref DictionayLocal, hello)}",
-    "index": [
-        {
-            "ref": "DictionaryLocal"
-        },
-        "hello"
-    ]
-}

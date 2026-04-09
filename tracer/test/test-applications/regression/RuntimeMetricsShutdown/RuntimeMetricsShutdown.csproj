@@ -1,7 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
-  </PropertyGroup>
-
-</Project>

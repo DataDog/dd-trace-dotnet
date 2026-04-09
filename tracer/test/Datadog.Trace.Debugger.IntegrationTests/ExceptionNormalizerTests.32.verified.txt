@@ -1,4 +1,0 @@
-﻿System.Exception
-   at WebService.Controllers.RoomsController.BookRoom(String id, String course)
-   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
-Resulting Hash: -1698563650

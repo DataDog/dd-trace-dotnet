@@ -1,4 +1,0 @@
-# EditorConfig is awesome:http://EditorConfig.org
-
-[*.{cs,vb}]
-dotnet_diagnostic.DDSEAL01.severity = error # types should be sealed

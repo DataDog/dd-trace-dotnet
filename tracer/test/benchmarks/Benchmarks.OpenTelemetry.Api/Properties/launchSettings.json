@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Benchmarks.OpenTelemetry.Api": {
-      "commandName": "Project",
-      "environmentVariables": {
-      }
-    }
-  }
-}

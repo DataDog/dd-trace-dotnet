@@ -1,8 +1,0 @@
-.idea
-.vs
-.vscode
-README.md
-src/bin/
-src/obj/
-src/**/*.user
-src/**/*.suo

@@ -1,9 +1,0 @@
-{
-  "dsl": "ref BooleanValue == true",
-  "eq": [
-    {
-      "ref": "BooleanValue"
-    },
-    true
-  ]
-}

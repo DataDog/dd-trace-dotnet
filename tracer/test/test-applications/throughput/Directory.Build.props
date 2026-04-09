@@ -1,7 +1,0 @@
-<Project>
-  <!--
-  This file intentionally left blank...
-  to stop msbuild from looking up the folder hierarchy
-  -->
-  <Import Project="..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
-</Project>

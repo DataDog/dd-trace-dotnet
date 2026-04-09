@@ -1,1 +1,0 @@
-﻿This file contains the generated APIs based on https://github.com/dotnet/pinvoke/tree/main/src/Fusion

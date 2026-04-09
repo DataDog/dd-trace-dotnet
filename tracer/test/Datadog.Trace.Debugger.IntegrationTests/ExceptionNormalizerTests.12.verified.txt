@@ -1,3 +1,0 @@
-System.Exception
-   at MyApp.Program.Main(String[] args)
-Resulting Hash: -52104551

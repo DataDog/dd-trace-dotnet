@@ -1,6 +1,0 @@
-<Project>
-    <PropertyGroup>
-        <IncludeSharedSampleHelpers>false</IncludeSharedSampleHelpers>
-    </PropertyGroup>
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../../'))" />
-</Project>

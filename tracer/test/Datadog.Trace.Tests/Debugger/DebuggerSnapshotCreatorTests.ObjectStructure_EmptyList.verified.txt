@@ -1,7 +1,0 @@
-﻿{
-  local0: {
-    elements: [],
-    size: 0,
-    type: List`1
-  }
-}

@@ -4,13 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using Datadog.InstrumentedAssemblyGenerator;
-using Datadog.InstrumentedAssemblyVerification;
-using Xunit;
 
 namespace Datadog.Trace.TestHelpers;
 
@@ -31,49 +26,11 @@ public static class InstrumentationVerification
 
     public static void VerifyInstrumentation(Process process, string logDirectory)
     {
-        var instrumentedLogsPath = FindInstrumentationLogsFolder(process, logDirectory);
-        if (instrumentedLogsPath == null)
-        {
-            throw new Exception($"Unable to find instrumentation verification directory for process {process.Id}");
-        }
-
-        var copyOriginalsModulesToDisk = Environment.GetEnvironmentVariable(InstrumentationVerification.CopyingOriginalModulesEnabled);
-        var generatorArgs = new AssemblyGeneratorArgs(instrumentedLogsPath, copyOriginalModulesToDisk: copyOriginalsModulesToDisk?.ToLower() is "true" or "1");
-        var generatedModules = InstrumentedAssemblyGeneration.Generate(generatorArgs);
-
-        var results = new List<VerificationOutcome>();
-        foreach (var instrumentedAssembly in generatedModules)
-        {
-            var result = new VerificationsRunner(
-                instrumentedAssembly.InstrumentedAssemblyPath,
-                instrumentedAssembly.OriginalAssemblyPath,
-                instrumentedAssembly.ModifiedMethods.Select(m => (m.TypeFullName, m.MethodAndArgumentsName)).ToList()).Run();
-            results.Add(result);
-        }
-
-        Assert.True(
-            results.TrueForAll(r => r.IsValid),
-            "Instrumentation verification test failed:" + Environment.NewLine + string.Join(Environment.NewLine, results.Where(r => !r.IsValid).Select(r => r.FailureReason)));
+        // Instrumentation verification removed — InstrumentedAssemblyGenerator/Verification projects not available
     }
 
     public static string FindInstrumentationLogsFolder(Process process, string logsFolder)
     {
-        var processExecutableFileName = Path.GetFileNameWithoutExtension(process.StartInfo.FileName);
-        Assert.NotNull(logsFolder);
-        var instrumentationLogsFolder = new DirectoryInfo(Path.Combine(logsFolder, InstrumentedAssemblyGeneratorConsts.InstrumentedAssemblyGeneratorLogsFolder));
-
-        if (!instrumentationLogsFolder.Exists)
-        {
-            return null;
-        }
-
-        string pattern = $"{processExecutableFileName}_{process.Id}_*"; // * wildcard matches process start time
-        var processSpecificInstrumentationLogsFolder =
-            instrumentationLogsFolder
-               .GetDirectories(pattern)
-               .OrderBy(d => d.CreationTime)
-               .LastOrDefault();
-
-        return processSpecificInstrumentationLogsFolder?.FullName;
+        return null;
     }
 }

@@ -1,9 +1,0 @@
-{
-    "dsl": "{Null.NestedString}",
-    "getmember": [
-        {
-            "ref": "Null"
-        },
-        "NestedString"
-    ]
-}

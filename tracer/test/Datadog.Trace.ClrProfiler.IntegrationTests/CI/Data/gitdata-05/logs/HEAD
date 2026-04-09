@@ -1,6 +1,0 @@
-0000000000000000000000000000000000000000 ff0538120057a8c24bcc953dde999750795be07a Daniel Redondo <daniel.redondo@undefinedlabs.com> 1614589139 +0100	clone: from git@github.com:DataDog/dd-trace-dotnet.git
-ff0538120057a8c24bcc953dde999750795be07a 5b6f3a6dab5972d73a56dff737bd08d995255c08 Daniel Redondo <daniel.redondo@undefinedlabs.com> 1614589171 +0100	checkout: moving from master to 5b6f3a6dab5972d73a56dff737bd08d995255c08
-5b6f3a6dab5972d73a56dff737bd08d995255c08 ff0538120057a8c24bcc953dde999750795be07a Daniel Redondo <daniel.redondo@undefinedlabs.com> 1614589219 +0100	checkout: moving from 5b6f3a6dab5972d73a56dff737bd08d995255c08 to master
-ff0538120057a8c24bcc953dde999750795be07a 5b6f3a6dab5972d73a56dff737bd08d995255c08 Daniel Redondo <daniel.redondo@undefinedlabs.com> 1614589226 +0100	checkout: moving from master to 5b6f3a6dab5972d73a56dff737bd08d995255c08
-5b6f3a6dab5972d73a56dff737bd08d995255c08 ff0538120057a8c24bcc953dde999750795be07a Daniel Redondo <daniel.redondo@undefinedlabs.com> 1614589229 +0100	checkout: moving from 5b6f3a6dab5972d73a56dff737bd08d995255c08 to master
-ff0538120057a8c24bcc953dde999750795be07a b667f427df9f9b0521b1b25ee0967896aa510012 Daniel Redondo <daniel.redondo@undefinedlabs.com> 1614589252 +0100	checkout: moving from master to v1.24.0

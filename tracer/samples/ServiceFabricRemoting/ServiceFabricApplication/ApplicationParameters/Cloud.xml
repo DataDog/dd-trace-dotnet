@@ -1,8 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Application xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="fabric:/ServiceFabricApplication" xmlns="http://schemas.microsoft.com/2011/01/fabric">
-  <Parameters>
-    <Parameter Name="WeatherService_NetFx461_InstanceCount" Value="-1" />
-    <Parameter Name="WeatherService_NetCore31_InstanceCount" Value="-1" />
-    <Parameter Name="WebApp_InstanceCount" Value="-1" />
-  </Parameters>
-</Application>

@@ -59,9 +59,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\..\..\src\Datadog.Trace.Annotations\TraceAttribute.cs" Link="TraceAttribute.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <None Update="Data\database.sql">

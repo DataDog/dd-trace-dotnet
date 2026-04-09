@@ -1,7 +1,0 @@
-## Ignore all files
-*
-
-## Keep the gitignore and placeholder file
-!Files in this folder are not committed
-!.gitignore
-

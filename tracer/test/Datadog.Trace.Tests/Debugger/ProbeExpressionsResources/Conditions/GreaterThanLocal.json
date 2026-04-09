@@ -1,9 +1,0 @@
-{
-  "dsl": "ref IntLocal > 2",
-  "gt": [
-    {
-      "ref": "IntLocal"
-    },
-    2
-  ]
-}

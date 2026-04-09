@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj" />
-  </ItemGroup>
-
-</Project>

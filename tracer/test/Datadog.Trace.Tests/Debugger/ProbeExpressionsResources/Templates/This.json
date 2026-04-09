@@ -1,9 +1,0 @@
-{
-    "dsl": "{this.String}",
-    "getmember": [
-        {
-            "ref": "this"
-        },
-        "String"
-    ]
-}
