@@ -38,6 +38,7 @@ namespace Datadog.Trace.Activity.Handlers
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && dataStreamsManager.IsEnabled
+                && !AzureServiceBusCommon.ProduceCheckpointSetByCalltarget.Value
                 && activity.Instance is not null
                 && activity.OperationName == "Message"
                 && AzureServiceBusCommon.ActiveMessageProperties.Value is IDictionary<string, object> applicationProperties)

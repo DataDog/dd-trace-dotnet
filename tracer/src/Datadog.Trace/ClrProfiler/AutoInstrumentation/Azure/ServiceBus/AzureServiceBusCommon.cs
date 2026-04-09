@@ -25,6 +25,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         internal static readonly AsyncLocal<IDictionary<string, object>?> ActiveMessageProperties = new();
 
+        /// <summary>
+        /// Set to true by the calltarget Send integrations after they set a DSM produce checkpoint,
+        /// so the Activity handler can skip its checkpoint and avoid double-counting.
+        /// </summary>
+        internal static readonly AsyncLocal<bool> ProduceCheckpointSetByCalltarget = new();
+
         public static void SetMessage(object applicationProperties, object? message)
         {
 #if NETCOREAPP3_1_OR_GREATER
