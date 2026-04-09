@@ -499,7 +499,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task Otlp_ShouldKeepTraces_TrueWhenTraceSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceSampled()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -511,11 +511,12 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoKeep, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
             var traceChunk = new SpanCollection([span]);
-            aggregator.ShouldKeepTrace(traceChunk).Should().BeTrue();
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().BeNull("sampled trace should be kept");
         }
 
         [Fact]
-        public async Task Otlp_ShouldKeepTraces_FalseWhenTraceNotSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceNotSampled()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -527,7 +528,8 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoReject, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
             var traceChunk = new SpanCollection([span]);
-            aggregator.ShouldKeepTrace(traceChunk).Should().BeFalse();
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().Be(TraceDropReason.Unsampled);
         }
 
         [Fact]

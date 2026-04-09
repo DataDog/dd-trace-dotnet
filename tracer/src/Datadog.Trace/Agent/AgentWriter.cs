@@ -430,34 +430,36 @@ namespace Datadog.Trace.Agent
             var chunk = spans;
             if (CanComputeStats)
             {
-                chunk = _statsAggregator.ProcessTrace(in chunk);
-                bool shouldSendTrace = _statsAggregator.ShouldKeepTrace(in chunk);
+                var dropReason = _statsAggregator.ProcessTrace(ref chunk);
                 _statsAggregator.AddRange(in chunk);
-                var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
+                List<Span>? singleSpanSamplingSpans = null; // TODO maybe we can store this from above?
 
                 foreach (var span in chunk)
                 {
                     if (span.GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
                     {
+                        singleSpanSamplingSpans ??= new();
                         singleSpanSamplingSpans.Add(span);
                     }
                 }
 
-                if (shouldSendTrace)
+                if (dropReason is null)
                 {
                     TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.P0Keep);
                     TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.P0Keep, chunk.Count);
                 }
                 else
                 {
-                    // If stats computation determined that we can drop the P0 Trace,
+                    // If stats computation determined that we can drop the trace,
                     // skip all other processing
-                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.P0Drop);
-                    if (singleSpanSamplingSpans.Count == 0)
+                    var reasonTag = dropReason.Value.ToTagReason();
+
+                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(reasonTag);
+                    if (singleSpanSamplingSpans is null)
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
                         Interlocked.Add(ref _droppedP0Spans, chunk.Count);
-                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, chunk.Count);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(reasonTag, chunk.Count);
                         return;
                     }
                     else
@@ -469,7 +471,7 @@ namespace Datadog.Trace.Agent
                         var spansDropped = chunk.Count - singleSpanSamplingSpans.Count;
                         Interlocked.Add(ref _droppedP0Spans, spansDropped);
                         chunk = new SpanCollection(singleSpanSamplingSpans.ToArray(), singleSpanSamplingSpans.Count);
-                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, spansDropped);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(reasonTag, spansDropped);
                         TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.SingleSpanSampling, chunk.Count);
                         TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.SingleSpanIngestion);
                     }

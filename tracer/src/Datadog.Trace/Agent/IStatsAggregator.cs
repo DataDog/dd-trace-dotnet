@@ -42,13 +42,12 @@ namespace Datadog.Trace.Agent
         void AddRange(in SpanCollection spans);
 
         /// <summary>
-        /// Runs a series of samplers over the entire trace chunk
+        /// Apply normalization, filtering, obfuscation, and sampling, to understand if the
+        /// trace should be kept
         /// </summary>
-        /// <param name="spans">The trace chunk to sample</param>
-        /// <returns>True if the trace chunk should be sampled, false otherwise.</returns>
-        bool ShouldKeepTrace(in SpanCollection spans);
-
-        SpanCollection ProcessTrace(in SpanCollection trace);
+        /// <param name="spans">The spans chunk to process</param>
+        /// <returns>An optional trace drop reason, or <c>null</c> if the trace should _not_ be dropped</returns>
+        TraceDropReason? ProcessTrace(ref SpanCollection spans);
 
         Task DisposeAsync();
 

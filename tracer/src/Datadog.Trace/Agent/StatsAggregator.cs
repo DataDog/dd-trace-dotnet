@@ -134,13 +134,6 @@ namespace Datadog.Trace.Agent
 
         public void AddRange(in SpanCollection spans)
         {
-            // Trace-level filters from the agent must be applied before stats computation.
-            // Rejected traces should not contribute to stats.
-            if (IsTraceFiltered(in spans))
-            {
-                return;
-            }
-
             // Contention around this lock is expected to be very small:
             // AddRange is called from the serialization thread, and concurrent serialization
             // of traces is a rare corner-case (happening only during shutdown).
@@ -154,19 +147,70 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public bool ShouldKeepTrace(in SpanCollection trace)
+        public TraceDropReason? ProcessTrace(ref SpanCollection spans)
+        {
+            // Follow the same processing steps as the Go tracer
+            spans = NormalizeTrace(in spans);
+            if (ShouldFilterTrace(in spans))
+            {
+                return TraceDropReason.TraceFilter;
+            }
+
+            spans = ObfuscateTrace(in spans);
+            if (!ShouldKeepTrace(in spans))
+            {
+                return TraceDropReason.Unsampled;
+            }
+
+            return null; // keep
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal SpanCollection NormalizeTrace(in SpanCollection trace)
+        {
+            try
+            {
+                return _normalizerProcessor.Process(in trace);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error executing normalizer trace processor");
+                return trace;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool ShouldFilterTrace(in SpanCollection trace)
+        {
+            var filter = Volatile.Read(ref _traceFilter);
+            if (filter is null)
+            {
+                return false;
+            }
+
+            // Find the local root span, searching from the last span, as that's where it normally is
+            var traceContext = TraceContext.GetTraceContext(in trace);
+            var localRoot = traceContext?.RootSpan;
+
+            if (localRoot is not null && trace.ContainsSpanId(localRoot.SpanId, trace.Count - 1))
+            {
+                // localRoot is in the trace chunk, so we can apply the filter directly
+                return filter.ShouldKeepTrace(localRoot);
+            }
+
+            // local root isn't in the trace chunk (can happen with partial flushing)
+            // or we don't have a local root (I don't know when that happens!)
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool ShouldKeepTrace(in SpanCollection trace)
         {
             // For OTLP, align with the OpenTelemetry SDK behavior to export a trace based
             // solely on its sampling decision.
             if (_isOtlp)
             {
                 return _prioritySampler.Sample(in trace);
-            }
-
-            // Trace-level filters from the agent must reject traces before sampling.
-            if (IsTraceFiltered(in trace))
-            {
-                return false;
             }
 
             // Note: The RareSampler must be run before all other samplers so that
@@ -181,25 +225,15 @@ namespace Datadog.Trace.Agent
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SpanCollection ProcessTrace(in SpanCollection trace)
+        internal SpanCollection ObfuscateTrace(in SpanCollection trace)
         {
-            var spans = trace;
-            try
-            {
-                spans = _normalizerProcessor.Process(in spans);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error executing normalizer trace processor");
-            }
-
             // Only obfuscate resources when the tracer has negotiated obfuscation responsibility.
             // The tracer currently only supports obfuscation version 1 (SQL, Cassandra, Redis).
             if (Volatile.Read(ref _tracerObfuscationVersion) == 1)
             {
                 try
                 {
-                    spans = _obfuscatorProcessor.Process(in spans);
+                    return _obfuscatorProcessor.Process(in trace);
                 }
                 catch (Exception e)
                 {
@@ -207,7 +241,7 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            return spans;
+            return trace;
         }
 
         public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
