@@ -258,8 +258,7 @@ namespace Datadog.Trace.Tests.Agent
             group.HttpMethod.Should().Be(expectedKey.HttpMethod);
             group.HttpEndpoint.Should().Be(expectedKey.HttpEndpoint);
             group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode);
-            // srv_src is only serialized when non-empty, so null on the wire maps to empty
-            group.ServiceSource.Should().Be(string.IsNullOrEmpty(expectedKey.ServiceSource) ? null : expectedKey.ServiceSource);
+            group.ServiceSource.Should().Be(expectedKey.ServiceSource);
 
             var stream = new MemoryStream();
             expectedBucket.ErrorSummary.Serialize(stream);

@@ -139,7 +139,7 @@ namespace Datadog.Trace.Agent
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
-            var fieldCount = 17;
+            var fieldCount = 18;
             if (bucket.PeerTags.Count != 0)
             {
                 fieldCount++;
