@@ -49,19 +49,14 @@ log_diagnostics()
 
 try_restart_docker()
 {
-    if command -v systemctl >/dev/null 2>&1; then
-        log "Attempting Docker service restart..."
-        local output
-        output=$(systemctl restart docker 2>&1)
-        if [ $? -eq 0 ]; then
-            log "systemctl restart docker completed"
-            return 0
-        else
-            log "systemctl restart docker failed: ${output}"
-            return 1
-        fi
+    log "Attempting Docker service restart..."
+    local output
+    output=$(systemctl restart docker 2>&1)
+    if [ $? -eq 0 ]; then
+        log "systemctl restart docker completed"
+        return 0
     else
-        log "systemctl not available, cannot restart Docker service"
+        log "systemctl restart docker failed: ${output}"
         return 1
     fi
 }
@@ -92,6 +87,9 @@ wait_for_docker()
     initial_status=$(systemctl is-active docker 2>&1 || true)
     log "Docker service initial state: ${initial_status}"
 
+    local consecutive_failures=0
+    local DOCKER_READY_FORCE_RESTART_AFTER=3
+
     while [ "${elapsed}" -lt "${DOCKER_READY_TIMEOUT_SECONDS}" ]; do
         if docker info >/dev/null 2>&1; then
             log "Docker daemon is ready (waited ${elapsed}s, ${restart_count} restart(s) performed)"
@@ -99,14 +97,25 @@ wait_for_docker()
             return 0
         fi
 
-        # If Docker is not responding, try restarting the service
+        consecutive_failures=$((consecutive_failures + 1))
+
+        # Try restarting if the service is down, or if it reports active but is unresponsive
         local svc_status
         svc_status=$(systemctl is-active docker 2>&1 || true)
-        if [ "${svc_status}" != "active" ] && [ "${restart_count}" -lt "${DOCKER_MAX_RESTARTS}" ]; then
+        local should_restart=false
+        if [ "${svc_status}" != "active" ]; then
+            should_restart=true
+        elif [ "${consecutive_failures}" -ge "${DOCKER_READY_FORCE_RESTART_AFTER}" ]; then
+            log "Docker service reports active but has been unresponsive for ${consecutive_failures} checks"
+            should_restart=true
+        fi
+
+        if [ "${should_restart}" = true ] && [ "${restart_count}" -lt "${DOCKER_MAX_RESTARTS}" ]; then
             restart_count=$((restart_count + 1))
             log "Docker service is ${svc_status}. Attempting restart ${restart_count}/${DOCKER_MAX_RESTARTS}..."
             try_restart_docker
-        elif [ "${svc_status}" != "active" ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
+            consecutive_failures=0
+        elif [ "${should_restart}" = true ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
             log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted"
         fi
 
