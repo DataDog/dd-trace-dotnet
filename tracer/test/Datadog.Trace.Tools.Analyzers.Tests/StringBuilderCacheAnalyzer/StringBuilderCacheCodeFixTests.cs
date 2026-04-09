@@ -363,4 +363,188 @@ public class StringBuilderCacheCodeFixTests
         var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
         await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
     }
+
+    [Fact]
+    public async Task NewStringBuilder_WithNamedArgs_CorrectlyMapsCapacityAndValue()
+    {
+        // Named arguments in the same order as positional — should produce the same output
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder(value: "hello", capacity: 100)|};
+                    sb.Append(" world");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire(100).Append("hello");
+                    sb.Append(" world");
+                    var result = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_WithSwappedNamedArgs_CorrectlyMapsCapacityAndValue()
+    {
+        // Named arguments in reversed order — capacity: first, value: second
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder(capacity: 100, value: "hello")|};
+                    sb.Append(" world");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire(100).Append("hello");
+                    sb.Append(" world");
+                    var result = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_WithCapacityAndMaxCapacity_DiagnosticFiredButNoCodeFixApplied()
+    {
+        // StringBuilderCache.Acquire() has no maxCapacity parameter — code fix is not offered
+        // to avoid silently changing runtime semantics. Diagnostic still fires.
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|DDALLOC003:new StringBuilder(100, 500)|};
+                    sb.Append("hello");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source + StringBuilderCacheStub);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleToStringCalls_PropertyAssignmentBetween_OnlyReplacesLast()
+    {
+        // sb.Length = 0 is a property assignment — treated as a mutation,
+        // so the code fix uses the "last only" path rather than collapsing to a single result.
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder()|};
+                    sb.Append("hello");
+                    var first = sb.ToString();
+                    sb.Length = 0;
+                    sb.Append("world");
+                    var second = sb.ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire();
+                    sb.Append("hello");
+                    var first = sb.ToString();
+                    sb.Length = 0;
+                    sb.Append("world");
+                    var second = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleToStringCalls_VariableReassignmentBetween_OnlyReplacesLast()
+    {
+        // sb = other is a variable reassignment — treated as a mutation,
+        // so the code fix uses the "last only" path rather than collapsing to a single result.
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod(StringBuilder other)
+                {
+                    var sb = {|#0:new StringBuilder()|};
+                    sb.Append("hello");
+                    var first = sb.ToString();
+                    sb = other;
+                    sb.Append("world");
+                    var second = sb.ToString();
+                }
+            }
+            """;
+
+        var fixedSource = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod(StringBuilder other)
+                {
+                    var sb = StringBuilderCache.Acquire();
+                    sb.Append("hello");
+                    var first = sb.ToString();
+                    sb = other;
+                    sb.Append("world");
+                    var second = StringBuilderCache.GetStringAndRelease(sb);
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyCodeFixAsync(source + StringBuilderCacheStub, expected, fixedSource + StringBuilderCacheStub);
+    }
 }

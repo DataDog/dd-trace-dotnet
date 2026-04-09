@@ -505,7 +505,8 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         {
             if (arg.NameColon?.Name.Identifier.Text == paramName)
             {
-                return arg;
+                // Strip the NameColon so the arg is passed positionally in the rewritten call
+                return arg.WithNameColon(null);
             }
         }
 
