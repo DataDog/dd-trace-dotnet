@@ -153,6 +153,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAzureEventHubsInboundV0(excludeTags),
             };
 
+        public static Result IsAzureEventGridOutbound(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureEventGridOutboundV1(excludeTags),
+                _ => span.IsAzureEventGridOutboundV0(excludeTags),
+            };
+
         public static Result IsCosmosDb(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

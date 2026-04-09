@@ -586,6 +586,25 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "consumer"));
 
+        public static Result IsAzureEventGridOutboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "azure_eventgrid.send")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .IsPresent("messaging.destination.name")
+                .IfPresentMatches("messaging.system", "eventgrid")
+                .Matches("messaging.operation", "send")
+                .IsOptional("messaging.batch.message_count")
+                .IsOptional("network.destination.name")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
+                .Matches("component", "AzureEventGrid")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
+                .Matches("span.kind", "producer"));
+
         public static Result IsCosmosDbV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "cosmosdb.query")

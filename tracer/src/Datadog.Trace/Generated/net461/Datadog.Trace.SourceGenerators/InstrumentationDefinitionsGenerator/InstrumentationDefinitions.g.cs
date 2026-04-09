@@ -174,6 +174,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AzureEventGrid,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.InstrumentMessageIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.AmqpConsumerReceiveAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs.EventDataBatchTryAddIntegration"
