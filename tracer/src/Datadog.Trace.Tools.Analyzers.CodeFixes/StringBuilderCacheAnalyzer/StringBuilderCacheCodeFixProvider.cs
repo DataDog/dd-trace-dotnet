@@ -364,6 +364,31 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
             }
         }
 
+        // Also check for assignment expressions targeting the variable or its properties/fields
+        // e.g. sb.Length = 0 or sb = other
+        foreach (var assignment in enclosingFunction.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == enclosingFunction).OfType<AssignmentExpressionSyntax>())
+        {
+            if (assignment.SpanStart <= firstSpanEnd || assignment.SpanStart >= lastSpanStart)
+            {
+                continue;
+            }
+
+            // sb = other  (reassignment of the variable itself)
+            if (assignment.Left is IdentifierNameSyntax leftId
+                && leftId.Identifier.Text == variableName)
+            {
+                return true;
+            }
+
+            // sb.Length = 0  (property/field assignment on the variable)
+            if (assignment.Left is MemberAccessExpressionSyntax leftMember
+                && leftMember.Expression is IdentifierNameSyntax memberId
+                && memberId.Identifier.Text == variableName)
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
