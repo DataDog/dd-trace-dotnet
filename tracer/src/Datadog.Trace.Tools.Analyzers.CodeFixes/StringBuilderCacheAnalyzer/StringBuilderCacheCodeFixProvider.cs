@@ -448,19 +448,18 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
             return (null, ImmutableArray<ArgumentSyntax>.Empty);
         }
 
-        var args = argList.Arguments;
         var paramCount = constructor.Parameters.Length;
 
         // StringBuilder(int capacity)
         if (paramCount == 1 && constructor.Parameters[0].Type.SpecialType == SpecialType.System_Int32)
         {
-            return (args[0], ImmutableArray<ArgumentSyntax>.Empty);
+            return (GetArgByName(argList, constructor, "capacity"), ImmutableArray<ArgumentSyntax>.Empty);
         }
 
         // StringBuilder(string? value)
         if (paramCount == 1 && constructor.Parameters[0].Type.SpecialType == SpecialType.System_String)
         {
-            return (null, ImmutableArray.Create(args[0]));
+            return (null, ImmutableArray.Create(GetArgByName(argList, constructor, "value")));
         }
 
         // StringBuilder(string? value, int capacity)
@@ -468,7 +467,7 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
             && constructor.Parameters[0].Type.SpecialType == SpecialType.System_String
             && constructor.Parameters[1].Type.SpecialType == SpecialType.System_Int32)
         {
-            return (args[1], ImmutableArray.Create(args[0]));
+            return (GetArgByName(argList, constructor, "capacity"), ImmutableArray.Create(GetArgByName(argList, constructor, "value")));
         }
 
         // StringBuilder(int capacity, int maxCapacity)
@@ -484,11 +483,43 @@ public sealed class StringBuilderCacheCodeFixProvider : CodeFixProvider
         // StringBuilder(string? value, int startIndex, int length, int capacity)
         if (paramCount == 4 && constructor.Parameters[0].Type.SpecialType == SpecialType.System_String)
         {
-            return (args[3], ImmutableArray.Create(args[0], args[1], args[2]));
+            return (GetArgByName(argList, constructor, "capacity"),
+                    ImmutableArray.Create(
+                        GetArgByName(argList, constructor, "value"),
+                        GetArgByName(argList, constructor, "startIndex"),
+                        GetArgByName(argList, constructor, "length")));
         }
 
         // Unknown overload — don't forward args
         return (null, ImmutableArray<ArgumentSyntax>.Empty);
+    }
+
+    /// <summary>
+    /// Returns the <see cref="ArgumentSyntax"/> for the parameter with the given name,
+    /// handling both positional and named arguments.
+    /// </summary>
+    private static ArgumentSyntax GetArgByName(ArgumentListSyntax argList, IMethodSymbol method, string paramName)
+    {
+        // Named argument: caller wrote e.g. new StringBuilder(capacity: 128, value: "x")
+        foreach (var arg in argList.Arguments)
+        {
+            if (arg.NameColon?.Name.Identifier.Text == paramName)
+            {
+                return arg;
+            }
+        }
+
+        // Positional argument: find the parameter index and return args[index]
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            if (method.Parameters[i].Name == paramName)
+            {
+                return argList.Arguments[i];
+            }
+        }
+
+        // Fallback — should not happen for known overloads
+        return argList.Arguments[0];
     }
 
     private static InvocationExpressionSyntax BuildGetStringAndReleaseCall(string variableName)
