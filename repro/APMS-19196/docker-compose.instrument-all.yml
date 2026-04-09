@@ -1,9 +1,0 @@
-# Usage: docker compose -f docker-compose.yml -f docker-compose.instrument-all.yml up -d --build
-# This override enables DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL which instruments ALL
-# methods at JIT time with debugger probes (same EH clause layout as ER, but at JIT
-# rather than ReJIT). If the EH sort bug triggers, the app will crash on startup or
-# on the first request that calls a complex async MoveNext.
-services:
-  app:
-    environment:
-      - DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL=true

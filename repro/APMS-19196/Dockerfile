@@ -40,6 +40,9 @@ ENV CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
 ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
 ENV DD_DOTNET_TRACER_HOME=/opt/datadog
 
+# Fix LD_PRELOAD for profiler to work properly
+ENV LD_PRELOAD=/opt/datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so
+
 # SSI injection marker — required by the native loader to activate
 ENV DD_INJECTION_ENABLED=tracer
 
