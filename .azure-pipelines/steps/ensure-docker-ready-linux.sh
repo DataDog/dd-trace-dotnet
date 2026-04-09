@@ -1,7 +1,7 @@
 #!/bin/sh
 # Linux Docker readiness check — mirrors the Windows PowerShell logic in ensure-docker-ready.yml.
 # Waits for the Docker daemon, attempts service restarts if needed, and fails fast
-# so the job can be rescheduled on a different agent.
+# to avoid wasting time on a broken agent.
 
 set -u
 
@@ -69,9 +69,10 @@ wait_for_docker()
     log "Waiting up to ${DOCKER_READY_TIMEOUT_SECONDS}s for Docker daemon (will attempt up to ${DOCKER_MAX_RESTARTS} service restarts)..."
 
     # Quick check — if Docker is already healthy, nothing to do
-    if docker info >/dev/null 2>&1; then
+    local info_output
+    if info_output=$(docker info 2>&1); then
         log "Docker daemon is ready"
-        docker info
+        echo "${info_output}"
         return 0
     fi
 
@@ -91,9 +92,9 @@ wait_for_docker()
     local DOCKER_READY_FORCE_RESTART_AFTER=3
 
     while [ "${elapsed}" -lt "${DOCKER_READY_TIMEOUT_SECONDS}" ]; do
-        if docker info >/dev/null 2>&1; then
+        if info_output=$(docker info 2>&1); then
             log "Docker daemon is ready (waited ${elapsed}s, ${restart_count} restart(s) performed)"
-            docker info
+            echo "${info_output}"
             return 0
         fi
 
@@ -125,6 +126,7 @@ wait_for_docker()
     done
 
     log "Docker daemon did not become ready within ${DOCKER_READY_TIMEOUT_SECONDS}s after ${restart_count} restart(s)"
+    echo "##vso[task.logissue type=error]Docker daemon did not become ready within ${DOCKER_READY_TIMEOUT_SECONDS}s after ${restart_count} restart(s)"
     log_diagnostics
     return 1
 }
