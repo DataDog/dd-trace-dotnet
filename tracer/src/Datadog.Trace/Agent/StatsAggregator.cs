@@ -11,14 +11,12 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
@@ -35,7 +33,7 @@ namespace Datadog.Trace.Agent
 
         private readonly IApi _api;
         private readonly bool _isOtlp;
-        private readonly ITraceProcessor[] _traceProcessors;
+        private readonly NormalizerTraceProcessor _normalizerProcessor;
         private readonly ObfuscatorTraceProcessor _obfuscatorProcessor;
 
         private readonly TaskCompletionSource<bool> _processExit;
@@ -65,12 +63,8 @@ namespace Datadog.Trace.Agent
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
-            _traceProcessors = new ITraceProcessor[]
-            {
-                new Processors.NormalizerTraceProcessor(),
-            };
-
-            _obfuscatorProcessor = new Processors.ObfuscatorTraceProcessor();
+            _normalizerProcessor = new NormalizerTraceProcessor();
+            _obfuscatorProcessor = new ObfuscatorTraceProcessor();
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
@@ -190,16 +184,13 @@ namespace Datadog.Trace.Agent
         public SpanCollection ProcessTrace(in SpanCollection trace)
         {
             var spans = trace;
-            foreach (var processor in _traceProcessors)
+            try
             {
-                try
-                {
-                    spans = processor.Process(in spans);
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
-                }
+                spans = _normalizerProcessor.Process(in spans);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error executing normalizer trace processor");
             }
 
             // Only obfuscate resources when the tracer has negotiated obfuscation responsibility.
