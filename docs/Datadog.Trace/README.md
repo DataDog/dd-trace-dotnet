@@ -2,8 +2,8 @@
 
 This package contains the Datadog .NET APM tracer for configuring custom instrumentation.
 
-⚠ Starting with version 3.0.0, this package requires that you also configure automatic instrumentation.
-Using this package without automatic instrumentation is no longer supported  
+> **Starting with version 3.0.0**, this package requires that you also configure automatic instrumentation.
+> Using this package without automatic instrumentation is no longer supported.
 
 > If you are only using automatic instrumentation, **you do not need this package**. Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for details on how to install the tracer for automatic instrumentation.
 
@@ -15,24 +15,28 @@ Please note that Datadog does not support tracing (manual or automatic) in parti
 
 1. Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm).
 2. Configure automatic instrumentation [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/?tab=windows#install-the-tracer).
-3. Configure custom instrumentation, as shown below
+3. Configure custom instrumentation, as shown below.
 4. [View your live data on Datadog](https://app.datadoghq.com/apm/traces).
 
-### Configuring Datadog in code
+## Configuring Datadog in code
 
-There are multiple ways to configure your application: using environment variables, a `web.config` file, or a `datadog.json` file, [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/#configuration). This NuGet package also allows you to configure settings in code.
+There are multiple ways to configure your application: using environment variables, a `web.config` file, or a `datadog.json` file, [as described in our documentation](https://docs.datadoghq.com/tracing/trace_collection/library_config/dotnet-core/). This NuGet package also allows you to configure settings in code.
 
 To override configuration settings, create an instance of `TracerSettings`, and pass it to the static `Tracer.Configure()` method:
 
 ```csharp
 using Datadog.Trace;
+using Datadog.Trace.Configuration;
 
 // Create a settings object using the existing
 // environment variables and config sources
 var settings = TracerSettings.FromDefaultSources();
 
-// Override a value
-settings.GlobalTags.Add("SomeKey", "SomeValue");
+// Override settings in code
+settings.ServiceName = "my-web-app";
+settings.Environment = "production";
+settings.ServiceVersion = "1.0.0";
+settings.GlobalTags.Add("team", "checkout");
 
 // Replace the tracer configuration
 Tracer.Configure(settings);
@@ -42,11 +46,11 @@ Calling `Tracer.Configure()` will replace the settings for all subsequent traces
 
 > :warning: Replacing the configuration should be done once, as early as possible in your application.
 
- ### Create custom traces
+## Create custom traces
 
 To create and activate a custom span, use `Tracer.Instance.StartActive()`. If a trace is already active (when created by automatic instrumentation, for example), the span will be part of the current trace. If there is no current trace, a new one will be started.
 
-> :warning: Ensure you dispose of the scope returned from StartActive. Disposing the scope will close the span, and ensure the trace is flushed to Datadog once all its spans are closed.
+> :warning: Ensure you dispose of the scope returned from `StartActive`. Disposing the scope will close the span, and ensure the trace is flushed to Datadog once all its spans are closed.
 
 ```csharp
 using Datadog.Trace;
@@ -54,8 +58,334 @@ using Datadog.Trace;
 // Start a new span
 using (var scope = Tracer.Instance.StartActive("custom-operation"))
 {
-    // Do something
+    var span = scope.Span;
+
+    // Set the resource name (what this specific call is doing)
+    span.ResourceName = "ProcessOrder";
+
+    // Set the service name (defaults to the application's service name)
+    span.ServiceName = "order-service";
+
+    // Set the span type (e.g. "web", "sql", "custom")
+    span.Type = "custom";
+
+    // Do your work here
+    ProcessOrder(orderId);
 }
+```
+
+## Add custom tags and metrics to spans
+
+Tags let you attach key-value metadata to spans for filtering and grouping in Datadog.
+
+### String tags
+
+Use `SetTag()` on the span to add string tags:
+
+```csharp
+using Datadog.Trace;
+
+using (var scope = Tracer.Instance.StartActive("checkout.process"))
+{
+    var span = scope.Span;
+    span.ResourceName = "ProcessCheckout";
+
+    // Add custom business tags
+    span.SetTag("user.id", userId);
+    span.SetTag("order.id", orderId);
+    span.SetTag("payment.method", "credit_card");
+    span.SetTag("cart.item_count", itemCount.ToString());
+
+    // Use built-in tag constants for standard fields
+    span.SetTag(Tags.HttpMethod, "POST");
+    span.SetTag(Tags.HttpUrl, "/api/checkout");
+
+    ProcessCheckout(userId, orderId);
+}
+```
+
+### Numeric metrics
+
+Use the `SetTag()` extension method with a `double?` parameter to add numeric metrics:
+
+```csharp
+using Datadog.Trace;
+
+using (var scope = Tracer.Instance.StartActive("payment.charge"))
+{
+    var span = scope.Span;
+    span.ResourceName = "ChargePayment";
+
+    // Add numeric metrics
+    span.SetTag("payment.amount", 99.95);
+    span.SetTag("payment.items", 3.0);
+    span.SetTag("payment.discount_percent", 15.0);
+
+    ChargePayment(orderId, amount);
+}
+```
+
+## Instrument a database query
+
+When automatic instrumentation doesn't cover a specific database client, you can manually wrap database calls in spans:
+
+```csharp
+using Datadog.Trace;
+using System.Data.SqlClient;
+
+public int ExecuteQuery(string connectionString, string query)
+{
+    using (var scope = Tracer.Instance.StartActive("sql.query"))
+    {
+        var span = scope.Span;
+        span.ResourceName = query;
+        span.Type = SpanTypes.Sql;
+        span.SetTag(Tags.DbType, "sql-server");
+        span.SetTag(Tags.SqlQuery, query);
+        span.SetTag(Tags.DbName, "OrdersDb");
+
+        try
+        {
+            using var connection = new SqlConnection(connectionString);
+            connection.Open();
+
+            using var command = new SqlCommand(query, connection);
+            int rowsAffected = command.ExecuteNonQuery();
+
+            span.SetTag(Tags.SqlRows, rowsAffected.ToString());
+            return rowsAffected;
+        }
+        catch (Exception ex)
+        {
+            span.SetException(ex);
+            throw;
+        }
+    }
+}
+```
+
+> **Note**: ADO.NET libraries like `System.Data.SqlClient`, `Microsoft.Data.SqlClient`, `Npgsql`, and `MySql.Data` are automatically instrumented when automatic instrumentation is enabled. You only need manual instrumentation for unsupported database clients or when you want to add custom tags.
+
+## Create child spans (parent-child relationships)
+
+### Automatic parenting
+
+When you nest `StartActive()` calls, child spans are automatically linked to their parent:
+
+```csharp
+using Datadog.Trace;
+
+// Parent span
+using (var outerScope = Tracer.Instance.StartActive("web.request"))
+{
+    outerScope.Span.ResourceName = "GET /api/orders";
+
+    // This span automatically becomes a child of "web.request"
+    using (var innerScope = Tracer.Instance.StartActive("sql.query"))
+    {
+        innerScope.Span.ResourceName = "SELECT * FROM orders";
+        innerScope.Span.Type = SpanTypes.Sql;
+
+        // Execute the query
+    }
+
+    // This span is also a child of "web.request"
+    using (var cacheScope = Tracer.Instance.StartActive("cache.lookup"))
+    {
+        cacheScope.Span.ResourceName = "GET order:123";
+    }
+}
+```
+
+### Explicit parent context
+
+To explicitly set a parent span, use `SpanCreationSettings`:
+
+```csharp
+using Datadog.Trace;
+
+// Use a previously captured span context as parent
+ISpanContext parentContext = previousScope.Span.Context;
+var settings = new SpanCreationSettings { Parent = parentContext };
+
+using (var scope = Tracer.Instance.StartActive("child-operation", settings))
+{
+    scope.Span.ResourceName = "ChildWork";
+    // This span is a child of the specified parent, regardless of the active scope
+}
+```
+
+### Create a root span (no parent)
+
+To create a span that is **not** a child of the currently active span, use `SpanContext.None`:
+
+```csharp
+using Datadog.Trace;
+
+// This span will start a new trace, even if there's an active span
+var settings = new SpanCreationSettings { Parent = SpanContext.None };
+
+using (var scope = Tracer.Instance.StartActive("background-job", settings))
+{
+    scope.Span.ResourceName = "CleanupExpiredSessions";
+    // This is a root span in its own trace
+}
+```
+
+## Error handling
+
+Mark a span as an error and attach exception details:
+
+```csharp
+using Datadog.Trace;
+
+using (var scope = Tracer.Instance.StartActive("risky-operation"))
+{
+    var span = scope.Span;
+    span.ResourceName = "ProcessPayment";
+
+    try
+    {
+        ProcessPayment(orderId);
+    }
+    catch (Exception ex)
+    {
+        // Record the exception on the span (sets error flag, message, type, and stack trace)
+        span.SetException(ex);
+        throw;
+    }
+}
+```
+
+You can also set the error flag manually without an exception:
+
+```csharp
+using Datadog.Trace;
+
+using (var scope = Tracer.Instance.StartActive("validation"))
+{
+    var span = scope.Span;
+
+    var result = ValidateInput(input);
+    if (!result.IsValid)
+    {
+        span.Error = true;
+        span.SetTag(Tags.ErrorMsg, result.ErrorMessage);
+    }
+}
+```
+
+## Manual sampling control
+
+Override the automatic sampling decision for a specific trace:
+
+```csharp
+using Datadog.Trace;
+using Datadog.Trace.ExtensionMethods;
+
+using (var scope = Tracer.Instance.StartActive("critical-operation"))
+{
+    var span = scope.Span;
+
+    // Force this trace to be kept (sent to Datadog), regardless of sampling rules
+    span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+
+    ProcessCriticalTransaction();
+}
+```
+
+You can also use tag-based sampling control:
+
+```csharp
+using Datadog.Trace;
+
+using (var scope = Tracer.Instance.StartActive("operation"))
+{
+    // Keep this trace
+    scope.Span.SetTag(Tags.ManualKeep, "true");
+
+    // Or drop this trace
+    // scope.Span.SetTag(Tags.ManualDrop, "true");
+}
+```
+
+## Trace context propagation for unsupported libraries
+
+The tracer automatically propagates trace context for [supported libraries](https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/). For libraries that are not automatically instrumented (such as custom message queues), you can manually inject and extract trace context using `SpanContextInjector` and `SpanContextExtractor`.
+
+### Injecting context (producer/sender side)
+
+When sending a message, inject the current trace context into the message headers:
+
+```csharp
+using Datadog.Trace;
+
+public void SendMessage(MyMessage message)
+{
+    using (var scope = Tracer.Instance.StartActive("queue.produce"))
+    {
+        var span = scope.Span;
+        span.ResourceName = $"Produce {message.Topic}";
+        span.Type = "queue";
+        span.SetTag("messaging.system", "custom-queue");
+        span.SetTag("messaging.destination", message.Topic);
+
+        // Inject trace context into message headers
+        var injector = new SpanContextInjector();
+        injector.Inject(
+            message.Headers,
+            (headers, key, value) => headers[key] = value,
+            span.Context);
+
+        _queue.Send(message);
+    }
+}
+```
+
+### Extracting context (consumer/receiver side)
+
+When receiving a message, extract the trace context from the message headers and use it as the parent:
+
+```csharp
+using Datadog.Trace;
+
+public void HandleMessage(MyMessage message)
+{
+    // Extract trace context from message headers
+    var extractor = new SpanContextExtractor();
+    var parentContext = extractor.Extract(
+        message.Headers,
+        (headers, key) => headers.TryGetValue(key, out var value)
+            ? new[] { value }
+            : Enumerable.Empty<string?>());
+
+    // Create a span with the extracted context as parent
+    var settings = new SpanCreationSettings { Parent = parentContext };
+
+    using (var scope = Tracer.Instance.StartActive("queue.consume", settings))
+    {
+        var span = scope.Span;
+        span.ResourceName = $"Consume {message.Topic}";
+        span.Type = "queue";
+        span.SetTag("messaging.system", "custom-queue");
+        span.SetTag("messaging.destination", message.Topic);
+
+        ProcessMessage(message);
+    }
+}
+```
+
+This pattern enables end-to-end distributed tracing across services connected by any messaging system, even when the tracer doesn't natively support it.
+
+## Flushing traces
+
+When your application is shutting down or running in a short-lived process, call `ForceFlushAsync()` to ensure all pending traces are sent:
+
+```csharp
+using Datadog.Trace;
+
+// Flush all pending traces before shutdown
+await Tracer.Instance.ForceFlushAsync();
 ```
 
 ## Release Notes
@@ -89,4 +419,3 @@ For a full list of changes and a guide to migrating your application, please see
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
-
