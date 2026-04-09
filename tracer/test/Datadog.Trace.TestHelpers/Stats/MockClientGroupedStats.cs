@@ -48,4 +48,7 @@ public class MockClientGroupedStats
 
     [Key("TopLevelHits")]
     public long TopLevelHits { get; set; }
+
+    [Key("srv_src")]
+    public string ServiceSource { get; set; }
 }
