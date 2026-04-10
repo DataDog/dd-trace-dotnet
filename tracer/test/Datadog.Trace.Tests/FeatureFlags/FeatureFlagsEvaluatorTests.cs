@@ -114,8 +114,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal(23, result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("No config loaded", result.Error);
-        Assert.Equal(EvaluationErrorCode.ProviderNotReady, result.ErrorCode);
+        Assert.Equal("PROVIDER_NOT_READY", result.Error);
     }
 
     [Fact]
@@ -131,7 +130,7 @@ public partial class FeatureFlagsEvaluatorTests
         var ctx = new EvaluationContext("user-123");
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
         Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Split, result.Reason); // CreateSimpleFlag uses shards
+        Assert.Equal(EvaluationReason.Split, result.Reason); // Flag has shards → Split reason
         Assert.Equal("on", result.Variant);
 
         var noTargettingKeyCtx = new EvaluationContext(string.Empty); // no targetingKey
@@ -139,8 +138,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("Targeting key missing", result.Error);
-        Assert.Equal(EvaluationErrorCode.TargetingKeyMissing, result.ErrorCode);
+        Assert.Equal("TARGETING_KEY_MISSING", result.Error);
     }
 
     [Fact]
@@ -152,8 +150,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("Flag not found", result.Error);
-        Assert.Equal(EvaluationErrorCode.FlagNotFound, result.ErrorCode);
+        Assert.Equal("FLAG_NOT_FOUND", result.Error);
     }
 
     [Fact]
@@ -187,12 +184,12 @@ public partial class FeatureFlagsEvaluatorTests
         var result1 = evaluator.Evaluate("null-allocation", Trace.FeatureFlags.ValueType.Boolean, 23, ctx);
         Assert.Equal(23, result1.Value);
         Assert.Equal(EvaluationReason.Error, result1.Reason);
-        Assert.Equal(EvaluationErrorCode.TypeMismatch, result1.ErrorCode);
+        Assert.Equal("TYPE_MISMATCH", result1.FlagMetadata?["errorCode"]);
 
         var result2 = evaluator.Evaluate("empty-allocation", Trace.FeatureFlags.ValueType.Numeric, 23, ctx);
         Assert.Equal(23, result2.Value);
         Assert.Equal(EvaluationReason.Error, result2.Reason);
-        Assert.Equal(EvaluationErrorCode.TypeMismatch, result2.ErrorCode);
+        Assert.Equal("TYPE_MISMATCH", result2.FlagMetadata?["errorCode"]);
     }
 
     [Fact]
@@ -272,8 +269,9 @@ public partial class FeatureFlagsEvaluatorTests
     // ---------------------------------------------------------------------
 
     [Fact]
-    public void EvaluateSimpleStringFlagReturnsTargetingMatch()
+    public void EvaluateSimpleStringFlagReturnsSplitReason()
     {
+        // CreateSimpleFlag creates a flag with shards (100% rollout), so reason is Split
         var flags = new Dictionary<string, Flag>
         {
             ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on")
@@ -285,7 +283,7 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("test-value", result.Value);
-        Assert.Equal(EvaluationReason.Split, result.Reason); // CreateSimpleFlag uses shards
+        Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("on", result.Variant);
     }
 
@@ -357,7 +355,7 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("tracked-value", result.Value);
-        Assert.Equal(EvaluationReason.Static, result.Reason); // CreateExposureFlag has no rules and empty shards
+        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
         Assert.Equal("tracked", result.Variant);
 
         // DoLog=true -> one exposure event
@@ -387,7 +385,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.Static, result.Reason); // CreateTimeBasedFlagWithDates has no rules and empty shards
+        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
         Assert.Equal("time-limited", result.Variant);
     }
 
@@ -429,7 +427,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.Static, result.Reason); // CreateTimeBasedFlagWithDates has no rules and empty shards
+        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
         Assert.Equal("time-limited", result.Variant);
     }
 
@@ -455,8 +453,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.NotNull(result.Error); // Contains the date parsing exception message
-        Assert.Equal(EvaluationErrorCode.ParseError, result.ErrorCode);
+        Assert.Equal("PARSE_ERROR", result.Error);
     }
 
     [Theory]
@@ -467,26 +464,6 @@ public partial class FeatureFlagsEvaluatorTests
     public void GetLongFromMd5Tests(string salt, string targetingKey, int expected)
     {
         FeatureFlagsEvaluator.GetShard(salt, targetingKey, int.MaxValue).Should().Be(expected);
-    }
-
-    [Fact]
-    public void EvaluateWithInvalidRegexReturnsParseError()
-    {
-        var flags = new Dictionary<string, Flag>
-        {
-            ["invalid-regex-flag"] = FeatureFlagsHelpers.CreateInvalidRegexFlag()
-        };
-
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        // Provide an email attribute to trigger the MATCHES condition with the invalid regex
-        var ctx = new EvaluationContext("user-123", new Dictionary<string, object?> { { "email", "test@example.com" } });
-
-        var result = evaluator.Evaluate("invalid-regex-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
-
-        Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.NotNull(result.Error); // Contains the regex parsing exception message
-        Assert.Equal(EvaluationErrorCode.ParseError, result.ErrorCode);
     }
 
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)

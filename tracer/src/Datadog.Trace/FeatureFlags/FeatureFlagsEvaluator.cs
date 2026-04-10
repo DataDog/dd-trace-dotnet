@@ -58,8 +58,11 @@ namespace Datadog.Trace.FeatureFlags
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
-                        error: "No config loaded",
-                        errorCode: EvaluationErrorCode.ProviderNotReady);
+                        error: "PROVIDER_NOT_READY",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "PROVIDER_NOT_READY"
+                        });
                 }
 
                 if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag) || flag is null)
@@ -68,8 +71,11 @@ namespace Datadog.Trace.FeatureFlags
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
-                        error: "Flag not found",
-                        errorCode: EvaluationErrorCode.FlagNotFound);
+                        error: "FLAG_NOT_FOUND",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "FLAG_NOT_FOUND"
+                        });
                 }
 
                 if (flag.Enabled != true)
@@ -86,8 +92,11 @@ namespace Datadog.Trace.FeatureFlags
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
-                        error: "Type mismatch",
-                        errorCode: EvaluationErrorCode.TypeMismatch);
+                        error: "TYPE_MISMATCH",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "TYPE_MISMATCH"
+                        });
                 }
 
                 if (flag.Allocations is null or { Count: 0 })
@@ -108,9 +117,9 @@ namespace Datadog.Trace.FeatureFlags
                         continue;
                     }
 
-                    // Track whether rules were matched for this allocation
-                    var hasRules = allocation.Rules is { Count: > 0 };
-                    if (hasRules)
+                    // Track whether this allocation has targeting rules
+                    var hadRules = allocation.Rules is { Count: > 0 };
+                    if (hadRules)
                     {
                         if (!EvaluateRules(allocation.Rules!, context))
                         {
@@ -127,9 +136,9 @@ namespace Datadog.Trace.FeatureFlags
                                 throw new FormatException($"Empty variation key in allocation {allocation.Key}");
                             }
 
-                            var hasShards = split.Shards is { Count: > 0 };
                             var allShardsMatch = true;
-                            if (hasShards)
+                            var hadShards = split.Shards is { Count: > 0 };
+                            if (hadShards)
                             {
                                 foreach (var shard in split.Shards!)
                                 {
@@ -143,25 +152,15 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                // Determine the reason based on evaluation path:
-                                // - Static: no rules AND no shards (direct assignment to everyone)
-                                // - TargetingMatch: rules were evaluated and matched
-                                // - Split: percentage-based shards were used
-                                EvaluationReason reason;
-                                if (hasShards)
-                                {
-                                    reason = EvaluationReason.Split;
-                                }
-                                else if (hasRules)
-                                {
-                                    reason = EvaluationReason.TargetingMatch;
-                                }
-                                else
-                                {
-                                    reason = EvaluationReason.Static;
-                                }
+                                // Determine reason based on how the flag was resolved:
+                                // - TargetingMatch: Allocation had targeting rules that matched
+                                // - Split: No rules, but resolved via percentage split (shards)
+                                // - Static: No rules, no shards - simple static value
+                                var reason = hadRules ? EvaluationReason.TargetingMatch
+                                           : hadShards ? EvaluationReason.Split
+                                           : EvaluationReason.Static;
 
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, now, context, reason);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, reason, now, context);
                             }
                         }
                     }
@@ -179,8 +178,12 @@ namespace Datadog.Trace.FeatureFlags
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
-                    error: ex.Message,
-                    errorCode: EvaluationErrorCode.ParseError);
+                    error: "PARSE_ERROR",
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "PARSE_ERROR",
+                        ["message"] = ex.Message
+                    });
             }
             catch (MissingTargetingKeyException)
             {
@@ -188,8 +191,11 @@ namespace Datadog.Trace.FeatureFlags
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
-                    error: "Targeting key missing",
-                    errorCode: EvaluationErrorCode.TargetingKeyMissing);
+                    error: "TARGETING_KEY_MISSING",
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "TARGETING_KEY_MISSING"
+                    });
             }
             catch (Exception ex)
             {
@@ -198,7 +204,11 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: ex.Message,
-                    errorCode: EvaluationErrorCode.General);
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "GENERAL",
+                        ["message"] = ex.Message
+                    });
             }
         }
 
@@ -617,9 +627,9 @@ namespace Datadog.Trace.FeatureFlags
             Flag flag,
             string variationKey,
             Allocation allocation,
+            EvaluationReason reason,
             DateTime evalTime,
-            EvaluationContext? context,
-            EvaluationReason reason)
+            EvaluationContext? context)
         {
             if (StringUtil.IsNullOrEmpty(flag.Key))
             {
@@ -664,7 +674,11 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: error,
-                    errorCode: EvaluationErrorCode.ParseError);
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "PARSE_ERROR",
+                        ["message"] = error
+                    });
             }
         }
 

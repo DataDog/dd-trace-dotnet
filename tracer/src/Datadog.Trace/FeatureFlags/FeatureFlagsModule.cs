@@ -67,12 +67,7 @@ namespace Datadog.Trace.FeatureFlags
             if (evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: "No config loaded",
-                    errorCode: EvaluationErrorCode.ProviderNotReady);
+                return new Evaluation(flagKey, null, EvaluationReason.Error, null, "PROVIDER_NOT_READY");
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
@@ -92,8 +87,7 @@ namespace Datadog.Trace.FeatureFlags
                 }
                 else
                 {
-                    // All configs were removed - reset evaluator to trigger PROVIDER_NOT_READY
-                    Log.Debug("FeatureFlagsModule::UpdateRemoteConfig -> All configs removed, resetting evaluator");
+                    // RC reset: clear evaluator so Evaluate() returns PROVIDER_NOT_READY
                     Interlocked.Exchange(ref _evaluator, null);
                 }
 
