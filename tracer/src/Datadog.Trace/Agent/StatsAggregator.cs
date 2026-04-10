@@ -165,6 +165,7 @@ namespace Datadog.Trace.Agent
             return TraceKeepState.Keep; // keep
         }
 
+        [TestingAndPrivateOnly]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal SpanCollection NormalizeTrace(in SpanCollection trace)
         {
@@ -179,6 +180,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        [TestingAndPrivateOnly]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool ShouldFilterTrace(in SpanCollection trace)
         {
@@ -203,6 +205,7 @@ namespace Datadog.Trace.Agent
             return false;
         }
 
+        [TestingAndPrivateOnly]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool ShouldKeepTrace(in SpanCollection trace)
         {
@@ -224,6 +227,7 @@ namespace Datadog.Trace.Agent
                 || _analyticsEventSampler.Sample(in trace);
         }
 
+        [TestingAndPrivateOnly]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal SpanCollection ObfuscateTrace(in SpanCollection trace)
         {
