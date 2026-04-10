@@ -440,6 +440,10 @@ internal static class RaspModule
                 var contentType = content.Headers?.ContentType?.MediaType;
                 if (contentType is "application/json")
                 {
+                    // This attempts to read the content length from the Content-Length header
+                    // if provided. That tells us if the content is too large
+                    // before we do anything expensive, and also ensures that we can safely 
+                    // load the data into the buffer (so that it cab be re-read later)
                     var len = content.Headers?.ContentLength ?? 0;
                     if (len == 0 || len > bodySizeLimit)
                     {

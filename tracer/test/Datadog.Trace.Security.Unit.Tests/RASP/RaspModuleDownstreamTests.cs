@@ -194,22 +194,17 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
     }
 
-    /// <summary>
-    /// When a chunked response body exceeds the size limit, LoadIntoBufferAsync throws
-    /// because it is called with bodySizeLimit as the maxBufferSize. The exception is caught
-    /// and the body is not parsed — this is correct behavior.
-    /// </summary>
-    [Fact]
-    public async Task AddBody_ChunkedJsonExceedingLimit_SkipsBody()
+    [Theory]
+    [InlineData(500, 1_000L)
+    [InlineData(1_000, 1_000L)
+    [InlineData(10_000, 1_000L)
+    public async Task AddBody_ChunkedEncoding_SkipsBody(sizeInBytes int, long bodySizeLimit, )
     {
-        const long bodySizeLimit = 1_000L;
-        var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: 10_000, "application/json");
+        var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: sizeInBytes, "application/json");
         var wafArgs = new Dictionary<string, object>();
 
         await RaspModule.AddBody(chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit);
 
-        // LoadIntoBufferAsync throws when content exceeds bodySizeLimit; AddBody catches and logs,
-        // so the body must not reach the WAF.
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamResponseBody);
     }
 

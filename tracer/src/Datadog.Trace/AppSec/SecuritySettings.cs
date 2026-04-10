@@ -298,7 +298,7 @@ namespace Datadog.Trace.AppSec
         public int ApiSecurityMaxDownstreamRequestBodyAnalysis { get; }
 
         /// <summary>
-        /// Gets the max size of the request body for being parsed.
+        /// Gets the max size of the request body in bytes for being parsed.
         /// </summary>
         public int AppSecBodyParsingSizeLimit { get; }
 
