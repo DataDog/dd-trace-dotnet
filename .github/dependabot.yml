@@ -103,7 +103,7 @@ updates:
       default-days: 2
 
   # Docker images used in smoke tests - Dependabot updates pinned digests
-  - package-ecosystem: "docker"
+  - package-ecosystem: "docker-compose"
     directory: "/tracer/build/_build/SmokeTests"
     schedule:
       interval: "weekly"
