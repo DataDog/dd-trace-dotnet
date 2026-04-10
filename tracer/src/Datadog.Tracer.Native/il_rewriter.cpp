@@ -7,6 +7,7 @@
 #include "il_rewriter.h"
 
 #include <algorithm>
+#include <memory>
 
 #undef IfFailRet
 #define IfFailRet(EXPR)                                                                                                \
@@ -831,7 +832,7 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
     // other clauses whose try or handler region encloses this clause's try region.
     // Per ECMA-335 II.19, nesting includes a clause's protected block being inside
     // another clause's protected block OR handler block.
-    auto* depth = new unsigned[nEH]();
+    auto depth = std::make_unique<unsigned[]>(nEH);  // value-initialized to 0
 
     for (unsigned i = 0; i < nEH; i++)
     {
@@ -865,15 +866,15 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
     // Sort by (depth descending, try offset ascending). This is a total order,
     // so it satisfies strict weak ordering required by std::sort. Deeper-nested
     // clauses sort first, satisfying the ECMA-335 requirement.
-    auto* indices = new unsigned[nEH];
+    auto indices = std::make_unique<unsigned[]>(nEH);
     for (unsigned i = 0; i < nEH; i++) indices[i] = i;
 
-    std::sort(indices, indices + nEH, [&](unsigned a, unsigned b) {
+    std::sort(indices.get(), indices.get() + nEH, [&](unsigned a, unsigned b) {
         if (depth[a] != depth[b]) return depth[a] > depth[b];
         return pEH[a].m_pTryBegin->m_offset < pEH[b].m_pTryBegin->m_offset;
     });
 
-    auto* sorted = new EHClause[nEH];
+    auto sorted = std::make_unique<EHClause[]>(nEH);
     for (unsigned i = 0; i < nEH; i++)
     {
         sorted[i] = pEH[indices[i]];
@@ -882,8 +883,4 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
     {
         pEH[i] = sorted[i];
     }
-
-    delete[] sorted;
-    delete[] indices;
-    delete[] depth;
 }
