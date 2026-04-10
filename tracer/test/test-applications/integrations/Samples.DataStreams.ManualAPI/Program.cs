@@ -28,6 +28,7 @@ public class Program
         await Task.Delay(millisecondsDelay: 100);
 
         Console.WriteLine("Sending one message to the queue...");
+        Datadog.Trace.DataStreams.TrackTransaction(scope.Span, "my-transaction-id", "send-checkpoint");
         var sb = new StringBuilder();
         var injector = new SpanContextInjector();
         injector.InjectIncludingDsm(sb, (b, k, v) => b.Append($"{k}:{v};"), scope.Span.Context, "ConcurrentQueue", nameof(_queue));
