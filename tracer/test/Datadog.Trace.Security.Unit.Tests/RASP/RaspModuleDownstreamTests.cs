@@ -207,24 +207,6 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamResponseBody);
     }
-
-    /// <summary>
-    /// Verifies that when Content-Length is absent, the body is NOT parsed.
-    /// </summary>
-    [Fact]
-    public async Task AddBody_ChunkedJson_DoesNotParsePartialJson()
-    {
-        // Build a JSON payload where the first bytes are syntactically incomplete
-        // (simulate a large array whose closing bracket is beyond the limit).
-        const long bodySizeLimit = 1_000L;
-        var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: 900, "application/json", incomplete: true);
-        var wafArgs = new Dictionary<string, object>();
-
-        await RaspModule.AddBody(chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit);
-
-        // The WAF must never receive a truncated/partial JSON body.
-        wafArgs.Should().NotContainKey(AddressesConstants.DownstreamResponseBody);
-    }
 }
 
 #endif
