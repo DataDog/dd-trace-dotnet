@@ -197,7 +197,7 @@ namespace Datadog.Trace.Agent
             if (localRoot is not null && trace.ContainsSpanId(localRoot.SpanId, trace.Count - 1))
             {
                 // localRoot is in the trace chunk, so we can apply the filter directly
-                return filter.ShouldKeepTrace(localRoot);
+                return !filter.ShouldKeepTrace(localRoot);
             }
 
             // local root isn't in the trace chunk (can happen with partial flushing)
