@@ -111,7 +111,7 @@ publish:
 
 download-single-step-artifacts:
   stage: package
-  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  image: registry.ddbuild.io/images/base/gbi-ubuntu_2404
   timeout: 45m
   tags: [ "arch:amd64" ]
   needs:
@@ -158,7 +158,7 @@ deploy_to_reliability_env:
 
 download-serverless-artifacts:
   stage: package
-  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  image: registry.ddbuild.io/images/base/gbi-ubuntu_2404
   tags: [ "arch:amd64" ]
   needs: []
   rules:
