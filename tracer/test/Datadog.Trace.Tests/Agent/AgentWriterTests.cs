@@ -601,10 +601,10 @@ namespace Datadog.Trace.Tests.Agent
                 AddedSpans.Add(spans);
             }
 
-            public TraceDropReason? ProcessTrace(ref SpanCollection spans)
+            public TraceKeepState ProcessTrace(ref SpanCollection spans)
             {
                 spans = processTrace(spans);
-                return shouldKeepTrace ? null : TraceDropReason.Unsampled;
+                return shouldKeepTrace ? TraceKeepState.Keep : TraceKeepState.DropUnsampled;
             }
 
             public Task DisposeAsync() => Task.CompletedTask;

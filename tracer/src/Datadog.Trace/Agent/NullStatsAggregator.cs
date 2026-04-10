@@ -21,7 +21,7 @@ namespace Datadog.Trace.Agent
         {
         }
 
-        public TraceDropReason? ProcessTrace(ref SpanCollection spans) => null;
+        public TraceKeepState ProcessTrace(ref SpanCollection spans) => TraceKeepState.Keep;
 
         public Task DisposeAsync()
         {

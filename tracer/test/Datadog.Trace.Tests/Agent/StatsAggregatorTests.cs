@@ -512,7 +512,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var dropReason = aggregator.ProcessTrace(ref traceChunk);
-            dropReason.Should().BeNull("sampled trace should be kept");
+            dropReason.Should().Be(TraceKeepState.Keep);
         }
 
         [Fact]
@@ -529,7 +529,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var dropReason = aggregator.ProcessTrace(ref traceChunk);
-            dropReason.Should().Be(TraceDropReason.Unsampled);
+            dropReason.Should().Be(TraceKeepState.DropUnsampled);
         }
 
         [Fact]

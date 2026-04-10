@@ -46,8 +46,8 @@ namespace Datadog.Trace.Agent
         /// trace should be kept
         /// </summary>
         /// <param name="spans">The spans chunk to process</param>
-        /// <returns>An optional trace drop reason, or <c>null</c> if the trace should _not_ be dropped</returns>
-        TraceDropReason? ProcessTrace(ref SpanCollection spans);
+        /// <returns>The keep state of the chunk after processing</returns>
+        TraceKeepState ProcessTrace(ref SpanCollection spans);
 
         Task DisposeAsync();
 

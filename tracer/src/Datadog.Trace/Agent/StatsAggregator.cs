@@ -147,22 +147,22 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public TraceDropReason? ProcessTrace(ref SpanCollection spans)
+        public TraceKeepState ProcessTrace(ref SpanCollection spans)
         {
             // Follow the same processing steps as the Go tracer
             spans = NormalizeTrace(in spans);
             if (ShouldFilterTrace(in spans))
             {
-                return TraceDropReason.TraceFilter;
+                return TraceKeepState.TraceFilter;
             }
 
             spans = ObfuscateTrace(in spans);
             if (!ShouldKeepTrace(in spans))
             {
-                return TraceDropReason.Unsampled;
+                return TraceKeepState.DropUnsampled;
             }
 
-            return null; // keep
+            return TraceKeepState.Keep; // keep
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

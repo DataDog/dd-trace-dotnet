@@ -431,35 +431,46 @@ namespace Datadog.Trace.Agent
             if (CanComputeStats)
             {
                 var dropReason = _statsAggregator.ProcessTrace(ref chunk);
-                _statsAggregator.AddRange(in chunk);
-                List<Span>? singleSpanSamplingSpans = null; // TODO maybe we can store this from above?
 
-                foreach (var span in chunk)
+                // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
+                // and we can just stop before we go any further.
+                if (dropReason == TraceKeepState.TraceFilter)
                 {
-                    if (span.GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
-                    {
-                        singleSpanSamplingSpans ??= new();
-                        singleSpanSamplingSpans.Add(span);
-                    }
+                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.TraceFilter);
+                    // These aren't p0 traces/spans, so presumably we _don't_ increment _droppedP0Traces/_droppedP0Spans
+                    TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.TraceFilter, chunk.Count);
+                    return;
                 }
 
-                if (dropReason is null)
+                // Trace wasn't filtered
+                _statsAggregator.AddRange(in chunk);
+
+                if (dropReason == TraceKeepState.Keep)
                 {
                     TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.P0Keep);
                     TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.P0Keep, chunk.Count);
                 }
                 else
                 {
+                    List<Span>? singleSpanSamplingSpans = null; // TODO maybe we can store this from above?
+
+                    foreach (var span in chunk)
+                    {
+                        if (span.GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
+                        {
+                            singleSpanSamplingSpans ??= new();
+                            singleSpanSamplingSpans.Add(span);
+                        }
+                    }
+
                     // If stats computation determined that we can drop the trace,
                     // skip all other processing
-                    var reasonTag = dropReason.Value.ToTagReason();
-
-                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(reasonTag);
+                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.P0Drop);
                     if (singleSpanSamplingSpans is null)
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
                         Interlocked.Add(ref _droppedP0Spans, chunk.Count);
-                        TelemetryFactory.Metrics.RecordCountSpanDropped(reasonTag, chunk.Count);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, chunk.Count);
                         return;
                     }
                     else
@@ -471,7 +482,7 @@ namespace Datadog.Trace.Agent
                         var spansDropped = chunk.Count - singleSpanSamplingSpans.Count;
                         Interlocked.Add(ref _droppedP0Spans, spansDropped);
                         chunk = new SpanCollection(singleSpanSamplingSpans.ToArray(), singleSpanSamplingSpans.Count);
-                        TelemetryFactory.Metrics.RecordCountSpanDropped(reasonTag, spansDropped);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, spansDropped);
                         TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.SingleSpanSampling, chunk.Count);
                         TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.SingleSpanIngestion);
                     }
