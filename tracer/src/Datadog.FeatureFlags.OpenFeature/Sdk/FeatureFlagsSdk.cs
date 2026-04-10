@@ -85,43 +85,29 @@ internal static class FeatureFlagsSdk
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
             (T)value,
-            ToErrorType(evaluation.ErrorCode),
-            ToOpenFeatureReason(evaluation.Reason),
+            ToErrorType(evaluation.Reason, evaluation.Error),
+            evaluation.Reason.ToString(),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata));
         return res;
     }
 
-    private static string ToOpenFeatureReason(EvaluationReason reason) => reason switch
+    private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason, string? errorMessage)
     {
-        EvaluationReason.TargetingMatch => Reason.TargetingMatch,
-        EvaluationReason.Split => Reason.Split,
-        EvaluationReason.Disabled => Reason.Disabled,
-        EvaluationReason.Default => Reason.Default,
-        EvaluationReason.Static => Reason.Static,
-        EvaluationReason.Cached => Reason.Cached,
-        EvaluationReason.Error => Reason.Error,
-        _ => Reason.Unknown,
-    };
-
-    /// <summary>
-    /// Converts our internal EvaluationErrorCode enum to OpenFeature's ErrorType.
-    /// Using an enum (value type) ensures reliable duck-typing across assemblies,
-    /// unlike reference types (string, IDictionary) which may return null through duck-typing proxies.
-    /// </summary>
-    private static ErrorType ToErrorType(EvaluationErrorCode errorCode) => errorCode switch
-    {
-        EvaluationErrorCode.FlagNotFound => ErrorType.FlagNotFound,
-        EvaluationErrorCode.InvalidContext => ErrorType.InvalidContext,
-        EvaluationErrorCode.ParseError => ErrorType.ParseError,
-        EvaluationErrorCode.ProviderFatal => ErrorType.ProviderFatal,
-        EvaluationErrorCode.ProviderNotReady => ErrorType.ProviderNotReady,
-        EvaluationErrorCode.TargetingKeyMissing => ErrorType.TargetingKeyMissing,
-        EvaluationErrorCode.TypeMismatch => ErrorType.TypeMismatch,
-        EvaluationErrorCode.General => ErrorType.General,
-        _ => ErrorType.None,
-    };
+        return errorMessage switch
+        {
+            "FLAG_NOT_FOUND" => ErrorType.FlagNotFound,
+            "INVALID_CONTEXT" => ErrorType.InvalidContext,
+            "PARSE_ERROR" => ErrorType.ParseError,
+            "PROVIDER_FATAL" => ErrorType.ProviderFatal,
+            "PROVIDER_NOT_READY" => ErrorType.ProviderNotReady,
+            "TARGETING_KEY_MISSING" => ErrorType.TargetingKeyMissing,
+            "TYPE_MISMATCH" => ErrorType.TypeMismatch,
+            "GENERAL" => ErrorType.General,
+            _ => ErrorType.None,
+        };
+    }
 
     private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
     {

@@ -8,6 +8,7 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 namespace Datadog.FeatureFlags.OpenFeature;
@@ -61,24 +62,24 @@ internal sealed class FlagEvalMetrics : IDisposable
         string? errorType,
         string? allocationKey)
     {
-        var tags = new List<KeyValuePair<string, object?>>
-        {
+        var tags = new TagList(
+        [
             new(TagFlagKey, flagKey),
             new(TagVariant, variant ?? string.Empty),
             new(TagReason, reason)
-        };
+        ]);
 
         if (!string.IsNullOrEmpty(errorType))
         {
-            tags.Add(new(TagErrorType, errorType));
+            tags.Add(TagErrorType, errorType);
         }
 
         if (!string.IsNullOrEmpty(allocationKey))
         {
-            tags.Add(new(TagAllocationKey, allocationKey));
+            tags.Add(TagAllocationKey, allocationKey);
         }
 
-        _counter.Add(1, tags.ToArray());
+        _counter.Add(1, tags);
     }
 
     /// <inheritdoc/>

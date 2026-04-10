@@ -34,9 +34,6 @@ public partial interface IEvaluation
     /// <summary> Gets the evaluation error </summary>
     string? Error { get; }
 
-    /// <summary> Gets the evaluation error code (enum for duck-typing reliability) </summary>
-    EvaluationErrorCode ErrorCode { get; }
-
     /// <summary> Gets the evaluation metadata </summary>
     IDictionary<string, string>? FlagMetadata { get; }
 }

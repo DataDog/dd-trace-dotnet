@@ -62,11 +62,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         }
 
         // Extract allocation key from metadata if present
-        string? allocationKey = null;
-        if (details.FlagMetadata != null)
-        {
-            allocationKey = details.FlagMetadata.GetString(FlagEvalMetrics.MetadataAllocationKey);
-        }
+        var allocationKey = details.FlagMetadata?.GetString(FlagEvalMetrics.MetadataAllocationKey);
 
         _metrics.Record(flagKey, variant, reason, errorType, allocationKey);
 
@@ -95,8 +91,22 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         };
     }
 
-    // Converts OpenFeature UPPER_SNAKE_CASE reason to lower_snake_case for metrics
-    // OpenFeature reasons: STATIC, DEFAULT, TARGETING_MATCH, SPLIT, DISABLED, ERROR, CACHED, STALE, UNKNOWN
-    private static string ReasonToString(string reason) => reason.ToLowerInvariant();
+    // Converts reason to lower_snake_case for metrics
+    // Handles both OpenFeature UPPER_SNAKE_CASE (e.g., "TARGETING_MATCH") and
+    // C# enum PascalCase (e.g., "TargetingMatch") formats
+    // Use cached strings to avoid allocation from ToLowerInvariant()
+    private static string ReasonToString(string reason) => reason switch
+    {
+        "STATIC" or "Static" => "static",
+        "DEFAULT" or "Default" => "default",
+        "TARGETING_MATCH" or "TargetingMatch" => "targeting_match",
+        "SPLIT" or "Split" => "split",
+        "DISABLED" or "Disabled" => "disabled",
+        "ERROR" or "Error" => "error",
+        "CACHED" or "Cached" => "cached",
+        "STALE" or "Stale" => "stale",
+        "UNKNOWN" or "Unknown" => "unknown",
+        _ => reason.ToLowerInvariant()
+    };
 }
 #endif
