@@ -746,7 +746,6 @@ check-slo-breaches:
     - profiler_cpu-win
     - profiler_cpu_timer_create-win
   when: always
-  allow_failure: true # Allowed to fail since we don't want it to block releases yet
   variables:
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
     ARTIFACTS_DIR: "reports"
