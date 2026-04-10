@@ -6,14 +6,13 @@
 #nullable enable
 
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> StreamWriterAspect class aspects </summary>
-[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", InstrumentationCategory.Iast, AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class StreamWriterAspect

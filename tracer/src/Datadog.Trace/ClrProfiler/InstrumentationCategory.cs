@@ -15,8 +15,5 @@ internal enum InstrumentationCategory : uint
 
     Tracing = 1,
     AppSec = 2,
-    Iast = 4,
-    Rasp = 8,
-
-    IastRasp = Iast | Rasp,
+    Iast = 4
 }

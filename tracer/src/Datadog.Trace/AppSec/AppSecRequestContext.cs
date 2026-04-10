@@ -19,17 +19,14 @@ namespace Datadog.Trace.AppSec;
 internal sealed partial class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
-    private const string ExploitStackKey = "exploit";
     private const string VulnerabilityStackKey = "vulnerability";
     private const string AppsecKey = "appsec";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecRequestContext>();
     private readonly object _sync = new();
-    private readonly RaspMetricsHelper? _raspMetricsHelper = Security.Instance.RaspEnabled ? new RaspMetricsHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
     private int _wafTimeout;
     private int? _wafError;
-    private int? _wafRaspError;
-    private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
+    private Dictionary<string, List<Dictionary<string, object>>>? _stackTraces;
 
     internal void CloseWebSpan(Span span)
     {
@@ -60,21 +57,14 @@ internal sealed partial class AppSecRequestContext
                 span.Tags.SetMetric(Metrics.WafError, _wafError);
             }
 
-            if (_wafRaspError != null)
+            if (_stackTraces?.Count > 0)
             {
-                span.Tags.SetMetric(Metrics.RaspWafError, _wafRaspError);
+                span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_stackTraces));
             }
-
-            if (_raspStackTraces?.Count > 0)
-            {
-                span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
-            }
-
-            _raspMetricsHelper?.GenerateRaspSpanMetricTags(span.Tags);
         }
     }
 
-    internal void CheckWAFError(IResult result, bool isRasp)
+    internal void CheckWAFError(IResult result)
     {
         if (result.Timeout)
         {
@@ -82,25 +72,9 @@ internal sealed partial class AppSecRequestContext
         }
 
         var code = (int)result.ReturnCode;
-        int? existingValue = isRasp ? _wafRaspError : _wafError;
-        if (code < 0 && (existingValue == null || existingValue < code))
+        if (code < 0 && (_wafError == null || _wafError < code))
         {
-            if (isRasp)
-            {
-                _wafRaspError = code;
-            }
-            else
-            {
-                _wafError = code;
-            }
-        }
-    }
-
-    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
-    {
-        lock (_sync)
-        {
-            _raspMetricsHelper?.AddRaspSpanMetrics(duration, durationWithBindings, timeout);
+            _wafError = code;
         }
     }
 
@@ -112,11 +86,6 @@ internal sealed partial class AppSecRequestContext
         }
     }
 
-    internal void AddRaspStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
-    {
-        AddStackTrace(ExploitStackKey, stackTrace, maxStackTraces);
-    }
-
     internal void AddVulnerabilityStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
     {
         AddStackTrace(VulnerabilityStackKey, stackTrace, maxStackTraces);
@@ -126,18 +95,18 @@ internal sealed partial class AppSecRequestContext
     {
         lock (_sync)
         {
-            _raspStackTraces ??= new();
+            _stackTraces ??= new();
 
-            if (!_raspStackTraces.TryGetValue(stackCategory, out var value))
+            if (!_stackTraces.TryGetValue(stackCategory, out var value))
             {
-                _raspStackTraces.Add(stackCategory, new());
+                _stackTraces.Add(stackCategory, new());
             }
             else if (maxStackTraces > 0 && value.Count >= maxStackTraces)
             {
                 return;
             }
 
-            _raspStackTraces[stackCategory].Add(stackTrace);
+            _stackTraces[stackCategory].Add(stackTrace);
         }
     }
 }

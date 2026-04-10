@@ -14,7 +14,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
 /// <summary> NHibernate class aspect </summary>
-[AspectClass("NHibernate", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
+[AspectClass("NHibernate", InstrumentationCategory.Iast, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class ISessionAspect

@@ -169,27 +169,13 @@ namespace Datadog.Trace.ClrProfiler
                         Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                         TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
-                        var raspEnabled = Security.Instance.Settings.RaspEnabled;
                         var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
 
-                        if (raspEnabled || iastEnabled)
+                        if (iastEnabled)
                         {
-                            InstrumentationCategory category = 0;
-                            if (iastEnabled)
-                            {
-                                Log.Debug("Enabling Iast call target category");
-                                category |= InstrumentationCategory.Iast;
-
-                                Iast.Iast.Instance.InitAnalyzers();
-                            }
-
-                            if (raspEnabled)
-                            {
-                                Log.Debug("Enabling Rasp");
-                                category |= InstrumentationCategory.Rasp;
-                            }
-
-                            EnableTracerInstrumentations(category);
+                            Log.Debug("Enabling Iast call target category");
+                            Iast.Iast.Instance.InitAnalyzers();
+                            EnableTracerInstrumentations(InstrumentationCategory.Iast);
                         }
                     }
                     catch (Exception ex)
@@ -585,32 +571,19 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void EnableCallSiteInstrumentations(InstrumentationCategory categories, Stopwatch sw)
         {
-            // Since we have no RASP especific instrumentations for now, we will only filter callsite aspects if RASP is
-            // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
-
             var isIast = categories.HasFlag(InstrumentationCategory.Iast);
-            var raspEnabled = categories.HasFlag(InstrumentationCategory.Rasp);
 
-            if (isIast || raspEnabled)
+            if (isIast)
             {
-                var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
-                Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
+                Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
 
                 var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(categories, ConfigTelemetryData.TargetFramework);
-                Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
-
-                if (isIast)
-                {
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
-                }
+                Log.Information<int>("IAST: {Aspects} Callsite Dataflow Aspects added to the profiler.", aspects);
+                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
 
                 if (sw != null)
                 {
-                    if (isIast)
-                    {
-                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Iast, sw.ElapsedMilliseconds);
-                    }
-
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Iast, sw.ElapsedMilliseconds);
                     sw.Restart();
                 }
             }

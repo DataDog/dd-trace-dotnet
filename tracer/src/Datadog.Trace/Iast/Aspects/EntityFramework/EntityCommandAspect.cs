@@ -15,7 +15,7 @@ namespace Datadog.Trace.Iast.Aspects;
 #nullable enable
 
 /// <summary> EntityCommandAspect class aspect </summary>
-[AspectClass("EntityFramework", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
+[AspectClass("EntityFramework", InstrumentationCategory.Iast, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class EntityCommandAspect
