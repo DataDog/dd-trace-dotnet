@@ -21,6 +21,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -172,7 +173,7 @@ namespace Datadog.Trace.PlatformHelpers
             httpContext.Items[HttpContextTrackingKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
 #endif
 
-            if (EnvironmentHelpers.IsAzureFunctions())
+            if (AzureInfo.Instance.IsAzureFunction)
             {
                 // Store scope in HttpContext.Items for Azure Functions middleware to retrieve
                 httpContext.Items[HttpContextActiveScopeKey] = scope;
