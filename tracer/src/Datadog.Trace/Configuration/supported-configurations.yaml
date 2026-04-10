@@ -524,6 +524,15 @@ supportedConfigurations:
       Configuration key for enabling legacy binary headers in Data Streams Monitoring.
       false by default if DSM is in default state, true otherwise
       <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+  DD_DATA_STREAMS_TRANSACTION_EXTRACTORS:
+  - implementation: A
+    type: array
+    default: null
+    product: DataStreamsMonitoring
+    const_name: TransactionExtractors
+    documentation: |-
+      Configuration key for transaction extractors in Data Streams Monitoring.
+      <see cref="Datadog.Trace.Configuration.TracerSettings.DataStreamsTransactionExtractors"/>
   DD_DBM_PROPAGATION_MODE:
   - implementation: A
     type: string
