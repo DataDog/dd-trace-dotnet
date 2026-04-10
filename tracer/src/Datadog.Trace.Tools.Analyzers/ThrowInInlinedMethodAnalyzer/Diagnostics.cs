@@ -16,7 +16,7 @@ public static class Diagnostics
     /// <summary>
     /// The diagnostic ID for throw statements in AggressiveInlining methods
     /// </summary>
-    public const string DiagnosticId = "DDALLOC007";
+    public const string DiagnosticId = "DD0011";
 
 #pragma warning disable RS2008 // Enable analyzer release tracking
     internal static readonly DiagnosticDescriptor ThrowInAggressiveInliningRule = new(
