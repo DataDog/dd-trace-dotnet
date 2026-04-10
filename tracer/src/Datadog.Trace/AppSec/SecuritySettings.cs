@@ -146,10 +146,6 @@ namespace Datadog.Trace.AppSec
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
 
-            // For now, RASP is enabled by default.
-            RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
-                                .AsBool(true) && AppsecEnabled;
-
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
                                       .AsBool(true);
 
@@ -210,10 +206,6 @@ namespace Datadog.Trace.AppSec
         public bool CanBeToggled { get; }
 
         public string? CustomIpHeader { get; }
-
-        // RASP related variables
-
-        public bool RaspEnabled { get; }
 
         public bool StackTraceEnabled { get; }
 

@@ -96,7 +96,6 @@ namespace Datadog.Trace.ClrProfiler
 
                 TracingEnabled = mutableSettings.TraceEnabled,
                 IastEnabled = Iast.Iast.Instance.Settings.Enabled,
-                RaspEnabled = Security.Instance.Settings.RaspEnabled,
                 DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
                 RuntimeId = RuntimeId.Get(),
                 Environment = mutableSettings.Environment,

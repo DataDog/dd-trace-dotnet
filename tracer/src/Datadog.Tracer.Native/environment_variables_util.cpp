@@ -53,16 +53,6 @@ bool IsAsmSettingEnabled()
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::asm_enabled), false);
 }
 
-bool IsRaspSettingEnabled()
-{
-    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::rasp_enabled), true);
-}
-
-bool IsRaspEnabled()
-{
-    return IsRaspSettingEnabled() && IsAsmSettingEnabled();
-}
-
 bool IsCallSiteManagedActivationEnabled()
 {
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::callsite_managed_activation_enabled), true);

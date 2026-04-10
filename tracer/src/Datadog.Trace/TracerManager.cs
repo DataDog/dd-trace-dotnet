@@ -671,9 +671,6 @@ namespace Datadog.Trace
             writer.WritePropertyName("appsec_libddwaf_version");
             writer.WriteValue(security.DdlibWafVersion ?? "(none)");
 
-            writer.WritePropertyName("dd_appsec_rasp_enabled");
-            writer.WriteValue(security.Settings.RaspEnabled);
-
             writer.WritePropertyName("dd_appsec_stack_trace_enabled");
             writer.WriteValue(security.Settings.StackTraceEnabled);
 

@@ -118,8 +118,6 @@ namespace Datadog.Trace.AppSec
 
         internal bool AppsecEnabled => _configurationState.AppsecEnabled;
 
-        internal bool RaspEnabled => _settings.RaspEnabled && AppsecEnabled;
-
         internal string? InitializationError { get; private set; }
 
         internal bool WafExportsErrorHappened => _libraryInitializationResult is { Status: LibraryInitializationResult.LoadStatus.ExportError };
@@ -522,11 +520,6 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _settings.NoCustomLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _settings.NoCustomLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _settings.NoCustomLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspCmd, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspCmd));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));

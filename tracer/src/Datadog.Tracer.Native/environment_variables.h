@@ -110,9 +110,6 @@ namespace environment
     // Enables the IAST.
     const shared::WSTRING iast_enabled = WStr("DD_IAST_ENABLED");
 
-    // Enables RASP.
-    const shared::WSTRING rasp_enabled = WStr("DD_APPSEC_RASP_ENABLED");
-
     // Enables ASM.
     const shared::WSTRING asm_enabled = WStr("DD_APPSEC_ENABLED");
 

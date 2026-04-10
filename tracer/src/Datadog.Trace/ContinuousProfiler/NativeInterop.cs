@@ -71,8 +71,6 @@ namespace Datadog.Trace.ContinuousProfiler
             [MarshalAs(UnmanagedType.I1)]
             public bool IastEnabled;
             [MarshalAs(UnmanagedType.I1)]
-            public bool RaspEnabled;
-            [MarshalAs(UnmanagedType.I1)]
             public bool DynamicInstrumentationEnabled;
 
             [MarshalAs(UnmanagedType.LPStr)]
