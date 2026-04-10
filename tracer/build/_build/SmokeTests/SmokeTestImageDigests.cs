@@ -114,7 +114,6 @@ public class SmokeTestImageDigests
                                      + "Add entries for these images to smoke-test-images.docker-compose.yml, and resolve their digests with:\n"
                                      + "  docker buildx imagetools inspect <image> --format '{{json .Manifest.Digest}}'";
                 Logger.Warning(message, serviceName, image);
-                result[image] = image;
                 continue;
             }
 
