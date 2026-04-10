@@ -871,7 +871,9 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
 
     std::sort(indices.get(), indices.get() + nEH, [&](unsigned a, unsigned b) {
         if (depth[a] != depth[b]) return depth[a] > depth[b];
-        return pEH[a].m_pTryBegin->m_offset < pEH[b].m_pTryBegin->m_offset;
+        if (pEH[a].m_pTryBegin->m_offset != pEH[b].m_pTryBegin->m_offset)
+            return pEH[a].m_pTryBegin->m_offset < pEH[b].m_pTryBegin->m_offset;
+        return a < b;
     });
 
     auto sorted = std::make_unique<EHClause[]>(nEH);
