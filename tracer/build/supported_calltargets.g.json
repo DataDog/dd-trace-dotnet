@@ -6660,6 +6660,32 @@
   {
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.DataStreams",
+    "TargetMethodName": "TrackTransaction",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Datadog.Trace.ISpan",
+      "System.String",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.DataStreams.DataStreamsTrackTransactionIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.ExtensionMethods.SpanExtensions",
     "TargetMethodName": "SetTraceSamplingPriority",
     "TargetReturnType": "System.Void",
