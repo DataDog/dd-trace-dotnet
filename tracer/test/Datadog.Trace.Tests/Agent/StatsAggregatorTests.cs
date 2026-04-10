@@ -1179,6 +1179,106 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
+        [Theory]
+        [InlineData(SpanKinds.Client)]
+        [InlineData(SpanKinds.Producer)]
+        public async Task PeerTagsHash_MatchesGoAgent_SingleTag(string spanKind)
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // peer.service:remote-service → hash 3430395298086625290
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, spanKind);
+            span.Tags.SetTag("peer.service", "remote-service");
+
+            var peerTagKeys = new List<string> { "peer.service" };
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_MultipleTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // db.instance:i-1234, db.system:postgres, peer.service:remote-service → hash 9894752672193411515
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            // Keys must be pre-sorted (matching agent behavior)
+            var peerTagKeys = new List<string> { "db.instance", "db.system", "peer.service" };
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(9894752672193411515UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_ConsumerMessagingTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // messaging.destination:topic-foo, messaging.system:kafka → hash 0xf5eeb51fbe7929b4
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            span.Tags.SetTag("messaging.destination", "topic-foo");
+            span.Tags.SetTag("messaging.system", "kafka");
+
+            var peerTagKeys = new List<string> { "db.instance", "db.system", "messaging.destination", "messaging.system" };
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(0xf5eeb51fbe7929b4UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_EmptyTagsSkipped()
+        {
+            // Same hash as single tag — empty db.instance and db.system values are skipped
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", string.Empty);
+            span.Tags.SetTag("db.system", string.Empty);
+
+            var peerTagKeys = new List<string> { "db.instance", "db.system", "peer.service" };
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_NoMatchingTags_ReturnsZero()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            // No peer tags set on the span
+
+            var peerTagKeys = new List<string> { "peer.service" };
+            var key = aggregator.BuildKey(span, peerTagKeys, out var utf8PeerTags);
+
+            key.PeerTagsHash.Should().Be(0UL);
+            utf8PeerTags.Should().BeEmpty();
+        }
+
         /// <summary>
         /// Creates a top-level span with a TraceContext (required by GetWeight).
         /// </summary>

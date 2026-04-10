@@ -304,7 +304,6 @@ namespace Datadog.Trace.Agent
                 // Hash should be generated as TAGNAME:TAGVALUE, and should be in sorted order (we sort ahead of time)
                 // peerTagKeys should already be in sorted order
                 // We serialize to the utf-8 bytes because we need to serialize them during sending anyway
-                // TODO: Verify we get the same results as the go code
                 utf8PeerTags = EmptyPeerTags;
                 peerTagsHash = 0;
                 foreach (var tagKey in peerTagKeys)
@@ -316,21 +315,24 @@ namespace Datadog.Trace.Agent
                     }
 
                     tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
+                    var bytes = EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey}:{tagValue}");
 
                     if (ReferenceEquals(utf8PeerTags, EmptyPeerTags))
                     {
                         // We're not setting the capacity here, because there's
                         // a _lot_ of potential peer tags, and _most_ of them won't apply
                         utf8PeerTags = new();
+                        // hash the bytes of the tag (starting from the initial hash)
+                        peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A);
                     }
                     else
                     {
                         // add the separator
                         peerTagsHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, peerTagsHash);
+                        // hash the bytes of the tag
+                        peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A, peerTagsHash);
                     }
 
-                    var bytes = EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey}:{tagValue}");
-                    peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A, peerTagsHash);
                     utf8PeerTags.Add(bytes);
                 }
             }
