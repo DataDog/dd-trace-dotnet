@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent
         private readonly int _batchInterval;
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
-        private readonly IStatsAggregator? _statsAggregator;
+        private readonly IStatsAggregator _statsAggregator;
 
         private readonly bool _apmTracingEnabled;
 
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Agent
 
         internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
         {
-            _statsAggregator = statsAggregator;
+            _statsAggregator = statsAggregator ?? new NullStatsAggregator();
 
             _api = api;
             _statsd = statsd;
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        public bool CanComputeStats => _apmTracingEnabled && _statsAggregator?.CanComputeStats == true;
+        public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
 
         public Task<bool> Ping() => _api.Ping();
 
@@ -207,10 +207,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Once all the spans have been processed, flush the stats
-            if (_statsAggregator != null)
-            {
-                await _statsAggregator.DisposeAsync().ConfigureAwait(false);
-            }
+            await _statsAggregator.DisposeAsync().ConfigureAwait(false);
 
             if (_api is IDisposable disposableApi)
             {
@@ -433,9 +430,9 @@ namespace Datadog.Trace.Agent
             var chunk = spans;
             if (CanComputeStats)
             {
-                chunk = _statsAggregator?.ProcessTrace(in chunk) ?? chunk;
-                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(in chunk) ?? true;
-                _statsAggregator?.AddRange(in chunk);
+                chunk = _statsAggregator.ProcessTrace(in chunk);
+                bool shouldSendTrace = _statsAggregator.ShouldKeepTrace(in chunk);
+                _statsAggregator.AddRange(in chunk);
                 var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
 
                 foreach (var span in chunk)
