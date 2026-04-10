@@ -126,6 +126,7 @@ download-single-step-artifacts:
       allow_failure: false
     - when: on_success # Artifacts come from Azure pipeline, but as we already depend on build, we already have a delayed start
   script:
+    - apt-get install --yes --no-install-recommends jq
     - .gitlab/download-single-step-artifacts.sh
     - cp tracer/build/artifacts/requirements.json artifacts/requirements.json
     - cp -r artifacts-out artifacts/windows
@@ -170,6 +171,7 @@ download-serverless-artifacts:
     - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
       start_in: 15 minutes
   script:
+    - apt-get install --yes --no-install-recommends jq
     - .gitlab/download-serverless-artifacts.sh
   artifacts:
     expire_in: 2 weeks
