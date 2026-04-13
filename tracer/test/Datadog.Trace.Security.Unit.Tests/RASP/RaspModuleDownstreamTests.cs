@@ -198,7 +198,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
     [InlineData(500, 1_000L)]
     [InlineData(1_000, 1_000L)]
     [InlineData(10_000, 1_000L)]
-    public async Task AddBody_ChunkedEncoding_SkipsBody(sizeInBytes int, long bodySizeLimit)
+    public async Task AddBody_ChunkedEncoding_SkipsBody(int sizeInBytes, long bodySizeLimit)
     {
         var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: sizeInBytes, "application/json");
         var wafArgs = new Dictionary<string, object>();
