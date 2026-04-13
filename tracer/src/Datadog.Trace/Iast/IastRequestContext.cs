@@ -15,7 +15,6 @@ using System.Web;
 using Microsoft.AspNetCore.Http;
 #endif
 using Datadog.Trace.AppSec;
-using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
@@ -30,7 +29,6 @@ internal sealed class IastRequestContext
     private TaintedObjects _taintedObjects = new();
     private bool _routedParametersAdded;
     private bool _querySourcesAdded;
-    private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
     private int _lastVulnerabilityStackId;
 
     private bool _routeVulnerabilityStatsDirty;
@@ -84,11 +82,6 @@ internal sealed class IastRequestContext
                         span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
                     }
                 }
-            }
-
-            if (_executedTelemetryHelper != null)
-            {
-                _executedTelemetryHelper.GenerateMetricTags(span.Tags, _taintedObjects.GetEstimatedSize());
             }
         }
         catch (Exception ex)
@@ -159,8 +152,6 @@ internal sealed class IastRequestContext
     {
         try
         {
-            _executedTelemetryHelper?.AddExecutedSource(IastSourceType.RequestBody);
-
             if (bodyExtracted is null)
             {
                 if (body is null)
@@ -242,7 +233,6 @@ internal sealed class IastRequestContext
     {
         if (!_routedParametersAdded)
         {
-            _executedTelemetryHelper?.AddExecutedSource(IastSourceType.RoutedParameterValue);
             if (routeData != null)
             {
                 foreach (var item in routeData)
@@ -279,19 +269,6 @@ internal sealed class IastRequestContext
     {
         if (!_querySourcesAdded)
         {
-            if (_executedTelemetryHelper is { } helper)
-            {
-                helper.AddExecutedSource(IastSourceType.RequestParameterName);
-                helper.AddExecutedSource(IastSourceType.RequestParameterValue);
-                helper.AddExecutedSource(IastSourceType.RequestHeaderName);
-                helper.AddExecutedSource(IastSourceType.RequestHeaderValue);
-                helper.AddExecutedSource(IastSourceType.CookieName);
-                helper.AddExecutedSource(IastSourceType.CookieValue);
-                helper.AddExecutedSource(IastSourceType.RequestPath);
-                helper.AddExecutedSource(IastSourceType.RequestQuery);
-                helper.AddExecutedSource(IastSourceType.RequestUri);
-            }
-
             var queryString = RequestDataHelper.GetQueryString(request);
 
             if (queryString != null)
@@ -368,18 +345,6 @@ internal sealed class IastRequestContext
 
         if (!_querySourcesAdded)
         {
-            if (_executedTelemetryHelper is { } helper)
-            {
-                helper.AddExecutedSource(IastSourceType.RequestParameterName);
-                helper.AddExecutedSource(IastSourceType.RequestParameterValue);
-                helper.AddExecutedSource(IastSourceType.RequestHeaderName);
-                helper.AddExecutedSource(IastSourceType.RequestHeaderValue);
-                helper.AddExecutedSource(IastSourceType.CookieName);
-                helper.AddExecutedSource(IastSourceType.CookieValue);
-                helper.AddExecutedSource(IastSourceType.RequestPath);
-                helper.AddExecutedSource(IastSourceType.RequestQuery);
-            }
-
             if (request.Query != null)
             {
                 foreach (var item in request.Query)
@@ -444,22 +409,18 @@ internal sealed class IastRequestContext
 
     internal void OnExecutedSinkTelemetry(IastVulnerabilityType sink)
     {
-        _executedTelemetryHelper?.AddExecutedSink(sink);
     }
 
     internal void OnExecutedSourceTelemetry(IastSourceType source)
     {
-        _executedTelemetryHelper?.AddExecutedSource(source);
     }
 
     internal void OnSupressedVulnerabilityTelemetry(IastVulnerabilityType sink)
     {
-        _executedTelemetryHelper?.AddSupressedVulnerability(sink);
     }
 
     internal void OnExecutedPropagationTelemetry()
     {
-        _executedTelemetryHelper?.AddExecutedPropagation();
     }
 
     internal string GetNextVulnerabilityStackId()

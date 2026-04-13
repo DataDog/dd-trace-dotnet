@@ -28,7 +28,6 @@ public class GrpcDotNetTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, "Off");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "200");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "1");

@@ -395,8 +395,8 @@ Global
 		{98FDE921-7921-D619-BDDB-1048E2F771C2} = {37327733-E955-A410-2082-0DA02DCDC37C}
 		{A3A2FB7D-4F81-4CD8-C9DD-0EC96E50CF58} = {98FDE921-7921-D619-BDDB-1048E2F771C2}
 		{826CC548-CA10-E736-9B8C-11F9FD98E92D} = {A3A2FB7D-4F81-4CD8-C9DD-0EC96E50CF58}
-		{99039F0D-CF8F-4487-A666-2B714CC197B5} = {826CC548-CA10-E736-9B8C-11F9FD98E92D}
-		{7707A74D-E1C3-45C4-B556-21F31C7A3015} = {826CC548-CA10-E736-9B8C-11F9FD98E92D}
+		{99039F0D-CF8F-4487-A666-2B714CC197B5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{7707A74D-E1C3-45C4-B556-21F31C7A3015} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -405,7 +405,9 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{43c696fa-3812-4312-9529-98ceccd32a81}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5a806f4b-39e7-4f38-b36f-f5cfc4f8760a}*SharedItemsImports = 13
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{753be7e5-5199-53b2-de69-43a05e78c2c8}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7707a74d-e1c3-45c4-b556-21f31c7a3015}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{87d57940-9a6e-473c-a4d6-777e3bafd5f9}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99039f0d-cf8f-4487-a666-2b714cc197b5}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b02aa609-811d-478b-94ce-d614ccaa687e}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b1f9f419-87e1-4b59-a954-9895fcd7949e}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c5e7978a-de2a-4944-86db-4721a110e720}*SharedItemsImports = 5

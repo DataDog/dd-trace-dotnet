@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
@@ -360,11 +359,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, enable.ToString().ToLower());
             }
-        }
-
-        public void EnableIastTelemetry(int level)
-        {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
         }
 
         public void DisableObfuscationQueryString()

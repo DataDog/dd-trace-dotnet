@@ -8,8 +8,6 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Iast.Telemetry;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast.Settings;
@@ -78,20 +76,6 @@ internal sealed class IastSettings
                                 .WithKeys(ConfigurationKeys.Iast.RegexTimeout)
                                 .AsDouble(200, val1 => val1 is >= 0).Value;
 
-        TelemetryVerbosity = config
-            .WithKeys(ConfigurationKeys.Iast.TelemetryVerbosity)
-            .GetAs(
-                defaultValue: new(IastMetricsVerbosityLevel.Information, "information"),
-                converter: value => value.ToLowerInvariant() switch
-                {
-                    "off" => IastMetricsVerbosityLevel.Off,
-                    "debug" => IastMetricsVerbosityLevel.Debug,
-                    "mandatory" => IastMetricsVerbosityLevel.Mandatory,
-                    "information" => IastMetricsVerbosityLevel.Information,
-                    _ => ParsingResult<IastMetricsVerbosityLevel>.Failure()
-                },
-                validator: null);
-
         TruncationMaxValueLength = config
             .WithKeys(ConfigurationKeys.Iast.TruncationMaxValueLength)
             .AsInt32(TruncationMaxValueLengthDefault, x => x > 0)
@@ -135,8 +119,6 @@ internal sealed class IastSettings
 
     public double RegexTimeout { get; }
 
-    public IastMetricsVerbosityLevel TelemetryVerbosity { get; }
-
     public int TruncationMaxValueLength { get; }
 
     public int DataBaseRowsToTaint { get; }
@@ -145,6 +127,6 @@ internal sealed class IastSettings
 
     public static IastSettings FromDefaultSources()
     {
-        return new IastSettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+        return new IastSettings(GlobalConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
     }
 }

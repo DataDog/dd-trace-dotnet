@@ -15,7 +15,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -187,6 +186,24 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 #endif
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestCookieNameRequest()
+    {
+        var filename = "Iast.CookieName.AspNetCore5";
+        var url = "/Iast/TestCookieName";
+        AddCookies(new Dictionary<string, string>() { { "cookiename", "cookievalue" } });
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+    }
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
@@ -393,107 +410,6 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
         }
 
         await VerifySpans(spans, settings, fileNameOverride: fileName);
-    }
-}
-
-public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
-{
-    public AspNetCore5IastTestsSpanTelemetryIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-: base(fixture, outputHelper, true, "AspNetCore5IastSpanTelemetryEnabled", iastTelemetryLevel: (int)IastMetricsVerbosityLevel.Debug, samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100)
-    {
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastTelemetry()
-    {
-        var filename = "Iast.PathTraversal.AspNetCore5.TelemetryEnabled";
-        var url = "/Iast/GetFileContent?file=nonexisting.txt";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestCookieNameRequest()
-    {
-        var filename = "Iast.CookieName.AspNetCore5.TelemetryEnabled";
-        var url = "/Iast/TestCookieName";
-        AddCookies(new Dictionary<string, string>() { { "cookiename", "cookievalue" } });
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Fact]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestStackTraceLeak()
-    {
-        var filename = "Iast.StackTraceLeak.AspNetCore5.NotVulnerable";
-        var url = "/Iast/StackTraceLeak";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spans, settings, fileNameOverride: filename);
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastJsonTagSizeExceeded()
-    {
-        var filename = "Iast.JsonTagSizeExceeded.AspNetCore5.TelemetryEnabled";
-        var url = "/Iast/TestJsonTagSizeExceeded?tainted=taint";
-        IncludeAllHttpSpans = true;
-
-        var newFixture = new AspNetCoreTestFixture();
-        newFixture.SetOutput(Output);
-        await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
-
-        var agent = newFixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-
-        newFixture.Dispose();
-        newFixture.SetOutput(null);
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastMetaStructTagSizeExceeded()
-    {
-        var filename = "Iast.MetaStructTagSizeExceeded.AspNetCore5.TelemetryEnabled";
-        var url = "/Iast/TestJsonTagSizeExceeded?tainted=taint";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing(forceMetaStruct: true);
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 }
 
@@ -1157,7 +1073,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
     protected static readonly (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
 #pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
 
-    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off, string sampleName = "AspNetCore5")
+    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, string sampleName = "AspNetCore5")
         : base(sampleName, outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
@@ -1167,7 +1083,6 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
         SamplingRate = samplingRate;
         RedactionEnabled = redactionEnabled;
-        IastTelemetryLevel = iastTelemetryLevel;
 
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
@@ -1186,8 +1101,6 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
     protected int? SamplingRate { get; }
 
-    protected int IastTelemetryLevel { get; }
-
     public override void Dispose()
     {
         base.Dispose();
@@ -1203,7 +1116,6 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
     {
         EnableIast(IastEnabled);
         EnableEvidenceRedaction(RedactionEnabled);
-        EnableIastTelemetry(IastTelemetryLevel);
         DisableObfuscationQueryString();
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);

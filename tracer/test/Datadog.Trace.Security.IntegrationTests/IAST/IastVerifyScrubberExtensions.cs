@@ -18,8 +18,6 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
     {
         private static readonly (Regex RegexPattern, string Replacement) ClientIp = (new Regex(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}"), string.Empty);
         private static readonly (Regex RegexPattern, string Replacement) NetworkClientIp = (new Regex(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}"), string.Empty);
-        private static readonly (Regex RegexPattern, string Replacement) RequestTaintedRegex = (new Regex(@"_dd.iast.telemetry.request.tainted:(\s)*([1-9])(\d*).?(\d*),"), "_dd.iast.telemetry.request.tainted:,");
-        private static readonly (Regex RegexPattern, string Replacement) TelemetryExecutedSinks = (new Regex(@"_dd\.iast\.telemetry\.executed\.sink\.weak_.+: .{3},"), string.Empty);
 
         private static readonly (Regex RegexPattern, string Replacement) SpanIdRegex = (new Regex("\"spanId\": \\d+"), "\"spanId\": XXX");
         private static readonly (Regex RegexPattern, string Replacement) LineRegex = (new Regex("\"line\": \\d+"), "\"line\": XXX");
@@ -38,9 +36,6 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
         {
             settings.AddRegexScrubber(ClientIp);
             settings.AddRegexScrubber(NetworkClientIp);
-            settings.AddRegexScrubber(RequestTaintedRegex);
-            settings.AddRegexScrubber(TelemetryExecutedSinks);
-
             settings.AddRegexScrubber(SpanIdRegex);
             settings.AddRegexScrubber(LineRegex);
 

@@ -13,7 +13,6 @@ using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -134,25 +133,15 @@ public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
 }
 
 [Collection("IisTests")]
-public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
-{
-    public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, classicMode: true, enableIast: true)
-    {
-    }
-}
-
-[Collection("IisTests")]
-public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
+public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
 
-    public AspNetMvc5ClassicWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
+    public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         EnableIast(true);
         EnableEvidenceRedaction(false);
-        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Debug);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
@@ -160,25 +149,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
         _iisFixture = iisFixture;
-        _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
-                 ".Classic" + ".enableIast=true";
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/GetFileContent?file=nonexisting.txt")]
-    public async Task TestIastTelemetry(string test, string url)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
-        var filename = $"{_testName}.path={sanitisedPath}";
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        _testName = "Security." + nameof(AspNetMvc5) + ".Classic" + ".enableIast=true";
     }
 
     [Trait("Category", "EndToEnd")]
@@ -226,7 +197,6 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         EnableIast(enableIast);
-        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");

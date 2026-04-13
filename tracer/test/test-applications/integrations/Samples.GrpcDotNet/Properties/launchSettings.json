@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Samples.GrpcDotNet": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:49690;http://localhost:49691"
+    }
+  }
+}

@@ -18,8 +18,8 @@ namespace Datadog.Trace.Telemetry
     {
         // need to start collecting these immediately
         private static readonly Lazy<RedactedErrorLogCollector> _logs = new();
-        private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
-        private static IConfigurationTelemetry _configuration = new ConfigurationTelemetry();
+        private static IMetricsTelemetryCollector _metrics = NullMetricsTelemetryCollector.Instance;
+        private static IConfigurationTelemetry _configuration = NullConfigurationTelemetry.Instance;
         private readonly object _sync = new();
 
         private TelemetryController? _controller;

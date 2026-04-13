@@ -5,7 +5,6 @@
 
 #if NETFRAMEWORK
 using System.Threading.Tasks;
-using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -42,7 +41,6 @@ public abstract class AspNetWebFormsWithIast : AspNetBase, IClassFixture<IisFixt
     {
         EnableIast(true);
         EnableEvidenceRedaction(false);
-        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");

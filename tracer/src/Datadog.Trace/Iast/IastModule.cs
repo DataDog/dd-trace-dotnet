@@ -24,7 +24,6 @@ using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -515,34 +514,18 @@ internal static partial class IastModule
 
     internal static void OnExecutedPropagationTelemetry()
     {
-        if (ExecutedTelemetryHelper.EnabledDebug())
-        {
-            GetIastContext()?.OnExecutedPropagationTelemetry();
-        }
     }
 
     internal static void OnExecutedSourceTelemetry(IastSourceType source)
     {
-        if (ExecutedTelemetryHelper.Enabled())
-        {
-            GetIastContext()?.OnExecutedSourceTelemetry(source);
-        }
     }
 
     internal static void OnExecutedSinkTelemetry(IastVulnerabilityType sink)
     {
-        if (ExecutedTelemetryHelper.Enabled())
-        {
-            GetIastContext()?.OnExecutedSinkTelemetry(sink);
-        }
     }
 
     internal static void OnSupressedVulnerabilityTelemetry(IastVulnerabilityType sink)
     {
-        if (ExecutedTelemetryHelper.Enabled())
-        {
-            GetIastContext()?.OnSupressedVulnerabilityTelemetry(sink);
-        }
     }
 
     public static IastRequestContext? GetIastContext()
