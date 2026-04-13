@@ -15,7 +15,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -58,65 +57,6 @@ namespace Datadog.Trace.ClrProfiler
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetNativeTracerVersion() => "None";
 
-        private static void PropagateStableConfiguration()
-        {
-            // TODO: only for profiler today
-            //
-
-            // The profiler is not available in various environments, so don't try to P/Invoke in those cases
-            // as the binary won't be there
-            if (!ProfilerAvailabilityHelper.IsContinuousProfilerAvailable)
-            {
-                Log.Information("The Continuous Profiler is not available");
-                return;
-            }
-
-            var profilerSettings = Profiler.Instance.Settings;
-            if (!profilerSettings.IsManagedActivationEnabled)
-            {
-                Log.Debug("Set Stable Configuration in Continuous Profiler native library is disabled.");
-                return;
-            }
-
-            Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
-            var tracer = Tracer.Instance;
-            var tracerSettings = tracer.Settings;
-            var mutableSettings = tracerSettings.Manager.InitialMutableSettings;
-
-            NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
-            {
-                ProfilingEnabled = profilerSettings.ProfilerState switch
-                {
-                    ProfilerState.Auto => NativeInterop.ProfilingEnabled.Auto,
-                    ProfilerState.Enabled => NativeInterop.ProfilingEnabled.Enabled,
-                    _ => NativeInterop.ProfilingEnabled.Disabled
-                },
-
-                TracingEnabled = mutableSettings.TraceEnabled,
-                IastEnabled = Iast.Iast.Instance.Settings.Enabled,
-                DynamicInstrumentationEnabled = false,  // TODO: find where to get this value from but for the other native p/invoke call
-                RuntimeId = RuntimeId.Get(),
-                Environment = mutableSettings.Environment,
-                ServiceName = mutableSettings.DefaultServiceName,
-                Version = mutableSettings.ServiceVersion
-            };
-
-            if (tracerSettings.PropagateProcessTags)
-            {
-                config.ProcessTags = mutableSettings.ProcessTags?.SerializedTags;
-            }
-
-            // Make sure nothing bubbles up, even if there are issues
-            try
-            {
-                NativeInterop.ProfilerSetConfiguration(config);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Error when setting profiler configuration.");
-            }
-        }
-
         /// <summary>
         /// Initializes global instrumentation values.
         /// </summary>
@@ -150,9 +90,6 @@ namespace Datadog.Trace.ClrProfiler
 
                     try
                     {
-                        // Set the Stable Configuration to the native parts
-                        PropagateStableConfiguration();
-
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;

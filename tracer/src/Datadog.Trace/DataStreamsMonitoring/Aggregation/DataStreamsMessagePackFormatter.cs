@@ -11,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -57,7 +56,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private byte[] _serviceValueBytes;
         private ProcessTags? _processTags;
 
-        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
+        public DataStreamsMessagePackFormatter(TracerSettings tracerSettings)
         {
             // .NET tracer doesn't yet support primary tag
             // _primaryTagValueBytes = Array.Empty<byte>();
@@ -71,7 +70,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 }
             });
 
-            _productMask = GetProductsMask(tracerSettings, profilerSettings);
+            _productMask = GetProductsMask(tracerSettings);
             _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
             _writeProcessTags = tracerSettings.PropagateProcessTags;
 
@@ -100,17 +99,12 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             Profiling = 1 << 3, // 00001000
         }
 
-        private static long GetProductsMask(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
+        private static long GetProductsMask(TracerSettings tracerSettings)
         {
             var productsMask = (long)Products.Apm;
             if (tracerSettings.IsDataStreamsMonitoringEnabled)
             {
                 productsMask |= (long)Products.Dsm;
-            }
-
-            if (profilerSettings.IsProfilerEnabled)
-            {
-                productsMask |= (long)Products.Profiling;
             }
 
             return productsMask;

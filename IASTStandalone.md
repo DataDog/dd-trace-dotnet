@@ -247,6 +247,24 @@ Deleted the entire `Debugger/` directory (218 files) and cleaned all external re
 | Cleaned `Datadog.Trace.csproj` | Removed debugger embedded resource |
 | Cleaned CI test integrations | Replaced `TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout` with literal values |
 
+### Continuous Profiler removal
+
+Deleted `ContinuousProfiler/` (9 files) and cleaned all external references:
+
+| Change | Details |
+|---|---|
+| Deleted `ContinuousProfiler/` | 9 files: Profiler, ProfilerSettings, NativeInterop, ProfilerAvailabilityHelper, ContextTracker, etc. |
+| Cleaned `Instrumentation.cs` | Removed profiler configuration propagation |
+| Cleaned `TracerManagerFactory.cs` | Removed profiler settings subscription, telemetry, and DataStreams profiler parameter |
+| Cleaned `TracerManager.cs` | Removed profiler diagnostic log entries |
+| Cleaned `TraceContext.cs` | Removed endpoint tracking via profiler |
+| Cleaned `AsyncLocalScopeManager.cs` | Removed profiler context tracker from scope changes |
+| Cleaned `GitMetadataTagsProvider.cs` | Removed git metadata propagation to profiler |
+| Cleaned DataStreams files | Removed `ProfilerSettings` parameter from Manager/Writer/Formatter |
+| Cleaned Telemetry interfaces | Removed `RecordProfilerSettings` from ITelemetryController and implementations |
+| Cleaned `Ci/TestOptimization.cs` | Removed profiler flush on close |
+| Removed `Directory.Build.props` analyzers reference | Removed deleted `Datadog.Trace.Tools.Analyzers` project references |
+
 ---
 
 ## Current Architecture

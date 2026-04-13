@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.Headers;
@@ -110,11 +109,10 @@ internal sealed class DataStreamsManager
 
     public static DataStreamsManager Create(
         TracerSettings settings,
-        ProfilerSettings profilerSettings,
         IDiscoveryService discoveryService)
     {
         var writer = settings.IsDataStreamsMonitoringEnabled
-                         ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
+                         ? DataStreamsWriter.Create(settings, discoveryService)
                          : null;
 
         return new DataStreamsManager(settings, writer, discoveryService);

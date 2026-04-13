@@ -15,7 +15,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
@@ -134,12 +133,6 @@ internal sealed class TelemetryController : ITelemetryController
     {
         _products.ProductChanged(product, enabled, error);
         _logTagBuilder.Update(product, enabled);
-    }
-
-    public void RecordProfilerSettings(Profiler profiler)
-    {
-        _configuration.Record(ConfigTelemetryData.ProfilerLoaded, profiler.Status.IsProfilerReady, ConfigurationOrigins.Default);
-        _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
     }
 
     public void RecordTestOptimizationSettings(TestOptimizationSettings settings)

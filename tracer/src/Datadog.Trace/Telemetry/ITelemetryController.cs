@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
 
 namespace Datadog.Trace.Telemetry
@@ -30,11 +29,6 @@ namespace Datadog.Trace.Telemetry
         /// Should be called when an integration is disabled for some reason.
         /// </summary>
         void IntegrationDisabledDueToError(IntegrationId integrationId, string error);
-
-        /// <summary>
-        /// Called to record profiler-related telemetry
-        /// </summary>
-        public void RecordProfilerSettings(Profiler profiler);
 
         /// <summary>
         /// Called to record test-optimization-related telemetry

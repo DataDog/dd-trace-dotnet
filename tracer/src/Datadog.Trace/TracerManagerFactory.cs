@@ -10,7 +10,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog;
@@ -29,7 +28,6 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
-using NativeInterop = Datadog.Trace.ContinuousProfiler.NativeInterop;
 
 namespace Datadog.Trace
 {
@@ -62,27 +60,6 @@ namespace Datadog.Trace
                 dynamicConfigurationManager: null,
                 tracerFlareManager: null,
                 spanEventsManager: null);
-
-            tracer.Settings.Manager.SubscribeToChanges(changes =>
-            {
-                if (changes.UpdatedMutable is { } mutableSettings)
-                {
-                    try
-                    {
-                        if (Profiler.Instance.Status.IsProfilerReady)
-                        {
-                            NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), mutableSettings.DefaultServiceName, mutableSettings.Environment, mutableSettings.ServiceVersion);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // We failed to retrieve the runtime from native this can be because:
-                        // - P/Invoke issue (unknown dll, unknown entrypoint...)
-                        // - We are running in a partial trust environment
-                        Log.Warning(ex, "Failed to set the service name for native.");
-                    }
-                }
-            });
 
             return tracer;
         }
@@ -154,11 +131,7 @@ namespace Datadog.Trace
                                        : null;
             telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: Security.Instance.AppsecEnabled, initError);
 
-            var profiler = Profiler.Instance;
-            telemetry.RecordProfilerSettings(profiler);
-            telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
-
-            dataStreamsManager ??= DataStreamsManager.Create(settings, profiler.Settings, discoveryService);
+            dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService);
 
             if (ShouldEnableRemoteConfiguration(settings))
             {

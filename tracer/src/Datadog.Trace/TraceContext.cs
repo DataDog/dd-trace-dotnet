@@ -16,7 +16,6 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -155,13 +154,10 @@ namespace Datadog.Trace
 
             SpanCollection spansToWrite = default;
 
-            // Propagate the resource name to the profiler for root web spans
             if (span.IsRootSpan)
             {
                 if (span.Type == SpanTypes.Web)
                 {
-                    Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
-
                     var iastInstance = Iast.Iast.Instance;
                     if (iastInstance.Settings.Enabled)
                     {
