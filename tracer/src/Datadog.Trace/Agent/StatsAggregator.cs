@@ -392,7 +392,7 @@ namespace Datadog.Trace.Agent
             try
             {
                 var written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, rented, byteIndex: 0);
-                return FnvHash64.GenerateHash(new ArraySegment<byte>(rented, 0, written), version, hash);
+                return FnvHash64.GenerateHash(rented, 0, written, version, hash);
             }
             finally
             {
