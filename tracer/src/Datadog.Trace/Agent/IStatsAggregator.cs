@@ -51,6 +51,8 @@ namespace Datadog.Trace.Agent
 
         Task DisposeAsync();
 
-        StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags);
+        StatsAggregationKey BuildKey(Span span);
+
+        StatsAggregationKey BuildKey(Span span, out EncodedPeerTags utf8PeerTags);
     }
 }

@@ -1276,7 +1276,7 @@ namespace Datadog.Trace.Tests.Agent
             var key = aggregator.BuildKey(span, peerTagKeys, out var utf8PeerTags);
 
             key.PeerTagsHash.Should().Be(0UL);
-            utf8PeerTags.Should().BeEmpty();
+            utf8PeerTags.Should().BeNull();
         }
 
         /// <summary>

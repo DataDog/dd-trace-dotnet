@@ -28,10 +28,8 @@ namespace Datadog.Trace.Agent
             return Task.CompletedTask;
         }
 
-        public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+        public StatsAggregationKey BuildKey(Span span)
         {
-            utf8PeerTags = [];
-
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
             if (rawHttpStatusCode is null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
             {
@@ -54,6 +52,12 @@ namespace Datadog.Trace.Agent
                 grpcStatusCode: string.Empty,
                 serviceSource: string.Empty,
                 peerTagsHash: 0);
+        }
+
+        public StatsAggregationKey BuildKey(Span span, out EncodedPeerTags utf8PeerTags)
+        {
+            utf8PeerTags = null;
+            return BuildKey(span);
         }
     }
 }

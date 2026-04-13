@@ -26,7 +26,6 @@ namespace Datadog.Trace.Agent
         private const int BufferCount = 2;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
-        private static readonly List<byte[]> EmptyPeerTags = [];
         private static readonly byte[] PeerTagSeparator = [0];
 
         private readonly StatsBuffer[] _buffers;
@@ -248,10 +247,23 @@ namespace Datadog.Trace.Agent
             return trace;
         }
 
-        public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+        public StatsAggregationKey BuildKey(Span span)
+        {
+            EncodedPeerTags utf8PeerTags = null;
+            try
+            {
+                return BuildKey(span, Volatile.Read(ref _peerTagKeys), out utf8PeerTags);
+            }
+            finally
+            {
+                utf8PeerTags?.Dispose();
+            }
+        }
+
+        public StatsAggregationKey BuildKey(Span span, out EncodedPeerTags utf8PeerTags)
             => BuildKey(span, Volatile.Read(ref _peerTagKeys), out utf8PeerTags);
 
-        internal StatsAggregationKey BuildKey(Span span, List<string> peerTagKeys, out List<byte[]> utf8PeerTags)
+        internal StatsAggregationKey BuildKey(Span span, List<string> peerTagKeys, out EncodedPeerTags utf8PeerTags)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -296,15 +308,16 @@ namespace Datadog.Trace.Agent
             ulong peerTagsHash;
             if ((string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal) && span.GetTag(Tags.BaseService) is { Length: >0 } baseService)
             {
-                utf8PeerTags = [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{baseService}")];
-                peerTagsHash = FnvHash64.GenerateHash(utf8PeerTags[0], FnvHash64.Version.V1A);
+                utf8PeerTags = new();
+                var encoded = utf8PeerTags.EncodeAndSavePeerTag(Tags.BaseService, baseService);
+                peerTagsHash = FnvHash64.GenerateHash(encoded, FnvHash64.Version.V1A);
             }
             else if (spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer)
             {
                 // Hash should be generated as TAGNAME:TAGVALUE, and should be in sorted order (we sort ahead of time)
                 // peerTagKeys should already be in sorted order
                 // We serialize to the utf-8 bytes because we need to serialize them during sending anyway
-                utf8PeerTags = EmptyPeerTags;
+                utf8PeerTags = null;
                 peerTagsHash = 0;
                 foreach (var tagKey in peerTagKeys)
                 {
@@ -315,13 +328,13 @@ namespace Datadog.Trace.Agent
                     }
 
                     tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
-                    var bytes = EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey}:{tagValue}");
 
-                    if (ReferenceEquals(utf8PeerTags, EmptyPeerTags))
+                    if (utf8PeerTags is null)
                     {
                         // We're not setting the capacity here, because there's
                         // a _lot_ of potential peer tags, and _most_ of them won't apply
                         utf8PeerTags = new();
+                        var bytes = utf8PeerTags.EncodeAndSavePeerTag(tagKey, tagValue);
                         // hash the bytes of the tag (starting from the initial hash)
                         peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A);
                     }
@@ -330,16 +343,15 @@ namespace Datadog.Trace.Agent
                         // add the separator
                         peerTagsHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, peerTagsHash);
                         // hash the bytes of the tag
+                        var bytes = utf8PeerTags.EncodeAndSavePeerTag(tagKey, tagValue);
                         peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A, peerTagsHash);
                     }
-
-                    utf8PeerTags.Add(bytes);
                 }
             }
             else
             {
                 peerTagsHash = 0;
-                utf8PeerTags = EmptyPeerTags;
+                utf8PeerTags = null;
             }
 
             // When submitting trace metrics over OTLP, we must create inidividual timeseries
@@ -442,14 +454,22 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
-            var key = BuildKey(span, out var peerTags);
-
             var buffer = CurrentBuffer;
 
-            if (!buffer.Buckets.TryGetValue(key, out var bucket))
+            EncodedPeerTags peerTags = null;
+            StatsBucket bucket;
+            try
             {
-                bucket = new StatsBucket(key, peerTags);
-                buffer.Buckets.Add(key, bucket);
+                var key = BuildKey(span, out peerTags);
+                if (!buffer.Buckets.TryGetValue(key, out bucket))
+                {
+                    bucket = new StatsBucket(key, peerTags?.GetPeerTags() ?? EncodedPeerTags.EmptyTags);
+                    buffer.Buckets.Add(key, bucket);
+                }
+            }
+            finally
+            {
+                peerTags?.Dispose();
             }
 
             var weight = GetWeight(span);
