@@ -86,6 +86,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("System-Data-SqlClient-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
+            settings.AddScrubber(builder =>
+            {
+                // scrub db.user tag because its presence varies
+                var lines = builder.ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.None);
+                var filtered = string.Join(Environment.NewLine, lines.Where(line => !line.Contains("db.user:")));
+                builder.Clear();
+                builder.Append(filtered);
+            });
+
             settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
