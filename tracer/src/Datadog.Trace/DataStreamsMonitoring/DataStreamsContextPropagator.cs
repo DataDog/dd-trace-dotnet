@@ -34,6 +34,29 @@ internal sealed class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
+#if NETCOREAPP3_1_OR_GREATER
+        // Encode directly into stack buffers to avoid heap allocations for the intermediate byte arrays.
+        // The only unavoidable allocation is the final ToArray() for headers.Add, since Kafka takes ownership.
+        Span<byte> encodedBytes = stackalloc byte[PathwayContextEncoder.MaxEncodedSize];
+        var encodedLen = PathwayContextEncoder.EncodeInto(context, encodedBytes);
+        var encodedSlice = encodedBytes.Slice(0, encodedLen);
+
+        Span<byte> base64Bytes = stackalloc byte[PathwayContextEncoder.MaxBase64EncodedSize];
+        var status = Base64.EncodeToUtf8(encodedSlice, base64Bytes, out _, out int bytesWritten);
+
+        if (status != OperationStatus.Done)
+        {
+            Log.Error("Failed to encode Data Streams context to Base64. OperationStatus: {Status}", status);
+            return;
+        }
+
+        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64Bytes.Slice(0, bytesWritten).ToArray());
+
+        if (isDataStreamsLegacyHeadersEnabled)
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedSlice.ToArray());
+        }
+#else
         var encodedBytes = PathwayContextEncoder.Encode(context);
 
         // Calculate the maximum length of the base64 encoded data
@@ -62,6 +85,7 @@ internal sealed class DataStreamsContextPropagator
         {
             headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBytes);
         }
+#endif
     }
 
     /// <summary>

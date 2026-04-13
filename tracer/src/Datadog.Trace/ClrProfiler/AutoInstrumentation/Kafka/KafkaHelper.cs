@@ -142,6 +142,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return size;
         }
 
+        // NOTE: tags must be sorted alphabetically — called only on edge-tag cache miss
+        private static string[] BuildProduceEdgeTags(string clusterId, string topic)
+        {
+            if (!StringUtil.IsNullOrEmpty(clusterId))
+            {
+                return StringUtil.IsNullOrEmpty(topic)
+                           ? ["direction:out", $"kafka_cluster_id:{clusterId}", "type:kafka"]
+                           : ["direction:out", $"kafka_cluster_id:{clusterId}", $"topic:{topic}", "type:kafka"];
+            }
+
+            return ["direction:out", $"topic:{topic}", "type:kafka"];
+        }
+
         internal static Scope? CreateConsumerScope(
             Tracer tracer,
             DataStreamsManager dataStreamsManager,
@@ -398,17 +411,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
 
                     string[] edgeTags;
-                    if (!StringUtil.IsNullOrEmpty(producerClusterId))
+                    if (StringUtil.IsNullOrEmpty(topic) && StringUtil.IsNullOrEmpty(producerClusterId))
                     {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? ["direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka"]
-                                       : ["direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka"];
+                        edgeTags = DefaultProduceEdgeTags;
                     }
                     else
                     {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? DefaultProduceEdgeTags
-                                       : ["direction:out", $"topic:{topic}", "type:kafka"];
+                        var cacheKey = new ProduceEdgeTagCacheKey(producerClusterId ?? string.Empty, topic ?? string.Empty);
+                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildProduceEdgeTags(k.ClusterId, k.Topic));
                     }
 
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);

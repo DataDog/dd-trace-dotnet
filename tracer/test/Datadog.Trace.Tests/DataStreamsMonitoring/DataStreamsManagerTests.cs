@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
@@ -405,6 +406,49 @@ public class DataStreamsManagerTests
         writer.DisposeCount.Should().Be(1);
     }
 
+    [Fact]
+    public void GetOrCreateEdgeTags_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new ProduceEdgeTagCacheKey("cluster1", "topic1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"kafka_cluster_id:{k.ClusterId}", $"topic:{k.Topic}", "type:kafka"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"kafka_cluster_id:{k.ClusterId}", $"topic:{k.Topic}", "type:kafka"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_ReturnsDifferentArrayReferences_ForDifferentKeys()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+
+        var forTopic1 = dsm.GetOrCreateEdgeTags(new ProduceEdgeTagCacheKey(string.Empty, "topic1"), static k => [$"topic:{k.Topic}", "type:kafka"]);
+        var forTopic2 = dsm.GetOrCreateEdgeTags(new ProduceEdgeTagCacheKey(string.Empty, "topic2"), static k => [$"topic:{k.Topic}", "type:kafka"]);
+
+        forTopic2.Should().NotBeSameAs(forTopic1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacity()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+
+        // Fill the per-type cache to the cap using a key type private to this test
+        // (OverflowTestKey has its own static dictionary, isolated from ProduceEdgeTagCacheKey)
+        for (var i = 0; i < DataStreamsManager.MaxEdgeTagCacheSize; i++)
+        {
+            dsm.GetOrCreateEdgeTags(new OverflowTestKey(i), static k => [$"tag:{k.Value}"]);
+        }
+
+        // The cache is now full; a new key should bypass caching and return a fresh array each call
+        var overflowKey = new OverflowTestKey(DataStreamsManager.MaxEdgeTagCacheSize);
+        var first = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
+        var second = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
+
+        second.Should().NotBeSameAs(first);
+    }
+
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)
     {
         writer = enabled ? new DataStreamsWriterMock() : null;
@@ -420,6 +464,23 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.PropagateProcessTags, "false" }
             });
         return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
+    }
+
+    /// <summary>
+    /// Private key type used exclusively by <see cref="GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacity"/>.
+    /// Having a unique type gives an isolated <c>EdgeTagCache&lt;OverflowTestKey&gt;</c> dictionary.
+    /// </summary>
+    private readonly struct OverflowTestKey : IEquatable<OverflowTestKey>
+    {
+        public readonly int Value;
+
+        public OverflowTestKey(int value) => Value = value;
+
+        public bool Equals(OverflowTestKey other) => Value == other.Value;
+
+        public override bool Equals(object obj) => obj is OverflowTestKey other && Equals(other);
+
+        public override int GetHashCode() => Value;
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter

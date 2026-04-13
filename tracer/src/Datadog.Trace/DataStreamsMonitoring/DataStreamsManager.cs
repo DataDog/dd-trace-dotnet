@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -27,6 +28,13 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// </summary>
 internal sealed class DataStreamsManager
 {
+    /// <summary>
+    /// Maximum number of distinct keys stored in a single per-type edge-tag cache.
+    /// When the limit is reached, new keys are computed on the fly without caching to
+    /// prevent unbounded memory growth caused by high-cardinality identifiers.
+    /// </summary>
+    internal const int MaxEdgeTagCacheSize = 1000;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
@@ -36,6 +44,7 @@ internal sealed class DataStreamsManager
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
     private readonly bool _isInDefaultState;
+    private readonly ConditionalWeakTable<string[], NodeHashCacheEntry> _nodeHashCache = new();
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
     private string? _previousContainerTagsHash;
@@ -303,7 +312,24 @@ internal sealed class DataStreamsManager
 
             // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
             var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
-            var nodeHash = HashHelper.CalculateNodeHash(nodeHashBase, edgeTags);
+            var cacheEntry = _nodeHashCache.GetOrCreateValue(edgeTags);
+            NodeHash nodeHash;
+
+            // Fast lock-free path: snapshot is an immutable object published via a volatile field.
+            // If the base still matches we avoid taking any lock on the hot path.
+            if (!cacheEntry.TryGetNodeHash(nodeHashBase, out nodeHash))
+            {
+                lock (cacheEntry)
+                {
+                    // Double-check under lock in case another thread raced to update
+                    if (!cacheEntry.TryGetNodeHash(nodeHashBase, out nodeHash))
+                    {
+                        nodeHash = HashHelper.CalculateNodeHash(nodeHashBase, edgeTags);
+                        cacheEntry.Store(nodeHashBase, nodeHash);
+                    }
+                }
+            }
+
             var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 
@@ -352,6 +378,34 @@ internal sealed class DataStreamsManager
     }
 
     /// <summary>
+    /// Returns a cached edge-tag array for the given key, creating and caching it on first use.
+    /// On cache hits, zero heap allocations occur. The factory is only invoked on the first call
+    /// per unique key, making this safe to use on high-throughput hot paths.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries the result is computed
+    /// fresh each time (no caching) to bound memory usage for high-cardinality key spaces.
+    /// </summary>
+    /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
+    /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
+    /// <param name="factory">A static factory that builds the edge-tag array from the key on cache miss.</param>
+    public string[] GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
+        where TKey : notnull, IEquatable<TKey>
+    {
+        var cache = EdgeTagCache<TKey>.Cache;
+        if (cache.TryGetValue(key, out var existing))
+        {
+            return existing;
+        }
+
+        if (cache.Count >= MaxEdgeTagCacheSize)
+        {
+            // High-cardinality key space — bypass cache to prevent unbounded memory growth
+            return factory(key);
+        }
+
+        return cache.GetOrAdd(key, factory);
+    }
+
+    /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions
     /// </summary>
     public bool ShouldExtractSchema(Span span, string operation, out int weight)
@@ -370,5 +424,59 @@ internal sealed class DataStreamsManager
 
         weight = 0;
         return false;
+    }
+
+    /// <summary>
+    /// Memoized NodeHash associated with a specific edge-tag array instance and nodeHashBase value.
+    /// The volatile <see cref="_snapshot"/> field enables a lock-free fast path: callers read the
+    /// snapshot without a lock, and only acquire the lock when the base has changed or is missing.
+    /// </summary>
+    private sealed class NodeHashCacheEntry
+    {
+        // Immutable snapshot published via volatile write; null until first computation.
+        private volatile NodeHashSnapshot? _snapshot;
+
+        /// <summary>
+        /// Tries to return the cached <see cref="NodeHash"/> for <paramref name="nodeHashBase"/>
+        /// without acquiring any lock (lock-free read via volatile field).
+        /// </summary>
+        public bool TryGetNodeHash(NodeHashBase nodeHashBase, out NodeHash nodeHash)
+        {
+            var snap = _snapshot; // volatile read — acts as a load-acquire barrier
+            if (snap is not null && snap.Base == nodeHashBase.Value)
+            {
+                nodeHash = snap.Hash;
+                return true;
+            }
+
+            nodeHash = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Stores a newly-computed <see cref="NodeHash"/>. Must be called under a lock held by the caller.
+        /// The volatile write ensures the snapshot is visible to all threads before the lock is released.
+        /// </summary>
+        public void Store(NodeHashBase nodeHashBase, NodeHash nodeHash)
+        {
+            _snapshot = new NodeHashSnapshot(nodeHashBase.Value, nodeHash); // volatile write
+        }
+
+        /// <summary>Immutable payload published atomically via the volatile <see cref="_snapshot"/> field.</summary>
+        private sealed class NodeHashSnapshot
+        {
+            private readonly ulong _base;
+            private readonly NodeHash _hash;
+
+            internal NodeHashSnapshot(ulong @base, NodeHash hash)
+            {
+                _base = @base;
+                _hash = hash;
+            }
+
+            internal ulong Base => _base;
+
+            internal NodeHash Hash => _hash;
+        }
     }
 }
