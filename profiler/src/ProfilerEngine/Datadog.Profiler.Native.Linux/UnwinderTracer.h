@@ -163,6 +163,7 @@ struct TraceEvent
     std::uintptr_t fp;
     std::uintptr_t sp;
     CursorSnapshot cursorSnapshot;
+    ucontext_t* context;
 };
 
 // ---------------------------------------------------------------------------
@@ -196,6 +197,17 @@ public:
     void Reset()
     {
         _totalEvents = 0;
+    }
+
+    void RecordStart(ucontext_t* context)
+    {
+        if (_totalEvents < Capacity)
+        {
+            _entries[_totalEvents].eventType = EventType::Start;
+            _entries[_totalEvents].result = 0;
+            _entries[_totalEvents].context = context;
+        }
+        _totalEvents++;
     }
 
     void Record(EventType eventType, std::int32_t result = 0)
