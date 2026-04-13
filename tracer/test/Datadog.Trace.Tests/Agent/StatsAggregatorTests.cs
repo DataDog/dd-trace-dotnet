@@ -223,7 +223,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 foreach (var span in spans)
                 {
-                    var key = aggregator.BuildKey(span, out _);
+                    var key = aggregator.BuildKey(span);
                     buffer.Buckets.Should().ContainKey(key);
 
                     var bucket = buffer.Buckets[key];
@@ -357,7 +357,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 buffer.Buckets.Should().HaveCount(2);
 
-                var serviceKey = aggregator.BuildKey(simpleSpan, out _);
+                var serviceKey = aggregator.BuildKey(simpleSpan);
                 buffer.Buckets.Should().ContainKey(serviceKey);
                 var serviceBucket = buffer.Buckets[serviceKey];
 
@@ -371,7 +371,7 @@ namespace Datadog.Trace.Tests.Agent
                 serviceBucket.OkSummary.GetSum().Should().BeApproximately(
                     expectedOkDuration, expectedOkDuration * serviceBucket.OkSummary.IndexMapping.RelativeAccuracy);
 
-                var httpClientServiceKey = aggregator.BuildKey(httpClientServiceSpan, out _);
+                var httpClientServiceKey = aggregator.BuildKey(httpClientServiceSpan);
                 buffer.Buckets.Should().ContainKey(httpClientServiceKey);
                 var httpClientServiceBucket = buffer.Buckets[httpClientServiceKey];
 
@@ -857,11 +857,11 @@ namespace Datadog.Trace.Tests.Agent
 
                 // parent, server child, client child are included; internal and no-kind are not
                 buffer.Buckets.Should().HaveCount(3);
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan, out _));
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(serverChildSpan, out _));
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(clientChildSpan, out _));
-                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(internalChildSpan, out _));
-                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(noKindChildSpan, out _));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(serverChildSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(clientChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(internalChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(noKindChildSpan));
             }
             finally
             {
@@ -924,8 +924,8 @@ namespace Datadog.Trace.Tests.Agent
                 // They have the same resource/operation/type but different IsTraceRoot → 2 buckets
                 buffer.Buckets.Should().HaveCount(2);
 
-                var rootKey = aggregator.BuildKey(rootSpan, out _);
-                var entryKey = aggregator.BuildKey(entrySpan, out _);
+                var rootKey = aggregator.BuildKey(rootSpan);
+                var entryKey = aggregator.BuildKey(entrySpan);
                 rootKey.IsTraceRoot.Should().BeTrue();
                 entryKey.IsTraceRoot.Should().BeFalse();
             }
@@ -1133,8 +1133,8 @@ namespace Datadog.Trace.Tests.Agent
                 aggregator.Add(sampledSpan, unweightedSpan);
 
                 var buffer = aggregator.CurrentBuffer;
-                var sampledKey = aggregator.BuildKey(sampledSpan, out _);
-                var unweightedKey = aggregator.BuildKey(unweightedSpan, out _);
+                var sampledKey = aggregator.BuildKey(sampledSpan);
+                var unweightedKey = aggregator.BuildKey(unweightedSpan);
 
                 buffer.Buckets[sampledKey].Hits.Should().BeApproximately(10.0, 0.001);
                 buffer.Buckets[unweightedKey].Hits.Should().BeApproximately(1.0, 0.001);
@@ -1195,7 +1195,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("peer.service", "remote-service");
 
             var peerTagKeys = new List<string> { "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys);
 
             key.PeerTagsHash.Should().Be(3430395298086625290UL);
         }
@@ -1217,7 +1217,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // Keys must be pre-sorted (matching agent behavior)
             var peerTagKeys = new List<string> { "db.instance", "db.system", "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys);
 
             key.PeerTagsHash.Should().Be(9894752672193411515UL);
         }
@@ -1237,7 +1237,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("messaging.system", "kafka");
 
             var peerTagKeys = new List<string> { "db.instance", "db.system", "messaging.destination", "messaging.system" };
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys);
 
             key.PeerTagsHash.Should().Be(0xf5eeb51fbe7929b4UL);
         }
@@ -1257,7 +1257,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("db.system", string.Empty);
 
             var peerTagKeys = new List<string> { "db.instance", "db.system", "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys);
 
             key.PeerTagsHash.Should().Be(3430395298086625290UL);
         }
@@ -1273,10 +1273,9 @@ namespace Datadog.Trace.Tests.Agent
             // No peer tags set on the span
 
             var peerTagKeys = new List<string> { "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys, out var utf8PeerTags);
+            var key = aggregator.BuildKey(span, peerTagKeys);
 
             key.PeerTagsHash.Should().Be(0UL);
-            utf8PeerTags.Should().BeNull();
         }
 
         /// <summary>

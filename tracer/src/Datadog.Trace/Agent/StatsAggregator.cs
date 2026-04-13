@@ -26,6 +26,7 @@ namespace Datadog.Trace.Agent
         private const int BufferCount = 2;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
+        private static readonly List<byte[]> EmptyPeerTags = [];
         private static readonly byte[] PeerTagSeparator = [0];
 
         private readonly StatsBuffer[] _buffers;
@@ -248,22 +249,13 @@ namespace Datadog.Trace.Agent
         }
 
         public StatsAggregationKey BuildKey(Span span)
-        {
-            EncodedPeerTags utf8PeerTags = null;
-            try
-            {
-                return BuildKey(span, Volatile.Read(ref _peerTagKeys), out utf8PeerTags);
-            }
-            finally
-            {
-                utf8PeerTags?.Dispose();
-            }
-        }
+            => BuildKey(span, Volatile.Read(ref _peerTagKeys));
 
-        public StatsAggregationKey BuildKey(Span span, out EncodedPeerTags utf8PeerTags)
-            => BuildKey(span, Volatile.Read(ref _peerTagKeys), out utf8PeerTags);
-
-        internal StatsAggregationKey BuildKey(Span span, List<string> peerTagKeys, out EncodedPeerTags utf8PeerTags)
+        /// <summary>
+        /// Computes a <see cref="StatsAggregationKey"/> for the given span, including the peer tags hash.
+        /// Peer tag selection logic is mirrored in <see cref="GetEncodedPeerTags"/> for the cold path.
+        /// </summary>
+        internal StatsAggregationKey BuildKey(Span span, List<string> peerTagKeys)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -298,27 +290,20 @@ namespace Datadog.Trace.Agent
             }
 
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L53-L99
-            // Peer tags are extracted for client/producer/consumer spans
+            // Peer tags are extracted for client/server/producer/consumer spans.
             // If the span kind is missing or internal, and we have a "base service" tag `_dd.base_service`
-            // then we only aggregate based on the `_dd.base_service`
-            // TODO: work out how to optimize the peer tags allocations, to avoid all the extra utf8 allocations
-            // - on .NET Core these are only necessary for the first instance of the key, but this makes for a tricky
-            // chicken and egg - we need to convert everything to utf-8, so that we can get the hash, so that we
-            // know whether we need the tags as byte[] or not..
+            // then we only aggregate based on the `_dd.base_service`.
+            // This computes only the hash; see GetEncodedPeerTags() for the cold-path encoding.
             ulong peerTagsHash;
-            if ((string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal) && span.GetTag(Tags.BaseService) is { Length: >0 } baseService)
+            if ((string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal) && span.GetTag(Tags.BaseService) is { Length: > 0 } baseService)
             {
-                utf8PeerTags = new();
-                var encoded = utf8PeerTags.EncodeAndSavePeerTag(Tags.BaseService, baseService);
-                peerTagsHash = FnvHash64.GenerateHash(encoded, FnvHash64.Version.V1A);
+                peerTagsHash = HashTag(Tags.BaseService, baseService, FnvHash64.Version.V1A);
             }
             else if (spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer)
             {
-                // Hash should be generated as TAGNAME:TAGVALUE, and should be in sorted order (we sort ahead of time)
-                // peerTagKeys should already be in sorted order
-                // We serialize to the utf-8 bytes because we need to serialize them during sending anyway
-                utf8PeerTags = null;
+                // Hash should be generated as TAGNAME:TAGVALUE, in sorted order (peerTagKeys is pre-sorted).
                 peerTagsHash = 0;
+                bool firstTag = true;
                 foreach (var tagKey in peerTagKeys)
                 {
                     var tagValue = span.GetTag(tagKey);
@@ -329,29 +314,19 @@ namespace Datadog.Trace.Agent
 
                     tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
 
-                    if (utf8PeerTags is null)
+                    if (!firstTag)
                     {
-                        // We're not setting the capacity here, because there's
-                        // a _lot_ of potential peer tags, and _most_ of them won't apply
-                        utf8PeerTags = new();
-                        var bytes = utf8PeerTags.EncodeAndSavePeerTag(tagKey, tagValue);
-                        // hash the bytes of the tag (starting from the initial hash)
-                        peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A);
-                    }
-                    else
-                    {
-                        // add the separator
+                        // add the separator between tags
                         peerTagsHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, peerTagsHash);
-                        // hash the bytes of the tag
-                        var bytes = utf8PeerTags.EncodeAndSavePeerTag(tagKey, tagValue);
-                        peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A, peerTagsHash);
                     }
+
+                    peerTagsHash = HashTag(tagKey, tagValue, FnvHash64.Version.V1A, firstTag ? null : peerTagsHash);
+                    firstTag = false;
                 }
             }
             else
             {
                 peerTagsHash = 0;
-                utf8PeerTags = null;
             }
 
             // When submitting trace metrics over OTLP, we must create inidividual timeseries
@@ -374,6 +349,93 @@ namespace Datadog.Trace.Agent
                 grpcStatusCode,
                 serviceSource,
                 peerTagsHash);
+        }
+
+        /// <summary>
+        /// Encodes "tagKey:tagValue" to UTF-8 and computes its FNV hash.
+        /// Uses stackalloc on .NET Core, ArrayPool on .NET Framework.
+        /// </summary>
+#if NETCOREAPP
+        [System.Runtime.CompilerServices.SkipLocalsInit]
+#endif
+        private static ulong HashTag(string tagKey, string tagValue, FnvHash64.Version version, ulong? initialHash = null)
+        {
+            const int MaxStackLimit = 256;
+            var maxByteCount = EncodingHelpers.Utf8NoBom.GetMaxByteCount(tagKey.Length + 1 + tagValue.Length);
+
+#if NETCOREAPP
+            if (maxByteCount <= MaxStackLimit)
+            {
+                Span<byte> buffer = stackalloc byte[MaxStackLimit];
+                int written = EncodingHelpers.Utf8NoBom.GetBytes(tagKey, buffer);
+                buffer[written++] = (byte)':';
+                written += EncodingHelpers.Utf8NoBom.GetBytes(tagValue, buffer.Slice(written));
+                return initialHash is { } h
+                    ? FnvHash64.GenerateHash(buffer.Slice(0, written), version, h)
+                    : FnvHash64.GenerateHash(buffer.Slice(0, written), version);
+            }
+#else
+            if (maxByteCount <= MaxStackLimit)
+            {
+                var buffer = ArrayPool<byte>.Shared.Rent(MaxStackLimit);
+                try
+                {
+                    int written = EncodingHelpers.Utf8NoBom.GetBytes(tagKey, 0, tagKey.Length, buffer, 0);
+                    buffer[written++] = (byte)':';
+                    written += EncodingHelpers.Utf8NoBom.GetBytes(tagValue, 0, tagValue.Length, buffer, written);
+                    var segment = new ArraySegment<byte>(buffer, 0, written);
+                    return initialHash is { } h
+                        ? FnvHash64.GenerateHash(segment, version, h)
+                        : FnvHash64.GenerateHash(segment, version);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
+            }
+#endif
+
+            // Fallback for oversized tags: heap-allocate
+            var bytes = EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey}:{tagValue}");
+            return initialHash is { } ih
+                ? FnvHash64.GenerateHash(bytes, version, ih)
+                : FnvHash64.GenerateHash(bytes, version);
+        }
+
+        /// <summary>
+        /// Encodes the peer tags for a span into a <see cref="List{T}"/> of UTF-8 byte arrays.
+        /// Called only on the cold path (new bucket creation).
+        /// Tag selection logic is mirrored in <see cref="BuildKey(Span, List{string})"/>.
+        /// </summary>
+        internal static List<byte[]> GetEncodedPeerTags(Span span, List<string> peerTagKeys)
+        {
+            var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind)) ?? string.Empty;
+
+            if ((string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal) && span.GetTag(Tags.BaseService) is { Length: > 0 } baseService)
+            {
+                return [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{baseService}")];
+            }
+
+            if (spanKind is not (SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer))
+            {
+                return EmptyPeerTags;
+            }
+
+            List<byte[]> result = null;
+            foreach (var tagKey in peerTagKeys)
+            {
+                var tagValue = span.GetTag(tagKey);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    continue;
+                }
+
+                tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
+                result ??= new();
+                result.Add(EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey}:{tagValue}"));
+            }
+
+            return result ?? EmptyPeerTags;
         }
 
         internal async Task Flush()
@@ -455,21 +517,14 @@ namespace Datadog.Trace.Agent
             }
 
             var buffer = CurrentBuffer;
+            var peerTagKeys = Volatile.Read(ref _peerTagKeys);
+            var key = BuildKey(span, peerTagKeys);
 
-            EncodedPeerTags peerTags = null;
-            StatsBucket bucket;
-            try
+            if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
-                var key = BuildKey(span, out peerTags);
-                if (!buffer.Buckets.TryGetValue(key, out bucket))
-                {
-                    bucket = new StatsBucket(key, peerTags?.GetPeerTags() ?? EncodedPeerTags.EmptyTags);
-                    buffer.Buckets.Add(key, bucket);
-                }
-            }
-            finally
-            {
-                peerTags?.Dispose();
+                // Cold path: encode the peer tags for storage in the new bucket
+                bucket = new StatsBucket(key, GetEncodedPeerTags(span, peerTagKeys));
+                buffer.Buckets.Add(key, bucket);
             }
 
             var weight = GetWeight(span);

@@ -610,12 +610,6 @@ namespace Datadog.Trace.Tests.Agent
             public Task DisposeAsync() => Task.CompletedTask;
 
             public StatsAggregationKey BuildKey(Span span) => new();
-
-            public StatsAggregationKey BuildKey(Span span, out EncodedPeerTags utf8PeerTags)
-            {
-                utf8PeerTags = null;
-                return new();
-            }
         }
     }
 }

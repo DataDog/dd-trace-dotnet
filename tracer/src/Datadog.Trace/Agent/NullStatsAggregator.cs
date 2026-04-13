@@ -53,11 +53,5 @@ namespace Datadog.Trace.Agent
                 serviceSource: string.Empty,
                 peerTagsHash: 0);
         }
-
-        public StatsAggregationKey BuildKey(Span span, out EncodedPeerTags utf8PeerTags)
-        {
-            utf8PeerTags = null;
-            return BuildKey(span);
-        }
     }
 }
