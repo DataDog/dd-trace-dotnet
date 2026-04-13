@@ -49,7 +49,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         return 0;
     }
 
-    if (tracer) tracer->Record(EventType::Start);
+    if (tracer) tracer->RecordStart(reinterpret_cast<ucontext_t*>(ctx));
 
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto flag = static_cast<unw_init_local2_flags_t>(UNW_INIT_SIGNAL_FRAME);
