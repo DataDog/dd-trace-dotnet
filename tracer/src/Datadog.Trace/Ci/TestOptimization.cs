@@ -615,7 +615,6 @@ internal sealed class TestOptimization : ITestOptimization
                 }
 
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
-                DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
@@ -667,7 +666,6 @@ internal sealed class TestOptimization : ITestOptimization
         using var cd = CodeDurationRef.Create();
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
-        DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);

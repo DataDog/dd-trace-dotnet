@@ -14,8 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.SourceGenerators;
@@ -79,39 +77,6 @@ namespace Datadog.Trace.Configuration
             {
                 Log.Information("Setting updates made via dynamic configuration were applied");
             }
-
-            // TODO: This might not record the config in the correct order in future, but would require
-            // a big refactoring of debugger settings to resolve
-            var settings = new ConfigurationBuilder(dynamicConfig, TelemetryFactory.Config);
-            var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
-            {
-                DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
-                ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
-                CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
-            };
-
-            var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;
-
-            if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
-            {
-                Log.Debug("No changes detected in the new dynamic debugger configuration");
-                return;
-            }
-
-            Log.Information("Applying new dynamic debugger configuration");
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                Log.Debug(
-                    "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}",
-                    dynamicDebuggerSettings.DynamicInstrumentationEnabled,
-                    dynamicDebuggerSettings.ExceptionReplayEnabled,
-                    dynamicDebuggerSettings.CodeOriginEnabled);
-            }
-
-            var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
-
-            DebuggerManager.Instance.UpdateConfiguration(Tracer.Instance.Settings, newDebuggerSettings)
-                           .ContinueWith(t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         [TestingAndPrivateOnly]

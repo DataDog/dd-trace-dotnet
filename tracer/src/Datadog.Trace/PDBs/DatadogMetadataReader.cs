@@ -11,8 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 
 // keep vendored versions for now because we access internal members

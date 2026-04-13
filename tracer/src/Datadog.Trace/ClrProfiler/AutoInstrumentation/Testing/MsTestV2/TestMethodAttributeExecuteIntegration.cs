@@ -274,7 +274,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 {
                     // let's wait for the instrumentation of an exception has been done
                     Common.Log.Debug("TestMethodAttributeExecuteIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
-                    testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).SafeWait();
+                    testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(2_000).SafeWait();
                     Common.Log.Debug("TestMethodAttributeExecuteIntegration: Exception instrumentation was set or timed out.");
                 }
 

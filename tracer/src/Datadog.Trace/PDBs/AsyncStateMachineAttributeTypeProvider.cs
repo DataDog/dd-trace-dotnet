@@ -8,7 +8,7 @@
 using System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 
-namespace Datadog.Trace.Debugger.Symbols;
+namespace Datadog.Trace.Pdb;
 
 internal sealed class AsyncStateMachineAttributeTypeProvider : ICustomAttributeTypeProvider<string>
 {

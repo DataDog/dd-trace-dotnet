@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;

@@ -187,7 +187,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         if (XUnitIntegration.ShouldWaitForExceptionInstrumentation(testOptimization, testCaseMetadata))
                         {
                             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
-                            await testOptimization.DynamicInstrumentationFeature!.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
+                            await testOptimization.DynamicInstrumentationFeature!.WaitForExceptionInstrumentation(2_000).ConfigureAwait(false);
                             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Exception instrumentation was set or timed out.");
                         }
 

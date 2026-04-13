@@ -11,8 +11,6 @@ using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -47,7 +45,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private readonly Tracer _tracer;
         private readonly Security _security;
         private readonly Iast.Iast _iast;
-        private readonly SpanCodeOrigin? _spanCodeOrigin;
         private string? _hostingHttpRequestInStartEventKey;
         private string? _mvcBeforeActionEventKey;
         private string? _hostingUnhandledExceptionEventKey;
@@ -55,19 +52,14 @@ namespace Datadog.Trace.DiagnosticListeners
         private string? _hostingHttpRequestInStopEventKey;
         private string? _routingEndpointMatchedKey;
 
-        public SingleSpanAspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, SpanCodeOrigin? spanCodeOrigin)
+        public SingleSpanAspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast)
         {
             _tracer = tracer;
             _security = security;
             _iast = iast;
-            _spanCodeOrigin = spanCodeOrigin;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
-
-        // TODO: Once SpanCodeOrigin initialization is synchronous
-        // just set this on startup instead of having the properties
-        private SpanCodeOrigin? CurrentCodeOrigin => _spanCodeOrigin ?? DebuggerManager.Instance.CodeOrigin;
 
         protected override void OnNext(string eventName, object arg)
         {
@@ -231,24 +223,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true } codeOrigin)
-                {
-                    var method = routeEndpoint.Value.RequestDelegate?.Method;
-                    if (method != null)
-                    {
-                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint.Value.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
-                    }
-                    else if (routeEndpoint.Value.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
-                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
-                    }
-                    else
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
-                    }
-                }
-
                 var request = httpContext.Request.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestStruct>();
                 var routeValues = request.RouteValues;
 
@@ -294,9 +268,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var appsecEnabled = _security.AppsecEnabled;
             var iastEnabled = _iast.Settings.Enabled;
-            var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
-            if (!appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
+            if (!appsecEnabled && !iastEnabled)
             {
                 return;
             }
@@ -305,18 +278,6 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                if (isCodeOriginEnabled)
-                {
-                    if (AspNetCoreDiagnosticObserver.TryGetTypeAndMethod(typedArg, out var type, out var method))
-                    {
-                        CurrentCodeOrigin!.SetCodeOriginForEntrySpan(rootSpan, type, method);
-                    }
-                    else
-                    {
-                        Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
-                    }
-                }
-
                 _security.CheckPathParamsFromAction(httpContext, rootSpan, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
 
                 if (iastEnabled)

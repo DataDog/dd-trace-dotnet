@@ -16,8 +16,6 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -188,21 +186,6 @@ namespace Datadog.Trace.ClrProfiler
                     InitializeTracer(ref sw);
                 }
 
-#if NETSTANDARD2_0 || NETCOREAPP3_1
-                try
-                {
-                    // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
-                    // while the app is shutting down, which results in flaky tests due to the short-
-                    // lived nature of our apps. This appears to be a bug in the runtime (although
-                    // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
-                    // hash which calls into the native library, triggering the load.
-                    _ = string.Empty.ToUUID();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error triggering eager OpenSSL load");
-                }
-#endif
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
                 Log.Debug("Initialization finished.");
@@ -441,18 +424,6 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    InitializeDebugger(tracer.Settings);
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Failed to initialize Remote Configuration Management.");
-                }
-
-                // RCM isn't _actually_ initialized at this point, as we do it in the background, so we record that separately
-                sw.Restart();
-
-                try
-                {
                     Log.Debug("Initializing TraceMethods instrumentation.");
                     var traceMethodsConfiguration = tracer.Settings.TraceMethods;
                     var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
@@ -494,17 +465,14 @@ namespace Datadog.Trace.ClrProfiler
         private static AspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver()
 #endif
         {
-            // Tracer and Security should both have been initialized by now.
-            // Iast hasn't yet, but doing it now is fine.
-            // SpanCodeOrigin is _not_ initialized yet, and we can't guarantee it will be, so just be lazy instead.
 #if NET6_0_OR_GREATER
             if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
             {
-                return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
+                return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance);
             }
 #endif // #if NET6_0_OR_GREATER
 
-            return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
+            return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance);
         }
 
         [Pure]
@@ -514,34 +482,6 @@ namespace Datadog.Trace.ClrProfiler
             return AzureInfo.Instance.IsAzureFunction;
         }
 #endif
-
-        private static void InitializeDebugger(TracerSettings tracerSettings)
-        {
-            var manager = DebuggerManager.Instance;
-            var debuggerSettings = manager.DebuggerSettings;
-
-            if (!debuggerSettings.DynamicInstrumentationEnabled)
-            {
-                // we need this line for tests
-                Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
-            }
-
-            if (!debuggerSettings.DynamicInstrumentationEnabled
-             && !debuggerSettings.CodeOriginForSpansEnabled
-             && !manager.ExceptionReplaySettings.Enabled)
-            {
-                Log.Debug("Debugger products are not enabled");
-            }
-            else
-            {
-                _ = manager.UpdateConfiguration(tracerSettings)
-                           .ContinueWith(
-                                t => Log.Error(t?.Exception, "Error initializing debugger"),
-                                CancellationToken.None,
-                                TaskContinuationOptions.OnlyOnFaulted,
-                                TaskScheduler.Default);
-            }
-        }
 
         // /!\ This method is called by reflection in the SampleHelpers
         // If you remove it then you need to provide an alternative way to wait for the discovery service

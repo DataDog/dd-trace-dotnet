@@ -226,6 +226,27 @@ Deleted the entire `FeatureFlags/` module (26 files) and related auto-instrument
 | Deleted `ClrProfiler/AutoInstrumentation/ManualInstrumentation/OpenFeature/` | OpenFeature SDK integration |
 | Removed `FeatureFlagsModule` from tracer lifecycle | `TracerManager`, `TracerManagerFactory`, `Tracer`, `TestOptimizationTracerManager`, `TestOptimizationTracerManagerFactory` — parameter, property, dispose, replace logic all removed |
 
+### Debugger (Dynamic Instrumentation) removal
+
+Deleted the entire `Debugger/` directory (218 files) and cleaned all external references:
+
+| Change | Details |
+|---|---|
+| Deleted `Debugger/` | 218 files: DynamicInstrumentation, ExceptionAutoInstrumentation, SpanCodeOrigin, Symbols, Snapshots, PInvoke, Configurations, Expressions, Sink, etc. |
+| Deleted `Ci/TestOptimizationDynamicInstrumentationFeature.cs` | CI debugger integration |
+| Cleaned `Instrumentation.cs` | Removed debugger initialization and SpanCodeOrigin from diagnostic observers |
+| Cleaned `Tracer.cs` | Removed CodeOrigin call from StartSpan |
+| Cleaned `Span.cs` | Removed ExceptionReplay calls from SetExceptionTags/Finish, removed MarkSpanForExceptionReplay |
+| Cleaned `TraceContext.cs` | Removed MarkSpanForExceptionReplay call |
+| Cleaned `DynamicConfigurationManager.cs` | Removed debugger config update block |
+| Cleaned `AspNetCoreDiagnosticObserver.cs` | Removed SpanCodeOrigin field/parameter/usage |
+| Cleaned `SingleSpanAspNetCoreDiagnosticObserver.cs` | Same SpanCodeOrigin cleanup |
+| Cleaned `FaultTolerantNativeMethods.cs` | Removed debugger using statements |
+| Cleaned `UserStringInterop.cs` | Removed debugger using |
+| Cleaned `PDBs/DatadogMetadataReader*.cs` | Removed debugger symbol references, moved utility types to PDBs namespace |
+| Cleaned `Datadog.Trace.csproj` | Removed debugger embedded resource |
+| Cleaned CI test integrations | Replaced `TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout` with literal values |
+
 ---
 
 ## Current Architecture

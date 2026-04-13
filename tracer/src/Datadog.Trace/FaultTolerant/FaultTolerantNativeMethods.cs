@@ -6,8 +6,6 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.ProbeStatuses;
-using Datadog.Trace.Debugger.Sink.Models;
 
 namespace Datadog.Trace.FaultTolerant
 {

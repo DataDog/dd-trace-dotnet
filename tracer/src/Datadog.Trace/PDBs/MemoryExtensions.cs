@@ -5,30 +5,16 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Pdb
 {
     internal static class MemoryExtensions
     {
-        /// <summary>
-        /// Return a new IMemoryOwner of size 'currentSize * 2' and dispose the old one
-        /// </summary>
         internal static IMemoryOwner<T> EnlargeBuffer<T>(this IMemoryOwner<T> memoryOwner, int currentSize)
         {
             var newMemory = MemoryPool<T>.Shared.Rent(currentSize * 2);
             memoryOwner.Memory.Span.CopyTo(newMemory.Memory.Span);
             memoryOwner.Dispose();
             return newMemory;
-        }
-
-        /// <summary>
-        /// Return a new array of size 'currentSize * 2' from the pool and return the old one to the pool
-        /// </summary>
-        internal static T[] EnlargeBuffer<T>(this T[] array, int currentSize)
-        {
-            var newArray = ArrayPool<T>.Shared.Rent(currentSize * 2);
-            array.CopyTo(newArray, 0);
-            ArrayPool<T>.Shared.Return(array, !typeof(T).IsValueType);
-            return newArray;
         }
     }
 }
