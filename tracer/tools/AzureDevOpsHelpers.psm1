@@ -366,7 +366,7 @@ function Get-BuildIdFromPRViaHttp {
         Azure DevOps builds appear as commit statuses (not check runs) on GitHub.
         This function gets the PR's head SHA, then queries commit statuses to find
         the Azure DevOps build URL. No authentication required for public repos
-        (rate-limited to 60 requests/hour).
+        (rate-limited).
     #>
     param([int]$PRNumber)
 
@@ -475,7 +475,7 @@ function Test-Prerequisites {
     if ($needsGh) {
         $hasGh = [bool](Get-Command gh -ErrorAction SilentlyContinue)
         if (-not $hasGh) {
-            Write-Warning "GitHub CLI (gh) not found. Using GitHub REST API for PR resolution (rate-limited to 60 requests/hour)."
+            Write-Warning "GitHub CLI (gh) not found. Using GitHub REST API for PR resolution (rate-limited)."
             Write-Warning "  Install: https://cli.github.com"
         }
         else {
