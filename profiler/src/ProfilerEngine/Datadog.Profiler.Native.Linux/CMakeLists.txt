@@ -31,6 +31,13 @@ endif()
 
 if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
+    if (ISARM64)
+        # On arm64, the CLR exports typeinfo for ProfToEEInterfaceImpl, so UBSAN's vptr
+        # check fires on every call through CLR interface pointers.  Suppress vptr checks
+        # only for CLR COM types (IUnknown, ICorProfilerInfo*, ICorProfilerCallback*).
+        # On x86_64 the CLR doesn't export that typeinfo, so the check is silently skipped.
+        add_compile_options(-fsanitize-ignorelist=${CMAKE_SOURCE_DIR}/profiler/src/ProfilerEngine/ubsan_ignorelist.txt)
+    endif()
 endif()
 
 if (RUN_TSAN)

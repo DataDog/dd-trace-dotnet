@@ -680,7 +680,7 @@ partial class Build
             var platforms =
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                : new[] { MSBuildTargetPlatform.x64 };
+                : new[] { IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64 };
 
             foreach (var platform in platforms)
             {
@@ -695,7 +695,7 @@ partial class Build
             var platforms =
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                : new[] { MSBuildTargetPlatform.x64 };
+                : new[] { IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64 };
 
             foreach (var platform in platforms)
             {
@@ -783,7 +783,7 @@ partial class Build
 
     Target CompileProfilerWithTsanLinux => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Before(PublishProfiler)
         .Executes(() =>
         {
@@ -798,7 +798,7 @@ partial class Build
 
     Target RunUnitTestsWithTsanLinux => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Executes(() =>
         {
             // Filtering tests is temporary.
@@ -822,7 +822,7 @@ partial class Build
             var platforms =
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                : new[] { MSBuildTargetPlatform.x64 };
+                : new[] { IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64 };
 
             var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
@@ -847,7 +847,7 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
-            RunSampleWithSanitizer(MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
+            RunSampleWithSanitizer(IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
     Target ValidateNativeProfilerGlibcCompatibility => _ => _
@@ -914,7 +914,7 @@ partial class Build
         {
             if (sanitizer is SanitizerKind.Asan)
             {
-                envVars["LD_PRELOAD"] = "libasan.so.6";
+                envVars["LD_PRELOAD"] = IsArm64 ? "libasan.so.5" : "libasan.so.6";
                 // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
                 envVars["ASAN_OPTIONS"] = "detect_leaks=0";
             }
