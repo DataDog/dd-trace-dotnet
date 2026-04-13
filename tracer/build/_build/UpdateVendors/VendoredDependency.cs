@@ -222,7 +222,8 @@ namespace UpdateVendors
                 },
                 relativePathsToExclude: new[]
                 {
-                    "Internal/Utilities/EncodingHelper.netcoreapp.cs"
+                    "Internal/Utilities/EncodingHelper.netcoreapp.cs",
+                    "Internal/Utilities/StreamExtensions.netcoreapp.cs",
                 });
 
             Add(
