@@ -1,12 +1,12 @@
-﻿// <copyright file="AppSecRequestContext.cs" company="Datadog">
+// <copyright file="AppSecRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
@@ -26,6 +26,7 @@ internal sealed partial class AppSecRequestContext
     private readonly object _sync = new();
     private readonly RaspMetricsHelper? _raspMetricsHelper = Security.Instance.RaspEnabled ? new RaspMetricsHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
+    private readonly ConcurrentDictionary<ulong, bool> _sampledHttpClientRequests = new();
     private int _wafTimeout;
     private int? _wafError;
     private int? _wafRaspError;
@@ -139,6 +140,26 @@ internal sealed partial class AppSecRequestContext
 
             _raspStackTraces[stackCategory].Add(stackTrace);
         }
+    }
+
+    public bool IsHttpClientRequestSampled(ulong id)
+    {
+        if (_sampledHttpClientRequests.TryGetValue(id, out bool value))
+        {
+            return value;
+        }
+
+        if (Security.Instance.SampleDownstreamRequest(this, id))
+        {
+            if (_sampledHttpClientRequests.Count < Security.Instance.ApiSecurityMaxDownstreamRequestBodyAnalysis)
+            {
+                _sampledHttpClientRequests[id] = true;
+                return true;
+            }
+        }
+
+        _sampledHttpClientRequests[id] = false;
+        return false;
     }
 }
 
