@@ -205,6 +205,34 @@ namespace UpdateVendors
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "FxResources", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
                 });
 
+            // "Common" shared components required by System.Reflection.Metadata (among others)
+            // Not a "real" package
+            Add(
+                libraryName: "System.Common",
+                version: "7.0.20",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.20.zip",
+                pathToSrc: new[] { "runtime-7.0.20", "src", "libraries", "Common", "src" },
+                transform: filePath =>
+                {
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents =>
+                        {
+                            return contents.Replace(
+                                "[LibraryImport(Libraries.Kernel32, SetLastError = true)]\n        internal static unsafe partial int ReadFile(",
+                                "[DllImport(\"kernel32.dll\", SetLastError = true)]\n        internal static extern unsafe int ReadFile(");
+                        });
+                    }
+                },
+                onlyIncludePaths: new[]
+                {
+                    "Interop/Windows/Interop.Libraries.cs",
+                    "Interop/Windows/kernel32/Interop.ReadFile_SafeHandle_IntPtr.cs",
+                });
+
             Add(
                 libraryName: "System.Reflection.Metadata",
                 version: "7.0.20",
@@ -479,8 +507,9 @@ namespace UpdateVendors
             contents = contents.Insert(namespaceIndex, usings);
 
             contents = contents
-               .Replace("using System.Collections.Immutable;", "using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;")
-               .Replace("namespace System.Reflection;", "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection;");
+                      .Replace("using System.Collections.Immutable;", "using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;")
+                      .Replace("namespace System.Reflection;", "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection;")
+                      .Replace("Configuration.Assemblies.AssemblyHashAlgorithm", "global::System.Configuration.Assemblies.AssemblyHashAlgorithm");
 
             // some somewhat hacky fixes for specific issues
             // if (string.Equals(Path.GetFileName(filePath), "Tables.cs")
@@ -502,13 +531,34 @@ namespace UpdateVendors
             //     contents = contents.Replace("System.Collections.IEnumerator.Current", "global::System.Collections.IEnumerator.Current");
             // }
             //
-            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.cs"))
-            // {
-            //     contents = contents
-            //               .Replace("System.Collections.IEnumerator", "global::System.Collections.IEnumerator")
-            //               .Replace("System.Collections.IEnumerable", "global::System.Collections.IEnumerable")
-            //               .Replace("System.Collections.ICollection", "global::System.Collections.ICollection");
-            // }
+            if (string.Equals(Path.GetFileName(filePath), "Throw.cs"))
+            {
+                contents = contents
+                   .Replace("throw new ObjectDisposedException(nameof(PortableExecutable.PEReader));", "throw new ObjectDisposedException(\"PEReader\");");
+            }
+            else if (string.Equals(Path.GetFileName(filePath), "BlobBuilder.cs"))
+            {
+                contents = contents
+                          .Replace("using System.Linq;\n", string.Empty)
+                          .Replace(
+                               """GetChunks().Select<BlobBuilder, string>(chunk => $"[{Display(chunk._buffer, chunk.Length)}]"))""",
+                               """GetChunks().Select<BlobBuilder, string>((Func<BlobBuilder, string>) (chunk => "[" + BlobBuilder.Display(chunk._buffer, chunk.Length) + "]")))""");
+            }
+            else if (string.Equals(Path.GetFileName(filePath), "MetadataReader.WinMD.cs"))
+            {
+                contents = contents
+                   .Replace(
+                        """internal static readonly byte[] WinRTPrefix = "<WinRT>"u8.ToArray();""",
+                        """internal static readonly byte[] WinRTPrefix = global::System.Text.Encoding.UTF8.GetBytes("<WinRT>");""");
+            }
+            else if (string.Equals(Path.GetFileName(filePath), "MethodDefinition.cs"))
+            {
+                // TODO: Maybe we should use duck typing for this instead, so we can exclude from .NET 6+?
+                contents = contents
+                   .Replace(
+                        """private MethodDefinitionHandle Handle\n""",
+                        """internal MethodDefinitionHandle Handle\n""");
+            }
             //
             // if (string.Equals(Path.GetFileName(filePath), "KeysOrValuesCollectionAccessor.cs"))
             // {
@@ -658,26 +708,32 @@ namespace UpdateVendors
 
                         string datadogVendoredNamespace = originalNamespace.StartsWith("System") ? "Datadog.Trace.VendoredMicrosoftCode." : "Datadog.Trace.Vendors.";
 
-                        // Prevent namespace conflicts
-                        builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
-                        builder.Replace($"namespace {originalNamespace}", $"namespace {datadogVendoredNamespace}{originalNamespace}");
+                        if (!string.IsNullOrEmpty(originalNamespace))
+                        {
+                            // Prevent namespace conflicts
+                            builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
+                            builder.Replace($"namespace {originalNamespace}", $"namespace {datadogVendoredNamespace}{originalNamespace}");
+                        }
+
                         builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
 
-                        // Fix namespace conflicts in `using alias` directives. For example, transform:
-                        //      using Foo = dnlib.A.B.C;
-                        // To:
-                        //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
-                        string result =
-                            Regex.Replace(
-                                builder.ToString(),
+                        content = builder.ToString();
+                        if (!string.IsNullOrEmpty(originalNamespace))
+                        {
+                            // Fix namespace conflicts in `using alias` directives. For example, transform:
+                            //      using Foo = dnlib.A.B.C;
+                            // To:
+                            //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
+                            content = Regex.Replace(
+                                content,
                                 @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
                                 match => $"using {match.Groups[1].Value} = {datadogVendoredNamespace}{originalNamespace}.{match.Groups[2].Value};");
-
+                        }
 
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
-                            result,
+                            content,
                             @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(readonly\s+)?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
