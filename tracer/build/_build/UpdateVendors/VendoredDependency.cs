@@ -472,6 +472,7 @@ namespace UpdateVendors
                                   "using System.Collections.Generic;\n" +
                                   "using System.IO;\n" +
                                   "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
                                   "using System.Threading;\n" +
                                   "using System.Threading.Tasks;\n\n";
 
@@ -480,7 +481,17 @@ namespace UpdateVendors
             contents = contents
                .Replace("using System.Collections.Immutable;", "using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;")
                .Replace("namespace System.Reflection;", "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection;");
-            // // some somewhat hacky fixes for specific issues
+
+            // some somewhat hacky fixes for specific issues
+            // if (string.Equals(Path.GetFileName(filePath), "Tables.cs")
+            //  || string.Equals(Path.GetFileName(filePath), "MetadataBuilder.Tables.cs")
+            //  || string.Equals(Path.GetFileName(filePath), "MetadataReader.netstandard.cs"))
+            // {
+            //     // Add using System.Reflection
+            //     contents = contents.Replace(
+            //         "\n\nnamespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.",
+            //         "\nusing System.Reflection;\n\nnamespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.");
+            // }
             // contents = contents
             //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.ConstrainedExecution", "System.Runtime.ConstrainedExecution")
             //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.ExceptionServices", "System.Runtime.ExceptionServices")
