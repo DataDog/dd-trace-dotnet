@@ -1194,8 +1194,8 @@ namespace Datadog.Trace.Tests.Agent
             span.SetTag(Tags.SpanKind, spanKind);
             span.Tags.SetTag("peer.service", "remote-service");
 
-            var peerTagKeys = new List<string> { "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys);
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
 
             key.PeerTagsHash.Should().Be(3430395298086625290UL);
         }
@@ -1216,8 +1216,8 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("db.system", "postgres");
 
             // Keys must be pre-sorted (matching agent behavior)
-            var peerTagKeys = new List<string> { "db.instance", "db.system", "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys);
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
 
             key.PeerTagsHash.Should().Be(9894752672193411515UL);
         }
@@ -1236,8 +1236,8 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("messaging.destination", "topic-foo");
             span.Tags.SetTag("messaging.system", "kafka");
 
-            var peerTagKeys = new List<string> { "db.instance", "db.system", "messaging.destination", "messaging.system" };
-            var key = aggregator.BuildKey(span, peerTagKeys);
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("messaging.destination"), new("messaging.system")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
 
             key.PeerTagsHash.Should().Be(0xf5eeb51fbe7929b4UL);
         }
@@ -1256,8 +1256,8 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("db.instance", string.Empty);
             span.Tags.SetTag("db.system", string.Empty);
 
-            var peerTagKeys = new List<string> { "db.instance", "db.system", "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys);
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
 
             key.PeerTagsHash.Should().Be(3430395298086625290UL);
         }
@@ -1272,8 +1272,8 @@ namespace Datadog.Trace.Tests.Agent
             span.SetTag(Tags.SpanKind, SpanKinds.Client);
             // No peer tags set on the span
 
-            var peerTagKeys = new List<string> { "peer.service" };
-            var key = aggregator.BuildKey(span, peerTagKeys);
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
 
             key.PeerTagsHash.Should().Be(0UL);
         }
