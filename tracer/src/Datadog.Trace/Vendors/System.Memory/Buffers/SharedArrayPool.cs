@@ -298,7 +298,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 // Try to push on to the associated partition first.  If that fails,
                 // round-robin through the other partitions.
                 Partition[] partitions = _partitions;
-                int index = (int)((uint)Process.GetCurrentProcess().Id % (uint)SharedArrayPoolStatics.s_partitionCount); // mod by constant in tier 1
+                int index = (int)((uint)Environment.CurrentManagedThreadId % (uint)SharedArrayPoolStatics.s_partitionCount); // mod by constant in tier 1
                 // int index = (int)((uint)Thread.GetCurrentProcessorId() % (uint)SharedArrayPoolStatics.s_partitionCount); // mod by constant in tier 1
                 for (int i = 0; i < partitions.Length; i++)
                 {
@@ -319,7 +319,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 // Try to pop from the associated partition first.  If that fails, round-robin through the other partitions.
                 T[]? arr;
                 Partition[] partitions = _partitions;
-                int index = (int)((uint)Process.GetCurrentProcess().Id % (uint)SharedArrayPoolStatics.s_partitionCount); // mod by constant in tier 1
+                int index = (int)((uint)Environment.CurrentManagedThreadId % (uint)SharedArrayPoolStatics.s_partitionCount); // mod by constant in tier 1
                 // todo: fix int index = (int)((uint)Thread.GetCurrentProcessorId() % (uint)SharedArrayPoolStatics.s_partitionCount); // mod by constant in tier 1
                 for (int i = 0; i < partitions.Length; i++)
                 {
