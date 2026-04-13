@@ -1,6 +1,6 @@
 ---
 name: analyze-azdo-build
-description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
+description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. This skill should be used when the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
 allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
@@ -12,40 +12,19 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Prerequisites
 
-This skill requires the following tools. If any are missing, provide the relevant install instructions below.
+- **PowerShell 7+** (`pwsh`) — Required. PowerShell 5.1 minimum on Windows.
+- **Azure CLI** (`az`) — Optional for read-only analysis; required for stage retry.
+- **GitHub CLI** (`gh`) — Optional; HTTP fallback for public repos.
 
-### PowerShell 7+ (`pwsh`) — Required
-
-The build analysis script requires PowerShell. PowerShell 7+ (`pwsh`) is recommended; PowerShell 5.1 (`powershell.exe`, Windows only) is the minimum.
-
-- **Verify**: `pwsh -Version`
-- **Install**: `winget install Microsoft.PowerShell` (Windows) · `brew install powershell/tap/powershell` (macOS)
-- **Docs**: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
+See [scripts-reference.md](scripts-reference.md#prerequisites) for install instructions, verification commands, and HTTP fallback details.
 
 **If the user does not have PowerShell installed**:
 1. Check for `pwsh` first: `pwsh -Version`
 2. If not found and on Windows, check for PowerShell 5.1: `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
-3. If neither found or version is too old, provide installation instructions above
+3. If neither found or version is too old, provide installation instructions from [scripts-reference.md](scripts-reference.md#prerequisites)
 4. Do NOT attempt to replicate the script functionality using bash/jq - the logic is too complex
 
 **Always prefer `pwsh` over `powershell.exe`** when both are available.
-
-### GitHub CLI (`gh`) — Required for PR analysis
-
-Used to resolve PR numbers to Azure DevOps build IDs. Must be authenticated.
-
-- **Verify**: `gh auth status`
-- **Install**: `winget install GitHub.cli` (Windows) · `brew install gh` (macOS)
-- **Docs**: https://cli.github.com/
-
-### Azure CLI (`az`) with `azure-devops` extension — Required
-
-Used by the PowerShell script to query Azure DevOps build and timeline APIs.
-
-- **Verify**: `az version` (check that `azure-devops` appears under "extensions")
-- **Install CLI**: `winget install Microsoft.AzureCLI` (Windows) · `brew install azure-cli` (macOS)
-- **Install extension**: `az extension add --name azure-devops`
-- **Docs**: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
 
 ## Additional Resources
 
@@ -55,7 +34,7 @@ Used by the PowerShell script to query Azure DevOps build and timeline APIs.
 
 ## Task
 
-You are analyzing CI failures for the dd-trace-dotnet repository.
+Analyze CI failures for the dd-trace-dotnet repository.
 
 **Phase 1 - Quick Initial Analysis (DO THIS FIRST)**:
 1. **Fetch build details** - Get build status, branch, commit
@@ -320,8 +299,8 @@ The Azure DevOps timeline contains a hierarchy:
 
 ## Notes
 
-- Requires `gh` CLI authenticated for PR analysis (see Prerequisites)
-- Requires `az` CLI with `azure-devops` extension (see Prerequisites)
+- `gh` and `az` CLIs are optional for read-only analysis (HTTP fallback for public repos/projects)
+- `az` CLI with `azure-devops` extension is required for stage retry (PATCH operations)
 - Large builds may take 30-60 seconds to analyze
 - Log downloads are best-effort; may fail due to Azure DevOps API issues
 - Always use scratchpad directory from system prompt, never hardcode /tmp paths
