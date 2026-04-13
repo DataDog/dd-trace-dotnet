@@ -5,6 +5,7 @@
 
 #if NET5_0_OR_GREATER
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -61,12 +62,20 @@ public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTes
         var agent = Fixture.Agent;
 
         var spans = await SendRequestsAsync(agent, url, body, 1, 5, string.Empty, "application/json", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(testName, string.Empty, string.Empty);
-        await VerifySpans(spansFiltered.ToImmutableList(), settings);
+        await VerifySpans(spansFiltered, settings, orderSpans: OrderSpans);
     }
+
+    private static IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)
+        => spans
+              .OrderBy(x => VerifyHelper.GetRootSpanResourceName(x, spans))
+              .ThenBy(x => VerifyHelper.GetSpanDepth(x, spans))
+              .ThenBy(x => x.Resource)
+              .ThenBy(x => x.Start)
+              .ThenBy(x => x.Duration);
 }
 
 #endif
