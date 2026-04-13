@@ -17,6 +17,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -1260,6 +1261,56 @@ namespace Datadog.Trace.Tests.Agent
             var key = aggregator.BuildKey(span, peerTagKeys, out _);
 
             key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_MultipleTags()
+        {
+            // Verify that the fast-path hash from BuildKey matches
+            // what you'd get by hashing the GetEncodedPeerTags output directly
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            // Hash the encoded tags the same way the Go agent does:
+            // FNV-1a of each tag's bytes, chained with a [0] separator
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+            for (var i = 1; i < encodedTags.Count; i++)
+            {
+                expectedHash = FnvHash64.GenerateHash(new byte[] { 0 }, FnvHash64.Version.V1A, expectedHash);
+                expectedHash = FnvHash64.GenerateHash(encodedTags[i], FnvHash64.Version.V1A, expectedHash);
+            }
+
+            key.PeerTagsHash.Should().Be(expectedHash);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_BaseService()
+        {
+            // Verify that the fast-path hash from BuildKey matches the encoded base service tag
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.Tags.SetTag(Tags.BaseService, "my-base-service");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            encodedTags.Should().HaveCount(1);
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+
+            key.PeerTagsHash.Should().Be(expectedHash);
         }
 
         [Fact]
