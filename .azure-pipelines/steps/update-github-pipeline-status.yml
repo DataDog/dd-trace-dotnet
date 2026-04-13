@@ -41,6 +41,9 @@ stages:
       - profiler_integration_tests_linux
       - profiler_integration_tests_arm64
       - asan_profiler_tests
+      - asan_arm64_profiler_tests
+      - ubsan_arm64_profiler_tests
+      - tsan_arm64_profiler_tests
       - ubsan_profiler_tests
       - tsan_profiler_tests
       - integration_tests_arm64
@@ -121,6 +124,9 @@ stages:
          in(dependencies.profiler_integration_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_integration_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.asan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.asan_arm64_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.ubsan_arm64_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.tsan_arm64_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.ubsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.integration_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -213,6 +219,9 @@ stages:
       - profiler_integration_tests_linux
       - profiler_integration_tests_arm64
       - asan_profiler_tests
+      - asan_arm64_profiler_tests
+      - ubsan_arm64_profiler_tests
+      - tsan_arm64_profiler_tests
       - ubsan_profiler_tests
       - tsan_profiler_tests
       - integration_tests_arm64
@@ -293,6 +302,9 @@ stages:
          in(dependencies.profiler_integration_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_integration_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.asan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.asan_arm64_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.ubsan_arm64_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.tsan_arm64_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.ubsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.integration_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
