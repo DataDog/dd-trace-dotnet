@@ -503,7 +503,7 @@ supportedConfigurations:
     const_name: TotalFlakyRetryCount
     documentation: Configuration key for the maximum number of retry attempts for the entire session.
   DD_CODE_ORIGIN_FOR_SPANS_ENABLED:
-  - implementation: B
+  - implementation: A
     type: boolean
     default: 'true'
     product: Debugger
