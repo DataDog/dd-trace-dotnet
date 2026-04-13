@@ -1,0 +1,11 @@
+# On arm64, the CLR exports typeinfo for its COM implementation class
+# (ProfToEEInterfaceImpl), so UBSAN's vptr check fires on every call through
+# CLR interface pointers.  These are false positives inherent to the COM pattern.
+# On x86_64 the CLR does not export that typeinfo, so the check is silently skipped.
+#
+# type: entries match the static type at the call site (known at compile time)
+# and are specifically designed for UBSAN's vptr check.
+[undefined]
+type:IUnknown
+type:ICorProfilerInfo*
+type:ICorProfilerCallback*
