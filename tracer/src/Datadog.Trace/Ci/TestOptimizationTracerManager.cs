@@ -14,7 +14,6 @@ using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -47,7 +46,6 @@ namespace Datadog.Trace.Ci
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlags,
             ServiceRemappingHash serviceRemappingHash)
             : base(
                 settings,
@@ -66,7 +64,6 @@ namespace Datadog.Trace.Ci
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
-                featureFlags,
                 serviceRemappingHash,
                 GetProcessors(settings.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
@@ -167,7 +164,6 @@ namespace Datadog.Trace.Ci
                 IDynamicConfigurationManager dynamicConfigurationManager,
                 ITracerFlareManager tracerFlareManager,
                 ISpanEventsManager spanEventsManager,
-                FeatureFlagsModule featureFlags,
                 ServiceRemappingHash serviceRemappingHash)
             : base(
                 settings,
@@ -186,7 +182,6 @@ namespace Datadog.Trace.Ci
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
-                featureFlags,
                 serviceRemappingHash)
             {
             }

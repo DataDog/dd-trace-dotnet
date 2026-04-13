@@ -16,7 +16,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -56,7 +55,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IStatsdManager statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null, ServiceRemappingHash serviceRemappingHash = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null, featureFlags: null, serviceRemappingHash: serviceRemappingHash))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null, serviceRemappingHash: serviceRemappingHash))
         {
         }
 

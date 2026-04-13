@@ -118,6 +118,8 @@ namespace Datadog.Trace.AppSec
 
         internal bool AppsecEnabled => _configurationState.AppsecEnabled;
 
+        internal ApiSecurity ApiSecurity { get; }
+
         internal string? InitializationError { get; private set; }
 
         internal bool WafExportsErrorHappened => _libraryInitializationResult is { Status: LibraryInitializationResult.LoadStatus.ExportError };
@@ -139,8 +141,6 @@ namespace Datadog.Trace.AppSec
             AppsecEnabled && CalculateIsTrackUserEventsEnabled(_configurationState.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
         internal bool IsAnonUserTrackingMode => CalculateIsAnonUserTrackingMode(_configurationState.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
-
-        internal ApiSecurity ApiSecurity { get; }
 
         internal static bool CalculateIsTrackUserEventsEnabled(string? remote, string local)
         {

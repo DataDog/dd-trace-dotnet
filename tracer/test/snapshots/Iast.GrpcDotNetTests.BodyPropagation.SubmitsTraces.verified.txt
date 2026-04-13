@@ -80,39 +80,13 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
-      _dd.iast.enabled: 1,
-      _dd.iast.json:
-{
-  "vulnerabilities": [
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": -3125352,
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromClient: "
-          },
-          {
-            "value": "GreeterClient0",
-            "source": 0
-          }
-        ]
-      }
-    }
-  ],
-  "sources": [
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient0"
-    }
-  ]
-}
+      _dd.iast.enabled: 0
     },
     Metrics: {
       process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 2.0
+      _sampling_priority_v1: 1.0
     }
   },
   {

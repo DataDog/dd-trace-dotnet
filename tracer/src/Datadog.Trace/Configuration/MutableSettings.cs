@@ -1086,7 +1086,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// by excluding all the default sources. Effectively gives all the settings their default
     /// values. Should only be used with the manual instrumentation source
     /// </summary>
-    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings, ConfigurationTelemetry telemetry)
+    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings, IConfigurationTelemetry telemetry)
         => CreateInitialMutableSettings(
             NullConfigurationSource.Instance,
             telemetry,
@@ -1096,7 +1096,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     public static MutableSettings CreateForTesting(TracerSettings tracerSettings, Dictionary<string, object?> settings)
         => CreateInitialMutableSettings(
             new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
-            new ConfigurationTelemetry(),
+            NullConfigurationTelemetry.Instance,
             new OverrideErrorLog(),
             tracerSettings);
 

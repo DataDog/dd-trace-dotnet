@@ -200,6 +200,32 @@ RASP was fully removed from both managed and native code while preserving IAST f
 | Removed `rasp_enabled` environment variable constant | `environment_variables.h` |
 | Simplified `cor_profiler.cpp` dataflow init to IAST-only | `cor_profiler.cpp` |
 
+### Telemetry removal
+
+All telemetry was disabled/removed. The `Telemetry/` directory (81 files) is kept as a skeleton
+since 159 files across the tracer reference `TelemetryFactory`, but it's been neutralized:
+
+| Change | Details |
+|---|---|
+| `TelemetryFactory` defaults to no-ops | `NullMetricsTelemetryCollector` and `NullConfigurationTelemetry` as defaults — all 159 call sites become no-ops |
+| Deleted `Iast/Telemetry/` | `ExecutedTelemetryHelper.cs`, `IastMetricsVerbosityLevel.cs` |
+| Deleted telemetry test files | `ExecutedTelemetryHelperTests.cs`, `IastTelemetryTests.cs` |
+| Cleaned `IastModule.cs` | 4 telemetry methods made empty |
+| Cleaned `IastRequestContext.cs` | Removed `_executedTelemetryHelper` field and all usage sites, 4 methods made empty |
+| Cleaned `IastSettings.cs` | Removed `TelemetryVerbosity` property, replaced `TelemetryFactory.Config` with `NullConfigurationTelemetry.Instance` |
+| Cleaned test infrastructure | Removed `EnableIastTelemetry` method, `iastTelemetryLevel` parameter, and `IastTelemetryLevel` property from all test base classes and subclasses |
+
+### Feature flags removal
+
+Deleted the entire `FeatureFlags/` module (26 files) and related auto-instrumentation integrations:
+
+| Change | Details |
+|---|---|
+| Deleted `FeatureFlags/` | 26 files: evaluator, module, RCM models, exposure API/cache/models |
+| Deleted `ClrProfiler/AutoInstrumentation/ManualInstrumentation/FeatureFlags/` | FeatureFlags SDK integration |
+| Deleted `ClrProfiler/AutoInstrumentation/ManualInstrumentation/OpenFeature/` | OpenFeature SDK integration |
+| Removed `FeatureFlagsModule` from tracer lifecycle | `TracerManager`, `TracerManagerFactory`, `Tracer`, `TestOptimizationTracerManager`, `TestOptimizationTracerManagerFactory` — parameter, property, dispose, replace logic all removed |
+
 ---
 
 ## Current Architecture
