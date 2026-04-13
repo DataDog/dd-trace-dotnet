@@ -9,7 +9,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
@@ -427,6 +433,117 @@ public class DataStreamsManagerTests
         var forTopic2 = dsm.GetOrCreateEdgeTags(new ProduceEdgeTagCacheKey(string.Empty, "topic2"), static k => [$"topic:{k.Topic}", "type:kafka"]);
 
         forTopic2.Should().NotBeSameAs(forTopic1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_KafkaConsume_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new ConsumeEdgeTagCacheKey("group1", "topic1", "cluster1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"group:{k.GroupId}", $"topic:{k.Topic}", $"kafka_cluster_id:{k.ClusterId}"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"group:{k.GroupId}", $"topic:{k.Topic}", $"kafka_cluster_id:{k.ClusterId}"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_RabbitMQProduce_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new RabbitMQProduceEdgeTagCacheKey("exchange1", string.Empty, hasRoutingKey: true);
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"exchange:{k.Exchange}", "has_routing_key:true", "type:rabbitmq"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"exchange:{k.Exchange}", "has_routing_key:true", "type:rabbitmq"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_RabbitMQConsume_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new RabbitMQConsumeEdgeTagCacheKey("queue1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"topic:{k.TopicOrRoutingKey}", "type:rabbitmq"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"topic:{k.TopicOrRoutingKey}", "type:rabbitmq"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_IbmMq_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var produceKey = new IbmMqEdgeTagCacheKey("queue1", isConsume: false);
+        var consumeKey = new IbmMqEdgeTagCacheKey("queue1", isConsume: true);
+
+        var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:ibmmq"]);
+        var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:ibmmq"]);
+        var consume1 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]);
+        var consume2 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]);
+
+        produce2.Should().BeSameAs(produce1);
+        consume2.Should().BeSameAs(consume1);
+        consume1.Should().NotBeSameAs(produce1); // same queue but different direction → different entry
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_Kinesis_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var produceKey = new KinesisEdgeTagCacheKey("stream1", isConsume: false);
+        var consumeKey = new KinesisEdgeTagCacheKey("stream1", isConsume: true);
+
+        var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.StreamName}", "type:kinesis"]);
+        var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.StreamName}", "type:kinesis"]);
+        var consume1 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.StreamName}", "type:kinesis"]);
+        var consume2 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.StreamName}", "type:kinesis"]);
+
+        produce2.Should().BeSameAs(produce1);
+        consume2.Should().BeSameAs(consume1);
+        consume1.Should().NotBeSameAs(produce1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_Sns_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new SnsEdgeTagCacheKey("arn:topic1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_Sqs_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var produceKey = new SqsEdgeTagCacheKey("queue1", isConsume: false);
+        var consumeKey = new SqsEdgeTagCacheKey("queue1", isConsume: true);
+
+        var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
+        var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
+        var consume1 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:sqs"]);
+        var consume2 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:sqs"]);
+
+        produce2.Should().BeSameAs(produce1);
+        consume2.Should().BeSameAs(consume1);
+        consume1.Should().NotBeSameAs(produce1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_ServiceBus_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new ServiceBusEdgeTagCacheKey("my-entity");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
+
+        second.Should().BeSameAs(first);
     }
 
     [Fact]

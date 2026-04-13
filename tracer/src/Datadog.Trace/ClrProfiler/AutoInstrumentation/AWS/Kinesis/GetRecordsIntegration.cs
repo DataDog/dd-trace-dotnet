@@ -78,7 +78,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager is { IsEnabled: true })
                 {
-                    var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:kinesis" };
+                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
+                        new KinesisEdgeTagCacheKey((string)state.State, isConsume: true),
+                        static k => ["direction:in", $"topic:{k.StreamName}", "type:kinesis"]);
                     foreach (var o in response.Records)
                     {
                         var record = o.DuckCast<IRecord>();

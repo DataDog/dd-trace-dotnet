@@ -37,8 +37,11 @@ internal sealed class AwsSnsHandlerCommon
         if (scope?.Span.Context is { } context && !string.IsNullOrEmpty(topicName))
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            // avoid allocation if edgeTags are not going to be used
-            var edgeTags = dataStreamsManager is { IsEnabled: true } ? ["direction:out", $"topic:{topicName}", "type:sns"] : Array.Empty<string>();
+            var edgeTags = dataStreamsManager is { IsEnabled: true }
+                               ? dataStreamsManager.GetOrCreateEdgeTags(
+                                   new SnsEdgeTagCacheKey(topicName!),
+                                   static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"])
+                               : Array.Empty<string>();
 
             if (sendType == SendType.SingleMessage)
             {

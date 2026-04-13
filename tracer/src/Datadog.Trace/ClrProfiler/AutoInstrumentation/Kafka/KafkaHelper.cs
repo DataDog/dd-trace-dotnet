@@ -143,6 +143,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         }
 
         // NOTE: tags must be sorted alphabetically — called only on edge-tag cache miss
+        private static string[] BuildConsumeEdgeTags(string groupId, string topic, string clusterId)
+        {
+            if (!StringUtil.IsNullOrEmpty(clusterId))
+            {
+                return StringUtil.IsNullOrEmpty(topic)
+                           ? ["direction:in", $"group:{groupId}", $"kafka_cluster_id:{clusterId}", "type:kafka"]
+                           : ["direction:in", $"group:{groupId}", $"kafka_cluster_id:{clusterId}", $"topic:{topic}", "type:kafka"];
+            }
+
+            return StringUtil.IsNullOrEmpty(topic)
+                       ? ["direction:in", $"group:{groupId}", "type:kafka"]
+                       : ["direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka"];
+        }
+
+        // NOTE: tags must be sorted alphabetically — called only on edge-tag cache miss
         private static string[] BuildProduceEdgeTags(string clusterId, string topic)
         {
             if (!StringUtil.IsNullOrEmpty(clusterId))
@@ -269,21 +284,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    // TODO: we could pool these arrays to reduce allocations
                     // NOTE: the tags must be sorted in alphabetical order
-                    string[] edgeTags;
-                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
-                                       : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
-                    }
-                    else
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
-                                       : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
-                    }
+                    var cacheKey = new ConsumeEdgeTagCacheKey(
+                        groupId ?? string.Empty,
+                        topic ?? string.Empty,
+                        consumerClusterId ?? string.Empty);
+                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId));
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,

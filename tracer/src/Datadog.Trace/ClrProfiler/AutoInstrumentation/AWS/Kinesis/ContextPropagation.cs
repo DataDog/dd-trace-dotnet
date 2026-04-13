@@ -64,7 +64,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
                     var payloadSize = jsonData?.Count > 0 && record.Data != null ? record.Data.Length : 0;
-                    var edgeTags = new[] { "direction:out", $"topic:{streamName}", "type:kinesis" };
+                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
+                        new KinesisEdgeTagCacheKey(streamName!, isConsume: false),
+                        static k => ["direction:out", $"topic:{k.StreamName}", "type:kinesis"]);
                     scope.Span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
                         CheckpointKind.Produce,
