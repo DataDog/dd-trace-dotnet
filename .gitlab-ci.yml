@@ -17,6 +17,8 @@ variables:
   GITLAB_GROUP: DataDog
   # GitLab group path for OSS projects in CI - may differ from GITLAB_GROUP after org split
   GITLAB_GROUP_OSS: DataDog
+  # GitHub org for internal repos (used in git insteadOf redirects) - update to new org after the split
+  GITHUB_ORG_INTERNAL: DataDog
   CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
   OCI_PACKAGE_MAX_SIZE_BYTES: 40000000
