@@ -68,7 +68,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
 
     unw_cursor_t cursor;
     auto initResult = unw_init_local2(&cursor, context, flag);
-    unw_cursor_snapshot_t snapshot;
+    unw_cursor_snapshot_t snapshot= {0};
     unw_get_cursor_snapshot(&cursor, &snapshot);
     if (tracer) tracer->Record(EventType::InitCursor, initResult, snapshot);
     if (initResult != 0)
