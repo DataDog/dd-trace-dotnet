@@ -1804,6 +1804,18 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
+    
+#ifdef LINUX
+if (_pCpuProfiler != nullptr)
+{
+    // if we failed at stopping the time_create-based CPU profiler,
+    // it's safer to not release the memory.
+    // Otherwise, we might crash the application.
+    // Reason: one thread could be executing the signal handler and accessing some field
+    auto success = _pCpuProfiler->Stop();
+    LogServiceStop(success, _pCpuProfiler->GetName());
+}
+#endif
     // TODO: maybe move the following 2 lines AFTER stopping the providers
     // --> to ensure that the last samples are collected
     _pSamplesCollector->Stop();
