@@ -571,7 +571,7 @@ function Get-PRNumberForCurrentBranch {
     $repo = 'DataDog/dd-trace-dotnet'
     $owner = 'DataDog'
     $encodedHead = [Uri]::EscapeDataString("${owner}:${branch}")
-    $url = "https://api.github.com/repos/$repo/pulls?head=$encodedHead&state=all&per_page=1"
+    $url = "https://api.github.com/repos/$repo/pulls?head=$encodedHead&state=open&per_page=1"
 
     Write-Verbose "Searching for open PRs with head=$encodedHead..."
     try {
