@@ -183,7 +183,7 @@ calltarget_ngen_sampled-x86:
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
-    DD_TRACE_STATS_COMPUTATION_ENABLED: 1
+    DD_TRACE_SAMPLE_RATE: "0.1"
     ENDPOINT: "hello"
 
 single_span-x86:
@@ -407,7 +407,7 @@ calltarget_ngen_sampled-arm64:
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
-    DD_TRACE_STATS_COMPUTATION_ENABLED: 1
+    DD_TRACE_SAMPLE_RATE: "0.1"
     ENDPOINT: "hello"
 
 single_span-arm64:
@@ -674,7 +674,7 @@ calltarget_ngen_sampled-win:
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
-    DD_TRACE_STATS_COMPUTATION_ENABLED: 1
+    DD_TRACE_SAMPLE_RATE: "0.1"
     ENDPOINT: "hello"
 
 single_span-win:
