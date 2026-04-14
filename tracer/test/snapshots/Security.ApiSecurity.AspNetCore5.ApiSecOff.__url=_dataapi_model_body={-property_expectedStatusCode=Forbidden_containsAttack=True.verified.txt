@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -51,6 +51,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-932-160","name":"Remote Command Execution: Unix Shell Code Found","tags":{"category":"attack_attempt","type":"command_injection"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dev/zero"],"key_path":["Property"],"value":"dev/zero"}]}],"security_response_id":"Guid_2"}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Model,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },

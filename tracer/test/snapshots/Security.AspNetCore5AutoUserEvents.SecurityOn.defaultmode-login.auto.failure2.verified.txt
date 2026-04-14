@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -31,6 +31,10 @@
       span.kind: server,
       _dd.appsec.events.users.login.failure.auto.mode: identification,
       _dd.appsec.usr.login: NoSuchUser,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.AccountController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

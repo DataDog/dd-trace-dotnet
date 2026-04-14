@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -36,6 +36,10 @@
       _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}],"security_response_id":"Guid_2"}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Model,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -86,6 +90,10 @@
       _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}],"security_response_id":"Guid_3"}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Model,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -136,6 +144,10 @@
       _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}],"security_response_id":"Guid_4"}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Model,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -186,6 +198,10 @@
       _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}],"security_response_id":"Guid_5"}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Model,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -236,6 +252,10 @@
       _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}],"security_response_id":"Guid_6"}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Model,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
