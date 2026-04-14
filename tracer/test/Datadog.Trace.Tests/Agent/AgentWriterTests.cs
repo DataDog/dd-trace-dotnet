@@ -604,7 +604,7 @@ namespace Datadog.Trace.Tests.Agent
             public TraceKeepState ProcessTrace(ref SpanCollection spans)
             {
                 spans = processTrace(spans);
-                return shouldKeepTrace ? TraceKeepState.Keep : TraceKeepState.DropUnsampled;
+                return shouldKeepTrace ? TraceKeepState.Keep : TraceKeepState.DroppedBySampling;
             }
 
             public Task DisposeAsync() => Task.CompletedTask;

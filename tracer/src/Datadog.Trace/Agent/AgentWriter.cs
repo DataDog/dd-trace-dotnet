@@ -434,7 +434,7 @@ namespace Datadog.Trace.Agent
 
                 // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
                 // and we can just stop before we go any further.
-                if (keepState == TraceKeepState.TraceFilter)
+                if (keepState == TraceKeepState.DroppedByFilter)
                 {
                     TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.TraceFilter);
                     // These aren't p0 traces/spans, so presumably we _don't_ increment _droppedP0Traces/_droppedP0Spans

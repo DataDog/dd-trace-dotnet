@@ -20,10 +20,10 @@ internal enum TraceKeepState
     /// <summary>
     /// The trace chunk was filtered using trace filtering, and should not be aggregated.
     /// </summary>
-    TraceFilter,
+    DroppedByFilter,
 
     /// <summary>
     /// The trace chunk was sampled out. Stats should be aggregated, but the chunk should be dropped.
     /// </summary>
-    DropUnsampled,
+    DroppedBySampling,
 }

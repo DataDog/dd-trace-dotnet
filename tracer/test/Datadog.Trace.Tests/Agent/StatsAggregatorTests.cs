@@ -529,7 +529,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var dropReason = aggregator.ProcessTrace(ref traceChunk);
-            dropReason.Should().Be(TraceKeepState.DropUnsampled);
+            dropReason.Should().Be(TraceKeepState.DroppedBySampling);
         }
 
         [Fact]
@@ -561,7 +561,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task ProcessTrace_WhenFilterRejects_ReturnsTraceFilter()
+        public async Task ProcessTrace_WhenFilterRejects_ReturnsDroppedByFilter()
         {
             var filterConfig = new AgentTraceFilterConfig(
                 FilterTagsRequire: null,
@@ -582,7 +582,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var result = aggregator.ProcessTrace(ref traceChunk);
-            result.Should().Be(TraceKeepState.TraceFilter);
+            result.Should().Be(TraceKeepState.DroppedByFilter);
         }
 
         [Fact]
@@ -613,7 +613,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task ProcessTrace_WhenFilterKeepsAndNotSampled_ReturnsDropUnsampled()
+        public async Task ProcessTrace_WhenFilterKeepsAndNotSampled_ReturnsDroppedBySampling()
         {
             // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
             var filterConfig = new AgentTraceFilterConfig(
@@ -636,7 +636,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var result = aggregator.ProcessTrace(ref traceChunk);
-            result.Should().Be(TraceKeepState.DropUnsampled);
+            result.Should().Be(TraceKeepState.DroppedBySampling);
         }
 
         [Fact]
