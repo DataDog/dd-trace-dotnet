@@ -32,8 +32,8 @@ candidate_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
 shopt -u nullglob
 
 if [ ${#candidate_files[@]} -eq 0 ]; then
-    echo "WARNING: No candidate results found in $ARTIFACTS_DIR, skipping PR comment."
-    exit 0
+    echo "ERROR: No candidate results found in $ARTIFACTS_DIR"
+    exit 1
 fi
 
 if [ ${#baseline_files[@]} -eq 0 ]; then
@@ -80,20 +80,12 @@ fi
 export UNCONFIDENCE_THRESHOLD
 
 echo "Comparing benchmark results..."
-set +e
 benchmark_analyzer compare pairwise \
     --baseline='{"baseline_or_candidate":"baseline"}' \
     --candidate='{"baseline_or_candidate":"candidate"}' \
     --format='md-nodejs' \
     --outpath="$ARTIFACTS_DIR/comparison.md" \
     "$ARTIFACTS_DIR"/baseline*.converted.json "$ARTIFACTS_DIR"/candidate*.converted.json
-compare_exit=$?
-set -e
-
-if [ $compare_exit -ne 0 ]; then
-    echo "WARNING: benchmark_analyzer compare failed (exit $compare_exit), skipping PR comment."
-    exit 0
-fi
 
 echo "Posting PR comment..."
 set +e
