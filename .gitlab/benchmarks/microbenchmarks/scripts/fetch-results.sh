@@ -39,7 +39,7 @@ prepare_baseline_results() {
     local BASELINE_DIR=$1
 
     if [ ! -d "$BASELINE_DIR" ]; then
-        echo "WARNING: Baseline directory $BASELINE_DIR not found"
+        echo "Warning: Baseline directory $BASELINE_DIR not found"
         return
     fi
 
@@ -98,7 +98,7 @@ echo "Source: s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX"
 aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX" "$ARTIFACTS_DIR/" \
     --region "$AWS_REGION" \
     --profile "$AWS_PROFILE" \
-    --recursive || echo "WARNING: No candidate results found in S3"
+    --recursive || echo "Warning: No candidate results found in S3"
 
 # Handle legacy format for candidate files (BP_INFRA_TEST mode)
 prepare_candidate_results
@@ -114,7 +114,7 @@ echo "Source: s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$BASELINE_PREFIX"
 aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$BASELINE_PREFIX" "$BASELINE_DIR/" \
     --region "$AWS_REGION" \
     --profile "$AWS_PROFILE" \
-    --recursive || echo "WARNING: No baseline results found in S3 (first run?)"
+    --recursive || echo "Warning: No baseline results found in S3 (first run?)"
 
 # Rename baseline files
 echo ""
