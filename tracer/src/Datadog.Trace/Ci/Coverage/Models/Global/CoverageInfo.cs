@@ -7,7 +7,7 @@
 
 using System;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Global;
 

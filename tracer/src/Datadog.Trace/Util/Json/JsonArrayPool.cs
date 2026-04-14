@@ -6,7 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Util.Json;
 

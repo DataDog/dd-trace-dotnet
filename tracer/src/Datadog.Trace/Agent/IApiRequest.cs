@@ -7,7 +7,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
 {

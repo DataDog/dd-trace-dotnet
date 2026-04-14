@@ -15,7 +15,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 

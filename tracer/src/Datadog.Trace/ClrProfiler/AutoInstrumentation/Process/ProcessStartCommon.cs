@@ -15,7 +15,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 #nullable enable
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process

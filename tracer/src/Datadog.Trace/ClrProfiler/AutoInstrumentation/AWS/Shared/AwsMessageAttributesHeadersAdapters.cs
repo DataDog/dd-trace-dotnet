@@ -13,7 +13,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 

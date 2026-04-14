@@ -8,8 +8,8 @@ using System;
 using System.IO;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -95,7 +95,7 @@ internal abstract class IpcDualChannel : IDisposable
             // Let's protect ourselves from deserializing types that we don't want to
             if (assemblyName?.StartsWith("Datadog.Trace") == true)
             {
-                return DefaultSerializationBinder.Instance.BindToType(assemblyName, typeName);
+                return new DefaultSerializationBinder().BindToType(assemblyName, typeName);
             }
 
             return typeof(void);
@@ -103,7 +103,7 @@ internal abstract class IpcDualChannel : IDisposable
 
         public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
         {
-            DefaultSerializationBinder.Instance.BindToName(serializedType, out assemblyName, out typeName);
+            new DefaultSerializationBinder().BindToName(serializedType, out assemblyName, out typeName);
         }
     }
 }

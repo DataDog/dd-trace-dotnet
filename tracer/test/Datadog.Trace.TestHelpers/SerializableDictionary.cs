@@ -5,7 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers

@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Global;
 

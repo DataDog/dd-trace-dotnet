@@ -10,8 +10,8 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Agent.Transports;
 

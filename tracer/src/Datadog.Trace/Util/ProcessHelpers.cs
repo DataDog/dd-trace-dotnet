@@ -15,7 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Util
 {

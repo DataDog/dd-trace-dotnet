@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
 

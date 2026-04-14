@@ -5,7 +5,7 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Ipc;
 

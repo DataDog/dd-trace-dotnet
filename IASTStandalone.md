@@ -265,6 +265,18 @@ Deleted `ContinuousProfiler/` (9 files) and cleaned all external references:
 | Cleaned `Ci/TestOptimization.cs` | Removed profiler flush on close |
 | Removed `Directory.Build.props` analyzers reference | Removed deleted `Datadog.Trace.Tools.Analyzers` project references |
 
+### Vendored Newtonsoft.Json replacement
+
+Replaced the vendored `Datadog.Trace.Vendors.Newtonsoft.Json` (238 files) with the official NuGet package:
+
+| Change | Details |
+|---|---|
+| Deleted `Vendors/Newtonsoft.Json/` | 238 vendored source files |
+| Added NuGet reference | `Newtonsoft.Json` 13.0.3 in `Datadog.Trace.csproj` |
+| Namespace replacement | `Datadog.Trace.Vendors.Newtonsoft.Json` → `Newtonsoft.Json` across ~150 files (src + test) |
+| Fixed vendored-only APIs | `IsCheckAdditionalContentSet()`, `DefaultSerializationBinder.Instance`, `AddDistinct`, `Type.Assembly()` |
+| Updated test project | `Datadog.Trace.Security.IntegrationTests` bumped from 13.0.2 to 13.0.3 |
+
 ---
 
 ## Current Architecture

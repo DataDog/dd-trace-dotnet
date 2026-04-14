@@ -6,8 +6,8 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Iast;
 

@@ -16,7 +16,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
@@ -280,7 +280,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             => new JsonTextWriter(new StringWriter(builder))
             {
                 ArrayPool = JsonArrayPool.Shared,
-                Formatting = Vendors.Newtonsoft.Json.Formatting.None,
+                Formatting = Newtonsoft.Json.Formatting.None,
             };
 
         /// <summary>

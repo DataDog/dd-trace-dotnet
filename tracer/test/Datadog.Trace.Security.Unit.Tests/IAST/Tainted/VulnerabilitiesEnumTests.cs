@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Iast;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted;

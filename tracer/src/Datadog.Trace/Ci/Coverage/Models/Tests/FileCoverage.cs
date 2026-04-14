@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Tests;
 

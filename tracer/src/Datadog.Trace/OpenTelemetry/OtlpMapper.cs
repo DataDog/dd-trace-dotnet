@@ -17,7 +17,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.VendoredMicrosoftCode.System;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.OpenTelemetry;
 

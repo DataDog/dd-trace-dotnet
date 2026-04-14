@@ -4,8 +4,8 @@
 // </copyright>
 
 using System.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {

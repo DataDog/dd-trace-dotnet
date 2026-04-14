@@ -6,7 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 #pragma warning disable SA1402 // File must contain single type
 namespace Datadog.Trace.Configuration

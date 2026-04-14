@@ -11,8 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
+using Newtonsoft.Json;
 using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
 
 namespace Datadog.Trace.Agent.Transports

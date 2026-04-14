@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 internal sealed class AsmFeatures
 {

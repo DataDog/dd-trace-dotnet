@@ -12,12 +12,12 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json.Common;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using FluentAssertions.Collections;
 using FluentAssertions.Execution;
 using FluentAssertions.Formatting;
 using FluentAssertions.Primitives;
+using Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 

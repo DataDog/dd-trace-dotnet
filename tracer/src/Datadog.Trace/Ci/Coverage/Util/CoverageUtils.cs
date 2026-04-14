@@ -13,7 +13,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 internal static class CoverageUtils
 {

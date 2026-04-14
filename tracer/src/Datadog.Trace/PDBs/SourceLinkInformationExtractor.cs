@@ -10,7 +10,7 @@ using System.Reflection;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb.SourceLink;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 
 #nullable enable
 

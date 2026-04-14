@@ -17,7 +17,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Util.Streams;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {

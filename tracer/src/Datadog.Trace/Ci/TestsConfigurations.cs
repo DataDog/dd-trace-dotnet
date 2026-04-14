@@ -6,7 +6,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
 
