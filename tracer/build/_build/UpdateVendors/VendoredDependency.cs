@@ -252,8 +252,35 @@ namespace UpdateVendors
                 },
                 relativePathsToExclude: new[]
                 {
+                    // .NET Core-only files
                     "Internal/Utilities/EncodingHelper.netcoreapp.cs",
                     "Internal/Utilities/StreamExtensions.netcoreapp.cs",
+
+                    // Builder/writer code - the tracer only reads metadata, never writes it
+                    "Metadata/Ecma335/Encoding/",
+                    "Metadata/BlobBuilder.cs",
+                    "Metadata/BlobBuilder.Enumerators.cs",
+                    "Metadata/BlobWriter.cs",
+                    "Metadata/BlobWriterImpl.cs",
+                    "Metadata/PooledBlobBuilder.cs",
+                    "Metadata/ReservedBlob.cs",
+                    "Metadata/Ecma335/MetadataBuilder.cs",
+                    "Metadata/Ecma335/MetadataBuilder.Heaps.cs",
+                    "Metadata/Ecma335/MetadataBuilder.Tables.cs",
+                    "Metadata/Ecma335/MetadataRootBuilder.cs",
+                    "Metadata/Ecma335/PortablePdbBuilder.cs",
+                    "Metadata/Ecma335/MetadataSizes.cs",
+                    "Metadata/Ecma335/SerializedMetadataHeaps.cs",
+                    "Metadata/Ecma335/MetadataAggregator.cs",
+                    "Metadata/Internal/MetadataWriterUtilities.cs",
+                    "PortableExecutable/PEBuilder.cs",
+                    "PortableExecutable/ManagedPEBuilder.cs",
+                    "PortableExecutable/ManagedTextSection.cs",
+                    "PortableExecutable/PEDirectoriesBuilder.cs",
+                    "PortableExecutable/PEHeaderBuilder.cs",
+                    "PortableExecutable/ResourceSectionBuilder.cs",
+                    "PortableExecutable/DebugDirectory/DebugDirectoryBuilder.cs",
+                    "PortableExecutable/DebugDirectory/DebugDirectoryBuilder.EmbeddedPortablePdb.cs",
                 });
 
             Add(
@@ -471,14 +498,8 @@ namespace UpdateVendors
                 RewriteFileWithTransform(
                     filePath,
                     content => content.Replace(
-                        "      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]",
-                        """
-                        #if NETCOREAPP
-                              private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]
-                        #else
-                              private static readonly byte[] DosHeader = new byte[DosHeaderSize]
-                        #endif
-                        """
+                        "private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]",
+                        "private static readonly byte[] DosHeader = new byte[DosHeaderSize]"
                     ));
             }
 
@@ -510,41 +531,13 @@ namespace UpdateVendors
 
             contents = contents
                       .Replace("using System.Collections.Immutable;", "using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;")
-                      .Replace("namespace System.Reflection;", "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection;")
+                      .Replace("namespace System.Reflection", "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection")
                       .Replace("Configuration.Assemblies.AssemblyHashAlgorithm", "global::System.Configuration.Assemblies.AssemblyHashAlgorithm");
 
-            // some somewhat hacky fixes for specific issues
-            // if (string.Equals(Path.GetFileName(filePath), "Tables.cs")
-            //  || string.Equals(Path.GetFileName(filePath), "MetadataBuilder.Tables.cs")
-            //  || string.Equals(Path.GetFileName(filePath), "MetadataReader.netstandard.cs"))
-            // {
-            //     // Add using System.Reflection
-            //     contents = contents.Replace(
-            //         "\n\nnamespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.",
-            //         "\nusing System.Reflection;\n\nnamespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.");
-            // }
-            // contents = contents
-            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.ConstrainedExecution", "System.Runtime.ConstrainedExecution")
-            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.ExceptionServices", "System.Runtime.ExceptionServices")
-            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices", "System.Runtime.CompilerServices")
-            //    .Replace("Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Serialization", "System.Runtime.Serialization");
-            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Enumerator.cs"))
-            // {
-            //     contents = contents.Replace("System.Collections.IEnumerator.Current", "global::System.Collections.IEnumerator.Current");
-            // }
-            //
             if (string.Equals(Path.GetFileName(filePath), "Throw.cs"))
             {
                 contents = contents
                    .Replace("throw new ObjectDisposedException(nameof(PortableExecutable.PEReader));", "throw new ObjectDisposedException(\"PEReader\");");
-            }
-            else if (string.Equals(Path.GetFileName(filePath), "BlobBuilder.cs"))
-            {
-                contents = contents
-                          .Replace("using System.Linq;\n", string.Empty)
-                          .Replace(
-                               """GetChunks().Select<BlobBuilder, string>(chunk => $"[{Display(chunk._buffer, chunk.Length)}]"))""",
-                               """GetChunks().Select<BlobBuilder, string>((Func<BlobBuilder, string>) (chunk => "[" + BlobBuilder.Display(chunk._buffer, chunk.Length) + "]")))""");
             }
             else if (string.Equals(Path.GetFileName(filePath), "MetadataReader.WinMD.cs"))
             {
@@ -553,42 +546,6 @@ namespace UpdateVendors
                         """internal static readonly byte[] WinRTPrefix = "<WinRT>"u8.ToArray();""",
                         """internal static readonly byte[] WinRTPrefix = global::System.Text.Encoding.UTF8.GetBytes("<WinRT>");""");
             }
-            else if (string.Equals(Path.GetFileName(filePath), "MethodDefinition.cs"))
-            {
-                // TODO: Maybe we should use duck typing for this instead, so we can exclude from .NET 6+?
-                contents = contents
-                   .Replace(
-                        """private MethodDefinitionHandle Handle\n""",
-                        """internal MethodDefinitionHandle Handle\n""");
-            }
-            //
-            // if (string.Equals(Path.GetFileName(filePath), "KeysOrValuesCollectionAccessor.cs"))
-            // {
-            //     // Hacky, but it works
-            //     contents = contents.Replace("var sortedDictionary = this.Dictionary as ImmutableSortedDictionary<TKey, TValue>;", "var sortedDictionary = this.Dictionary as IImmutableDictionaryInternal<TKey, TValue>;");
-            // }
-            //
-            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Node.cs"))
-            // {
-            //     contents = contents.Replace("root.AddRange(Linq.Enumerable.Select(this, converter));", "root.AddRange(global::System.Linq.Enumerable.Select(this, converter));");
-            // }
-            //
-            // if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Builder.cs"))
-            // {
-            //     contents = contents.Replace("System.Threading.Interlocked.CompareExchange", "global::System.Threading.Interlocked.CompareExchange");
-            // }
-            //
-            // if (string.Equals(Path.GetFileName(filePath), "ImmutableDictionary_2.Builder.cs"))
-            // {
-            //     contents = contents.Replace("Threading.Interlocked.CompareExchange", "global::System.Threading.Interlocked.CompareExchange");
-            // }
-            //
-            // // replace SR, hard to do generally
-            // contents = contents
-            //    .Replace("""ArgumentException(SR.Format(SR.DuplicateKey, key))""", """ArgumentException("DuplicateKey" + key)""")
-            //    .Replace("""KeyNotFoundException(SR.Format(SR.Arg_KeyNotFoundWithKey, key.ToString()))""", """KeyNotFoundException("Arg_KeyNotFoundWithKey" + key.ToString())""")
-            //    .Replace("""SR.Format(SR.Arg_KeyNotFoundWithKey, (object) key.ToString()));""", """key.ToString());""");
-            // contents = Regex.Replace(contents, @"SR\.(\w+)(?=\W)", "@\"$1\"");
 
             return contents;
         }
