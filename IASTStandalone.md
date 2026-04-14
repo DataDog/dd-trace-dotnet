@@ -284,7 +284,9 @@ Replaced the vendored `System.Memory` with the official NuGet package:
 | Change | Details |
 |---|---|
 | Deleted vendored `System.Memory`, `System.Collections.Immutable`, `System.Runtime.CompilerServices.Unsafe` | Vendored source files under `Vendors/` |
-| Added NuGet reference | `System.Memory` 4.6.0 in `Datadog.Trace.csproj` |
+| Added NuGet references | `System.Memory` 4.6.0, `System.Collections.Immutable` 9.0.0 in `Datadog.Trace.csproj` |
+| Added `using System.Collections.Immutable` | ~36 files in `Vendors/System.Reflection.Metadata/` and `PDBs/` that used `ImmutableArray<>` |
+| Updated test project | `Datadog.Trace.TestHelpers` bumped `System.Collections.Immutable` from 6.0.0 to 9.0.0 |
 
 ---
 

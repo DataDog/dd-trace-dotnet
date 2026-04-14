@@ -19,9 +19,7 @@ global using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Compile
 global using System.Buffers;
 global using System.Buffers.Binary;
 global using System.Buffers.Text;
-global using System.Collections.Immutable;
 #else
 global using Datadog.Trace.VendoredMicrosoftCode.System;
-global using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 global using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 #endif

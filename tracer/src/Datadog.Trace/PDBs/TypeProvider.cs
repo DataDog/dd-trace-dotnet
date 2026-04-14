@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Collections.Immutable;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata; // keep vendored versions for now because we access internal members
 
