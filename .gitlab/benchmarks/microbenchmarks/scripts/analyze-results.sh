@@ -79,7 +79,7 @@ convert_results() {
     done
 
     if [ "$files_found" = false ]; then
-        echo "  Warning: No $BASELINE_OR_CANDIDATE results found"
+        echo "  WARNING: No $BASELINE_OR_CANDIDATE results found"
     fi
 }
 
@@ -97,7 +97,7 @@ if [ -n "$BASELINE_CI_COMMIT_SHORT_SHA" ]; then
         "$BASELINE_CI_COMMIT_SHORT_SHA" "$BASELINE_COMMIT_DATE" "$BASELINE_CI_JOB_ID" "$BASELINE_CI_PIPELINE_ID" "$BASELINE_JOB_DATE"
 else
     echo ""
-    echo "Warning: No baseline metadata found (BASELINE_CI_COMMIT_SHORT_SHA not set)."
+    echo "WARNING: No baseline metadata found (BASELINE_CI_COMMIT_SHORT_SHA not set)."
     echo "This is expected on the first run or when no master baseline exists yet."
 fi
 

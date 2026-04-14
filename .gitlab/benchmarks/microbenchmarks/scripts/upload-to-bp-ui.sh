@@ -23,7 +23,7 @@ converted_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
 shopt -u nullglob
 
 if [ ${#converted_files[@]} -eq 0 ]; then
-    echo "Warning: No converted results found in $ARTIFACTS_DIR"
+    echo "WARNING: No converted results found in $ARTIFACTS_DIR"
     echo "Make sure to run analyze-results.sh first."
     exit 0
 fi
@@ -45,13 +45,13 @@ for CONVERTED_JSON in "${converted_files[@]}"; do
     RESPONSE_BODY=$(echo "$response" | head -n-1)
 
     if [ $curl_exit -ne 0 ]; then
-        echo "Warning: curl failed (exit $curl_exit) while uploading $(basename "$CONVERTED_JSON")"
+        echo "WARNING: curl failed (exit $curl_exit) while uploading $(basename "$CONVERTED_JSON")"
         upload_failed=true
         continue
     fi
 
     if [ "$STATUS_CODE" -ne 200 ]; then
-        echo "Warning: Upload of $(basename "$CONVERTED_JSON") failed with status $STATUS_CODE"
+        echo "WARNING: Upload of $(basename "$CONVERTED_JSON") failed with status $STATUS_CODE"
         if [ -n "$RESPONSE_BODY" ]; then
             echo "  Response: $RESPONSE_BODY"
         fi
@@ -64,7 +64,7 @@ done
 
 if [ "$upload_failed" = true ]; then
     echo ""
-    echo "Warning: One or more uploads failed. Benchmark results were not fully recorded in the Benchmarking Platform UI."
+    echo "WARNING: One or more uploads failed. Benchmark results were not fully recorded in the Benchmarking Platform UI."
     echo "This does not affect benchmark correctness. The CI job will continue."
 else
     echo "All uploads complete."
