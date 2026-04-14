@@ -60,7 +60,7 @@ $buildId = Resolve-BuildId -ParameterSetName 'ByPullRequest' -PullRequest 8172
 
 ### Prerequisites
 
-- **PowerShell 7+** (`pwsh`) — **required**; minimum PowerShell 5.1 (`powershell.exe`, Windows only)
+- **PowerShell 5.1+** — Minimum required. PowerShell 7+ (`pwsh`) preferred; PowerShell 5.1 (`powershell.exe`, Windows only) is supported.
   - Verify: `pwsh -Version`
   - Install: `winget install Microsoft.PowerShell` (Windows) · `brew install powershell/tap/powershell` (macOS)
   - Docs: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
@@ -73,7 +73,7 @@ $buildId = Resolve-BuildId -ParameterSetName 'ByPullRequest' -PullRequest 8172
   - Install: `winget install GitHub.cli` (Windows) · `brew install gh` (macOS)
   - Docs: https://cli.github.com/
 
-**Note**: This script uses PowerShell-specific features (e.g., `-notin` operator, `HashSet<T>`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
+**Note**: This script uses PowerShell-specific features (e.g., `HashSet<T>`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
 
 **HTTP Fallback**: When `az` or `gh` are not available (or fail), the module falls back to direct HTTP requests via `Invoke-RestMethod`. No authentication is needed for GET requests against the public `dd-trace-dotnet` project and repo. The fallback emits warnings indicating degraded mode. Stage retry (PATCH) has no HTTP fallback and requires a working `az` CLI.
 
@@ -283,7 +283,7 @@ Use `-Verbose` to see:
 
 ### Prerequisites
 
-Same as `Get-AzureDevOpsBuildAnalysis.ps1` (PowerShell 7+ required, Azure CLI and GitHub CLI optional for read-only operations). **Note**: Stage retry requires a working Azure CLI with authentication — there is no HTTP fallback for PATCH operations.
+Same as `Get-AzureDevOpsBuildAnalysis.ps1` (PowerShell 5.1+, Azure CLI and GitHub CLI optional for read-only operations). **Note**: Stage retry requires a working Azure CLI with authentication — there is no HTTP fallback for PATCH operations.
 
 ### Parameters
 

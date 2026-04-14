@@ -12,7 +12,7 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Prerequisites
 
-- **PowerShell 7+** (`pwsh`) — Required. PowerShell 5.1 minimum on Windows.
+- **PowerShell 5.1+** — Minimum required. PowerShell 7+ (`pwsh`) preferred; PowerShell 5.1 (`powershell.exe`, Windows only) is supported.
 - **Azure CLI** (`az`) — Optional for read-only analysis; required for stage retry.
 - **GitHub CLI** (`gh`) — Optional; HTTP fallback for public repos.
 
