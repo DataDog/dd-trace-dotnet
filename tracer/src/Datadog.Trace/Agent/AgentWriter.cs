@@ -430,11 +430,11 @@ namespace Datadog.Trace.Agent
             var chunk = spans;
             if (CanComputeStats)
             {
-                var dropReason = _statsAggregator.ProcessTrace(ref chunk);
+                var keepState = _statsAggregator.ProcessTrace(ref chunk);
 
                 // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
                 // and we can just stop before we go any further.
-                if (dropReason == TraceKeepState.TraceFilter)
+                if (keepState == TraceKeepState.TraceFilter)
                 {
                     TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.TraceFilter);
                     // These aren't p0 traces/spans, so presumably we _don't_ increment _droppedP0Traces/_droppedP0Spans
@@ -445,7 +445,7 @@ namespace Datadog.Trace.Agent
                 // Trace wasn't filtered
                 _statsAggregator.AddRange(in chunk);
 
-                if (dropReason == TraceKeepState.Keep)
+                if (keepState == TraceKeepState.Keep)
                 {
                     TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.P0Keep);
                     TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.P0Keep, chunk.Count);
