@@ -621,7 +621,7 @@ namespace Datadog.Trace.Pdb
             CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
             if (PdbReader != null)
             {
-                var methodHandle = MethodDefinitionHandle.FromRowId(RidOf(methodToken));
+                var methodHandle = MetadataTokens.MethodDefinitionHandle(RidOf(methodToken));
                 if (methodHandle.IsNil)
                 {
                     return default;
@@ -668,7 +668,7 @@ namespace Datadog.Trace.Pdb
 
         internal bool IsCompilerGeneratedAttributeDefinedOnType(int typeToken)
         {
-            var nestedType = MetadataReader.GetTypeDefinition(TypeDefinitionHandle.FromRowId(RidOf(typeToken)));
+            var nestedType = MetadataReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle(RidOf(typeToken)));
             var attributes = nestedType.GetCustomAttributes();
             return IsCompilerGeneratedAttributeDefine(attributes);
         }
@@ -752,7 +752,7 @@ namespace Datadog.Trace.Pdb
 
         internal MethodDefinition GetMethodDef(int methodToken)
         {
-            return MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(RidOf(methodToken)));
+            return MetadataReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle(RidOf(methodToken)));
         }
 
         internal ImmutableArray<LocalScope>? GetLocalSymbols(int methodToken, ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
