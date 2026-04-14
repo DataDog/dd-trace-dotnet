@@ -8,6 +8,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
@@ -52,4 +53,54 @@ public class GlobalConfigurationSourceTests
         localConfigSource.GetString("KEY4", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("true");
         localConfigSource.GetBool("KEY2", NullConfigurationTelemetry.Instance, null).Result.Should().Be(false);
     }
+
+#if NETFRAMEWORK
+    [Fact]
+    public void CreateDefaultConfigurationSource_SetsAndClearsAppSettingsLoadingGuard()
+    {
+        // The guard must be cleared after CreateDefaultConfigurationSource completes,
+        // so that CallTarget integrations resume normally after initialization.
+        CallTargetInvoker.IsLoadingConfigurationManagerAppSettings.Should().BeFalse(
+            "the guard should not be active outside of ConfigurationManager.AppSettings loading");
+
+        // Verify that after creating the configuration source, the guard is cleared
+        var result = GlobalConfigurationSource.CreateDefaultConfigurationSource(
+            isLibdatadogAvailable: false);
+
+        result.ConfigurationSource.Should().NotBeNull();
+        CallTargetInvoker.IsLoadingConfigurationManagerAppSettings.Should().BeFalse(
+            "the guard should be cleared after CreateDefaultConfigurationSource completes");
+    }
+
+    [Fact]
+    public void AppSettingsLoadingGuard_BlocksCallTargetIntegrations()
+    {
+        // Verify the guard's default state is false (not blocking)
+        CallTargetInvoker.IsLoadingConfigurationManagerAppSettings.Should().BeFalse();
+
+        try
+        {
+            // When the guard is set, BeginMethod should return the default state
+            // (i.e., no instrumentation runs) because CanExecuteCallTargetIntegration returns false
+            CallTargetInvoker.IsLoadingConfigurationManagerAppSettings = true;
+
+            // BeginMethod should return default (no-op) when the guard is active
+            var result = CallTargetInvoker.BeginMethod<ConfigLoadingGuardTestIntegration, object>(new object());
+            result.Should().Be(CallTargetState.GetDefault());
+        }
+        finally
+        {
+            CallTargetInvoker.IsLoadingConfigurationManagerAppSettings = false;
+        }
+
+        CallTargetInvoker.IsLoadingConfigurationManagerAppSettings.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Dummy integration type used only for testing the configuration loading guard.
+    /// </summary>
+    internal class ConfigLoadingGuardTestIntegration
+    {
+    }
+#endif
 }

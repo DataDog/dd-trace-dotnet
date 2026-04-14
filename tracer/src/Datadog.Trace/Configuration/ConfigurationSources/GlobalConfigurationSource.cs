@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
@@ -79,7 +80,20 @@ internal static class GlobalConfigurationSource
 
 #if NETFRAMEWORK
         // on .NET Framework only, also read from app.config/web.config
-        configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig));
+        // Guard: config builders (like Azure App Configuration) may make outbound HTTP calls
+        // during AppSettings initialization. Those calls could be instrumented by CallTarget,
+        // which would try to access GlobalConfigurationSource before it finishes initializing,
+        // causing a cross-thread deadlock. Setting this flag tells CallTargetInvoker to skip
+        // instrumenting any methods during this window.
+        try
+        {
+            CallTargetInvoker.IsLoadingConfigurationManagerAppSettings = true;
+            configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig));
+        }
+        finally
+        {
+            CallTargetInvoker.IsLoadingConfigurationManagerAppSettings = false;
+        }
 #endif
 
         // datadog.json

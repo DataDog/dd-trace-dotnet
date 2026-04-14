@@ -31,6 +31,14 @@ public static class CallTargetInvoker
     private static readonly bool IsRunningInPartialTrust;
     private static bool _isIisPreStartInitComplete;
 
+    // Guard to prevent CallTarget integrations from running while ConfigurationManager.AppSettings
+    // is being loaded. On .NET Framework, config builders (like Azure App Configuration) can make
+    // outbound HTTP calls during AppSettings initialization. If those HTTP calls are instrumented,
+    // the instrumentation may try to access GlobalConfigurationSource (which is still initializing),
+    // causing a cross-thread deadlock on the type initializer lock.
+    // Set by GlobalConfigurationSource before reading ConfigurationManager.AppSettings.
+    private static volatile bool _isLoadingConfigurationManagerAppSettings;
+
     static CallTargetInvoker()
     {
         // Check if IIS automatic instrumentation has set the AppDomain property to indicate the PreStartInit state
@@ -91,6 +99,12 @@ public static class CallTargetInvoker
                 _isIisPreStartInitComplete = true;
             }
         }
+    }
+
+    internal static bool IsLoadingConfigurationManagerAppSettings
+    {
+        get => _isLoadingConfigurationManagerAppSettings;
+        set => _isLoadingConfigurationManagerAppSettings = value;
     }
 #endif
 
@@ -683,7 +697,7 @@ public static class CallTargetInvoker
         // in some scenarios that we definitely _shouldn't_ be running here, so
         // strictly checking _isIisPreStartInitComplete instead.
 #if NETFRAMEWORK
-        if (!IsRunningInPartialTrust && _isIisPreStartInitComplete)
+        if (!IsRunningInPartialTrust && !IsLoadingConfigurationManagerAppSettings && _isIisPreStartInitComplete)
 #endif
         {
             IntegrationOptions<TIntegration, TTarget>.LogException(exception);
@@ -716,6 +730,15 @@ public static class CallTargetInvoker
         if (IsRunningInPartialTrust)
         {
             // Never run any call target integrations
+            return false;
+        }
+
+        // Block all integrations while ConfigurationManager.AppSettings is being loaded.
+        // Config builders (e.g. Azure App Configuration) can make outbound HTTP calls during
+        // AppSettings initialization. If we instrument those calls, the integration would try
+        // to access GlobalConfigurationSource (still initializing), causing a deadlock.
+        if (IsLoadingConfigurationManagerAppSettings)
+        {
             return false;
         }
 
