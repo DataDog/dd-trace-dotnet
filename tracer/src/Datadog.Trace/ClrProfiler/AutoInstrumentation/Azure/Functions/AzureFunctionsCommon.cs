@@ -311,10 +311,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // The ASP.NET Core span is already active - don't create a new span,
                     // just update the existing root span's tags to make it a "serverless" span.
-                    // This matches the behavior for isolated worker scenario where we detect
-                    // an existing scope and update it rather than creating a duplicate.
-                    scope = activeScope;
-                    var rootSpan = scope.Root.Span;
+                    // Don't assign to `scope`: the ASP.NET Core middleware owns this scope's
+                    // lifetime, and returning it here would cause OnAsyncMethodEnd to dispose it.
+                    var rootSpan = activeScope.Root.Span;
 
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan.Tags,
