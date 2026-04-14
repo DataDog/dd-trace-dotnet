@@ -98,7 +98,7 @@ pr_commenter_exit=$?
 set -e
 
 if [ $pr_commenter_exit -ne 0 ]; then
-    echo "Warning: pr-commenter failed (exit $pr_commenter_exit), PR comment was not posted."
+    echo "WARNING: pr-commenter failed (exit $pr_commenter_exit), PR comment was not posted."
     exit 0
 fi
 
