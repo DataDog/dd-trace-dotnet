@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# Uploads converted benchmark results to the Benchmarking Platform UI service.
-#
-# Required environment variables:
-#   CI_PROJECT_NAME - GitLab/GitHub project name
-#
-# Optional:
-#   ARTIFACTS_DIR - Directory containing converted results (default: ./artifacts)
-#
-# Upload failures are logged as warnings and do not fail the CI job. Missing
-# converted files are treated as an error since that indicates a pipeline failure.
 
 set -e
 
