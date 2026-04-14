@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Buffers;
+using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
 

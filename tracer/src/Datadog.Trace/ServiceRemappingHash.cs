@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Buffers.Binary;
+using System.Buffers.Text;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Util;

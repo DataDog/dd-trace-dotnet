@@ -277,6 +277,15 @@ Replaced the vendored `Datadog.Trace.Vendors.Newtonsoft.Json` (238 files) with t
 | Fixed vendored-only APIs | `IsCheckAdditionalContentSet()`, `DefaultSerializationBinder.Instance`, `AddDistinct`, `Type.Assembly()` |
 | Updated test project | `Datadog.Trace.Security.IntegrationTests` bumped from 13.0.2 to 13.0.3 |
 
+### Vendored System.Memory replacement
+
+Replaced the vendored `System.Memory` with the official NuGet package:
+
+| Change | Details |
+|---|---|
+| Deleted vendored `System.Memory`, `System.Collections.Immutable`, `System.Runtime.CompilerServices.Unsafe` | Vendored source files under `Vendors/` |
+| Added NuGet reference | `System.Memory` 4.6.0 in `Datadog.Trace.csproj` |
+
 ---
 
 ## Current Architecture
