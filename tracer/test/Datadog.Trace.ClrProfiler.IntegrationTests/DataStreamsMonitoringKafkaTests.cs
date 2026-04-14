@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -135,6 +136,32 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(HandlesBatchProcessing)}")
                       .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    public async Task SubmitsTransactions()
+    {
+        var topicSuffix = "SubmitsTransactions";
+
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        // Use the DSM pathway context header that is automatically injected into every produced Kafka message.
+        // This header is present on consumed messages without any changes to the sample app.
+        SetEnvironmentVariable(
+            ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors,
+            """[{"name":"kafka-tx","type":"KAFKA_CONSUME_HEADERS","value":"dd-pathway-ctx-base64"}]""");
+
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+        using var processResult = await RunSampleAndWaitForExit(agent, arguments: topicSuffix);
+
+        using var assertionScope = new AssertionScope();
+        var dataStreams = await agent.WaitForDataStreamsTransactionsAsync();
+        dataStreams.Should().NotBeEmpty("DSM payload should be sent when transactions are tracked");
+
+        var hasTransactions = dataStreams
+            .Any(p => p.Stats != null && p.Stats.Any(b => b.Transactions is { Length: > 0 }));
+        hasTransactions.Should().BeTrue("at least one DSM bucket should contain transaction bytes");
     }
 
     [SkippableFact]

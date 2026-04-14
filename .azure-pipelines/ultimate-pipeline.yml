@@ -2143,6 +2143,8 @@ stages:
       displayName: BuildWindowsIntegrationTests
       retryCountOnTaskFailure: 3
 
+    - template: steps/ensure-docker-ready.yml
+
     - powershell: |
         mkdir -Force ./artifacts/build_data/snapshots
         mkdir -Force ./artifacts/build_data/logs/LoaderOptimizationStartup
