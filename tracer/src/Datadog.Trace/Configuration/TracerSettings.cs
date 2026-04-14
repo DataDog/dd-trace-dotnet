@@ -226,6 +226,20 @@ namespace Datadog.Trace.Configuration
             }
 #endif
 
+#if NET6_0_OR_GREATER
+            // OTLP runtime metrics: enabled when runtime metrics are on AND either
+            // DD_METRICS_OTEL_ENABLED=true or OTEL_METRICS_EXPORTER=otlp is explicitly set.
+            // When active, OTLP takes precedence over DogStatsD for runtime metrics.
+            OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && (OpenTelemetryMetricsEnabled || OtelMetricsExporterEnabled);
+
+            if (OtlpRuntimeMetricsEnabled)
+            {
+                OpenTelemetryMeterNames.Add("System.Runtime");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Hosting");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Server.Kestrel");
+            }
+#endif
+
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -1144,6 +1158,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
         internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether runtime metrics should be collected in OTEL format and exported via OTLP.
+        /// True when runtime metrics are enabled AND (DD_METRICS_OTEL_ENABLED=true OR OTEL_METRICS_EXPORTER=otlp).
+        /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
+        /// </summary>
+        internal bool OtlpRuntimeMetricsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline

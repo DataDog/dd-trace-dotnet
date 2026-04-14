@@ -165,6 +165,15 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 var previousCumulative = double.IsNaN(_lastObservedCumulative) ? 0 : _lastObservedCumulative;
                 var delta = _runningDoubleValue - previousCumulative;
 
+                // OTel spec: for monotonic counters (ObservableCounter), a negative delta
+                // indicates a counter reset (e.g. process restart). Report currentValue
+                // as the delta, as if the previous cumulative was 0.
+                // ObservableUpDownCounter is non-monotonic so negative deltas are expected.
+                if (delta < 0 && InstrumentType is InstrumentType.ObservableCounter)
+                {
+                    delta = _runningDoubleValue;
+                }
+
                 sumForSnapshot = AggregationTemporality == Metrics.AggregationTemporality.Delta
                     ? delta
                     : _runningDoubleValue;
