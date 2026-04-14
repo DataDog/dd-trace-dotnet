@@ -476,7 +476,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
 
                     var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
-                    if (!TryCreateMethodScope(type, methodDef, out methodScope))
+                    if (!TryCreateMethodScope(type, methodDefHandle, methodDef, out methodScope))
                     {
                         continue;
                     }
@@ -580,7 +580,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return new SourceLocationInfo(startLine: startLine, endLine: endLine, path: sourceFile, startColumn: startColumn, endColumn: endColumn);
         }
 
-        protected virtual bool TryCreateMethodScope(TypeDefinition type, MethodDefinition method, out Model.Scope methodScope)
+        protected virtual bool TryCreateMethodScope(TypeDefinition type, MethodDefinitionHandle methodHandle, MethodDefinition method, out Model.Scope methodScope)
         {
             methodScope = default;
 
@@ -599,7 +599,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var argsSymbol = GetArgsSymbol(method);
 
             // closures
-            var closureScopes = GetClosureScopes(type, method);
+            var closureScopes = GetClosureScopes(type, methodHandle, method);
             var methodAttributes = method.Attributes & StaticFinalVirtualMethod;
             var isAsyncMethod = DatadogMetadataReader.IsAsyncMethod(method.GetCustomAttributes());
             var methodLanguageSpecifics = new LanguageSpecifics
@@ -626,7 +626,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return true;
         }
 
-        private Model.Scope[]? GetClosureScopes(TypeDefinition typeDef, MethodDefinition methodDef)
+        private Model.Scope[]? GetClosureScopes(TypeDefinition typeDef, MethodDefinitionHandle methodDefHandle, MethodDefinition methodDef)
         {
             Model.Scope[]? closureMethods = null;
             int index = 0;
@@ -666,13 +666,13 @@ namespace Datadog.Trace.Debugger.Symbols
                         }
 
                         var generatedMethodDef = MetadataReader.GetMethodDefinition(generatedMethodHandle);
-                        PopulateClosureMethod(generatedMethodDef, nestedType);
+                        PopulateClosureMethod(generatedMethodHandle, generatedMethodDef, nestedType);
                     }
                 }
 
                 foreach (var methodHandle in methods)
                 {
-                    if (methodHandle.IsNil || methodHandle == methodDef.Handle)
+                    if (methodHandle.IsNil || methodHandle == methodDefHandle)
                     {
                         continue;
                     }
@@ -683,7 +683,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
 
                     var currentMethod = MetadataReader.GetMethodDefinition(methodHandle);
-                    PopulateClosureMethod(currentMethod, typeDef);
+                    PopulateClosureMethod(methodHandle, currentMethod, typeDef);
                 }
 
                 if (index == 0)
@@ -709,9 +709,9 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
             }
 
-            void PopulateClosureMethod(MethodDefinition generatedMethod, TypeDefinition ownerType)
+            void PopulateClosureMethod(MethodDefinitionHandle generatedMethodHandle, MethodDefinition generatedMethod, TypeDefinition ownerType)
             {
-                if (TryCreateMethodScopeForGeneratedMethod(methodDef, generatedMethod, ownerType, out var closureMethodScope))
+                if (TryCreateMethodScopeForGeneratedMethod(methodDefHandle, methodDef, generatedMethodHandle, generatedMethod, ownerType, out var closureMethodScope))
                 {
                     // This can exceed our initial heuristic, so grow the pooled buffer on-demand to avoid dropping closure methods.
                     if (index >= closureMethods!.Length)
@@ -732,7 +732,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        protected virtual bool TryCreateMethodScopeForGeneratedMethod(MethodDefinition method, MethodDefinition generatedMethod, TypeDefinition nestedType, out Model.Scope methodScope)
+        protected virtual bool TryCreateMethodScopeForGeneratedMethod(MethodDefinitionHandle methodHandle, MethodDefinition method, MethodDefinitionHandle generatedMethodHandle, MethodDefinition generatedMethod, TypeDefinition nestedType, out Model.Scope methodScope)
         {
             methodScope = default;
             return false;
