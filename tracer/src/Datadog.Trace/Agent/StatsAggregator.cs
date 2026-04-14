@@ -477,26 +477,6 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private bool IsTraceFiltered(in SpanCollection spans)
-        {
-            var filter = Volatile.Read(ref _traceFilter);
-            if (filter is null)
-            {
-                return false;
-            }
-
-            // Find the root span (ParentId == null or 0) and apply the filter
-            foreach (var span in spans)
-            {
-                if (span.Context.ParentId is null or 0)
-                {
-                    return !filter.ShouldKeepTrace(span);
-                }
-            }
-
-            return false;
-        }
-
         private void HandleConfigUpdate(AgentConfiguration config)
         {
             // Client-side stats requires agent >= 7.65.0 which has full CSS v1.2.0 support.
