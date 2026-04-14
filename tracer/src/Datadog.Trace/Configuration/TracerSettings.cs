@@ -226,20 +226,6 @@ namespace Datadog.Trace.Configuration
             }
 #endif
 
-#if NET6_0_OR_GREATER
-            // OTLP runtime metrics: enabled when runtime metrics are on AND either
-            // DD_METRICS_OTEL_ENABLED=true or OTEL_METRICS_EXPORTER=otlp is explicitly set.
-            // When active, OTLP takes precedence over DogStatsD for runtime metrics.
-            OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && (OpenTelemetryMetricsEnabled || OtelMetricsExporterEnabled);
-
-            if (OtlpRuntimeMetricsEnabled)
-            {
-                OpenTelemetryMeterNames.Add("System.Runtime");
-                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Hosting");
-                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Server.Kestrel");
-            }
-#endif
-
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -709,6 +695,20 @@ namespace Datadog.Trace.Configuration
             OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters)
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
+
+#if NET6_0_OR_GREATER
+            // OTLP runtime metrics: enabled when runtime metrics are on AND either
+            // DD_METRICS_OTEL_ENABLED=true or OTEL_METRICS_EXPORTER=otlp is explicitly set.
+            // When active, OTLP takes precedence over DogStatsD for runtime metrics.
+            OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && (OpenTelemetryMetricsEnabled || OtelMetricsExporterEnabled);
+
+            if (OtlpRuntimeMetricsEnabled)
+            {
+                OpenTelemetryMeterNames.Add("System.Runtime");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Hosting");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Server.Kestrel");
+            }
+#endif
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 

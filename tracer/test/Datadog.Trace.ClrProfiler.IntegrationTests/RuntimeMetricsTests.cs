@@ -4,19 +4,24 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(RuntimeMetricsTests), DisableParallelization = true)]
+    [UsesVerify]
     public class RuntimeMetricsTests : TestHelper
     {
         private readonly ITestOutputHelper _output;
@@ -54,6 +59,86 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, "1");
             EnvironmentHelper.EnableDefaultTransport();
             await RunTest();
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("RequiresDockerDependency", "true")]
+        public async Task OtlpRuntimeMetricsSubmitted()
+        {
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+
+            using (var httpClient = new System.Net.Http.HttpClient())
+            {
+                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
+            }
+
+            EnvironmentHelper.EnableDefaultTransport();
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using (await RunSampleAndWaitForExit(agent))
+            {
+                using var httpClient = new System.Net.Http.HttpClient();
+                var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/metrics");
+                metricsResponse.EnsureSuccessStatusCode();
+
+                var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
+                var metricsData = JToken.Parse(metricsJson);
+                metricsData.Should().NotBeNullOrEmpty();
+
+                // Scrub volatile values for deterministic snapshots (timestamps + runtime-dependent metric values)
+                foreach (var dataPoint in metricsData.SelectTokens("$..data_points[*]"))
+                {
+                    dataPoint["start_time_unix_nano"] = "0";
+                    dataPoint["time_unix_nano"] = "0";
+                    foreach (var prop in dataPoint.OfType<JProperty>().Where(p => p.Value.Type is JTokenType.Integer or JTokenType.Float).ToList())
+                    {
+                        prop.Value = 0;
+                    }
+                }
+
+                // Scrub resource attributes that vary per environment
+                foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[*]"))
+                {
+                    var key = attribute["key"]?.ToString();
+                    if (key is not null && key is not ("service.name" or "deployment.environment"))
+                    {
+                        attribute["value"] = JToken.FromObject(new { string_value = $"<{key}>" });
+                    }
+                }
+
+                // Deduplicate metrics across export intervals — keep one instance of each unique name+tags combo
+                foreach (var scopeMetric in metricsData.SelectTokens("$..scope_metrics[*]"))
+                {
+                    if (scopeMetric["metrics"] is JArray metricsArray)
+                    {
+                        var deduplicated = metricsArray
+                            .GroupBy(m => m["name"]?.ToString())
+                            .Select(g => g.First())
+                            .OrderBy(m => m["name"]?.ToString());
+                        scopeMetric["metrics"] = new JArray(deduplicated);
+                    }
+                }
+
+                var formattedJson = metricsData.ToString(Formatting.Indented);
+
+                var tfm = Environment.Version.Major >= 9 ? "net9" : "net6";
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                await Verifier.Verify(formattedJson, settings)
+                              .UseFileName($"{nameof(RuntimeMetricsTests)}.OtlpRuntimeMetricsSubmitted_{tfm}")
+                              .DisableRequireUniquePrefix();
+
+                // Verify StatsD received nothing — OTLP should fully replace DogStatsD for runtime metrics
+                agent.StatsdRequests.Should().BeEmpty(
+                    "StatsD runtime metrics should be disabled when OTLP runtime metrics are active");
+            }
         }
 #endif
 
