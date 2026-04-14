@@ -454,7 +454,6 @@ namespace Datadog.Trace.Pdb
                     return null;
                 }
 
-                const int methodDefTablePrefix = 0x06000000;
                 foreach (MethodDefinitionHandle methodDefinitionHandle in MetadataReader.MethodDefinitions)
                 {
                     MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefinitionHandle);
@@ -477,7 +476,7 @@ namespace Datadog.Trace.Pdb
                             (column.HasValue == false || (sequencePoint.StartColumn <= column && sequencePoint.EndColumn >= column)))
                         {
                             byteCodeOffset = sequencePoint.Offset;
-                            return methodDefTablePrefix | methodDefinitionHandle.RowId;
+                            return MetadataTokens.GetToken(methodDefinitionHandle);
                         }
                     }
                 }

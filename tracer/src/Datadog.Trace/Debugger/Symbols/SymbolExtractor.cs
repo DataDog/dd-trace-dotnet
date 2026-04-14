@@ -171,7 +171,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeDefinitionHandle.RowId))
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle)))
                 {
                     return false;
                 }
@@ -356,7 +356,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId))
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeHandle)))
                     {
                         continue;
                     }
