@@ -409,7 +409,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Azure Functions span creation: Error retrieving AspNetCore scope from HttpContext.Items");
+                Log.Error(ex, "Azure Functions span creation: Error retrieving AspNetCore scope from HttpContext.Items");
             }
 
             return parentScope;
