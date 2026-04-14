@@ -9,7 +9,7 @@
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/4.0.2.19 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.2.18" />
+    <PackageReference Include="AWSSDK.StepFunctions" Version="4.0.2.19" />
   </ItemGroup>
 
 </Project>

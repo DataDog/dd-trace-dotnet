@@ -9,7 +9,7 @@
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/4.0.3.28 -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.3.27" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.3.28" />
   </ItemGroup>
 
 </Project>
