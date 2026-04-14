@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <iosfwd>
+#include <ucontext.h>
 
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
@@ -274,8 +276,14 @@ public:
 
     void WriteTo(std::ostream& os) const;
 
+    void SetBackupContext(ucontext_t* context)
+    {
+        memcpy(&_backupContext, context, sizeof(ucontext_t));
+    }
+
 private:
     static constexpr std::size_t Capacity = 256;
     std::array<TraceEvent, Capacity> _entries;
     std::size_t _totalEvents = 0;
+    ucontext_t _backupContext = {0};
 };
