@@ -265,7 +265,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                             if (isAspNetCoreIntegration)
                             {
-                                // Skip extraction - will rely on HttpContext.Items bridge or create root span
+                                // Skip gRPC header extraction in HTTP proxying mode.
+                                // The gRPC message headers contain STALE context from the host process
+                                // (the host's root span), so extracting them would create an incorrect parent.
+                                // Instead, we rely on the HttpContext.Items bridge to get the ASP.NET Core scope.
                                 Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
                             }
                             else
