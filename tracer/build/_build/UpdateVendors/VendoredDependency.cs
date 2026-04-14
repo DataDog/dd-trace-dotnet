@@ -208,7 +208,7 @@ namespace UpdateVendors
             // "Common" shared components required by System.Reflection.Metadata (among others)
             // Not a "real" package
             Add(
-                libraryName: "System.Common",
+                libraryName: "System.Reflection.Metadata.Interop",
                 version: "7.0.20",
                 downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.20.zip",
                 pathToSrc: new[] { "runtime-7.0.20", "src", "libraries", "Common", "src" },
@@ -221,18 +221,20 @@ namespace UpdateVendors
                     {
                         RewriteFileWithTransform(filePath, contents =>
                         {
-                            return contents.Replace(
-                                "[LibraryImport(Libraries.Kernel32, SetLastError = true)]\n        internal static unsafe partial int ReadFile(",
-                                "[DllImport(\"kernel32.dll\", SetLastError = true)]\n        internal static extern unsafe int ReadFile(");
+                            return contents
+                                  .Replace(
+                                       "internal static partial class Interop",
+                                       "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;" + Environment.NewLine + Environment.NewLine + "internal static partial class Interop")
+                                  .Replace(
+                                       "[LibraryImport(Libraries.Kernel32, SetLastError = true)]",
+                                       """[DllImport("kernel32.dll", SetLastError = true)]""")
+                                  .Replace(
+                                       "internal static unsafe partial int ReadFile(",
+                                       "internal static extern unsafe int ReadFile(");
                         });
                     }
                 },
-                onlyIncludePaths: new[]
-                {
-                    "Interop/Windows/Interop.Libraries.cs",
-                    "Interop/Windows/kernel32/Interop.ReadFile_SafeHandle_IntPtr.cs",
-                });
-
+                onlyIncludePaths: new[] { "Interop/Windows/kernel32/Interop.ReadFile_SafeHandle_IntPtr.cs", });
             Add(
                 libraryName: "System.Reflection.Metadata",
                 version: "7.0.20",
