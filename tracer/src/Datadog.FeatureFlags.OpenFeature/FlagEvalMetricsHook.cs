@@ -43,16 +43,9 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         var flagKey = context.FlagKey;
         var variant = details.Variant ?? string.Empty;
 
+        // Reason is already in lower_snake_case format from the provider
         // Use "unknown" as fallback for missing reason (matches OpenFeature SDK telemetry convention)
-        var reason = details.Reason;
-        if (string.IsNullOrEmpty(reason))
-        {
-            reason = "unknown";
-        }
-        else
-        {
-            reason = ReasonToString(reason);
-        }
+        var reason = string.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
 
         // Extract error type if present
         string? errorType = null;
@@ -90,23 +83,5 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
             _ => "general"
         };
     }
-
-    // Converts reason to lower_snake_case for metrics
-    // Handles both OpenFeature UPPER_SNAKE_CASE (e.g., "TARGETING_MATCH") and
-    // C# enum PascalCase (e.g., "TargetingMatch") formats
-    // Use cached strings to avoid allocation from ToLowerInvariant()
-    private static string ReasonToString(string reason) => reason switch
-    {
-        "STATIC" or "Static" => "static",
-        "DEFAULT" or "Default" => "default",
-        "TARGETING_MATCH" or "TargetingMatch" => "targeting_match",
-        "SPLIT" or "Split" => "split",
-        "DISABLED" or "Disabled" => "disabled",
-        "ERROR" or "Error" => "error",
-        "CACHED" or "Cached" => "cached",
-        "STALE" or "Stale" => "stale",
-        "UNKNOWN" or "Unknown" => "unknown",
-        _ => reason.ToLowerInvariant()
-    };
 }
 #endif
