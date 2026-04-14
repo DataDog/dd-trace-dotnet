@@ -32,7 +32,7 @@ candidate_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
 shopt -u nullglob
 
 if [ ${#candidate_files[@]} -eq 0 ]; then
-    echo "WARNING: No candidate results found in $ARTIFACTS_DIR — skipping PR comment."
+    echo "WARNING: No candidate results found in $ARTIFACTS_DIR, skipping PR comment."
     exit 0
 fi
 
@@ -91,7 +91,7 @@ compare_exit=$?
 set -e
 
 if [ $compare_exit -ne 0 ]; then
-    echo "WARNING: benchmark_analyzer compare failed (exit $compare_exit) — skipping PR comment."
+    echo "WARNING: benchmark_analyzer compare failed (exit $compare_exit), skipping PR comment."
     exit 0
 fi
 
@@ -106,7 +106,7 @@ pr_commenter_exit=$?
 set -e
 
 if [ $pr_commenter_exit -ne 0 ]; then
-    echo "WARNING: pr-commenter failed (exit $pr_commenter_exit) — PR comment was not posted."
+    echo "WARNING: pr-commenter failed (exit $pr_commenter_exit), PR comment was not posted."
     exit 0
 fi
 
