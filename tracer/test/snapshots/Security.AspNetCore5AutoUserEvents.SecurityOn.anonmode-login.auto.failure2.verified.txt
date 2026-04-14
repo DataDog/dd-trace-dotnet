@@ -31,6 +31,10 @@
       span.kind: server,
       _dd.appsec.events.users.login.failure.auto.mode: anonymization,
       _dd.appsec.usr.login: anon_c34de12d00b78a9977da847b7e55202e,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.AccountController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
