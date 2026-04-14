@@ -137,6 +137,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
