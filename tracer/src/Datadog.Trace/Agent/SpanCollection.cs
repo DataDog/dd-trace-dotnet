@@ -188,7 +188,7 @@ internal readonly struct SpanCollection : IEnumerable<Span>
         // Not Span, not null, can only be SpanArray
         var spans = Unsafe.As<Span[]>(value);
 
-        if (startIndex >= Count)
+        if (startIndex >= Count || startIndex < 0)
         {
             startIndex = 0;
         }
