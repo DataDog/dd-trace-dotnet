@@ -538,7 +538,8 @@ namespace Datadog.Trace.Processors
 #if NETCOREAPP
             return ushort.TryParse(s, out _);
 #else
-            if (s.Length == 0)
+            // This doesn't strictly check the number is a valid ushort, but it's "good enough"
+            if (s.Length == 0 || s.Length > 5)
             {
                 return false;
             }
