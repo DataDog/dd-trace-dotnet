@@ -79,7 +79,12 @@ convert_results() {
     done
 
     if [ "$files_found" = false ]; then
-        echo "  Warning: No $BASELINE_OR_CANDIDATE results found"
+        if [ "$BASELINE_OR_CANDIDATE" = "candidate" ]; then
+            echo "  ERROR: No candidate results found in $ARTIFACTS_DIR"
+            exit 1
+        else
+            echo "  Warning: No $BASELINE_OR_CANDIDATE results found"
+        fi
     fi
 }
 

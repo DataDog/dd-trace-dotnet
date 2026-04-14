@@ -7,8 +7,8 @@
 # Optional:
 #   ARTIFACTS_DIR - Directory containing converted results (default: ./artifacts)
 #
-# This script always exits 0. Upload failures are logged as warnings so that a
-# transient network or service error does not fail the benchmark CI job.
+# Upload failures are logged as warnings and do not fail the CI job. Missing
+# converted files are treated as an error since that indicates a pipeline failure.
 
 set -e
 
@@ -23,9 +23,9 @@ converted_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
 shopt -u nullglob
 
 if [ ${#converted_files[@]} -eq 0 ]; then
-    echo "Warning: No converted results found in $ARTIFACTS_DIR"
+    echo "ERROR: No converted results found in $ARTIFACTS_DIR"
     echo "Make sure to run analyze-results.sh first."
-    exit 0
+    exit 1
 fi
 
 upload_failed=false
