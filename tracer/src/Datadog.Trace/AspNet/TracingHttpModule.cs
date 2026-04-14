@@ -417,6 +417,20 @@ namespace Datadog.Trace.AspNet
                     }
                     finally
                     {
+                        // If an exception prevented the normal resource name logic from running,
+                        // set a fallback resource name before disposing to avoid defaulting to the operation name
+                        try
+                        {
+                            if (scope.Span.ResourceName is null)
+                            {
+                                scope.Span.ResourceName = BuildResourceName(tracer, app.Request);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex, "Unable to set fallback resource name.");
+                        }
+
                         scope.Dispose();
                         proxyScope?.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
