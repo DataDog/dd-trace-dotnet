@@ -261,12 +261,12 @@ namespace Datadog.Trace.Pdb
             if (PdbReader != null)
             {
                 var methodDefHandle = GetMethodDefHandle(methodToken);
-                var methodDef = GetMethodDef(methodDefHandle);
                 if (methodDefHandle.IsNil)
                 {
                     return null;
                 }
 
+                var methodDef = GetMethodDef(methodDefHandle);
                 MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefHandle.ToDebugInformationHandle());
                 if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
                 {
