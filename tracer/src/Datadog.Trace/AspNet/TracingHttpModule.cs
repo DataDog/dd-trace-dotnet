@@ -263,6 +263,18 @@ namespace Datadog.Trace.AspNet
                 if (shouldDisposeScope)
                 {
                     // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
+                    try
+                    {
+                        if (scope?.Span.ResourceName is null)
+                        {
+                            scope.Span.ResourceName = BuildResourceName(tracer, httpRequest);
+                        }
+                    }
+                    catch (Exception ex2)
+                    {
+                        Log.Debug(ex2, "Unable to set fallback resource name.");
+                    }
+
                     scope?.Dispose();
                     inferredProxyScope?.Dispose();
                 }
