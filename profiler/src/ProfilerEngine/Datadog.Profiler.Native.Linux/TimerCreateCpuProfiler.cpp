@@ -268,10 +268,12 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
 #ifdef ARM64
     auto tracer = UnwindTracersProvider::GetInstance().GetTracer();
     Tracer = tracer.get();
+    Tracer->SetBackupContext(reinterpret_cast<ucontext_t*>(ctx));
 #else
     Tracer = nullptr;
 #endif
     auto buffer = rawCpuSample->Stack.AsSpan();
+
     auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size(), stackBase, stackEnd, Tracer);
     rawCpuSample->Stack.SetCount(count);
 
