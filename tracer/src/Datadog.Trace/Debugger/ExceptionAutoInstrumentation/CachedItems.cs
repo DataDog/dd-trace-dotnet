@@ -11,7 +11,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Vendors.MessagePack;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation

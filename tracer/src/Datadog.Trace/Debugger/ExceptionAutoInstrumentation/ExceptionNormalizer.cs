@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -33,7 +32,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 throw new ArgumentException(@"Exception string cannot be null or empty", nameof(exceptionString));
             }
 
-            var fnvHashCode = HashLine(outerExceptionType.AsSpan(), Fnv1aHash.FnvOffsetBias);
+            var fnvHashCode = HashLine(outerExceptionType.AsSpan(), SimpleHash.FnvOffsetBias);
 
             if (innerExceptionType != null)
             {
@@ -93,7 +92,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             for (var i = 0; i < line.Length; i++)
             {
-                fnvHashCode = Fnv1aHash.Combine((uint)line[i], fnvHashCode);
+                fnvHashCode = SimpleHash.Combine((uint)line[i], fnvHashCode);
             }
 
             return fnvHashCode;
