@@ -29,14 +29,14 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
     {
     }
 
-    protected override bool TryCreateMethodScope(TypeDefinition type, MethodDefinition method, out Model.Scope methodScope)
+    protected override bool TryCreateMethodScope(TypeDefinition type, MethodDefinitionHandle methodHandle, MethodDefinition method, out Model.Scope methodScope)
     {
-        if (!base.TryCreateMethodScope(type, method, out methodScope))
+        if (!base.TryCreateMethodScope(type, methodHandle, method, out methodScope))
         {
             return false;
         }
 
-        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(MetadataTokens.GetToken(method.Handle), false, out var count);
+        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(MetadataTokens.GetToken(methodHandle), false, out var count);
         if (memory == null || count == 0)
         {
             return true;
@@ -61,7 +61,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
             methodScope.LanguageSpecifics = ls;
         }
 
-        var localScopes = GetLocalSymbols(method, sequencePoints, methodScope);
+        var localScopes = GetLocalSymbols(methodHandle, method, sequencePoints, methodScope);
         methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes ?? null, localScopes);
         return true;
     }
@@ -94,7 +94,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         return new SourceLocationInfo(startLine: startLine, endLine: endLine, startColumn: startColumn, endColumn: endColumn, path: typeSourceFile);
     }
 
-    protected override bool TryCreateMethodScopeForGeneratedMethod(MethodDefinition method, MethodDefinition generatedMethod, TypeDefinition nestedType, out Model.Scope closureMethodScope)
+    protected override bool TryCreateMethodScopeForGeneratedMethod(MethodDefinitionHandle methodHandle, MethodDefinition method, MethodDefinitionHandle generatedMethodHandle, MethodDefinition generatedMethod, TypeDefinition nestedType, out Model.Scope closureMethodScope)
     {
         closureMethodScope = default;
         if (method.Name.IsNil || generatedMethod.Name.IsNil)
@@ -102,7 +102,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
             return false;
         }
 
-        var methodToken = MetadataTokens.GetToken(generatedMethod.Handle);
+        var methodToken = MetadataTokens.GetToken(generatedMethodHandle);
         if (!DatadogMetadataReader.HasSequencePoints(methodToken))
         {
             return false;
@@ -110,9 +110,10 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
 
         var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(methodToken);
         string? methodName;
-        if (cdi.StateMachineHoistedLocal && MetadataTokens.GetToken(method.Handle) == cdi.StateMachineKickoffMethodToken)
+        if (cdi.StateMachineHoistedLocal && MetadataTokens.GetToken(methodHandle) == cdi.StateMachineKickoffMethodToken)
         {
-            var kickoffDef = DatadogMetadataReader.GetMethodDef(cdi.StateMachineKickoffMethodToken);
+            var kickoffDefHandle = DatadogMetadataReader.GetMethodDefHandle(cdi.StateMachineKickoffMethodToken);
+            var kickoffDef = DatadogMetadataReader.GetMethodDef(kickoffDefHandle);
             methodName = MetadataReader.GetString(kickoffDef.Name);
         }
         else
@@ -136,7 +137,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
             return false;
         }
 
-        if (!TryCreateMethodScope(nestedType, generatedMethod, out closureMethodScope))
+        if (!TryCreateMethodScope(nestedType, generatedMethodHandle, generatedMethod, out closureMethodScope))
         {
             return false;
         }
@@ -211,12 +212,12 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         return true;
     }
 
-    private Model.Scope[]? GetLocalSymbols(MethodDefinition methodDefinition, ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
+    private Model.Scope[]? GetLocalSymbols(MethodDefinitionHandle methodHandle, MethodDefinition methodDefinition, ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
     {
         List<Model.Scope>? scopes = null;
         var generatedClassPrefix = GeneratedClassPrefix.AsSpan();
 
-        var methodToken = MetadataTokens.GetToken(methodDefinition.Handle);
+        var methodToken = MetadataTokens.GetToken(methodHandle);
         if (DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(methodToken).StateMachineHoistedLocal
          && DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(methodDefinition.GetDeclaringType())))
         {
