@@ -99,6 +99,7 @@ set -e
 
 if [ $pr_commenter_exit -ne 0 ]; then
     echo "WARNING: pr-commenter failed (exit $pr_commenter_exit), PR comment was not posted."
+    echo "This does not affect benchmark correctness. The CI job will continue."
     exit 0
 fi
 
