@@ -59,7 +59,7 @@ check-azure-pipeline:
         echo "export buildId=$HARDCODED_BUILD_ID" > build-id.txt
         exit 0
       fi
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./wait-for-pipeline.sh
 
 
@@ -84,7 +84,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
     # based on an instance that is created in this job
     CLEANUP: "true"
   script:
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
       bp-infra launch --region "${AWS_REGION}" --os "windows" \
@@ -125,7 +125,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   after_script:
@@ -321,7 +321,7 @@ profiler_cpu_timer_create-x86:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
   after_script:
@@ -587,7 +587,7 @@ profiler_cpu_timer_create-arm64:
     - source build-id.txt
     - echo "Running Windows benchmarks for build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
   after_script:
     - |
