@@ -44,7 +44,11 @@ internal sealed class DataStreamsManager
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
     private readonly bool _isInDefaultState;
-    private readonly ConditionalWeakTable<string[], NodeHashCacheEntry> _nodeHashCache = new();
+    // Keyed by string[] identity (reference equality) — safe because EdgeTagCache holds strong
+    // references to the cached arrays (bounded by MaxEdgeTagCacheSize).
+    private readonly ConcurrentDictionary<string[], NodeHashCacheEntry> _nodeHashCache =
+        new(NodeHashCacheKeyComparer.Instance);
+
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
     private string? _previousContainerTagsHash;
@@ -312,7 +316,7 @@ internal sealed class DataStreamsManager
 
             // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
             var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
-            var cacheEntry = _nodeHashCache.GetOrCreateValue(edgeTags);
+            var cacheEntry = _nodeHashCache.GetOrAdd(edgeTags, static _ => new NodeHashCacheEntry());
             NodeHash nodeHash;
 
             // Fast lock-free path: snapshot is an immutable object published via a volatile field.
@@ -424,6 +428,20 @@ internal sealed class DataStreamsManager
 
         weight = 0;
         return false;
+    }
+
+    /// <summary>
+    /// Reference-equality comparer for string[] keys in <see cref="_nodeHashCache"/>.
+    /// Two string[] objects are considered equal only when they are the same instance,
+    /// which is always true for the cached arrays held by <see cref="EdgeTagCache{TKey}"/>.
+    /// </summary>
+    private sealed class NodeHashCacheKeyComparer : IEqualityComparer<string[]>
+    {
+        internal static readonly NodeHashCacheKeyComparer Instance = new();
+
+        public bool Equals(string[]? x, string[]? y) => ReferenceEquals(x, y);
+
+        public int GetHashCode(string[] obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
     }
 
     /// <summary>

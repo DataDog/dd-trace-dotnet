@@ -299,7 +299,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
                         pathwayContext);
 
-                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext); // remove eventual junk
+                    // TemporaryBase64PathwayContext is only written by our consumer code when
+                    // KafkaCreateConsumerScopeEnabled=false. When it is true (the default), the
+                    // header is never present so the unconditional Remove performs a wasted O(n)
+                    // linear header scan on every message. Skip it when we know it can't be there.
+                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled)
+                    {
+                        message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
+                    }
+
                     if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
                     {
                         // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual

@@ -110,6 +110,19 @@ internal sealed class DataStreamsContextPropagator
         {
             try
             {
+#if NETCOREAPP3_1_OR_GREATER
+                // Decode directly into a stack buffer to avoid a heap allocation per consume.
+                Span<byte> decodedBytes = stackalloc byte[PathwayContextEncoder.MaxEncodedSize];
+                var status = Base64.DecodeFromUtf8(base64Bytes, decodedBytes, out _, out int bytesWritten);
+
+                if (status != OperationStatus.Done)
+                {
+                    Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                    return null;
+                }
+
+                return PathwayContextEncoder.Decode(decodedBytes.Slice(0, bytesWritten));
+#else
                 // Calculate the maximum decoded length
                 // Base64 encoding encodes 3 bytes of data into 4 bytes of encoded data
                 // So the maximum decoded length is (base64Bytes.Length * 3) / 4
@@ -134,6 +147,7 @@ internal sealed class DataStreamsContextPropagator
                         return PathwayContextEncoder.Decode(decodedBytes.AsSpan(0, bytesWritten).ToArray());
                     }
                 }
+#endif
             }
             catch (Exception ex)
             {
