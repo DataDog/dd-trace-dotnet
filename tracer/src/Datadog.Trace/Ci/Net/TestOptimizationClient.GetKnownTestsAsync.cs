@@ -39,6 +39,9 @@ internal sealed partial class TestOptimizationClient
 
         var configurations = GetTestConfigurations();
         KnownTestsResponse.KnownTestsModules? aggregateTests = null;
+        // An explicit empty "tests": {} payload keeps known-tests enabled, so we must
+        // preserve that distinction from an invalid or missing known-tests response.
+        var sawExplicitTestsPayload = false;
         string? pageState = null;
         var pageNumber = 0;
 
@@ -70,7 +73,8 @@ internal sealed partial class TestOptimizationClient
             Log.Debug("TestOptimizationClient: KnownTests.JSON RS (page {PageNumber}) = {Json}", pageNumber, queryResponse);
             if (StringUtil.IsNullOrEmpty(queryResponse))
             {
-                break;
+                Log.Warning<int>("TestOptimizationClient: Known tests response body was empty on page {PageNumber}. Discarding paginated known tests data.", pageNumber);
+                return default;
             }
 
             var deserializedResult = JsonHelper.DeserializeObject<DataEnvelope<Data<KnownTestsPageResponse>?>>(queryResponse);
@@ -78,19 +82,36 @@ internal sealed partial class TestOptimizationClient
 
             if (pageResponse is null)
             {
-                break;
+                Log.Warning<int>("TestOptimizationClient: Known tests response is missing data.attributes on page {PageNumber}. Discarding paginated known tests data.", pageNumber);
+                return default;
             }
 
             var page = pageResponse.Value;
-
-            // Merge page tests into aggregate
-            MergeKnownTests(ref aggregateTests, page.Tests);
-
-            // Check pagination
-            var pageInfo = page.PageInfo;
-            if (pageInfo is not { HasNext: true })
+            var isContinuationPage = pageState is not null;
+            if (isContinuationPage && page.PageInfo is null)
             {
-                // No page_info or has_next is false — we're done
+                Log.Warning<int>("TestOptimizationClient: Known tests response is missing page_info on continuation page {PageNumber}. Discarding paginated known tests data.", pageNumber);
+                return default;
+            }
+
+            if (page.Tests is not null)
+            {
+                sawExplicitTestsPayload = true;
+            }
+
+            // Merge page tests into the aggregate only after validating the page structure.
+            aggregateTests = MergeKnownTests(aggregateTests, page.Tests);
+
+            var pageInfo = page.PageInfo;
+            if (pageInfo is null)
+            {
+                // Missing page_info is accepted only on the first page for backward compatibility
+                // with non-paginated known-tests responses.
+                break;
+            }
+
+            if (!pageInfo.Value.HasNext)
+            {
                 break;
             }
 
@@ -108,6 +129,11 @@ internal sealed partial class TestOptimizationClient
         if (pageNumber >= MaxKnownTestsPages)
         {
             Log.Warning<int>("TestOptimizationClient: Known tests pagination exceeded maximum of {MaxPages} pages. Returning data collected so far.", MaxKnownTestsPages);
+        }
+
+        if (aggregateTests is null && sawExplicitTestsPayload)
+        {
+            aggregateTests = new KnownTestsResponse.KnownTestsModules();
         }
 
         var finalResponse = new KnownTestsResponse(aggregateTests);
@@ -132,18 +158,16 @@ internal sealed partial class TestOptimizationClient
         return finalResponse;
     }
 
-    private static void MergeKnownTests(ref KnownTestsResponse.KnownTestsModules? aggregate, KnownTestsResponse.KnownTestsModules? page)
+    private static KnownTestsResponse.KnownTestsModules? MergeKnownTests(KnownTestsResponse.KnownTestsModules? aggregate, KnownTestsResponse.KnownTestsModules? page)
     {
         if (page is null)
         {
-            return;
+            return aggregate;
         }
-
-        aggregate ??= new KnownTestsResponse.KnownTestsModules();
 
         if (page.Count == 0)
         {
-            return;
+            return aggregate;
         }
 
         foreach (var moduleEntry in page)
@@ -153,17 +177,21 @@ internal sealed partial class TestOptimizationClient
                 continue;
             }
 
-            if (!aggregate.TryGetValue(moduleEntry.Key, out var existingSuites) || existingSuites is null)
-            {
-                existingSuites = new KnownTestsResponse.KnownTestsSuites();
-                aggregate[moduleEntry.Key] = existingSuites;
-            }
+            KnownTestsResponse.KnownTestsSuites? existingSuites = null;
 
             foreach (var suiteEntry in moduleEntry.Value)
             {
                 if (suiteEntry.Value is null or { Count: 0 })
                 {
                     continue;
+                }
+
+                aggregate ??= new KnownTestsResponse.KnownTestsModules();
+
+                if (!aggregate.TryGetValue(moduleEntry.Key, out existingSuites) || existingSuites is null)
+                {
+                    existingSuites = new KnownTestsResponse.KnownTestsSuites();
+                    aggregate[moduleEntry.Key] = existingSuites;
                 }
 
                 if (!existingSuites.TryGetValue(suiteEntry.Key, out var existingTests) || existingTests is null)
@@ -176,6 +204,8 @@ internal sealed partial class TestOptimizationClient
                 }
             }
         }
+
+        return aggregate;
     }
 
     private readonly struct KnownTestsCallbacks : ICallbacks

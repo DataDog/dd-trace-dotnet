@@ -596,8 +596,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
         /// <summary>
         /// Optional paginated known tests responses. When non-null, the handler returns these
-        /// pages sequentially instead of <see cref="TestsJson"/>. Each entry must be a complete
-        /// JSON response including page_info with cursor/has_next.
+        /// raw page bodies sequentially instead of <see cref="TestsJson"/>. Negative-path tests
+        /// may intentionally omit fields such as attributes or page_info.
         /// </summary>
         public readonly string[]? KnownTestsJsonPages;
 

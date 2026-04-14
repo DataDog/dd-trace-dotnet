@@ -13,26 +13,29 @@ namespace Datadog.Trace.Ci;
 internal sealed class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimizationEarlyFlakeDetectionFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationEarlyFlakeDetectionFeature));
+    private readonly TestOptimizationSettings _settings;
+    private readonly bool _enabled;
 
     private TestOptimizationEarlyFlakeDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
     {
+        _settings = settings;
         EarlyFlakeDetectionSettings = clientSettingsResponse.EarlyFlakeDetection;
 
         if ((settings.EarlyFlakeDetectionEnabled == true || clientSettingsResponse.EarlyFlakeDetection.Enabled == true) && settings.KnownTestsEnabled == true)
         {
             Log.Information("TestOptimizationEarlyFlakeDetectionFeature: Early flake detection is enabled.");
             settings.SetEarlyFlakeDetectionEnabled(true);
-            Enabled = true;
+            _enabled = true;
         }
         else
         {
             Log.Information("TestOptimizationEarlyFlakeDetectionFeature: Early flake detection is disabled.");
             settings.SetEarlyFlakeDetectionEnabled(false);
-            Enabled = false;
+            _enabled = false;
         }
     }
 
-    public bool Enabled { get; }
+    public bool Enabled => _enabled && _settings.KnownTestsEnabled == true && _settings.EarlyFlakeDetectionEnabled == true;
 
     public TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; }
 
