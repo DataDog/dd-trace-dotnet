@@ -480,7 +480,10 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                         }
                         else
                         {
-                            e.Value.Response = new MockTracerResponse(string.Empty, 404);
+                            // The mock HTTP transports cannot emit an empty response body.
+                            // Use an invalid payload instead to simulate a missing continuation page
+                            // while still exercising the Known Tests invalid-payload handling path.
+                            e.Value.Response = new MockTracerResponse("{\"data\":null}", 404);
                         }
                     }
                     else
