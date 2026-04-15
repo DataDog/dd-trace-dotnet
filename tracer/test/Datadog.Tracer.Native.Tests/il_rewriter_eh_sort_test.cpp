@@ -2,11 +2,11 @@
 
 #include "../../src/Datadog.Tracer.Native/il_rewriter.h"
 
-// Helper to build a doubly-linked chain of ILInstr nodes with specified offsets.
-// Returns a heap-allocated array; the caller must delete[].
-// Each node's m_pNext and m_pPrev are wired up in sequence. The last node's
-// m_pNext points to a sentinel (the first node acts as its own sentinel for
-// handler-end calculations via m_pHandlerEnd->m_pNext).
+#include <cstring>
+#include <vector>
+
+// For simplicity, nodes are linked in a ring (last points to first). This is not production IL layout; it avoids a separate sentinel while keeping every node with a valid successor.
+// SortEHClauses uses m_pHandlerEnd->m_pNext->m_offset as the exclusive end of a handler region (same convention as ILRewriter::ImportEH).
 static ILInstr* MakeInstrChain(const std::vector<unsigned>& offsets)
 {
     auto n = offsets.size();
