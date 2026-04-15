@@ -25,9 +25,8 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 
     // Drain the queues when this many items accumulate OR after DrainTimeoutMs — whichever comes first.
-    // At the queue limit of 10_000, this leaves 50% headroom even at 2× current peak throughput.
-    private const int DrainThreshold = 5_000;
-    private const int DrainTimeoutMs = 1_000;
+    private const int DrainThreshold = 1_000;
+    private const int DrainTimeoutMs = 500;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
