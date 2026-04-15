@@ -759,6 +759,7 @@ namespace UpdateVendors
                 new("NotSupported_CannotCallGetHashCodeOnSpan", "GetHashCode() on Span and ReadOnlySpan is not supported."),
                 new("OutstandingReferences", "Release all references before disposing this instance."),
                 new("UnexpectedSegmentType", "Unexpected segment type."),
+                new("Argument_GWithPrecisionNotSupported", "The 'G' format combined with a precision is not supported.")
             };
 
             foreach (var kvp in resourceReplacements)
