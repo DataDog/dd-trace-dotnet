@@ -8,13 +8,12 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent;
 
@@ -23,6 +22,8 @@ namespace Datadog.Trace.Agent;
 /// </summary>
 internal sealed class ManagedApiOtlp : IApi
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ManagedApiOtlp>();
+
     private IApi _api;
 
     public ManagedApiOtlp(TracerSettings settings)
@@ -34,7 +35,7 @@ internal sealed class ManagedApiOtlp : IApi
         [MemberNotNull(nameof(_api))]
         void UpdateApi(TracerSettings settings, ExporterSettings exporterSettings)
         {
-            var apiRequestFactory = TracesTransportStrategy.Get(exporterSettings);
+            var apiRequestFactory = CreateOtlpRequestFactory(exporterSettings);
             var api = new ApiOtlp(apiRequestFactory, settings, exporterSettings);
             Interlocked.Exchange(ref _api!, api);
         }
@@ -49,6 +50,21 @@ internal sealed class ManagedApiOtlp : IApi
 
     public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
         => Volatile.Read(ref _api).SendStatsAsync(stats, bucketDuration);
+
+    /// <summary>
+    /// Creates an <see cref="IApiRequestFactory"/> for OTLP export using the OTLP endpoint
+    /// directly, bypassing the APM trace transport strategy. This is necessary because
+    /// <see cref="TracesTransportStrategy"/> selects the transport based on the APM agent
+    /// configuration (e.g. the APM Unix domain socket), which is incorrect for OTLP export
+    /// that should use the OTLP-specific endpoint.
+    /// </summary>
+    internal static IApiRequestFactory CreateOtlpRequestFactory(ExporterSettings exporterSettings)
+    {
+        var otlpEndpoint = exporterSettings.OtlpTracesEndpoint;
+        var baseEndpoint = new Uri($"{otlpEndpoint.Scheme}://{otlpEndpoint.Authority}");
+        Log.Debug("Using " + nameof(HttpClientRequestFactory) + " for OTLP traces transport to {Endpoint}", baseEndpoint);
+        return new HttpClientRequestFactory(baseEndpoint, defaultHeaders: []);
+    }
 }
 
 #endif
