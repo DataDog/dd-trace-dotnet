@@ -185,8 +185,18 @@ namespace UpdateVendors
                 {
                     // This source code _doesn't_ use nullability, so don't add the nullability attribute
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Numerics", AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents => FixSystemMemory(filePath, contents));
+                    }
                 },
-                onlyIncludePaths: new[] { "System/Numerics/Vector.cs" });
+                onlyIncludePaths: new[]
+                {
+                    "System/Numerics/Vector.cs",
+                    "System/Numerics/Hashing/HashHelpers.cs",
+                });
 
             Add(
                 libraryName: "System.Memory",
@@ -666,6 +676,67 @@ namespace UpdateVendors
         }
 
         private static string FixSystemMemory(string filePath, string contents)
+        {
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
+                                  "using System.Runtime.InteropServices;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            contents = contents.Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..omponentModel.",
+                                    "System.ComponentModel.")
+                               .Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..UInt",
+                                    "Datadog.Trace.VendoredMicrosoftCode.System.NUInt")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel",
+                                    "using System.ComponentModel")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics",
+                                    "using System.Diagnostics")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Globalization",
+                                    "using System.Globalization")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices",
+                                    "using System.Runtime.CompilerServices")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
+                                    "using System.Text")
+                               .Replace(
+                                    "namespace System\r\n",
+                                    "namespace System\n")
+                                // TODO: We should consider _not_ making this change in the future
+                               .Replace(
+                                    "namespace System\n",
+                                    "namespace Datadog.Trace.VendoredMicrosoftCode.System\n");
+
+
+            return contents;
+        }
+
+        private static string FixSystemBuffers(string filePath, string contents)
         {
             // Add additional usings which are assumed available
             // Find the namespace declaration
