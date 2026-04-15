@@ -53,16 +53,6 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAspNetCoreV0(excludeTags),
             };
 
-        /// <summary>
-        /// ASP.NET Core 404 span (no route matched). Code origin tags must be absent.
-        /// </summary>
-        public static Result IsAspNetCore404(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAspNetCore404V1(excludeTags),
-                _ => span.IsAspNetCore404V0(excludeTags),
-            };
-
         public static Result IsAspNetCoreMvc(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

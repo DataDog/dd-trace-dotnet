@@ -61,7 +61,7 @@ namespace Datadog.Trace.TestHelpers
         public SpanTagAssertion<T> IsOptional(string tagName, params string[] fallbackTagNames) => IsOptionalOrPresent(isRequired: false, new string[] { tagName }.Concat(fallbackTagNames).ToArray());
 
         /// <summary>
-        /// Asserts that the tag must NOT be present. Use for spans where a tag is correctly absent (e.g. code origin on 404 spans).
+        /// Asserts that the tag must NOT be present. Use for spans where a tag is correctly absent for that scenario.
         /// </summary>
         public SpanTagAssertion<T> IsAbsent(string tagName)
         {
