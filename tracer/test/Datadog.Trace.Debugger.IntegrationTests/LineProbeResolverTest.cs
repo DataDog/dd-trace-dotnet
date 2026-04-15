@@ -130,7 +130,8 @@ public class LineProbeResolverTest
         result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
         result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
         result.Diagnostics.SameFileNameMatchCount.Should().Be(0);
-        result.Message.Should().Contain("assembly is not loaded yet or if symbols are unavailable");
+        result.Message.Should().Contain("assembly is not loaded yet");
+        result.Message.Should().Contain("symbols are unavailable");
         loc.Should().BeNull();
     }
 

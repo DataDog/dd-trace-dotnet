@@ -55,7 +55,7 @@ namespace Datadog.Trace.Debugger
 
         private static string BuildAssemblyNotLoadedOrSymbolsUnavailableMessage()
         {
-            return "Source file location for probe was not found in any currently loaded assembly. This can happen if the relevant assembly is not loaded yet or if symbols are unavailable for the matching assembly.";
+            return "Source file location for probe could not be matched to any currently loaded assembly with available symbols. This can happen if the relevant assembly is not loaded yet or symbols are unavailable for the matching assembly.";
         }
 
         private IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
