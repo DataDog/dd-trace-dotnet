@@ -63,7 +63,7 @@ internal sealed class ManagedApiOtlp : IApi
         var otlpEndpoint = exporterSettings.OtlpTracesEndpoint;
         var baseEndpoint = new Uri($"{otlpEndpoint.Scheme}://{otlpEndpoint.Authority}");
         Log.Debug("Using " + nameof(HttpClientRequestFactory) + " for OTLP traces transport to {Endpoint}", baseEndpoint);
-        return new HttpClientRequestFactory(baseEndpoint, defaultHeaders: []);
+        return new HttpClientRequestFactory(baseEndpoint, AgentHttpHeaderNames.DefaultHeaders);
     }
 }
 
