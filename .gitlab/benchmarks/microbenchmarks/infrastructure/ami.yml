@@ -26,9 +26,10 @@ provision_steps:
 
 check_bp_runner:
   remote_command: |
+    $ErrorActionPreference = "Stop"
     $version = (bp-runner --version 2>&1)
     Write-Output "bp-runner version: $version"
-    exit 1
+    throw "Intentional failure: checked bp-runner version"
 
 install_dotnet:
   populate_env: true
