@@ -37,10 +37,17 @@ internal static class EventGridCommon
             var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventGridTags(SpanKinds.Producer);
             tags.MessagingOperation = "send";
 
-            var host = instance.UriBuilder?.Host;
+            var uriBuilder = instance.UriBuilder;
+            var host = uriBuilder?.Host;
             var topic = GetTopicFromHost(host);
             tags.MessagingDestinationName = topic;
             tags.NetworkDestinationName = host;
+
+            var port = uriBuilder?.Port ?? -1;
+            if (port is not -1)
+            {
+                tags.NetworkDestinationPort = port.ToString();
+            }
 
             var messageCount = events is ICollection collection ? collection.Count : 0;
             if (messageCount > 1)

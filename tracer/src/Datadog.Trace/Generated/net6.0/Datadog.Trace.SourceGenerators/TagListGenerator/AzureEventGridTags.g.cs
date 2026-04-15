@@ -50,11 +50,11 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] NetworkDestinationNameBytes = new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
 #endif
-        // ServerAddressBytes = MessagePack.Serialize("server.address");
+        // NetworkDestinationPortBytes = MessagePack.Serialize("network.destination.port");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> ServerAddressBytes => new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+        private static ReadOnlySpan<byte> NetworkDestinationPortBytes => new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
 #else
-        private static readonly byte[] ServerAddressBytes = new byte[] { 174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
+        private static readonly byte[] NetworkDestinationPortBytes = new byte[] { 184, 110, 101, 116, 119, 111, 114, 107, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 112, 111, 114, 116 };
 #endif
         // MessagingBatchMessageCountBytes = MessagePack.Serialize("messaging.batch.message_count");
 #if NETCOREAPP
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tagging
                 "messaging.operation" => MessagingOperation,
                 "messaging.destination.name" => MessagingDestinationName,
                 "network.destination.name" => NetworkDestinationName,
-                "server.address" => ServerAddress,
+                "network.destination.port" => NetworkDestinationPort,
                 "messaging.batch.message_count" => MessagingBatchMessageCount,
                 _ => base.GetTag(key),
             };
@@ -92,8 +92,8 @@ namespace Datadog.Trace.Tagging
                 case "network.destination.name": 
                     NetworkDestinationName = value;
                     break;
-                case "server.address": 
-                    ServerAddress = value;
+                case "network.destination.port": 
+                    NetworkDestinationPort = value;
                     break;
                 case "messaging.batch.message_count": 
                     MessagingBatchMessageCount = value;
@@ -141,9 +141,9 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("network.destination.name", NetworkDestinationName, NetworkDestinationNameBytes));
             }
 
-            if (ServerAddress is not null)
+            if (NetworkDestinationPort is not null)
             {
-                processor.Process(new TagItem<string>("server.address", ServerAddress, ServerAddressBytes));
+                processor.Process(new TagItem<string>("network.destination.port", NetworkDestinationPort, NetworkDestinationPortBytes));
             }
 
             if (MessagingBatchMessageCount is not null)
@@ -198,10 +198,10 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
-            if (ServerAddress is not null)
+            if (NetworkDestinationPort is not null)
             {
-                sb.Append("server.address (tag):")
-                  .Append(ServerAddress)
+                sb.Append("network.destination.port (tag):")
+                  .Append(NetworkDestinationPort)
                   .Append(',');
             }
 
