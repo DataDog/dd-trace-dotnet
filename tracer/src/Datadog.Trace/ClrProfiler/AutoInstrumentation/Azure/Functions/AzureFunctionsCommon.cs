@@ -264,6 +264,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
+
+                        case "EventGrid" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid):
+                            extractedContext = ExtractPropagatedContextFromEventGrid(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                            break;
                     }
 
                     break;
@@ -419,6 +423,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated context from messaging binding");
+                return default;
+            }
+        }
+
+        internal static PropagationContext ExtractPropagatedContextFromEventGrid<T>(T context, string? bindingName)
+            where T : IFunctionContext
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(bindingName))
+                {
+                    return default;
+                }
+
+                var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
+                if (bindingsFeature == null)
+                {
+                    return default;
+                }
+
+                // The full CloudEvent JSON (including extension attributes) is in InputData,
+                // not TriggerMetadata (which only contains {"data": ...} for Event Grid).
+                if (bindingsFeature.Value.InputData is null
+                 || !bindingsFeature.Value.InputData.TryGetValue(bindingName!, out var inputDataObj))
+                {
+                    return default;
+                }
+
+                // Single dispatch sends a JSON object, batch dispatch sends a JSON array.
+                // Only reparent for single events — batch triggers can receive events from different producers.
+                if (!TryParseJson<Dictionary<string, object>>(inputDataObj, out var cloudEventProps))
+                {
+                    return default;
+                }
+
+                // Extract W3C trace context from CloudEvent extension attributes.
+                // These were injected by EventGridCommon.InjectW3CContext() on the publisher side.
+                var traceProperties = new Dictionary<string, object>();
+
+                if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceParentHeaderName, out var traceparent) && traceparent is string)
+                {
+                    traceProperties[W3CTraceContextPropagator.TraceParentHeaderName] = traceparent;
+                }
+
+                if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceStateHeaderName, out var tracestate) && tracestate is string)
+                {
+                    traceProperties[W3CTraceContextPropagator.TraceStateHeaderName] = tracestate;
+                }
+
+                if (traceProperties.Count == 0)
+                {
+                    return default;
+                }
+
+                return Shared.AzureMessagingCommon.ExtractContext(traceProperties);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting propagated context from EventGrid binding");
                 return default;
             }
         }
