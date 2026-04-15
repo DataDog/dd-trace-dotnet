@@ -179,7 +179,11 @@ namespace UpdateVendors
                         RewriteFileWithTransform(filePath, contents => FixSystemBuffers(filePath, contents));
                     }
                 },
-                relativePathsToExclude: new[] { "System/Buffers/ArrayPoolEventSource.cs" });
+                relativePathsToExclude: new[]
+                {
+                    "Resources/Strings.resx",
+                    "System/Buffers/ArrayPoolEventSource.cs"
+                });
 
             Add(
                 libraryName: "System.Numerics.Vectors",
@@ -199,8 +203,6 @@ namespace UpdateVendors
                 },
                 onlyIncludePaths: new[]
                 {
-                    // TODO: inline these calls
-                    "Resources/Strings.resx",
                     "System/Numerics/ConstantHelper.cs",
                     "System/Numerics/ConstantHelper.cs",
                     "System/Numerics/Vector.cs",
@@ -225,7 +227,8 @@ namespace UpdateVendors
                     {
                         RewriteFileWithTransform(filePath, contents => FixSystemMemory(filePath, contents));
                     }
-                });
+                },
+                relativePathsToExclude: new [] { "Resources/Strings.resx" });
 
             Add(
                 libraryName: "System.Private.CoreLib",
@@ -743,6 +746,27 @@ namespace UpdateVendors
                                     "namespace System\n",
                                     "namespace Datadog.Trace.VendoredMicrosoftCode.System\n");
 
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("Argument_BadFormatSpecifier", "Format specifier was invalid."),
+                new("Argument_CannotParsePrecision", "Characters following the format symbol must be a number of {0} or less."),
+                new("Argument_DestinationTooShort", "Destination is too short."),
+                new("Argument_InvalidTypeWithPointersNotSupported", "Cannot use type '{0}'. Only value types without pointers or references are supported."),
+                new("Argument_OverlapAlignmentMismatch", "Overlapping spans have mismatching alignment."),
+                new("Argument_PrecisionTooLarge", "Precision cannot be larger than {0}."),
+                new("EndPositionNotReached", "End position was not reached during enumeration."),
+                new("NotSupported_CannotCallEqualsOnSpan", "Equals() on Span and ReadOnlySpan is not supported. Use operator== instead."),
+                new("NotSupported_CannotCallGetHashCodeOnSpan", "GetHashCode() on Span and ReadOnlySpan is not supported."),
+                new("OutstandingReferences", "Release all references before disposing this instance."),
+                new("UnexpectedSegmentType", "Unexpected segment type."),
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
+            }
+
+            return contents;
 
             return contents;
         }
@@ -812,6 +836,21 @@ namespace UpdateVendors
                                                                                           ArrayPoolEventSource.BufferAllocatedReason.Pooled);
                                                                                   }
                                """, "");
+            }
+
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("Arg_ArgumentOutOfRangeException", "Index was out of bounds:"),
+                new("Arg_ElementsInSourceIsGreaterThanDestination", "Number of elements in source vector is greater than the destination array"),
+                new("Arg_InsufficientNumberOfElements", """At least {0} element(s) are expected in the parameter "{1}"."""),
+                new("Arg_NullArgumentNullRef", "The method was called with a null array argument."),
+                new("Arg_TypeNotSupported", "Specified type is not supported"),
+                new("ArgumentException_BufferNotFromPool", "The buffer is not associated with this pool and may not be returned to it."),
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
             }
 
             return contents;
