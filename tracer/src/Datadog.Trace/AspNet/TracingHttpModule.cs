@@ -132,7 +132,10 @@ namespace Datadog.Trace.AspNet
             bool shouldDisposeScope = true;
             try
             {
-                var tracer = Tracer.Instance;
+bool shouldDisposeScope = true;
+var tracer = Tracer.Instance;
+try
+{
 
                 if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
