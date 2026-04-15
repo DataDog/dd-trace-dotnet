@@ -816,6 +816,13 @@ namespace UpdateVendors
                                """, "")
                           .Replace(
                                """
+                                                       if (log.IsEnabled())
+                                                       {
+                                                           log.BufferRented(buffer.GetHashCode(), buffer.Length, Id, _buckets[i].Id);
+                                                       }
+                               """, "")
+                          .Replace(
+                               """
                                            if (log.IsEnabled())
                                            {
                                                log.BufferReturned(array.GetHashCode(), array.Length, Id);
@@ -829,12 +836,12 @@ namespace UpdateVendors
                           .ReplaceLineEndings()
                           .Replace(
                                """
-                                                                                  var log = ArrayPoolEventSource.Log;
-                                                                                  if (log.IsEnabled())
-                                                                                  {
-                                                                                      log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,
-                                                                                          ArrayPoolEventSource.BufferAllocatedReason.Pooled);
-                                                                                  }
+                                                   var log = ArrayPoolEventSource.Log;
+                                                   if (log.IsEnabled())
+                                                   {
+                                                       log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,
+                                                           ArrayPoolEventSource.BufferAllocatedReason.Pooled);
+                                                   }
                                """, "");
             }
 
