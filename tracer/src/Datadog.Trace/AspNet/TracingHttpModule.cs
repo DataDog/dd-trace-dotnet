@@ -130,10 +130,10 @@ namespace Datadog.Trace.AspNet
             Scope scope = null;
             Scope inferredProxyScope = null;
             bool shouldDisposeScope = true;
+            var tracer = Tracer.Instance;
 
             try
             {
-                var tracer = Tracer.Instance;
                 if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
@@ -263,18 +263,17 @@ namespace Datadog.Trace.AspNet
                 if (shouldDisposeScope)
                 {
                     // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
-                    // TEMPORARILY COMMENTED OUT for testing — remove to re-enable the fix
-                    // try
-                    // {
-                    //     if (scope?.Span is { ResourceName: null } span)
-                    //     {
-                    //         span.ResourceName = BuildResourceName(tracer, (sender as HttpApplication)?.Context?.Request);
-                    //     }
-                    // }
-                    // catch (Exception ex2)
-                    // {
-                    //     Log.Debug(ex2, "Unable to set fallback resource name.");
-                    // }
+                    try
+                    {
+                        if (scope?.Span is { ResourceName: null } span)
+                        {
+                            span.ResourceName = BuildResourceName(tracer, (sender as HttpApplication)?.Context?.Request);
+                        }
+                    }
+                    catch (Exception ex2)
+                    {
+                        Log.Debug(ex2, "Unable to set fallback resource name.");
+                    }
 
                     scope?.Dispose();
                     inferredProxyScope?.Dispose();
@@ -430,18 +429,17 @@ namespace Datadog.Trace.AspNet
                     }
                     finally
                     {
-                        // TEMPORARILY COMMENTED OUT for testing — remove to re-enable the fix
-                        // try
-                        // {
-                        //     if (scope.Span.ResourceName is null)
-                        //     {
-                        //         scope.Span.ResourceName = BuildResourceName(tracer, app.Request);
-                        //     }
-                        // }
-                        // catch (Exception ex)
-                        // {
-                        //     Log.Debug(ex, "Unable to set fallback resource name.");
-                        // }
+                        try
+                        {
+                            if (scope.Span.ResourceName is null)
+                            {
+                                scope.Span.ResourceName = BuildResourceName(tracer, app.Request);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex, "Unable to set fallback resource name.");
+                        }
 
                         scope.Dispose();
                         proxyScope?.Dispose();
