@@ -955,9 +955,10 @@
     "SampleProjectName": "Samples.AzureEventGrid",
     "NugetPackageSearchName": "Azure.Messaging.EventGrid",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "5.0.0",
+    "MaxVersionExclusive": "6.0.0",
     "SpecificVersions": [
-      "4.*.*"
+      "4.0.*",
+      "5.*.*"
     ]
   },
   {
