@@ -27,7 +27,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         var client = new TestOptimizationClientStub(knownTestsResponse: default);
 
         var knownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-        var earlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
+        var earlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, knownTestsFeature);
 
         knownTestsFeature.Enabled.Should().BeFalse();
         settings.KnownTestsEnabled.Should().BeFalse();
@@ -46,12 +46,30 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             new TestOptimizationClient.KnownTestsResponse(new TestOptimizationClient.KnownTestsResponse.KnownTestsModules()));
 
         var knownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-        var earlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
+        var earlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, knownTestsFeature);
 
         knownTestsFeature.Enabled.Should().BeTrue();
         settings.KnownTestsEnabled.Should().BeTrue();
         settings.EarlyFlakeDetectionEnabled.Should().BeTrue();
         earlyFlakeDetectionFeature.Enabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void InvalidKnownTestsResponseDisablesEarlyFlakeDetectionWhenQueriedFirst()
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.KnownTestsEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled, "true"));
+        var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement: null);
+        var client = new TestOptimizationClientStub(knownTestsResponse: default);
+
+        var knownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
+        var earlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, knownTestsFeature);
+
+        earlyFlakeDetectionFeature.Enabled.Should().BeFalse();
+        settings.KnownTestsEnabled.Should().BeFalse();
+        settings.EarlyFlakeDetectionEnabled.Should().BeFalse();
+        knownTestsFeature.Enabled.Should().BeFalse();
     }
 
     private static TestOptimizationSettings CreateSettings(params (string Key, string Value)[] values)

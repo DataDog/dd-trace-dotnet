@@ -13,11 +13,13 @@ namespace Datadog.Trace.Ci;
 internal sealed class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimizationEarlyFlakeDetectionFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationEarlyFlakeDetectionFeature));
+    private readonly ITestOptimizationKnownTestsFeature? _knownTestsFeature;
     private readonly TestOptimizationSettings _settings;
     private readonly bool _enabled;
 
-    private TestOptimizationEarlyFlakeDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
+    private TestOptimizationEarlyFlakeDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationKnownTestsFeature? knownTestsFeature)
     {
+        _knownTestsFeature = knownTestsFeature;
         _settings = settings;
         EarlyFlakeDetectionSettings = clientSettingsResponse.EarlyFlakeDetection;
 
@@ -35,10 +37,28 @@ internal sealed class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimiza
         }
     }
 
-    public bool Enabled => _enabled && _settings.KnownTestsEnabled == true && _settings.EarlyFlakeDetectionEnabled == true;
+    public bool Enabled
+    {
+        get
+        {
+            if (!_enabled || _settings.EarlyFlakeDetectionEnabled != true)
+            {
+                return false;
+            }
+
+            // EFD depends on the known-tests payload. Some framework hooks ask for EFD state
+            // before any code has evaluated KnownTestsFeature.Enabled, so resolve that dependency here.
+            if (_knownTestsFeature?.Enabled != true)
+            {
+                return false;
+            }
+
+            return _settings.KnownTestsEnabled == true;
+        }
+    }
 
     public TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; }
 
-    public static ITestOptimizationEarlyFlakeDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
-        => new TestOptimizationEarlyFlakeDetectionFeature(settings, clientSettingsResponse);
+    public static ITestOptimizationEarlyFlakeDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationKnownTestsFeature? knownTestsFeature)
+        => new TestOptimizationEarlyFlakeDetectionFeature(settings, clientSettingsResponse, knownTestsFeature);
 }
