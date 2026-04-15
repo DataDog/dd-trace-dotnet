@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec;
 
@@ -46,7 +47,7 @@ internal static class MapEndpointsCollection
                 return;
             }
 
-            var sb = new StringBuilder();
+            var sb = StringBuilderCache.Acquire();
 
             for (var i = _buildingMapEndpoints.Count - 1; i >= 0; i--)
             {
@@ -60,7 +61,8 @@ internal static class MapEndpointsCollection
                 }
             }
 
-            _mapEndpoints?.Add(sb.ToString());
+            var endpoint = StringBuilderCache.GetStringAndRelease(sb);
+            _mapEndpoints?.Add(endpoint);
         }
     }
 

@@ -8,12 +8,13 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DatabaseMonitoring
 {
     internal static class VendoredSqlHelpers
     {
-        // parse an string of the form db.schema.name where any of the three components
+        // parse a string of the form db.schema.name where any of the three components
         // might have "[" "]" and dots within it.
         // returns:
         //   [0] dbname (or null)
@@ -22,7 +23,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         // NOTE: if perf/space implications of Regex is not a problem, we can get rid
         // of this and use a simple regex to do the parsing
         // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/SqlClient/SqlParameter.cs#L2433
-        internal static string[] ParseTypeName(string typeName, bool isUdtTypeName)
+        private static string[] ParseTypeName(string typeName)
         {
             try
             {
@@ -40,7 +41,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         //  the result as a single composite name.
         internal static string ParseAndQuoteIdentifier(string identifier, bool isUdtTypeName)
         {
-            string[] strings = ParseTypeName(identifier, isUdtTypeName);
+            string[] strings = ParseTypeName(identifier);
 
             if (strings.Length == 0)
             {
@@ -54,30 +55,30 @@ namespace Datadog.Trace.DatabaseMonitoring
         // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/netcore/src/Microsoft/Data/SqlClient/SqlCommand.cs#L6502
         private static string QuoteIdentifier(ReadOnlySpan<string> strings)
         {
-            StringBuilder bld = new StringBuilder();
+            var sb = StringBuilderCache.Acquire();
 
             // Stitching back together is a little tricky. Assume we want to build a full multi-part name
             //  with all parts except trimming separators for leading empty names (null or empty strings,
             //  but not whitespace). Separators in the middle should be added, even if the name part is
             //  null/empty, to maintain proper location of the parts.
-            for (int i = 0; i < strings.Length; i++)
+            foreach (var s in strings)
             {
-                if (0 < bld.Length)
+                if (sb.Length > 0)
                 {
-                    bld.Append('.');
+                    sb.Append('.');
                 }
 
-                if (strings[i] != null && 0 != strings[i].Length)
+                if (!string.IsNullOrEmpty(s))
                 {
-                    AppendQuotedString(bld, "[", "]", strings[i]);
+                    AppendQuotedString(sb, "[", "]", s);
                 }
             }
 
-            return bld.ToString();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/Common/AdapterUtil.cs#L547
-        internal static string AppendQuotedString(StringBuilder buffer, string quotePrefix, string quoteSuffix, string unQuotedString)
+        private static void AppendQuotedString(StringBuilder buffer, string quotePrefix, string quoteSuffix, string unQuotedString)
         {
             if (!string.IsNullOrEmpty(quotePrefix))
             {
@@ -96,8 +97,6 @@ namespace Datadog.Trace.DatabaseMonitoring
             {
                 buffer.Append(unQuotedString);
             }
-
-            return buffer.ToString();
         }
     }
 }

@@ -261,7 +261,10 @@ internal static class BsonSerializationHelper
             // so we do it once here, just to confirm that it will work later
             try
             {
+                // StringBuilder is passed to external MongoDB BsonWriter — cannot use StringBuilderCache
+#pragma warning disable DDALLOC003
                 SerializeWithCustomWriter(string.Empty, new StringBuilder(1), helper);
+#pragma warning restore DDALLOC003
             }
             catch (Exception ex)
             {
