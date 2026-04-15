@@ -825,9 +825,13 @@ bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
 // All values are IL offsets using exclusive ends (first offset past the region).
 static bool IsProperlyContained(unsigned innerBegin, unsigned innerEnd, unsigned outerBegin, unsigned outerEnd)
 {
-    bool contained = innerBegin >= outerBegin && innerEnd <= outerEnd;
     bool identical = innerBegin == outerBegin && innerEnd == outerEnd;
-    return contained && !identical;
+    if (identical)
+    {
+        return false;
+    }
+    bool contained = innerBegin >= outerBegin && innerEnd <= outerEnd;
+    return contained;
 }
 
 void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
