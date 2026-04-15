@@ -40,6 +40,7 @@ internal static class EventGridCommon
             var host = instance.UriBuilder?.Host;
             var topic = GetTopicFromHost(host);
             tags.MessagingDestinationName = topic;
+            tags.NetworkDestinationName = host;
 
             var messageCount = events is ICollection collection ? collection.Count : 0;
             if (messageCount > 1)
