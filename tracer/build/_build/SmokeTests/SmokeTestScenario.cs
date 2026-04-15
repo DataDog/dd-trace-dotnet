@@ -7,9 +7,6 @@ namespace SmokeTests;
 
 public abstract record SmokeTestScenario
 {
-    // Smoke snapshots are shared across a broad runtime/package matrix.
-    // If we later want smoke coverage for code origin itself, split the snapshot
-    // contract per scenario group instead of asserting these fields globally.
     protected const string DefaultSnapshotIgnoredAttrs =
         "span_id" + ",trace_id" + ",parent_id" + ",duration" + ",start" + ",metrics.system.pid" + ",meta.runtime-id" + ","
         + "meta.network.client.ip" + ",meta.http.client_ip" + ",metrics.process_id" + ",meta._dd.p.dm" + ","
