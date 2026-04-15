@@ -589,12 +589,13 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAzureEventGridOutboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "azure_eventgrid.send")
-                .Matches(Type, "http"))
+                .Matches(Type, "queue"))
             .Tags(s => s
                 .IsPresent("messaging.destination.name")
                 .IfPresentMatches("messaging.system", "eventgrid")
                 .Matches("messaging.operation", "send")
                 .IsOptional("messaging.batch.message_count")
+                .IsOptional("messaging.message_id")
                 .IsPresent("network.destination.name")
                 .IsOptional("net.peer.name")
                 .IsOptional("peer.address")

@@ -52,8 +52,21 @@ internal static class EventGridCommon
             scope = tracer.StartActiveInternal("azure_eventgrid.send", tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
             var span = scope.Span;
 
-            span.Type = SpanTypes.Http;
+            span.Type = SpanTypes.Queue;
             span.ResourceName = topic;
+
+            if (messageCount == 1 && events is not null)
+            {
+                foreach (var evt in events)
+                {
+                    if (evt?.DuckCast<IEventGridEventId>() is { Id: { } id } && id.Length > 0)
+                    {
+                        span.SetTag(Tags.MessagingMessageId, id);
+                    }
+
+                    break;
+                }
+            }
 
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventGrid);
             Log.Information("AzureEventGrid span created: {SpanId}, topic={Topic}", scope.Span.SpanId, topic ?? "null");
