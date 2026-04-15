@@ -39,8 +39,8 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.NetworkDestinationName)]
         public string? NetworkDestinationName { get; set; }
 
-        [Tag(Trace.Tags.ServerAddress)]
-        public string? ServerAddress { get; set; }
+        [Tag(Trace.Tags.NetworkDestinationPort)]
+        public string? NetworkDestinationPort { get; set; }
 
         [Tag(Trace.Tags.MessagingBatchMessageCount)]
         public string? MessagingBatchMessageCount { get; set; }

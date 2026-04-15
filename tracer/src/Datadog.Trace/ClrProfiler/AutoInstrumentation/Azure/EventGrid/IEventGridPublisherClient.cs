@@ -24,6 +24,8 @@ internal interface IEventGridPublisherClient : IDuckType
 internal interface IRequestUriBuilder : IDuckType
 {
     string? Host { get; }
+
+    int Port { get; }
 }
 
 /// <summary>
