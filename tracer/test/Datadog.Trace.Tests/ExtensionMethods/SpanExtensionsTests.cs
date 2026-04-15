@@ -23,6 +23,8 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;UserID=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
         [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;User=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
         [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;Uid=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
+        [InlineData("Host Name=127.0.0.1;Port=5432;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", "127.0.0.1")]
+        [InlineData("Hostname=127.0.0.1;Port=5432;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", "127.0.0.1")]
         [InlineData("Host=myServerName;Database=myDataBase;Username=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName")]
         [InlineData("Data Source=myServerName;Initial Catalog=myDataBase;User Name=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName")]
         [InlineData(@"Server=myServerName\myInstanceName;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", @"myServerName\myInstanceName")]
