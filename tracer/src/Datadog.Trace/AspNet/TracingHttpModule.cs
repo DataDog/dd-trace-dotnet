@@ -265,9 +265,9 @@ namespace Datadog.Trace.AspNet
                     // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
                     try
                     {
-                        if (scope?.Span.ResourceName is null)
+                        if (scope?.Span is { ResourceName: null } span)
                         {
-                            scope.Span.ResourceName = BuildResourceName(tracer, httpRequest);
+                            span.ResourceName = BuildResourceName(tracer, httpRequest);
                         }
                     }
                     catch (Exception ex2)
