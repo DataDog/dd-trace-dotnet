@@ -163,6 +163,32 @@ namespace UpdateVendors
                 });
 
             Add(
+                libraryName: "System.Buffers",
+                version: "4.6.1",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Buffers", "src" },
+                transform: filePath =>
+                {
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Buffers", AddIgnoreNullabilityWarningDisablePragma);
+                },
+                relativePathsToExclude: new[] { "System/Buffers/ArrayPoolEventSource.cs" });
+
+            Add(
+                libraryName: "System.Numerics.Vectors",
+                version: "4.6.1",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Numerics.Vectors", "src" },
+                transform: filePath =>
+                {
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Numerics", AddIgnoreNullabilityWarningDisablePragma);
+                },
+                onlyIncludePaths: new[] { "System/Numerics/Vector.cs" });
+
+            Add(
                 libraryName: "System.Memory",
                 version: "4.6.3",
                 // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
@@ -170,7 +196,8 @@ namespace UpdateVendors
                 pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Memory", "src" },
                 transform: filePath =>
                 {
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddIgnoreNullabilityWarningDisablePragma);
 
                     // we run these _after_ the standard transform otherwise we get issues
                     if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
@@ -654,8 +681,7 @@ namespace UpdateVendors
             // Add all common using directives assumed to be available
             // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
             // Also add nullable here tp make sure it's definitely added
-            const string usings = "#nullable enable\n" +
-                                  "using System;\n" +
+            const string usings = "using System;\n" +
                                   "using System.Collections;\n" +
                                   "using System.Collections.Generic;\n" +
                                   "using System.IO;\n" +
@@ -689,6 +715,9 @@ namespace UpdateVendors
                                .Replace(
                                     "using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices",
                                     "using System.Runtime.CompilerServices")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
+                                    "using System.Text")
                                .Replace(
                                     "namespace System\r\n",
                                     "namespace System\n")
