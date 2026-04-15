@@ -757,8 +757,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settings = new TracerSettings(CreateConfigurationSource(configPairs.ToArray()));
 
-            // Default is "rcm is enabled" and "we're not in AAS"
-            var expected = (overrideValue ?? true) && !isRunningInAas;
+            // RC is available in AAS (agent sidecar provides RC) — isRunningInAas no longer blocks RC
+            var expected = overrideValue ?? true;
             settings.IsRemoteConfigurationAvailable.Should().Be(expected);
         }
 

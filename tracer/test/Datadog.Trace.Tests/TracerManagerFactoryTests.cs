@@ -91,9 +91,24 @@ public class TracerManagerFactoryTests : IAsyncLifetime
     }
 
     [Fact]
-    public void RemoteConfigIsDisabledInAzureAppServices()
+    public void RemoteConfigIsEnabledInAzureAppServices()
     {
         var source = AzureAppServiceHelper.CreateMinimalAzureAppServiceConfiguration("site-name");
+        var settings = new TracerSettings(source);
+
+        settings.IsRemoteConfigurationAvailable.Should().BeTrue();
+
+        _manager = CreateTracerManager(settings);
+
+        _manager.RemoteConfigurationManager.Should().BeOfType<RemoteConfigurationManager>();
+        _manager.DynamicConfigurationManager.Should().BeOfType<DynamicConfigurationManager>();
+        _manager.TracerFlareManager.Should().BeOfType<TracerFlareManager>();
+    }
+
+    [Fact]
+    public void RemoteConfigIsDisabledInAzureFunctions()
+    {
+        var source = AzureAppServiceHelper.CreateMinimalAzureFunctionsConfiguration("my-function-app");
         var settings = new TracerSettings(source);
 
         settings.IsRemoteConfigurationAvailable.Should().BeFalse();

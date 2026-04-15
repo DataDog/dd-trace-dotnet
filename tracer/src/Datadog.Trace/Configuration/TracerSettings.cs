@@ -1372,7 +1372,6 @@ namespace Datadog.Trace.Configuration
         // NOTE: when we clean this up, see also EnvironmentHelpers.IsServerlessEnvironment()
         internal bool IsRemoteConfigurationAvailable =>
             RemoteConfigurationEnabled &&
-            !IsRunningInAzureAppService &&
             !IsRunningInAzureFunctions &&
             !IsRunningInGCPFunctions &&
             !LambdaMetadata.IsRunningInLambda;

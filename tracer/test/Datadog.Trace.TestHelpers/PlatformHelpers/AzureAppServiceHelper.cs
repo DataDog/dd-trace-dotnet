@@ -25,6 +25,18 @@ public static class AzureAppServiceHelper
         return new DictionaryConfigurationSource(dict);
     }
 
+    public static IConfigurationSource CreateMinimalAzureFunctionsConfiguration(string siteName, string workerRuntime = "dotnet-isolated", string extensionVersion = "~4")
+    {
+        var dict = new Dictionary<string, string>
+        {
+            { PlatformKeys.AzureAppService.SiteNameKey, siteName },
+            { PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, workerRuntime },
+            { PlatformKeys.AzureFunctions.FunctionsExtensionVersion, extensionVersion },
+        };
+
+        return new DictionaryConfigurationSource(dict);
+    }
+
     public static IConfigurationSource GetRequiredAasConfigurationValues(
         string subscriptionId,
         string deploymentId,
