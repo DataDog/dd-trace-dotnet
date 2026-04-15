@@ -164,33 +164,20 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "System.Memory",
-                version: "4.5.5",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Memory" },
+                version: "4.6.3",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Memory", "src" },
                 transform: filePath =>
                 {
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    if (filePath.EndsWith(Path.Join("Buffers", "Utilities.cs")))
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Fix cases where we're relying on this behaviour:
-                        // private static ReadOnlySpan<byte> Property => new byte[32]
-                        // it "works" in .NET Core, but is very allocaty in .NET FX
-                        RewriteFileWithTransform(
-                            filePath,
-                            content => content.Replace(
-                                "        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]",
-                                """
-                                #if NETCOREAPP
-                                        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]
-                                #else
-                                        private static ReadOnlySpan<byte> Log2DeBruijn => _log2DeBruijn.AsSpan();
-                                        private static readonly byte[] _log2DeBruijn = new byte[32]
-                                #endif
-                                """
-                            ));
+                        RewriteFileWithTransform(filePath, contents => FixSystemMemory(filePath, contents));
                     }
-                },
-                relativePathsToExclude: new[] { "Buffers/ArrayPoolEventSource.cs" });
+                });
 
             Add(
                 libraryName: "System.Private.CoreLib",
@@ -649,6 +636,68 @@ namespace UpdateVendors
             }
 
             return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
+        }
+
+        private static string FixSystemMemory(string filePath, string contents)
+        {
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "#nullable enable\n" +
+                                  "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
+                                  "using System.Runtime.InteropServices;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+
+            contents = contents.Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..omponentModel.",
+                                    "System.ComponentModel.")
+                               .Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..UInt",
+                                    "System.NUInt")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel",
+                                    "using System.ComponentModel")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics",
+                                    "using System.Diagnostics")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Globalization",
+                                    "using System.Globalization")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Numerics",
+                                    "using System.Numerics")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices",
+                                    "using System.Runtime.CompilerServices")
+                               .Replace(
+                                    "namespace System\r\n",
+                                    "namespace System\n")
+                               .Replace(
+                                    "namespace System\n",
+                                    "namespace Datadog.Trace.VendoredMicrosoftCode.System\n");
+
+
+            return contents;
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, params Func<string, string, string>[] extraTransform)
