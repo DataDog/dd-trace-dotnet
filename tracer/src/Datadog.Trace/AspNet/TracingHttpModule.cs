@@ -1,4 +1,4 @@
-﻿// <copyright file="TracingHttpModule.cs" company="Datadog">
+// <copyright file="TracingHttpModule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -130,13 +130,10 @@ namespace Datadog.Trace.AspNet
             Scope scope = null;
             Scope inferredProxyScope = null;
             bool shouldDisposeScope = true;
+            var tracer = Tracer.Instance;
+
             try
             {
-bool shouldDisposeScope = true;
-var tracer = Tracer.Instance;
-try
-{
-
                 if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
@@ -270,7 +267,7 @@ try
                     {
                         if (scope?.Span is { ResourceName: null } span)
                         {
-                            span.ResourceName = BuildResourceName(tracer, httpRequest);
+                            span.ResourceName = BuildResourceName(tracer, (sender as HttpApplication)?.Context?.Request);
                         }
                     }
                     catch (Exception ex2)
