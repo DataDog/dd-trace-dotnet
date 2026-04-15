@@ -197,6 +197,32 @@ public class LineProbeResolverTest
     }
 
     [Fact]
+    public void BestFallbackMatchSelectionRejectsTieWhenHighestScoreIsAlreadyAmbiguous()
+    {
+        var selection = new LineProbeResolver.BestFallbackMatchSelection();
+
+        selection.Track(typeof(string).Assembly, CreateClosestPathBySuffixResult(@"/a/src/Shared/Feature/MyFile.cs", matchingTrailingSegments: 4, isAmbiguous: true));
+        selection.Track(typeof(LineProbeResolverTest).Assembly, CreateClosestPathBySuffixResult(@"/b/src/Shared/Feature/MyFile.cs", matchingTrailingSegments: 4, isAmbiguous: false));
+
+        selection.HasAmbiguousBestMatch.Should().BeTrue();
+        selection.BestMatch.Should().BeNull();
+    }
+
+    [Fact]
+    public void BestFallbackMatchSelectionAllowsHigherUniqueScoreToOverrideEarlierAmbiguity()
+    {
+        var selection = new LineProbeResolver.BestFallbackMatchSelection();
+
+        selection.Track(typeof(string).Assembly, CreateClosestPathBySuffixResult(@"/a/src/Shared/Feature/MyFile.cs", matchingTrailingSegments: 4, isAmbiguous: true));
+        selection.Track(typeof(LineProbeResolverTest).Assembly, CreateClosestPathBySuffixResult(@"/b/src/One/Shared/Feature/MyFile.cs", matchingTrailingSegments: 5, isAmbiguous: false));
+
+        selection.HasAmbiguousBestMatch.Should().BeFalse();
+        selection.BestMatch.Should().NotBeNull();
+        selection.BestMatch!.Value.Path.Should().Be(@"/b/src/One/Shared/Feature/MyFile.cs");
+        selection.BestMatch!.Value.MatchingTrailingSegments.Should().Be(5);
+    }
+
+    [Fact]
     public void OutOfBoundsLineProbeReturnsAnError()
     {
         _probeDefinition.Where.Lines[0] = "999999";
@@ -319,5 +345,16 @@ public class LineProbeResolverTest
         result.Diagnostics.FallbackFailureReason.Should().BeNull();
         result.Diagnostics.SameFileNameExamples.Should().BeNull();
         loc.Should().BeNull();
+    }
+
+    private static LineProbeResolver.ClosestPathBySuffixResult CreateClosestPathBySuffixResult(string path, int matchingTrailingSegments, bool isAmbiguous)
+    {
+        return new LineProbeResolver.ClosestPathBySuffixResult(
+            exampleSameFileNamePath: path,
+            bestMatchingTrailingSegments: matchingTrailingSegments,
+            qualifiedMatchCount: isAmbiguous ? 2 : 1,
+            bestQualifiedMatchingTrailingSegments: matchingTrailingSegments,
+            bestQualifiedPath: path,
+            hasAmbiguousBestQualifiedMatch: isAmbiguous);
     }
 }

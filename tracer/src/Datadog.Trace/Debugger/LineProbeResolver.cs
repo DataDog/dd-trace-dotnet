@@ -216,8 +216,7 @@ namespace Datadog.Trace.Debugger
 
             lock (_locker)
             {
-                BestFallbackMatch? bestMatch = null;
-                var hasAmbiguousBestMatch = false;
+                var bestFallbackMatchSelection = new BestFallbackMatchSelection();
                 List<string>? sameFileNameMatches = null;
                 var loadedAssemblyCount = 0;
                 var symbolicatedAssemblyCount = 0;
@@ -253,23 +252,12 @@ namespace Datadog.Trace.Debugger
                         ref qualifiedFallbackMatchCount,
                         ref sameFileNameMatches);
 
-                    if (!closestPathMatch.IsSuccessful)
-                    {
-                        continue;
-                    }
-
-                    if (bestMatch is null || closestPathMatch.BestQualifiedMatchingTrailingSegments > bestMatch.MatchingTrailingSegments)
-                    {
-                        bestMatch = new BestFallbackMatch(candidateAssembly, closestPathMatch.BestQualifiedPath!, closestPathMatch.BestQualifiedMatchingTrailingSegments);
-                        hasAmbiguousBestMatch = false;
-                    }
-                    else if (closestPathMatch.BestQualifiedMatchingTrailingSegments == bestMatch.MatchingTrailingSegments)
-                    {
-                        hasAmbiguousBestMatch = true;
-                    }
+                    // Only bind when a single global fallback candidate has the best score.
+                    // Assemblies with internally ambiguous fallback matches must still participate in that global tie.
+                    bestFallbackMatchSelection.Track(candidateAssembly, closestPathMatch);
                 }
 
-                if (!hasAmbiguousBestMatch && bestMatch is not null)
+                if (bestFallbackMatchSelection.BestMatch is { } bestMatch)
                 {
                     assemblyPathMatch = new AssemblyPathMatch(bestMatch.Assembly, bestMatch.Path, LineProbePathMatchType.FallbackTrailingSuffixMatch, bestMatch.MatchingTrailingSegments);
                     return true;
@@ -282,7 +270,7 @@ namespace Datadog.Trace.Debugger
                     sameFileNameMatchCount,
                     bestMatchingTrailingSegments,
                     qualifiedFallbackMatchCount,
-                    hasAmbiguousBestMatch,
+                    bestFallbackMatchSelection.HasAmbiguousBestMatch,
                     includeDetailedDiagnostics ? sameFileNameMatches?.ToArray() ?? [] : []);
                 return false;
             }
@@ -394,6 +382,49 @@ namespace Datadog.Trace.Debugger
             public string ReversedBackslashPath { get; } = FilePathLookup.GetReversePath(path, '\\', trimTrailingSeparators: true);
 
             public string ReversedForwardSlashPath { get; } = FilePathLookup.GetReversePath(path, '/', trimTrailingSeparators: true);
+        }
+
+        internal struct BestFallbackMatchSelection
+        {
+            private BestFallbackMatch? _bestMatch;
+            private int _bestMatchingTrailingSegments;
+
+            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch ? null : _bestMatch;
+
+            public bool HasAmbiguousBestMatch { get; private set; }
+
+            public void Track(Assembly assembly, ClosestPathBySuffixResult result)
+            {
+                if (result.QualifiedMatchCount == 0)
+                {
+                    return;
+                }
+
+                var candidateScore = result.BestQualifiedMatchingTrailingSegments;
+                if (candidateScore > _bestMatchingTrailingSegments)
+                {
+                    _bestMatchingTrailingSegments = candidateScore;
+                    HasAmbiguousBestMatch = !result.IsSuccessful;
+                    _bestMatch = result.IsSuccessful
+                                     ? new BestFallbackMatch(assembly, result.BestQualifiedPath!, candidateScore)
+                                     : null;
+                    return;
+                }
+
+                if (candidateScore == _bestMatchingTrailingSegments)
+                {
+                    HasAmbiguousBestMatch = true;
+                }
+            }
+        }
+
+        internal readonly struct BestFallbackMatch(Assembly assembly, string path, int matchingTrailingSegments)
+        {
+            public Assembly Assembly { get; } = assembly;
+
+            public string Path { get; } = path;
+
+            public int MatchingTrailingSegments { get; } = matchingTrailingSegments;
         }
 
         internal sealed class FilePathLookup
@@ -703,15 +734,6 @@ namespace Datadog.Trace.Debugger
                 bestQualifiedMatchingTrailingSegments: 0,
                 bestQualifiedPath: null,
                 hasAmbiguousBestQualifiedMatch: false);
-        }
-
-        private sealed class BestFallbackMatch(Assembly assembly, string path, int matchingTrailingSegments)
-        {
-            public Assembly Assembly { get; } = assembly;
-
-            public string Path { get; } = path;
-
-            public int MatchingTrailingSegments { get; } = matchingTrailingSegments;
         }
 
         private sealed class AssemblyPathMatch(Assembly assembly, string path, LineProbePathMatchType pathMatchType, int? matchingTrailingSegments)
