@@ -45,6 +45,39 @@ The Dev Container is closer to production (glibc, not musl) and has the extra ru
 | Native build matching production | Dev Container (Debian/glibc) |
 | Alpine-specific testing | build_in_docker |
 
+## Without Docker: Host Prerequisites
+
+If Docker is not available, install the following directly on the host.
+
+### Required tools
+
+- **.NET SDK 10.0.100** (pinned in `global.json`, `rollForward: minor`)
+- **Clang/LLVM 16+** (native tracer and loader compilation)
+- **CMake** (native build system)
+- **make** + **build-essential** / equivalent (Linux/macOS build toolchain)
+
+### System libraries
+
+The full list of system-level packages depends on the OS. Rather than duplicating it here, refer to the Dockerfiles as the authoritative source:
+
+- **Debian/Ubuntu (glibc)**: See `tracer/build/_build/docker/debian.dockerfile` (uuid-dev, zlib1g-dev, liblzma-dev, autoconf, libtool, etc.)
+- **Alpine (musl)**: See `tracer/build/_build/docker/alpine.dockerfile` (util-linux-dev, zlib-dev, xz-dev, alpine-sdk, etc.)
+
+### Extra ASP.NET Core runtimes (integration tests only)
+
+Unit tests only need the build SDK. Integration tests targeting older TFMs need these additional runtimes, installable via the [dotnet-install script](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script):
+
+```bash
+# Channels: 2.1, 3.0, 3.1, 5.0, 6.0, 7.0, 8.0, 9.0
+./dotnet-install.sh --runtime aspnetcore --channel <version> --install-dir <dotnet-root> --no-path
+```
+
+Note: ASP.NET Core 2.1 is not available for ARM64. The Dockerfiles install the base `dotnet` runtime instead on that architecture.
+
+### Windows
+
+On Windows without Docker, see `tracer/README.md` for the full Visual Studio 2022 requirements (Desktop C++, .NET desktop development workloads, and components listed in `.vsconfig`).
+
 ## Build Sequence
 
 The build system uses [Nuke](https://nuke.build/). List all targets with:
