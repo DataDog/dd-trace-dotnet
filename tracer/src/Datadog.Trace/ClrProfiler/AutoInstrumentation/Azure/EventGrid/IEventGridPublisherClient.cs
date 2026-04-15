@@ -25,3 +25,11 @@ internal interface IRequestUriBuilder : IDuckType
 {
     string? Host { get; }
 }
+
+/// <summary>
+/// Duck type for EventGridEvent.Id and CloudEvent.Id
+/// </summary>
+internal interface IEventGridEventId
+{
+    string? Id { get; }
+}
