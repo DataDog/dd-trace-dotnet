@@ -114,6 +114,9 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 📖 **Load when**: Setting up development environment, running builds, or troubleshooting build issues
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
+📖 **Load when**: Running builds or tests in a cloud or headless environment without an IDE
+- **`docs/development/for-ai/CloudAgentBuildGuide.md`** — Dev Container vs build_in_docker, Nuke target dependency chain, quick validation commands, integration test Docker service groups, and resource requirements
+
 ## Creating Integrations
 
 **Quick reference:**
