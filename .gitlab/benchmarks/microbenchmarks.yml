@@ -43,9 +43,6 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 
     AWS_REGION: "us-east-1"
 
-    # Branch containing a provision for building the AMI
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
-
     PROVISION_FILE: "platform/ephemeral-infra/ami.yaml"
 
     # Where AMI creation artifacts will be stored
@@ -57,7 +54,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
+    - git clone --branch main https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
     - echo "GITHUB_TOKEN=$(cat /tmp/github-token)" > .env
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
