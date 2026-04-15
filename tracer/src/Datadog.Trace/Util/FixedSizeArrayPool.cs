@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -115,7 +114,7 @@ internal sealed class FixedSizeArrayPool<T>
 #if DEBUG
                 if (_array is null)
                 {
-                    throw new ObjectDisposedException(nameof(ArrayPoolItem));
+                    ThrowHelper.ThrowObjectDisposedException(nameof(ArrayPoolItem));
                 }
 #endif
                 return _array ?? [];

@@ -29,7 +29,15 @@ public static class CoverageReporter
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _handler;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _handler = value ?? throw new ArgumentNullException(nameof(value));
+        set
+        {
+            if (value == null!)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(value));
+            }
+
+            _handler = value;
+        }
     }
 
     internal static CoverageContextContainer? Container => _handler.Container;

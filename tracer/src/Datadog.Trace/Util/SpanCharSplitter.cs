@@ -19,7 +19,12 @@ internal readonly ref struct SpanCharSplitter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SpanCharSplitter(string source, char separator, int count)
     {
-        _source = source ?? throw new ArgumentNullException(nameof(source));
+        if (source == null!)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(source));
+        }
+
+        _source = source;
         _separator = separator;
         _count = count;
     }
