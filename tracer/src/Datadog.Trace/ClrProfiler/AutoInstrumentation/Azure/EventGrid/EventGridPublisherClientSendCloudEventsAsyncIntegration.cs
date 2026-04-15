@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
     ReturnTypeName = ClrNames.Task,
     ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]", ClrNames.CancellationToken],
     MinimumVersion = "4.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "5.*.*",
     IntegrationName = nameof(IntegrationId.AzureEventGrid))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

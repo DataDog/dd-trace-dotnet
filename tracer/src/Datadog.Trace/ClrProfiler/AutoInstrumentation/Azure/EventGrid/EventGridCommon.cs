@@ -38,7 +38,8 @@ internal static class EventGridCommon
             tags.MessagingOperation = "send";
 
             var host = instance.UriBuilder?.Host;
-            tags.MessagingDestinationName = host;
+            var topic = GetTopicFromHost(host);
+            tags.MessagingDestinationName = topic;
 
             var messageCount = events is ICollection collection ? collection.Count : 0;
             if (messageCount > 1)
@@ -51,10 +52,10 @@ internal static class EventGridCommon
             var span = scope.Span;
 
             span.Type = SpanTypes.Http;
-            span.ResourceName = host;
+            span.ResourceName = topic;
 
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventGrid);
-            Log.Information("AzureEventGrid span created: {SpanId}, host={Host}", scope.Span.SpanId, host ?? "null");
+            Log.Information("AzureEventGrid span created: {SpanId}, topic={Topic}", scope.Span.SpanId, topic ?? "null");
 
             return new CallTargetState(scope);
         }
@@ -64,5 +65,20 @@ internal static class EventGridCommon
             scope?.Dispose();
             return CallTargetState.GetDefault();
         }
+    }
+
+    /// <summary>
+    /// Extracts the topic name from the Event Grid endpoint host.
+    /// The host format is "TOPIC-NAME.REGION.eventgrid.azure.net".
+    /// </summary>
+    private static string? GetTopicFromHost(string? host)
+    {
+        if (host is null)
+        {
+            return null;
+        }
+
+        var dotIndex = host.IndexOf('.');
+        return dotIndex > 0 ? host.Substring(0, dotIndex) : host;
     }
 }
