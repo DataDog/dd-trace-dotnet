@@ -97,7 +97,7 @@ namespace Datadog.Trace.Tests.Debugger
 
                     // Controller with HTTP methods
                     else if (type.Name == "HttpMethodController" &&
-                            method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom")
+                            method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom" or "RouteOnly" or "AcceptVerbs")
                     {
                         isExpectedEndpoint = true;
                     }
@@ -369,6 +369,12 @@ namespace Microsoft.AspNetCore.Mvc
         public HttpOptionsAttribute(string template) { }
     }
 
+    [AttributeUsage(AttributeTargets.Method)]
+    public class AcceptVerbsAttribute : Attribute
+    {
+        public AcceptVerbsAttribute(params string[] httpMethods) { }
+    }
+
     namespace Routing
     {
         [AttributeUsage(AttributeTargets.Method)]
@@ -480,6 +486,12 @@ namespace EndpointDetectorTestNamespace
 
         [Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute]
         public object Custom() => null;
+
+        [Microsoft.AspNetCore.Mvc.Route(""route-only"")]
+        public object RouteOnly() => null;
+
+        [Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute(""GET"")]
+        public object AcceptVerbs() => null;
     }
 
     // PageModel with handler methods
