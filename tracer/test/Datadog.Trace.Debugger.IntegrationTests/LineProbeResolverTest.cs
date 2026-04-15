@@ -249,25 +249,57 @@ public class LineProbeResolverTest
     }
 
     [Fact]
-    public void SameFileNameMatchAddsPathHintWithoutChangingUnboundReason()
+    public void MinimalDiagnosticsOnInvalidLineNumberOmitRawLines()
+    {
+        _probeDefinition.Where.Lines[0] = "not-a-number";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc, LineProbeDiagnosticLevel.Minimal);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Error);
+        result.Reason.Should().Be(LineProbeResolveReason.InvalidLineNumber);
+        result.Diagnostics.ProbeFile.Should().Be(_probeDefinition.Where.SourceFile);
+        result.Diagnostics.ProbeLine.Should().BeNull();
+        result.Diagnostics.RawLines.Should().BeNull();
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void MinimalDiagnosticsOnMissingSequencePointOmitResolvedAssemblyFields()
+    {
+        _probeDefinition.Where.Lines[0] = "999999";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc, LineProbeDiagnosticLevel.Minimal);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Error);
+        result.Reason.Should().Be(LineProbeResolveReason.MissingSequencePoint);
+        result.Diagnostics.ProbeFile.Should().Be(_probeDefinition.Where.SourceFile);
+        result.Diagnostics.ProbeLine.Should().Be(999999);
+        result.Diagnostics.PathMatchType.Should().BeNull();
+        result.Diagnostics.ResolvedSourceFile.Should().BeNull();
+        result.Diagnostics.AssemblyName.Should().BeNull();
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void SameFileNamePathMismatchReturnsSpecificUnboundReason()
     {
         _probeDefinition.Where.SourceFile = @"some\other\folder\LambdaSingleLine.cs";
 
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
 
         result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
-        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
+        result.Reason.Should().Be(LineProbeResolveReason.LoadedAssemblySourceFileMismatch);
         result.Diagnostics.LoadedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SymbolicatedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameMatchCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameExamples.Should().NotBeNullOrEmpty();
-		result.Diagnostics.FallbackFailureReason.Should().Be(LineProbeFallbackFailureReason.NoQualifiedSuffixMatch);
+        result.Diagnostics.FallbackFailureReason.Should().Be(LineProbeFallbackFailureReason.NoQualifiedSuffixMatch);
         result.Diagnostics.MatchingTrailingSegments.Should().Be(1);
         result.Diagnostics.QualifiedFallbackMatchCount.Should().Be(0);
         result.Message.Should().Contain("did not match the PDB document path");
-        result.Message.Should().Contain("assembly is not loaded yet");
-        result.Message.Should().Contain("symbols are unavailable");
-        result.Message.Should().Contain("configured source path may differ from the PDB document path");
+        result.Message.Should().Contain("loaded, symbolicated assembly with the same file name");
+        result.Message.Should().NotContain("assembly is not loaded yet");
+        result.Message.Should().NotContain("symbols are unavailable");
         loc.Should().BeNull();
     }
 

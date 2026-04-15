@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using Datadog.Trace.Debugger.Configurations;
@@ -147,17 +146,6 @@ namespace Datadog.Trace.Debugger
                 AssemblyLocation: assemblyPathMatch.Assembly.Location,
                 ModuleVersionId: assemblyPathMatch.Assembly.ManifestModule.ModuleVersionId,
                 ProbeId: probeId);
-        }
-
-        private static string BuildAssemblyNotLoadedOrSymbolsUnavailableMessage(bool hasSameFileNameMatches)
-        {
-            var message = "Source file location for probe could not be matched to any currently loaded assembly with available symbols. This can happen if the relevant assembly is not loaded yet or its symbols are unavailable.";
-            if (!hasSameFileNameMatches)
-            {
-                return message;
-            }
-
-            return message + " Loaded symbolicated assemblies with the same file name were found, so the configured source path may differ from the PDB document path.";
         }
 
         private IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
