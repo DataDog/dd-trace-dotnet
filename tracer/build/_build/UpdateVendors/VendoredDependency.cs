@@ -766,9 +766,7 @@ namespace UpdateVendors
                 contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
             }
 
-            return contents;
-
-            return contents;
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
         }
 
         private static string FixSystemBuffers(string filePath, string contents)
@@ -860,7 +858,7 @@ namespace UpdateVendors
                 contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
             }
 
-            return contents;
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, params Func<string, string, string>[] extraTransform)
