@@ -542,7 +542,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.library.version")
                 .IsOptional("otel.status_code")
                 .IsOptional("events")
-                .IsOptional("_dd.base_service"));
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process"));
 
         public static Result IsHotChocolateV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
