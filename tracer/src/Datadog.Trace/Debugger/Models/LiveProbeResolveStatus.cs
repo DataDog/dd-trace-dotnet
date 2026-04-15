@@ -29,7 +29,6 @@ namespace Datadog.Trace.Debugger.Models
         None,
         MissingSourceFile,
         AssemblyNotLoadedOrSymbolsUnavailable,
-        LoadedAssemblySourceFileMismatch,
         MissingPdb,
         InvalidLineNumber,
         MissingSequencePoint,
