@@ -35,7 +35,7 @@ public class LogAnalyzer : DiagnosticAnalyzer
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        => ImmutableArray.Create(Diagnostics.ExceptionRule, Diagnostics.TemplateRule, Diagnostics.PropertyBindingRule, Diagnostics.ConstantMessageTemplateRule, Diagnostics.UniquePropertyNameRule, Diagnostics.PascalPropertyNameRule, Diagnostics.DestructureAnonymousObjectsRule, Diagnostics.UseCorrectContextualLoggerRule, Diagnostics.UseDatadogLoggerRule);
+        => ImmutableArray.Create(Diagnostics.ExceptionRule, Diagnostics.TemplateRule, Diagnostics.PropertyBindingRule, Diagnostics.ConstantMessageTemplateRule, Diagnostics.UniquePropertyNameRule, Diagnostics.PascalPropertyNameRule, Diagnostics.DestructureAnonymousObjectsRule, Diagnostics.UseCorrectContextualLoggerRule, Diagnostics.UseDatadogLoggerRule, Diagnostics.NumericToStringInLogRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -91,6 +91,8 @@ public class LogAnalyzer : DiagnosticAnalyzer
         var literalSpan = default(TextSpan);
         var exactPositions = true;
         var stringText = default(string);
+        var isObjectArrayOverload = false;
+        var messageTemplateArgIndex = -1;
         var invocationArguments = invocation.ArgumentList.Arguments;
         foreach (var argument in invocationArguments)
         {
@@ -149,16 +151,17 @@ public class LogAnalyzer : DiagnosticAnalyzer
                     }
                 }
 
-                var messageTemplateArgumentIndex = invocationArguments.IndexOf(argument);
+                messageTemplateArgIndex = invocationArguments.IndexOf(argument);
 
                 // crude handling case where we pass an object[] as the single extra argument
-                var nextParameterIndex = messageTemplateArgumentIndex + 1;
+                var nextParameterIndex = messageTemplateArgIndex + 1;
                 if ((invocationArguments.Count == nextParameterIndex + 1)
                     && method.Parameters.Length > nextParameterIndex
                     && (method.Parameters[nextParameterIndex].Type.ToString() == "object[]"
                         || method.Parameters[nextParameterIndex].Type.ToString() == "object?[]"))
                 {
-                    // we're in the object[] version of the log message,
+                    // we're in the object[] version of the log message
+                    isObjectArrayOverload = true;
                     if (invocationArguments[nextParameterIndex].Expression is ArrayCreationExpressionSyntax { Initializer: { } initializer })
                     {
                         // The object[] is being created inline, e.g. new object[] {"arg1", "arg2"}
@@ -180,7 +183,7 @@ public class LogAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    arguments = invocationArguments.Skip(messageTemplateArgumentIndex + 1).Select(x =>
+                    arguments = invocationArguments.Skip(messageTemplateArgIndex + 1).Select(x =>
                     {
                         var location = x.GetLocation().SourceSpan;
                         return new SourceArgument(x.Expression, location.Start, location.Length);
@@ -237,6 +240,15 @@ public class LogAnalyzer : DiagnosticAnalyzer
                 {
                     ReportDiagnostic(ref context, ref literalSpan, stringText, exactPositions, Diagnostics.PascalPropertyNameRule, new MessageTemplateDiagnostic(property.StartIndex, property.Length, property.PropertyName));
                 }
+            }
+        }
+
+        // check for unnecessary .ToString() on numeric arguments (skip object[] overloads — removing .ToString() there would just cause boxing)
+        if (!isObjectArrayOverload && messageTemplateArgIndex >= 0)
+        {
+            for (var i = messageTemplateArgIndex + 1; i < invocationArguments.Count; i++)
+            {
+                CheckForNumericToString(context, invocationArguments[i].Expression);
             }
         }
 
@@ -402,4 +414,75 @@ public class LogAnalyzer : DiagnosticAnalyzer
 
         return false;
     }
+
+    private static void CheckForNumericToString(SyntaxNodeAnalysisContext context, ExpressionSyntax argExpression)
+    {
+        // Check if the argument is someExpr.ToString() with no arguments
+        if (argExpression is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess } toStringInvocation)
+        {
+            return;
+        }
+
+        if (memberAccess.Name.Identifier.Text != "ToString")
+        {
+            return;
+        }
+
+        if (toStringInvocation.ArgumentList.Arguments.Count != 0)
+        {
+            return;
+        }
+
+        // Check if the receiver type is a numeric type
+        var receiverTypeInfo = context.SemanticModel.GetTypeInfo(memberAccess.Expression, context.CancellationToken);
+        if (receiverTypeInfo.Type is null || !IsNumericType(receiverTypeInfo.Type))
+        {
+            return;
+        }
+
+        var receiverText = memberAccess.Expression.ToString();
+        var properties = ImmutableDictionary.CreateBuilder<string, string?>();
+        properties.Add("ReceiverTypeName", GetCSharpKeyword(receiverTypeInfo.Type.SpecialType));
+
+        context.ReportDiagnostic(
+            Diagnostic.Create(
+                Diagnostics.NumericToStringInLogRule,
+                argExpression.GetLocation(),
+                properties: properties.ToImmutable(),
+                receiverText));
+    }
+
+    private static bool IsNumericType(ITypeSymbol type) =>
+        type.SpecialType is SpecialType.System_Byte
+            or SpecialType.System_SByte
+            or SpecialType.System_Int16
+            or SpecialType.System_UInt16
+            or SpecialType.System_Int32
+            or SpecialType.System_UInt32
+            or SpecialType.System_Int64
+            or SpecialType.System_UInt64
+            or SpecialType.System_Single
+            or SpecialType.System_Double
+            or SpecialType.System_Decimal
+            or SpecialType.System_IntPtr
+            or SpecialType.System_UIntPtr;
+
+    private static string? GetCSharpKeyword(SpecialType specialType) =>
+        specialType switch
+        {
+            SpecialType.System_Byte => "byte",
+            SpecialType.System_SByte => "sbyte",
+            SpecialType.System_Int16 => "short",
+            SpecialType.System_UInt16 => "ushort",
+            SpecialType.System_Int32 => "int",
+            SpecialType.System_UInt32 => "uint",
+            SpecialType.System_Int64 => "long",
+            SpecialType.System_UInt64 => "ulong",
+            SpecialType.System_Single => "float",
+            SpecialType.System_Double => "double",
+            SpecialType.System_Decimal => "decimal",
+            SpecialType.System_IntPtr => "nint",
+            SpecialType.System_UIntPtr => "nuint",
+            _ => null,
+        };
 }
