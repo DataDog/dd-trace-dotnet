@@ -88,7 +88,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddRegexScrubber(new Regex("System-Data-SqlClient-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
             settings.AddScrubber(builder =>
             {
-                // scrub db.user tag because its presence varies
+                // Windows runs typically fall back to LocalDB with Integrated Security,
+                // which has no explicit user in the connection string. Docker runs use SQL auth
+                // with `User=sa`, so `db.user` is present there.
                 var lines = builder.ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.None);
                 var filtered = string.Join(Environment.NewLine, lines.Where(line => !line.Contains("db.user:")));
                 builder.Clear();
