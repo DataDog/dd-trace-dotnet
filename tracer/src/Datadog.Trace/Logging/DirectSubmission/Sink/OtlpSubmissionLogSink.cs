@@ -76,7 +76,11 @@ internal sealed class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEv
 
     public override async Task DisposeAsync()
     {
-        await DisposeAsync(true).ConfigureAwait(false);
+        await base.DisposeAsync().ConfigureAwait(false);
+        if (!_otlpExporter.Shutdown(timeoutMilliseconds: 5000))
+        {
+            _logger.Warning("OTLP exporter shutdown did not complete successfully.");
+        }
     }
 }
 #endif
