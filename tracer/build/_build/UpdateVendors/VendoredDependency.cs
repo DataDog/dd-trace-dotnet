@@ -172,6 +172,12 @@ namespace UpdateVendors
                 {
                     // This source code _doesn't_ use nullability, so don't add the nullability attribute
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Buffers", AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents => FixSystemBuffers(filePath, contents));
+                    }
                 },
                 relativePathsToExclude: new[] { "System/Buffers/ArrayPoolEventSource.cs" });
 
@@ -185,16 +191,20 @@ namespace UpdateVendors
                 {
                     // This source code _doesn't_ use nullability, so don't add the nullability attribute
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Numerics", AddIgnoreNullabilityWarningDisablePragma);
-
                     // we run these _after_ the standard transform otherwise we get issues
                     if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
                     {
-                        RewriteFileWithTransform(filePath, contents => FixSystemMemory(filePath, contents));
+                        RewriteFileWithTransform(filePath, contents => FixSystemBuffers(filePath, contents));
                     }
                 },
                 onlyIncludePaths: new[]
                 {
+                    // TODO: inline these calls
+                    "Resources/Strings.resx",
+                    "System/Numerics/ConstantHelper.cs",
+                    "System/Numerics/ConstantHelper.cs",
                     "System/Numerics/Vector.cs",
+                    "System/Numerics/Register.cs",
                     "System/Numerics/Hashing/HashHelpers.cs",
                 });
 
@@ -764,38 +774,36 @@ namespace UpdateVendors
 
             contents = contents.Insert(namespaceIndex, usings);
 
-
-            contents = contents.Replace(
-                                    "Datadog.Trace.VendoredMicrosoftCode.System..omponentModel.",
-                                    "System.ComponentModel.")
-                               .Replace(
-                                    "Datadog.Trace.VendoredMicrosoftCode.System..UInt",
-                                    "System.NUInt")
-                               .Replace(
-                                    "using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel",
-                                    "using System.ComponentModel")
-                               .Replace(
-                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics",
-                                    "using System.Diagnostics")
-                               .Replace(
-                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Globalization",
-                                    "using System.Globalization")
-                               .Replace(
-                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Numerics",
-                                    "using System.Numerics")
-                               .Replace(
-                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices",
-                                    "using System.Runtime.CompilerServices")
-                               .Replace(
-                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
-                                    "using System.Text")
-                               .Replace(
-                                    "namespace System\r\n",
-                                    "namespace System\n")
-                               .Replace(
-                                    "namespace System\n",
-                                    "namespace Datadog.Trace.VendoredMicrosoftCode.System\n");
-
+            if (string.Equals(Path.GetFileName(filePath), "DefaultArrayPool.cs"))
+            {
+                contents = contents
+                          .Replace("var log = ArrayPoolEventSource.Log;", "")
+                          .Replace(
+                               """
+                                           if (log.IsEnabled())
+                                           {
+                                               int bufferId = buffer.GetHashCode(), bucketId = -1; // no bucket for an on-demand allocated buffer
+                                               log.BufferRented(bufferId, buffer.Length, Id, bucketId);
+                                               log.BufferAllocated(bufferId, buffer.Length, Id, bucketId, index >= _buckets.Length ?
+                                                   ArrayPoolEventSource.BufferAllocatedReason.OverMaximumSize : ArrayPoolEventSource.BufferAllocatedReason.PoolExhausted);
+                                           })
+                               """, "");
+            }
+            else if (string.Equals(Path.GetFileName(filePath), "DefaultArrayPoolBucket.cs"))
+            {
+                contents = contents
+                          .Replace("Debugger.IsAttached", "global::System.Diagnostics.Debugger.IsAttached")
+                          .Replace(
+                               """
+                                                   var log = ArrayPoolEventSource.Log;
+                                                   if (log.IsEnabled())
+                                                   {
+                                                       log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,
+                                                           ArrayPoolEventSource.BufferAllocatedReason.Pooled);
+                                                   }
+                               """,
+                               "");
+            }
 
             return contents;
         }
