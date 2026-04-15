@@ -547,7 +547,108 @@ namespace UpdateVendors
                         """internal static readonly byte[] WinRTPrefix = global::System.Text.Encoding.UTF8.GetBytes("<WinRT>");""");
             }
 
-            return contents;
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("BlobTooLarge", "Blob is to large."),
+                new("BuilderAlreadyLinked", "The operation is not valid on this builder as it has been linked with another one."),
+                new("CantGetOffsetForVirtualHeapHandle", "Can't get a heap offset for a virtual heap handle"),
+                new("ControlFlowBuilderNotAvailable", "Can't emit a branch or exception region, the current encoder not created with a control flow builder."),
+                new("DataTooBig", "Data too big to fit in memory."),
+                new("ExpectedNonEmptyArray", "Expected non-empty array."),
+                new("ExpectedNonEmptyString", "Expected non-empty string."),
+                new("HashTooShort", "Hash must be at least {0}B long."),
+                new("HeapSizeLimitExceeded", "The limit on the size of {0} heap has been exceeded."),
+                new("IllegalTablesInCompressedMetadataStream", "Illegal tables in compressed metadata stream."),
+                new("ImageTooSmallOrContainsInvalidOffsetOrCount", "Image is either too small or contains an invalid byte offset or count."),
+                new("ImageTooSmall", "Image is too small."),
+                new("InvalidCodedIndex", "Invalid coded index."),
+                new("InvalidCompressedInteger", "Invalid compressed integer."),
+                new("InvalidConstantValue", "Invalid constant value."),
+                new("InvalidCorHeaderSize", "Invalid COR header size."),
+                new("InvalidDebugDirectoryEntryCharacteristics", "The value of field Characteristics in debug directory entry must be zero."),
+                new("InvalidDirectoryRVA", "Invalid directory relative virtual address."),
+                new("InvalidDirectorySize", "Invalid directory size."),
+                new("InvalidDocumentName", "Invalid document name."),
+                new("InvalidEntryPointToken", "Invalid entry point token: 0x{0:8X}"),
+                new("InvalidHandle", "Invalid handle."),
+                new("InvalidImportDefinitionKind", "Invalid import definition kind: {0}."),
+                new("InvalidLocalSignatureToken", "Invalid local signature token: 0x{0:X8}"),
+                new("InvalidMetadataSectionSpan", "Invalid metadata section span."),
+                new("InvalidMetadataStreamFormat", "Invalid Metadata stream format."),
+                new("InvalidMethodHeader1", "Invalid method header: 0x{0:X2}"),
+                new("InvalidMethodHeader2", "Invalid method header: 0x{0:X2} 0x{1:X2}"),
+                new("InvalidMethodRva", "Invalid relative virtual address (RVA): 0x{0:X8}"),
+                new("InvalidNumberOfSections", "Invalid number of sections declared in PE header."),
+                new("InvalidPdbChecksumDataFormat", "Invalid PDB Checksum data format."),
+                new("InvalidPESignature", "Invalid PE signature."),
+                new("InvalidRowCount", "Invalid row count: {0}"),
+                new("InvalidSehHeader", "Invalid SEH header: 0x{0:X2}"),
+                new("InvalidSerializedString", "Invalid serialized string."),
+                new("InvalidToken", "Invalid token."),
+                new("InvalidTypeSize", "Invalid type size."),
+                new("LabelDoesntBelongToBuilder", "Specified label doesn't belong to the current builder."),
+                new("LabelNotMarked", "Label {0} has not been marked."),
+                new("MetadataHeaderTooSmall", "Metadata header too small."),
+                new("MetadataImageDoesNotRepresentAnAssembly", "Metadata image doesn't represent an assembly."),
+                new("MetadataSignature", "Invalid COR20 header signature."),
+                new("MetadataStringDecoderEncodingMustBeUtf8", "The MetadataStringDecoder instance used to instantiate the Metadata reader must have a UTF8 encoding."),
+                new("MetadataTableHeaderTooSmall", "Metadata table header too small."),
+                new("MetadataTableNotSorted", "Metadata table {0} not sorted."),
+                new("MetadataTablesTooSmall", "Metadata tables too small."),
+                new("MissingDataDirectory", "Missing data directory."),
+                new("ModuleTableInvalidNumberOfRows", "Invalid number of rows of Module table: {0}."),
+                new("NotEnoughSpaceForBlobStream", "Not enough space for Blob stream."),
+                new("NotEnoughSpaceForGUIDStream", "Not enough space for GUID stream."),
+                new("NotEnoughSpaceForMetadataStream", "Not enough space for Metadata stream."),
+                new("NotEnoughSpaceForStreamHeaderName", "Not enough space for stream header name."),
+                new("NotEnoughSpaceForStringStream", "Not enough space for String stream."),
+                new("NotEnoughSpaceForVersionString", "Not enough space for version string."),
+                new("NotMetadataHeapHandle", "Specified handle is not a valid metadata heap handle."),
+                new("NotMetadataTableOrUserStringHandle", "Specified handle is not a valid metadata table or UserString heap handle."),
+                new("NotTypeDefOrRefHandle", "Specified handle is not a TypeDefinitionHandle or TypeReferenceHandle."),
+                new("NotTypeDefOrRefOrSpecHandle", "Specified handle is not a TypeDefinitionHandle, TypeReferenceHandle, or TypeSpecificationHandle."),
+                new("OutOfBoundsRead", "Read out of bounds."),
+                new("OutOfBoundsWrite", "Write out of bounds."),
+                new("PEImageDoesNotHaveMetadata", "PE image does not have metadata."),
+                new("PEImageNotAvailable", "PE image not available."),
+                new("RowIdOrHeapOffsetTooLarge", "Row ID or heap offset is too large."),
+                new("SectionTooSmall", "Section too small."),
+                new("SequencePointValueOutOfRange", "Sequence point value is out of range."),
+                new("SignatureNotVarArg", "Can't add vararg parameters to non-vararg signature."),
+                new("SignatureTypeSequenceMustHaveAtLeastOneElement", "Signature type sequence must have at least one element."),
+                new("SizeMismatch", "Declared size doesn't correspond to the actual size."),
+                new("StandaloneDebugMetadataImageDoesNotContainModuleTable", "Standalone debug metadata image doesn't contain Module table."),
+                new("StreamHeaderTooSmall", "Stream header too small."),
+                new("StreamMustSupportReadAndSeek", "Stream must support read and seek operations."),
+                new("StreamTooLarge", "Stream length minus starting position is too large to hold a PEImage."),
+                new("TableRowCountSpaceTooSmall", "Table row count space to small."),
+                new("TooManySubnamespaces", "There are too many subnamespaces."),
+                new("UnexpectedArrayLength", "Expected array of length {0}."),
+                new("UnexpectedCodeViewDataSignature", "Unexpected CodeView data signature value."),
+                new("UnexpectedDebugDirectoryType", "The Debug directory was not of type {0}."),
+                new("UnexpectedEmbeddedPortablePdbDataSignature", "Unexpected Embedded Portable PDB data signature value."),
+                new("UnexpectedHandleKind", "Unexpected handle kind: {0}."),
+                new("UnexpectedOpCode", "Unexpected op-code: {0}."),
+                new("UnexpectedSignatureHeader2", "Expected signature header for '{0}' or '{1}', but found '{2}' (0x{3:x2})."),
+                new("UnexpectedSignatureHeader", "Expected signature header for '{0}', but found '{1}' (0x{2:x2})."),
+                new("UnexpectedSignatureTypeCode", "Unexpected SignatureTypeCode: (0x{0:x})."),
+                new("UnexpectedStreamEnd", "Unexpected stream end."),
+                new("UnexpectedValueUnknownType", "Unexpected value '{0}' of unknown type."),
+                new("UnexpectedValue", "Unexpected value '{0}' of type '{1}'"),
+                new("UnknownFileFormat", "Unknown file format."),
+                new("UnknownPEMagicValue", "Unknown PE Magic value."),
+                new("UnknownTables", "Unknown tables: 0x{0:x16}."),
+                new("UnsupportedFormatVersion", "Unsupported format version: {0}"),
+                new("ValueTooLarge", "Value is too large."),
+                new("WinMDMissingMscorlibRef", "Missing mscorlib reference in AssemblyRef table."),
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
+            }
+
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, params Func<string, string, string>[] extraTransform)
@@ -772,6 +873,13 @@ namespace UpdateVendors
                 "using System.Threading.Tasks;\n\n";
 
             return contents.Insert(namespaceIndex, usings);
+        }
+
+        private static string ReplaceResourceUsage(string contents, string key, string value)
+        {
+            return value.Contains("{0}")
+                       ? contents.Replace($"SR.Format(SR.{key}", $"string.Format(global::System.Globalization.CultureInfo.InvariantCulture, \"\"\"{value}\"\"\"")
+                       : contents.Replace($"SR.{key}", $"\"{value}\"");
         }
     }
 }
