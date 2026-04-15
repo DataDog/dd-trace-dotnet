@@ -67,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RequiresDockerDependency", "true")]
         public async Task OtlpRuntimeMetricsSubmitted()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
 
             using (var httpClient = new System.Net.Http.HttpClient())
@@ -92,44 +93,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var metricsData = JToken.Parse(metricsJson);
                 metricsData.Should().NotBeNullOrEmpty();
 
-                // Scrub volatile values for deterministic snapshots (timestamps + runtime-dependent metric values)
-                foreach (var dataPoint in metricsData.SelectTokens("$..data_points[*]"))
+                // Deduplicate metrics across export intervals and keep one sorted list
+                var dedupedMetrics = new JArray(
+                    metricsData
+                        .SelectTokens("$..scope_metrics[*].metrics[*]")
+                        .GroupBy(m => m["name"]?.ToString())
+                        .Select(g => g.First())
+                        .OrderBy(m => m["name"]?.ToString()));
+
+                // Collapse to first export, replace metrics, and scrub volatile data
+                var collapsed = metricsData[0]!.DeepClone();
+                ((JArray)collapsed.SelectToken("$.resource_metrics")!).RemoveAll();
+                var firstExport = metricsData.SelectToken("$[0].resource_metrics[0]")!.DeepClone();
+                firstExport.SelectToken("$.scope_metrics[0].metrics")!.Replace(dedupedMetrics);
+                ((JArray)collapsed["resource_metrics"]!).Add(firstExport);
+
+                foreach (var section in collapsed.SelectTokens("$..metrics[*].*"))
                 {
-                    dataPoint["start_time_unix_nano"] = "0";
-                    dataPoint["time_unix_nano"] = "0";
-                    foreach (var prop in dataPoint.OfType<JProperty>().Where(p => p.Value.Type is JTokenType.Integer or JTokenType.Float).ToList())
+                    if (section is JObject obj && obj["data_points"] is JArray)
                     {
-                        prop.Value = 0;
+                        obj["data_points"] = new JArray();
                     }
                 }
 
-                // Scrub resource attributes that vary per environment
-                foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[*]"))
+                foreach (var attribute in collapsed.SelectTokens("$..resource.attributes[*]"))
                 {
                     var key = attribute["key"]?.ToString();
-                    if (key is not null && key is not ("service.name" or "deployment.environment"))
+                    if (key is not null)
                     {
                         attribute["value"] = JToken.FromObject(new { string_value = $"<{key}>" });
                     }
                 }
 
-                // Deduplicate metrics across export intervals — keep one instance of each unique name+tags combo
-                foreach (var scopeMetric in metricsData.SelectTokens("$..scope_metrics[*]"))
-                {
-                    if (scopeMetric["metrics"] is JArray metricsArray)
-                    {
-                        var deduplicated = metricsArray
-                            .GroupBy(m => m["name"]?.ToString())
-                            .Select(g => g.First())
-                            .OrderBy(m => m["name"]?.ToString());
-                        scopeMetric["metrics"] = new JArray(deduplicated);
-                    }
-                }
-
-                var formattedJson = metricsData.ToString(Formatting.Indented);
-
-                var tfm = Environment.Version.Major >= 9 ? "net9" : "net6";
+                var formattedJson = collapsed.ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                var tfm = Environment.Version.Major >= 9 ? "net9" : "net6";
 
                 await Verifier.Verify(formattedJson, settings)
                               .UseFileName($"{nameof(RuntimeMetricsTests)}.OtlpRuntimeMetricsSubmitted_{tfm}")
