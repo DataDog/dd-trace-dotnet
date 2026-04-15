@@ -8,10 +8,6 @@ init_environment:
   # It includes the final End-of-Life (EOL) versions for .NET Core 3.1 and .NET 6.0 along with the latest .NET version.
   DOTNET_SDK_VERSIONS: "6.0.428,3.1.426,10.0.100"
 
-  # Branch of benchmarking-platform-tools to install bp-runner from
-  # Change this to install from a dev branch for testing
-  BP_RUNNER_BRANCH: "main"
-
 source_ami:
   # From https://github.com/DataDog/benchmarking-platform-tools/tree/main/bp-infra/src/provisions/windows/apm-managed-windows-tweaked-metal.yaml
   ami_id_ssm_parameter: "/windows-benchmarking/apm-managed-windows-tweaked-metal-ami-id"
@@ -23,10 +19,16 @@ tags:
   Name: *provision_name
 
 provision_steps:
+  - check_bp_runner
   - install_dotnet
   - install_vs
-  - install_bp_runner
   - test_setup
+
+check_bp_runner:
+  remote_command: |
+    $version = (bp-runner --version 2>&1)
+    Write-Output "bp-runner version: $version"
+    exit 1
 
 install_dotnet:
   populate_env: true
@@ -155,58 +157,6 @@ install_vs:
 
     Remove-Item $exeOut
     Write-Output -ForegroundColor Green "Visual Studio $($version) installed successfully."
-
-install_bp_runner:
-  populate_env: true
-  remote_command: |
-    $ErrorActionPreference = "Stop"
-
-    $branch = if ($env:BP_RUNNER_BRANCH) { $env:BP_RUNNER_BRANCH } else { "main" }
-    $installDir = "C:\app\bp-runner"
-    $tempDir = "$env:temp\benchmarking-platform-tools"
-
-    Write-Output "Installing bp-runner from branch: $branch"
-
-    # GITHUB_TOKEN is passed from the CI job via dd-octo-sts
-    if (-not $env:GITHUB_TOKEN) {
-        Write-Error "GITHUB_TOKEN is not set. Cannot install bp-runner from private repo."
-        exit 1
-    }
-
-    # Clean up any existing temp clone
-    if (Test-Path $tempDir) {
-        Write-Output "Removing existing temp directory..."
-        Remove-Item -Recurse -Force $tempDir
-    }
-
-    # Clone benchmarking-platform-tools to temp
-    Write-Output "Cloning benchmarking-platform-tools (branch: $branch)..."
-    git clone -b $branch --single-branch "https://x-access-token:$env:GITHUB_TOKEN@github.com/DataDog/benchmarking-platform-tools.git" $tempDir
-
-    # Remove previous bp-runner installation if present
-    if (Test-Path $installDir) {
-        Write-Output "Removing existing bp-runner installation at $installDir..."
-        Remove-Item -Recurse -Force $installDir
-    }
-
-    # Copy bp-runner to install directory
-    Write-Output "Copying bp-runner to $installDir..."
-    Copy-Item -Path "$tempDir\bp-runner" -Destination $installDir -Recurse -Force
-
-    # Run the install script
-    Write-Output "Running bp-runner install.ps1..."
-    Push-Location $installDir
-    try {
-        & .\install.ps1
-        bp-runner --version
-    } finally {
-        Pop-Location
-    }
-
-    # Clean up temp clone
-    if (Test-Path $tempDir) {
-        Remove-Item -Recurse -Force $tempDir
-    }
 
 test_setup:
   remote_command: |
