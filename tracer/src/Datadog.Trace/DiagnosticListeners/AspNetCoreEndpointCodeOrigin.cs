@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 
@@ -13,10 +14,10 @@ namespace Datadog.Trace.DiagnosticListeners;
 
 internal static class AspNetCoreEndpointCodeOrigin
 {
-    internal static bool TryGetTypeAndMethod(RouteEndpoint routeEndpoint, out Type type, out MethodInfo method)
+    internal static bool TryGetTypeAndMethod(RouteEndpoint routeEndpoint, [NotNullWhen(true)] out Type? type, [NotNullWhen(true)] out MethodInfo? method)
     {
-        type = null!;
-        method = null!;
+        type = null;
+        method = null;
 
         // Fast path: use RequestDelegate.Method and prefer the delegate target type if available.
         var requestDelegate = routeEndpoint.RequestDelegate;
@@ -52,9 +53,9 @@ internal static class AspNetCoreEndpointCodeOrigin
         return false;
     }
 
-    private static bool TryGetHandlerFromRequestDelegateTarget(object requestDelegateTarget, out Delegate handler)
+    private static bool TryGetHandlerFromRequestDelegateTarget(object requestDelegateTarget, [NotNullWhen(true)] out Delegate? handler)
     {
-        handler = null!;
+        handler = null;
 
         // Common shape: field "handler"
         if (requestDelegateTarget.TryDuckCast<Target>(out var target) && target.Handler is { } h1)
