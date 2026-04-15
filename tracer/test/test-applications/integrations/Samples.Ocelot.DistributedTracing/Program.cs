@@ -15,18 +15,17 @@ var builder = WebApplication.CreateBuilder(args);
 // The OTel SDK replaces DistributedContextPropagator.Current with its own propagator,
 // which causes SocketsHttpHandler's internal DiagnosticsHandler to overwrite Datadog
 // trace context headers on forwarded requests.
+//
+// No exporter is configured because the test only needs the propagator replacement
+// that AddHttpClientInstrumentation() causes. An OTLP exporter would generate an
+// additional http.request span for the export call, which is not relevant to the test.
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService("ocelot-sample"))
     .WithTracing(opt =>
     {
         opt
             .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
-            .AddOtlpExporter(o =>
-            {
-                // Use a non-routable endpoint so exports silently fail
-                o.Endpoint = new System.Uri("http://192.0.2.1:4317");
-            });
+            .AddHttpClientInstrumentation();
     });
 
 // Create a minimal in-memory configuration for Ocelot startup
