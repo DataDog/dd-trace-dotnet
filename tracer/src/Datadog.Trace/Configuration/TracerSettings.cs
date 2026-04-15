@@ -697,10 +697,7 @@ namespace Datadog.Trace.Configuration
                 : new HashSet<string>(StringComparer.Ordinal);
 
 #if NET6_0_OR_GREATER
-            // OTLP runtime metrics: enabled when runtime metrics are on AND either
-            // DD_METRICS_OTEL_ENABLED=true or OTEL_METRICS_EXPORTER=otlp is explicitly set.
-            // When active, OTLP takes precedence over DogStatsD for runtime metrics.
-            OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && (OpenTelemetryMetricsEnabled || OtelMetricsExporterEnabled);
+            OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && OpenTelemetryMetricsEnabled;
 
             if (OtlpRuntimeMetricsEnabled)
             {
