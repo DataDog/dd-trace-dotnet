@@ -158,14 +158,11 @@ internal sealed class OtlpExporter : IOtlpExporter
         var httpClient = new HttpClient(tcpHandler)
         {
             Timeout = TimeSpan.FromMilliseconds(_timeoutMs),
-            DefaultRequestVersion = HttpVersion.Version20,
-            DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
         };
 #else
         var httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromMilliseconds(_timeoutMs),
-            DefaultRequestVersion = HttpVersion.Version20,
         };
 #endif
 

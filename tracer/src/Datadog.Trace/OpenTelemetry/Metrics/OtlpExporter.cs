@@ -146,7 +146,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         /// <summary>
         /// Creates an HttpClient with Unix Domain Socket support if the endpoint uses unix:// scheme.
-        /// For TCP/IP endpoints (http:// or https://), creates a standard HttpClient with HTTP/2.
+        /// For TCP/IP endpoints (http:// or https://), creates a standard HttpClient.
         /// </summary>
         private static HttpClient CreateHttpClient(Uri endpoint)
         {
@@ -168,11 +168,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     }
                 };
 
-                return new HttpClient(handler)
-                {
-                    DefaultRequestVersion = HttpVersion.Version20,
-                    DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
-                };
+                return new HttpClient(handler);
             }
 
             // Standard TCP/IP endpoint
@@ -181,11 +177,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             };
 
-            return new HttpClient(tcpHandler)
-            {
-                DefaultRequestVersion = HttpVersion.Version20,
-                DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
-            };
+            return new HttpClient(tcpHandler);
         }
 
         private async Task<bool> SendOtlpRequest(IReadOnlyList<MetricPoint> metrics)
