@@ -454,19 +454,12 @@ namespace Datadog.Trace.DiagnosticListeners
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
+                var codeOrigin = CurrentCodeOrigin;
+                var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
-                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
-                if (isFirstExecution)
+                if (!routeTemplateResourceNamesEnabled && !isCodeOriginEnabled)
                 {
-                    trackingFeature.IsUsingEndpointRouting = true;
-                    trackingFeature.IsFirstPipelineExecution = false;
-
-                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
-                    {
-                        // URL has changed from original, so treat this execution as a "subsequent" request
-                        // Typically occurs for 404s for example
-                        isFirstExecution = false;
-                    }
+                    return;
                 }
 
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
@@ -507,13 +500,12 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                var codeOrigin = CurrentCodeOrigin;
-                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true } &&
+                if (isCodeOriginEnabled &&
                     AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint.Value, out var endpointType, out var endpointMethod))
                 {
                     codeOrigin.SetCodeOriginForEntrySpan(rootSpan, endpointType, endpointMethod);
                 }
-                else if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                else if (isCodeOriginEnabled)
                 {
                     Log.Debug("Could not extract type and method for endpoint code origin. Endpoint: {EndpointDisplayName}", routeEndpoint.Value.DisplayName);
                 }
@@ -527,6 +519,20 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // customer is using legacy resource names
                     return;
+                }
+
+                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
+                if (isFirstExecution)
+                {
+                    trackingFeature.IsUsingEndpointRouting = true;
+                    trackingFeature.IsFirstPipelineExecution = false;
+
+                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
+                    {
+                        // URL has changed from original, so treat this execution as a "subsequent" request
+                        // Typically occurs for 404s for example
+                        isFirstExecution = false;
+                    }
                 }
 
                 if (isFirstExecution)

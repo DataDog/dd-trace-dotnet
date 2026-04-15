@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -16,6 +17,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -25,7 +27,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -105,6 +109,42 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             }
 
             Assert.Equal("GET /home/?/action", span.ResourceName);
+        }
+
+        [Fact]
+        public async Task EndpointMatched_DoesNotMutateTrackingFeature_WhenRouteTemplateResourceNamesAreDisabled()
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "0" },
+            }));
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+            var (security, iast) = GetSecurity();
+            var spanCodeOrigin = GetSpanCodeOrigin(enabled: true);
+
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin);
+
+            var httpContext = GetHttpContext();
+            var startContext = new HostingApplication.Context { HttpContext = httpContext };
+
+            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Start", startContext));
+
+            var trackingFeature = httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey]
+                                             .Should()
+                                             .BeOfType<AspNetCoreHttpRequestHandler.RequestTrackingFeature>()
+                                             .Subject;
+
+            trackingFeature.IsUsingEndpointRouting.Should().BeFalse();
+            trackingFeature.IsFirstPipelineExecution.Should().BeTrue();
+
+            httpContext.Features.Set<IEndpointFeature>(new TestEndpointFeature(CreateRouteEndpoint()));
+
+            observer.OnNext(new KeyValuePair<string, object>(
+                "Microsoft.AspNetCore.Routing.EndpointMatched",
+                new { HttpContext = httpContext }));
+
+            trackingFeature.IsUsingEndpointRouting.Should().BeFalse();
+            trackingFeature.IsFirstPipelineExecution.Should().BeTrue();
         }
 
 #if NET6_0_OR_GREATER
@@ -215,16 +255,26 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             return (security, iast);
         }
 
-        private static SpanCodeOrigin GetSpanCodeOrigin()
+        private static SpanCodeOrigin GetSpanCodeOrigin(bool enabled = false)
         {
             var settings = new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "0" },
+                { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, enabled ? "1" : "0" },
             });
 
             var co = new SpanCodeOrigin(new DebuggerSettings(settings, new NullConfigurationTelemetry()));
             return co;
         }
+
+        private static Microsoft.AspNetCore.Routing.RouteEndpoint CreateRouteEndpoint()
+            => new(
+                TestEndpointDelegate,
+                RoutePatternFactory.Parse("/home/{id?}/action"),
+                order: 0,
+                EndpointMetadataCollection.Empty,
+                "HomeController.Index");
+
+        private static Task TestEndpointDelegate(HttpContext context) => Task.CompletedTask;
 
         private static HttpContext GetHttpContext()
         {
@@ -239,6 +289,13 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             httpContext.Request.Method = "GET";
 
             return httpContext;
+        }
+
+        private sealed class TestEndpointFeature : IEndpointFeature
+        {
+            public TestEndpointFeature(Microsoft.AspNetCore.Http.Endpoint endpoint) => Endpoint = endpoint;
+
+            public Microsoft.AspNetCore.Http.Endpoint Endpoint { get; set; }
         }
 
         private class Startup
