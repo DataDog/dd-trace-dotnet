@@ -32,6 +32,10 @@ build-dd-trace-dotnet-microbenchmarks-ami:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   variables:
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
     # Allows ephemeral instances to read content from dd-trace-dotnet
     # This is not strictly necessary in the current AMI build
     DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
@@ -53,7 +57,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
     - echo "GITHUB_TOKEN=$(cat /tmp/github-token)" > .env
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
@@ -78,8 +82,7 @@ run-benchmarks:
   stage: benchmarks
   tags: ["arch:amd64"]
   timeout: 2h
-  # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
@@ -93,57 +96,65 @@ run-benchmarks:
     name: "artifacts"
     when: always
     paths:
-      - reports/
+      - artifacts/
     expire_in: 3 months
   variables:
-    # Allows ephemeral instances to read content from benchmarking-platform
-    DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
+    # Benchmarks matching this regex are marked as flaky by benchmark_analyzer
+    # and excluded from the check-big-regressions job.
+    FLAKY_BENCHMARKS_REGEX: "ActivityBenchmark|SpanBenchmark|TraceAnnotationsBenchmark|StringAspectsBenchmark|CharSliceBenchmark|AppSecWafBenchmark|AppSecBodyBenchmark|AppSecEncoderBenchmark|CIVisibilityProtocolWriterBenchmark|AgentWriterBenchmark|AspNetCoreBenchmark|SingleSpanAspNetCoreBenchmark|ElasticsearchBenchmark|GraphQLBenchmark|Log4netBenchmark|SerilogBenchmark|RedisBenchmark|ILoggerBenchmark"
+
+    # Scope for dd-octo-sts to get GitHub token for cloning dd-trace-dotnet
+    DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
-
     AWS_REGION: "us-east-1"
-
-    # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
-    # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
-    # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
-
-    # Where benchmarking results will be stored
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
-
-    # Whether to mock benchmark execution by simply copying the latest 
-    # master results. Useful for testing the after_script steps
-    BP_INFRA_TEST: "false"
-
-    # Whether to cleanup ephemeral instances after benchmarks are run
+    # Cleanup instances after benchmarks
     CLEANUP: "true"
-
-    # Where to look for benchmarking artifacts for uploading to the BP UI
-    ARTIFACTS_DIR: "reports"
+    # Set to "true" to skip actual benchmarks and use _latest results (for testing the pipeline)
+    BP_INFRA_TEST: "false"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
+    - mkdir -p artifacts
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - mkdir -p reports
-    - ./platform/steps/run-windows-benchmarks.sh
+    # Fetch DD_API_KEY from SSM (in GitLab runner's AWS account) and export for bp-infra
+    - export DD_API_KEY=$(aws ssm get-parameter --name "ci.dd-trace-dotnet.dd_api_key" --with-decryption --query "Parameter.Value" --output text --region "${AWS_REGION}")
+    - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
+    # Run benchmarks on ephemeral instance
+    - |
+      bp-infra launch \
+        --provision .gitlab/benchmarks/microbenchmarks/infrastructure/instance.yml \
+        --region "${AWS_REGION}" \
+        --os windows \
+        --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_)" \
+        --bypass-stack-destroy \
+        $CLEANUP_ARG
+    # Fetch results from S3, analyze, upload, and post PR comment
+    - export ARTIFACTS_DIR="$(pwd)/artifacts"
+    - .gitlab/benchmarks/microbenchmarks/scripts/fetch-results.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/analyze-results.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-bp-ui.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/post-pr-comment.sh
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
-        bp-infra cleanup --provision ./platform/ephemeral-infra/instance.yaml \
+        bp-infra cleanup \
+          --provision .gitlab/benchmarks/microbenchmarks/infrastructure/instance.yml \
           --region "${AWS_REGION}" \
-          --bypass-stack-destroy
+          --os windows \
+          --bypass-stack-destroy || true
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
-    - ./platform/steps/fetch-results.sh
-    - ./platform/steps/analyze-results.sh
-    - ./platform/steps/post-pr-comment.sh
-    - ./platform/steps/upload-to-bp-ui.sh
 
 # This repository is using PR-level performance quality gates.
 # Verify that the check-big-regressions CI job has passed. If any regression happened, merging this PR will be blocked.
 # If bypassing is necessary, see https://datadoghq.atlassian.net/wiki/x/8YFzMwE for more details.
-.check-big-regressions:
+check-big-regressions:
   stage: gate
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
@@ -157,42 +168,12 @@ run-benchmarks:
       when: always
     - interruptible: true
       when: always
-  allow_failure: true  # Allowed to fail since we don't want it to block PRs yet
   artifacts:
     name: "artifacts"
     when: always
     paths:
-      - reports/
+      - artifacts/
     expire_in: "30 days"
-  variables:
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/micro"
-
-    # Regex to ignore benchmarks identified as unstable
-    IGNORED_BENCHMARKS_REGEX: "Trace.Iast.StringAspectsBenchmark|Trace.CharSliceBenchmark|Trace.Asm.AppSecWafBenchmark|Trace.Asm.AppSecBodyBenchmark|Trace.CIVisibilityProtocolWriterBenchmark"
   script: |
-    export ARTIFACTS_DIR="$(pwd)/reports"
-
-    if [ -n "${IGNORED_BENCHMARKS_REGEX}" ]; then
-      echo "Adding the 'ignored.' prefix to benchmarks matching IGNORED_BENCHMARKS_REGEX:"
-      echo "    ${IGNORED_BENCHMARKS_REGEX}"
-      for file in "${ARTIFACTS_DIR}"/*.converted.json; do
-        file_basename=$(basename "${file}")
-        if [[ "${file_basename}" =~ ${IGNORED_BENCHMARKS_REGEX} ]]; then
-          echo "    ${file_basename} -> ignored.${file_basename}"
-          mv "${file}" "${ARTIFACTS_DIR}/ignored.${file_basename}"
-        fi
-      done
-    fi
-
-    git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform
-    bp-runner /platform/bp-runner.fail-on-regression.yml --debug
-
-check-big-regressions:
-  extends: .check-big-regressions
-
-# TODO: Remove once the decision to consider or ignore benchmarks identified as 
-# unstable has been made
-check-big-regressions-no-ignored-benchmarks:
-  extends: .check-big-regressions
-  variables:
-    IGNORED_BENCHMARKS_REGEX: ""
+    export ARTIFACTS_DIR="$(pwd)/artifacts"
+    bp-runner .gitlab/benchmarks/bp-runner.fail-on-regression.yml --debug

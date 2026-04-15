@@ -335,6 +335,16 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsTransactionsAsync(
+            int timeoutInMilliseconds = 20000)
+        {
+            return await WaitForDataStreamsAsync(
+                timeoutInMilliseconds,
+                stats => stats.Any(
+                    p => p.Stats != null &&
+                         p.Stats.Any(b => b.Transactions is { Length: > 0 })));
+        }
+
         public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
             int payloadCount,
             int timeoutInMilliseconds = 20000)

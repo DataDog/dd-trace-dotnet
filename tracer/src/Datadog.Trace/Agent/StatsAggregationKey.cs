@@ -13,6 +13,7 @@ namespace Datadog.Trace.Agent
         public readonly string Service;
         public readonly string OperationName;
         public readonly string Type;
+        public readonly string ServiceSource;
         public readonly int HttpStatusCode;
         public readonly bool IsSyntheticsRequest;
         public readonly bool IsError;
@@ -25,6 +26,7 @@ namespace Datadog.Trace.Agent
             string service,
             string operationName,
             string type,
+            string serviceSource,
             int httpStatusCode,
             bool isSyntheticsRequest)
         {
@@ -32,6 +34,7 @@ namespace Datadog.Trace.Agent
             Service = service;
             OperationName = operationName;
             Type = type;
+            ServiceSource = serviceSource;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
             IsError = false;
@@ -45,6 +48,7 @@ namespace Datadog.Trace.Agent
             string service,
             string operationName,
             string type,
+            string serviceSource,
             int httpStatusCode,
             bool isSyntheticsRequest,
             bool isError,
@@ -54,6 +58,7 @@ namespace Datadog.Trace.Agent
             Service = service;
             OperationName = operationName;
             Type = type;
+            ServiceSource = serviceSource;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
             IsError = isError;
@@ -67,6 +72,7 @@ namespace Datadog.Trace.Agent
                 && Service == other.Service
                 && OperationName == other.OperationName
                 && Type == other.Type
+                && ServiceSource == other.ServiceSource
                 && HttpStatusCode == other.HttpStatusCode
                 && IsSyntheticsRequest == other.IsSyntheticsRequest
                 && IsError == other.IsError
@@ -86,6 +92,7 @@ namespace Datadog.Trace.Agent
                 hashCode = (hashCode * 397) ^ (Service != null ? Service.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (OperationName != null ? OperationName.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (ServiceSource != null ? ServiceSource.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ HttpStatusCode;
                 hashCode = (hashCode * 397) ^ IsSyntheticsRequest.GetHashCode();
                 hashCode = (hashCode * 397) ^ IsError.GetHashCode();

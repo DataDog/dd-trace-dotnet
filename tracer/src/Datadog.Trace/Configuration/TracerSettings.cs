@@ -14,6 +14,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -584,6 +585,13 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
+
+            DataStreamsTransactionExtractors = config
+                                                  .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
+                                                  .GetAs(
+                                                       defaultValue: new DefaultResult<List<DataStreamsTransactionExtractor>>([], "[]"),
+                                                       converter: json => ParsingResult<List<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
+                                                       validator: null);
 
             // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
@@ -1207,6 +1215,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
         /// </summary>
         internal bool IsDataStreamsMonitoringInDefaultState { get; }
+
+        /// <summary>
+        /// Gets a raw value for DSM extractors
+        /// </summary>
+        internal List<DataStreamsTransactionExtractor> DataStreamsTransactionExtractors { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams schema extraction is enabled or not.

@@ -13,6 +13,12 @@ variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
+  # GitLab org for internal cross-repo references - parameterized for org migration resilience
+  GITLAB_GROUP: DataDog
+  # GitLab group path for OSS projects in CI - may differ from GITLAB_GROUP after org split
+  GITLAB_GROUP_OSS: DataDog
+  # GitHub org for internal repos (used in git insteadOf redirects) - update to new org after the split
+  GITHUB_ORG_INTERNAL: DataDog
   CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
   OCI_PACKAGE_MAX_SIZE_BYTES: 40000000
@@ -111,7 +117,7 @@ publish:
 
 download-single-step-artifacts:
   stage: package
-  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  image: registry.ddbuild.io/images/ci/images:1.2.6
   timeout: 45m
   tags: [ "arch:amd64" ]
   needs:
@@ -158,7 +164,7 @@ deploy_to_reliability_env:
 
 download-serverless-artifacts:
   stage: package
-  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  image: registry.ddbuild.io/images/ci/images:1.2.6
   tags: [ "arch:amd64" ]
   needs: []
   rules:
@@ -181,7 +187,7 @@ aws-lambda-layer:
   needs: [download-serverless-artifacts]
   when: manual
   trigger:
-    project: DataDog/dd-trace-dotnet-aws-lambda-layer
+    project: ${GITLAB_GROUP_OSS}/dd-trace-dotnet-aws-lambda-layer
     strategy: depend
   variables:
     UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
@@ -203,9 +209,9 @@ benchmark-serverless:
     - >-
       BTI_RESPONSE=$(curl --silent --request GET \
         --header "$BTI_CI_API_TOKEN" \  --header "Content-Type: application/vnd.api+json" \
-        "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=DataDog&repository=serverless-tools")
+        "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=${GITLAB_GROUP}&repository=serverless-tools")
     - GITLAB_TOKEN=$(echo "$BTI_RESPONSE" | jq -r '.token // empty')
-    - git clone https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools
+    - git clone https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/serverless-tools.git ./serverless-tools
     - cd ./serverless-tools
     - ./ci/check_trigger_status.sh
 
@@ -213,7 +219,7 @@ benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
   trigger:
-    project: DataDog/serverless-tools
+    project: ${GITLAB_GROUP}/serverless-tools
     strategy: depend
   allow_failure: true
   variables:

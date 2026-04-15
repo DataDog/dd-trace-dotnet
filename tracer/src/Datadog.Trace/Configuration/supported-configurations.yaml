@@ -51,6 +51,13 @@ supportedConfigurations:
     default: null
     const_name: ApiKey
     documentation: Configuration key for setting the API key, used by the Agent.
+  DD_API_SECURITY_DOWNSTREAM_BODY_ANALYSIS_SAMPLE_RATE:
+  - implementation: A
+    type: decimal
+    default: '0.5'
+    product: AppSec
+    const_name: ApiSecurityDownstreamBodyAnalysisSampleRate
+    documentation: When RASP is enabled, defines the probability of a downstream request body being sampled, or said differently, defines the overall number of requests for which the request and response body should be sampled / analysed (50%).
   DD_API_SECURITY_ENABLED:
   - implementation: A
     type: boolean
@@ -74,6 +81,13 @@ supportedConfigurations:
     product: AppSec
     const_name: ApiSecurityEndpointCollectionMessageLimit
     documentation: with a default value of 300, it defines the maximum number of endpoints to be collected (serialized) for API Security.
+  DD_API_SECURITY_MAX_DOWNSTREAM_REQUEST_BODY_ANALYSIS:
+  - implementation: A
+    type: int
+    default: '1'
+    product: AppSec
+    const_name: ApiSecurityMaxDownstreamRequestBodyAnalysis
+    documentation: When RASP is enabled, defines the maximum number of downstream requests per request for which the request and response body should be analysed. default value of 1.
   DD_API_SECURITY_PARSE_RESPONSE_BODY:
   - implementation: A
     type: boolean
@@ -150,6 +164,13 @@ supportedConfigurations:
     product: AppSec
     const_name: UserEventsAutoInstrumentationMode
     documentation: Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
+  DD_APPSEC_BODY_PARSING_SIZE_LIMIT:
+  - implementation: A
+    type: int
+    default: '10000000'
+    product: AppSec
+    const_name: AppSecBodyParsingSizeLimit
+    documentation: Configuration key for limiting the size of the request body being parsed. Default value is 10_000_000.
   DD_APPSEC_ENABLED:
   - implementation: A
     type: boolean
@@ -524,6 +545,15 @@ supportedConfigurations:
       Configuration key for enabling legacy binary headers in Data Streams Monitoring.
       false by default if DSM is in default state, true otherwise
       <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+  DD_DATA_STREAMS_TRANSACTION_EXTRACTORS:
+  - implementation: A
+    type: array
+    default: null
+    product: DataStreamsMonitoring
+    const_name: TransactionExtractors
+    documentation: |-
+      Configuration key for transaction extractors in Data Streams Monitoring.
+      <see cref="Datadog.Trace.Configuration.TracerSettings.DataStreamsTransactionExtractors"/>
   DD_DBM_PROPAGATION_MODE:
   - implementation: A
     type: string

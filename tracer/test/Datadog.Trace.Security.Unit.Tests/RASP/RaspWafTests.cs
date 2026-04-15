@@ -88,7 +88,7 @@ public class RaspWafTests : WafLibraryRequiredTest
     [Theory]
     [InlineData("select * from employees where name = 'John' or '1' = '1'", "John' or '1' = '1", "rasp-942-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.DBStatement)]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
-    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.DownstreamUrl)]
     [InlineData("ls; echo hello", "echo hello", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
     [InlineData("ls &> file; echo hello", "&> file", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
     [InlineData(new string[] { "/usr/bin/reboot" }, "/usr/bin/reboot", "rasp-932-110", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.CommandInjection)]

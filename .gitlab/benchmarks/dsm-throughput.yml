@@ -14,7 +14,7 @@ check_azure_pipeline:
   stage: check-azure-pipeline
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./wait-for-pipeline.sh
   artifacts:
     name: "artifacts"
@@ -39,8 +39,12 @@ dsm_throughput:
   script:
     - source build-id.txt
     - export ARTIFACTS_DIR="$(pwd)/artifacts" && (mkdir "${ARTIFACTS_DIR}" || :)
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
-    - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    # Redirect GitHub clone URLs to GitLab mirrors. Both orgs are covered:
+    # - DataDog: OSS org (stays)
+    # - GITHUB_ORG_INTERNAL: GitHub org for internal repos
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/".insteadOf "https://github.com/DataDog/"
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/".insteadOf "https://github.com/${GITHUB_ORG_INTERNAL}/"
+    - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   artifacts:
