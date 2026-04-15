@@ -779,31 +779,39 @@ namespace UpdateVendors
             {
                 contents = contents
                           .Replace("var log = ArrayPoolEventSource.Log;", "")
+                          .ReplaceLineEndings()
                           .Replace(
-                               "                                           if (log.IsEnabled())\n" +
-                               "                                           {\n" +
-                               "                                               int bufferId = buffer.GetHashCode(), bucketId = -1; // no bucket for an on-demand allocated buffer\n" +
-                               "                                               log.BufferRented(bufferId, buffer.Length, Id, bucketId);\n" +
-                               "                                               log.BufferAllocated(bufferId, buffer.Length, Id, bucketId, index >= _buckets.Length ?\n" +
-                               "                                                   ArrayPoolEventSource.BufferAllocatedReason.OverMaximumSize : ArrayPoolEventSource.BufferAllocatedReason.PoolExhausted);\n" +
-                               "                                           })\n", "")
+                               """
+                                           if (log.IsEnabled())
+                                           {
+                                               int bufferId = buffer.GetHashCode(), bucketId = -1; // no bucket for an on-demand allocated buffer
+                                               log.BufferRented(bufferId, buffer.Length, Id, bucketId);
+                                               log.BufferAllocated(bufferId, buffer.Length, Id, bucketId, index >= _buckets.Length ?
+                                                   ArrayPoolEventSource.BufferAllocatedReason.OverMaximumSize : ArrayPoolEventSource.BufferAllocatedReason.PoolExhausted);
+                                           }
+                               """, "")
                           .Replace(
-                               "            if (log.IsEnabled())\n" +
-                               "            {\n" +
-                               "                log.BufferReturned(array.GetHashCode(), array.Length, Id);\n" +
-                               "            }\n", "");
+                               """
+                                           if (log.IsEnabled())
+                                           {
+                                               log.BufferReturned(array.GetHashCode(), array.Length, Id);
+                                           }
+                               """, "");
             }
             else if (string.Equals(Path.GetFileName(filePath), "DefaultArrayPoolBucket.cs"))
             {
                 contents = contents
                           .Replace("Debugger.IsAttached", "global::System.Diagnostics.Debugger.IsAttached")
+                          .ReplaceLineEndings()
                           .Replace(
-                               "                                                   var log = ArrayPoolEventSource.Log;\n" +
-                               "                                                   if (log.IsEnabled())\n" +
-                               "                                                   {\n" +
-                               "                                                       log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,\n" +
-                               "                                                           ArrayPoolEventSource.BufferAllocatedReason.Pooled);\n" +
-                               "                                                   }\n", "");
+                               """
+                                                                                  var log = ArrayPoolEventSource.Log;
+                                                                                  if (log.IsEnabled())
+                                                                                  {
+                                                                                      log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,
+                                                                                          ArrayPoolEventSource.BufferAllocatedReason.Pooled);
+                                                                                  }
+                               """, "");
             }
 
             return contents;
