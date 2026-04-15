@@ -28,18 +28,10 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   allow_failure: true
   when: manual
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
-  id_tokens:
-    DDOCTOSTS_ID_TOKEN:
-      aud: dd-octo-sts
   variables:
     # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
     # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
     DD_METRICS_TAGS: "managed-by:bp-infra"
-
-    # Allows ephemeral instances to read content from dd-trace-dotnet
-    # This is not strictly necessary in the current AMI build
-    DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
-    DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
     AWS_REGION: "us-east-1"
 
@@ -51,16 +43,12 @@ build-dd-trace-dotnet-microbenchmarks-ami:
     # Whether to cleanup instances after building the AMI, since the AMI is 
     # based on an instance that is created in this job
     CLEANUP: "true"
-  before_script:
-    - !reference [.dd-octo-sts-setup, before_script]
   script:
-    - echo "GITHUB_TOKEN=$(cat /tmp/github-token)" > .env
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
       bp-infra launch --region "${AWS_REGION}" --os "windows" \
         --provision "${PROVISION_FILE}" \
         --bypass-stack-destroy \
-        --env .env \
         $CLEANUP_ARG
   after_script:
     # Makes sure the instance is cleaned up.
