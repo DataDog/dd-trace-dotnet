@@ -230,19 +230,6 @@ namespace UpdateVendors
                 },
                 relativePathsToExclude: new [] { "Resources/Strings.resx" });
 
-            Add(
-                libraryName: "System.Private.CoreLib",
-                version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Private.CoreLib" },
-                transform: filePath =>
-                {
-                    
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Diagnostics", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "FxResources", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                });
-
             // "Common" shared components required by System.Reflection.Metadata (among others)
             // Not a "real" package
             Add(
