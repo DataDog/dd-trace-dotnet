@@ -91,6 +91,10 @@
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))">
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" PrivateAssets="All" />
+  </ItemGroup>
+
   <!-- we don't need the vendored .NET runtime code when targetting .NET Core 3.1+ -->
   <PropertyGroup>
     <DotNetRuntimeFiles>Vendors/System.Buffers/**;Vendors/System.Collections.Immutable/**;Vendors/System.Memory/**;Vendors/System.Numerics.Vectors/**;Vendors/System.Private.CoreLib/**;Vendors/System.Reflection.Metadata/**;Vendors/System.Reflection.Metadata.Interop/**;Vendors/System.Runtime.CompilerServices.Unsafe/**</DotNetRuntimeFiles>

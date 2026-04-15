@@ -12,8 +12,6 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
-using InlineIL;
-using static InlineIL.IL.Emit;
 
 namespace Datadog.Trace.Iast.Aspects.System.Runtime;
 
