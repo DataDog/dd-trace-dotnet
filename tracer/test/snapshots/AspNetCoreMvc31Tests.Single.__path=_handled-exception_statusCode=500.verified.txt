@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -59,7 +59,10 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\integrations\Samples.AspNetCoreMvc21\Controllers\HomeController.cs,
       _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
       _dd.code_origin.frames.0.method: HandledException,
       _dd.code_origin.frames.0.type: Samples.AspNetCoreMvc.Controllers.HomeController,
       _dd.code_origin.type: entry
