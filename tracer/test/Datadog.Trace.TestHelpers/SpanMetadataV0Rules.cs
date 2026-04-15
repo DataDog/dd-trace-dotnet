@@ -595,7 +595,7 @@ namespace Datadog.Trace.TestHelpers
                 .IfPresentMatches("messaging.system", "eventgrid")
                 .Matches("messaging.operation", "send")
                 .IsOptional("messaging.batch.message_count")
-                .IsOptional("network.destination.name")
+                .IsPresent("network.destination.name")
                 .IsOptional("net.peer.name")
                 .IsOptional("peer.address")
                 .IsOptional("server.address")
