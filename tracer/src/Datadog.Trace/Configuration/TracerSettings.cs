@@ -14,12 +14,14 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -33,7 +35,7 @@ namespace Datadog.Trace.Configuration
     public partial record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.PropagateProcessTags];
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
 
         private readonly Lazy<string> _fallbackApplicationName;
 
@@ -87,7 +89,7 @@ namespace Datadog.Trace.Configuration
 
             PropagateProcessTags = config
                                        .WithKeys(ConfigurationKeys.PropagateProcessTags)
-                                       .AsBool(ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags)); // read it as "defaults to false"
+                                       .AsBool(true);
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
@@ -575,14 +577,21 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(
-                                                  !EnvironmentHelpers.IsAwsLambda() &&
-                                                  !EnvironmentHelpers.IsAzureAppServices() &&
-                                                  !EnvironmentHelpers.IsAzureFunctions() &&
-                                                  !EnvironmentHelpers.IsGoogleCloudFunctions());
+                                                  !AwsInfo.Instance.IsAwsLambda &&
+                                                  !AzureInfo.Instance.IsAzureAppService &&
+                                                  !AzureInfo.Instance.IsAzureFunction &&
+                                                  !GcpInfo.Instance.IsCloudFunction);
 
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
+
+            DataStreamsTransactionExtractors = config
+                                                  .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
+                                                  .GetAs(
+                                                       defaultValue: new DefaultResult<List<DataStreamsTransactionExtractor>>([], "[]"),
+                                                       converter: json => ParsingResult<List<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
+                                                       validator: null);
 
             // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
@@ -1208,6 +1217,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringInDefaultState { get; }
 
         /// <summary>
+        /// Gets a raw value for DSM extractors
+        /// </summary>
+        internal List<DataStreamsTransactionExtractor> DataStreamsTransactionExtractors { get; }
+
+        /// <summary>
         /// Gets a value indicating whether data streams schema extraction is enabled or not.
         /// </summary>
         internal bool IsDataStreamsSchemaExtractionEnabled => IsDataStreamsMonitoringEnabled && !IsDataStreamsMonitoringInDefaultState;
@@ -1441,15 +1455,5 @@ namespace Datadog.Trace.Configuration
             Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
         }
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
-            new(
-                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
-                new ConfigurationTelemetry(),
-                new OverrideErrorLog(),
-                isLibDatadogAvailable);
     }
 }

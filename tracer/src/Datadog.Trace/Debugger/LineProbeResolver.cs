@@ -48,6 +48,17 @@ namespace Datadog.Trace.Debugger
             return path.Split(DirectorySeparatorsCrossPlatform, StringSplitOptions.None).LastOrDefault() ?? string.Empty;
         }
 
+        private static string BuildAssemblyNotLoadedOrSymbolsUnavailableMessage(bool hasSameFileNameMatches)
+        {
+            var message = "Source file location for probe could not be matched to any currently loaded assembly with available symbols. This can happen if the relevant assembly is not loaded yet or its symbols are unavailable.";
+            if (!hasSameFileNameMatches)
+            {
+                return message;
+            }
+
+            return message + " Loaded symbolicated assemblies with the same file name were found, so the configured source path may differ from the PDB document path.";
+        }
+
         private IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
         {
             try
@@ -174,10 +185,12 @@ namespace Datadog.Trace.Debugger
                 if (!TryFindAssemblyContainingFile(sourceFile, out var filePathFromPdb, out var assembly))
                 {
                     var searchDiagnostics = CollectAssemblySearchDiagnostics(sourceFile);
+                    var hasSameFileNameMatches = searchDiagnostics.SameFileNameMatchCount > 0;
+
                     return new LineProbeResolveResult(
                         LiveProbeResolveStatus.Unbound,
-                        LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch,
-                        "Source file location for probe was not found, possibly because the relevant assembly was not yet loaded.",
+                        LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                        BuildAssemblyNotLoadedOrSymbolsUnavailableMessage(hasSameFileNameMatches),
                         searchDiagnostics.ToDiagnostics(lineNum, probe.Id));
                 }
 

@@ -32,6 +32,8 @@ parameters:
     default: 0
 
 steps:
+- template: ensure-docker-ready.yml
+
 - ${{ if eq(parameters.build, true) }}:
   - script: |
       if [ -z "${{ parameters.useNativeSdkVersion }}" ]; then

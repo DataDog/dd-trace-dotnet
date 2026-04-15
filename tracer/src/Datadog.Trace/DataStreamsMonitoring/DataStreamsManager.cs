@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -13,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -29,14 +31,15 @@ internal sealed class DataStreamsManager
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
+    private readonly IDiscoveryService _discoveryService;
+    private readonly DataStreamsExtractorRegistry _registry;
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
-    private readonly IDiscoveryService _discoveryService; // only saved to be able to unsubscribe
+    private readonly bool _isInDefaultState;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
     private string? _previousContainerTagsHash;
     private bool _isEnabled;
-    private bool _isInDefaultState;
     private IDataStreamsWriter? _writer;
 
     public DataStreamsManager(
@@ -49,6 +52,12 @@ internal sealed class DataStreamsManager
         _writer = writer;
         _discoveryService = discoveryService;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
+        _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
+
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Debug("Data Streams extractors loaded: {Value}", _registry.AsJson());
+        }
 
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
         // even though the value will probably get updated by a callback when subscriptions happen just after,
@@ -64,10 +73,9 @@ internal sealed class DataStreamsManager
         get => Volatile.Read(ref _isEnabled);
     }
 
-    public bool IsInDefaultState
-    {
-        get => Volatile.Read(ref _isInDefaultState);
-    }
+    public bool IsInDefaultState => _isInDefaultState;
+
+    public bool IsTransactionTrackingEnabled => !_isInDefaultState && IsEnabled;
 
     /// <summary> Callback for AgentConfiguration updates </summary>
     private void UpdateHashWithContainerTags(AgentConfiguration conf)
@@ -159,6 +167,11 @@ internal sealed class DataStreamsManager
         where TCarrier : IBinaryHeadersCollection
         => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
 
+    public List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType extractorType)
+    {
+        return _registry.GetExtractorsByType(extractorType);
+    }
+
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
     /// </summary>
@@ -173,6 +186,34 @@ internal sealed class DataStreamsManager
         }
 
         DataStreamsContextPropagator.Instance.Inject(context.Value, headers, _isLegacyDsmHeadersEnabled);
+    }
+
+    public void TrackTransaction(string transactionId, string checkpointName)
+    {
+        if (!IsTransactionTrackingEnabled)
+        {
+            return;
+        }
+
+        var writer = Volatile.Read(ref _writer);
+        writer?.AddTransaction(new DataStreamsTransactionInfo(
+                                   transactionId,
+                                   DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
+                                   checkpointName));
+    }
+
+    public void TrackTransaction(byte[] transactionIdBytes, string checkpointName)
+    {
+        if (!IsTransactionTrackingEnabled)
+        {
+            return;
+        }
+
+        var writer = Volatile.Read(ref _writer);
+        writer?.AddTransaction(new DataStreamsTransactionInfo(
+                                   transactionIdBytes,
+                                   DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
+                                   checkpointName));
     }
 
     public void TrackBacklog(string tags, long value)

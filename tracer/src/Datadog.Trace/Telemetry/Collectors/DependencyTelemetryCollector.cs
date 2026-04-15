@@ -169,7 +169,7 @@ namespace Datadog.Trace.Telemetry
         {
             for (int i = assemblyName.Length - 1; i >= start; i--)
             {
-                if (!IsHexChar(assemblyName[i]))
+                if (!char.IsAsciiHexDigit(assemblyName[i]))
                 {
                     return false;
                 }
@@ -192,16 +192,6 @@ namespace Datadog.Trace.Telemetry
                 default:
                     return false;
             }
-        }
-
-        private static bool IsHexChar(char c)
-        {
-            return c switch
-            {
-                >= '0' and <= '9' => true,
-                >= 'a' and <= 'f' => true,
-                _ => false
-            };
         }
 
         private static bool IsZeroVersionAssemblyPattern(string assemblyName)
@@ -255,7 +245,7 @@ namespace Datadog.Trace.Telemetry
             // Verify remaining characters are all digits
             for (int i = 14; i < assemblyName.Length; i++)
             {
-                if (assemblyName[i] is < '0' or > '9')
+                if (!char.IsAsciiDigit(assemblyName[i]))
                 {
                     return false;
                 }

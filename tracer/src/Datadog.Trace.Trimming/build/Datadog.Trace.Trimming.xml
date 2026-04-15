@@ -582,6 +582,7 @@
       <type fullname="System.ComponentModel.EditorBrowsableState" />
       <type fullname="System.Configuration.Assemblies.AssemblyHashAlgorithm" />
       <type fullname="System.Convert" />
+      <type fullname="System.Converter`2" />
       <type fullname="System.DateOnly" />
       <type fullname="System.DateTime" />
       <type fullname="System.DateTimeKind" />

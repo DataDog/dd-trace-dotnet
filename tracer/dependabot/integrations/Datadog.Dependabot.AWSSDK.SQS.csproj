@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.2.18 -->
-    <PackageReference Include="AWSSDK.SQS" Version="4.0.2.18" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/4.0.2.24 -->
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.2.23" />
   </ItemGroup>
 
 </Project>

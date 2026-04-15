@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
@@ -124,6 +125,15 @@ public class DataStreamsManagerTests
         var point = writer.BacklogPoints.Should().ContainSingle().Subject;
         point.Value.Should().Be(value);
         point.Tags.Should().Be(tags);
+    }
+
+    [Fact]
+    public void WhenEnabled_TracksTransactions()
+    {
+        var dsm = GetDataStreamManager(true, out var writer);
+        dsm.TrackTransaction("transaction-id", "checkpoint");
+
+        writer.DataStreamsTransactions.Size().Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -250,6 +260,64 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public void WhenEnabled_TrackTransaction_AddsTransactionAndTagsSpan()
+    {
+        var dsm = GetDataStreamManager(true, out var writer);
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        writer.DataStreamsTransactions.GetDataAndReset().Should().NotBeEmpty();
+        span.Tags.GetTag("dsm.transaction.id").Should().Be("tx-abc");
+    }
+
+    [Fact]
+    public void WhenDisabled_TrackTransaction_DoesNothing()
+    {
+        var dsm = GetDataStreamManager(false, out var writer);
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        span.Tags.GetTag("dsm.transaction.id").Should().BeNull();
+        // writer is null when DSM is disabled, so nothing could have been enqueued
+        writer.Should().BeNull();
+    }
+
+    [Fact]
+    public void WhenInDefaultState_TrackTransaction_DoesNotSetTag()
+    {
+        // DSM is "in default state" when DD_DATA_STREAMS_MONITORING_ENABLED is absent from config.
+        // IsTransactionTrackingEnabled = !IsInDefaultState && IsEnabled, so even with a live writer
+        // the tag must not be set and nothing should be enqueued.
+        var writer = new DataStreamsWriterMock();
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.Environment, "foo" },
+            { ConfigurationKeys.ServiceName, "bar" },
+            // DD_DATA_STREAMS_MONITORING_ENABLED intentionally absent → IsInDefaultState = true
+        });
+        var dsm = new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
+        dsm.IsInDefaultState.Should().BeTrue("precondition: DSM must be in default state");
+
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        span.Tags.GetTag("dsm.transaction.id").Should().BeNull();
+        writer.DataStreamsTransactions.Size().Should().Be(0);
+    }
+
+    [Fact]
+    public void WhenManagerIsNull_TrackTransaction_DoesNothing()
+    {
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        var act = () => span.TrackTransaction(null, "tx-abc", "some-checkpoint");
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public async Task WhenEnabled_OneConsumeTwoProduceUsesTwiceConsumePathway()
     {
         var dsm = GetDataStreamManager(enabled: true, out var writer);
@@ -346,6 +414,10 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.Environment, "foo" },
                 { ConfigurationKeys.ServiceName, "bar" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
+                // TODO: inject a deterministic value for process tags instead, to make test closer to reality
+                // there are already tests about process tags, so this one is not required to "prove" it works
+                // but it'd be cleaner not to have exclusions like this
+                { ConfigurationKeys.PropagateProcessTags, "false" }
             });
         return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
     }
@@ -358,11 +430,18 @@ public class DataStreamsManagerTests
 
         public ConcurrentQueue<BacklogPoint> BacklogPoints { get; } = new();
 
+        public DataStreamsTransactionContainer DataStreamsTransactions { get; } = new(1024);
+
         public int DisposeCount => Volatile.Read(ref _disposeCount);
 
         public void Add(in StatsPoint point)
         {
             Points.Enqueue(point);
+        }
+
+        public void AddTransaction(in DataStreamsTransactionInfo transaction)
+        {
+            DataStreamsTransactions.Add(transaction);
         }
 
         public void AddBacklog(in BacklogPoint point)

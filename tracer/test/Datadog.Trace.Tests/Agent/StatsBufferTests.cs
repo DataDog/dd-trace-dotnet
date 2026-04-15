@@ -20,10 +20,21 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void KeyEquality()
         {
-            var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
-            var key2 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
+            var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", null, 1, false);
+            var key2 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", null, 1, false);
 
             key1.Should().Be(key2);
+        }
+
+        [Fact]
+        public void KeyEquality_WithServiceSource()
+        {
+            var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", "m", 1, false);
+            var key2 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", "m", 1, false);
+            var key3 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", null, 1, false);
+
+            key1.Should().Be(key2);
+            key1.Should().NotBe(key3);
         }
 
         [Theory]
@@ -55,9 +66,9 @@ namespace Datadog.Trace.Tests.Agent
 
             var buffer = new StatsBuffer(payload);
 
-            var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, true);
-            var key2 = new StatsAggregationKey("resource2", "service2", "operation2", "type2", 2, false);
-            var key3 = new StatsAggregationKey("resource3", "service3", "operation3", "type3", 2, true);
+            var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", null, 1, true);
+            var key2 = new StatsAggregationKey("resource2", "service2", "operation2", "type2", null, 2, false);
+            var key3 = new StatsAggregationKey("resource3", "service3", "operation3", "type3", null, 2, true);
 
             var statsBucket1 = new StatsBucket(key1) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
             var statsBucket2 = new StatsBucket(key2) { Duration = 2, Errors = 22, Hits = 222, TopLevelHits = 20 };
@@ -104,12 +115,40 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void Serialization_WithServiceSource()
+        {
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])) { HostName = "host" });
+
+            var keyWithSource = new StatsAggregationKey("resource1", "service1", "operation1", "type1", "m", 1, false);
+            var keyWithoutSource = new StatsAggregationKey("resource2", "service2", "operation2", "type2", null, 2, false);
+
+            var bucket1 = new StatsBucket(keyWithSource) { Duration = 1, Errors = 0, Hits = 1, TopLevelHits = 1 };
+            var bucket2 = new StatsBucket(keyWithoutSource) { Duration = 2, Errors = 0, Hits = 1, TopLevelHits = 1 };
+
+            buffer.Buckets.Add(keyWithSource, bucket1);
+            buffer.Buckets.Add(keyWithoutSource, bucket2);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 10);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            var stats = result.Stats[0].Stats;
+            stats.Should().HaveCount(2);
+
+            var groupWithSource = stats.Single(g => g.Name == keyWithSource.OperationName);
+            groupWithSource.ServiceSource.Should().Be("m");
+
+            var groupWithoutSource = stats.Single(g => g.Name == keyWithoutSource.OperationName);
+            groupWithoutSource.ServiceSource.Should().BeNull();
+        }
+
+        [Fact]
         public void Reset()
         {
             var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
-            var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
-            var key2 = new StatsAggregationKey("resource2", "service2", "operation2", "type2", 2, false);
+            var key1 = new StatsAggregationKey("resource1", "service1", "operation1", "type1", null, 1, false);
+            var key2 = new StatsAggregationKey("resource2", "service2", "operation2", "type2", null, 2, false);
 
             var statsBucket1 = new StatsBucket(key1) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
             var statsBucket2 = new StatsBucket(key2) { Duration = 2, Errors = 0, Hits = 0, TopLevelHits = 0 };
@@ -144,7 +183,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
-            var key = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1, false);
+            var key = new StatsAggregationKey("resource1", "service1", "operation1", "type1", null, 1, false);
             var statsBucket = new StatsBucket(key) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
 
             buffer.Buckets.Add(key, statsBucket);
@@ -175,6 +214,7 @@ namespace Datadog.Trace.Tests.Agent
             group.Duration.Should().Be(expectedBucket.Duration);
             group.Synthetics.Should().Be(expectedKey.IsSyntheticsRequest);
             group.TopLevelHits.Should().Be(expectedBucket.TopLevelHits);
+            group.ServiceSource.Should().Be(expectedKey.ServiceSource);
 
             var stream = new MemoryStream();
             expectedBucket.ErrorSummary.Serialize(stream);

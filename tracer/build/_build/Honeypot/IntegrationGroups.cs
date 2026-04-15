@@ -120,10 +120,10 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
             NugetPackages.Add("Microsoft.TestPlatform.CrossPlatEngine", Array.Empty<string>());
-            NugetPackages.Add("MSTest.TestFramework", Array.Empty<string>());
+            NugetPackages.Add("MSTest.TestFramework", new [] { "MSTest.TestFramework" });
             NugetPackages.Add("MSTestAdapter.PlatformServices", Array.Empty<string>());
             NugetPackages.Add("RestSharp", Array.Empty<string>());
-            NugetPackages.Add("Hangfire.Core", new [] { "Hangfire" });
+            NugetPackages.Add("Hangfire.Core", new [] { "Hangfire.Core" });
             NugetPackages.Add("MassTransit", new [] { "MassTransit" });
 
             // Manual instrumentation
@@ -132,8 +132,8 @@ namespace Honeypot
             NugetPackages.Add("Datadog.Trace.OpenTracing", new string[] { });
             
             // Feature Flags
-            NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new string[] { });
-            NugetPackages.Add("OpenFeature", new string[] { });
+            NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new [] { "OpenFeature" });
+            NugetPackages.Add("OpenFeature", Array.Empty<string>());
         }
 
         private IntegrationMap()

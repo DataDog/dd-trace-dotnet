@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -210,20 +211,6 @@ namespace Datadog.Trace.Processors
             return new string(segment.Array, segment.Offset, segment.Count);
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L213-L216
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsAlpha(char c)
-        {
-            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-        }
-
-        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L218-L221
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsAlphaNumeric(char c)
-        {
-            return IsAlpha(c) || (c >= '0' && c <= '9');
-        }
-
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L223-L274
         public static string NormalizeMetricName(string name, int limit)
         {
@@ -236,7 +223,7 @@ namespace Datadog.Trace.Processors
             int i = 0;
 
             // skip non-alphabetic characters
-            for (; i < name.Length && !IsAlpha(name[i]); i++) { }
+            for (; i < name.Length && !char.IsAsciiLetter(name[i]); i++) { }
 
             // if there were no alphabetic characters it wasn't valid
             if (i == name.Length)
@@ -248,7 +235,7 @@ namespace Datadog.Trace.Processors
             {
                 char c = name[i];
 
-                if (IsAlphaNumeric(c))
+                if (char.IsAsciiLetterOrDigit(c))
                 {
                     sb.Append(c);
                 }

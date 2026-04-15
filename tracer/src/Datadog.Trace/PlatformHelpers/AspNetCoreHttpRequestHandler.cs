@@ -16,6 +16,8 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -135,6 +137,25 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager.IsTransactionTrackingEnabled)
+            {
+                var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders);
+                if (extractors != null)
+                {
+                    foreach (var extractor in extractors)
+                    {
+                        if (request.Headers.TryGetValue(extractor.Value, out var headerValues))
+                        {
+                            foreach (var headerValue in headerValues)
+                            {
+                                scope.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
+                            }
+                        }
+                    }
+                }
+            }
 
             var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
             if (headerTagsInternal.Count != 0)

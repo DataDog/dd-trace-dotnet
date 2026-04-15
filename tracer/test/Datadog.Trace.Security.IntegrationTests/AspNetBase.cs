@@ -144,7 +144,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false, Func<IReadOnlyCollection<MockSpan>, IOrderedEnumerable<MockSpan>> orderSpans = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -231,13 +231,17 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 // Overriding the type name here as we have multiple test classes in the file
                 // Ensures that we get nice file nesting in Solution Explorer
-                await Verifier.Verify(spans, settings)
-                              .UseMethodName(methodNameOverride ?? "_")
-                              .UseTypeName(testName ?? GetTestName());
+                // The span ordering is kept identical to the passed in order,
+                // but that means that it must be deterministic. We should consider using the default
+                // ordering instead
+                orderSpans ??= x => x.OrderBy(_ => 0);
+                await VerifyHelper.VerifySpans(spans, settings, orderSpans)
+                                      .UseMethodName(methodNameOverride ?? "_")
+                                      .UseTypeName(testName ?? GetTestName());
             }
             else
             {
-                await VerifyHelper.VerifySpans(spans, settings)
+                await VerifyHelper.VerifySpans(spans, settings, orderSpans)
                                   .UseFileName(fileNameOverride)
                                   .DisableRequireUniquePrefix();
             }

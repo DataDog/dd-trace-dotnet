@@ -104,18 +104,37 @@ public class LineProbeResolverTest
     }
 
     [Fact]
-    public void MismatchedPathReturnsUnboundWithFileNameDiagnostics()
+    public void SameFileNameMatchAddsPathHintWithoutChangingUnboundReason()
     {
         _probeDefinition.Where.SourceFile = @"some\other\folder\LambdaSingleLine.cs";
 
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
 
         result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
-        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch);
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
         result.Diagnostics.LoadedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SymbolicatedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameMatchCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameExamples.Should().NotBeNullOrEmpty();
+        result.Message.Should().Contain("assembly is not loaded yet");
+        result.Message.Should().Contain("symbols are unavailable");
+        result.Message.Should().Contain("configured source path may differ from the PDB document path");
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void UnknownFileReturnsUnboundWithGenericMessage()
+    {
+        _probeDefinition.Where.SourceFile = @"some\other\folder\FileThatDoesNotExistAnywhere.cs";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
+        result.Diagnostics.SameFileNameMatchCount.Should().Be(0);
+        result.Message.Should().Contain("assembly is not loaded yet");
+        result.Message.Should().Contain("symbols are unavailable");
+        result.Message.Should().NotContain("configured source path may differ from the PDB document path");
         loc.Should().BeNull();
     }
 
