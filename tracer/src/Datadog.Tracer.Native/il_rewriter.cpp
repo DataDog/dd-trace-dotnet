@@ -889,11 +889,14 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
     }
 
     std::sort(indices.get(), indices.get() + nEH, [&](unsigned a, unsigned b) {
+        // Primary (inner try first): e.g. try { try { } catch { } } catch { }
         if (depth[a] != depth[b])
         {
             return depth[a] > depth[b];
         }
 
+        // Secondary (same depth, different tries — order by try start offset): e.g.
+        //   try { } catch { } try { } catch { }
         unsigned offsetA = pEH[a].m_pTryBegin->m_offset;
         unsigned offsetB = pEH[b].m_pTryBegin->m_offset;
         if (offsetA != offsetB)
@@ -903,6 +906,7 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
 
         // Preserve original order for clauses with equal depth and try offset
         // (e.g. multiple catch handlers for the same try block).
+        // Tertiary (same try — keep compiler order): e.g. try { } catch (A) { } catch (B) { }
         return a < b;
     });
 
