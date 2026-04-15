@@ -19,7 +19,11 @@
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Redirected,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.IastController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,
@@ -66,7 +70,11 @@
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: UnvalidatedRedirect,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.IastController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,
