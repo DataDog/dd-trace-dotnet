@@ -5,10 +5,6 @@
 
 #nullable enable
 
-using System;
-using InlineIL;
-using static InlineIL.IL.Emit;
-
 namespace Datadog.Trace.Iast
 {
     internal sealed class TaintedObjects
