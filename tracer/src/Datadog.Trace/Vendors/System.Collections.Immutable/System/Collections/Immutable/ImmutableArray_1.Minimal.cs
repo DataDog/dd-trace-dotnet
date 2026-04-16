@@ -47,7 +47,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
     /// it is insulated from other threads.
     /// </devremarks>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    /* [NonVersionable] */ // Applies to field layout
+    [NonVersionable] // Applies to field layout
     internal partial struct ImmutableArray<T> : IEnumerable<T>, IEquatable<ImmutableArray<T>>, IImmutableArray
     {
         /// <summary>
@@ -86,7 +86,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         /// <param name="left">The instance to the left of the operator.</param>
         /// <param name="right">The instance to the right of the operator.</param>
         /// <returns><c>true</c> if the values' underlying arrays are reference equal; <c>false</c> otherwise.</returns>
-        /* [NonVersionable] */
+        [NonVersionable]
         public static bool operator ==(ImmutableArray<T> left, ImmutableArray<T> right)
         {
             return left.Equals(right);
@@ -98,7 +98,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         /// <param name="left">The instance to the left of the operator.</param>
         /// <param name="right">The instance to the right of the operator.</param>
         /// <returns><c>true</c> if the values' underlying arrays are reference not equal; <c>false</c> otherwise.</returns>
-        /* [NonVersionable] */
+        [NonVersionable]
         public static bool operator !=(ImmutableArray<T> left, ImmutableArray<T> right)
         {
             return !left.Equals(right);
@@ -135,7 +135,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         /// <returns>The element at the specified index in the read-only list.</returns>
         public T this[int index]
         {
-            /* [NonVersionable] */
+            [NonVersionable]
             get
             {
                 // We intentionally do not check this.array != null, and throw NullReferenceException
@@ -168,7 +168,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public bool IsEmpty
         {
-            /* [NonVersionable] */
+            [NonVersionable]
             get { return this.array!.Length == 0; }
         }
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public int Length
         {
-            /* [NonVersionable] */
+            [NonVersionable]
             get
             {
                 // We intentionally do not check this.array != null, and throw NullReferenceException
@@ -331,7 +331,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         /// <returns>
         /// true if the current object is equal to the <paramref name="other"/> parameter; otherwise, false.
         /// </returns>
-        /* [NonVersionable] */
+        [NonVersionable]
         public bool Equals(ImmutableArray<T> other)
         {
             return this.array == other.array;

@@ -393,7 +393,6 @@ namespace UpdateVendors
             contents = contents.Insert(namespaceIndex, usings);
 
             contents = contents
-               .Replace("[NonVersionable]", "/* [NonVersionable] */")
                .Replace("[ValidatedNotNull]", string.Empty)
                .Replace("#nullable restore", "#nullable enable");
 
