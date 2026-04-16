@@ -523,6 +523,11 @@ namespace Datadog.Trace.AspNet
 
             public Scope Scope { get; }
 
+            /// <summary>
+            /// Gets the inferred proxy scope. Only present when inferred proxy spans are enabled
+            /// AND necessary proxy headers were present.
+            /// </summary>
+            /// <see cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
             public Scope ProxyScope { get; }
         }
     }
