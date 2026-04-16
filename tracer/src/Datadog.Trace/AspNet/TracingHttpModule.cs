@@ -513,7 +513,7 @@ namespace Datadog.Trace.AspNet
         /// disposal and ensures OnEndRequest can still enrich the span with resource name,
         /// status code, and other tags.
         /// </summary>
-        private sealed class ScopeContainer
+        internal sealed class ScopeContainer
         {
             public ScopeContainer(Scope scope, Scope proxyScope = null)
             {
