@@ -29,6 +29,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
         }
 
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData("/RouteHandler/Params/appscan_fingerprint", "id", "appscan_fingerprint")]
+        public Task TestRoutedHttpHandlerPathParams(string url, string expectedKey, string expectedValue)
+            => AssertRouteHandlerPathParams(url, expectedKey, expectedValue);
+
         [SkippableTheory]
         [InlineData(200, 303)]
         [InlineData(302, 302)]
@@ -68,6 +76,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(iisFixture, output, classicMode: true, enableSecurity: true)
         {
         }
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData("/RouteHandler/Params/appscan_fingerprint", "id", "appscan_fingerprint")]
+        public Task TestRoutedHttpHandlerPathParams(string url, string expectedKey, string expectedValue)
+            => AssertRouteHandlerPathParams(url, expectedKey, expectedValue);
     }
 
     [Collection("IisTests")]
@@ -129,6 +145,22 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
             FilterConnectionHeader(settings);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+        }
+
+        protected async Task AssertRouteHandlerPathParams(string url, string expectedKey, string expectedValue)
+        {
+            var minDateTime = DateTime.UtcNow;
+            var (statusCode, _) = await SubmitRequest(url, body: null, contentType: null);
+            ((int)statusCode).Should().Be(200);
+
+            var spans = await WaitForSpansAsync(_iisFixture.Agent, 1, string.Empty, minDateTime, url);
+            var span = spans.Should().ContainSingle().Which;
+
+            span.Tags.Should().ContainKey("_dd.appsec.json");
+            var appSecJson = span.Tags["_dd.appsec.json"];
+            appSecJson.Should().Contain("\"address\":\"server.request.path_params\"");
+            appSecJson.Should().Contain($"\"key_path\":[\"{expectedKey}\"]");
+            appSecJson.Should().Contain($"\"value\":\"{expectedValue}\"");
         }
 
         public async Task InitializeAsync()
