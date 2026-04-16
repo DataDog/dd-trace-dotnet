@@ -181,6 +181,18 @@ It hangs with the tracer attached because the CallTarget JIT rewriting on the Th
 
 **Result**: **Works** — the app starts instantly. This confirms the deadlock is caused by the native profiler's **mere presence**, not by any specific managed code path. Just having the profiler attached changes the CLR's assembly loading and `ConfigurationManager` timing enough to trigger the deadlock.
 
+### 11. Managed PreStartInit Gate for Non-IIS Processes
+
+**Approach**: In `CallTargetInvoker`'s static constructor, set `_isIisPreStartInitComplete = false` for non-IIS .NET Framework processes (instead of `true`). Release the gate from `Instrumentation.Initialize()` via `AppDomain.SetData("Datadog_IISPreInitStart", false)`.
+
+**Result**: Does not work. The gate blocks `CanExecuteCallTargetIntegration()` at the managed level, but the deadlock occurs before any managed guard code runs. The ThreadPool thread's `WebRequest.Create()` accesses `ConfigurationManager` internally (for proxy settings), blocking on the CM lock held by Thread A. This is a framework-level lock contention, not a managed CallTarget issue.
+
+### 12. `Lazy<IDatadogLogger>` in IntegrationOptions + IntegrationMapper + ContinuationGenerator (Combined with Gate)
+
+**Approach**: Made ALL `IDatadogLogger` fields in the CallTarget handler infrastructure lazy (`Lazy<IDatadogLogger>`) to break every `.cctor` → `DatadogLogging` → `ConfigurationManager` chain. Combined with the managed PreStartInit gate (#11).
+
+**Result**: Does not work. Even with all `.cctor` chains fully broken, the deadlock persists. The ThreadPool thread's `WebRequest.Create()` accesses `ConfigurationManager` internally — this is inside the .NET Framework's own implementation, not triggered by any Datadog type loading. The deadlock is between `ConfigurationManager`'s internal lock (held by Thread A during config builder execution) and `WebRequest`'s internal `ConfigurationManager` access (on Thread B).
+
 ## Key Findings
 
 ### 0. The Deadlock is Caused by the Native Profiler's Presence, Not Managed Code
@@ -227,108 +239,79 @@ The IIS `PreStartInit` guard blocks CallTarget integrations **at the native leve
 - Block CallTarget integrations until `Instrumentation.Initialize()` completes
 - Signal from managed code to the native profiler when it's safe to enable integrations
 
-## Proposed Solution: Reuse the IIS PreStartInit Gate for Non-IIS .NET Framework Processes
+## Proposed Solution: Native Profiler Must Defer CallTarget JIT Rewrites
 
-### Concept
+### Why Managed-Only Fixes Cannot Work
 
-The IIS deadlock fix (PR #6147) already implements a gate mechanism:
-- The native profiler injects IL into `InvokePreStartInitMethods` that sets `AppDomain.CurrentDomain.SetData("Datadog_IISPreInitStart", true)` at method start and `false` at method end
-- `CallTargetInvoker.CanExecuteCallTargetIntegration()` checks this AppDomain data and blocks all integrations while the flag is `true`
-- This prevents CallTarget JIT rewrites from triggering type loading → `.cctor` → `ConfigurationManager` chains during the dangerous window
+We tried every managed-level approach (see "Things Already Tried" #1-12). The fundamental issue is:
 
-We can reuse this exact mechanism for non-IIS .NET Framework console apps with **managed-only changes**:
+1. The native profiler rewrites method IL **during JIT compilation** on the ThreadPool thread
+2. The rewritten IL references `CallTargetInvoker.BeginMethod<T,T>` which triggers type loading
+3. Even with all `.cctor` chains broken (lazy loggers), `WebRequest.Create()` itself accesses `ConfigurationManager` internally for proxy settings and binding redirects
+4. This `ConfigurationManager` access blocks on the CM lock held by Thread A
 
-### Implementation (Managed-Only, Minimal Scope)
+The deadlock happens **inside the .NET Framework's own `WebRequest` implementation**, not in our managed code. No amount of managed-code changes can prevent `WebRequest.Create()` from accessing `ConfigurationManager`.
 
-**Change 1: `CallTargetInvoker.cs` static constructor** — For non-IIS .NET Framework processes, set `_isIisPreStartInitComplete = false` instead of `true`. This blocks all CallTarget integrations until the gate is released.
+### What Needs to Happen
 
-```csharp
-// Current (line 89-92):
-else
+The native profiler must **not rewrite method IL with CallTarget hooks** while the `ConfigurationManager` lock may be held. Two approaches:
+
+#### Option A: Extend `AddIISPreStartInitFlags` to All .NET Framework Processes
+
+Currently, `AddIISPreStartInitFlags` (in `cor_profiler.cpp:4034`) is only called for IIS processes (`is_desktop_iis` check at line 1634). Extending it to ALL .NET Framework processes would:
+
+1. Inject `AppDomain.SetData("Datadog_IISPreInitStart", true)` at the **start** of the startup hook method
+2. Inject `AppDomain.SetData("Datadog_IISPreInitStart", false)` at the **end** of the startup hook method
+3. The managed `CallTargetInvoker.CanExecuteCallTargetIntegration()` already checks this flag — no managed changes needed
+
+The startup hook runs inside `Main()` (or the first JIT-compiled method). It completes before user code runs. During its execution, CallTarget integrations are blocked, preventing the deadlock.
+
+**Key difference from current IIS behavior**: For IIS, the flag wraps `InvokePreStartInitMethods`. For console apps, it would wrap the startup hook inside `Main()`. The effect is the same — integrations are deferred until after tracer initialization.
+
+```cpp
+// cor_profiler.cpp, line 1634:
+// Current:
+if (is_desktop_iis)
 {
-    _isIisPreStartInitComplete = true;  // Integrations enabled immediately
+    hr = AddIISPreStartInitFlags(module_id, function_token);
 }
 
 // Proposed:
-else
+if (!runtime_information_.is_core())  // All .NET Framework processes
 {
-    // Block integrations until Instrumentation.Initialize() completes.
-    // This prevents the ConfigurationManager deadlock when config builders
-    // spawn ThreadPool threads that trigger type loading .cctor chains.
-    _isIisPreStartInitComplete = false;
+    hr = AddIISPreStartInitFlags(module_id, function_token);
 }
 ```
 
-**Change 2: `Instrumentation.cs`** — After `InitializeNoNativeParts()` completes, release the gate by setting the AppDomain data to `false` (same value the IIS mechanism uses to signal "init complete").
+**Risk**: The startup hook for console apps wraps `Main()`. `AddIISPreStartInitFlags` sets the flag to `false` at the method's `ret` instruction — meaning integrations would only be released when `Main()` returns (far too late). The native code would need modification to set the flag to `false` **after the startup hook call** but **before the rest of `Main()`'s original code**, or the managed code (`Instrumentation.Initialize()`) would need to release it via `AppDomain.SetData`.
 
-```csharp
-// After InitializeNoNativeParts(ref sw):
-#if NETFRAMEWORK
-AppDomain.CurrentDomain.SetData("Datadog_IISPreInitStart", false);
-#endif
-```
+#### Option B: Defer CallTarget ReJIT Until After Managed Init Signal
 
-### Why This Works
+Instead of rewriting methods immediately in `ModuleLoadFinished`, queue the ReJIT requests and apply them after `Instrumentation.Initialize()` signals completion. This is a larger change but more robust.
 
-1. When `CallTargetInvoker`'s `.cctor` runs, `_isIisPreStartInitComplete` is `false` for ALL .NET Framework processes
-2. `CanExecuteCallTargetIntegration()` returns `false` → no CallTarget integration runs
-3. ThreadPool threads spawned by config builders call instrumented methods → the native profiler rewrites the IL → JIT compiles it → but `BeginMethod` returns immediately (guard active)
-4. No type loading for `IntegrationOptions`, `BeginMethodHandler`, etc. occurs on ThreadPool threads
-5. No `.cctor` chains fire → no `ConfigurationManager` access from ThreadPool threads → no deadlock
-6. After `Instrumentation.Initialize()` completes, the gate is released → integrations start running normally
+### Customer Workarounds (Available Today)
 
-### Scoping to Minimize Risk
+#### Move Config Builder to Code (Confirmed Working)
 
-The change should be scoped as narrowly as possible:
-- **Only .NET Framework** (`#if NETFRAMEWORK`) — .NET Core doesn't have `ConfigurationManager` config builders
-- **Only non-IIS console/service processes** — IIS already has its own mechanism; don't change that
-- The `CanExecuteCallTargetIntegration` already allows `HttpModule_Integration` through during the gate (line 753-754), which is only relevant for IIS and harmless for console apps
+Move Azure App Configuration from `app.config` `configBuilders` to `IConfiguration` via `AddAzureAppConfiguration()` in `Main()`. The customer confirmed this works but says it's not viable for their 15-year-old application.
 
-### Risks and Mitigations
-
-| Risk | Mitigation |
-|------|-----------|
-| Missing spans during startup | The gate is active only during `Instrumentation.Initialize()` — typically < 1 second. No user code runs during this window (startup hook runs before `Main()`). |
-| `Instrumentation.Initialize()` fails → gate never released | Add a `finally` block or timeout fallback that releases the gate even on failure. The error catch in `CallTargetInvoker` already handles the case where `_isIisPreStartInitComplete` stays `false` — it polls `AppDomain.GetData` on each call. |
-| Other .NET Framework apps affected (not just config builder users) | The extra overhead is one `AppDomain.GetData` check per integration call until the gate is released. This is the same overhead IIS apps already have. |
-| IIS behavior changes | No change — the `is_desktop_iis` code path in the native profiler is untouched. IIS processes already have the flag set by native code before the managed `.cctor` runs. |
-
-### Native Profiler: No Changes Required
-
-The native profiler does NOT need to be modified. The existing IIS mechanism works by checking `AppDomain.GetData("Datadog_IISPreInitStart")`:
-- If the data is not set (`null`), `CanExecuteCallTargetIntegration` falls through to the process name check
-- For non-IIS processes, it currently sets `_isIisPreStartInitComplete = true` (our change sets it to `false` instead)
-- For the release, `Instrumentation.Initialize()` calls `AppDomain.SetData("Datadog_IISPreInitStart", false)`
-- The next `CanExecuteCallTargetIntegration` call sees `boolState is false` → sets `_isIisPreStartInitComplete = true` → cached forever
-
-## Other Solutions Considered But Not Recommended
-
-### A. Customer Workaround: Move Config Builder to Code
-
-The customer confirmed this works: move Azure App Configuration from `app.config` `configBuilders` to `IConfiguration` via `AddAzureAppConfiguration()` in `Main()`.
-
-**Pros**: Works today, no tracer changes needed.
-**Cons**: Not viable for the current customer (15-year-old application). Only a workaround, not a fix.
-
-### B. Customer Workaround: `COR_ENABLE_PROFILING=0` (Not Viable)
+#### `COR_ENABLE_PROFILING=0` (Not Viable)
 
 Disabling the profiler avoids the deadlock but also disables all auto-instrumentation.
 
-### ~~C. Managed-Level Settings (Ruled Out)~~
+### ~~Managed-Level Settings (All Ruled Out)~~
 
-`DD_TRACE_ENABLED=false`, `DD_DISABLED_INTEGRATIONS`, `DD_TRACE_WebRequest_ENABLED=false`, `DD_CLR_DISABLE_OPTIMIZATIONS`, and all other managed-level settings have been tested and **do not work**. The deadlock is caused by the native profiler's presence, not by any managed code path. See "Things Already Tried" #7-10.
+`DD_TRACE_ENABLED=false`, `DD_DISABLED_INTEGRATIONS`, `DD_TRACE_WebRequest_ENABLED=false`, `DD_CLR_DISABLE_OPTIMIZATIONS`, managed PreStartInit gate, `Lazy<IDatadogLogger>` in handlers, skipping AppSettings during `.cctor`, pre-reading AppSettings in managed loader — all tested and **do not work**. See "Things Already Tried" #1-12.
 
-## Files Modified During Investigation
+## Reproduction Branch
 
-| File | Change | Status |
-|------|--------|--------|
-| `CallTargetInvoker.cs` | Added `IsLoadingConfigurationManagerAppSettings` guard | In PR #8456 (dd-trace-6) |
-| `GlobalConfigurationSource.cs` | Guard around AppSettings access, `isCalledFromStaticInitializer` param, `AddAppSettingsIfMissing` | Experimental (dd-trace-5) |
-| `IntegrationOptions.cs` | Changed `Log` to `Lazy<IDatadogLogger>` | Experimental (dd-trace-5) |
-| `Instrumentation.cs` | `AddAppSettingsIfMissing()` call after init | Experimental (dd-trace-5) |
-| `Startup.NetFramework.cs` | `PreReadAppSettings()` (reverted) | Reverted |
-| `Samples.ConsoleDeadLock/` | Repro sample app + integration test | In dd-trace-5 |
-| `ConsoleDeadLockTests.cs` | Integration test with local HTTP server | In dd-trace-5 |
+All repro code and the integration test are in the branch: https://github.com/DataDog/dd-trace-dotnet/compare/master...nacho/ConsoleHangs
+
+| File | Purpose |
+|------|---------|
+| `Samples.ConsoleDeadLock/` | Minimal repro: custom config builder that does `Task.Run(() => WebRequest.GetResponse()).Wait()` |
+| `ConsoleDeadLockTests.cs` | Integration test: starts local HTTP server, launches app with tracer, asserts it completes in 30s |
+| `ConsoleDeadlockIssue.md` | This document |
 
 ## Related
 
