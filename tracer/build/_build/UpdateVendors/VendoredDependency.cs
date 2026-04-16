@@ -309,13 +309,6 @@ namespace UpdateVendors
                 });
 
             Add(
-                libraryName: "System.Runtime.CompilerServices.Unsafe",
-                version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Runtime.CompilerServices.Unsafe" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
-
-            Add(
                 libraryName: "ICSharpCode.SharpZipLib",
                 version: "1.3.3",
                 downloadUrl: "https://github.com/icsharpcode/SharpZipLib/archive/refs/tags/v1.3.3.zip",
