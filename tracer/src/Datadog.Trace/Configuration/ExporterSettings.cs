@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -97,9 +98,9 @@ namespace Datadog.Trace.Configuration
             string? tracesPipeName;
             string? metricsPipeName;
 
-            if (Util.EnvironmentHelpers.IsAzureFunctions()
-                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && Serverless.ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport())
+            if (AzureInfo.Instance.IsAzureFunction
+                && !AzureInfo.Instance.IsUsingSiteExtension
+                && ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport())
             {
                 tracesPipeName = GenerateUniquePipeName(rawSettings.TracesPipeName, "dd_trace", ConfigurationKeys.TracesPipeName);
                 metricsPipeName = GenerateUniquePipeName(rawSettings.MetricsPipeName, "dd_dogstatsd", ConfigurationKeys.MetricsPipeName);
