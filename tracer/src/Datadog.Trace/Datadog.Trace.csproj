@@ -95,7 +95,24 @@
   <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))">
     <!-- We embed this package inside the dll with ILRepack -->
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" PrivateAssets="All" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.44.2" />
   </ItemGroup>
+
+  <Target Name="ILRepacker" AfterTargets="Build" Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))">
+    <ItemGroup>
+      <InputAssemblies Include="$(TargetPath)"/>
+      <InputAssemblies Include="@(ReferencePathWithRefAssemblies)" Condition="'%(filename)' == 'System.Runtime.CompilerServices.Unsafe,'" />
+    </ItemGroup>
+
+    <ILRepack
+      AllowDuplicateResources="false"
+      DebugInfo="true"
+      Internalize="true"
+      InputAssemblies="@(InputAssemblies)"
+      OutputFile="$(TargetPath)"
+      Parallel="true"
+      TargetKind="SameAsPrimaryAssembly" />
+  </Target>
 
   <ItemGroup>
     <None Remove="AppSec\Waf\ConfigFiles\rule-set.json" />
