@@ -276,6 +276,58 @@ TEST(ILRewriterEHSortTest, DebuggerAsyncMiddlewareScenario)
 }
 
 // ============================================================================
+// Test: multiple catch handlers for the same try -- original order preserved
+//
+// Models:  try { throw ex; }
+//          catch (ArgumentNullException) { return 1; }
+//          catch (InvalidOperationException) { return 2; }
+//          catch (Exception) { return 3; }
+//
+// All three clauses share the same try region [10,50). The runtime dispatches
+// to the first matching handler, so preserving the compiler's original order
+// is semantically required.
+// ============================================================================
+TEST(ILRewriterEHSortTest, SameTryMultipleCatchPreservesOrder)
+{
+    auto* instrs = MakeInstrChain({10, 50, 55, 60, 65, 70, 75, 80, 85});
+    const size_t instrCount = 9;
+
+    EHClause clauses[3];
+    memset(clauses, 0, sizeof(clauses));
+
+    // catch (ArgumentNullException) -- try [10,50), handler [50,55)
+    clauses[0].m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    clauses[0].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[0].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[0].m_pHandlerBegin = FindInstr(instrs, instrCount, 50);
+    clauses[0].m_pHandlerEnd = FindInstr(instrs, instrCount, 55); // m_pNext = 60
+
+    // catch (InvalidOperationException) -- try [10,50), handler [60,65)
+    clauses[1].m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    clauses[1].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[1].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[1].m_pHandlerBegin = FindInstr(instrs, instrCount, 60);
+    clauses[1].m_pHandlerEnd = FindInstr(instrs, instrCount, 65); // m_pNext = 70
+
+    // catch (Exception) -- try [10,50), handler [70,75)
+    clauses[2].m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    clauses[2].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[2].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[2].m_pHandlerBegin = FindInstr(instrs, instrCount, 70);
+    clauses[2].m_pHandlerEnd = FindInstr(instrs, instrCount, 75); // m_pNext = 80
+
+    ILRewriter::SortEHClauses(clauses, 3);
+
+    // All three share the same try and depth -- original order must be preserved.
+    // Handler offsets identify which clause is which.
+    EXPECT_EQ(clauses[0].m_pHandlerBegin->m_offset, 50u);  // ArgumentNullException
+    EXPECT_EQ(clauses[1].m_pHandlerBegin->m_offset, 60u);  // InvalidOperationException
+    EXPECT_EQ(clauses[2].m_pHandlerBegin->m_offset, 70u);  // Exception
+
+    delete[] instrs;
+}
+
+// ============================================================================
 // Test: single clause -- no sorting needed, should not crash
 // ============================================================================
 TEST(ILRewriterEHSortTest, SingleClause)
