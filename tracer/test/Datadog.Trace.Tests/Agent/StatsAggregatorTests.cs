@@ -783,11 +783,16 @@ namespace Datadog.Trace.Tests.Agent
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
             span.OperationName = "operation";
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
             span.SetDuration(TimeSpan.FromMilliseconds(100));
 
             var traceChunk = new SpanCollection([span]);
             var result = aggregator.ObfuscateTrace(in traceChunk);
+
             result.Count.Should().Be(1);
+            // The SQL should not have been obfuscated (numeric literal replaced)
+            result[0].ResourceName.Should().Be("SELECT * FROM users WHERE id = 123");
         }
 
         [Fact]
