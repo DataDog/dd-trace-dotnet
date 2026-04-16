@@ -114,7 +114,7 @@ public class TraceFilterTests
             FilterTagsReject: null,
             FilterTagsRegexRequire: null,
             FilterTagsRegexReject: null,
-            IgnoreResources: ["GET /healthcheck"]);
+            IgnoreResourcesRegex: ["GET /healthcheck"]);
         var filter = new TraceFilter(config);
 
         // Even with correct required tag, resource reject wins

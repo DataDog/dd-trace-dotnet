@@ -569,7 +569,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:production"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -595,7 +595,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:staging"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -622,7 +622,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:staging"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -663,7 +663,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:staging"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -688,7 +688,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:production"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -712,7 +712,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: null,
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: ["^GET /health"]);
+                IgnoreResourcesRegex: ["^GET /health"]);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
