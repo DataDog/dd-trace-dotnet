@@ -88,10 +88,19 @@ benchmark_analyzer compare pairwise \
     "$ARTIFACTS_DIR"/baseline*.converted.json "$ARTIFACTS_DIR"/candidate*.converted.json
 
 echo "Posting PR comment..."
+set +e
 cat "$ARTIFACTS_DIR/comparison.md" | pr-commenter \
     --for-repo="$CI_PROJECT_NAME" \
     --for-pr="$CI_COMMIT_REF_NAME" \
     --header='Benchmarks' \
     --on-duplicate=replace
+pr_commenter_exit=$?
+set -e
+
+if [ $pr_commenter_exit -ne 0 ]; then
+    echo "WARNING: pr-commenter failed (exit $pr_commenter_exit), PR comment was not posted."
+    echo "This does not affect benchmark correctness. The CI job will continue."
+    exit 0
+fi
 
 echo "PR comment posted successfully!"
