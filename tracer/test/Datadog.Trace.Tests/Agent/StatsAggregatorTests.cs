@@ -499,7 +499,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task Otlp_ProcessTrace_WhenTraceSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -516,7 +516,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task Otlp_ProcessTrace_WhenTraceNotSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceNotSampled_ReturnsAggregateOnly()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -533,7 +533,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task ProcessTrace_WhenSampled_ReturnsKeep()
+        public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
         {
             var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -561,7 +561,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task ProcessTrace_WhenFilterRejects_ReturnsDroppedByFilter()
+        public async Task ProcessTrace_WhenFilterRejects_ReturnsRejected()
         {
             var filterConfig = new AgentTraceFilterConfig(
                 FilterTagsRequire: null,
@@ -586,7 +586,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task ProcessTrace_WhenFilterKeepsAndSampled_ReturnsKeep()
+        public async Task ProcessTrace_WhenFilterKeepsAndSampled_ReturnsAggregateAndExport()
         {
             // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
             var filterConfig = new AgentTraceFilterConfig(
@@ -613,7 +613,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task ProcessTrace_WhenFilterKeepsAndNotSampled_ReturnsDroppedBySampling()
+        public async Task ProcessTrace_WhenFilterKeepsAndNotSampled_ReturnsAggregateOnly()
         {
             // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
             var filterConfig = new AgentTraceFilterConfig(
