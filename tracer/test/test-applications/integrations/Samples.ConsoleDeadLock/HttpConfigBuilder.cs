@@ -39,9 +39,11 @@ namespace Samples.ConsoleDeadLock
             // GlobalConfigurationSource → blocked on .cctor (held by main thread) → DEADLOCK.
             var task = Task.Run(() =>
             {
+                Console.WriteLine($"[ConfigBuilder] Background thread {Environment.CurrentManagedThreadId} started, about to call WebRequest.Create");
                 try
                 {
                     var request = WebRequest.Create(url);
+                    Console.WriteLine($"[ConfigBuilder] WebRequest created on thread {Environment.CurrentManagedThreadId}, calling GetResponse...");
                     request.Timeout = 5000;
                     using (var response = request.GetResponse())
                     {
@@ -52,6 +54,8 @@ namespace Samples.ConsoleDeadLock
                 {
                     Console.WriteLine($"[ConfigBuilder] HTTP failed on thread {Environment.CurrentManagedThreadId}: {ex.GetType().Name}");
                 }
+
+                Console.WriteLine($"[ConfigBuilder] Background thread {Environment.CurrentManagedThreadId} completed");
             });
 
             // Block the main thread waiting for the background HTTP call.

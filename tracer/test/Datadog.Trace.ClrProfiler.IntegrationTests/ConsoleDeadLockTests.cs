@@ -62,10 +62,6 @@ public class ConsoleDeadLockTests : TestHelper
                     try
                     {
                         var context = listener.GetContext();
-                        // Delay the response so HttpClient's async I/O parks the continuation
-                        // on an IOCP/ThreadPool thread. Without this delay, the response may
-                        // arrive synchronously and never trigger the cross-thread deadlock.
-                        Thread.Sleep(500);
                         context.Response.StatusCode = 200;
                         context.Response.Close();
                     }
@@ -82,6 +78,8 @@ public class ConsoleDeadLockTests : TestHelper
 
         // Enable debug logging so we can see what the tracer is doing
         EnvironmentHelper.CustomEnvironmentVariables["DD_TRACE_DEBUG"] = "1";
+
+        // No workaround - the deadlock is caused by the native profiler's presence
 
         using var agent = EnvironmentHelper.GetMockAgent();
 
@@ -100,10 +98,13 @@ public class ConsoleDeadLockTests : TestHelper
 
         if (!completed && !process.HasExited)
         {
+            // Capture memory dump before killing for thread analysis
+            var dumpTaken = MemoryDumpHelper.CaptureMemoryDump(process);
+            Output.WriteLine($"Memory dump taken: {dumpTaken}");
             process.Kill();
             throw new TimeoutException(
-                "The console app did not exit within 30 seconds — likely deadlocked during tracer initialization. "
-              + $"Stdout: {helper.StandardOutput} | Stderr: {helper.ErrorOutput}");
+                "The console app did not exit within 30 seconds — likely deadlocked. "
+              + $"Memory dump: {dumpTaken} | Stdout: {helper.StandardOutput} | Stderr: {helper.ErrorOutput}");
         }
 
         Output.WriteLine($"Exit code: {process.ExitCode}");
