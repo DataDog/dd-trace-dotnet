@@ -5,6 +5,7 @@ stages:
   - shared-pipeline
   - publish
   - benchmarks
+  # These benchmarks are intended to replace the legacy macrobenchmarks long term
   - dotnet-aspnet-realworld-parallel
   - dotnet-aspnet-realworld-parallel-slo
 
