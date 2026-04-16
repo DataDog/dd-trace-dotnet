@@ -565,7 +565,7 @@ namespace Datadog.Trace.Agent
 
             if (CanComputeStats.Value)
             {
-                Log.Debug("Stats computation has been enabled.");
+                Log.Debug("Stats computation enabled.");
             }
             else
             {
