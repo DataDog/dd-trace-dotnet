@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            const int expectedSpanCount = 52;
+            const int expectedSpanCount = 58;
             var ddTraceMethodsString = string.Empty;
 
             foreach (var type in TestTypes)
@@ -91,6 +91,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Add method with extreme exception handling nesting (APMS-19196 regression test)
             // Must target the sync method which has the EH directly in its body (not in an async state machine)
             ddTraceMethodsString += ";Samples.TraceAnnotations.ExtremeExceptionHandling[DeepNestedExceptionHandlingSync]";
+
+            // Add methods that verify exception handler ordering is preserved after instrumentation.
+            // SameTryMultipleCatch: multiple catch handlers sharing the same try block
+            // FilterAndTypedCatch: filter clauses mixed with typed catches
+            ddTraceMethodsString += ";Samples.TraceAnnotations.ExtremeExceptionHandling[SameTryMultipleCatch,FilterAndTypedCatch]";
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
             // Don't bother with telemetry in version mismatch scenarios because older versions may only support V1 telemetry

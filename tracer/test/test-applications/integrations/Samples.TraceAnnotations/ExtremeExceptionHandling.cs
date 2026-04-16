@@ -23,6 +23,85 @@ namespace Samples.TraceAnnotations
         }
 
         /// <summary>
+        /// Verifies that multiple catch handlers sharing the same try block dispatch
+        /// to the correct handler after instrumentation. The CLR uses the first matching
+        /// handler, so reordering would silently change exception dispatch semantics.
+        /// </summary>
+        public static int SameTryMultipleCatch(Exception ex)
+        {
+            try
+            {
+                throw ex;
+            }
+            catch (ArgumentNullException)
+            {
+                return 1;
+            }
+            catch (InvalidOperationException)
+            {
+                return 2;
+            }
+            catch (Exception)
+            {
+                return 3;
+            }
+        }
+
+        /// <summary>
+        /// Verifies that exception filter clauses mixed with typed catches preserve
+        /// evaluation order after instrumentation. Filters are evaluated sequentially;
+        /// reordering would change which filter matches first.
+        /// </summary>
+        public static int FilterAndTypedCatch(Exception ex)
+        {
+            try
+            {
+                throw ex;
+            }
+            catch (Exception e) when (e is ArgumentNullException)
+            {
+                return 1;
+            }
+            catch (Exception e) when (e is InvalidOperationException)
+            {
+                return 2;
+            }
+            catch (Exception)
+            {
+                return 3;
+            }
+        }
+
+        /// <summary>
+        /// Validates both multi-catch and filter ordering scenarios. Throws if any
+        /// handler dispatches incorrectly, which would fail the integration test.
+        /// </summary>
+        public static void ValidateExceptionHandlerOrdering()
+        {
+            // Multi-catch ordering
+            AssertEqual(1, SameTryMultipleCatch(new ArgumentNullException()), nameof(SameTryMultipleCatch), "ArgumentNullException");
+            AssertEqual(2, SameTryMultipleCatch(new InvalidOperationException()), nameof(SameTryMultipleCatch), "InvalidOperationException");
+            AssertEqual(3, SameTryMultipleCatch(new Exception()), nameof(SameTryMultipleCatch), "Exception");
+
+            // Filter ordering
+            AssertEqual(1, FilterAndTypedCatch(new ArgumentNullException()), nameof(FilterAndTypedCatch), "ArgumentNullException");
+            AssertEqual(2, FilterAndTypedCatch(new InvalidOperationException()), nameof(FilterAndTypedCatch), "InvalidOperationException");
+            AssertEqual(3, FilterAndTypedCatch(new Exception()), nameof(FilterAndTypedCatch), "Exception");
+
+            Console.WriteLine("Exception handler ordering validated successfully");
+        }
+
+        private static void AssertEqual(int expected, int actual, string method, string exceptionType)
+        {
+            if (expected != actual)
+            {
+                throw new InvalidOperationException(
+                    $"{method}({exceptionType}) returned {actual}, expected {expected}. " +
+                    "Exception handler ordering was not preserved after instrumentation.");
+            }
+        }
+
+        /// <summary>
         /// Synchronous method with 9 levels of nested try/catch/finally.
         /// This pattern triggers the EH clause sorting bug when instrumented.
         /// The EH is directly in this method (not in a state machine).
