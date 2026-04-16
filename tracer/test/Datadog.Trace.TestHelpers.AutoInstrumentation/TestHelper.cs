@@ -166,21 +166,21 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
+        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null, TimeSpan? timeout = null)
         {
             var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
             using var helper = new ProcessHelper(process);
 
-            return WaitForProcessResult(helper);
+            return WaitForProcessResult(helper, timeout: timeout);
         }
 
-        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false)
+        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false, TimeSpan? timeout = null)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
             // the whole CI run times out
             var process = helper.Process;
-            var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            var timeoutMs = timeout.HasValue ? (int)timeout.Value.TotalMilliseconds : (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
             var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
 
             var standardOutput = helper.StandardOutput;
