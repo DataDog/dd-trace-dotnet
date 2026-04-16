@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Globalization;
+using System.Threading;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
@@ -106,5 +108,36 @@ public class TraceContextTests_KnuthSamplingRate
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, rate);
 
             traceContext.Tags.GetTag(Tags.Propagated.KnuthSamplingRate).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(0.3f, "0.3")]
+        [InlineData(1.0f, "1")]
+        [InlineData(0.000001f, "0.000001")]
+        [InlineData(0.5f, "0.5")]
+        [InlineData(0.0f, "0")]
+        public void KsrTag_FormattedIndependentOfThreadCulture(float rate, string expected)
+        {
+            var originalCulture = Thread.CurrentThread.CurrentCulture;
+            try
+            {
+                // German culture uses comma as decimal separator
+                Thread.CurrentThread.CurrentCulture = new CultureInfo("de-DE");
+
+                var tracer = new StubDatadogTracer();
+                var traceContext = new TraceContext(tracer);
+
+                traceContext.SetSamplingPriority(
+                    SamplingPriorityValues.AutoKeep,
+                    SamplingMechanism.AgentRate,
+                    rate);
+
+                traceContext.Tags.GetTag(Tags.Propagated.KnuthSamplingRate)
+                    .Should().Be(expected, "KSR formatting must use '.' as decimal separator regardless of thread culture");
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = originalCulture;
+            }
         }
 }
