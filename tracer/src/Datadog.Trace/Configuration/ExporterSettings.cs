@@ -92,9 +92,10 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
-            // In Azure Functions (without AAS Site Extension), generate unique pipe names so each
-            // function instance gets its own pipe even when sharing a hosting plan. The generated names
-            // use the user-configured base name (from any config source) with a unique GUID suffix.
+            // In Azure Functions (without AAS Site Extension), generate unique default pipe names so
+            // each function instance gets its own pipe even when sharing a hosting plan. A
+            // customer-configured pipe name always takes precedence — we only fabricate one when the
+            // customer has not set one themselves.
             string? tracesPipeName;
             string? metricsPipeName;
 
@@ -102,8 +103,12 @@ namespace Datadog.Trace.Configuration
                 && !AzureInfo.Instance.IsUsingSiteExtension
                 && ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport())
             {
-                tracesPipeName = GenerateUniquePipeName(rawSettings.TracesPipeName, "dd_trace", ConfigurationKeys.TracesPipeName);
-                metricsPipeName = GenerateUniquePipeName(rawSettings.MetricsPipeName, "dd_dogstatsd", ConfigurationKeys.MetricsPipeName);
+                tracesPipeName = !StringUtil.IsNullOrEmpty(rawSettings.TracesPipeName)
+                    ? rawSettings.TracesPipeName
+                    : GenerateUniquePipeName("dd_trace", ConfigurationKeys.TracesPipeName);
+                metricsPipeName = !StringUtil.IsNullOrEmpty(rawSettings.MetricsPipeName)
+                    ? rawSettings.MetricsPipeName
+                    : GenerateUniquePipeName("dd_dogstatsd", ConfigurationKeys.MetricsPipeName);
             }
             else
             {
@@ -348,10 +353,9 @@ namespace Datadog.Trace.Configuration
             return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
         }
 
-        private string GenerateUniquePipeName(string? configuredBaseName, string defaultBaseName, string configKey)
+        private string GenerateUniquePipeName(string baseName, string configKey)
         {
-            var baseName = StringUtil.IsNullOrEmpty(configuredBaseName) ? defaultBaseName : configuredBaseName;
-            var name = Serverless.ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, "ExporterSettings");
+            var name = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, "ExporterSettings");
             Log.Information("Azure Functions environment detected. Using pipe base name '{BaseName}', generated unique pipe name: {PipeName}", baseName, name);
             _telemetry.Record(configKey, name, recordValue: true, ConfigurationOrigins.Calculated);
             return name;
