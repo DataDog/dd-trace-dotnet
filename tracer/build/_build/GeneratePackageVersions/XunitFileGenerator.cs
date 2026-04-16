@@ -6,8 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace GeneratePackageVersions
 {
@@ -113,6 +115,89 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, bodyStringBuilder.ToString()));
+        }
+
+        /// <summary>
+        /// Reads the previously-generated xunit file and extracts the version list per
+        /// (integration, target framework). Used by Freeze mode to re-emit the same versions
+        /// without re-querying NuGet -- feeding them back through Write() reproduces identical
+        /// output because the writer is deterministic.
+        /// Returns an empty dictionary if the file does not exist yet.
+        /// </summary>
+        public Dictionary<string, List<(TargetFramework Framework, List<Version> Versions)>> LoadExistingVersions()
+        {
+            var result = new Dictionary<string, List<(TargetFramework, List<Version>)>>();
+            if (!File.Exists(Filename))
+            {
+                return result;
+            }
+
+            // The file is authored by Write() above. Each integration is emitted as:
+            //   public static IEnumerable<object[]> <Integration> =>
+            //       ...
+            //       #if <FX>
+            //           new object[] { "1.2.3" },
+            //       #endif
+            //       ...
+            // A simple line-based scanner mirrors that structure directly.
+            var integrationRegex = new Regex(@"public static IEnumerable<object\[\]> (\w+) =>");
+            var ifRegex = new Regex(@"^\s*#if\s+(\w+)\s*$");
+            var versionRegex = new Regex(@"new object\[\]\s*\{\s*""([^""]+)""\s*\}");
+
+            List<(TargetFramework, List<Version>)> currentIntegration = null;
+            List<Version> currentVersions = null;
+
+            foreach (var line in File.ReadAllLines(Filename))
+            {
+                var integrationMatch = integrationRegex.Match(line);
+                if (integrationMatch.Success)
+                {
+                    currentIntegration = new List<(TargetFramework, List<Version>)>();
+                    result[integrationMatch.Groups[1].Value] = currentIntegration;
+                    currentVersions = null;
+                    continue;
+                }
+
+                if (currentIntegration is null)
+                {
+                    continue;
+                }
+
+                var ifMatch = ifRegex.Match(line);
+                if (ifMatch.Success)
+                {
+                    var token = ifMatch.Groups[1].Value;
+                    if (token == "DEFAULT_SAMPLES")
+                    {
+                        // The DEFAULT_SAMPLES branch contains only "new object[] { string.Empty }"
+                        // which has no version literal for the regex to match; skip entirely.
+                        currentVersions = null;
+                        continue;
+                    }
+
+                    // Convert the preprocessor token (e.g. "NETCOREAPP3_1") back to the
+                    // TargetFramework string Write() consumed (e.g. "netcoreapp3.1").
+                    var frameworkText = token.ToLowerInvariant().Replace('_', '.');
+                    var framework = (TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(frameworkText);
+
+                    currentVersions = new List<Version>();
+                    currentIntegration.Add((framework, currentVersions));
+                    continue;
+                }
+
+                if (currentVersions is null)
+                {
+                    continue;
+                }
+
+                var versionMatch = versionRegex.Match(line);
+                if (versionMatch.Success)
+                {
+                    currentVersions.Add(new Version(versionMatch.Groups[1].Value));
+                }
+            }
+
+            return result;
         }
     }
 }

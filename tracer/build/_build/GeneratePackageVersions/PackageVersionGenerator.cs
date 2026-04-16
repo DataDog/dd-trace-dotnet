@@ -11,25 +11,27 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Logger = Serilog.Log;
 
 namespace GeneratePackageVersions
 {
     public class PackageVersionGenerator
     {
-        private readonly Func<string, bool> _shouldQueryNuGet;
+        private readonly Func<string, CooldownMode> _getCooldownMode;
         private readonly AbsolutePath _definitionsFilePath;
         private readonly PackageGroup _latestMinors;
         private readonly PackageGroup _latestMajors;
         private readonly PackageGroup _latestSpecific;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
         private readonly DateTimeOffset _cutoffDate;
-        private readonly Dictionary<string, List<Version>> _baseline;
+        private readonly Dictionary<string, List<Version>> _previousMaxVersions;
 
         /// <summary>
-        /// The version cache, populated during generation. Entries are added for every
-        /// package that is queried from NuGet. Pre-populated with cached entries on construction.
+        /// NuGet query results from this run, keyed by package name. Not persisted across runs.
+        /// Used to dedup queries when multiple entries share a package name (e.g. split version ranges),
+        /// and so the caller can look up publish dates when logging version bumps.
         /// </summary>
-        public Dictionary<string, List<VersionWithDate>> VersionCache { get; }
+        public Dictionary<string, List<VersionWithDate>> QueriedVersions { get; } = new();
 
         /// <summary>
         /// Report of package versions that were excluded by the cooldown filter.
@@ -40,15 +42,13 @@ namespace GeneratePackageVersions
         public PackageVersionGenerator(
             AbsolutePath tracerDirectory,
             AbsolutePath testProjectDirectory,
-            Func<string, bool> shouldQueryNuGet,
-            Dictionary<string, List<VersionWithDate>> previousVersionCache,
+            Func<string, CooldownMode> getCooldownMode,
             int cooldownDays,
-            Dictionary<string, List<Version>> baseline)
+            Dictionary<string, List<Version>> previousMaxVersions)
         {
-            _shouldQueryNuGet = shouldQueryNuGet;
-            VersionCache = new Dictionary<string, List<VersionWithDate>>(previousVersionCache);
+            _getCooldownMode = getCooldownMode;
             _cutoffDate = DateTimeOffset.UtcNow.AddDays(-cooldownDays);
-            _baseline = baseline;
+            _previousMaxVersions = previousMaxVersions;
             CooldownReport = new CooldownReport(cooldownDays);
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
@@ -81,33 +81,54 @@ namespace GeneratePackageVersions
 
             foreach (var entry in entries)
             {
+                var mode = _getCooldownMode(entry.NugetPackageSearchName);
                 var project = solution.GetProject(entry.SampleProjectName);
+
                 var supportedTargetFrameworks = project
                                                .GetTargetFrameworks()
                                                .Select(x => (TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(x));
-
                 var requiresDockerDependency = project.RequiresDockerDependency().ToString();
 
-                // Get all versions for this package (unfiltered), using cache when possible
-                List<VersionWithDate> allPackageVersions;
-                if (!_shouldQueryNuGet(entry.NugetPackageSearchName)
-                    && VersionCache.TryGetValue(entry.NugetPackageSearchName, out var cached))
+                // Freeze: re-emit whatever versions were in the previous output, without re-querying NuGet.
+                // We look them up from the xunit files (the narrowest, most regular format) and feed
+                // them back through Write() -- the generators are deterministic, so identical inputs
+                // reproduce identical output. If the previous output is missing (e.g. a newly-added
+                // entry), fall through to Normal so we don't silently drop it.
+                if (mode is CooldownMode.Freeze
+                    && _latestMinors.TryGetFrozenVersions(entry.IntegrationName, out var frozenMinors)
+                    && _latestMajors.TryGetFrozenVersions(entry.IntegrationName, out var frozenMajors)
+                    && _latestSpecific.TryGetFrozenVersions(entry.IntegrationName, out var frozenSpecific))
                 {
-                    allPackageVersions = cached;
+                    _latestMinors.Write(entry, frozenMinors, requiresDockerDependency);
+                    _latestMajors.Write(entry, frozenMajors, requiresDockerDependency);
+                    _latestSpecific.Write(entry, frozenSpecific, requiresDockerDependency);
+                    _strategyGenerator.Write(entry, null, requiresDockerDependency);
+                    continue;
                 }
-                else
+
+                if (mode is CooldownMode.Freeze)
+                {
+                    Logger.Warning(
+                        "Freeze requested for {Package} ({Integration}) but no existing output was found; generating fresh",
+                        entry.NugetPackageSearchName,
+                        entry.IntegrationName);
+                    mode = CooldownMode.Normal;
+                }
+
+                // Get all versions for this package (unfiltered), dedup across entries that share a package name
+                if (!QueriedVersions.TryGetValue(entry.NugetPackageSearchName, out var allPackageVersions))
                 {
                     allPackageVersions = await NuGetPackageHelper.GetAllNugetPackageVersions(entry.NugetPackageSearchName);
-                    VersionCache[entry.NugetPackageSearchName] = allPackageVersions;
+                    QueriedVersions[entry.NugetPackageSearchName] = allPackageVersions;
                 }
 
-                // Filter to this entry's version range
+                // Filter to this entry's version range, then (for Normal) remove recently-published versions.
+                // BypassCooldown mode skips the cooldown filter entirely.
                 var packageVersions = NuGetPackageHelper.FilterVersions(allPackageVersions, entry);
-
-                // Build a publish-date lookup for cooldown filtering
-                var publishDateLookup = packageVersions
-                    .GroupBy(v => v.Version)
-                    .ToDictionary(g => g.Key, g => g.First().Published);
+                if (mode is CooldownMode.Normal)
+                {
+                    packageVersions = ApplyCooldown(entry, packageVersions);
+                }
 
                 var orderedPackageVersions =
                     packageVersions
@@ -121,11 +142,6 @@ namespace GeneratePackageVersions
                     where IsSupported(entry, version.ToString(), framework)
                     select (version, framework))
                    .ToList();
-
-                // Apply cooldown once on the full version list before selection.
-                // This removes versions within the cooldown period (unless already at/below baseline)
-                // so that SelectMax/SelectPackagesFromGlobs never see them.
-                orderedWithFramework = ApplyCooldown(entry, orderedWithFramework, publishDateLookup);
 
                 // Add the last for every minor
                 var latestMajors = SelectMax(orderedWithFramework, v => v.Major).ToList();
@@ -164,73 +180,48 @@ namespace GeneratePackageVersions
         }
 
         /// <summary>
-        /// Applies cooldown filtering to the full ordered version list. For each version published
-        /// within the cooldown period, checks if it was already accepted (at or below baseline).
-        /// If already accepted, keeps it. Otherwise, removes it so that downstream selection
-        /// (SelectMax/SelectPackagesFromGlobs) naturally picks the next-best version.
-        /// Removed versions are recorded in CooldownReport.
+        /// Drops versions that were published too recently to have been vetted, recording each
+        /// dropped version in the cooldown report. Versions at or below the previous max (the highest
+        /// version we shipped against in a prior run for this entry's range) are kept regardless,
+        /// so the cooldown never downgrades an already-tested version.
+        /// Only called for CooldownMode.Normal entries; Freeze and BypassCooldown are handled by the caller.
         /// </summary>
-        private List<(Version version, TargetFramework framework)> ApplyCooldown(
-            PackageVersionEntry entry,
-            List<(Version version, TargetFramework framework)> orderedVersions,
-            Dictionary<string, DateTimeOffset?> publishDateLookup)
+        private List<VersionWithDate> ApplyCooldown(PackageVersionEntry entry, List<VersionWithDate> versions)
         {
-            var baselineVersion = FindBaselineForEntry(entry);
+            var previousMax = FindPreviousMaxForEntry(entry);
+            var result = new List<VersionWithDate>();
 
-            var result = new List<(Version version, TargetFramework framework)>();
-
-            foreach (var (version, framework) in orderedVersions)
+            foreach (var v in versions)
             {
-                var versionKey = version.ToString();
-                publishDateLookup.TryGetValue(versionKey, out var publishedDate);
+                var publishedTooRecently = WasPublishedTooRecently(v.Published);
+                var atOrBelowPreviousMax = previousMax is not null && new Version(v.Version) <= previousMax;
 
-                if (!IsWithinCooldown(publishedDate))
+                if (publishedTooRecently && !atOrBelowPreviousMax)
                 {
-                    // Outside cooldown -- always accept
-                    result.Add((version, framework));
-                    continue;
+                    CooldownReport.Add(new CooldownReport.CooldownEntry(
+                        entry.NugetPackageSearchName,
+                        entry.IntegrationName,
+                        v.Version,
+                        v.Published));
                 }
-
-                if (baselineVersion is not null && version <= baselineVersion)
+                else
                 {
-                    // Within cooldown but already accepted in a previous run -- keep it
-                    result.Add((version, framework));
-                    continue;
+                    result.Add(v);
                 }
-
-                // Within cooldown and above baseline -- remove from the list.
-                // The best fallback is whatever SelectMax ends up picking from the remaining versions.
-                // Find what that would be for reporting purposes.
-                var fallback = orderedVersions
-                    .Where(v => v.framework == framework && v.version < version)
-                    .Select(v => v.version)
-                    .OrderByDescending(v => v)
-                    .FirstOrDefault(v =>
-                    {
-                        publishDateLookup.TryGetValue(v.ToString(), out var d);
-                        return !IsWithinCooldown(d) || (baselineVersion is not null && v <= baselineVersion);
-                    });
-
-                CooldownReport.Add(new CooldownReport.CooldownEntry(
-                    entry.NugetPackageSearchName,
-                    entry.IntegrationName,
-                    versionKey,
-                    publishedDate,
-                    fallback?.ToString()));
             }
 
             return result;
         }
 
         /// <summary>
-        /// Finds the baseline version for the given entry by selecting the highest previously tested
-        /// version that falls within the entry's [MinVersion, MaxVersionExclusive) range.
-        /// This prevents a high baseline from one version range (e.g., 8.x in 7.0-9.0) from
-        /// suppressing cooldown checks in a different range (e.g., 4.1-6.0) for the same package.
+        /// Returns the highest previously-tested version for the given entry, restricted to its
+        /// [MinVersion, MaxVersionExclusive) range. The range restriction matters for split-range
+        /// packages (e.g. GraphQL 4.x-6.x and 7.x-9.x): a high max from the 7.x-9.x entry must not
+        /// suppress cooldown checks on the 4.x-6.x entry.
         /// </summary>
-        private Version FindBaselineForEntry(PackageVersionEntry entry)
+        private Version FindPreviousMaxForEntry(PackageVersionEntry entry)
         {
-            if (!_baseline.TryGetValue(entry.NugetPackageSearchName, out var versions))
+            if (!_previousMaxVersions.TryGetValue(entry.NugetPackageSearchName, out var versions))
             {
                 return null;
             }
@@ -244,9 +235,9 @@ namespace GeneratePackageVersions
                 .FirstOrDefault();
         }
 
-        private bool IsWithinCooldown(DateTimeOffset? publishedDate)
+        private bool WasPublishedTooRecently(DateTimeOffset? publishedDate)
         {
-            // Null published date means the package predates NuGet tracking -- treat as safe
+            // Null published date means the package predates NuGet's publish-date tracking -- treat as old.
             return publishedDate.HasValue && publishedDate.Value > _cutoffDate;
         }
 
@@ -357,18 +348,33 @@ namespace GeneratePackageVersions
         {
             private readonly MSBuildPropsFileGenerator _msBuildPropsFileGenerator;
             private readonly XUnitFileGenerator _xUnitFileGenerator;
+            private readonly Dictionary<string, List<(TargetFramework Framework, List<Version> Versions)>> _frozenVersions;
 
             public PackageGroup(string propsDirectory, string testDirectoryPath, string postfix)
             {
                 var className = $"PackageVersions{postfix}";
+                var propsFilename = Path.Combine(propsDirectory, $"PackageVersions{postfix}.g.props");
+                var xunitFilename = Path.Combine(testDirectoryPath, $"PackageVersions{postfix}.g.cs");
 
-                var outputPackageVersionsPropsFilename = Path.Combine(propsDirectory, $"PackageVersions{postfix}.g.props");
+                _msBuildPropsFileGenerator = new MSBuildPropsFileGenerator(propsFilename);
+                _xUnitFileGenerator = new XUnitFileGenerator(xunitFilename, className);
 
-                var outputPackageVersionsXunitFilename = Path.Combine(testDirectoryPath, $"PackageVersions{postfix}.g.cs");
+                // Load before Start() overwrites anything, so Freeze can recover the previous versions.
+                _frozenVersions = _xUnitFileGenerator.LoadExistingVersions();
+            }
 
-                _msBuildPropsFileGenerator = new MSBuildPropsFileGenerator(outputPackageVersionsPropsFilename);
+            public bool TryGetFrozenVersions(
+                string integrationName,
+                out IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions)
+            {
+                if (_frozenVersions.TryGetValue(integrationName, out var loaded))
+                {
+                    versions = loaded.Select(x => (x.Framework, (IEnumerable<Version>)x.Versions)).ToList();
+                    return true;
+                }
 
-                _xUnitFileGenerator = new XUnitFileGenerator(outputPackageVersionsXunitFilename, className);
+                versions = null;
+                return false;
             }
 
             public void Start()
