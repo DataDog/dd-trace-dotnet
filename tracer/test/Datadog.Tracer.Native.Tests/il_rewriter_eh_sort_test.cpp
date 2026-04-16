@@ -328,6 +328,74 @@ TEST(ILRewriterEHSortTest, SameTryMultipleCatchPreservesOrder)
 }
 
 // ============================================================================
+// Test: exception filter clauses mixed with typed catches -- order preserved
+//
+// Models:  try { throw ex; }
+//          catch (Exception ex) when (ex is ArgumentNullException) { return 1; }  // filter
+//          catch (Exception ex) when (ex is InvalidOperationException) { return 2; }  // filter
+//          catch (Exception) { return 3; }  // typed catch
+//
+// Filter clauses use COR_ILEXCEPTION_CLAUSE_FILTER and have a filter region
+// before the handler. All three share the same try [10,50). Order must be
+// preserved because the runtime evaluates filters sequentially.
+// ============================================================================
+TEST(ILRewriterEHSortTest, FilterAndTypedCatchPreservesOrder)
+{
+    //  10       = try begin
+    //  50       = try end / filter1 begin
+    //  58       = handler1 begin (endfilter lands here)
+    //  63       = handler1 last instr
+    //  68       = filter2 begin
+    //  75       = handler2 begin
+    //  80       = handler2 last instr
+    //  85       = handler3 begin (typed catch)
+    //  90       = handler3 last instr
+    //  95       = after everything
+    auto* instrs = MakeInstrChain({10, 50, 58, 63, 68, 75, 80, 85, 90, 95});
+    const size_t instrCount = 10;
+
+    EHClause clauses[3];
+    memset(clauses, 0, sizeof(clauses));
+
+    // Filter clause 1 -- try [10,50), filter at 50, handler [58,63)
+    clauses[0].m_Flags = COR_ILEXCEPTION_CLAUSE_FILTER;
+    clauses[0].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[0].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[0].m_pFilter = FindInstr(instrs, instrCount, 50);
+    clauses[0].m_pHandlerBegin = FindInstr(instrs, instrCount, 58);
+    clauses[0].m_pHandlerEnd = FindInstr(instrs, instrCount, 63); // m_pNext = 68
+
+    // Filter clause 2 -- try [10,50), filter at 68, handler [75,80)
+    clauses[1].m_Flags = COR_ILEXCEPTION_CLAUSE_FILTER;
+    clauses[1].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[1].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[1].m_pFilter = FindInstr(instrs, instrCount, 68);
+    clauses[1].m_pHandlerBegin = FindInstr(instrs, instrCount, 75);
+    clauses[1].m_pHandlerEnd = FindInstr(instrs, instrCount, 80); // m_pNext = 85
+
+    // Typed catch -- try [10,50), handler [85,90)
+    clauses[2].m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    clauses[2].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[2].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[2].m_pHandlerBegin = FindInstr(instrs, instrCount, 85);
+    clauses[2].m_pHandlerEnd = FindInstr(instrs, instrCount, 90); // m_pNext = 95
+
+    ILRewriter::SortEHClauses(clauses, 3);
+
+    // Same try, same depth -- original order must be preserved regardless of clause type.
+    EXPECT_EQ(clauses[0].m_pHandlerBegin->m_offset, 58u);  // filter 1
+    EXPECT_EQ(clauses[1].m_pHandlerBegin->m_offset, 75u);  // filter 2
+    EXPECT_EQ(clauses[2].m_pHandlerBegin->m_offset, 85u);  // typed catch
+
+    // Also verify flags are in expected order (filter, filter, typed)
+    EXPECT_EQ(clauses[0].m_Flags, COR_ILEXCEPTION_CLAUSE_FILTER);
+    EXPECT_EQ(clauses[1].m_Flags, COR_ILEXCEPTION_CLAUSE_FILTER);
+    EXPECT_EQ(clauses[2].m_Flags, COR_ILEXCEPTION_CLAUSE_NONE);
+
+    delete[] instrs;
+}
+
+// ============================================================================
 // Test: single clause -- no sorting needed, should not crash
 // ============================================================================
 TEST(ILRewriterEHSortTest, SingleClause)
