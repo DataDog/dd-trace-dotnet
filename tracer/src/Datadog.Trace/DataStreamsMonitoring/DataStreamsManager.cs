@@ -299,7 +299,7 @@ internal sealed class DataStreamsManager
         try
         {
             var previousContext = parentPathway;
-            if (previousContext == null && LastConsumePathway.Value != null && checkpointKind == CheckpointKind.Produce)
+            if (previousContext == null && checkpointKind == CheckpointKind.Produce)
             {
                 // We only enter here on produce: when we consume, the only thing that matters is the parent we'd have read from the inbound message, not what happened before.
                 // We want to use the context from the previous consume (but we'll give priority to the parent passed in param if set).
@@ -395,6 +395,34 @@ internal sealed class DataStreamsManager
         where TKey : notnull, IEquatable<TKey>
     {
         var cache = EdgeTagCache<TKey>.Cache;
+        if (cache.TryGetValue(key, out var existing))
+        {
+            return existing;
+        }
+
+        if (cache.Count >= MaxEdgeTagCacheSize)
+        {
+            // High-cardinality key space — bypass cache to prevent unbounded memory growth
+            return factory(key);
+        }
+
+        return cache.GetOrAdd(key, factory);
+    }
+
+    /// <summary>
+    /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
+    /// On cache hits, zero heap allocations occur. The factory is only invoked on the first call
+    /// per unique key, making this safe to use on high-throughput hot paths.
+    /// Once the cache reaches <see cref="MaxEdgeTagCacheSize"/> entries the result is computed
+    /// fresh each time (no caching) to bound memory usage for high-cardinality key spaces.
+    /// </summary>
+    /// <typeparam name="TKey">A value type (struct) used as the cache key — no boxing.</typeparam>
+    /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
+    /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
+    public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
+        where TKey : notnull, IEquatable<TKey>
+    {
+        var cache = BacklogTagCache<TKey>.Cache;
         if (cache.TryGetValue(key, out var existing))
         {
             return existing;
