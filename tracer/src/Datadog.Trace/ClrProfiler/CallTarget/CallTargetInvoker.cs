@@ -683,7 +683,7 @@ public static class CallTargetInvoker
         // in some scenarios that we definitely _shouldn't_ be running here, so
         // strictly checking _isIisPreStartInitComplete instead.
 #if NETFRAMEWORK
-        if (!IsRunningInPartialTrust && _isIisPreStartInitComplete)
+        if (!IsRunningInPartialTrust && _isIisPreStartInitComplete && Instrumentation.IsInitializationComplete)
 #endif
         {
             IntegrationOptions<TIntegration, TTarget>.LogException(exception);
@@ -721,7 +721,7 @@ public static class CallTargetInvoker
 
         if (_isIisPreStartInitComplete)
         {
-            return true;
+            return Instrumentation.IsInitializationComplete;
         }
 
         var boolState = AppDomain.CurrentDomain.GetData(NamedSlotName);

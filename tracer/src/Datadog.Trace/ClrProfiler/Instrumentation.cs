@@ -43,12 +43,23 @@ namespace Datadog.Trace.ClrProfiler
 
         private static int _firstNonNativePartsInitialization = 1;
 
+        private static int _initializationComplete;
+
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
         /// </summary>
         public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
+
+        /// <summary>
+        /// Gets a value indicating whether the Tracer has finished initial initialization.
+        /// </summary>
+        public static bool IsInitializationComplete
+        {
+            get => Volatile.Read(ref _initializationComplete) == 1;
+            private set => Volatile.Write(ref _initializationComplete, value ? 1 : 0);
+        }
 
         /// <summary>
         /// Gets a value indicating the version of the native Datadog profiler. This method
@@ -223,12 +234,14 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Initialization finished.");
 
                 TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, swTotal.ElapsedMilliseconds);
+                IsInitializationComplete = true;
             }
             catch (Exception ex)
             {
                 // if we're in SSI we want to be as safe as possible, so catching to avoid the possibility of a crash
                 try
                 {
+                    IsInitializationComplete = true;
                     Log.Error(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
                     return;
                 }
