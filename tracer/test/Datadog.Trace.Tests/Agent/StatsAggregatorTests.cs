@@ -512,7 +512,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var dropReason = aggregator.ProcessTrace(ref traceChunk);
-            dropReason.Should().Be(TraceKeepState.Keep);
+            dropReason.Should().Be(TraceKeepState.AggregateAndExport);
         }
 
         [Fact]
@@ -529,7 +529,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var dropReason = aggregator.ProcessTrace(ref traceChunk);
-            dropReason.Should().Be(TraceKeepState.DroppedBySampling);
+            dropReason.Should().Be(TraceKeepState.AggregateOnly);
         }
 
         [Fact]
@@ -552,7 +552,7 @@ namespace Datadog.Trace.Tests.Agent
             span.ServiceName.Should().BeEmpty();
             var traceChunk = new SpanCollection([span]);
             var result = aggregator.ProcessTrace(ref traceChunk);
-            result.Should().Be(TraceKeepState.Keep);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
             traceChunk.Count.Should().Be(1);
             // normalized
             span.ServiceName.Should().NotBeEmpty();
@@ -582,7 +582,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var result = aggregator.ProcessTrace(ref traceChunk);
-            result.Should().Be(TraceKeepState.DroppedByFilter);
+            result.Should().Be(TraceKeepState.Rejected);
         }
 
         [Fact]
@@ -609,7 +609,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var result = aggregator.ProcessTrace(ref traceChunk);
-            result.Should().Be(TraceKeepState.Keep);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
         }
 
         [Fact]
@@ -636,7 +636,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new SpanCollection([span]);
             var result = aggregator.ProcessTrace(ref traceChunk);
-            result.Should().Be(TraceKeepState.DroppedBySampling);
+            result.Should().Be(TraceKeepState.AggregateOnly);
         }
 
         [Fact]

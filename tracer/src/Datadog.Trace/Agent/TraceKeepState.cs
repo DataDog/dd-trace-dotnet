@@ -13,17 +13,17 @@ namespace Datadog.Trace.Agent;
 internal enum TraceKeepState
 {
     /// <summary>
-    /// The trace chunk should be kept.
+    /// The trace chunk should be kept, aggregated for stats, and exported to the intake.
     /// </summary>
-    Keep,
+    AggregateAndExport,
 
     /// <summary>
-    /// The trace chunk was filtered using trace filtering, and should not be aggregated.
+    /// The trace chunk was filtered using trace filtering, and should not be aggregated or exported.
     /// </summary>
-    DroppedByFilter,
+    Rejected,
 
     /// <summary>
     /// The trace chunk was sampled out. Stats should be aggregated, but the chunk should be dropped.
     /// </summary>
-    DroppedBySampling,
+    AggregateOnly,
 }

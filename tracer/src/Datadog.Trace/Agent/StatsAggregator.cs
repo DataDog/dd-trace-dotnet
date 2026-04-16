@@ -153,16 +153,16 @@ namespace Datadog.Trace.Agent
             spans = NormalizeTrace(in spans);
             if (ShouldFilterTrace(in spans))
             {
-                return TraceKeepState.DroppedByFilter;
+                return TraceKeepState.Rejected;
             }
 
             spans = ObfuscateTrace(in spans);
             if (!ShouldKeepTrace(in spans))
             {
-                return TraceKeepState.DroppedBySampling;
+                return TraceKeepState.AggregateOnly;
             }
 
-            return TraceKeepState.Keep; // keep
+            return TraceKeepState.AggregateAndExport; // keep
         }
 
         [TestingAndPrivateOnly]
