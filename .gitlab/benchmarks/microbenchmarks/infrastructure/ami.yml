@@ -9,8 +9,8 @@ init_environment:
   DOTNET_SDK_VERSIONS: "6.0.428,3.1.426,10.0.100"
 
 source_ami:
-  # From https://github.com/DataDog/benchmarking-platform-tools/tree/main/bp-infra/src/provisions/windows/apm-managed-windows-tweaked-metal.yaml
-  ami_id_ssm_parameter: "/windows-benchmarking/apm-managed-windows-tweaked-metal-ami-id"
+  # From https://github.com/DataDog/benchmarking-platform-tools/tree/main/bp-infra/src/provisions/windows/apm-windows-tweaked-metal.yaml
+  ami_id_ssm_parameter: "/windows-benchmarking/apm-windows-tweaked-metal-ami-id"
 
 create_ami:
   ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id"
