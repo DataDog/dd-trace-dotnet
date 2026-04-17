@@ -2055,19 +2055,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #if NET9_0
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #if NET10_0
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #endif
             };
@@ -2119,19 +2119,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #if NET9_0
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #if NET10_0
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #endif
             };
@@ -2183,19 +2183,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #if NET9_0
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #if NET10_0
                 new object[] { "2.0.0" },
                 new object[] { "2.2.10" },
                 new object[] { "3.11.1" },
-                new object[] { "4.1.0" },
+                new object[] { "4.2.1" },
 #endif
 #endif
             };
