@@ -59,13 +59,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // and KafkaProduceSyncIntegration.OnMethodEnd, so the consumer span is active for the duration of this integration
                 var activeScope = Tracer.Instance?.InternalActiveScope;
                 var span = activeScope?.Span;
-                if (span is null)
+                if (span is not Span sp)
                 {
                     Logger.Warning("Unexpected null span for Kafka Producer with delivery handler");
                     return CallTargetState.GetDefault();
                 }
 
-                var newAction = CachedWrapperDelegate<TActionOfDeliveryReport>.CreateWrapper(handler, span);
+                var newAction = CachedWrapperDelegate<TActionOfDeliveryReport>.CreateWrapper(handler, sp);
 
                 Action<ITypedDeliveryHandlerShimAction> updateHandlerAction = inst => inst.Handler = newAction;
 

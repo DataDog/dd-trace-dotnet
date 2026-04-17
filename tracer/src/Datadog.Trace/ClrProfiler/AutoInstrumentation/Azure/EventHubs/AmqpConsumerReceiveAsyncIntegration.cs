@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 public sealed class AmqpConsumerReceiveAsyncIntegration
 {
     private const string OperationName = "receive";
-    private const string SpanOperationName = "azure_eventhubs." + OperationName;
+    // private const string SpanOperationName = "azure_eventhubs." + OperationName;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AmqpConsumerReceiveAsyncIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maximumEventCount, TimeSpan? maximumWaitTime, CancellationToken cancellationToken)
@@ -119,37 +119,37 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         tags.MessagingOperation = OperationName;
 
         var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureEventHubs);
-        var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, links: spanLinks);
-        var span = scope.Span;
+        // var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, links: spanLinks);
+        // var span = scope.Span;
+        //
+        // var eventHubName = consumerInstance.EventHubName;
+        // span.Type = SpanTypes.Queue;
+        // span.ResourceName = eventHubName;
+        //
+        // if (messageCount > 1)
+        // {
+        //     tags.MessagingBatchMessageCount = messageCount.ToString();
+        // }
+        //
+        // if (messageCount == 1)
+        // {
+        //     var eventObj = events[0];
+        //     if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true &&
+        //         !string.IsNullOrEmpty(eventData.MessageId))
+        //     {
+        //         tags.MessagingMessageId = eventData.MessageId;
+        //     }
+        // }
+        //
+        // var endpoint = consumerInstance.ConnectionScope?.ServiceEndpoint;
+        // if (endpoint != null)
+        // {
+        //     tags.ServerAddress = endpoint.Host;
+        // }
+        //
+        // tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
 
-        var eventHubName = consumerInstance.EventHubName;
-        span.Type = SpanTypes.Queue;
-        span.ResourceName = eventHubName;
-
-        if (messageCount > 1)
-        {
-            tags.MessagingBatchMessageCount = messageCount.ToString();
-        }
-
-        if (messageCount == 1)
-        {
-            var eventObj = events[0];
-            if (eventObj?.TryDuckCast<IEventData>(out var eventData) == true &&
-                !string.IsNullOrEmpty(eventData.MessageId))
-            {
-                tags.MessagingMessageId = eventData.MessageId;
-            }
-        }
-
-        var endpoint = consumerInstance.ConnectionScope?.ServiceEndpoint;
-        if (endpoint != null)
-        {
-            tags.ServerAddress = endpoint.Host;
-        }
-
-        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventHubs);
-
-        return scope;
+        return null;
     }
 
     private static void ReinjectContextIntoMessages(Tracer tracer, Scope scope, IReadOnlyList<object> eventsList)

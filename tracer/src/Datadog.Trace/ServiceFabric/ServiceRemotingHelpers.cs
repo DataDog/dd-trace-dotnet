@@ -96,91 +96,92 @@ namespace Datadog.Trace.ServiceFabric
             IServiceRemotingRequestEventArgs? eventArgs,
             IServiceRemotingRequestMessageHeader? messageHeader)
         {
-            string? methodName = null;
-            string? resourceName = null;
-            string? serviceUrl = null;
-            string? remotingServiceName = null;
-
-            string serviceFabricServiceName = PlatformHelpers.ServiceFabric.ServiceName;
-
-            if (eventArgs != null)
-            {
-                methodName = eventArgs.MethodName ??
-                             messageHeader?.MethodName ??
-                             messageHeader?.MethodId.ToString(CultureInfo.InvariantCulture) ??
-                             "unknown_method";
-
-                serviceUrl = eventArgs.ServiceUri?.AbsoluteUri;
-                resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
-                remotingServiceName = serviceUrl?.StartsWith("fabric:/") == true ? serviceUrl.Substring(8) : null;
-            }
-
-            tags.ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId;
-            tags.ApplicationName = PlatformHelpers.ServiceFabric.ApplicationName;
-            tags.PartitionId = PlatformHelpers.ServiceFabric.PartitionId;
-            tags.NodeId = PlatformHelpers.ServiceFabric.NodeId;
-            tags.NodeName = PlatformHelpers.ServiceFabric.NodeName;
-            tags.ServiceName = serviceFabricServiceName;
-            tags.RemotingUri = serviceUrl;
-            tags.RemotingServiceName = remotingServiceName;
-            tags.RemotingMethodName = methodName;
-
-            if (messageHeader != null)
-            {
-                tags.RemotingMethodId = messageHeader.MethodId.ToString(CultureInfo.InvariantCulture);
-                tags.RemotingInterfaceId = messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture);
-                tags.RemotingInvocationId = messageHeader.InvocationId;
-            }
-
-            Span span = tracer.StartSpan(GetOperationName(tracer, tags.SpanKind), tags, context);
-            span.ResourceName = resourceName;
-            tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ServiceRemotingConstants.IntegrationId);
-
-            return span;
+            // string? methodName = null;
+            // string? resourceName = null;
+            // string? serviceUrl = null;
+            // string? remotingServiceName = null;
+            //
+            // string serviceFabricServiceName = PlatformHelpers.ServiceFabric.ServiceName;
+            //
+            // if (eventArgs != null)
+            // {
+            //     methodName = eventArgs.MethodName ??
+            //                  messageHeader?.MethodName ??
+            //                  messageHeader?.MethodId.ToString(CultureInfo.InvariantCulture) ??
+            //                  "unknown_method";
+            //
+            //     serviceUrl = eventArgs.ServiceUri?.AbsoluteUri;
+            //     resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
+            //     remotingServiceName = serviceUrl?.StartsWith("fabric:/") == true ? serviceUrl.Substring(8) : null;
+            // }
+            //
+            // tags.ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId;
+            // tags.ApplicationName = PlatformHelpers.ServiceFabric.ApplicationName;
+            // tags.PartitionId = PlatformHelpers.ServiceFabric.PartitionId;
+            // tags.NodeId = PlatformHelpers.ServiceFabric.NodeId;
+            // tags.NodeName = PlatformHelpers.ServiceFabric.NodeName;
+            // tags.ServiceName = serviceFabricServiceName;
+            // tags.RemotingUri = serviceUrl;
+            // tags.RemotingServiceName = remotingServiceName;
+            // tags.RemotingMethodName = methodName;
+            //
+            // if (messageHeader != null)
+            // {
+            //     tags.RemotingMethodId = messageHeader.MethodId.ToString(CultureInfo.InvariantCulture);
+            //     tags.RemotingInterfaceId = messageHeader.InterfaceId.ToString(CultureInfo.InvariantCulture);
+            //     tags.RemotingInvocationId = messageHeader.InvocationId;
+            // }
+            //
+            // Span span = tracer.StartSpan(GetOperationName(tracer, tags.SpanKind), tags, context);
+            // span.ResourceName = resourceName;
+            // tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            // tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ServiceRemotingConstants.IntegrationId);
+            //
+            // return span;
+            return null!;
         }
 
         public static void FinishSpan(EventArgs? e, string spanKind)
         {
-            try
-            {
-                var scope = Tracer.Instance.InternalActiveScope;
-
-                if (scope == null)
-                {
-                    Log.Warning("Expected an active scope, but there is none.");
-                    return;
-                }
-
-                string expectedSpanName = GetOperationName(Tracer.Instance, spanKind);
-
-                if (expectedSpanName != scope.Span.OperationName)
-                {
-                    Log.Warning("Expected span name {ExpectedSpanName}, but found {ActualSpanName} instead.", expectedSpanName, scope.Span.OperationName);
-                    return;
-                }
-
-                try
-                {
-                    var eventArgs = e?.DuckAs<IServiceRemotingFailedResponseEventArgs>();
-                    var exception = eventArgs?.Error;
-
-                    if (exception != null)
-                    {
-                        scope.Span?.SetException(exception);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error setting exception tags on span.");
-                }
-
-                scope.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error accessing or finishing active span.");
-            }
+            // try
+            // {
+            //     var scope = Tracer.Instance.InternalActiveScope;
+            //
+            //     if (scope == null)
+            //     {
+            //         Log.Warning("Expected an active scope, but there is none.");
+            //         return;
+            //     }
+            //
+            //     string expectedSpanName = GetOperationName(Tracer.Instance, spanKind);
+            //
+            //     if (expectedSpanName != scope.Span.OperationName)
+            //     {
+            //         Log.Warning("Expected span name {ExpectedSpanName}, but found {ActualSpanName} instead.", expectedSpanName, scope.Span.OperationName);
+            //         return;
+            //     }
+            //
+            //     try
+            //     {
+            //         var eventArgs = e?.DuckAs<IServiceRemotingFailedResponseEventArgs>();
+            //         var exception = eventArgs?.Error;
+            //
+            //         if (exception != null)
+            //         {
+            //             scope.Span?.SetException(exception);
+            //         }
+            //     }
+            //     catch (Exception ex)
+            //     {
+            //         Log.Error(ex, "Error setting exception tags on span.");
+            //     }
+            //
+            //     scope.Dispose();
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error accessing or finishing active span.");
+            // }
         }
 
         internal static string GetOperationName(Tracer tracer, string spanKind)

@@ -79,7 +79,7 @@ namespace Datadog.Trace.AppSec
 
             if (security.AppsecEnabled)
             {
-                var securityTransport = SecurityCoordinator.Get(security, scope.Span!, context);
+                var securityTransport = SecurityCoordinator.Get(security, (Span)scope.Span!, context);
                 if (!securityTransport.IsBlocked)
                 {
                     var inputData = new Dictionary<string, object>();

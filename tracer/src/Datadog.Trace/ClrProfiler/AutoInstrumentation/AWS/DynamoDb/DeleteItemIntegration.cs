@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             try
             {
                 var keys = request.Keys.DuckCast<IDynamoDbKeysObject>();
-                SpanPointers.AddDynamoDbSpanPointer(scope.Span, tableName, keys);
+                // SpanPointers.AddDynamoDbSpanPointer(scope.Span, tableName, keys);
             }
             catch (Exception exception)
             {

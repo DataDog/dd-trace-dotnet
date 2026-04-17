@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             where TResponse : ICreateQueueResponse
         {
             if (response.Instance is not null
-                && state.Scope?.Span.Tags is AwsSqsTags tags)
+             && state.Scope?.Span is Span { Tags: AwsSqsTags tags })
             {
                 tags.QueueUrl = response.QueueUrl;
             }

@@ -43,36 +43,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                 if (state.State != null && state.State.TryDuckCast<IMqMessage>(out var msg))
                 {
                     var scope = IbmMqHelper.CreateConsumerScope(Tracer.Instance, state.StartTime, instance, msg);
-                    var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                    if (dataStreams.IsEnabled && exception == null && scope != null)
-                    {
-                        var adapter = IbmMqHelper.GetHeadersAdapter(msg);
-                        PathwayContext? pathwayContext = null;
-                        try
-                        {
-                            pathwayContext = dataStreams.ExtractPathwayContextAsBase64String(adapter);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error extracting PathwayContext from IbmMq message");
-                        }
-
-                        var queueName = IbmMqHelper.SanitizeQueueName(instance.Name);
-                        var edgeTags = dataStreams.GetOrCreateEdgeTags(
-                            new IbmMqEdgeTagCacheKey(queueName, IsConsume: true),
-                            static k => ["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]);
-
-                        scope.Span.SetDataStreamsCheckpoint(
-                            dataStreams,
-                            CheckpointKind.Consume,
-                            edgeTags,
-                            msg.MessageLength,
-                            timeInQueueMs: 0,
-                            pathwayContext);
-                        // we need to inject new context, since message objects can theoretically be reused
-                        // hence we need to make sure the parent hash changes properly
-                        dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, IbmMqHelper.GetHeadersAdapter(msg));
-                    }
+                    // var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                    // if (dataStreams.IsEnabled && exception == null && scope != null)
+                    // {
+                    //     var adapter = IbmMqHelper.GetHeadersAdapter(msg);
+                    //     PathwayContext? pathwayContext = null;
+                    //     try
+                    //     {
+                    //         pathwayContext = dataStreams.ExtractPathwayContextAsBase64String(adapter);
+                    //     }
+                    //     catch (Exception ex)
+                    //     {
+                    //         Log.Error(ex, "Error extracting PathwayContext from IbmMq message");
+                    //     }
+                    //
+                    //     var queueName = IbmMqHelper.SanitizeQueueName(instance.Name);
+                    //     var edgeTags = dataStreams.GetOrCreateEdgeTags(
+                    //        new IbmMqEdgeTagCacheKey(queueName, IsConsume: true),
+                    //        static k => ["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]);
+                    //
+                    //     scope.Span.SetDataStreamsCheckpoint(
+                    //         dataStreams,
+                    //         CheckpointKind.Consume,
+                    //         edgeTags,
+                    //         msg.MessageLength,
+                    //         timeInQueueMs: 0,
+                    //         pathwayContext);
+                    //     // we need to inject new context, since message objects can theoretically be reused
+                    //     // hence we need to make sure the parent hash changes properly
+                    //     dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, IbmMqHelper.GetHeadersAdapter(msg));
+                    // }
 
                     scope.DisposeWithException(exception);
                 }

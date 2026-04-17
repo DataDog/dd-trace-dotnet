@@ -62,14 +62,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             try
             {
-                if (exception != null)
-                {
-                    scope.Span?.SetException(exception);
-                }
-                else if (executionResult != null && executionResult.Errors != null)
-                {
-                    HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, executionResult.Errors);
-                }
+                // if (exception != null)
+                // {
+                //     scope.Span?.SetException(exception);
+                // }
+                // else if (executionResult != null && executionResult.Errors != null)
+                // {
+                //     HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, executionResult.Errors);
+                // }
             }
             finally
             {

@@ -16,10 +16,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     internal static class AwsSnsCommon
     {
-        private const string DatadogAwsSnsServiceName = "aws-sns";
+        // private const string DatadogAwsSnsServiceName = "aws-sns";
         private const string SnsRequestOperationName = "sns.request";
-        private const string SnsServiceName = "SNS";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSnsCommon));
+        // private const string SnsServiceName = "SNS";
+        // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSnsCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSns);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSns;
@@ -37,26 +37,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Messaging.CreateAwsSnsTags(spanKind);
-                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsSnsServiceName);
-                var operationName = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Http;
-                span.ResourceName = $"{SnsServiceName}.{operation}";
-
-                tags.Service = SnsServiceName;
-                tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Messaging.CreateAwsSnsTags(spanKind);
+            //     var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsSnsServiceName);
+            //     var operationName = GetOperationName(tracer, spanKind);
+            //     scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+            //     var span = scope.Span;
+            //
+            //     span.Type = SpanTypes.Http;
+            //     span.ResourceName = $"{SnsServiceName}.{operation}";
+            //
+            //     tags.Service = SnsServiceName;
+            //     tags.Operation = operation;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)

@@ -19,10 +19,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsStepFunctions);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsStepFunctions;
 
-        private const string DatadogAwsStepFunctionsServiceName = "aws-stepfunctions";
-        private const string StepFunctionsServiceName = "StepFunctions";
+        // private const string DatadogAwsStepFunctionsServiceName = "aws-stepfunctions";
+        // private const string StepFunctionsServiceName = "StepFunctions";
         private const string StepFunctionsRequestOperationName = "stepfunctions.request";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
+        // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
 
         public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsStepFunctionsTags? tags, ISpanContext? parentContext = null)
         {
@@ -36,26 +36,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
-                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsStepFunctionsServiceName);
-                var operationName = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Http;
-                span.ResourceName = $"{StepFunctionsServiceName}.{operation}";
-
-                tags.Service = StepFunctionsServiceName;
-                tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
+            //     var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsStepFunctionsServiceName);
+            //     var operationName = GetOperationName(tracer, spanKind);
+            //     scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+            //     var span = scope.Span;
+            //
+            //     span.Type = SpanTypes.Http;
+            //     span.ResourceName = $"{StepFunctionsServiceName}.{operation}";
+            //
+            //     tags.Service = StepFunctionsServiceName;
+            //     tags.Operation = operation;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

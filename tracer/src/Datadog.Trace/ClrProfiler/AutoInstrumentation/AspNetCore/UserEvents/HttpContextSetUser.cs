@@ -49,9 +49,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
-                if (instance is HttpContext httpContext && scope is not null && claimsPrincipal is not null)
+                if (instance is HttpContext httpContext && scope is { Span: Span span } && claimsPrincipal is not null)
                 {
-                    var span = scope.Span;
                     var foundUserId = false;
                     Func<string, string>? processPii = null;
                     string successAutoMode;
@@ -67,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
                     var setTag = TaggingUtils.GetSpanSetter(span, out _);
                     var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                    var secCoord = SecurityCoordinator.Get(security, scope.Span, httpContext);
+                    var secCoord = SecurityCoordinator.Get(security, span, httpContext);
                     string? userId = null;
                     foreach (var claim in claimsPrincipal.Claims)
                     {
