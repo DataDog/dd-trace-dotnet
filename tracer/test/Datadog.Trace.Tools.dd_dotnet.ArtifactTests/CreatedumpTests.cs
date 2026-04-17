@@ -365,11 +365,6 @@ public class CreatedumpTests : ConsoleTestHelper
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
-        if (Utils.IsAlpine())
-        {
-            throw new SkipException("Signal unwinding does not work correctly on Alpine");
-        }
-
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(
@@ -713,10 +708,7 @@ public class CreatedumpTests : ConsoleTestHelper
             var clrModuleName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcoreclr.so" : "coreclr.dll";
 #endif
 
-            if (!Utils.IsAlpine())
-            {
-                validatedModules.Should().ContainMatch($@"*{Path.DirectorySeparatorChar}{clrModuleName}");
-            }
+            validatedModules.Should().ContainMatch($@"*{Path.DirectorySeparatorChar}{clrModuleName}");
         }
 
         string ToHexString(byte[] ba)
