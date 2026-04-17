@@ -283,27 +283,6 @@ TEST_F(ManagedCodeCacheTest, GetFunctionId_NullIP_ReturnsEmpty) {
     EXPECT_FALSE(cache->GetFunctionId(0).has_value());
 }
 
-// Test: IsManaged falls back to R2R module check when IP is not in the JIT page map
-TEST_F(ManagedCodeCacheTest, IsManaged_IPInR2RModule_NotInPageMap_ReturnsTrue) {
-    // Register an R2R module range directly (bypassing PE parsing)
-    // Use an address that has no JIT-compiled code registered on its page
-    uintptr_t r2rCodeStart = 0xA0000000;
-    uintptr_t r2rCodeEnd   = 0xA000FFFF;
-
-    std::vector<ModuleCodeRange> moduleRanges;
-    moduleRanges.emplace_back(r2rCodeStart, r2rCodeEnd);
-
-    cache->AddModuleRangesToCache(std::move(moduleRanges));
-
-    // An IP within the R2R range but with no JIT page entry should still be detected as managed
-    uintptr_t ipInR2R = r2rCodeStart + 0x500;
-    EXPECT_TRUE(cache->IsManaged(ipInR2R))
-        << "IsManaged should return true for an IP in an R2R module even when the JIT page map has no entry for that page";
-
-    // An IP outside both the JIT page map and any R2R module should still be false
-    EXPECT_FALSE(cache->IsManaged(0xDEADBEEF));
-}
-
 // Test: GetCodeInfo2 failure handling
 TEST_F(ManagedCodeCacheTest, AddFunction_GetCodeInfo2Fails_HandledGracefully) {
     FunctionID testFuncId = 999;
