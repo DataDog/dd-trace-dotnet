@@ -5,10 +5,12 @@
 
 #if NETFRAMEWORK
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -156,11 +158,28 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = await WaitForSpansAsync(_iisFixture.Agent, 1, string.Empty, minDateTime, url);
             var span = spans.Should().ContainSingle().Which;
 
-            span.Tags.Should().ContainKey("_dd.appsec.json");
-            var appSecJson = span.Tags["_dd.appsec.json"];
-            appSecJson.Should().Contain("\"address\":\"server.request.path_params\"");
-            appSecJson.Should().Contain($"\"key_path\":[\"{expectedKey}\"]");
-            appSecJson.Should().Contain($"\"value\":\"{expectedValue}\"");
+            span.Tags.TryGetValue(Tags.AppSecEvent, out var appSecEvent).Should().BeTrue();
+            appSecEvent.Should().Be("true");
+
+            string appSecJson;
+            if (!span.Tags.TryGetValue(Tags.AppSecJson, out appSecJson))
+            {
+                span.MetaStruct.Should().NotBeNull();
+                span.MetaStruct!.Should().ContainKey("appsec");
+                appSecJson = MetaStructToJson(span.MetaStruct["appsec"]);
+            }
+
+            var appSecParameters = JToken.Parse(appSecJson)
+                                         .SelectTokens("$..parameters[*]")
+                                         .OfType<JObject>()
+                                         .ToList();
+
+            appSecParameters.Should().Contain(parameter =>
+                parameter["address"]?.Value<string>() == "server.request.path_params"
+             && parameter["value"]?.Value<string>() == expectedValue
+             && parameter["key_path"] is JArray keyPath
+             && keyPath.Count == 1
+             && keyPath[0]?.Value<string>() == expectedKey);
         }
 
         public async Task InitializeAsync()
