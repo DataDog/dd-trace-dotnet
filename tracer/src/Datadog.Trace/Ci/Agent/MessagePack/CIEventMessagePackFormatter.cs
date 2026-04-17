@@ -7,7 +7,6 @@
 
 using System;
 using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -15,27 +14,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack;
 
 internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibilityProtocolPayload>
 {
-    private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
-
-    private readonly byte[] _asteriskBytes = StringEncoding.UTF8.GetBytes("*");
-    private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
     private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
-    private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
-    private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");
-    private readonly byte[] _libraryVersionBytes = StringEncoding.UTF8.GetBytes(CommonTags.LibraryVersion);
-    private readonly byte[] _libraryVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
-    private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
     private readonly byte[]? _environmentValueBytes;
-
-    private readonly byte[] _testBytes = StringEncoding.UTF8.GetBytes(SpanTypes.Test);
-    private readonly byte[] _testSuiteEndBytes = StringEncoding.UTF8.GetBytes(SpanTypes.TestSuite);
-    private readonly byte[] _testModuleEndBytes = StringEncoding.UTF8.GetBytes(SpanTypes.TestModule);
-    private readonly byte[] _testSessionEndBytes = StringEncoding.UTF8.GetBytes(SpanTypes.TestSession);
-    private readonly byte[] _testSessionNameBytes = StringEncoding.UTF8.GetBytes("test_session.name");
     private readonly byte[]? _testSessionNameValueBytes;
-
-    private readonly byte[] _eventsBytes = StringEncoding.UTF8.GetBytes("events");
-
     private readonly ArraySegment<byte> _envelopBytes;
 
     public CIEventMessagePackFormatter(TracerSettings tracerSettings)
@@ -54,6 +35,23 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
 
         _envelopBytes = GetEnvelopeArraySegment();
     }
+
+#pragma warning disable SA1516 // Elements should be separated by blank line
+    private static ReadOnlySpan<byte> MetadataBytes => "metadata"u8;
+    private static ReadOnlySpan<byte> AsteriskBytes => "*"u8;
+    private static ReadOnlySpan<byte> RuntimeIdBytes => "runtime-id"u8;
+    private static ReadOnlySpan<byte> LanguageNameBytes => "language"u8;
+    private static ReadOnlySpan<byte> LanguageNameValueBytes => "dotnet"u8;
+    private static ReadOnlySpan<byte> LibraryVersionBytes => "library_version"u8;
+    private static ReadOnlySpan<byte> LibraryVersionValueBytes => TracerConstants.AssemblyVersionBytes;
+    private static ReadOnlySpan<byte> EnvironmentBytes => "env"u8;
+    private static ReadOnlySpan<byte> TestBytes => "test"u8;
+    private static ReadOnlySpan<byte> TestSuiteEndBytes => "test_suite_end"u8;
+    private static ReadOnlySpan<byte> TestModuleEndBytes => "test_module_end"u8;
+    private static ReadOnlySpan<byte> TestSessionEndBytes => "test_session_end"u8;
+    private static ReadOnlySpan<byte> TestSessionNameBytes => "test_session.name"u8;
+    private static ReadOnlySpan<byte> EventsBytes => "events"u8;
+#pragma warning restore SA1516
 
     public override int Serialize(ref byte[] bytes, int offset, CIVisibilityProtocolPayload? value, IFormatterResolver formatterResolver)
     {
@@ -104,7 +102,7 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
         // # Metadata
 
         // Key
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metadataBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetadataBytes);
 
         // Value
         var metadataValuesCount = _testSessionNameValueBytes is not null ? 5 : 1;
@@ -113,7 +111,7 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
         // ->  * : {}
 
         // Key
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _asteriskBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AsteriskBytes);
 
         // Value (RuntimeId, Language, library_version, Env?)
         int valuesCount = 3;
@@ -124,56 +122,56 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
 
         offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, valuesCount);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdBytes);
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameValueBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameValueBytes);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionBytes);
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionValueBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LibraryVersionBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LibraryVersionValueBytes);
 
         if (_environmentValueBytes is not null)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentValueBytes);
         }
 
         if (_testSessionNameValueBytes is not null)
         {
             // -> test : {}
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestBytes);
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
             // -> test_session.name : "value"
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameValueBytes);
 
             // -> test_suite_end : {}
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSuiteEndBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSuiteEndBytes);
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
             // -> test_session.name : "value"
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameValueBytes);
 
             // -> test_module_end : {}
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testModuleEndBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestModuleEndBytes);
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
             // -> test_session.name : "value"
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameValueBytes);
 
             // -> test_session_end : {}
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionEndBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionEndBytes);
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
             // -> test_session.name : "value"
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionNameValueBytes);
         }
 
         // # Events
 
         // Key
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventsBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EventsBytes);
 
         return new ArraySegment<byte>(bytes, 0, offset);
     }
