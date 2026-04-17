@@ -149,6 +149,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            SetHttpPort(_iisFixture.HttpPort);
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+
         protected async Task AssertRouteHandlerPathParams(string url, string expectedKey, string expectedValue)
         {
             var minDateTime = DateTime.UtcNow;
@@ -175,20 +183,13 @@ namespace Datadog.Trace.Security.IntegrationTests
                                          .ToList();
 
             appSecParameters.Should().Contain(parameter =>
-                parameter["address"]?.Value<string>() == "server.request.path_params"
-             && parameter["value"]?.Value<string>() == expectedValue
-             && parameter["key_path"] is JArray keyPath
-             && keyPath.Count == 1
-             && keyPath[0]?.Value<string>() == expectedKey);
+                parameter["address"].Value<string>() == "server.request.path_params"
+                && parameter["value"].Value<string>() == expectedValue
+                && parameter["key_path"] != null
+                && parameter["key_path"].Type == JTokenType.Array
+                && ((JArray)parameter["key_path"]).Count == 1
+                && ((JArray)parameter["key_path"])[0].Value<string>() == expectedKey);
         }
-
-        public async Task InitializeAsync()
-        {
-            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-            SetHttpPort(_iisFixture.HttpPort);
-        }
-
-        public Task DisposeAsync() => Task.CompletedTask;
 
         protected override string GetTestName() => _testName;
     }
