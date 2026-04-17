@@ -5,11 +5,14 @@
 
 #nullable enable
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Sink
 {
     internal sealed class SnapshotUploader : DebuggerUploaderBase, ISnapshotUploader
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SnapshotUploader>();
+
         private readonly ISnapshotSink _snapshotSink;
         private readonly IBatchUploader _snapshotBatchUploader;
 
@@ -44,7 +47,12 @@ namespace Datadog.Trace.Debugger.Sink
 
         public void Add(string probeId, string snapshot)
         {
-            _snapshotSink.Add(probeId, snapshot);
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            _snapshotSink.Add(probeId, snapshot!);
         }
 
         protected override void Dispose(bool disposing)

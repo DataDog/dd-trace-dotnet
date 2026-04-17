@@ -6,13 +6,10 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
@@ -35,7 +32,13 @@ namespace Datadog.Trace.Debugger.Sink
 
         public void Add(string probeId, string snapshot)
         {
-            var slicedSnapshot = _snapshotSlicer.SliceIfNeeded(probeId, snapshot);
+            if (snapshot == null)
+            {
+                Log.Information("Skip adding snapshot exploration snapshot because snapshot is null");
+                return;
+            }
+
+            var slicedSnapshot = _snapshotSlicer.SliceIfNeeded(probeId, snapshot!);
             _reportWriter.Enqueue(probeId, slicedSnapshot);
         }
 
@@ -57,137 +60,182 @@ namespace Datadog.Trace.Debugger.Sink
         private sealed class ProbeReportWriter : IDisposable
         {
             private const string _fileName = "SnapshotExplorationTestReport.csv";
-            private readonly string _folderPath;
-            private readonly BlockingCollection<IdAndSnapshot> _writeQueue;
+            private readonly string _fullPath;
             private readonly HashSet<string> _probesIds;
-            private readonly Task _writerTask;
-            private readonly CancellationTokenSource _cts;
-            private readonly int _bufferSize;
+            private readonly object _lock = new();
+            private StreamWriter? _writer;
             private bool _disposed;
 
-            public ProbeReportWriter(string folderPath, int bufferSize = 4096)
+            public ProbeReportWriter(string folderPath)
             {
-                _folderPath = folderPath ?? throw new ArgumentNullException(nameof(folderPath));
-                _bufferSize = bufferSize;
-                _writeQueue = new BlockingCollection<IdAndSnapshot>();
-                _probesIds = new HashSet<string>();
-                _cts = new CancellationTokenSource();
-                _writerTask = Task.Run(WriteProcess, _cts.Token);
-            }
+                if (folderPath == null)
+                {
+                    throw new ArgumentNullException(nameof(folderPath));
+                }
 
-            ~ProbeReportWriter()
-            {
-                Dispose(false);
+                var fileName = Process.GetCurrentProcess().Id + "_" + _fileName;
+                _fullPath = Path.Combine(folderPath, fileName);
+                _probesIds = new HashSet<string>();
+
+                // Create file and write header immediately
+                Log.Information("ProbeReportWriter: Creating file at {Path}", _fullPath);
+                _writer = new StreamWriter(_fullPath, false, Encoding.UTF8);
+                _writer.AutoFlush = true; // Flush immediately on every write
+                _writer.WriteLine("Probe ID,Type,Method,Is valid");
             }
 
             internal void Enqueue(string probeId, string snapshot)
             {
-                try
+                lock (_lock)
                 {
-                    _writeQueue.Add(new IdAndSnapshot(probeId, snapshot));
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Failed to queue snapshot.");
-                }
-            }
+                    if (_disposed || _writer == null)
+                    {
+                        Log.Warning("ProbeReportWriter: Cannot write, writer is disposed");
+                        return;
+                    }
 
-            private async Task WriteProcess()
-            {
-                var failures = 0;
-                const int maxFailures = 10;
-                var fileName = Process.GetCurrentProcess().Id + "_" + _fileName;
-                var fullPath = Path.Combine(_folderPath, fileName);
-                using var writer = new StreamWriter(fullPath, true, Encoding.UTF8, _bufferSize);
-                writer.AutoFlush = false;
-                await writer.WriteLineAsync("Probe ID,Type,Method,Is valid").ConfigureAwait(false);
-
-                while (!_writeQueue.IsCompleted && !_cts.IsCancellationRequested)
-                {
+                    var start = ExplorationTestMetrics.IsEnabled ? Stopwatch.GetTimestamp() : 0;
                     try
                     {
-                        if (!_writeQueue.TryTake(out var info, 200, _cts.Token))
+                        if (!_probesIds.Add(probeId))
                         {
-                            continue;
+                            // Already recorded this probe ID
+                            return;
                         }
 
-                        if (!_probesIds.Add(info.Id))
-                        {
-                            // we have already got snapshot for this probe ID
-                            continue;
-                        }
+                        string? typeName;
+                        string? methodName;
+                        var isValid = TryGetTypeAndMethod(snapshot, out typeName, out methodName);
 
-                        var methodFullName = GetMethodFullName(info.Snapshot);
-                        var line = $"{info.Id},{methodFullName ?? "N/A"},{!string.IsNullOrEmpty(methodFullName)}";
-                        await writer.WriteLineAsync(line).ConfigureAwait(false);
-
-                        if (writer.BaseStream.Position >= _bufferSize)
-                        {
-                            await writer.FlushAsync().ConfigureAwait(false);
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
-                    catch (ThreadAbortException)
-                    {
-                        throw;
+                        // Always emit 4 columns to match the CSV header.
+                        _writer.WriteLine(
+                            string.Concat(
+                                Csv(probeId),
+                                ",",
+                                Csv(typeName ?? "N/A"),
+                                ",",
+                                Csv(methodName ?? "N/A"),
+                                ",",
+                                (isValid ? "True" : "False")));
                     }
                     catch (Exception e)
                     {
-                        if (++failures >= maxFailures)
+                        Log.Error(e, "Failed to write snapshot for probeId={ProbeId}", probeId);
+                    }
+                    finally
+                    {
+                        if (ExplorationTestMetrics.IsEnabled)
                         {
-                            Log.Error(e, "Stopping writing probe report. There were too many errors during the writing process.");
-                            throw;
+                            ExplorationTestMetrics.RecordSnapshotSinkWrite(Stopwatch.GetTimestamp() - start);
                         }
-
-                        Log.Error(e, "Error writing to probe report file.");
                     }
                 }
-
-                await writer.FlushAsync().ConfigureAwait(false);
             }
 
-            private string? GetMethodFullName(string snapshot)
+            private static bool TryGetTypeAndMethod(string snapshot, out string? typeName, out string? methodName)
             {
+                typeName = null;
+                methodName = null;
                 try
                 {
-                    var parsedSnapshot = JsonConvert.DeserializeObject<Snapshot>(snapshot);
-                    return $"{parsedSnapshot.Logger.Name},{parsedSnapshot.Logger.Method}";
+                    // IMPORTANT: Do not deserialize into Snapshot POCO here.
+                    // The snapshot payload may evolve and/or contain partial data, and POCO deserialization failures
+                    // would incorrectly mark probes as invalid in the exploration test report.
+                    // Instead, extract just the minimal fields we need ("logger.name" and "logger.method")
+                    // using a streaming JSON reader for robustness and performance.
+                    using var stringReader = new StringReader(snapshot);
+                    using var reader = new JsonTextReader(stringReader);
+
+                    while (reader.Read())
+                    {
+                        if (reader.TokenType != JsonToken.PropertyName)
+                        {
+                            continue;
+                        }
+
+                        if (!string.Equals(reader.Value as string, "logger", StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        // Move to logger object
+                        if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+                        {
+                            break;
+                        }
+
+                        while (reader.Read())
+                        {
+                            if (reader.TokenType == JsonToken.EndObject)
+                            {
+                                break;
+                            }
+
+                            if (reader.TokenType != JsonToken.PropertyName)
+                            {
+                                continue;
+                            }
+
+                            var prop = reader.Value as string;
+                            if (!reader.Read())
+                            {
+                                break;
+                            }
+
+                            if (string.Equals(prop, "name", StringComparison.Ordinal))
+                            {
+                                typeName = reader.Value as string;
+                            }
+                            else if (string.Equals(prop, "method", StringComparison.Ordinal))
+                            {
+                                methodName = reader.Value as string;
+                            }
+
+                            if (!string.IsNullOrEmpty(typeName) && !string.IsNullOrEmpty(methodName))
+                            {
+                                return true;
+                            }
+                        }
+
+                        // We found "logger" but didn't find both required fields
+                        break;
+                    }
+
+                    return false;
                 }
                 catch (Exception)
                 {
-                    return null;
+                    return false;
                 }
+            }
+
+            private static string Csv(string value)
+            {
+                // Minimal CSV escaping (commas/quotes/newlines)
+                if (value.IndexOfAny(new[] { ',', '"', '\n', '\r' }) >= 0)
+                {
+                    return "\"" + value.Replace("\"", "\"\"") + "\"";
+                }
+
+                return value;
             }
 
             public void Dispose()
             {
-                Dispose(true);
-                GC.SuppressFinalize(this);
-            }
-
-            private void Dispose(bool disposing)
-            {
-                if (_disposed)
+                lock (_lock)
                 {
-                    return;
-                }
+                    if (_disposed)
+                    {
+                        return;
+                    }
 
-                if (disposing)
-                {
-                    _cts.Cancel();
-                    _writeQueue.CompleteAdding();
-                    _writerTask.Wait();
-                    _cts.Dispose();
-                    _writeQueue.Dispose();
+                    _disposed = true;
+                    Log.Information("ProbeReportWriter.Dispose: Flushing and closing file.");
+                    _writer?.Flush();
+                    _writer?.Dispose();
+                    _writer = null;
                 }
-
-                _disposed = true;
             }
         }
-
-        private record IdAndSnapshot(string Id, string Snapshot);
     }
 }

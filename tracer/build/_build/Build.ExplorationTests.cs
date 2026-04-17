@@ -110,18 +110,40 @@ partial class Build
     {
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
-            throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+            throw new InvalidOperationException(
+                $"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
-        var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
+        var useLatest = ExplorationTestCloneLatest;
+
+        // shallow clone רק כשעובדים על latest (HEAD)
+        var depth = testDescription.IsGitShallowCloneSupported && useLatest ? "--depth 1" : "";
         var submodules = testDescription.IsGitSubmodulesRequired ? "--recurse-submodules" : "";
-        var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
+
+        var repoUrl = testDescription.GitRepositoryUrl;
         var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
         FileSystemTasks.EnsureCleanDirectory(target);
 
-        var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
+        string cloneCommand;
+
+        if (useLatest)
+        {
+            // clone לפי HEAD
+            cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {repoUrl} {target}";
+        }
+        else
+        {
+            // clone מלא בלי -b ואז checkout ל-tag/commit
+            cloneCommand = $"clone -q -c advice.detachedHead=false {submodules} {repoUrl} {target}";
+        }
+
         GitTasks.Git(cloneCommand);
+
+        if (!useLatest)
+        {
+            GitTasks.Git($"-C {target} checkout {testDescription.GitRepositoryTag}");
+        }
 
         var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
         if (!Directory.Exists(projectPath))
@@ -134,11 +156,13 @@ partial class Build
                 .SetProjectFile(projectPath)
                 .SetConfiguration(BuildConfiguration)
                 .SetProcessArgumentConfigurator(arguments => arguments
-                                                            .Add("-consoleLoggerParameters:ErrorsOnly")
-                                                            .Add("-property:NuGetAudit=false"))
+                    .Add("-consoleLoggerParameters:ErrorsOnly")
+                    .Add("-property:NuGetAudit=false"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
     }
+
+
 
     Target RunExplorationTests
         => _ => _
@@ -207,7 +231,12 @@ partial class Build
             ["DD_SERVICE"] = "exploration_tests",
             ["DD_VERSION"] = Version,
             // Disable logs injection for exploration tests to avoid interfering with third-party test expectations
-            ["DD_LOGS_INJECTION"] = "false"
+            ["DD_LOGS_INJECTION"] = "false",
+            // Increase log file size to prevent rolling during long exploration tests (default is 10MB)
+            // This ensures we don't lose error data when analyzing logs after test completion
+            ["DD_MAX_LOGFILE_SIZE"] = "100000000", // 100MB
+            // Prevent log cleanup during test
+            ["DD_TRACE_LOGFILE_RETENTION_DAYS"] = "30"
         };
 
         switch (ExplorationTestUseCase)
@@ -293,7 +322,7 @@ partial class Build
             x =>
             {
                 x = x
-				   .SetDotnetPath(TargetPlatform)
+                   .SetDotnetPath(TargetPlatform)
                    .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
                    .EnableNoRestore()
                    .EnableNoBuild()
@@ -687,9 +716,9 @@ class ExplorationTestDescription
                     "Google.Protobuf.CodedInputStreamTest.RecursionLimitAppliedWhileSkippingGroup",
                     "Google.Protobuf.JsonParserTest.MaliciousRecursion",
                     "Google.Protobuf.Test.RefStructCompatibilityTest",
-					"Google.Protobuf.RefStructCompatibilityTest.GeneratedCodeCompilesWithOldCsharpCompiler",
-                    "Google.Protobuf.RefStructCompatibilityTest.RunOldCsharpCompilerAndCheckSuccess",
-					// exclude those "legacy" tests because they are on manually modified code
+                    "Google.Protobuf.RefStructCompatibilityTest.GeneratedCodeCompilesWithOldCsharpCompiler",
+                    "Google.Protobuf.RefStructCompatibilityTest.RunOldCsharpCompilerAndCheckSuccess", 
+                    // exclude those "legacy" tests because they are on manually modified code
                     // that throws a NotImplementedException on the `Descriptor` property that we use.
                     "Google.Protobuf.LegacyGeneratedCodeTest.IntermixingOfNewAndLegacyGeneratedCodeWorksWithCodedInputStream",
                     "Google.Protobuf.LegacyGeneratedCodeTest.IntermixingOfNewAndLegacyGeneratedCodeWorksWithCodedOutputStream",

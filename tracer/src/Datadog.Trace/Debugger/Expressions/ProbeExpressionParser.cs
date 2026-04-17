@@ -543,6 +543,7 @@ internal partial class ProbeExpressionParser<T>
         var argsOrLocals = methodScopeMembers.Members;
         var @this = methodScopeMembers.InvocationTarget;
         var thisType = thisTypeOverride;
+
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
             var ex = new ArgumentException("Method has been called with an invalid argument");

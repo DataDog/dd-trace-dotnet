@@ -27,6 +27,8 @@ namespace Datadog.Trace.Debugger.Expressions
     {
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
+        private static readonly bool SnapshotFlowLogsEnabled =
+            string.Equals(Environment.GetEnvironmentVariable("DD_INTERNAL_DEBUGGER_SNAPSHOT_FLOW_LOGS"), "1", StringComparison.Ordinal);
 
         private ProbeExpressionEvaluator? _evaluator;
         private DebuggerExpression?[]? _templates;
@@ -104,6 +106,28 @@ namespace Datadog.Trace.Debugger.Expressions
         [DebuggerStepThrough]
         private bool HasCondition() => _condition.HasValue;
 
+        /// <summary>
+        /// For exploration tests: checks if we should capture a snapshot for this probe.
+        /// Returns false (skip) if the probe has already captured enough snapshots.
+        /// For non-exploration tests, always returns true.
+        /// </summary>
+        private bool ShouldCaptureSnapshotForExplorationTest()
+        {
+            if (!ExplorationTestProbeTracker.IsEnabled)
+            {
+                return true;
+            }
+
+            if (ExplorationTestProbeTracker.ShouldCaptureSnapshot(ProbeInfo.ProbeId))
+            {
+                return true;
+            }
+
+            // Probe has reached its snapshot limit - skip serialization
+            ExplorationTestMetrics.RecordSnapshotSkipped();
+            return false;
+        }
+
         private DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
         {
             return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
@@ -160,7 +184,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations), null);
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(ProbeInfo.ProbeId, _templates, _condition, _metric, _spanDecorations), null);
             return _evaluator;
         }
 
@@ -171,11 +195,13 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
         {
+            Log.Debug("ProbeProcessor.Process CALLED: probeId={ProbeId}, MethodState={MethodState}", probeData.ProbeId, info.MethodState);
+
             var snapshotCreator = (DebuggerSnapshotCreator)inSnapshotCreator;
 
             if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
             {
-                Log.Debug("Stop processing probe {ID} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probeData.ProbeId);
+                Log.Debug("ProbeProcessor.Process: DI not initialized, stopping. probeId={ProbeId}", probeData.ProbeId);
                 snapshotCreator.Stop();
                 return false;
             }
@@ -603,6 +629,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!ProbeInfo.IsFullSnapshot)
                     {
+                        if (!ShouldCaptureSnapshotForExplorationTest())
+                        {
+                            snapshotCreator.Stop();
+                            break;
+                        }
+
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
@@ -622,6 +654,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!ProbeInfo.IsFullSnapshot)
                     {
+                        if (!ShouldCaptureSnapshotForExplorationTest())
+                        {
+                            snapshotCreator.Stop();
+                            break;
+                        }
+
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
@@ -641,6 +679,12 @@ namespace Datadog.Trace.Debugger.Expressions
                         if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                         {
                             snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                        }
+
+                        if (!ShouldCaptureSnapshotForExplorationTest())
+                        {
+                            snapshotCreator.Stop();
+                            break;
                         }
 
                         if (ProbeInfo.IsFullSnapshot)
@@ -682,6 +726,12 @@ namespace Datadog.Trace.Debugger.Expressions
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
                     }
 
+                    if (!ShouldCaptureSnapshotForExplorationTest())
+                    {
+                        snapshotCreator.Stop();
+                        break;
+                    }
+
                     if (ProbeInfo.IsFullSnapshot)
                     {
                         snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
@@ -689,7 +739,20 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
+                    if (SnapshotFlowLogsEnabled)
+                    {
+                        Log.Debug("ProbeProcessor.ProcessLine finalized snapshot probeId={ProbeId}", ProbeInfo.ProbeId);
+                    }
+
                     DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
+                    if (SnapshotFlowLogsEnabled)
+                    {
+                        Log.Debug(
+                            "ProbeProcessor.ProcessLine AddSnapshot called probeId={ProbeId}, SnapshotNull={SnapshotNull}",
+                            property0: ProbeInfo.ProbeId,
+                            property1: snapshot is null);
+                    }
+
                     snapshotCreator.Stop();
                     break;
 

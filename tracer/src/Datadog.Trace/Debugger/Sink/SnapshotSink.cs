@@ -40,7 +40,12 @@ namespace Datadog.Trace.Debugger.Sink
 
         public void Add(string probeId, string snapshot)
         {
-            _queue.TryEnqueue(_snapshotSlicer.SliceIfNeeded(probeId, snapshot));
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            _queue.TryEnqueue(_snapshotSlicer.SliceIfNeeded(probeId, snapshot)!);
         }
 
         public IList<string> GetSnapshots()
