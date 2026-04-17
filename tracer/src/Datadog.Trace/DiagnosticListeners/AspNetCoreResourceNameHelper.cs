@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -128,14 +127,9 @@ internal static class AspNetCoreResourceNameHelper
                     + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
-#if NETCOREAPP
         var sb = maxSize < 512
                      ? new ValueStringBuilder(stackalloc char[512])
                      : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
-#else
-        // In .NET Core 2.1, the ValueStringBuilder doesn't actually improve anything
-        var sb = StringBuilderCache.Acquire(maxSize);
-#endif
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
@@ -227,7 +221,6 @@ internal static class AspNetCoreResourceNameHelper
             }
         }
 
-#if NETCOREAPP
         if (sb.Length <= 1)
         {
             sb.Dispose();
@@ -235,15 +228,6 @@ internal static class AspNetCoreResourceNameHelper
         }
 
         return sb.ToString();
-#else
-        if (sb.Length <= 1)
-        {
-            StringBuilderCache.Release(sb);
-            return "/";
-        }
-
-        return StringBuilderCache.GetStringAndRelease(sb).ToLowerInvariant();
-#endif
     }
 
     internal static string SimplifyRouteTemplate(
@@ -261,14 +245,9 @@ internal static class AspNetCoreResourceNameHelper
                     + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
-#if NETCOREAPP
         var sb = maxSize < 512
                      ? new ValueStringBuilder(stackalloc char[512])
                      : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
-#else
-        // In .NET Core 2.1, the ValueStringBuilder doesn't actually improve anything
-        var sb = StringBuilderCache.Acquire(maxSize);
-#endif
 
         // Remove the boxing of the enumerator
         // In all versions of .NET, this is implemented as a List<TemplateSegment>
@@ -367,7 +346,6 @@ internal static class AspNetCoreResourceNameHelper
         }
 
         // We never added anything, or we just added the first `/`, no need for explicit ToString()
-#if NETCOREAPP
         if (sb.Length <= 1)
         {
             sb.Dispose();
@@ -375,15 +353,6 @@ internal static class AspNetCoreResourceNameHelper
         }
 
         return sb.ToString();
-#else
-        if (sb.Length <= 1)
-        {
-            StringBuilderCache.Release(sb);
-            return "/";
-        }
-
-        return StringBuilderCache.GetStringAndRelease(sb).ToLowerInvariant();
-#endif
     }
 
     [TestingAndPrivateOnly]
@@ -412,10 +381,5 @@ internal static class AspNetCoreResourceNameHelper
 
         return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
     }
-
-#if !NETCOREAPP
-    // .NET Core 2.1 helper which doesn't _actually_ append as lower invariant, and just does it all at the end instead
-    private static void AppendAsLowerInvariant(this StringBuilder sb, string? value) => sb.Append(value);
-#endif
 }
 #endif

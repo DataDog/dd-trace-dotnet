@@ -233,6 +233,15 @@ namespace Datadog.Trace.Util
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendAsLowerInvariant(string? value)
+        {
+            if (value is not null)
+            {
+                AppendAsLowerInvariant(value.AsSpan());
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AppendAsLowerInvariant(scoped ReadOnlySpan<char> value)
         {
             int pos = _pos;
