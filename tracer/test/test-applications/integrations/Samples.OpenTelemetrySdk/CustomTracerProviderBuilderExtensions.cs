@@ -5,6 +5,7 @@ using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
 #endif
 #if OTEL_1_9
+using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Logs;
 #endif
 using Microsoft.Extensions.Logging;
@@ -61,33 +62,30 @@ public static class CustomMeterProviderBuilderExtensions
 #if OTEL_1_9
 public static class CustomLoggerFactoryBuilderExtensions
 {
-    public static ILoggerFactory AddOtlpExporterIfEnvironmentVariablePresent()
+    // Returns an IServiceProvider rather than an ILoggerFactory so callers can resolve
+    // the underlying OpenTelemetry.Logs.LoggerProvider and call ForceFlush before disposal.
+    // LoggerProviderSdk.Dispose() caps its shutdown flush at 5s; with gRPC, the first export
+    // can exceed that due to TCP/HTTP/2/TLS handshake, causing batched logs to be dropped.
+    public static ServiceProvider CreateLoggerServices()
     {
-        // Check if OpenTelemetry Logs Exporter is enabled (similar to metrics)
-        if (Environment.GetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED") is string value
-        && value == "true")
+        var services = new ServiceCollection();
+        services.AddLogging(builder =>
         {
-            return LoggerFactory.Create(builder =>
+            builder.SetMinimumLevel(LogLevel.Trace);
+
+            if (Environment.GetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED") is string value
+                && value == "true")
             {
-                builder.SetMinimumLevel(LogLevel.Trace);
 #if NET6_0_OR_GREATER
-                builder.AddOpenTelemetry(
-                    options =>
-                    {
-                        options.AddOtlpExporter();
-                    }
-                );
+                builder.AddOpenTelemetry(options =>
+                {
+                    options.AddOtlpExporter();
+                });
 #endif
-            });
-        }
-        else
-        {
-            // Create logger factory without OTel - Datadog instrumentation will hook this
-            return LoggerFactory.Create(builder =>
-            {
-                builder.SetMinimumLevel(LogLevel.Trace);
-            });
-        }
+            }
+        });
+
+        return services.BuildServiceProvider();
     }
 }
 #endif

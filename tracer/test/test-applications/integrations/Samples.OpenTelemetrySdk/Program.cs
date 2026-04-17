@@ -7,6 +7,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
 #endif
 #if OTEL_1_9
+using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Logs;
 #endif
 using System.Collections.Generic;
@@ -50,8 +51,8 @@ public static class Program
 #endif
 
 #if OTEL_1_9
-        using var loggerFactory = CustomLoggerFactoryBuilderExtensions
-            .AddOtlpExporterIfEnvironmentVariablePresent();
+        using var loggerServices = CustomLoggerFactoryBuilderExtensions.CreateLoggerServices();
+        var loggerFactory = loggerServices.GetRequiredService<ILoggerFactory>();
 #endif
 
         _tracer = tracerProvider.GetTracer(serviceName); // The version is omitted so the ActivitySource.Version / otel.library.version is not set
@@ -147,8 +148,11 @@ public static class Program
         meterProvider?.Dispose();
 #endif
 #if OTEL_1_9
-
-        loggerFactory?.Dispose();
+        // Flush OTLP log batches before the ServiceProvider's `using` disposes them.
+        // LoggerProviderSdk.Dispose caps shutdown flush at 5s, which is often insufficient
+        // for the first gRPC export (TCP+HTTP/2+TLS handshake). A generous ForceFlush here
+        // drains pending batches on the critical path instead of racing a hard-coded timeout.
+        loggerServices.GetService<LoggerProvider>()?.ForceFlush(timeoutMilliseconds: 10_000);
 #endif
     }
 
