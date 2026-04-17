@@ -40,12 +40,6 @@ namespace Datadog.Trace.AspNet
         private static bool _canReadHttpResponseHeaders = true;
 
         private readonly string _httpContextScopeKey;
-
-        /// <summary>
-        /// This key is only present when inferred proxy spans are enabled AND necessary proxy headers were present.
-        /// </summary>
-        /// <see cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
-        private readonly string _httpContextProxyScopeKey;
         private readonly string _requestOperationName;
 
         /// <summary>
@@ -69,7 +63,6 @@ namespace Datadog.Trace.AspNet
 
             _requestOperationName = operationName;
             _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
-            _httpContextProxyScopeKey = string.Concat(_httpContextScopeKey, ".proxy");
         }
 
         /// <inheritdoc />
@@ -218,12 +211,7 @@ namespace Datadog.Trace.AspNet
                     tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
                 }
 
-                if (inferredProxyScope is not null)
-                {
-                    httpContext.Items[_httpContextProxyScopeKey] = inferredProxyScope;
-                }
-
-                httpContext.Items[_httpContextScopeKey] = scope;
+                httpContext.Items[_httpContextScopeKey] = new ScopeContainer(scope, inferredProxyScope);
                 shouldDisposeScope = false;
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -296,9 +284,10 @@ namespace Datadog.Trace.AspNet
                 }
 
                 if (sender is HttpApplication app &&
-                    app.Context.Items[_httpContextScopeKey] is Scope scope)
+                    app.Context.Items[_httpContextScopeKey] is ScopeContainer container)
                 {
-                    var proxyScope = app.Context.Items[_httpContextProxyScopeKey] as Scope;
+                    var scope = container.Scope;
+                    var proxyScope = container.ProxyScope;
 
                     try
                     {
@@ -474,9 +463,10 @@ namespace Datadog.Trace.AspNet
                 var httpException = exception as HttpException;
                 var is404 = httpException?.GetHttpCode() == 404;
 
-                if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
+                if (httpContext?.Items[_httpContextScopeKey] is ScopeContainer container)
                 {
-                    var proxyScope = httpContext?.Items[_httpContextProxyScopeKey] as Scope;
+                    var scope = container.Scope;
+                    var proxyScope = container.ProxyScope;
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
                     if (proxyScope != null)
                     {
@@ -508,12 +498,37 @@ namespace Datadog.Trace.AspNet
             try
             {
                 context.Items.Remove(_httpContextScopeKey);
-                context.Items.Remove(_httpContextProxyScopeKey);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while clearing the HttpContext");
             }
+        }
+
+        /// <summary>
+        /// Non-disposable container for scopes stored in <see cref="HttpContext.Items"/>.
+        /// Some frameworks (e.g. ServiceStack) iterate through HttpContext.Items and dispose
+        /// all IDisposable values during their own request cleanup, which runs before IIS's
+        /// EndRequest event. Wrapping scopes in a non-disposable container prevents premature
+        /// disposal and ensures OnEndRequest can still enrich the span with resource name,
+        /// status code, and other tags.
+        /// </summary>
+        internal sealed class ScopeContainer
+        {
+            public ScopeContainer(Scope scope, Scope proxyScope = null)
+            {
+                Scope = scope;
+                ProxyScope = proxyScope;
+            }
+
+            public Scope Scope { get; }
+
+            /// <summary>
+            /// Gets the inferred proxy scope. Only present when inferred proxy spans are enabled
+            /// AND necessary proxy headers were present.
+            /// </summary>
+            /// <see cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
+            public Scope ProxyScope { get; }
         }
     }
 }
