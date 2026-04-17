@@ -7,6 +7,7 @@
 #include "il_rewriter.h"
 
 #include <algorithm>
+#include <memory>
 
 #undef IfFailRet
 #define IfFailRet(EXPR)                                                                                                \
@@ -682,11 +683,11 @@ again:
             //      handlers are nested, the most deeply nested try blocks shall come before the try blocks that enclose them."
             // If we will not follow that, we might face InvalidProgramException.
             // That's why we order the Exception Clauses right before applying them.
+            //
+            // Per ECMA-335 II.19, nesting includes a clause's try region being inside
+            // another clause's try region OR handler region.
 
-            std::sort(m_pEH, m_pEH + m_nEH, [](EHClause a, EHClause b) {
-                return a.m_pTryBegin->m_offset > b.m_pTryBegin->m_offset &&
-                       a.m_pTryEnd->m_offset < b.m_pTryEnd->m_offset;
-            });
+            SortEHClauses(m_pEH, m_nEH);
 
             for (unsigned iEH = 0; iEH < m_nEH; iEH++)
             {
@@ -817,5 +818,106 @@ bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
         case CEE_LDC_R8:
         return true;
         default:return false;
+    }
+}
+
+// Checks whether the range [innerBegin, innerEnd) is a proper subset of [outerBegin, outerEnd).
+// All values are IL offsets using exclusive ends (first offset past the region).
+static bool IsProperlyContained(unsigned innerBegin, unsigned innerEnd, unsigned outerBegin, unsigned outerEnd)
+{
+    bool identical = innerBegin == outerBegin && innerEnd == outerEnd;
+    if (identical)
+    {
+        return false;
+    }
+    bool contained = innerBegin >= outerBegin && innerEnd <= outerEnd;
+    return contained;
+}
+
+void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
+{
+    if (nEH <= 1)
+    {
+        return;
+    }
+
+    // Per ECMA-335 I.12.4.2.5, the most deeply nested try blocks must come first
+    // in the EH table. Per II.19, nesting includes a clause's protected (try) block
+    // being inside another clause's protected block OR handler block.
+    //
+    // We compute a nesting depth for each clause: the number of other clauses whose
+    // try or handler region encloses this clause's try region. Then we sort by
+    // depth descending so that the most deeply nested clauses appear first.
+
+    std::unique_ptr<unsigned[]> depth(new unsigned[nEH]());  // zero-initialized
+
+    for (unsigned i = 0; i < nEH; i++)
+    {
+        unsigned iTryBegin = pEH[i].m_pTryBegin->m_offset;
+        unsigned iTryEnd = pEH[i].m_pTryEnd->m_offset;
+
+        for (unsigned j = 0; j < nEH; j++)
+        {
+            if (i == j)
+            {
+                continue;
+            }
+
+            unsigned jTryBegin = pEH[j].m_pTryBegin->m_offset;
+            unsigned jTryEnd = pEH[j].m_pTryEnd->m_offset;
+            unsigned jHandlerBegin = pEH[j].m_pHandlerBegin->m_offset;
+            unsigned jHandlerEnd = pEH[j].m_pHandlerEnd->m_pNext->m_offset;
+
+            bool nestedInTry = IsProperlyContained(iTryBegin, iTryEnd, jTryBegin, jTryEnd);
+            bool nestedInHandler = IsProperlyContained(iTryBegin, iTryEnd, jHandlerBegin, jHandlerEnd);
+
+            if (nestedInTry || nestedInHandler)
+            {
+                depth[i]++;
+            }
+        }
+    }
+
+    // Build an index array and sort it. Using indices (rather than sorting clauses
+    // directly) lets us use the original position as a stability tiebreaker.
+    // This preserves the compiler's ordering of catch handlers that share the same
+    // try region -- their order determines which handler the runtime evaluates first.
+    std::unique_ptr<unsigned[]> indices(new unsigned[nEH]);
+    for (unsigned i = 0; i < nEH; i++)
+    {
+        indices[i] = i;
+    }
+
+    std::sort(indices.get(), indices.get() + nEH, [&](unsigned a, unsigned b) {
+        // Primary (inner try first): e.g. try { try { } catch { } } catch { }
+        if (depth[a] != depth[b])
+        {
+            return depth[a] > depth[b];
+        }
+
+        // Secondary (same depth, different tries — order by try start offset): e.g.
+        //   try { } catch { } try { } catch { }
+        unsigned offsetA = pEH[a].m_pTryBegin->m_offset;
+        unsigned offsetB = pEH[b].m_pTryBegin->m_offset;
+        if (offsetA != offsetB)
+        {
+            return offsetA < offsetB;
+        }
+
+        // Preserve original order for clauses with equal depth and try offset
+        // (e.g. multiple catch handlers for the same try block).
+        // Tertiary (same try — keep compiler order): e.g. try { } catch (A) { } catch (B) { }
+        return a < b;
+    });
+
+    // Apply the sorted order back to the EH clause array.
+    std::unique_ptr<EHClause[]> sorted(new EHClause[nEH]);
+    for (unsigned i = 0; i < nEH; i++)
+    {
+        sorted[i] = pEH[indices[i]];
+    }
+    for (unsigned i = 0; i < nEH; i++)
+    {
+        pEH[i] = sorted[i];
     }
 }
