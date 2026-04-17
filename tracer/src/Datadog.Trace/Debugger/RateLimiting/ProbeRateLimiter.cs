@@ -22,7 +22,18 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         private static ProbeRateLimiter _instance;
 
+        private readonly Func<int, IAdaptiveSampler> _samplerFactory;
         private readonly ConcurrentDictionary<string, IAdaptiveSampler> _samplers = new();
+
+        internal ProbeRateLimiter()
+            : this(AdaptiveSamplerLifetime.Create)
+        {
+        }
+
+        internal ProbeRateLimiter(Func<int, IAdaptiveSampler> samplerFactory)
+        {
+            _samplerFactory = samplerFactory ?? throw new ArgumentNullException(nameof(samplerFactory));
+        }
 
         internal static ProbeRateLimiter Instance
         {
@@ -31,35 +42,39 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 return LazyInitializer.EnsureInitialized(
                     ref _instance,
                     ref _globalInstanceInitialized,
-                    ref _globalInstanceLock);
+                    ref _globalInstanceLock,
+                    () => new ProbeRateLimiter());
             }
         }
 
-        private static AdaptiveSampler CreateSampler(int samplesPerSecond = DefaultSamplesPerSecond) =>
-            new(TimeSpan.FromSeconds(1), samplesPerSecond, 180, 16, null);
-
         public IAdaptiveSampler GerOrAddSampler(string probeId)
         {
-            // Avoid ConcurrentDictionary.GetOrAdd(factory): its factory can run more than once
-            // under contention, leaking the losing sampler's Timer (rooted by the runtime).
-            if (_samplers.TryGetValue(probeId, out var sampler))
+            while (true)
             {
-                return sampler;
-            }
+                if (_samplers.TryGetValue(probeId, out var sampler))
+                {
+                    return sampler;
+                }
 
-            var candidate = CreateSampler();
-            sampler = _samplers.GetOrAdd(probeId, candidate);
-            if (!ReferenceEquals(sampler, candidate))
-            {
-                candidate.Dispose();
-            }
+                var candidate = _samplerFactory(DefaultSamplesPerSecond);
+                if (_samplers.TryAdd(probeId, candidate))
+                {
+                    return candidate;
+                }
 
-            return sampler;
+                AdaptiveSamplerLifetime.Dispose(candidate);
+            }
         }
 
         public bool TryAddSampler(string probeId, IAdaptiveSampler sampler)
         {
-            return _samplers.TryAdd(probeId, sampler);
+            if (_samplers.TryAdd(probeId, sampler))
+            {
+                return true;
+            }
+
+            AdaptiveSamplerLifetime.Dispose(sampler);
+            return false;
         }
 
         public void SetRate(string probeId, int samplesPerSecond)
@@ -70,7 +85,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 return;
             }
 
-            var candidate = CreateSampler(samplesPerSecond);
+            var candidate = _samplerFactory(samplesPerSecond);
             if (_samplers.TryAdd(probeId, candidate))
             {
                 return;
@@ -82,7 +97,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 UpdateExistingRate(probeId, existing, samplesPerSecond);
             }
 
-            candidate.Dispose();
+            AdaptiveSamplerLifetime.Dispose(candidate);
         }
 
         public void ResetRate(string probeId)
@@ -90,7 +105,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             // Must dispose: AdaptiveSampler's Timer is rooted by the runtime until disposed.
             if (_samplers.TryRemove(probeId, out var removed))
             {
-                removed.Dispose();
+                AdaptiveSamplerLifetime.Dispose(removed);
             }
         }
 

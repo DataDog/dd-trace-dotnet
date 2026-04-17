@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
@@ -20,6 +21,7 @@ namespace Datadog.Trace.Debugger.Configurations
         private readonly string? _env;
         private readonly string? _version;
         private readonly int _maxProbesPerType;
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
         private readonly HashSet<string> _removedRcmProbeIds = new();
         private Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>>? _handleAddedProbesChanges;
         private Action<string[]>? _handleRemovedProbesChanges;
@@ -28,18 +30,19 @@ namespace Datadog.Trace.Debugger.Configurations
         private ProbeConfiguration? _fileConfiguration;
         private ProbeConfiguration _rcmConfiguration;
 
-        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType)
+        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter)
         {
             _env = env;
             _version = version;
             _maxProbesPerType = maxProbesPerType;
+            _globalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
             _currentConfiguration = new ProbeConfiguration();
             _rcmConfiguration = new ProbeConfiguration();
         }
 
-        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType)
+        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter = null)
         {
-            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType);
+            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType, globalRateLimiter);
         }
 
         public void SetProbeInstrumentationHandlers(Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>> handleAddedProbesChanges, Action<string[]> handleRemovedProbesChanges)
@@ -108,7 +111,7 @@ namespace Datadog.Trace.Debugger.Configurations
 
             if (comparer.HasRateLimitChanged)
             {
-                HandleRateLimitChanged(comparer);
+                HandleRateLimitChanged(filteredConfiguration);
             }
 
             _currentConfiguration = filteredConfiguration;
@@ -195,9 +198,9 @@ namespace Datadog.Trace.Debugger.Configurations
             _handleRemovedProbesChanges?.Invoke(probeIds);
         }
 
-        private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)
+        private void HandleRateLimitChanged(ProbeConfiguration configuration)
         {
-            // todo handle rate limited changes
+            _globalRateLimiter.SetRate(configuration.ServiceConfiguration?.Sampling?.SnapshotsPerSecond);
         }
 
         internal sealed record UpdateResult(string Id, string? Error);

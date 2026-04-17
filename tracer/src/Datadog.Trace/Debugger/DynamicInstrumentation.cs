@@ -54,7 +54,8 @@ namespace Datadog.Trace.Debugger
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
         private readonly DebuggerSettings _settings;
-        private readonly NativeProbeInstrumentationRequester _instrumentProbes;
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
+		private readonly NativeProbeInstrumentationRequester _instrumentProbes;
         private readonly object _instanceLock = new();
         private int _disposeState;
         private int _initializationState;
@@ -71,7 +72,8 @@ namespace Datadog.Trace.Debugger
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats,
-            NativeProbeInstrumentationRequester? instrumentProbes = null)
+            IDebuggerGlobalRateLimiter? globalRateLimiter = null,
+			NativeProbeInstrumentationRequester? instrumentProbes = null)
         {
             Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
@@ -89,6 +91,8 @@ namespace Datadog.Trace.Debugger
             _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
             _lastReportedUnboundProbeErrors = new Dictionary<string, LineProbeResolveErrorKey>();
+			_globalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
+			_globalRateLimiter.ResetRate();
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -922,6 +926,7 @@ namespace Datadog.Trace.Debugger
             // On master, _dogStats was disposed via SafeDisposal.Add() which called sync
             // Dispose() — itself fire-and-forget internally via Task.Run().
             _dogStats?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
+            _globalRateLimiter.Dispose();
         }
     }
 }
