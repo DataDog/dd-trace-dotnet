@@ -269,7 +269,6 @@ namespace Datadog.Trace.Propagators
             string rawTraceId;
             string rawSpanId;
 
-#if NETCOREAPP
             var w3cTraceId = header.AsSpan(start: 3, length: 32);
             var w3cSpanId = header.AsSpan(start: 36, length: 16);
 
@@ -295,31 +294,6 @@ namespace Datadog.Trace.Propagators
             {
                 return false;
             }
-#else
-            rawTraceId = header.Substring(startIndex: 3, length: 32);
-            rawSpanId = header.Substring(startIndex: 36, length: 16);
-
-            if (!HexString.TryParseTraceId(rawTraceId, out traceId) || traceId == TraceId.Zero)
-            {
-                return false;
-            }
-
-            if (!HexString.TryParseUInt64(rawSpanId, out parentId) || parentId == 0)
-            {
-                return false;
-            }
-
-            bool sampled;
-
-            if (HexString.TryParseByte(header.Substring(53, 2), out var traceFlags))
-            {
-                sampled = ((TraceFlags)traceFlags).HasFlagFast(TraceFlags.Sampled);
-            }
-            else
-            {
-                return false;
-            }
-#endif
 
             traceParent = new W3CTraceParent(
                 traceId: traceId,
