@@ -65,13 +65,14 @@ namespace Datadog.Trace.Processors
 
         public Span Process(Span span)
         {
+            // TODO: This must happen on span context creation because it affects sampling
             if (span.Type == "sql" || span.Type == "cassandra")
             {
-                span.ResourceName = ObfuscateSqlResource(span.ResourceName);
+                // span.ResourceName = ObfuscateSqlResource(span.ResourceName);
             }
             else if (span.Type == SpanTypes.Redis)
             {
-                span.ResourceName = ObfuscateRedisResource(span.ResourceName);
+                // span.ResourceName = ObfuscateRedisResource(span.ResourceName);
             }
 
             return span;

@@ -87,7 +87,7 @@ internal readonly struct TraceChunkModel
 
     // used only to chain constructors
     private TraceChunkModel(in SpanCollection spans, TraceContext? traceContext, int? samplingPriority, bool isFirstChunkInPayload)
-        : this(in spans, traceContext?.RootSpan)
+        : this(in spans, traceContext?.RootSpan as Span)
     {
         // sampling decision override takes precedence over TraceContext.SamplingPriority
         SamplingPriority = samplingPriority;

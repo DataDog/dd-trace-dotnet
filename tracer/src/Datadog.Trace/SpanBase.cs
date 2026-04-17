@@ -21,16 +21,19 @@ internal abstract class SpanBase
     internal abstract string? ResourceName { get; }
 
     /// <summary>
-    /// Gets or sets the service name.
+    /// Gets the operation name
+    /// </summary>
+    internal abstract string? OperationName { get; }
+
+    /// <summary>
+    /// Gets the service name.
     /// The setter marks the source as manual ("m") and exists as the
     /// duck-typed entry point for Datadog.Trace.Manual.dll users.
-    /// Internal code should call <see cref="SetService"/> with an explicit source instead.
+    /// Internal code should call <see cref="Span.SetService"/> with an explicit source instead.
     /// </summary>
     internal string? ServiceName
     {
         get => Context.ServiceName;
-        [Obsolete("Use SetService(serviceName, source) instead to explicitly provide a source.")]
-        set => SetService(value, value is not null ? Configuration.Schema.ServiceNameMetadata.Manual : null);
     }
 
     /// <summary>
@@ -80,9 +83,4 @@ internal abstract class SpanBase
     internal abstract void Finish(DateTimeOffset finishTimestamp);
 
     internal abstract void Finish(TimeSpan duration);
-
-    /// <summary>
-    /// Sets the service name with an explicit source for <c>_dd.svc_src</c>.
-    /// </summary>
-    internal abstract void SetService(string? serviceName, string? source);
 }

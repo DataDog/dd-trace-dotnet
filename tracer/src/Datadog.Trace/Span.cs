@@ -63,7 +63,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the operation name
         /// </summary>
-        internal string OperationName { get; }
+        internal override string OperationName { get; }
 
         /// <summary>
         /// Gets the resource name
@@ -113,7 +113,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Sets the service name with an explicit source for <c>_dd.svc_src</c>.
         /// </summary>
-        internal override void SetService(string serviceName, string source)
+        internal void SetService(string serviceName, string source)
         {
             Context.ServiceName = serviceName;
             Context.ServiceNameSource = source;
@@ -151,6 +151,13 @@ namespace Datadog.Trace
 
             return StringBuilderCache.GetStringAndRelease(sb);
         }
+
+        /// <summary>
+        /// Set the resource name for the Span. Note that this should not be called on root spans,
+        /// as it impacts the sampling decision, and so can lead to incorrectly recording or
+        /// not recording spans.
+        /// </summary>
+        internal void SetResourceName(string resourceName) => _resourceName = resourceName;
 
         /// <summary>
         /// Add a the specified tag to this span.

@@ -21,14 +21,12 @@ namespace Datadog.Trace
         string? ISpan.OperationName
         {
             get => OperationName;
-            set => OperationName = value;
         }
 
         /// <inheritdoc />
         string? ISpan.ResourceName
         {
             get => ResourceName;
-            set => ResourceName = value;
         }
 
         /// <inheritdoc />
@@ -49,7 +47,6 @@ namespace Datadog.Trace
         string? ISpan.ServiceName
         {
             get => ServiceName;
-            set => SetService(value, value is not null ? Configuration.Schema.ServiceNameMetadata.Manual : null);
         }
 
         /// <inheritdoc />
