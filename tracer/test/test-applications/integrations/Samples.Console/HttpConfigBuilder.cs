@@ -2,6 +2,7 @@
 using System;
 using System.Configuration;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Xml;
@@ -51,13 +52,10 @@ public class HttpConfigBuilder : ConfigurationBuilder
             Console.WriteLine($"[ConfigBuilder] Background thread {Environment.CurrentManagedThreadId} started, about to call WebRequest.Create");
             try
             {
-                var request = WebRequest.Create(url);
+                using var request = new HttpClient();
                 Console.WriteLine($"[ConfigBuilder] WebRequest created on thread {Environment.CurrentManagedThreadId}, calling GetResponse...");
-                request.Timeout = 5000;
-                using (var response = request.GetResponse())
-                {
-                    Console.WriteLine($"[ConfigBuilder] HTTP response on thread {Environment.CurrentManagedThreadId}");
-                }
+                using var response = request.GetAsync(url).Result;
+                Console.WriteLine($"[ConfigBuilder] HTTP response on thread {Environment.CurrentManagedThreadId}");
             }
             catch (Exception ex)
             {

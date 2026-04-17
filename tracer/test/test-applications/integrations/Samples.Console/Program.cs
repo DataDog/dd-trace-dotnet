@@ -16,6 +16,9 @@ namespace Samples.Console_
     {
         private static void Main(string[] args)
         {
+#if NETFRAMEWORK
+            Console.WriteLine($" Some Value: {System.Configuration.ConfigurationManager.AppSettings["SomeValue"]}");
+#endif
             if (args.Length > 0 && args[0].StartsWith("crash"))
             {
                 Ready();

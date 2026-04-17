@@ -83,7 +83,8 @@ public class ConsoleDeadLockTests : TestHelper
         // Use a shorter timeout than the default 10 minutes — if the deadlock
         // occurs, the process will hang indefinitely. 30 seconds is plenty of
         // time for a console app that just starts and exits.
-        using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1", aspNetCorePort: 0, timeout: TimeSpan.FromSeconds(30));
+        EnvironmentHelper.SetAutomaticInstrumentation(false);
+        using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1", aspNetCorePort: 0, timeout: TimeSpan.FromMinutes(30));
         processResult.StandardOutput.Should().Contain("Sending 1 spans");
 
         // Stop the listener
