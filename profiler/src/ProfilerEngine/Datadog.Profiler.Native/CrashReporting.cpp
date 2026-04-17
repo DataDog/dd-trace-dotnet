@@ -291,7 +291,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, int32_t code)
     return 0;
 }
 
-int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
+int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingThreadContext, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
 {
     auto threads = GetThreads();
 
@@ -301,7 +301,18 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
     for (auto const& [threadId, threadName] : threads)
     {
-        auto frames = GetThreadFrames(threadId, resolveCallback, context);
+        auto isCrashingThread = threadId == crashingThreadId;
+        auto threadContext = isCrashingThread ? crashingThreadContext : nullptr;
+        if (!isCrashingThread)
+        {
+            continue;
+        }
+        if (threadContext == nullptr)
+        {
+            continue;
+        }
+
+        auto frames = GetThreadFrames(threadId, threadContext, resolveCallback, context);
 
         auto [stackTrace, succeeded] = ExtractResult(ddog_crasht_StackTrace_new());
 
@@ -310,7 +321,6 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             return 1;
         }
 
-        auto currentIsCrashingThread = threadId == crashingThreadId;
         // GetThreadFrames returns the frames in reverse order, so we need to iterate in reverse
         for (auto it = frames.rbegin(); it != frames.rend(); it++)
         {
@@ -323,7 +333,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
             auto const& currentFrame = *it;
 
-            if (currentIsCrashingThread)
+            if (isCrashingThread)
             {
                 // Mark the callstack as suspicious if one of the frames is suspicious
                 // or the thread name begins with DD_
@@ -368,7 +378,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
         auto threadIdStr = std::to_string(threadId);
         // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
         auto thread = ddog_crasht_ThreadData{
-            .crashed = currentIsCrashingThread,
+            .crashed = isCrashingThread,
             .name = {threadIdStr.data(), threadIdStr.size()},
             .stack = stackTrace,
             .state = {nullptr, 0}

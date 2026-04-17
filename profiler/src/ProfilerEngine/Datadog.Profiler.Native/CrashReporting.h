@@ -106,7 +106,7 @@ public:
     // only for tests
     virtual int32_t STDMETHODCALLTYPE Panic() = 0;
     virtual int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, int32_t code) = 0;
-    virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) = 0;
+    virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, void* crashingThreadContext, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) = 0;
     virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
     virtual int32_t STDMETHODCALLTYPE Send() = 0;
     virtual int32_t STDMETHODCALLTYPE WriteToFile(const char* url) = 0;
@@ -129,7 +129,7 @@ public:
     int32_t STDMETHODCALLTYPE Initialize() override;
     int32_t STDMETHODCALLTYPE Panic() override;
     int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, int32_t code) override;
-    int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) override;
+    int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, void* crashingThreadContext, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) override;
     int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
     int32_t STDMETHODCALLTYPE Send() override;
     int32_t STDMETHODCALLTYPE WriteToFile(const char* url) override;
@@ -143,7 +143,7 @@ protected:
     ddog_crasht_Handle_CrashInfoBuilder _builder;
     void SetLastError(ddog_Error error);
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
-    virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
+    virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, void* threadContext, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
 
 #ifdef DD_TEST
 public:
