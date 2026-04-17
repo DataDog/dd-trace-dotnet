@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Text;
 
 #if !NETCOREAPP3_1_OR_GREATER
