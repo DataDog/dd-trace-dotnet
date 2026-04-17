@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     //
     // Some of the Number code ported from CoreRT used internal Decimal methods that did in-place modifications on Decimal. So as to not

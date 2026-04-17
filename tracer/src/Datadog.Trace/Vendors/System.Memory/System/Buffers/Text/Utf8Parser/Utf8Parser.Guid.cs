@@ -56,7 +56,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                 case 'N':
                     return TryParseGuidN(source, out value, out bytesConsumed);
                 default:
-                    return ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
             }
         }
 

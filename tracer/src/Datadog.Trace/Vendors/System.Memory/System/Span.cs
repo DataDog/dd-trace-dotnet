@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     /// <summary>
     /// Span represents a contiguous region of arbitrary memory. Unlike arrays, it can point to either managed

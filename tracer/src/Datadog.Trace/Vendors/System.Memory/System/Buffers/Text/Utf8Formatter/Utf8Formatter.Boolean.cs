@@ -114,7 +114,7 @@ BufferTooSmall:
             return false;
 
 BadFormat:
-            return ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
+            return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
         }
     }
 }

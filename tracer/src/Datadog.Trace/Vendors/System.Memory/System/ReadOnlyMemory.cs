@@ -24,7 +24,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     /// <summary>
     /// Represents a contiguous region of memory, similar to <see cref="ReadOnlySpan{T}"/>.
@@ -86,12 +86,12 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (array == null)
             {
                 if (start != 0 || length != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
                 this = default;
                 return; // returns default
             }
             if ((uint)start > (uint)array.Length || (uint)length > (uint)(array.Length - start))
-                ThrowHelper.ThrowArgumentOutOfRangeException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
 
             _object = array;
             _index = start;
@@ -164,7 +164,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             int actualLength = capturedLength & RemoveFlagsBitMask;
             if ((uint)start > (uint)actualLength)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
             }
 
             // It is expected for (capturedLength - start) to be negative if the memory is already pre-pinned.
@@ -187,7 +187,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             int actualLength = _length & RemoveFlagsBitMask;
             if ((uint)start > (uint)actualLength || (uint)length > (uint)(actualLength - start))
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
             }
 
             // Set the high-bit to match the this._length high bit (1 for pre-pinned, 0 for unpinned).
