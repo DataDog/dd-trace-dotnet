@@ -250,8 +250,8 @@ public class FnvHash64Tests
     [MemberData(nameof(BinaryData))]
     public void CalculatesOffsetCountHashCorrectly(byte[] data, string v1HashAsHex, string v1AHashAsHex)
     {
-        var v1 = FnvHash64.GenerateHash(data, 0, data.Length, FnvHash64.Version.V1);
-        var v1A = FnvHash64.GenerateHash(data, 0, data.Length, FnvHash64.Version.V1A);
+        var v1 = FnvHash64.GenerateHash(data.AsSpan(0, data.Length), FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(data.AsSpan(0, data.Length), FnvHash64.Version.V1A);
 
         using var a = new AssertionScope();
         v1.ToString("x16").Should().Be(v1HashAsHex);
@@ -268,8 +268,8 @@ public class FnvHash64Tests
         new Random().NextBytes(padded);
         Array.Copy(data, 0, padded, padding, data.Length);
 
-        var v1 = FnvHash64.GenerateHash(padded, padding, data.Length, FnvHash64.Version.V1);
-        var v1A = FnvHash64.GenerateHash(padded, padding, data.Length, FnvHash64.Version.V1A);
+        var v1 = FnvHash64.GenerateHash(padded.AsSpan(padding, data.Length), FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(padded.AsSpan(padding, data.Length), FnvHash64.Version.V1A);
 
         using var a = new AssertionScope();
         v1.ToString("x16").Should().Be(v1HashAsHex);
