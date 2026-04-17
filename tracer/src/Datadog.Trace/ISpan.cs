@@ -18,14 +18,14 @@ namespace Datadog.Trace
     public partial interface ISpan : IDisposable
     {
         /// <summary>
-        /// Gets or sets operation name
+        /// Gets the operation name
         /// </summary>
-        string? OperationName { get; set; }
+        string? OperationName { get; }
 
         /// <summary>
-        /// Gets or sets the resource name
+        /// Gets the resource name
         /// </summary>
-        string? ResourceName { get; set; }
+        string? ResourceName { get; }
 
         /// <summary>
         /// Gets or sets the type of request this span represents (ex: web, db).
@@ -40,9 +40,9 @@ namespace Datadog.Trace
         bool Error { get; set; }
 
         /// <summary>
-        /// Gets or sets the service name.
+        /// Gets the service name.
         /// </summary>
-        string? ServiceName { get; set; }
+        string? ServiceName { get; }
 
         /// <summary>
         /// Gets the lower 64 bits of the trace's unique 128-bit identifier.

@@ -32,7 +32,7 @@ internal sealed class UnrecordedSpan : SpanBase
     /// <summary>
     /// Gets the operation name
     /// </summary>
-    internal string? OperationName => _context.OperationName;
+    internal override string? OperationName => _context.OperationName;
 
     internal override void Finish() => Finish(TimeSpan.Zero);
 
@@ -47,11 +47,5 @@ internal sealed class UnrecordedSpan : SpanBase
 
             TelemetryFactory.Metrics.RecordCountSpanFinished();
         }
-    }
-
-    internal override void SetService(string? serviceName, string? source)
-    {
-        Context.ServiceName = serviceName;
-        Context.ServiceNameSource = source;
     }
 }

@@ -70,17 +70,18 @@ namespace Datadog.Trace.Processors
 
         public Span Process(Span span)
         {
+            // TODO: This normalization should always happen, when the span context is first created, as it impacts sampling
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L51-L63
-            span.SetService(NormalizeService(span.ServiceName), span.Context.ServiceNameSource);
+            // span.SetService(NormalizeService(span.ServiceName), span.Context.ServiceNameSource);
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L76-L87
-            span.OperationName = NormalizeName(span.OperationName);
+            // span.OperationName = NormalizeName(span.OperationName);
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L89-L93
             if (string.IsNullOrEmpty(span.ResourceName))
             {
                 Log.Debug("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={Name}: {Span}", span.OperationName, span);
-                span.ResourceName = span.OperationName;
+                // span.ResourceName = span.OperationName;
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L95-L99
