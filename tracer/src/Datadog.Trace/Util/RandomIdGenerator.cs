@@ -27,7 +27,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
 
 namespace Datadog.Trace.Util;
 
@@ -39,13 +38,6 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     [ThreadStatic]
     private static RandomIdGenerator? _shared;
 
-#if !NETCOREAPP3_1_OR_GREATER
-    /// <summary>
-    /// Buffer used to avoid allocating a new byte array each time we generate a 128-bit trace id.
-    /// </summary>
-    private static byte[]? _buffer;
-#endif
-
     // in .NET < 6, we implement Xoshiro256** instead of using System.Random,
     // so we need to keep some state. it is not safe to access from multiple threads,
     // hence the threadstatic field.
@@ -56,39 +48,23 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
 
     public RandomIdGenerator()
     {
-#if NETCOREAPP
         // don't allocate this inside the loop (CA2014)
         Span<Guid> guidSpan = stackalloc Guid[2];
-#endif
 
         do
         {
             // generate two guids as a source of random bytes for the initial PRNG state.
             // reinterpret the 32 bytes (16 bytes x 2) as Int64s (8 bytes x 4).
 
-#if NETCOREAPP
             guidSpan[0] = Guid.NewGuid();
             guidSpan[1] = Guid.NewGuid();
 
-            var int64Span = System.Runtime.InteropServices.MemoryMarshal.Cast<Guid, ulong>(guidSpan);
+            var int64Span = MemoryMarshal.Cast<Guid, ulong>(guidSpan);
 
             _s0 = int64Span[0];
             _s1 = int64Span[1];
             _s2 = int64Span[2];
             _s3 = int64Span[3];
-#else
-            // we can't use `unsafe` pointers in this code because it can be called
-            // from manual instrumentation which could be running in partial trust.
-            // if we ever drop support for partial trust,
-            // we can rewrite this to use `unsafe` instead of allocating these arrays.
-            var guidBytes1 = Guid.NewGuid().ToByteArray();
-            var guidBytes2 = Guid.NewGuid().ToByteArray();
-
-            _s0 = BitConverter.ToUInt64(guidBytes1, startIndex: 0);
-            _s1 = BitConverter.ToUInt64(guidBytes1, startIndex: 8);
-            _s2 = BitConverter.ToUInt64(guidBytes2, startIndex: 0);
-            _s3 = BitConverter.ToUInt64(guidBytes2, startIndex: 8);
-#endif
 
             // Guid uses the 4 most significant bits of the first long as the version which would be fixed and not randomized.
             // and uses 2 other bits in the second long for variants which would be fixed and not randomized too.
@@ -102,19 +78,6 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     }
 
     public static RandomIdGenerator Shared => _shared ??= new RandomIdGenerator();
-
-#if !NETCOREAPP3_1_OR_GREATER
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static byte[] GetBuffer(int size)
-    {
-        if (_buffer == null || _buffer.Length < size)
-        {
-            _buffer = new byte[size];
-        }
-
-        return _buffer;
-    }
-#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
