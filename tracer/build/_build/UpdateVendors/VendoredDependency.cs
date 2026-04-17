@@ -721,10 +721,17 @@ namespace UpdateVendors
                                   "using System.Reflection;\n" +
                                   "using System.Runtime.InteropServices;\n" +
                                   "using System.Threading;\n" +
-                                  "using System.Threading.Tasks;\n" +
-                                  "using Datadog.Trace.VendoredMicrosoftCode.System;\n\n"; // To give Span<T> etc access to ThrowHelper
+                                  "using System.Threading.Tasks;\n\n";
 
             contents = contents.Insert(namespaceIndex, usings);
+
+            // Leave this one in the vendored namespace to avoid naming conflicts with various _other_ ThrowHelper files
+            if (string.Equals(Path.GetFileName(filePath), "ThrowHelper.cs"))
+            {
+                contents = contents.Replace(
+                    "namespace System",
+                    "namespace Datadog.Trace.VendoredMicrosoftCode.System");
+            }
 
             // Note that we leave everything in the System namespace where it is,
             // so that the compiler can light up for things like Span<T>. It does raise the question
@@ -750,15 +757,10 @@ namespace UpdateVendors
                                     "using System.Runtime.CompilerServices")
                                .Replace(
                                     "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
-                                    "using System.Text");
-
-            // Leave this one in the vendored namespace to avoid naming conflicts with various _other_ ThrowHelper files
-            if (string.Equals(Path.GetFileName(filePath), "ThrowHelper.cs"))
-            {
-                contents = contents.Replace(
-                    "namespace System",
-                    "namespace Datadog.Trace.VendoredMicrosoftCode.System");
-            }
+                                    "using System.Text")
+                               .Replace(
+                                    "ThrowHelper.",
+                                    "global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.");
 
             var resourceReplacements = new List<KeyValuePair<string, string>>
             {
