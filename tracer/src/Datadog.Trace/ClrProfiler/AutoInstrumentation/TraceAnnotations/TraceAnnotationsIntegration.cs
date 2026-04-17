@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
     public sealed class TraceAnnotationsIntegration
     {
         internal static readonly IntegrationId IntegrationId = IntegrationId.TraceAnnotations;
-        private static readonly ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo>();
+        // private static readonly ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -36,15 +36,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle)
         {
-            var info = InstrumentedMethodCache.GetOrAdd(
-                new RuntimeHandleTuple(methodHandle, typeHandle),
-                key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
-
-            var tags = new TraceAnnotationTags();
-            var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
-            scope.Span.ResourceName = info.ResourceName;
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            return new CallTargetState(scope);
+            // var info = InstrumentedMethodCache.GetOrAdd(
+            //     new RuntimeHandleTuple(methodHandle, typeHandle),
+            //     key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
+            //
+            // var tags = new TraceAnnotationTags();
+            // var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
+            // scope.Span.ResourceName = info.ResourceName;
+            // Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            return new CallTargetState();
         }
 
         /// <summary>

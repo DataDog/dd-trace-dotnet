@@ -17,9 +17,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
     internal static class ElasticsearchNetCommon
     {
         public const string ComponentValue = "elasticsearch-net";
-        private const string SpanType = "elasticsearch";
+        // private const string SpanType = "elasticsearch";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
+        // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
 
         public static Scope? CreateScope<T>(Tracer tracer, IntegrationId integrationId, RequestPipelineStruct pipeline, T requestData)
             where T : IRequestData
@@ -61,24 +61,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             Scope? scope = null;
 
-            try
-            {
-                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
-                var span = scope.Span;
-                span.ResourceName = requestName ?? operationName;
-                span.Type = SpanType;
-                tags.Action = requestName;
-                tags.Method = method;
-
-                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
+            //     var span = scope.Span;
+            //     span.ResourceName = requestName ?? operationName;
+            //     span.Type = SpanType;
+            //     tags.Action = requestName;
+            //     tags.Method = method;
+            //
+            //     tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     perTraceSettings.Schema.RemapPeerService(tags);
+            //
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

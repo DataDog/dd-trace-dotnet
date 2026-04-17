@@ -40,74 +40,74 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             Scope? scope = null;
 
-            try
-            {
-                var settings = tracer.CurrentTraceSettings;
-                if (!settings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
-                {
-                    // integration disabled, don't create a scope/span, skip this trace
-                    return null;
-                }
-
-                var parent = tracer.ActiveScope?.Span;
-                string operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Kafka);
-                if (parent is not null &&
-                    parent.OperationName == operationName &&
-                    parent.GetTag(Tags.InstrumentationName) != null)
-                {
-                    return null;
-                }
-
-                var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka);
-                KafkaTags tags = settings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
-
-                scope = tracer.StartActiveInternal(
-                    operationName,
-                    tags: tags,
-                    serviceName: serviceName,
-                    serviceNameSource: serviceNameSource,
-                    finishOnClose: finishOnClose);
-
-                string resourceName = $"Produce Topic {(string.IsNullOrEmpty(topicPartition?.Topic) ? "kafka" : topicPartition?.Topic)}";
-
-                var span = scope.Span;
-                span.Type = SpanTypes.Queue;
-                span.ResourceName = resourceName;
-                if (topicPartition?.Partition is not null && !topicPartition.Partition.IsSpecial)
-                {
-                    tags.Partition = (topicPartition?.Partition).ToString();
-                }
-
-                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out var clusterId))
-                {
-                    tags.BootstrapServers = bootstrapServers;
-                    if (!string.IsNullOrEmpty(clusterId))
-                    {
-                        tags.ClusterId = clusterId;
-                    }
-                }
-
-                if (isTombstone)
-                {
-                    tags.Tombstone = "true";
-                }
-
-                if (topicPartition is not null && !string.IsNullOrEmpty(topicPartition.Topic))
-                {
-                    tags.Topic = topicPartition.Topic;
-                }
-
-                // Producer spans should always be measured
-                span.SetMetric(Trace.Tags.Measured, 1.0);
-
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     var settings = tracer.CurrentTraceSettings;
+            //     if (!settings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+            //     {
+            //         // integration disabled, don't create a scope/span, skip this trace
+            //         return null;
+            //     }
+            //
+            //     var parent = tracer.ActiveScope?.Span;
+            //     string operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Kafka);
+            //     if (parent is not null &&
+            //         parent.OperationName == operationName &&
+            //         parent.GetTag(Tags.InstrumentationName) != null)
+            //     {
+            //         return null;
+            //     }
+            //
+            //     var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka);
+            //     KafkaTags tags = settings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
+            //
+            //     scope = tracer.StartActiveInternal(
+            //         operationName,
+            //         tags: tags,
+            //         serviceName: serviceName,
+            //         serviceNameSource: serviceNameSource,
+            //         finishOnClose: finishOnClose);
+            //
+            //     string resourceName = $"Produce Topic {(string.IsNullOrEmpty(topicPartition?.Topic) ? "kafka" : topicPartition?.Topic)}";
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.Queue;
+            //     span.ResourceName = resourceName;
+            //     if (topicPartition?.Partition is not null && !topicPartition.Partition.IsSpecial)
+            //     {
+            //         tags.Partition = (topicPartition?.Partition).ToString();
+            //     }
+            //
+            //     if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out var clusterId))
+            //     {
+            //         tags.BootstrapServers = bootstrapServers;
+            //         if (!string.IsNullOrEmpty(clusterId))
+            //         {
+            //             tags.ClusterId = clusterId;
+            //         }
+            //     }
+            //
+            //     if (isTombstone)
+            //     {
+            //         tags.Tombstone = "true";
+            //     }
+            //
+            //     if (topicPartition is not null && !string.IsNullOrEmpty(topicPartition.Topic))
+            //     {
+            //         tags.Topic = topicPartition.Topic;
+            //     }
+            //
+            //     // Producer spans should always be measured
+            //     span.SetMetric(Trace.Tags.Measured, 1.0);
+            //
+            //     tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            //     tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }
@@ -181,183 +181,183 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             Scope? scope = null;
 
-            try
-            {
-                if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
-                {
-                    // integration disabled, don't create a scope/span, skip this trace
-                    return null;
-                }
-
-                var parent = tracer.ActiveScope?.Span;
-                string operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Kafka);
-                if (parent is not null &&
-                    parent.OperationName == operationName &&
-                    parent.GetTag(Tags.InstrumentationName) != null)
-                {
-                    return null;
-                }
-
-                PropagationContext extractedContext = default;
-                PathwayContext? pathwayContext = null;
-
-                // Try to extract propagated context from headers
-                if (message?.Headers is not null)
-                {
-                    var headers = new KafkaHeadersCollectionAdapter(message.Headers);
-
-                    try
-                    {
-                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting propagated headers from Kafka message");
-                    }
-
-                    if (dataStreamsManager.IsEnabled)
-                    {
-                        try
-                        {
-                            pathwayContext = dataStreamsManager.ExtractPathwayContext(headers);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error extracting PathwayContext from Kafka message");
-                        }
-                    }
-                }
-
-                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka);
-                var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
-
-                scope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
-
-                string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
-
-                var span = scope.Span;
-                span.Type = SpanTypes.Queue;
-                span.ResourceName = resourceName;
-
-                if (partition is not null)
-                {
-                    tags.Partition = partition.ToString();
-                }
-
-                if (offset is not null)
-                {
-                    tags.Offset = offset.ToString();
-                }
-
-                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var consumerClusterId))
-                {
-                    tags.ConsumerGroup = groupId;
-                    tags.BootstrapServers = bootstrapServers;
-                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
-                    {
-                        tags.ClusterId = consumerClusterId;
-                    }
-                }
-
-                if (message?.Instance is not null && message.Timestamp.Type != 0)
-                {
-                    var consumeTime = span.StartTime.UtcDateTime;
-                    var produceTime = message.Timestamp.UtcDateTime;
-                    tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
-                }
-
-                if (message?.Instance is not null && message.Value is null)
-                {
-                    tags.Tombstone = "true";
-                }
-
-                if (!string.IsNullOrEmpty(topic))
-                {
-                    tags.Topic = topic;
-                }
-
-                // Consumer spans should always be measured
-                span.SetTag(Tags.Measured, "1");
-
-                tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-
-                if (dataStreamsManager.IsEnabled)
-                {
-                    // NOTE: the tags must be sorted in alphabetical order
-                    var cacheKey = new ConsumeEdgeTagCacheKey(
-                        groupId ?? string.Empty,
-                        topic ?? string.Empty,
-                        consumerClusterId ?? string.Empty);
-                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId));
-
-                    span.SetDataStreamsCheckpoint(
-                        dataStreamsManager,
-                        CheckpointKind.Consume,
-                        edgeTags,
-                        message?.Instance is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
-                        tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
-                        pathwayContext);
-
-                    // TemporaryBase64PathwayContext is only written by our consumer code when
-                    // KafkaCreateConsumerScopeEnabled=false. When it is true (the default), the
-                    // header is never present so the unconditional Remove performs a wasted O(n)
-                    // linear header scan on every message. Skip it when we know it can't be there.
-                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled)
-                    {
-                        message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
-                    }
-
-                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
-                    {
-                        // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
-                        // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
-                        // Note that this header only exists on the consume side, and Kafka never sees it.
-                        var base64PathwayContext = Convert.ToBase64String(BitConverter.GetBytes(span.Context.PathwayContext.Value.Hash.Value));
-                        message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
-                    }
-
-                    if (dataStreamsManager.IsTransactionTrackingEnabled)
-                    {
-                        ApplyDataStreamsExtractors(span, dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaConsumeHeaders, message);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+            //     {
+            //         // integration disabled, don't create a scope/span, skip this trace
+            //         return null;
+            //     }
+            //
+            //     var parent = tracer.ActiveScope?.Span;
+            //     string operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Kafka);
+            //     if (parent is not null &&
+            //         parent.OperationName == operationName &&
+            //         parent.GetTag(Tags.InstrumentationName) != null)
+            //     {
+            //         return null;
+            //     }
+            //
+            //     PropagationContext extractedContext = default;
+            //     PathwayContext? pathwayContext = null;
+            //
+            //     // Try to extract propagated context from headers
+            //     if (message?.Headers is not null)
+            //     {
+            //         var headers = new KafkaHeadersCollectionAdapter(message.Headers);
+            //
+            //         try
+            //         {
+            //             extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
+            //         }
+            //         catch (Exception ex)
+            //         {
+            //             Log.Error(ex, "Error extracting propagated headers from Kafka message");
+            //         }
+            //
+            //         if (dataStreamsManager.IsEnabled)
+            //         {
+            //             try
+            //             {
+            //                 pathwayContext = dataStreamsManager.ExtractPathwayContext(headers);
+            //             }
+            //             catch (Exception ex)
+            //             {
+            //                 Log.Error(ex, "Error extracting PathwayContext from Kafka message");
+            //             }
+            //         }
+            //     }
+            //
+            //     var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka);
+            //     var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
+            //
+            //     scope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
+            //
+            //     string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.Queue;
+            //     span.ResourceName = resourceName;
+            //
+            //     if (partition is not null)
+            //     {
+            //         tags.Partition = partition.ToString();
+            //     }
+            //
+            //     if (offset is not null)
+            //     {
+            //         tags.Offset = offset.ToString();
+            //     }
+            //
+            //     if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var consumerClusterId))
+            //     {
+            //         tags.ConsumerGroup = groupId;
+            //         tags.BootstrapServers = bootstrapServers;
+            //         if (!StringUtil.IsNullOrEmpty(consumerClusterId))
+            //         {
+            //             tags.ClusterId = consumerClusterId;
+            //         }
+            //     }
+            //
+            //     if (message?.Instance is not null && message.Timestamp.Type != 0)
+            //     {
+            //         var consumeTime = span.StartTime.UtcDateTime;
+            //         var produceTime = message.Timestamp.UtcDateTime;
+            //         tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+            //     }
+            //
+            //     if (message?.Instance is not null && message.Value is null)
+            //     {
+            //         tags.Tombstone = "true";
+            //     }
+            //
+            //     if (!string.IsNullOrEmpty(topic))
+            //     {
+            //         tags.Topic = topic;
+            //     }
+            //
+            //     // Consumer spans should always be measured
+            //     span.SetTag(Tags.Measured, "1");
+            //
+            //     tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //
+            //     if (dataStreamsManager.IsEnabled)
+            //     {
+            //         // NOTE: the tags must be sorted in alphabetical order
+            //         var cacheKey = new ConsumeEdgeTagCacheKey(
+            //             groupId ?? string.Empty,
+            //             topic ?? string.Empty,
+            //             consumerClusterId ?? string.Empty);
+            //         var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId));
+            //
+            //         span.SetDataStreamsCheckpoint(
+            //             dataStreamsManager,
+            //             CheckpointKind.Consume,
+            //             edgeTags,
+            //             message?.Instance is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
+            //             tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
+            //             pathwayContext);
+            //
+            //         // TemporaryBase64PathwayContext is only written by our consumer code when
+            //         // KafkaCreateConsumerScopeEnabled=false. When it is true (the default), the
+            //         // header is never present so the unconditional Remove performs a wasted O(n)
+            //         // linear header scan on every message. Skip it when we know it can't be there.
+            //         if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled)
+            //         {
+            //             message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
+            //         }
+            //
+            //         if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
+            //         {
+            //             // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
+            //             // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
+            //             // Note that this header only exists on the consume side, and Kafka never sees it.
+            //             var base64PathwayContext = Convert.ToBase64String(BitConverter.GetBytes(span.Context.PathwayContext.Value.Hash.Value));
+            //             message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
+            //         }
+            //
+            //         if (dataStreamsManager.IsTransactionTrackingEnabled)
+            //         {
+            //             ApplyDataStreamsExtractors(span, dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaConsumeHeaders, message);
+            //         }
+            //     }
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }
 
         internal static void CloseConsumerScope(Tracer tracer)
         {
-            try
-            {
-                var settings = tracer.CurrentTraceSettings.Settings;
-                if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-                 || !settings.KafkaCreateConsumerScopeEnabled)
-                {
-                    // integration disabled, skip this trace
-                    return;
-                }
-
-                var activeScope = tracer.InternalActiveScope;
-                var currentSpan = activeScope?.Span;
-                if (currentSpan?.OperationName != tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Kafka))
-                {
-                    // Not currently in a consumer operation
-                    return;
-                }
-
-                // TODO: record end-to-end time?
-                activeScope!.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error closing Kafka consumer scope");
-            }
+            // try
+            // {
+            //     var settings = tracer.CurrentTraceSettings.Settings;
+            //     if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
+            //      || !settings.KafkaCreateConsumerScopeEnabled)
+            //     {
+            //         // integration disabled, skip this trace
+            //         return;
+            //     }
+            //
+            //     var activeScope = tracer.InternalActiveScope;
+            //     var currentSpan = activeScope?.Span;
+            //     if (currentSpan?.OperationName != tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Kafka))
+            //     {
+            //         // Not currently in a consumer operation
+            //         return;
+            //     }
+            //
+            //     // TODO: record end-to-end time?
+            //     activeScope!.Dispose();
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error closing Kafka consumer scope");
+            // }
         }
 
         internal static void ApplyDataStreamsExtractors<TMessage>(

@@ -45,7 +45,7 @@ internal sealed class AwsSnsHandlerCommon
 
             if (sendType == SendType.SingleMessage)
             {
-                scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                // scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                 ContextPropagation.InjectHeadersIntoMessage(tracer, request.DuckCast<IContainsMessageAttributes>(), context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
             }
             else if (sendType == SendType.Batch)
@@ -60,7 +60,7 @@ internal sealed class AwsSnsHandlerCommon
 
                         if (entry != null)
                         {
-                            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                            // scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                             ContextPropagation.InjectHeadersIntoMessage(tracer, entry, context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
                         }
                     }

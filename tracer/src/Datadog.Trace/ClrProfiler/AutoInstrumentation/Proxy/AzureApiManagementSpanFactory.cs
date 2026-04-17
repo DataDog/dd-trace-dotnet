@@ -18,35 +18,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// </summary>
 internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
 {
-    private const string OperationName = AzureFunctionsConstants.AzureApimName;
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementSpanFactory>();
+    // private const string OperationName = AzureFunctionsConstants.AzureApimName;
+    // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementSpanFactory>();
 
     public Scope? CreateSpan(Tracer tracer, InferredProxyData data, ISpanContext? parent = null)
     {
-        try
-        {
-            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+        // try
+        // {
+        //     var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+        //
+        //     var tags = new InferredProxyTags
+        //     {
+        //         HttpMethod = data.HttpMethod,
+        //         InstrumentationName = data.ProxyName,
+        //         HttpUrl = $"{data.DomainName}{data.Path}",
+        //         HttpRoute = resourceUrl,
+        //         InferredSpan = 1,
+        //         Region = data.Region,
+        //     };
+        //
+        //     var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: "azure-apim");
+        //     scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod} {resourceUrl}";
+        //     scope.Span.Type = SpanTypes.Web;
+        //
+        //     return scope;
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Error creating Azure API Management span");
+        //     return null;
+        // }
 
-            var tags = new InferredProxyTags
-            {
-                HttpMethod = data.HttpMethod,
-                InstrumentationName = data.ProxyName,
-                HttpUrl = $"{data.DomainName}{data.Path}",
-                HttpRoute = resourceUrl,
-                InferredSpan = 1,
-                Region = data.Region,
-            };
-
-            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: "azure-apim");
-            scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod} {resourceUrl}";
-            scope.Span.Type = SpanTypes.Web;
-
-            return scope;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error creating Azure API Management span");
-            return null;
-        }
+        return null;
     }
 }

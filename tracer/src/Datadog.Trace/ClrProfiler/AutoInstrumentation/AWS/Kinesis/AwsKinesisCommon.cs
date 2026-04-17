@@ -15,9 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     internal static class AwsKinesisCommon
     {
-        private const string DatadogAwsKinesisServiceName = "aws-kinesis";
-        private const string KinesisServiceName = "Kinesis";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsKinesisCommon));
+        // private const string DatadogAwsKinesisServiceName = "aws-kinesis";
+        // private const string KinesisServiceName = "Kinesis";
+        // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsKinesisCommon));
 
         internal const string IntegrationName = nameof(IntegrationId.AwsKinesis);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsKinesis;
@@ -57,26 +57,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
-                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsKinesisServiceName);
-                string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsKinesis);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Http;
-                span.ResourceName = $"{KinesisServiceName}.{operation}";
-
-                tags.Service = KinesisServiceName;
-                tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
+            //     var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsKinesisServiceName);
+            //     string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsKinesis);
+            //     scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+            //     var span = scope.Span;
+            //
+            //     span.Type = SpanTypes.Http;
+            //     span.ResourceName = $"{KinesisServiceName}.{operation}";
+            //
+            //     tags.Service = KinesisServiceName;
+            //     tags.Operation = operation;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // Always returns the scope. Even if it's `null` because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags).
