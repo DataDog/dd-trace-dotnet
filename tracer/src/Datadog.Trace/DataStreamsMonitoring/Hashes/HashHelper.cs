@@ -61,24 +61,12 @@ internal static class HashHelper
         return new NodeHash(hash);
     }
 
-#if NETCOREAPP3_1_OR_GREATER
     [System.Runtime.CompilerServices.SkipLocalsInit]
-#endif
     public static PathwayHash CalculatePathwayHash(NodeHash nodeHash, PathwayHash parentHash)
     {
-#if NETCOREAPP3_1_OR_GREATER
         Span<byte> bytes = stackalloc byte[16];
-        System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes, nodeHash.Value);
-        System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(8), parentHash.Value);
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes, nodeHash.Value);
+        BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(8), parentHash.Value);
         return new PathwayHash(FnvHash64.GenerateHash(bytes, HashVersion));
-#else
-        // annoyingly allocate-y, but meh
-        var bytes = new byte[8];
-        BinaryPrimitivesHelper.WriteUInt64LittleEndian(bytes, nodeHash.Value);
-        var hash = FnvHash64.GenerateHash(bytes, HashVersion);
-
-        BinaryPrimitivesHelper.WriteUInt64LittleEndian(bytes, parentHash.Value);
-        return new PathwayHash(FnvHash64.GenerateHash(bytes, HashVersion, hash));
-#endif
     }
 }
