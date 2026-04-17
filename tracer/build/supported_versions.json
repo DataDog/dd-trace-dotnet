@@ -1014,7 +1014,7 @@
         "minVersionTestedInclusive": "2.0.0",
         "maxVersionSupportedInclusive": "4.2.1",
         "maxVersionAvailableInclusive": "4.2.1",
-        "maxVersionTestedInclusive": "4.2.1"
+        "maxVersionTestedInclusive": "4.1.0"
       }
     ]
   },
