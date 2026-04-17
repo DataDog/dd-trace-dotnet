@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace System
+namespace Datadog.Trace.VendoredMicrosoftCode.System
 {
     /// <summary>
     /// Extension methods for Span{T}, Memory{T}, and friends.
