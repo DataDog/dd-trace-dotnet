@@ -725,8 +725,11 @@ namespace UpdateVendors
 
             contents = contents.Insert(namespaceIndex, usings);
 
-            // Leave this one in the vendored namespace to avoid naming conflicts with various _other_ ThrowHelper files
-            if (string.Equals(Path.GetFileName(filePath), "ThrowHelper.cs"))
+            // Leave these in the vendored namespace to avoid naming conflicts with various _other_ ThrowHelper files,
+            // and MemoryExtensions causes conflicts in the test projects - it's extension methods, so doesn't matter too much where it is
+            if (string.Equals(Path.GetFileName(filePath), "ThrowHelper.cs")
+             || string.Equals(Path.GetFileName(filePath), "MemoryExtensions.cs")
+             || string.Equals(Path.GetFileName(filePath), "MemoryExtensions.Portable.cs"))
             {
                 contents = contents.Replace(
                     "namespace System",
