@@ -13,7 +13,7 @@ include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'DataDog/apm-reliability/apm-sdks-benchmarks'
     file: '.gitlab/ci-dotnet-aspnet-realworld-parallel.yml'
-    ref: 'fayssal/integrate'
+    ref: 'main'
 
 variables:
   DOTNET_PACKAGE_VERSION:
