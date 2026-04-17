@@ -5,9 +5,15 @@ stages:
   - shared-pipeline
   - publish
   - benchmarks
+  # These benchmarks are running in parallel with the legacy ones
+  - dotnet-aspnet-realworld-parallel
+  - dotnet-aspnet-realworld-parallel-slo
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
+  - project: 'DataDog/apm-reliability/apm-sdks-benchmarks'
+    file: '.gitlab/ci-dotnet-aspnet-realworld-parallel.yml'
+    ref: 'main'
 
 variables:
   DOTNET_PACKAGE_VERSION:
