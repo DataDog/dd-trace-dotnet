@@ -28,6 +28,10 @@ namespace Datadog.Trace.Debugger.Expressions
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
+        private string _probeId = string.Empty;
+        private ProbeType _probeType;
+        private bool _shouldApplyGlobalRateLimit;
         private ProbeExpressionEvaluator? _evaluator;
         private DebuggerExpression?[]? _templates;
         private DebuggerExpression? _condition;
@@ -41,7 +45,13 @@ namespace Datadog.Trace.Debugger.Expressions
         /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
+            : this(probe, DebuggerGlobalRateLimiter.Instance)
         {
+        }
+
+        internal ProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
+        {
+            _globalRateLimiter = globalRateLimiter ?? throw new ArgumentNullException(nameof(globalRateLimiter));
             InitializeProbeProcessor(probe);
         }
 
@@ -73,6 +83,9 @@ namespace Datadog.Trace.Debugger.Expressions
             };
 
             SetExpressions(probe);
+            _probeId = probe.Id;
+            _probeType = probeType;
+            _shouldApplyGlobalRateLimit = probeType is ProbeType.Snapshot or ProbeType.Log;
 
             var capture = (probe as LogProbe)?.Capture;
             var maxInfo = capture != null
@@ -164,9 +177,15 @@ namespace Datadog.Trace.Debugger.Expressions
             return _evaluator;
         }
 
+        private bool SamplePayload(IAdaptiveSampler sampler)
+        {
+            return (!_shouldApplyGlobalRateLimit || _globalRateLimiter.ShouldSample(_probeType, _probeId))
+                && sampler.Sample();
+        }
+
         public bool ShouldProcess(in ProbeData probeData)
         {
-            return HasCondition() || probeData.Sampler.Sample();
+            return HasCondition() || SamplePayload(probeData.Sampler);
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -382,10 +401,24 @@ namespace Datadog.Trace.Debugger.Expressions
             }
 
             if (evaluationResult.Condition != null && // i.e. not a metric, span probe, or span decoration
-                (evaluationResult.Condition is false ||
-                !sampler.Sample()))
+                evaluationResult.Condition is false)
             {
                 // if the expression evaluated to false, or there is a rate limit, stop capture
+                shouldStopCapture = true;
+                return evaluationResult;
+            }
+
+            if (evaluationResult.Condition != null &&
+                _shouldApplyGlobalRateLimit &&
+                !_globalRateLimiter.ShouldSample(_probeType, _probeId))
+            {
+                shouldStopCapture = true;
+                return evaluationResult;
+            }
+
+            if (evaluationResult.Condition != null &&
+                !sampler.Sample())
+            {
                 shouldStopCapture = true;
                 return evaluationResult;
             }

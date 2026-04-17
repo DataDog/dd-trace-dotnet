@@ -29,5 +29,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             return 1.0;
         }
+
+        public void Dispose()
+        {
+        }
     }
 }

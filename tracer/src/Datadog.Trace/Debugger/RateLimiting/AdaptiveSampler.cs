@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -64,15 +66,16 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private int _countsSlotIndex;
         private Counts[] _countsSlots;
 
-        private Timer _timer;
-        private Action _rollWindowCallback;
+        private Timer? _timer;
+        private Action? _rollWindowCallback;
+        private int _disposeState;
 
         internal AdaptiveSampler(
             TimeSpan windowDuration,
             int samplesPerWindow,
             int averageLookback,
             int budgetLookback,
-            Action rollWindowCallback)
+            Action? rollWindowCallback)
         {
             _timer = new Timer(state => RollWindow(), state: null, windowDuration, windowDuration);
             _totalCountRunningAverage = 0;
@@ -134,6 +137,17 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return ThreadSafeRandom.Shared.NextDouble();
         }
 
+        public void Dispose()
+        {
+            if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
+            {
+                return;
+            }
+
+            Interlocked.Exchange(ref _timer, null)?.Dispose();
+            _rollWindowCallback = null;
+        }
+
         private double ComputeIntervalAlpha(int lookback)
         {
             return 1 - Math.Pow(lookback, -1.0 / lookback);
@@ -191,10 +205,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
                 counts.Reset();
 
-                if (_rollWindowCallback != null)
-                {
-                    _rollWindowCallback();
-                }
+                _rollWindowCallback?.Invoke();
             }
             catch (Exception e)
             {
