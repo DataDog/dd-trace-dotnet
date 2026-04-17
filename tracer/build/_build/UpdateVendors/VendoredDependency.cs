@@ -721,16 +721,21 @@ namespace UpdateVendors
                                   "using System.Reflection;\n" +
                                   "using System.Runtime.InteropServices;\n" +
                                   "using System.Threading;\n" +
-                                  "using System.Threading.Tasks;\n\n";
+                                  "using System.Threading.Tasks;\n" +
+                                  "using Datadog.Trace.VendoredMicrosoftCode.System;\n\n"; // To give Span<T> etc access to ThrowHelper
 
             contents = contents.Insert(namespaceIndex, usings);
 
+            // Note that we leave everything in the System namespace where it is,
+            // so that the compiler can light up for things like Span<T>. It does raise the question
+            // of whether we should bother renaming _any_ of these APIs, but leaving as-is for now
+            // to avoid confusion
             contents = contents.Replace(
                                     "Datadog.Trace.VendoredMicrosoftCode.System..omponentModel.",
                                     "System.ComponentModel.")
                                .Replace(
                                     "Datadog.Trace.VendoredMicrosoftCode.System..UInt",
-                                    "Datadog.Trace.VendoredMicrosoftCode.System.NUInt")
+                                    "System.NUInt")
                                .Replace(
                                     "using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel",
                                     "using System.ComponentModel")
@@ -745,14 +750,15 @@ namespace UpdateVendors
                                     "using System.Runtime.CompilerServices")
                                .Replace(
                                     "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
-                                    "using System.Text")
-                               .Replace(
-                                    "namespace System\r\n",
-                                    "namespace System\n")
-                                // TODO: We should consider _not_ making this change in the future
-                               .Replace(
-                                    "namespace System\n",
-                                    "namespace Datadog.Trace.VendoredMicrosoftCode.System\n");
+                                    "using System.Text");
+
+            // Leave this one in the vendored namespace to avoid naming conflicts with various _other_ ThrowHelper files
+            if (string.Equals(Path.GetFileName(filePath), "ThrowHelper.cs"))
+            {
+                contents = contents.Replace(
+                    "namespace System",
+                    "namespace Datadog.Trace.VendoredMicrosoftCode.System");
+            }
 
             var resourceReplacements = new List<KeyValuePair<string, string>>
             {
