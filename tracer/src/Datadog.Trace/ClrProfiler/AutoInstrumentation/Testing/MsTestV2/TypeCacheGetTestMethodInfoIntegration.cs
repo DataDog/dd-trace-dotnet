@@ -87,3 +87,37 @@ public sealed class TypeCacheGetTestMethodInfoIntegrationV3_9
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache::GetTestMethodInfo(Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod) calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache",
+    MethodName = "GetTestMethodInfo",
+    ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod"],
+    MinimumVersion = "4.2.1",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public sealed class TypeCacheGetTestMethodInfoIntegrationV4
+#pragma warning restore SA1402
+{
+    /// <summary>
+    /// Captures the MSTest v4 test method and forwards it through the shared cache handler.
+    /// </summary>
+    internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, ref TTestMethod? testMethod)
+    {
+        object? testContext = null;
+        return TypeCacheGetTestMethodInfoIntegrationV3_9.OnMethodBegin<TTarget, TTestMethod, object>(instance, ref testMethod, ref testContext);
+    }
+
+    /// <summary>
+    /// Stores the resolved TestMethodInfo using the shared cache completion logic.
+    /// </summary>
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => TypeCacheGetTestMethodInfoIntegrationV3_9.OnMethodEnd(instance, returnValue, exception, in state);
+}
