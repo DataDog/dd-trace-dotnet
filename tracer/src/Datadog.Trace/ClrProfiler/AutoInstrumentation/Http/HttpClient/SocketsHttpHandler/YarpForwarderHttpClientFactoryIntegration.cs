@@ -8,7 +8,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
@@ -23,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
     MethodName = "ConfigureHandler",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Yarp.ReverseProxy.Forwarder.ForwarderHttpClientContext", "System.Net.Http.SocketsHttpHandler" },
-    MinimumVersion = "1.1.0",
+    MinimumVersion = "1.0.0",
     MaximumVersion = "2.*.*",
     IntegrationName = IntegrationName)]
 [Browsable(false)]
@@ -72,7 +71,7 @@ public sealed class YarpForwarderHttpClientFactoryIntegration
         // trace context is not updated by Yarp.
         if (state.State is System.Net.Http.SocketsHttpHandler handler)
         {
-            handler.ActivityHeadersPropagator = DistributedContextPropagator.CreateNoOutputPropagator();
+            handler.ActivityHeadersPropagator = null;
         }
 
         return CallTargetReturn.GetDefault();

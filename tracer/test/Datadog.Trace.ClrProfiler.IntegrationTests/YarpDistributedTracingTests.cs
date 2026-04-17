@@ -61,8 +61,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // solution to the snapshot testing
                 settings.AddSimpleScrubber("aspnet_core.endpoint: / HTTP: GET", "aspnet_core.endpoint: HTTP: GET /");
 
+                var fileName = nameof(YarpDistributedTracingTests);
+#if !NET8_0_OR_GREATER
+                fileName += ".NetCore";
+#endif
+
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(YarpDistributedTracingTests))
+                                  .UseFileName(fileName)
                                   .DisableRequireUniquePrefix();
             }
         }
