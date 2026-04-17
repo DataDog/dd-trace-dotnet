@@ -109,7 +109,7 @@ namespace Datadog.Trace.MSBuild
             {
                 Log.Debug("Build Started");
 
-                _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
+                _buildSpan = null; // HACK: _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
 
                 if (_buildSpan.Context.TraceContext is { } traceContext)
@@ -186,7 +186,7 @@ namespace Datadog.Trace.MSBuild
                 string projectName = Path.GetFileName(e.ProjectFile);
 
                 string targetName = string.IsNullOrEmpty(e.TargetNames) ? "build" : e.TargetNames?.ToLowerInvariant();
-                Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
+                Span projectSpan = null; // HACK: _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
 
                 if (projectName != null)
                 {
@@ -206,7 +206,7 @@ namespace Datadog.Trace.MSBuild
                     }
                 }
 
-                projectSpan.ResourceName = (string.IsNullOrEmpty(e.TargetNames) ? "Build" : e.TargetNames) + $"/{targetFramework}";
+                // HACK: projectSpan.ResourceName = (string.IsNullOrEmpty(e.TargetNames) ? "Build" : e.TargetNames) + $"/{targetFramework}";
 
                 projectSpan.SetTag(BuildTags.ProjectFile, e.ProjectFile);
                 projectSpan.SetTag(BuildTags.ProjectSenderName, e.SenderName);
