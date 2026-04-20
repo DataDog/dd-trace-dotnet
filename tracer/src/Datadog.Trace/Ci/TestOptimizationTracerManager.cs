@@ -18,7 +18,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -34,7 +33,6 @@ namespace Datadog.Trace.Ci
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IStatsdManager statsd,
-            RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
@@ -52,7 +50,6 @@ namespace Datadog.Trace.Ci
                 agentWriter,
                 scopeManager,
                 statsd,
-                runtimeMetricsWriter,
                 logSubmissionManager,
                 telemetry,
                 discoveryService,
@@ -152,7 +149,6 @@ namespace Datadog.Trace.Ci
                 IAgentWriter agentWriter,
                 IScopeManager scopeManager,
                 IStatsdManager statsd,
-                RuntimeMetricsWriter runtimeMetricsWriter,
                 DirectLogSubmissionManager logSubmissionManager,
                 ITelemetryController telemetry,
                 IDiscoveryService discoveryService,
@@ -170,7 +166,6 @@ namespace Datadog.Trace.Ci
                 agentWriter,
                 scopeManager,
                 statsd,
-                runtimeMetricsWriter,
                 logSubmissionManager,
                 telemetry,
                 discoveryService,

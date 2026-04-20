@@ -21,7 +21,6 @@ using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -43,15 +42,14 @@ namespace Datadog.Trace
         /// </summary>
         internal TracerManager CreateTracerManager(TracerSettings settings, TracerManager previous)
         {
-            // TODO: If relevant settings have not changed, continue using existing statsd/agent writer/runtime metrics etc
-            // If reusing the runtime metrics/statsd, need to propagate the new value of DD_TAGS from dynamic config
+            // TODO: If relevant settings have not changed, continue using existing statsd/agent writer etc
+            // If reusing statsd, need to propagate the new value of DD_TAGS from dynamic config
             var tracer = CreateTracerManager(
                 settings,
                 agentWriter: null,
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
                 statsd: null, // For now, let's continue to always create a new StatsD instance
-                runtimeMetrics: previous?.RuntimeMetrics,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
@@ -74,7 +72,6 @@ namespace Datadog.Trace
             ITraceSampler sampler,
             IScopeManager scopeManager,
             IStatsdManager statsd,
-            RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
@@ -104,9 +101,6 @@ namespace Datadog.Trace
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
 
             statsd ??= new StatsdManager(settings);
-            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
-                                   ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService, settings.RuntimeMetricsDiagnosticsMetricsApiEnabled)
-                                   : null;
 
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(
@@ -172,7 +166,6 @@ namespace Datadog.Trace
                 agentWriter,
                 scopeManager,
                 statsd,
-                runtimeMetrics,
                 logSubmissionManager,
                 telemetry,
                 discoveryService,
@@ -213,7 +206,6 @@ namespace Datadog.Trace
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IStatsdManager statsd,
-            RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
@@ -227,7 +219,7 @@ namespace Datadog.Trace
             ISpanEventsManager spanEventsManager,
             ServiceRemappingHash serviceRemappingHash)
         {
-            return new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
+            return new TracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
         }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)

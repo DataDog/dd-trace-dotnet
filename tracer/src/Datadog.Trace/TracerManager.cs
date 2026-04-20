@@ -26,7 +26,6 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -63,7 +62,6 @@ namespace Datadog.Trace
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IStatsdManager statsd,
-            RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
@@ -82,7 +80,6 @@ namespace Datadog.Trace
             AgentWriter = agentWriter;
             ScopeManager = scopeManager;
             Statsd = statsd;
-            RuntimeMetrics = runtimeMetricsWriter;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
             DataStreamsManager = dataStreamsManager;
             DirectLogSubmission = directLogSubmission;
@@ -177,8 +174,6 @@ namespace Datadog.Trace
 
         public ITracerFlareManager TracerFlareManager { get; }
 
-        public RuntimeMetricsWriter RuntimeMetrics { get; }
-
         public ISpanEventsManager SpanEventsManager { get; }
 
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
@@ -261,13 +256,6 @@ namespace Datadog.Trace
                     await oldManager.AgentWriter.FlushAndCloseAsync().ConfigureAwait(false);
                 }
 
-                var runtimeMetricsWriterReplaced = false;
-                if (oldManager.RuntimeMetrics != newManager.RuntimeMetrics)
-                {
-                    runtimeMetricsWriterReplaced = true;
-                    oldManager.RuntimeMetrics?.Dispose();
-                }
-
                 var statsdReplaced = false;
                 if (oldManager.Statsd != newManager.Statsd)
                 {
@@ -315,8 +303,8 @@ namespace Datadog.Trace
 
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -439,9 +427,6 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("log_injection_enabled");
                     writer.WriteValue(mutableSettings.LogsInjectionEnabled);
-
-                    writer.WritePropertyName("runtime_metrics_enabled");
-                    writer.WriteValue(instanceSettings.RuntimeMetricsEnabled);
 
                     writer.WritePropertyName("disabled_integrations");
                     writer.WriteStartArray();
@@ -758,9 +743,6 @@ namespace Datadog.Trace
                     {
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
-
-                    Log.Debug("Disposing RuntimeMetrics");
-                    instance.RuntimeMetrics?.Dispose();
 
                     if (instance.Statsd is { } statsd)
                     {

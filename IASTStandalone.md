@@ -287,6 +287,19 @@ Deleted OpenTelemetry support from the tracer (~103 files):
 | Cleaned `DirectLogSubmissionManager.cs` | Removed `OtlpSubmissionLogSink` branch |
 | Cleaned `DirectSubmissionLoggerProvider.cs` | Removed `OtlpSubmissionLogSink` / `OtelLogEventCreator` branch |
 
+### Runtime Metrics removal
+
+Deleted `RuntimeMetrics/` (14 files) and cleaned external references:
+
+| Change | Details |
+|---|---|
+| Deleted `RuntimeMetrics/` | 14 files: RuntimeMetricsWriter, GC counters, thread/memory collectors |
+| Cleaned `TracerManager.cs` | Removed `RuntimeMetricsWriter` parameter/property, replace logic, dispose, diagnostic log entry |
+| Cleaned `TracerManagerFactory.cs` | Removed conditional `RuntimeMetricsWriter` creation (`settings.RuntimeMetricsEnabled` check) |
+| Cleaned `TestOptimizationTracerManager.cs` | Removed `RuntimeMetricsWriter` parameter from both `TestOptimizationTracerManager` and `LockedManager` constructors |
+| Cleaned `TestOptimizationTracerManagerFactory.cs` | Removed `RuntimeMetricsWriter` parameter from `CreateTracerManagerFrom` |
+| Cleaned `Tracer.cs` | Removed `runtimeMetrics: null` named argument from test-only constructor |
+
 ---
 
 ## Current Architecture
