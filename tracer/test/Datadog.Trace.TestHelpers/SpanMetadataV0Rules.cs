@@ -876,6 +876,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
+                .IsOptional("db.user")
                 .IsPresent("out.host")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process")
@@ -1076,6 +1077,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsOptional("db.name")
+                .IsOptional("db.user")
                 .IsPresent("out.host")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process")
