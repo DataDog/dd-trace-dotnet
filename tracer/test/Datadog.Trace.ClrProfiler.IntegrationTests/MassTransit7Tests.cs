@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
-[Trait("DockerGroup", "2")]
+[Trait("DockerGroup", "1")]
 public class MassTransit7Tests : TracingIntegrationTest
 {
     public MassTransit7Tests(ITestOutputHelper output)
