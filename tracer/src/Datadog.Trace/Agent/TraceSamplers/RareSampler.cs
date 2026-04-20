@@ -17,16 +17,15 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private readonly HashSet<StatsAggregationKey> _keys = new();
         private readonly Queue<StatsAggregationKey> _cache = new();
+        private readonly IStatsAggregator _aggregator;
 
-        public RareSampler(TracerSettings settings, bool isOtlp)
+        public RareSampler(TracerSettings settings, IStatsAggregator aggregator)
         {
             IsEnabled = settings.IsRareSamplerEnabled;
-            IsOtlp = isOtlp;
+            _aggregator = aggregator;
         }
 
         public bool IsEnabled { get; }
-
-        public bool IsOtlp { get; }
 
         /// <summary>
         /// Samples the trace chunk with the following rules:
@@ -92,7 +91,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private bool SampleSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span, IsOtlp);
+            var key = _aggregator.BuildKey(span, out _);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)
@@ -106,7 +105,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private void UpdateSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span, IsOtlp);
+            var key = _aggregator.BuildKey(span, out _);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)

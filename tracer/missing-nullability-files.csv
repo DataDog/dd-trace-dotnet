@@ -43,7 +43,6 @@ src/Datadog.Trace/Agent/IStreamFactory.cs
 src/Datadog.Trace/Agent/MovingAverageKeepRateCalculator.cs
 src/Datadog.Trace/Agent/NullStatsAggregator.cs
 src/Datadog.Trace/Agent/SpanBuffer.cs
-src/Datadog.Trace/Agent/StatsAggregationKey.cs
 src/Datadog.Trace/Agent/StatsAggregator.cs
 src/Datadog.Trace/Agent/StatsBucket.cs
 src/Datadog.Trace/Agent/StatsBuffer.cs
@@ -222,6 +221,8 @@ src/Datadog.Trace/Agent/Transports/HttpStreamRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequestFactory.cs
 src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
+src/Datadog.Trace/AppSec/Rasp/DownstreamSampler.cs
+src/Datadog.Trace/AppSec/Rasp/IDownstreamSampler.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs

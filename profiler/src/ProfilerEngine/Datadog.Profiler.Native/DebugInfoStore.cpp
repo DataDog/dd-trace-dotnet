@@ -45,6 +45,7 @@ SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef)
     if (it == _modulesInfo.cend())
     {
         ParseModuleDebugInfo(moduleId);
+        it = _modulesInfo.find(moduleId);
     }
 
     ModuleDebugInfo& info = (it == _modulesInfo.cend()) ? _modulesInfo[moduleId] : it->second;

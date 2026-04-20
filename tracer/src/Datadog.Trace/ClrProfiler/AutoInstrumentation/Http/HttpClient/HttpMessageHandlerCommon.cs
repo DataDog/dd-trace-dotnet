@@ -6,11 +6,13 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
@@ -72,7 +74,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
-                    return new CallTargetState(scope);
+
+                    bool executeOnDownstreamResponse = false;
+#if NETCOREAPP
+                    if (requestMessage != null)
+                    {
+                        var rootSpan = tracer.InternalActiveScope?.Root?.Span;
+                        try
+                        {
+                            executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(requestMessage, scope.Span.SpanId, rootSpan);
+                        }
+                        catch (AppSec.BlockException ex)
+                        {
+                            scope.DisposeWithException(ex);
+                            throw;
+                        }
+                    }
+#endif
+
+                    return new CallTargetState(scope, executeOnDownstreamResponse);
                 }
             }
 
@@ -99,6 +119,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;
+                    if (state.State is true)
+                    {
+                        RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+                    }
 #else
                 if (responseMessage.Instance is not null)
                 {

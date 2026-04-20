@@ -1082,13 +1082,16 @@ namespace Datadog.Trace.TestHelpers
             public bool ClientDropP0s { get; set; } = true;
 
             [JsonProperty("version")]
-            public string AgentVersion { get; set; }
+            public string AgentVersion { get; set; } = "7.65.0";
 
             [JsonProperty("span_meta_structs")]
             public bool SpanMetaStructs { get; set; } = true;
 
             [JsonProperty("span_events")]
             public bool SpanEvents { get; set; } = false;
+
+            [JsonProperty("obfuscation_version")]
+            public int ObfuscationVersion { get; set; } = 1;
         }
 
         public class TcpUdpAgent : MockTracerAgent

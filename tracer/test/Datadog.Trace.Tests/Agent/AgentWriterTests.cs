@@ -606,6 +606,12 @@ namespace Datadog.Trace.Tests.Agent
             public SpanCollection ProcessTrace(in SpanCollection trace) => processTrace(trace);
 
             public Task DisposeAsync() => Task.CompletedTask;
+
+            public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+            {
+                utf8PeerTags = [];
+                return new();
+            }
         }
     }
 }
