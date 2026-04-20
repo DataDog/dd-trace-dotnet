@@ -70,7 +70,7 @@ namespace Samples.Security.WebApi.Controllers
 
         [AcceptVerbs("GET")]
         [Route("Iast/SqlQuery")]
-        public string SqlQuery(string username, string query)
+        public string SqlQuery(string username = null, string query = null)
         {
             try
             {
@@ -116,7 +116,7 @@ namespace Samples.Security.WebApi.Controllers
 
         [AcceptVerbs("GET")]
         [Route("Iast/Ldap")]
-        public string Ldap(string path, string userName, bool skipQueryExecution = false)
+        public string Ldap(string path = null, string userName = null, bool skipQueryExecution = false)
         {
             var resultString = string.Empty;
             DirectoryEntry entry;

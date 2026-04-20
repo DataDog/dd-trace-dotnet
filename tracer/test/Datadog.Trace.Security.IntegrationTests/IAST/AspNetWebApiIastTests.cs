@@ -254,8 +254,8 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
         }
 
         var spans = body == null
-                        ? await SendRequestsAsync(_iisFixture.Agent, new[] { url })
-                        : await SendRequestsAsync(_iisFixture.Agent, url, body, 1, 1, string.Empty, contentType ?? "application/json");
+                        ? await SendRequestsAsync(_iisFixture.Agent, 2, new[] { url })
+                        : await SendRequestsAsync(_iisFixture.Agent, url, body, 1, 2, string.Empty, contentType ?? "application/json");
 
         var rootSpan = spans.Single(span => span.Name == "aspnet.request" && span.ParentId == null);
         var webApiSpan = spans.Single(span => span.Name == "aspnet-webapi.request" && span.ParentId == rootSpan.SpanId);
@@ -263,7 +263,11 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
         webApiSpan.ParentId.Should().Be(rootSpan.SpanId);
         rootSpan.GetTag(Tags.IastEnabled).Should().Be("1");
 
-        IastVerifyScrubberExtensions.IastMetaStructScrubbing(rootSpan);
+        if (rootSpan.MetaStruct is not null)
+        {
+            IastVerifyScrubberExtensions.IastMetaStructScrubbing(rootSpan);
+        }
+
         var iastJsonText = rootSpan.GetTag(Tags.IastJson);
         iastJsonText.Should().NotBeNullOrEmpty();
 
