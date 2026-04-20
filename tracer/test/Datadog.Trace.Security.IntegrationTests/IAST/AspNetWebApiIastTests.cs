@@ -212,6 +212,19 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableFact]
+    public async Task DetectsUnvalidatedRedirectViaHttpResponse()
+    {
+        var (_, _, iastJson) = await SendIastRequestAsync("/Iast/UnvalidatedRedirectViaHttpResponse?param=value");
+
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "UNVALIDATED_REDIRECT");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "UnvalidatedRedirectViaHttpResponse");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "param", "value");
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
     public async Task DetectsWeakHashing()
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/WeakHashing");
