@@ -44,57 +44,6 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     private readonly IisFixture _iisFixture;
     private readonly bool _classicMode;
 
-    private static IEnumerable<JObject> GetVulnerabilities(JObject iastJson)
-    {
-        var vulnerabilities = iastJson["vulnerabilities"] as JArray;
-        vulnerabilities.Should().NotBeNull();
-        return vulnerabilities!.OfType<JObject>();
-    }
-
-    private static IEnumerable<JObject> GetVulnerabilities(JObject iastJson, string vulnerabilityType)
-    {
-        return GetVulnerabilities(iastJson).Where(vulnerability =>
-            string.Equals(vulnerability["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal));
-    }
-
-    private static JObject GetSingleVulnerability(JObject iastJson, string vulnerabilityType)
-    {
-        var vulnerabilities = GetVulnerabilities(iastJson, vulnerabilityType).ToList();
-        vulnerabilities.Should().ContainSingle();
-        return vulnerabilities[0];
-    }
-
-    private static void AssertLocation(JObject vulnerability, string expectedPathContains, string expectedMethodContains)
-    {
-        var location = vulnerability["location"] as JObject;
-        location.Should().NotBeNull();
-        location!["path"]?.Value<string>().Should().Contain(expectedPathContains);
-        location["method"]?.Value<string>().Should().Contain(expectedMethodContains);
-    }
-
-    private static void AssertCookieEvidence(IEnumerable<JObject> vulnerabilities, string vulnerabilityType)
-    {
-        vulnerabilities.Where(v => string.Equals(v["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal))
-                       .Select(v => v["evidence"]?["value"]?.Value<string>())
-                       .Should()
-                       .Contain("AllVulnerabilitiesCookieKey");
-    }
-
-    private static void AssertSource(JObject iastJson, string origin, string name = null, string value = null)
-    {
-        var sources = iastJson["sources"] as JArray;
-        sources.Should().NotBeNull();
-
-        var source = sources!
-                    .OfType<JObject>()
-                    .FirstOrDefault(candidate =>
-                         string.Equals(candidate["origin"]?.Value<string>(), origin, StringComparison.Ordinal)
-                      && (name == null || string.Equals(candidate["name"]?.Value<string>(), name, StringComparison.Ordinal))
-                      && (value == null || string.Equals(candidate["value"]?.Value<string>(), value, StringComparison.Ordinal)));
-
-        source.Should().NotBeNull();
-    }
-
     protected AspNetWebApiIastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode)
         : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet", allowAutoRedirect: false)
     {
@@ -121,9 +70,9 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/SqlQuery?username=Vicent");
 
-        var vulnerability = GetSingleVulnerability(iastJson, "SQL_INJECTION");
-        AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "SqlQuery");
-        AssertSource(iastJson, "http.request.parameter", "username", "Vicent");
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "SQL_INJECTION");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "SqlQuery");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "username", "Vicent");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -137,9 +86,9 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
             body: "{\"Id\":\"nonexisting.txt\"}",
             contentType: "application/json");
 
-        var vulnerability = GetSingleVulnerability(iastJson, "PATH_TRAVERSAL");
-        AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "PathTraversal");
-        AssertSource(iastJson, "http.request.body", value: "nonexisting.txt");
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "PATH_TRAVERSAL");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "PathTraversal");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.body", value: "nonexisting.txt");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -150,10 +99,10 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1");
 
-        var vulnerability = GetSingleVulnerability(iastJson, "COMMAND_INJECTION");
-        AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "ExecuteCommandInternal");
-        AssertSource(iastJson, "http.request.parameter", "file", "nonexisting.exe");
-        AssertSource(iastJson, "http.request.parameter", "argumentLine", "arg1");
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "COMMAND_INJECTION");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "ExecuteCommandInternal");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "file", "nonexisting.exe");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "argumentLine", "arg1");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -170,10 +119,10 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
                 { "argumentLine", "arg1" },
             });
 
-        var vulnerability = GetSingleVulnerability(iastJson, "COMMAND_INJECTION");
-        AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "ExecuteCommandInternal");
-        AssertSource(iastJson, "http.request.header", "file", "nonexisting.exe");
-        AssertSource(iastJson, "http.request.header", "argumentLine", "arg1");
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "COMMAND_INJECTION");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "ExecuteCommandInternal");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.header", "file", "nonexisting.exe");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.header", "argumentLine", "arg1");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -190,10 +139,10 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
                 { "argumentLine", "arg1" },
             });
 
-        var vulnerability = GetSingleVulnerability(iastJson, "COMMAND_INJECTION");
-        AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "ExecuteCommandInternal");
-        AssertSource(iastJson, "http.request.cookie.value", "file", "nonexisting.exe");
-        AssertSource(iastJson, "http.request.cookie.value", "argumentLine", "arg1");
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "COMMAND_INJECTION");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "ExecuteCommandInternal");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.cookie.value", "file", "nonexisting.exe");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.cookie.value", "argumentLine", "arg1");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -204,9 +153,9 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/Ldap?userName=Vicent&skipQueryExecution=true");
 
-        var vulnerability = GetSingleVulnerability(iastJson, "LDAP_INJECTION");
-        AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "Ldap");
-        AssertSource(iastJson, "http.request.parameter", "userName", "Vicent");
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "LDAP_INJECTION");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "Ldap");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "userName", "Vicent");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -223,9 +172,9 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
                 { "value", "value" },
             });
 
-        GetSingleVulnerability(iastJson, "HEADER_INJECTION");
-        AssertSource(iastJson, "http.request.header", "name", "Name");
-        AssertSource(iastJson, "http.request.header", "value", "value");
+        AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "HEADER_INJECTION");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.header", "name", "Name");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.header", "value", "value");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -236,14 +185,14 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/AllVulnerabilitiesCookie");
 
-        var vulnerabilities = GetVulnerabilities(iastJson).ToList();
+        var vulnerabilities = AspNetWebApiIastAssertions.GetVulnerabilities(iastJson).ToList();
         var vulnerabilityTypes = vulnerabilities.Select(v => v["type"]?.Value<string>()).ToList();
         vulnerabilityTypes.Should().Contain("NO_SAMESITE_COOKIE");
         vulnerabilityTypes.Should().Contain("NO_HTTPONLY_COOKIE");
         vulnerabilityTypes.Should().Contain("INSECURE_COOKIE");
-        AssertCookieEvidence(vulnerabilities, "NO_SAMESITE_COOKIE");
-        AssertCookieEvidence(vulnerabilities, "NO_HTTPONLY_COOKIE");
-        AssertCookieEvidence(vulnerabilities, "INSECURE_COOKIE");
+        AspNetWebApiIastAssertions.AssertCookieEvidence(vulnerabilities, "NO_SAMESITE_COOKIE");
+        AspNetWebApiIastAssertions.AssertCookieEvidence(vulnerabilities, "NO_HTTPONLY_COOKIE");
+        AspNetWebApiIastAssertions.AssertCookieEvidence(vulnerabilities, "INSECURE_COOKIE");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -254,9 +203,9 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/UnvalidatedRedirect?param=value");
 
-        var vulnerability = GetSingleVulnerability(iastJson, "UNVALIDATED_REDIRECT");
-        AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "UnvalidatedRedirect");
-        AssertSource(iastJson, "http.request.parameter", "param", "value");
+        var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "UNVALIDATED_REDIRECT");
+        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "UnvalidatedRedirect");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "param", "value");
     }
 
     [Trait("Category", "EndToEnd")]
@@ -267,7 +216,7 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/WeakHashing");
 
-        var vulnerabilities = GetVulnerabilities(iastJson, "WEAK_HASH").ToList();
+        var vulnerabilities = AspNetWebApiIastAssertions.GetVulnerabilities(iastJson, "WEAK_HASH").ToList();
         vulnerabilities.Should().HaveCount(2);
         vulnerabilities.Select(v => v["evidence"]?["value"]?.Value<string>())
                        .Should()
@@ -275,7 +224,7 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
 
         foreach (var vulnerability in vulnerabilities)
         {
-            AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "WeakHashing");
+            AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "WeakHashing");
         }
     }
 
@@ -319,6 +268,60 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
         iastJsonText.Should().NotBeNullOrEmpty();
 
         return (rootSpan, webApiSpan, JObject.Parse(iastJsonText));
+    }
+}
+
+internal static class AspNetWebApiIastAssertions
+{
+    internal static IEnumerable<JObject> GetVulnerabilities(JObject iastJson)
+    {
+        var vulnerabilities = iastJson["vulnerabilities"] as JArray;
+        vulnerabilities.Should().NotBeNull();
+        return vulnerabilities!.OfType<JObject>();
+    }
+
+    internal static IEnumerable<JObject> GetVulnerabilities(JObject iastJson, string vulnerabilityType)
+    {
+        return GetVulnerabilities(iastJson).Where(vulnerability =>
+            string.Equals(vulnerability["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal));
+    }
+
+    internal static JObject GetSingleVulnerability(JObject iastJson, string vulnerabilityType)
+    {
+        var vulnerabilities = GetVulnerabilities(iastJson, vulnerabilityType).ToList();
+        vulnerabilities.Should().ContainSingle();
+        return vulnerabilities[0];
+    }
+
+    internal static void AssertLocation(JObject vulnerability, string expectedPathContains, string expectedMethodContains)
+    {
+        var location = vulnerability["location"] as JObject;
+        location.Should().NotBeNull();
+        location!["path"]?.Value<string>().Should().Contain(expectedPathContains);
+        location["method"]?.Value<string>().Should().Contain(expectedMethodContains);
+    }
+
+    internal static void AssertCookieEvidence(IEnumerable<JObject> vulnerabilities, string vulnerabilityType)
+    {
+        vulnerabilities.Where(v => string.Equals(v["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal))
+                       .Select(v => v["evidence"]?["value"]?.Value<string>())
+                       .Should()
+                       .Contain("AllVulnerabilitiesCookieKey");
+    }
+
+    internal static void AssertSource(JObject iastJson, string origin, string name = null, string value = null)
+    {
+        var sources = iastJson["sources"] as JArray;
+        sources.Should().NotBeNull();
+
+        var source = sources!
+                    .OfType<JObject>()
+                    .FirstOrDefault(candidate =>
+                         string.Equals(candidate["origin"]?.Value<string>(), origin, StringComparison.Ordinal)
+                      && (name == null || string.Equals(candidate["name"]?.Value<string>(), name, StringComparison.Ordinal))
+                      && (value == null || string.Equals(candidate["value"]?.Value<string>(), value, StringComparison.Ordinal)));
+
+        source.Should().NotBeNull();
     }
 }
 #endif
