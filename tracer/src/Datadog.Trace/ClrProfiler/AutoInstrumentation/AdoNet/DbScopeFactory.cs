@@ -179,8 +179,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     dbType = DbType.Sqlite;
                     return true;
                 default:
-                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (IsDisabledCommandType(commandTypeName, disabledAdoNetCommandTypes))
+                    var fullNameSpan = commandTypeFullName.AsSpan();
+                    var lastDotIndex = fullNameSpan.LastIndexOf('.');
+                    var typeNameStart = lastDotIndex + 1;
+                    var typeNameLength = fullNameSpan.Length - typeNameStart;
+                    var commandTypeNameSpan = fullNameSpan.Slice(typeNameStart, typeNameLength);
+
+                    if (IsDisabledCommandType(commandTypeNameSpan, disabledAdoNetCommandTypes))
                     {
                         integrationId = null;
                         dbType = null;
@@ -188,29 +193,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
 
                     const string commandSuffix = "Command";
-                    int lastIndex = commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal);
-                    string namespaceName = lastIndex > 0 ? commandTypeFullName.Substring(0, lastIndex) : string.Empty;
                     integrationId = IntegrationId.AdoNet;
-                    dbType = commandTypeName switch
+
+                    if (commandTypeNameSpan.Equals(commandSuffix.AsSpan(), StringComparison.Ordinal))
                     {
-                        _ when namespaceName.Length == 0 && commandTypeName == commandSuffix => "command",
-                        _ when namespaceName.Contains(".") && commandTypeName == commandSuffix =>
+                        if (lastDotIndex <= 0)
+                        {
+                            // either no dot, or leading dot — namespace is empty
+                            dbType = "command";
+                        }
+                        else
+                        {
                             // the + 1 could be dangerous and cause IndexOutOfRangeException, but this shouldn't happen
                             // a period should never be the last character in a namespace
-                            namespaceName.Substring(namespaceName.LastIndexOf('.') + 1).ToLowerInvariant(),
-                        _ when commandTypeName == commandSuffix =>
-                            namespaceName.ToLowerInvariant(),
-                        _ when commandTypeName.EndsWith(commandSuffix) =>
-                            commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant(),
-                        _ => commandTypeName.ToLowerInvariant()
-                    };
+                            var namespaceSpan = fullNameSpan.Slice(0, lastDotIndex);
+                            var nsLastDot = namespaceSpan.LastIndexOf('.');
+                            dbType = nsLastDot >= 0
+                                ? ToLowerInvariantSlice(commandTypeFullName, nsLastDot + 1, lastDotIndex - nsLastDot - 1)
+                                : ToLowerInvariantSlice(commandTypeFullName, 0, lastDotIndex);
+                        }
+                    }
+                    else if (commandTypeNameSpan.EndsWith(commandSuffix.AsSpan(), StringComparison.Ordinal))
+                    {
+                        dbType = ToLowerInvariantSlice(commandTypeFullName, typeNameStart, typeNameLength - commandSuffix.Length);
+                    }
+                    else
+                    {
+                        dbType = ToLowerInvariantSlice(commandTypeFullName, typeNameStart, typeNameLength);
+                    }
+
                     return true;
             }
         }
 
-        internal static bool IsDisabledCommandType(string commandTypeName, HashSet<string> disabledAdoNetCommandTypes)
+        internal static bool IsDisabledCommandType(ReadOnlySpan<char> commandTypeName, HashSet<string> disabledAdoNetCommandTypes)
         {
-            if (string.IsNullOrEmpty(commandTypeName))
+            if (commandTypeName.IsEmpty)
             {
                 return false;
             }
@@ -224,13 +242,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             foreach (var disabledType in disabledTypes)
             {
-                if (string.Equals(disabledType, commandTypeName, StringComparison.OrdinalIgnoreCase))
+                if (disabledType.AsSpan().Equals(commandTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static string ToLowerInvariantSlice(string source, int start, int length)
+        {
+#if NETCOREAPP
+            return string.Create(length, (source, start), static (dst, state) =>
+            {
+                state.source.AsSpan(state.start, dst.Length).ToLowerInvariant(dst);
+            });
+#else
+            return source.Substring(start, length).ToLowerInvariant();
+#endif
         }
 
         public static class Cache<TCommand>
