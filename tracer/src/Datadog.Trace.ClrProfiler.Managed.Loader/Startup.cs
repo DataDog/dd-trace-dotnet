@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -21,6 +22,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
+        private static readonly HashSet<string> ArchitectureDirectories = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "win-x64",
+            "win-x86",
+#if NETCOREAPP
+            "linux-x64",
+            "linux-arm64",
+            "linux-musl-x64",
+            "linux-musl-arm64",
+            "osx",
+            "osx-arm64",
+            "osx-x64"
+#endif
+        };
+
         private static int _startupCtorInitialized;
 
         /// <summary>
@@ -34,10 +50,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // Startup() was already called before in the same AppDomain, this can happen because the profiler rewrites
                 // methods before the jitting to inject the loader. This is done until the profiler detects that the loader
                 // has been initialized.
-                // The piece of code injected already includes an Interlocked condition but, because the static variable is emitted
-                // in a custom type inside the running assembly, others assemblies will also have a different type with a different static
-                // variable, so, we still can hit an scenario where multiple loaders initialize.
-                // With this we prevent this scenario.
+                // The piece of code injected already includes an Interlocked condition. However, because the static variable is emitted
+                // in a custom type inside the running assembly, other assemblies will also have a different type with a different static
+                // variable, so we still can hit a scenario where multiple loaders initialize. This prevents this scenario.
                 return;
             }
 
@@ -58,11 +73,24 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 var envVars = new EnvironmentVariableProvider(logErrors: true);
-                var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+                var tracerHomeDirectory = GetTracerHomePath(envVars);
 
                 if (tracerHomeDirectory is null)
                 {
-                    StartupLogger.Log("{0} not set. Datadog SDK will be disabled.", TracerHomePathKey);
+                    // Provide a specific error message based on what was configured
+                    var explicitTracerHome = envVars.GetEnvironmentVariable(TracerHomePathKey);
+
+                    if (string.IsNullOrWhiteSpace(explicitTracerHome))
+                    {
+                        // DD_DOTNET_TRACER_HOME was not set and automatic detection from profiler path failed
+                        StartupLogger.Log("{0} is not set and the tracer home directory could not be determined automatically. Datadog SDK will be disabled. To resolve this issue, set environment variable {0}.", TracerHomePathKey);
+                    }
+                    else
+                    {
+                        // DD_DOTNET_TRACER_HOME was set but resulted in null (shouldn't happen, but just in case)
+                        StartupLogger.Log("{0} is set to '{1}' but could not be used. Datadog SDK will be disabled.", TracerHomePathKey, explicitTracerHome);
+                    }
+
                     return;
                 }
 
@@ -70,11 +98,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (!Directory.Exists(ManagedProfilerDirectory))
                 {
-                    StartupLogger.Log("Datadog.Trace.dll TFM directory not found at '{0}'. Datadog SDK will be disabled.", ManagedProfilerDirectory);
+                    StartupLogger.Log("Datadog.Trace.dll directory not found at '{0}'. Datadog SDK will be disabled.", ManagedProfilerDirectory);
                     return;
                 }
 
-                StartupLogger.Debug("Resolved Datadog.Trace.dll TFM directory to: {0}", ManagedProfilerDirectory);
+                StartupLogger.Debug("Resolved Datadog.Trace.dll directory to: {0}", ManagedProfilerDirectory);
 
                 try
                 {
@@ -125,12 +153,88 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // Nothing to do here.
                 }
 
-                // If the logger fails, throw the original exception. The profiler emits code to log it.
+                // If the logger fails, throw the original exception. The native library emits code to log it.
                 throw;
             }
         }
 
         internal static string? ManagedProfilerDirectory { get; }
+
+        internal static string? GetTracerHomePath<TEnvVars>(TEnvVars envVars)
+            where TEnvVars : IEnvironmentVariableProvider
+        {
+            // allow override with DD_DOTNET_TRACER_HOME
+            var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+
+            if (!string.IsNullOrWhiteSpace(tracerHomeDirectory))
+            {
+                // Safe to use ! here because we just checked !string.IsNullOrWhiteSpace above
+                var trimmedPath = tracerHomeDirectory!.Trim();
+                StartupLogger.Debug("Using tracer home from {0}=\"{1}\"", TracerHomePathKey, trimmedPath);
+                return trimmedPath;
+            }
+
+            // try to compute the path from the architecture-specific "COR_PROFILER_PATH_*" or "CORECLR_PROFILER_PATH_*"
+            var archEnvVarName = GetProfilerPathEnvVarNameForArch();
+
+            if (ComputeTracerHomePathFromProfilerPath(envVars, archEnvVarName) is { } archTracerHomePath)
+            {
+                StartupLogger.Debug("Derived tracer home from {0}=\"{1}\"", archEnvVarName, archTracerHomePath);
+                return archTracerHomePath;
+            }
+
+            // try to compute the path from "COR_PROFILER_PATH" or "CORECLR_PROFILER_PATH" (no architecture)
+            var fallbackEnvVarName = GetProfilerPathEnvVarNameFallback();
+
+            if (ComputeTracerHomePathFromProfilerPath(envVars, fallbackEnvVarName) is { } fallbackTracerHomePath)
+            {
+                StartupLogger.Debug("Derived tracer home from {0}=\"{1}\"", fallbackEnvVarName, fallbackTracerHomePath);
+                return fallbackTracerHomePath;
+            }
+
+            return null;
+        }
+
+        internal static string? ComputeTracerHomePathFromProfilerPath<TEnvVars>(TEnvVars envVars, string envVarName)
+            where TEnvVars : IEnvironmentVariableProvider
+        {
+            var envVarValue = envVars.GetEnvironmentVariable(envVarName)?.Trim();
+
+            if (string.IsNullOrWhiteSpace(envVarValue))
+            {
+                return null;
+            }
+
+            try
+            {
+                var directory = Directory.GetParent(envVarValue);
+
+                if (directory is null)
+                {
+                    StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, envVarValue);
+                    return null;
+                }
+
+                // if the directory name is one of the well-known "os-arch" child directories (e.g. "win-x64"), go one level higher
+                if (ArchitectureDirectories.Contains(directory.Name))
+                {
+                    directory = directory.Parent;
+
+                    if (directory is null)
+                    {
+                        StartupLogger.Log("Unable to determine tracer home directory from {0}={1}", envVarName, envVarValue);
+                        return null;
+                    }
+                }
+
+                return directory.FullName;
+            }
+            catch (Exception ex)
+            {
+                StartupLogger.Log(ex, "Error resolving tracer home directory from {0}={1}", envVarName, envVarValue);
+                return null;
+            }
+        }
 
         private static void TryInvokeManagedMethod(string typeName, string methodName, string? loaderHelperTypeName = null)
         {
