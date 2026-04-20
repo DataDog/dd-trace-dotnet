@@ -1,5 +1,7 @@
 name: &provision_name "dd-trace-dotnet-microbenchmarks-ami"
 
+instance_type: m6i.metal
+
 init_environment:
   # Defines the .NET SDK versions to install on the AMI
 

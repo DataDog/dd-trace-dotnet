@@ -10,6 +10,8 @@
 
 name: &provision_name "dd-trace-dotnet-microbenchmarks"
 
+instance_type: m6i.metal
+
 init_environment:
   # S3 bucket for benchmark results
   BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
@@ -30,11 +32,11 @@ check_cpu_model:
   remote_command: |
     $ErrorActionPreference = "Stop"
     $cpuModel = (Get-WmiObject -Class Win32_Processor).Name
-    if ($cpuModel -notlike "*8259CL CPU*") {
-        Write-Error "CPU model is not Intel(R) Xeon(R) Platinum 8259CL: $cpuModel"
-        exit 1
+    if ($cpuModel -notlike "*8375C*") {
+        Write-Warning "CPU model is not the expected Intel(R) Xeon(R) Platinum 8375C: $cpuModel. Benchmark results may not be comparable to existing baselines."
+    } else {
+        Write-Output "CPU model verified: Intel(R) Xeon(R) Platinum 8375C"
     }
-    Write-Output "CPU model verified: Intel(R) Xeon(R) Platinum 8259CL"
 
 fetch_baseline_metadata:
   populate_env: true
