@@ -45,7 +45,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 _instance = new OtelMetricsPipeline(settings, exporter);
                 _instance.Start();
 
-                if (Environment.Version.Major < 9)
+                if (settings.OtlpRuntimeMetricsEnabled && Environment.Version.Major < 9)
                 {
                     try
                     {

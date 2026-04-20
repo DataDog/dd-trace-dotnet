@@ -54,6 +54,13 @@ internal sealed class MetricReaderHandler
             shouldEnable = !meterName.StartsWith("System.", StringComparison.Ordinal) && !meterName.StartsWith("Microsoft.", StringComparison.Ordinal);
         }
 
+        if (!shouldEnable && _settings.OtlpRuntimeMetricsEnabled)
+        {
+            shouldEnable = meterName is "System.Runtime"
+            or "Microsoft.AspNetCore.Hosting"
+            or "Microsoft.AspNetCore.Server.Kestrel";
+        }
+
         if (!shouldEnable)
         {
             return;

@@ -696,16 +696,7 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
-#if NET6_0_OR_GREATER
             OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && OpenTelemetryMetricsEnabled;
-
-            if (OtlpRuntimeMetricsEnabled)
-            {
-                OpenTelemetryMeterNames.Add("System.Runtime");
-                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Hosting");
-                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Server.Kestrel");
-            }
-#endif
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
