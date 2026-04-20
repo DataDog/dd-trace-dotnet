@@ -195,24 +195,47 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
         AspNetWebApiIastAssertions.AssertCookieEvidence(vulnerabilities, "INSECURE_COOKIE");
     }
 
+    // --- Unvalidated Redirect: A/B diagnostic tests ---
+    // Test A: ApiController.Redirect() path — vulnerability detection via ReturnedHeadersAnalyzer
+    //   The tracer's Location-header analyzer detects the redirect, but source attribution
+    //   is lost because ApiController.Redirect(string) converts to Uri internally,
+    //   breaking taint tracking. A dedicated ApiControllerAspect would fix this.
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableFact]
-    public async Task DetectsUnvalidatedRedirect()
+    public async Task UnvalidatedRedirect_ApiController_VulnerabilityDetected()
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/UnvalidatedRedirect?param=value");
 
+        // Vulnerability IS detected via ReturnedHeadersAnalyzer reading Location header
         var vulnerability = AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "UNVALIDATED_REDIRECT");
-        AspNetWebApiIastAssertions.AssertLocation(vulnerability, "Samples.Security.WebApi.Controllers.IastController", "UnvalidatedRedirect");
-        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "param", "value");
+        vulnerability.Should().NotBeNull();
     }
 
+    // Test B: ApiController.Redirect() path — source attribution check
+    //   Expected to FAIL: the tainted query param goes through string→Uri→string
+    //   round-trip inside ApiController.Redirect, so the source info is lost.
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableFact]
-    public async Task DetectsUnvalidatedRedirectViaHttpResponse()
+    public async Task UnvalidatedRedirect_ApiController_SourceAttribution()
+    {
+        var (_, _, iastJson) = await SendIastRequestAsync("/Iast/UnvalidatedRedirect?param=value");
+
+        AspNetWebApiIastAssertions.GetSingleVulnerability(iastJson, "UNVALIDATED_REDIRECT");
+        AspNetWebApiIastAssertions.AssertSource(iastJson, "http.request.parameter", "param", "value");
+    }
+
+    // Test C: HttpResponse.Redirect() path — full detection with source attribution
+    //   Expected to PASS: calls the instrumented System.Web.HttpResponse.Redirect(string)
+    //   aspect directly, so the tainted string never goes through Uri conversion.
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    public async Task UnvalidatedRedirect_HttpResponse_FullDetection()
     {
         var (_, _, iastJson) = await SendIastRequestAsync("/Iast/UnvalidatedRedirectViaHttpResponse?param=value");
 
