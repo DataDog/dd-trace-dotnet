@@ -41,37 +41,41 @@ namespace Datadog.Trace.Headers.Ip
         internal static IpInfo? RealIpFromValue(string headerValue, bool https, Func<string?, string?> extractor)
         {
             IpInfo? privateIpInfo = null;
-            var values = headerValue.Split(',', ';');
-            foreach (var potentialIp in values)
+            var remaining = headerValue.AsSpan();
+            while (true)
             {
-                var consideredPotentialIp = extractor(potentialIp);
-                if (consideredPotentialIp is null || consideredPotentialIp.Length == 0)
+                var delim = remaining.IndexOfAny(',', ';');
+                var segment = delim < 0 ? remaining : remaining.Slice(0, delim);
+
+                var consideredPotentialIp = extractor(segment.ToString());
+                if (!string.IsNullOrEmpty(consideredPotentialIp))
                 {
-                    continue;
+                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp!, defaultPort: DefaultPort(https));
+                    if (IPAddress.TryParse(addressAndPort.IpAddress, out var ipAddress))
+                    {
+                        if (ipAddress!.IsIPv4MappedToIPv6)
+                        {
+                            ipAddress = ipAddress.MapToIPv4();
+                        }
+
+                        if (IsPrivateIp(ipAddress))
+                        {
+                            // only set the oldest (so the first one)
+                            privateIpInfo ??= addressAndPort;
+                        }
+                        else
+                        {
+                            return new IpInfo(ipAddress.ToString(), addressAndPort.Port);
+                        }
+                    }
                 }
 
-                var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, defaultPort: DefaultPort(https));
-                consideredPotentialIp = addressAndPort.IpAddress;
-
-                var success = IPAddress.TryParse(consideredPotentialIp, out var ipAddress);
-                if (success)
+                if (delim < 0)
                 {
-                    if (ipAddress!.IsIPv4MappedToIPv6)
-                    {
-                        ipAddress = ipAddress.MapToIPv4();
-                    }
-
-                    if (IsPrivateIp(ipAddress))
-                    {
-                        // only set the oldest (so the first one)
-                        privateIpInfo ??= addressAndPort;
-                    }
-                    else
-                    {
-                        var publicIpInfo = new IpInfo(ipAddress.ToString(), addressAndPort.Port);
-                        return publicIpInfo;
-                    }
+                    break;
                 }
+
+                remaining = remaining.Slice(delim + 1);
             }
 
             return privateIpInfo;
@@ -82,11 +86,17 @@ namespace Datadog.Trace.Headers.Ip
             var port = defaultPort ?? DefaultPort(https);
             if (ip.Contains("."))
             {
-                var parts = ip.Split(':');
-                if (parts.Length == 2)
+                var firstColon = ip.IndexOf(':');
+                if (firstColon >= 0 && ip.IndexOf(':', firstColon + 1) < 0)
                 {
-                    _ = int.TryParse(parts[1], out port);
-                    return new IpInfo(parts[0], port);
+                    // exactly one colon — IPv4 with port
+                    var portSpan = ip.AsSpan(firstColon + 1);
+#if NETCOREAPP
+                    _ = int.TryParse(portSpan, out port);
+#else
+                    _ = int.TryParse(portSpan.ToString(), out port);
+#endif
+                    return new IpInfo(ip.Substring(0, firstColon), port);
                 }
             }
 
