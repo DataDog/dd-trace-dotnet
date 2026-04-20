@@ -37,13 +37,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
         {
             var formatter = new LogFormatter(settings, directLogSettings, azureAppServiceSettings, gitMetadataTagsProvider);
 
-#if NETCOREAPP3_1_OR_GREATER
-            if (settings.OpenTelemetryLogsEnabled is true)
-            {
-                return new DirectLogSubmissionManager(directLogSettings, new Sink.OtlpSubmissionLogSink(directLogSettings.CreateBatchingSinkOptions(), settings), formatter);
-            }
-#endif
-
             if (!directLogSettings.IsEnabled)
             {
                 return new DirectLogSubmissionManager(directLogSettings, new NullDirectSubmissionLogSink(), formatter);

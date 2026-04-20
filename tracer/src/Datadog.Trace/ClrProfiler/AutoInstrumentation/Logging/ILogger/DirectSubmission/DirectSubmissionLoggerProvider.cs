@@ -42,14 +42,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             _minimumLogLevel = minimumLogLevel;
             _createLoggerFunc = CreateLoggerImplementation;
 
-#if NETCOREAPP3_1_OR_GREATER
-            if (sink is OtlpSubmissionLogSink)
-            {
-                _logEventCreator = new OtelLogEventCreator();
-                return;
-            }
-#endif
-
             _logFormatter = formatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
             _logEventCreator = new DatadogLogEventCreator(_logFormatter, scopeProvider);
         }

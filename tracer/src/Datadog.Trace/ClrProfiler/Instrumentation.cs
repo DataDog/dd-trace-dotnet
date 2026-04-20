@@ -292,52 +292,6 @@ namespace Datadog.Trace.ClrProfiler
             }
 #endif // #if !NETFRAMEWORK
 
-            try
-            {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
-                {
-                    Log.Debug("Initializing activity listener.");
-                    Activity.ActivityListener.Initialize();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing activity listener");
-            }
-
-#if NET6_0_OR_GREATER
-            try
-            {
-                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
-                {
-                    Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
-                    OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing OTel Metrics collection.");
-            }
-#else
-            if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled)
-            {
-                Log.Information("Unable to initialize Opentelemetry Protocol Metrics collection, this is only available starting with .NET 6.0.");
-            }
-#endif
-
-            try
-            {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
-                {
-                    Log.Debug("Initializing OpenTelemetry components.");
-                    OpenTelemetry.Sdk.Initialize();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing OpenTelemetry components.");
-            }
-
             Log.Debug("Initialization of non native parts finished.");
 
             var tracer = Tracer.Instance;

@@ -32,7 +32,6 @@ src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
 src/Datadog.Trace/TracerManagerFactory.cs
 src/Datadog.Trace/Agent/Api.cs
-src/Datadog.Trace/Agent/ApiOtlp.cs
 src/Datadog.Trace/Agent/IApi.cs
 src/Datadog.Trace/Agent/IApiRequest.cs
 src/Datadog.Trace/Agent/IApiRequestFactory.cs
@@ -79,12 +78,6 @@ src/Datadog.Trace/Configuration/DeprecationMessages.cs
 src/Datadog.Trace/Configuration/IDynamicConfigurationManager.cs
 src/Datadog.Trace/Configuration/IntegrationRegistry.cs
 src/Datadog.Trace/Configuration/TracerSettingsConstants.cs
-src/Datadog.Trace/ContinuousProfiler/ContextTracker.cs
-src/Datadog.Trace/ContinuousProfiler/IContextTracker.cs
-src/Datadog.Trace/ContinuousProfiler/IProfilerStatus.cs
-src/Datadog.Trace/ContinuousProfiler/NativeInterop.cs
-src/Datadog.Trace/ContinuousProfiler/Profiler.cs
-src/Datadog.Trace/ContinuousProfiler/ProfilerStatus.cs
 src/Datadog.Trace/DatabaseMonitoring/MultiPartIdentifier.cs
 src/Datadog.Trace/DatabaseMonitoring/VendoredSqlHelpers.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
@@ -204,7 +197,6 @@ src/Datadog.Trace/Util/System.Diagnostics.CodeAnalysis.Attributes.cs
 src/Datadog.Trace/Util/System.Runtime.CompilerServices.Attributes.cs
 src/Datadog.Trace/Util/ThrowHelper.cs
 src/Datadog.Trace/Util/TimeHelpers.cs
-src/Datadog.Trace/Activity/Handlers/ActivityMappingExtensions.cs
 src/Datadog.Trace/Agent/MessagePack/SpanFormatterResolver.cs
 src/Datadog.Trace/Agent/MessagePack/SpanMessagePackFormatter.cs
 src/Datadog.Trace/Agent/StreamFactories/NamedPipeClientStreamFactory.cs
@@ -380,9 +372,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MongoDb/IBsonDocumentProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MongoDb/MongoDbTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Msmq/MessageQueueTransactionType.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Msmq/MsmqConstants.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/StartRootSpanIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/StartSpanIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/TracerProviderBuilderIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/EnvironmentVariablesScrubber.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs

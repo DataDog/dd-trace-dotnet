@@ -265,6 +265,28 @@ Deleted `ContinuousProfiler/` (9 files) and cleaned all external references:
 | Cleaned `Ci/TestOptimization.cs` | Removed profiler flush on close |
 | Removed `Directory.Build.props` analyzers reference | Removed deleted `Datadog.Trace.Tools.Analyzers` project references |
 
+### OpenTelemetry removal
+
+Deleted OpenTelemetry support from the tracer (~103 files):
+
+| Change | Details |
+|---|---|
+| Deleted `OpenTelemetry/` | 33 files: OTel SDK, exporters, traces/metrics/logs stubs |
+| Deleted `Activity/` | 41 files: System.Diagnostics.Activity listener bridge, handlers, helpers, duck types |
+| Deleted `ClrProfiler/AutoInstrumentation/OpenTelemetry/` | 13 files: OTel SDK auto-instrumentation |
+| Deleted `Vendors/OpenTelemetry.Exporter.OpenTelemetryProtocol/` | 16 vendored OTLP exporter files |
+| Deleted OTLP-specific files | `Agent/ApiOtlp.cs`, `Agent/ManagedApiOtlp.cs`, `Logging/DirectSubmission/Sink/OtlpSubmissionLogSink.cs`, `ClrProfiler/.../OtlpLogEventBuilder.cs`, `OtelLogEventCreator.cs` |
+| Cleaned `AgentWriter.cs` | Removed OtlpJson branch from `TracesEncoding` switch |
+| Cleaned `LoggerDirectSubmissionLogEvent.cs` | Removed `OtlpLog` property using `LogPoint` |
+| Cleaned `QuartzCommon.cs` | Removed all IActivity/IActivity5/ActivityKind methods |
+| Cleaned `QuartzDiagnosticObserver.cs` | `OnNext` simplified to no-op |
+| Cleaned `AspNetCoreHttpRequestHandler.cs` | Removed Activity tags copying |
+| Cleaned `Tracer.cs` | Removed `ActivityListener.GetCurrentActivity()` traceId pull |
+| Cleaned `Instrumentation.cs` | Removed `ActivityListener.Initialize()`, `MetricsRuntime.Start()`, OTel SDK init |
+| Cleaned `TracerManagerFactory.cs` | Removed `ManagedApiOtlp` branch in `GetAgentWriter` |
+| Cleaned `DirectLogSubmissionManager.cs` | Removed `OtlpSubmissionLogSink` branch |
+| Cleaned `DirectSubmissionLoggerProvider.cs` | Removed `OtlpSubmissionLogSink` / `OtelLogEventCreator` branch |
+
 ---
 
 ## Current Architecture

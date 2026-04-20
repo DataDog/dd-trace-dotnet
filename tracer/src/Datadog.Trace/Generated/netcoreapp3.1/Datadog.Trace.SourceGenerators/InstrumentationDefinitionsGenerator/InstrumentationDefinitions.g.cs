@@ -51,8 +51,6 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("NLog,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Npgsql,", StringComparison.Ordinal)
             || assemblyName.StartsWith("nunit.framework,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("OpenTelemetry,", StringComparison.Ordinal)
-            || assemblyName.StartsWith("OpenTelemetry.Api,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Oracle.DataAccess,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Oracle.ManagedDataAccess,", StringComparison.Ordinal)
             || assemblyName.StartsWith("RabbitMQ.Client,", StringComparison.Ordinal)
@@ -561,16 +559,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitReflectInvokeMethodIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_ClearBaggageIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_GetCurrentIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_RemoveBaggageIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetCurrentIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_SetBaggageItemsIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartRootSpanIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration"
-                    => Datadog.Trace.Configuration.IntegrationId.OpenTelemetry,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Process,
