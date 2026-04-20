@@ -15,35 +15,19 @@ namespace Datadog.Trace.Tagging
     partial class OpenTelemetryTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
+
         // OtelTraceIdBytes = MessagePack.Serialize("otel.trace_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelTraceIdBytes => new byte[] { 173, 111, 116, 101, 108, 46, 116, 114, 97, 99, 101, 95, 105, 100 };
-#else
-        private static readonly byte[] OtelTraceIdBytes = new byte[] { 173, 111, 116, 101, 108, 46, 116, 114, 97, 99, 101, 95, 105, 100 };
-#endif
+        private static ReadOnlySpan<byte> OtelTraceIdBytes => [173, 111, 116, 101, 108, 46, 116, 114, 97, 99, 101, 95, 105, 100];
+
         // OtelLibraryNameBytes = MessagePack.Serialize("otel.library.name");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelLibraryNameBytes => new byte[] { 177, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] OtelLibraryNameBytes = new byte[] { 177, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 110, 97, 109, 101 };
-#endif
+        private static ReadOnlySpan<byte> OtelLibraryNameBytes => [177, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 110, 97, 109, 101];
+
         // OtelLibraryVersionBytes = MessagePack.Serialize("otel.library.version");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelLibraryVersionBytes => new byte[] { 180, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 118, 101, 114, 115, 105, 111, 110 };
-#else
-        private static readonly byte[] OtelLibraryVersionBytes = new byte[] { 180, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 118, 101, 114, 115, 105, 111, 110 };
-#endif
+        private static ReadOnlySpan<byte> OtelLibraryVersionBytes => [180, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 118, 101, 114, 115, 105, 111, 110];
+
         // OtelStatusCodeBytes = MessagePack.Serialize("otel.status_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelStatusCodeBytes => new byte[] { 176, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] OtelStatusCodeBytes = new byte[] { 176, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#endif
+        private static ReadOnlySpan<byte> OtelStatusCodeBytes => [176, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
 
         public override string? GetTag(string key)
         {
