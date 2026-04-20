@@ -103,7 +103,7 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
             return;
         }
 
-        if (!AnyCharRequiresEncoding(source, isKey))
+        if (!AnyCharRequiresEncoding(source.AsSpan(), isKey))
         {
             // no chars require encoding, append the source string directly
             sb.Append(source);
@@ -187,7 +187,7 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return isKey && c is '(' or ')' or '/' or ':' or '<' or '=' or '>' or '?' or '@' or '[' or ']' or '{' or '}';
     }
 
-    private static bool AnyCharRequiresEncoding(string source, bool isKey)
+    private static bool AnyCharRequiresEncoding(ReadOnlySpan<char> source, bool isKey)
     {
         foreach (var c in source)
         {
@@ -200,12 +200,7 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return false;
     }
 
-    internal static string Decode(string value)
-    {
-        return Decode(value.AsSpan());
-    }
-
-    private static string Decode(ReadOnlySpan<char> value)
+    internal static string Decode(ReadOnlySpan<char> value)
     {
         if (value.IsEmpty)
         {
