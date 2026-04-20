@@ -99,10 +99,10 @@ internal static class MethodMatcher
         return StringBuilderCache.GetStringAndRelease(sb);
     }
 
-    private static string NormalizeMethodName(string methodName)
+    private static string NormalizeMethodName(ReadOnlySpan<char> methodName)
     {
         var backtickIndex = methodName.IndexOf('`');
-        return backtickIndex > 0 ? methodName.Substring(0, backtickIndex) : methodName;
+        return (backtickIndex > 0 ? methodName.Slice(0, backtickIndex) : methodName).ToString();
     }
 
     private static bool IsAsyncStateMachine(MethodBase method)
@@ -422,63 +422,60 @@ internal static class MethodMatcher
         // This prevents incorrect splitting of the assembly-qualified type name
         var sb = StringBuilderCache.Acquire();
         sb.Append(normalizedName);
-        var insideBrackets = false;
         var bracketCount = 0;
         for (var i = 0; i < sb.Length; i++)
         {
             var c = sb[i];
             if (c == '[')
             {
-                insideBrackets = true;
                 bracketCount++;
             }
             else if (c == ']')
             {
                 bracketCount--;
-                insideBrackets = bracketCount > 0;
             }
-            else if (insideBrackets && c == '.')
+            else if (bracketCount > 0 && c == '.')
             {
                 sb[i] = '\u0001'; // Use a temporary character that won't appear in normal type names
             }
         }
 
         normalizedName = StringBuilderCache.GetStringAndRelease(sb);
+        var normSpan = normalizedName.AsSpan();
 
-        var parts = normalizedName.Split('.');
-        if (parts.Length < 2)
+        var lastDotIdx = normSpan.LastIndexOf('.');
+        if (lastDotIdx < 0)
         {
+            // original behaviour: Split('.') produced fewer than 2 parts
             return null;
         }
 
-        var lastPart = parts[parts.Length - 1];
+        var lastPart = normSpan.Slice(lastDotIdx + 1);
         var parenIndex = lastPart.IndexOf('(');
-        var methodName = parenIndex > 0 ? lastPart.Substring(0, parenIndex) : lastPart;
-        methodName = NormalizeMethodName(methodName);
+        var methodName = NormalizeMethodName(parenIndex > 0 ? lastPart.Slice(0, parenIndex) : lastPart);
 
-        // Everything except the method name is type parts
-        var typeParts = parts.Take(parts.Length - 1)
-                            .SelectMany(p => p.Split('+'))
-                            .ToArray();
-
-        // Normalize generic type parts by only keeping up to the first [ character
-        typeParts = typeParts.Select(p =>
+        // Walk the type portion, splitting on '.' or '+' and trimming generic args after the arity marker.
+        var typePortion = normSpan.Slice(0, lastDotIdx);
+        var typeParts = new List<string>();
+        var currentStart = 0;
+        for (var i = 0; i <= typePortion.Length; i++)
         {
-            var bracketIndex = p.IndexOf('[');
-            if (bracketIndex > 0)
+            if (i == typePortion.Length || typePortion[i] == '.' || typePortion[i] == '+')
             {
-                // Keep type name and its arity (e.g., "NestedGeneric`1")
-                var backtickIndex = p.IndexOf('`');
-                if (backtickIndex > 0)
+                var partSpan = typePortion.Slice(currentStart, i - currentStart);
+                var bracketIndex = partSpan.IndexOf('[');
+                if (bracketIndex > 0 && partSpan.Slice(0, bracketIndex).IndexOf('`') > 0)
                 {
-                    return p.Substring(0, bracketIndex);
+                    // Keep type name and its arity (e.g., "NestedGeneric`1")
+                    partSpan = partSpan.Slice(0, bracketIndex);
                 }
+
+                typeParts.Add(partSpan.ToString());
+                currentStart = i + 1;
             }
+        }
 
-            return p;
-        }).ToArray();
-
-        return new MethodNameParts(typeParts, methodName);
+        return new MethodNameParts(typeParts.ToArray(), methodName);
     }
 
     private static bool DoMethodPartsMatch(MethodNameParts stackTrace, MethodNameParts methodBase, bool isStateMachine)
