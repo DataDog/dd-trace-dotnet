@@ -4,9 +4,14 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -69,6 +74,67 @@ public abstract class AspNetWebFormsWithIast : AspNetBase, IClassFixture<IisFixt
         settings.AddIastScrubbing();
 
         await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 1, 1, settings, userAgent: "Hello/V");
+    }
+
+    // XSS via Response.Write — WebForms pattern. The tracer only instruments
+    // HtmlString..ctor (MVC Razor's Html.Raw), not HttpResponse.Write, so this
+    // should produce NO XSS vulnerability on plain WebForms.
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    public async Task Xss_ResponseWrite_NotDetected()
+    {
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 1, new[] { "/Iast/Xss.aspx?input=<script>alert(1)</script>" });
+        var rootSpan = spans.FirstOrDefault(s => s.Name == "aspnet.request");
+        rootSpan.Should().NotBeNull();
+
+        if (rootSpan.MetaStruct is not null)
+        {
+            IastVerifyScrubberExtensions.IastMetaStructScrubbing(rootSpan);
+        }
+
+        var iastJson = rootSpan.GetTag(Tags.IastJson);
+        if (iastJson != null)
+        {
+            var parsed = JObject.Parse(iastJson);
+            var vulns = parsed["vulnerabilities"] as JArray;
+            var xssVulns = vulns?.OfType<JObject>()
+                .Where(v => v["type"]?.Value<string>() == "XSS")
+                .ToList();
+            xssVulns.Should().BeNullOrEmpty("WebForms Response.Write is not instrumented for XSS");
+        }
+    }
+
+    // TrustBoundaryViolation via Session["key"] = value — WebForms pattern.
+    // The tracer instruments HttpSessionStateBase (MVC abstract), not the
+    // concrete HttpSessionState that WebForms uses, so this should produce
+    // NO trust-boundary-violation on plain WebForms.
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    public async Task TrustBoundaryViolation_ConcreteSession_NotDetected()
+    {
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 1, new[] { "/Iast/TrustBoundary.aspx?name=testKey&value=testValue" });
+        var rootSpan = spans.FirstOrDefault(s => s.Name == "aspnet.request");
+        rootSpan.Should().NotBeNull();
+
+        if (rootSpan.MetaStruct is not null)
+        {
+            IastVerifyScrubberExtensions.IastMetaStructScrubbing(rootSpan);
+        }
+
+        var iastJson = rootSpan.GetTag(Tags.IastJson);
+        if (iastJson != null)
+        {
+            var parsed = JObject.Parse(iastJson);
+            var vulns = parsed["vulnerabilities"] as JArray;
+            var tbvVulns = vulns?.OfType<JObject>()
+                .Where(v => v["type"]?.Value<string>() == "TRUST_BOUNDARY_VIOLATION")
+                .ToList();
+            tbvVulns.Should().BeNullOrEmpty("WebForms concrete HttpSessionState is not instrumented for trust boundary violation");
+        }
     }
 
     public async Task InitializeAsync()
