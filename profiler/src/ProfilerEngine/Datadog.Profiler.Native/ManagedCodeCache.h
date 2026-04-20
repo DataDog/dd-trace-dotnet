@@ -84,7 +84,7 @@ public:
     ~ManagedCodeCache();
 
     // Signal-safe lookup methods (no allocation)
-    [[nodiscard]] bool IsManaged(std::uintptr_t ip) const noexcept;
+    [[nodiscard]] std::optional<bool> IsManaged(std::uintptr_t ip) const noexcept;
 
     // Not signal-safe
     [[nodiscard]] std::optional<FunctionID> GetFunctionId(std::uintptr_t ip) noexcept;
@@ -173,7 +173,7 @@ private:
     template<typename WorkType>
     void EnqueueWork(WorkType work);
     std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
-    bool IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
+    std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
     std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;
     void AddFunctionImpl(FunctionID functionId, bool isAsync);
     

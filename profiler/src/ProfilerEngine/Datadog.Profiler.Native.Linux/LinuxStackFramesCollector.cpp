@@ -243,7 +243,7 @@ inline std::int32_t LinuxStackFramesCollector::CollectStack(void* ctx)
     auto buffer = Data();
     std::uintptr_t stackBase = 0;
     std::uintptr_t stackEnd = 0;
-    auto& threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    auto* threadInfo = _pCurrentCollectionThreadInfo;
     if (threadInfo)
     {
         std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
