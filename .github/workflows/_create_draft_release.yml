@@ -41,10 +41,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: publish-debug-symbols-env
     # These permissions need to map to the ones demanded in create_normal_draft_release.yml and create_hotfix_draft_release.yml
+    # and to those in .github/chainguard/self.github.create-draft-release.sts.yaml (except id-token, which is only needed at workflow level for OIDC)
     permissions:
       contents: write # create release
       actions: read # read secrets
-      issues: write # change milestones 
+      issues: write # change milestones
+      pull-requests: read # read merged PRs for release notes
+      statuses: read # verify SSI artifact build succeeded
       id-token: write  # enable GitHub OIDC token issuance for this job
     env:
       # Have to use external token with explicit workflow permissions because we are creating

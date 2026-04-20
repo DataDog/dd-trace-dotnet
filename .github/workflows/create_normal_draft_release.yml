@@ -32,7 +32,9 @@ jobs:
         permissions:
           contents: write # create release
           actions: read # read secrets
-          issues: write # change milestones 
+          issues: write # change milestones
+          pull-requests: read # read merged PRs for release notes
+          statuses: read # verify SSI artifact build succeeded
           id-token: write  # enable GitHub OIDC token issuance for this job
         with:
             forced_commit_id: ${{ inputs.forced_commit_id }}
