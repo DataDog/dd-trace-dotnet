@@ -5,8 +5,6 @@
 
 #nullable enable
 
-// MassTransit 7 only runs on .NET Core/.NET 5+, so we exclude .NET Framework
-#if !NETFRAMEWORK
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -89,4 +87,3 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
         }
     }
 }
-#endif
