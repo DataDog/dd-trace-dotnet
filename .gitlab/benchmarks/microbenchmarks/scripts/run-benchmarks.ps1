@@ -118,7 +118,7 @@ $env:DD_TRACER_HOME = $monitoringHome
 # The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
 # to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.
 if ($env:DD_API_KEY) {
-    $env:DD_CIVISIBILITY_AGENTLESS_ENABLED = "true"
+    $env:DD_CIVISIBILITY_AGENTLESS_ENABLED = "1"
     if (-not $env:DD_SITE) {
         $env:DD_SITE = "datadoghq.com"
     }
