@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Web;
 using System.Web.Http;
@@ -48,6 +46,12 @@ namespace Samples.Security.WebApi.Controllers
             return firstIsEmpty ? second : first;
         }
 
+        private static string GetHeaderValue(string name)
+            => HttpContext.Current?.Request.Headers[name];
+
+        private static string GetQueryValue(string name)
+            => HttpContext.Current?.Request.QueryString[name];
+
         [AcceptVerbs("POST")]
         [Route("Iast/PathTraversal")]
         public string PathTraversal([FromBody] MiscModel miscModel)
@@ -74,6 +78,9 @@ namespace Samples.Security.WebApi.Controllers
         {
             try
             {
+                username = GetQueryValue(nameof(username)) ?? username;
+                query = GetQueryValue(nameof(query)) ?? query;
+
                 if (!string.IsNullOrEmpty(username))
                 {
                     var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
@@ -99,6 +106,8 @@ namespace Samples.Security.WebApi.Controllers
         [Route("Iast/ExecuteCommand")]
         public string ExecuteCommand(string file, string argumentLine, bool fromShell = false)
         {
+            file = GetQueryValue(nameof(file)) ?? file;
+            argumentLine = GetQueryValue(nameof(argumentLine)) ?? argumentLine;
             return ExecuteCommandInternal(file, argumentLine, fromShell);
         }
 
@@ -118,6 +127,9 @@ namespace Samples.Security.WebApi.Controllers
         [Route("Iast/Ldap")]
         public string Ldap(string path = null, string userName = null, bool skipQueryExecution = false)
         {
+            path = GetQueryValue(nameof(path)) ?? path;
+            userName = GetQueryValue(nameof(userName)) ?? userName;
+
             var resultString = string.Empty;
             DirectoryEntry entry;
 
@@ -158,12 +170,6 @@ namespace Samples.Security.WebApi.Controllers
             return "Result: " + resultString;
         }
 
-        private string GetHeaderValue(string name)
-        {
-            IEnumerable<string> values;
-            return Request.Headers.TryGetValues(name, out values) ? values.FirstOrDefault() : null;
-        }
-
         [AcceptVerbs("GET")]
         [Route("Iast/AllVulnerabilitiesCookie")]
         public string AllVulnerabilitiesCookie()
@@ -180,6 +186,7 @@ namespace Samples.Security.WebApi.Controllers
         [Route("Iast/UnvalidatedRedirect")]
         public IHttpActionResult UnvalidatedRedirect(string param)
         {
+            param = GetQueryValue(nameof(param)) ?? param;
             var location = $"Redirected?param={param}";
             return Redirect(location);
         }
