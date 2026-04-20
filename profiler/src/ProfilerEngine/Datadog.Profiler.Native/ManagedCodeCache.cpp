@@ -90,7 +90,12 @@ std::optional<bool> ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip, bool 
     auto moduleCodeRange = FindRange(_modulesCodeRanges, ip);
     if (!moduleCodeRange.has_value())
     {
-        return std::nullopt;
+        // IP isn't in any R2R module we know about -> it's genuinely native
+        // (libc, libpthread, the profiler itself, kernel tramps, etc.).
+        // Returning nullopt here would mean "unknown/contention" and would make
+        // HybridUnwinder give up; we want {false} so it can keep stepping with
+        // libunwind.
+        return std::optional<bool>{false};
     }
 
     if (moduleCodeRange->isRemoved)
@@ -114,11 +119,16 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noe
     }
 
     // Level 2: Check if the IP is within a module code range
-    
+    //
+    // IsCodeInR2RModule now returns {false} (not nullopt) when the IP is
+    // genuinely outside every known R2R module. Previously this path also
+    // returned nullopt, and the coercion optional<bool>{false} -> optional<FunctionID>
+    // would have produced FunctionID(0), which is wrong. We treat "not R2R" the
+    // same as "no FunctionID" and return nullopt.
     auto isR2r = IsCodeInR2RModule(ip, false);
     if (!isR2r.has_value() || !isR2r.value())
     {
-        return isR2r;
+        return std::nullopt;
     }
 
     auto functionId = GetFunctionFromIP_Original(ip);
