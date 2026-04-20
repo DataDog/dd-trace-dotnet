@@ -145,6 +145,11 @@ public static class Program
         }
 
 #if OTEL_1_2
+        // Flush OTLP metric batches before Dispose. MeterProviderSdk.Dispose caps its shutdown
+        // call at 5s, but the first gRPC export (TCP+HTTP/2+TLS handshake) can exceed that and
+        // the OTel SDK's metric export timeout default is 30s. Force a flush on the critical
+        // path with the full export timeout instead of racing the 5s shutdown cap.
+        meterProvider?.ForceFlush(timeoutMilliseconds: 30_000);
         meterProvider?.Dispose();
 #endif
 #if OTEL_1_9

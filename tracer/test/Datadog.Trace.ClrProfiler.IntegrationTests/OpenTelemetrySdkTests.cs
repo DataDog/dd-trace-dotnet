@@ -716,9 +716,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// <summary>
         /// Polls the test-agent for data until non-empty results are returned or timeout is reached.
         /// The sample app exports data during shutdown, so there can be a brief delay
-        /// between process exit and data appearing in the test-agent.
+        /// between process exit and data appearing in the test-agent. The timeout is generous
+        /// because first-time gRPC connections (TCP+HTTP/2+TLS handshake) plus tracer shutdown
+        /// flushing can stack up on slower CI runners.
         /// </summary>
-        private static async Task<JToken> WaitForTestAgentData(string url, int timeoutSeconds = 30, int pollIntervalMs = 500)
+        private static async Task<JToken> WaitForTestAgentData(string url, int timeoutSeconds = 60, int pollIntervalMs = 500)
         {
             using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
             var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
