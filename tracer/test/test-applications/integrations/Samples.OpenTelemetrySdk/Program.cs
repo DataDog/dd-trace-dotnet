@@ -145,12 +145,13 @@ public static class Program
         }
 
 #if OTEL_1_2
-        // Flush OTLP metric batches before Dispose. MeterProviderSdk.Dispose caps its shutdown
-        // call at 5s, but the first gRPC export (TCP+HTTP/2+TLS handshake) can exceed that and
-        // the OTel SDK's metric export timeout default is 30s. Force a flush on the critical
-        // path with the full export timeout instead of racing the 5s shutdown cap.
-        meterProvider?.ForceFlush(timeoutMilliseconds: 30_000);
-        meterProvider?.Dispose();
+        // Shutdown with a generous timeout so the single final Collect+Export can complete even
+        // when the first gRPC export has to negotiate TCP+HTTP/2+TLS. We avoid ForceFlush-then-
+        // Dispose because two Collects on cumulative-temporality observable instruments re-emit
+        // the same cumulative values and produce duplicate resource_metrics batches. Shutdown
+        // performs exactly one Collect; the `using var` Dispose at end-of-scope no-ops via the
+        // SDK's internal shutdown-count guard.
+        meterProvider?.Shutdown(timeoutMilliseconds: 30_000);
 #endif
 #if OTEL_1_9
         // Flush OTLP log batches before the ServiceProvider's `using` disposes them.
