@@ -114,6 +114,19 @@ $env:DD_ENV = "CI"
 $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
+# CI Visibility ships benchmark results to Datadog via the in-process tracer.
+# The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
+# to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.
+if ($env:DD_API_KEY) {
+    $env:DD_CIVISIBILITY_AGENTLESS_ENABLED = "true"
+    if (-not $env:DD_SITE) {
+        $env:DD_SITE = "datadoghq.com"
+    }
+    Write-Output "CI Visibility agentless mode enabled (site: $env:DD_SITE)"
+} else {
+    Write-Warning "DD_API_KEY not set; CI Visibility data will not be sent to Datadog"
+}
+
 # Build BenchmarkDotNet arguments
 $arguments = @("-r") + $runtimes + @(
     "-m",
