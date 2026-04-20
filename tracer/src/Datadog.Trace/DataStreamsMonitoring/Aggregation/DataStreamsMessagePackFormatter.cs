@@ -13,6 +13,7 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -176,12 +177,21 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                     bytesWritten += MessagePackBinary.WriteStringBytes(stream, BacklogValueBytes);
                     bytesWritten += MessagePackBinary.WriteInt64(stream, point.Value);
 
-                    var tags = point.Tags.Split(',');
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, BacklogTagsBytes);
-                    bytesWritten += MessagePackBinary.WriteArrayHeader(stream, tags.Length);
-                    foreach (var tag in tags)
+                    var tagsSpan = point.Tags.AsSpan();
+                    var tagCount = 1;
+                    for (var i = 0; i < tagsSpan.Length; i++)
                     {
-                        bytesWritten += MessagePackBinary.WriteString(stream, tag);
+                        if (tagsSpan[i] == ',')
+                        {
+                            tagCount++;
+                        }
+                    }
+
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, BacklogTagsBytes);
+                    bytesWritten += MessagePackBinary.WriteArrayHeader(stream, tagCount);
+                    foreach (var tag in new SpanCharSplitter(point.Tags, ',', tagCount))
+                    {
+                        bytesWritten += MessagePackBinary.WriteString(stream, tag.AsSpan().ToString());
                     }
                 }
             }
