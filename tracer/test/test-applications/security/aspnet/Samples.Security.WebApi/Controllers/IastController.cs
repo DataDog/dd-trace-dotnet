@@ -187,17 +187,18 @@ namespace Samples.Security.WebApi.Controllers
         public IHttpActionResult UnvalidatedRedirect(string param)
         {
             param = GetQueryValue(nameof(param)) ?? param;
-            var location = $"Redirected?param={param}";
+            var location = new Uri(Request.RequestUri, $"Redirected?param={param}").ToString();
             return Redirect(location);
         }
 
         [AcceptVerbs("GET")]
         [Route("Iast/UnvalidatedRedirectViaHttpResponse")]
-        public void UnvalidatedRedirectViaHttpResponse(string param)
+        public string UnvalidatedRedirectViaHttpResponse(string param)
         {
             param = GetQueryValue(nameof(param)) ?? param;
             var location = $"Redirected?param={param}";
             HttpContext.Current.Response.Redirect(location, false);
+            return "redirecting";
         }
 
         [AcceptVerbs("GET")]
