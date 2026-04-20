@@ -35,13 +35,7 @@ internal static class HexConverter
     /// <summary>
     /// Gets a map from an ASCII char to its hex value, e.g. arr['b'] == 11. 0xFF means it's not a hex digit.
     /// </summary>
-#if NETCOREAPP
     private static ReadOnlySpan<byte> CharToHexLookup =>
-#else
-#pragma warning disable SA1201 // Elements should appear in the correct order
-    private static readonly byte[] CharToHexLookup =
-#pragma warning restore SA1201 // Elements should appear in the correct order
-#endif
     [
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 15
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 31
