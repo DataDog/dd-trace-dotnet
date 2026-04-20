@@ -76,7 +76,7 @@ namespace Datadog.Trace.TestHelpers
             return Task.FromResult(true);
         }
 
-        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         {
             throw new NotImplementedException();
         }

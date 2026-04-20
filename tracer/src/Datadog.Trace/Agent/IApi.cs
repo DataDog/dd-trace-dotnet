@@ -16,6 +16,6 @@ namespace Datadog.Trace.Agent
 
         Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true);
 
-        Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration);
+        Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion);
     }
 }
