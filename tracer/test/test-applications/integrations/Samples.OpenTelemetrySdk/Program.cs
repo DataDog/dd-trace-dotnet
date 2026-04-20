@@ -45,7 +45,10 @@ public static class Program
             .Build();
 
 #if OTEL_1_2
-        using var meterProvider = Sdk.CreateMeterProviderBuilder()
+        // Not `using var`: we call Shutdown explicitly below, and OTel SDK <= 1.3.2 re-collects
+        // on a second Shutdown/Dispose which produces a duplicate cumulative batch the test
+        // snapshot doesn't expect. Process exit handles cleanup.
+        var meterProvider = Sdk.CreateMeterProviderBuilder()
             .AddOtlpExporterIfEnvironmentVariablePresent()
             .Build();
 #endif
@@ -149,8 +152,9 @@ public static class Program
         // when the first gRPC export has to negotiate TCP+HTTP/2+TLS. We avoid ForceFlush-then-
         // Dispose because two Collects on cumulative-temporality observable instruments re-emit
         // the same cumulative values and produce duplicate resource_metrics batches. Shutdown
-        // performs exactly one Collect; the `using var` Dispose at end-of-scope no-ops via the
-        // SDK's internal shutdown-count guard.
+        // performs exactly one Collect; `meterProvider` is deliberately not `using var` so the
+        // runtime doesn't re-invoke Dispose->Shutdown after this (older OTel SDKs like 1.3.2
+        // re-collect in that second call).
         meterProvider?.Shutdown(timeoutMilliseconds: 30_000);
 #endif
 #if OTEL_1_9

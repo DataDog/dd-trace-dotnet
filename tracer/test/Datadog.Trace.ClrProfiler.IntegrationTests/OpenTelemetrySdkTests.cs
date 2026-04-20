@@ -279,6 +279,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             using var agent = EnvironmentHelper.GetMockAgent();
+            // When DD_AGENT_HOST=test-agent is set above, it also redirects the APM trace agent
+            // URL via the DD_TRACE_AGENT_HOSTNAME alias (the primary key wins). That points APM
+            // traces at test-agent:<mock-agent-port>, which does not exist, so AgentWriter
+            // retries fill the tracer's shutdown window and can starve the DirectLogSubmission
+            // final flush. Pin the APM URL back to the in-process MockAgent.
+            if (useAgentHostBackup && agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+            {
+                SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcpAgent.Port}");
+            }
+
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
                 using var httpClient = new System.Net.Http.HttpClient();
@@ -539,6 +549,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", runtimeMajor >= 9 ? "delta" : "cumulative");
 
             using var agent = EnvironmentHelper.GetMockAgent();
+            // See comment in SubmitsOtlpTraces. DD_AGENT_HOST=test-agent also redirects the APM
+            // trace agent URL; pin it back to the in-process MockAgent.
+            if (useAgentHostBackup && agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+            {
+                SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcpAgent.Port}");
+            }
+
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
                 var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
@@ -626,6 +643,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
             using var agent = EnvironmentHelper.GetMockAgent();
+            // See comment in SubmitsOtlpTraces. DD_AGENT_HOST=test-agent also redirects the APM
+            // trace agent URL; pin it back to the in-process MockAgent so AgentWriter retries
+            // don't starve the DirectLogSubmission final flush during shutdown.
+            if (useAgentHostBackup && agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+            {
+                SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcpAgent.Port}");
+            }
+
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
                 var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();

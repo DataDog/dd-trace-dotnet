@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
@@ -75,18 +74,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         [DuckReverseMethod]
         public void Dispose()
         {
-            // Flush the shared log sink on a best-effort basis so pending batches drain when
-            // the ILoggerFactory is disposed deterministically (host shutdown, test teardown)
-            // rather than waiting for the process-exit hook. The sink is a global singleton
-            // owned by TracerManager, so this does not dispose it.
-            try
-            {
-                _sink.FlushAsync().Wait(TimeSpan.FromSeconds(10));
-            }
-            catch
-            {
-                // Never throw from Dispose. Final flush still runs via the process-exit hook.
-            }
         }
 
         /// <summary>
