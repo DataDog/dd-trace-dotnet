@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Util.Json;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources
 {

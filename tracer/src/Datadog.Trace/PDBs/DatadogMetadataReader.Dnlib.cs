@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Vendors.dnlib.DotNet;

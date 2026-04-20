@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers

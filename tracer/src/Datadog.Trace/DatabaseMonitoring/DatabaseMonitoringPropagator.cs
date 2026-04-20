@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Buffers.Binary;
 using System.Data;
 using System.Data.Common;
 using System.Text;

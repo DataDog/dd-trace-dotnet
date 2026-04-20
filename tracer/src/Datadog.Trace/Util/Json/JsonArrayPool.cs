@@ -5,9 +5,8 @@
 
 #nullable enable
 
-using System.Buffers;
 using Datadog.Trace.SourceGenerators;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Util.Json;
 

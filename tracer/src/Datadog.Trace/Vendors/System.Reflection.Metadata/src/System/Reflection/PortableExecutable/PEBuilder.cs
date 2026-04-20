@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Reflection;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;

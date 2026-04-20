@@ -6,7 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
 {

@@ -10,7 +10,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Newtonsoft.Json.Utilities;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 
@@ -125,10 +125,7 @@ internal sealed class AwsSqsHandlerCommon
         }
         else
         {
-            if (!request.MessageAttributeNames.Contains(ContextPropagation.InjectionKey))
-            {
-                request.MessageAttributeNames.Add(ContextPropagation.InjectionKey);
-            }
+            request.MessageAttributeNames.AddDistinct(ContextPropagation.InjectionKey);
         }
 
         if (request.AttributeNames is null)
@@ -137,10 +134,7 @@ internal sealed class AwsSqsHandlerCommon
         }
         else
         {
-            if (!request.AttributeNames.Contains("SentTimestamp"))
-            {
-                request.AttributeNames.Add("SentTimestamp");
-            }
+            request.AttributeNames.AddDistinct("SentTimestamp");
         }
 
         return new CallTargetState(scope, queueName);

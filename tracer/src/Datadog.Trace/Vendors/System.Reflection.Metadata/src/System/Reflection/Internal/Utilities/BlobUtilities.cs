@@ -10,7 +10,6 @@
 // MVID: 2EB35F4B-CF50-496F-AFB8-CC6F6F79CB72
 
 using System;
-using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;

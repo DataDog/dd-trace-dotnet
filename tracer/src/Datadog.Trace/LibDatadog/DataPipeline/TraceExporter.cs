@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Json;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using static Datadog.Trace.Agent.Api;
 
 namespace Datadog.Trace.LibDatadog.DataPipeline;

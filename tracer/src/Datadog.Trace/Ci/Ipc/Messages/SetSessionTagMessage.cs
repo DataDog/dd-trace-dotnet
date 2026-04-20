@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Ipc.Messages;
 

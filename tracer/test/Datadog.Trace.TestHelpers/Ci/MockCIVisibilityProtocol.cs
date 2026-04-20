@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.TestHelpers.Ci
 {

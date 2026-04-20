@@ -7,7 +7,7 @@
 
 using System;
 using System.Text;
-using Newtonsoft.Json.Converters;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
 namespace Datadog.Trace.Telemetry.DTOs;
 
@@ -32,7 +32,7 @@ internal sealed class LogMessageData
 
     public string Message { get; set; }
 
-    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+    [Vendors.Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
     public TelemetryLogLevel Level { get; set; }
 
     public string? Tags { get; set; }

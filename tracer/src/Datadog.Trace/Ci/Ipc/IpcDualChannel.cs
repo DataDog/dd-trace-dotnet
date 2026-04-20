@@ -1,16 +1,15 @@
-// <copyright file="IpcDualChannel.cs" company="Datadog">
+﻿// <copyright file="IpcDualChannel.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
 using System;
-using System.Buffers;
 using System.IO;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -96,7 +95,7 @@ internal abstract class IpcDualChannel : IDisposable
             // Let's protect ourselves from deserializing types that we don't want to
             if (assemblyName?.StartsWith("Datadog.Trace") == true)
             {
-                return new DefaultSerializationBinder().BindToType(assemblyName, typeName);
+                return DefaultSerializationBinder.Instance.BindToType(assemblyName, typeName);
             }
 
             return typeof(void);
@@ -104,7 +103,7 @@ internal abstract class IpcDualChannel : IDisposable
 
         public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
         {
-            new DefaultSerializationBinder().BindToName(serializedType, out assemblyName, out typeName);
+            DefaultSerializationBinder.Instance.BindToName(serializedType, out assemblyName, out typeName);
         }
     }
 }

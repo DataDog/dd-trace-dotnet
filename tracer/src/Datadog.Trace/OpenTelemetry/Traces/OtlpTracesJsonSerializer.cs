@@ -13,7 +13,7 @@ using Datadog.Trace.OpenTelemetry.Common;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
 

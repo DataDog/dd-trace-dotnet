@@ -15,8 +15,8 @@ using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
-using Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage;
 

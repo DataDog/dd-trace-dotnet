@@ -8,7 +8,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.RemoteConfigurationManagement.Json;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {

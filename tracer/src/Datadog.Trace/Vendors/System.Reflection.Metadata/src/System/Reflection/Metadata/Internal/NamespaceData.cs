@@ -11,8 +11,6 @@
 
 
 #nullable enable
-using System.Collections.Immutable;
-
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
   internal sealed class NamespaceData

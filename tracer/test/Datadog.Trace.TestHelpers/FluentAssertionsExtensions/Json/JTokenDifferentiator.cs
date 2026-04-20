@@ -9,9 +9,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 

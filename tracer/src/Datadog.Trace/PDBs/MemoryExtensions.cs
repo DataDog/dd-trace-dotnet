@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using System.Buffers;
-
 namespace Datadog.Trace.Pdb
 {
     internal static class MemoryExtensions

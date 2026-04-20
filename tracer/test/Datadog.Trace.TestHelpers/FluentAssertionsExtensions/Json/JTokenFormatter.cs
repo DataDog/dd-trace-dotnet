@@ -7,9 +7,9 @@
 // License: https://github.com/fluentassertions/fluentassertions.json/blob/master/LICENSE
 
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json.Common;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions.Formatting;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 

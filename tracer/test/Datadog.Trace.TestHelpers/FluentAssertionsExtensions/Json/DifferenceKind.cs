@@ -6,6 +6,13 @@
 // Originally Based on https://github.com/fluentassertions/fluentassertions.json
 // License: https://github.com/fluentassertions/fluentassertions.json/blob/master/LICENSE
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
+using FluentAssertions.Execution;
+
 namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 
 internal enum DifferenceKind

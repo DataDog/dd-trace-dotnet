@@ -6,7 +6,7 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Rcm.Models.AsmData;
 
