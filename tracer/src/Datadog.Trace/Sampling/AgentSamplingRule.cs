@@ -100,9 +100,6 @@ namespace Datadog.Trace.Sampling
 
         private readonly struct SampleRateKey : IEquatable<SampleRateKey>
         {
-            private static readonly char[] PartSeparator = [','];
-            private static readonly char[] ValueSeparator = [':'];
-
             private readonly string _service;
             private readonly string _env;
 
@@ -115,28 +112,35 @@ namespace Datadog.Trace.Sampling
             public static SampleRateKey? Parse(string key)
             {
                 // Expected format: "service:{service},env:{env}"
-                var parts = key.Split(PartSeparator);
+                var keySpan = key.AsSpan();
 
-                if (parts.Length != 2)
+                // there must be exactly one comma separating the service and env parts
+                var commaIdx = keySpan.IndexOf(',');
+                if (commaIdx < 0 || commaIdx != keySpan.LastIndexOf(','))
                 {
                     return null;
                 }
 
-                var serviceParts = parts[0].Split(ValueSeparator, 2);
+                var servicePart = keySpan.Slice(0, commaIdx);
+                var envPart = keySpan.Slice(commaIdx + 1);
 
-                if (serviceParts.Length != 2 || !string.Equals(serviceParts[0], "service", StringComparison.OrdinalIgnoreCase))
+                var serviceColonIdx = servicePart.IndexOf(':');
+                if (serviceColonIdx < 0 ||
+                    !servicePart.Slice(0, serviceColonIdx).Equals("service".AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     return null;
                 }
 
-                var envParts = parts[1].Split(ValueSeparator, 2);
-
-                if (envParts.Length != 2 || !string.Equals(envParts[0], "env", StringComparison.OrdinalIgnoreCase))
+                var envColonIdx = envPart.IndexOf(':');
+                if (envColonIdx < 0 ||
+                    !envPart.Slice(0, envColonIdx).Equals("env".AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
                     return null;
                 }
 
-                return new SampleRateKey(serviceParts[1], envParts[1]);
+                return new SampleRateKey(
+                    servicePart.Slice(serviceColonIdx + 1).ToString(),
+                    envPart.Slice(envColonIdx + 1).ToString());
             }
 
             public bool Equals(SampleRateKey other)
