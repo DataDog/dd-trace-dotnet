@@ -35,6 +35,7 @@ static const char* FinishReasonName(FinishReason r)
         case FinishReason::InvalidFp:           return "InvalidFp";
         case FinishReason::TooManyNativeFrames: return "TooManyNativeFrames";
         case FinishReason::InvalidIp:           return "InvalidIp";
+        case FinishReason::FailedIsManaged:     return "FailedIsManaged";
         default:                                return "Unknown";
     }
 }

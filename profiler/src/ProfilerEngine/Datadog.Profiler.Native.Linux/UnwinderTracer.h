@@ -130,6 +130,7 @@ enum class FinishReason : std::uint8_t
     InvalidFp           = 7,
     TooManyNativeFrames = 8,
     InvalidIp           = 9,
+    FailedIsManaged     = 10,
 };
 
 // ---------------------------------------------------------------------------
