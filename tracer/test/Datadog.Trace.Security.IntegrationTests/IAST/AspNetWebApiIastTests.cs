@@ -1,3 +1,8 @@
+// <copyright file="AspNetWebApiIastTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
@@ -38,6 +43,57 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
 {
     private readonly IisFixture _iisFixture;
     private readonly bool _classicMode;
+
+    private static IEnumerable<JObject> GetVulnerabilities(JObject iastJson)
+    {
+        var vulnerabilities = iastJson["vulnerabilities"] as JArray;
+        vulnerabilities.Should().NotBeNull();
+        return vulnerabilities!.OfType<JObject>();
+    }
+
+    private static IEnumerable<JObject> GetVulnerabilities(JObject iastJson, string vulnerabilityType)
+    {
+        return GetVulnerabilities(iastJson).Where(vulnerability =>
+            string.Equals(vulnerability["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal));
+    }
+
+    private static JObject GetSingleVulnerability(JObject iastJson, string vulnerabilityType)
+    {
+        var vulnerabilities = GetVulnerabilities(iastJson, vulnerabilityType).ToList();
+        vulnerabilities.Should().ContainSingle();
+        return vulnerabilities[0];
+    }
+
+    private static void AssertLocation(JObject vulnerability, string expectedPathContains, string expectedMethodContains)
+    {
+        var location = vulnerability["location"] as JObject;
+        location.Should().NotBeNull();
+        location!["path"]?.Value<string>().Should().Contain(expectedPathContains);
+        location["method"]?.Value<string>().Should().Contain(expectedMethodContains);
+    }
+
+    private static void AssertCookieEvidence(IEnumerable<JObject> vulnerabilities, string vulnerabilityType)
+    {
+        vulnerabilities.Where(v => string.Equals(v["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal))
+                       .Select(v => v["evidence"]?["value"]?.Value<string>())
+                       .Should()
+                       .Contain("AllVulnerabilitiesCookieKey");
+    }
+
+    private static void AssertSource(JObject iastJson, string origin, string name = null, string value = null)
+    {
+        var sources = iastJson["sources"] as JArray;
+        sources.Should().NotBeNull();
+
+        var source = sources!
+                    .OfType<JObject>()
+                    .FirstOrDefault(candidate =>
+                         string.Equals(candidate["origin"]?.Value<string>(), origin, StringComparison.Ordinal)
+                      && (name == null || string.Equals(candidate["name"]?.Value<string>(), name, StringComparison.Ordinal))
+                      && (value == null || string.Equals(candidate["value"]?.Value<string>(), value, StringComparison.Ordinal)));
+
+        source.Should().NotBeNull();
+    }
 
     protected AspNetWebApiIastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode)
         : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet", allowAutoRedirect: false)
@@ -263,57 +319,6 @@ public abstract class AspNetWebApiIastTests : AspNetBase, IClassFixture<IisFixtu
         iastJsonText.Should().NotBeNullOrEmpty();
 
         return (rootSpan, webApiSpan, JObject.Parse(iastJsonText));
-    }
-
-    private static IEnumerable<JObject> GetVulnerabilities(JObject iastJson)
-    {
-        var vulnerabilities = iastJson["vulnerabilities"] as JArray;
-        vulnerabilities.Should().NotBeNull();
-        return vulnerabilities!.OfType<JObject>();
-    }
-
-    private static IEnumerable<JObject> GetVulnerabilities(JObject iastJson, string vulnerabilityType)
-    {
-        return GetVulnerabilities(iastJson).Where(vulnerability =>
-            string.Equals(vulnerability["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal));
-    }
-
-    private static JObject GetSingleVulnerability(JObject iastJson, string vulnerabilityType)
-    {
-        var vulnerabilities = GetVulnerabilities(iastJson, vulnerabilityType).ToList();
-        vulnerabilities.Should().ContainSingle();
-        return vulnerabilities[0];
-    }
-
-    private static void AssertLocation(JObject vulnerability, string expectedPathContains, string expectedMethodContains)
-    {
-        var location = vulnerability["location"] as JObject;
-        location.Should().NotBeNull();
-        location!["path"]?.Value<string>().Should().Contain(expectedPathContains);
-        location["method"]?.Value<string>().Should().Contain(expectedMethodContains);
-    }
-
-    private static void AssertCookieEvidence(IEnumerable<JObject> vulnerabilities, string vulnerabilityType)
-    {
-        vulnerabilities.Where(v => string.Equals(v["type"]?.Value<string>(), vulnerabilityType, StringComparison.Ordinal))
-                       .Select(v => v["evidence"]?["value"]?.Value<string>())
-                       .Should()
-                       .Contain("AllVulnerabilitiesCookieKey");
-    }
-
-    private static void AssertSource(JObject iastJson, string origin, string name = null, string value = null)
-    {
-        var sources = iastJson["sources"] as JArray;
-        sources.Should().NotBeNull();
-
-        var source = sources!
-                    .OfType<JObject>()
-                    .FirstOrDefault(candidate =>
-                         string.Equals(candidate["origin"]?.Value<string>(), origin, StringComparison.Ordinal)
-                      && (name == null || string.Equals(candidate["name"]?.Value<string>(), name, StringComparison.Ordinal))
-                      && (value == null || string.Equals(candidate["value"]?.Value<string>(), value, StringComparison.Ordinal)));
-
-        source.Should().NotBeNull();
     }
 }
 #endif

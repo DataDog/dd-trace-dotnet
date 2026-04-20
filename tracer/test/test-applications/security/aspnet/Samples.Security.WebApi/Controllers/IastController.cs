@@ -30,6 +30,24 @@ namespace Samples.Security.WebApi.Controllers
             }
         }
 
+        private static string Combine(string first, string second, string defaultValue)
+        {
+            var firstIsEmpty = string.IsNullOrWhiteSpace(first);
+            var secondIsEmpty = string.IsNullOrWhiteSpace(second);
+
+            if (firstIsEmpty && secondIsEmpty)
+            {
+                return defaultValue;
+            }
+
+            if (!firstIsEmpty && !secondIsEmpty)
+            {
+                return first + second;
+            }
+
+            return firstIsEmpty ? second : first;
+        }
+
         [AcceptVerbs("POST")]
         [Route("Iast/PathTraversal")]
         public string PathTraversal([FromBody] MiscModel miscModel)
@@ -140,37 +158,10 @@ namespace Samples.Security.WebApi.Controllers
             return "Result: " + resultString;
         }
 
-        private static string Combine(string first, string second, string defaultValue)
-        {
-            var firstIsEmpty = string.IsNullOrWhiteSpace(first);
-            var secondIsEmpty = string.IsNullOrWhiteSpace(second);
-
-            if (firstIsEmpty && secondIsEmpty)
-            {
-                return defaultValue;
-            }
-
-            if (!firstIsEmpty && !secondIsEmpty)
-            {
-                return first + second;
-            }
-
-            return firstIsEmpty ? second : first;
-        }
-
         private string GetHeaderValue(string name)
         {
             IEnumerable<string> values;
             return Request.Headers.TryGetValues(name, out values) ? values.FirstOrDefault() : null;
-        }
-
-        private static HttpCookie GetDefaultCookie(string key, string value)
-        {
-            var cookie = new HttpCookie(key, value);
-            cookie.Values["SameSite"] = "Strict";
-            cookie.HttpOnly = true;
-            cookie.Secure = true;
-            return cookie;
         }
 
         [AcceptVerbs("GET")]
