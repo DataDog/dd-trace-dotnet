@@ -4801,7 +4801,7 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - script: git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
+        - script: git $(GIT_RETRY_CONFIG) clone --branch andrew/enable-dotnet-css --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
 
         - script: |
@@ -4903,7 +4903,7 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
+      - script: git $(GIT_RETRY_CONFIG) clone --branch andrew/enable-dotnet-css --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
       - template: steps/download-artifact.yml
