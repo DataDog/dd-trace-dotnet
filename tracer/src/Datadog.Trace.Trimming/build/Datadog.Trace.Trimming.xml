@@ -429,7 +429,6 @@
       <type fullname="System.Net.DnsEndPoint" />
       <type fullname="System.Net.EndPoint" />
       <type fullname="System.Net.HttpStatusCode" />
-      <type fullname="System.Net.HttpVersion" />
       <type fullname="System.Net.ICredentials" />
       <type fullname="System.Net.IPAddress" />
       <type fullname="System.Net.IPEndPoint" />
