@@ -511,7 +511,7 @@ partial class Build
                     .SetTargetPlatform(platform)));
         });
 
-    Target DownloadLibDdwaf => _ => _.Unlisted().After(CreateRequiredDirectories).Executes(() => DownloadWafVersion());
+    Target DownloadLibDdwaf => _ => _.Unlisted().After(CreateRequiredDirectories);
 
     async Task DownloadWafVersion(string libddwafVersion = null, string uncompressFolderTarget = null)
     {
@@ -569,39 +569,7 @@ partial class Build
     Target CopyLibDdwaf => _ => _
         .Unlisted()
         .After(Clean)
-        .After(DownloadLibDdwaf)
-        .Executes(() =>
-        {
-            if (IsWin)
-            {
-                foreach (var architecture in WindowsArchitectureFolders)
-                {
-                    var source = LibDdwafDirectory() / "runtimes" / architecture / "native" / "ddwaf.dll";
-                    var dest = MonitoringHomeDirectory / architecture;
-                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                }
-            }
-            else if (IsLinux)
-            {
-                var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                var (destArch, _) = GetUnixArchitectureAndExtension();
-
-                var ddwafFileName = $"libddwaf.{ext}";
-
-                var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-                var dest = MonitoringHomeDirectory / destArch;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-            }
-            else if (IsOsx)
-            {
-                var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                var ddwafFileName = $"libddwaf.{ext}";
-
-                var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-                var dest = MonitoringHomeDirectory / "osx";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-            }
-        });
+        .After(DownloadLibDdwaf);
 
     Target DownloadLibDatadog => _ => _
                 .Unlisted()
