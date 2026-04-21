@@ -69,12 +69,12 @@ public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisF
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("LoadFromGAC", "True")]
-    [InlineData("handler-route", "/api/security/12", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
-    public async Task TestApiSecurityHandlerRoute(string scenario, string url, string body)
+    [InlineData("/api/security/12", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
+    public async Task TestApiSecurityHandlerRoute(string url, string body)
     {
         var agent = _iisFixture.Agent;
         var dateTime = DateTime.UtcNow;
-        var result = await SubmitRequest(url, body, "application/json");
+        await SubmitRequest(url, body, "application/json");
 
         var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
         var requestSpan = spans.First(s => s.Tags.TryGetValue("http.url", out var u) && u.Contains(url));
@@ -86,31 +86,19 @@ public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisF
             Output.WriteLine($"[handler-route] http.route value: {requestSpan.Tags[HttpRouteTag]}");
         }
 
-        // When http.route is absent, ShouldAnalyzeSchema returns false regardless of settings
-        if (_enableApiSecurity && hasRoute)
-        {
-            requestSpan.Tags.Should().ContainKey(RequestBodySchemaTag,
-                because: "http.route is present and API Security is enabled, so schema extraction should fire");
-        }
-        else
-        {
-            requestSpan.Tags.Should().NotContainKey(RequestBodySchemaTag,
-                because: hasRoute
-                    ? "API Security is disabled"
-                    : "http.route is missing so ShouldAnalyzeSchema returns false");
-        }
+        AssertSchemaTagPresence(requestSpan, hasRoute);
     }
 
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("LoadFromGAC", "True")]
-    [InlineData("mapped-page-route", "/Health/Params/12", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
-    public async Task TestApiSecurityMappedPageRoute(string scenario, string url, string body)
+    [InlineData("/Health/Params/12", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
+    public async Task TestApiSecurityMappedPageRoute(string url, string body)
     {
         var agent = _iisFixture.Agent;
         var dateTime = DateTime.UtcNow;
-        var result = await SubmitRequest(url, body, "application/json");
+        await SubmitRequest(url, body, "application/json");
 
         var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
         var requestSpan = spans.First(s => s.Tags.TryGetValue("http.url", out var u) && u.Contains(url));
@@ -122,18 +110,7 @@ public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisF
             Output.WriteLine($"[mapped-page-route] http.route value: {requestSpan.Tags[HttpRouteTag]}");
         }
 
-        if (_enableApiSecurity && hasRoute)
-        {
-            requestSpan.Tags.Should().ContainKey(RequestBodySchemaTag,
-                because: "http.route is present and API Security is enabled, so schema extraction should fire");
-        }
-        else
-        {
-            requestSpan.Tags.Should().NotContainKey(RequestBodySchemaTag,
-                because: hasRoute
-                    ? "API Security is disabled"
-                    : "http.route is missing so ShouldAnalyzeSchema returns false");
-        }
+        AssertSchemaTagPresence(requestSpan, hasRoute);
     }
 
     public async Task InitializeAsync()
@@ -146,5 +123,27 @@ public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisF
     public Task DisposeAsync() => Task.CompletedTask;
 
     protected override string GetTestName() => _testName;
+
+    private void AssertSchemaTagPresence(MockSpan requestSpan, bool hasRoute)
+    {
+        if (_enableApiSecurity && hasRoute)
+        {
+            requestSpan.Tags.Should().ContainKey(
+                RequestBodySchemaTag,
+                "http.route is present and API Security is enabled, so schema extraction should fire");
+        }
+        else if (hasRoute)
+        {
+            requestSpan.Tags.Should().NotContainKey(
+                RequestBodySchemaTag,
+                "API Security is disabled");
+        }
+        else
+        {
+            requestSpan.Tags.Should().NotContainKey(
+                RequestBodySchemaTag,
+                "http.route is missing so ShouldAnalyzeSchema returns false");
+        }
+    }
 }
 #endif

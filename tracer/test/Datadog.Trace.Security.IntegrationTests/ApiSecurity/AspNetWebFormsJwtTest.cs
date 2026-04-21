@@ -76,11 +76,8 @@ public abstract class AspNetWebFormsJwtTest : AspNetBase, IClassFixture<IisFixtu
     {
         var agent = _iisFixture.Agent;
         var dateTime = DateTime.UtcNow;
-        var result = await SubmitRequest(
-            url,
-            body: null,
-            contentType: string.Empty,
-            headers: new[] { new KeyValuePair<string, string>("Authorization", "Bearer " + JwtWithAttackInNameClaim) });
+        var jwtHeaders = new[] { new KeyValuePair<string, string>("Authorization", "Bearer " + JwtWithAttackInNameClaim) };
+        await SubmitRequest(url, body: null, contentType: string.Empty, headers: jwtHeaders);
 
         var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
         var requestSpan = spans.First(s => s.Tags.TryGetValue("http.url", out var u) && u.Contains(url));
@@ -105,17 +102,19 @@ public abstract class AspNetWebFormsJwtTest : AspNetBase, IClassFixture<IisFixtu
 
         if (_enableSecurity)
         {
-            requestSpan.Metrics.Should().ContainKey("_dd.appsec.waf.duration",
-                because: "the WAF should run when AppSec is enabled");
+            requestSpan.Metrics.Should().ContainKey(
+                "_dd.appsec.waf.duration",
+                "the WAF should run when AppSec is enabled");
             appSecJson.Should().NotBeNullOrWhiteSpace(
-                because: "the decoded JWT claim contains a path-traversal attack that should trigger an AppSec event");
-            appSecJson.Should().Contain(AttackPayload,
-                because: "the event should reference the decoded JWT claim value, proving JWT extraction happened");
+                "the decoded JWT claim contains a path-traversal attack that should trigger an AppSec event");
+            appSecJson.Should().Contain(
+                AttackPayload,
+                "the event should reference the decoded JWT claim value, proving JWT extraction happened");
         }
         else
         {
             appSecJson.Should().BeNullOrEmpty(
-                because: "AppSec events should not appear when AppSec is disabled");
+                "AppSec events should not appear when AppSec is disabled");
         }
     }
 
