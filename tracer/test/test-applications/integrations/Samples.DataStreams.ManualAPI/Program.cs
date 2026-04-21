@@ -14,21 +14,25 @@ public class Program
 
     private static async Task Main(string[] args)
     {
-        var writing = Send("my message");
+        var trackTransaction = args.Contains("TrackTransaction");
+        var writing = Send("my message", trackTransaction);
         var reading = Receive();
 
         // wait up to 20 second for threads
         await Task.WhenAny(Task.WhenAll(reading, writing), Task.Delay(TimeSpan.FromSeconds(value: 20)));
     }
 
-    private static async Task Send(string message)
+    private static async Task Send(string message, bool trackTransaction = false)
     {
         using var scope = Tracer.Instance.StartActive("Samples.DataStreams.ManualAPI.Send");
 
         await Task.Delay(millisecondsDelay: 100);
 
         Console.WriteLine("Sending one message to the queue...");
-        Datadog.Trace.DataStreams.TrackTransaction(scope.Span, "my-transaction-id", "send-checkpoint");
+        if (trackTransaction)
+        {
+            Datadog.Trace.DataStreams.TrackTransaction(scope.Span, "my-transaction-id", "send-checkpoint");
+        }
         var sb = new StringBuilder();
         var injector = new SpanContextInjector();
         injector.InjectIncludingDsm(sb, (b, k, v) => b.Append($"{k}:{v};"), scope.Span.Context, "ConcurrentQueue", nameof(_queue));

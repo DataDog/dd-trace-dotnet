@@ -56,7 +56,7 @@ public class DataStreamsMonitoringManualApiTest : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var processResult = await RunSampleAndWaitForExit(agent);
+        using var processResult = await RunSampleAndWaitForExit(agent, arguments: "TrackTransaction");
 
         // Verify the dsm.transaction.id tag was set on the span
         var spans = await agent.WaitForSpansAsync(count: 2);
