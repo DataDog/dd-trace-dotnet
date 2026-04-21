@@ -83,10 +83,10 @@ internal sealed class ManagedTraceExporter : IApi, IDisposable
             ?? Task.FromResult(false);
     }
 
-    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion = 0)
     {
         // Handle shutdown scenario where api is null
-        return Volatile.Read(ref _current)?.SendStatsAsync(stats, bucketDuration) ?? Task.FromResult(false);
+        return Volatile.Read(ref _current)?.SendStatsAsync(stats, bucketDuration, tracerObfuscationVersion) ?? Task.FromResult(false);
     }
 
     // Internal for testing
