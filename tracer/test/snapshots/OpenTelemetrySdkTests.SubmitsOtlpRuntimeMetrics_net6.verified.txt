@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "resource_metrics": [
       {
@@ -52,9 +52,8 @@
                 "name": "dotnet.assembly.count",
                 "description": "The number of .NET assemblies that are currently loaded.",
                 "unit": "{assembly}",
-                "sum": {
-                  "data_points": [],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                "gauge": {
+                  "data_points": []
                 }
               },
               {
@@ -91,27 +90,24 @@
                 "name": "dotnet.gc.last_collection.heap.fragmentation.size",
                 "description": "The heap fragmentation, as observed during the latest garbage collection.",
                 "unit": "By",
-                "sum": {
-                  "data_points": [],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                "gauge": {
+                  "data_points": []
                 }
               },
               {
                 "name": "dotnet.gc.last_collection.heap.size",
                 "description": "The managed GC heap size (including fragmentation), as observed during the latest garbage collection.",
                 "unit": "By",
-                "sum": {
-                  "data_points": [],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                "gauge": {
+                  "data_points": []
                 }
               },
               {
                 "name": "dotnet.gc.last_collection.memory.committed_size",
                 "description": "The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection.",
                 "unit": "By",
-                "sum": {
-                  "data_points": [],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                "gauge": {
+                  "data_points": []
                 }
               },
               {
@@ -168,9 +164,8 @@
                 "name": "dotnet.process.cpu.count",
                 "description": "The number of processors available to the process.",
                 "unit": "{cpu}",
-                "sum": {
-                  "data_points": [],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                "gauge": {
+                  "data_points": []
                 }
               },
               {
@@ -187,9 +182,8 @@
                 "name": "dotnet.process.memory.working_set",
                 "description": "The number of bytes of physical memory mapped to the process context.",
                 "unit": "By",
-                "sum": {
-                  "data_points": [],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                "gauge": {
+                  "data_points": []
                 }
               },
               {
@@ -226,9 +220,8 @@
                 "name": "dotnet.timer.count",
                 "description": "The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled.",
                 "unit": "{timer}",
-                "sum": {
-                  "data_points": [],
-                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                "gauge": {
+                  "data_points": []
                 }
               }
             ]

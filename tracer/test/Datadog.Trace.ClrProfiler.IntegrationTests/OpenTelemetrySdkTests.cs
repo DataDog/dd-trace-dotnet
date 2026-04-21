@@ -592,6 +592,80 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
+
+        [SkippableFact]
+        [Trait("SkipInCI", "True")]
+        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
+        [Trait("Category", "EndToEnd")]
+        public async Task SubmitsOtlpRuntimeMetrics()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+
+            using (var httpClient = new System.Net.Http.HttpClient())
+            {
+                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
+            }
+
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using (await RunSampleAndWaitForExit(agent, packageVersion: "1.13.1"))
+            {
+                using var httpClient = new System.Net.Http.HttpClient();
+                var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/metrics");
+                metricsResponse.EnsureSuccessStatusCode();
+
+                var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
+                var metricsData = JToken.Parse(metricsJson);
+                metricsData.Should().NotBeNullOrEmpty();
+
+                var dedupedMetrics = new JArray(
+                    metricsData
+                        .SelectTokens("$..scope_metrics[*].metrics[*]")
+                        .GroupBy(m => m["name"]?.ToString())
+                        .Select(g => g.First())
+                        .OrderBy(m => m["name"]?.ToString()));
+
+                var collapsed = metricsData[0]!.DeepClone();
+                ((JArray)collapsed.SelectToken("$.resource_metrics")!).RemoveAll();
+                var firstExport = metricsData.SelectToken("$[0].resource_metrics[0]")!.DeepClone();
+                firstExport.SelectToken("$.scope_metrics[0].metrics")!.Replace(dedupedMetrics);
+                ((JArray)collapsed["resource_metrics"]!).Add(firstExport);
+
+                foreach (var section in collapsed.SelectTokens("$..metrics[*].*"))
+                {
+                    if (section is JObject obj && obj["data_points"] is JArray)
+                    {
+                        obj["data_points"] = new JArray();
+                    }
+                }
+
+                foreach (var attribute in collapsed.SelectTokens("$..resource.attributes[*]"))
+                {
+                    var key = attribute["key"]?.ToString();
+                    if (key is not null)
+                    {
+                        attribute["value"] = JToken.FromObject(new { string_value = $"<{key}>" });
+                    }
+                }
+
+                var formattedJson = new JArray(collapsed).ToString(Formatting.Indented);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                var tfm = Environment.Version.Major >= 9 ? "net9" : "net6";
+
+                await Verifier.Verify(formattedJson, settings)
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpRuntimeMetrics_{tfm}")
+                              .DisableRequireUniquePrefix();
+
+                agent.StatsdRequests.Should().BeEmpty(
+                    "StatsD runtime metrics should be disabled when OTLP runtime metrics are active");
+            }
+        }
 #endif
 
 #if NETCOREAPP3_1_OR_GREATER
