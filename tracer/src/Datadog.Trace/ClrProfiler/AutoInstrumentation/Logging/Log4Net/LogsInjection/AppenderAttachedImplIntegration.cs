@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 {
@@ -28,6 +29,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class AppenderAttachedImplIntegration
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AppenderAttachedImplIntegration));
+        private static bool _loggedNullSettings;
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -47,7 +51,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
             var tracer = Tracer.Instance;
 
             var mutableSettings = tracer.CurrentTraceSettings?.Settings;
-            if (mutableSettings is null || !mutableSettings.LogsInjectionEnabled)
+            if (mutableSettings is null)
+            {
+                if (!_loggedNullSettings)
+                {
+                    _loggedNullSettings = true;
+                    Log.Debug("log4net logs-injection skipped: CurrentTraceSettings was null.");
+                }
+
+                return CallTargetState.GetDefault();
+            }
+
+            if (!mutableSettings.LogsInjectionEnabled)
             {
                 return CallTargetState.GetDefault();
             }
@@ -55,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
             var properties = loggingEvent.Properties;
             if (properties is not null && !properties.Contains(CorrelationIdentifier.ServiceKey))
             {
-                properties[CorrelationIdentifier.ServiceKey] = mutableSettings.DefaultServiceName ?? string.Empty;
+                properties[CorrelationIdentifier.ServiceKey] = mutableSettings.DefaultServiceName;
                 properties[CorrelationIdentifier.VersionKey] = mutableSettings.ServiceVersion ?? string.Empty;
                 properties[CorrelationIdentifier.EnvKey] = mutableSettings.Environment ?? string.Empty;
 
