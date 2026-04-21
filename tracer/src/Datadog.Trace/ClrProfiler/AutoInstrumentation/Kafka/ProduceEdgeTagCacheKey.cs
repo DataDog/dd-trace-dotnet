@@ -5,39 +5,10 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Value-type cache key for produce edge tags. Using a named struct avoids boxing and
 /// is compatible with all supported target frameworks.
 /// </summary>
-internal readonly struct ProduceEdgeTagCacheKey : IEquatable<ProduceEdgeTagCacheKey>
-{
-    public readonly string ClusterId;
-    public readonly string Topic;
-
-    public ProduceEdgeTagCacheKey(string clusterId, string topic)
-    {
-        ClusterId = clusterId;
-        Topic = topic;
-    }
-
-    public bool Equals(ProduceEdgeTagCacheKey other)
-        => ClusterId == other.ClusterId && Topic == other.Topic;
-
-    public override bool Equals(object? obj)
-        => obj is ProduceEdgeTagCacheKey other && Equals(other);
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            int hash = 17;
-            hash = (hash * 31) + (ClusterId?.GetHashCode() ?? 0);
-            hash = (hash * 31) + (Topic?.GetHashCode() ?? 0);
-            return hash;
-        }
-    }
-}
+internal readonly record struct ProduceEdgeTagCacheKey(string ClusterId, string Topic);

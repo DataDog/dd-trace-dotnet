@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.SourceGenerators;
@@ -60,7 +59,7 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
         var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
         if (!_backlogBuckets.TryGetValue(currentBucketStartTime, out var bucket))
         {
-            bucket = new Dictionary<string, BacklogBucket>(StringReferenceEqualityComparer.Instance);
+            bucket = new Dictionary<string, BacklogBucket>();
             _backlogBuckets[currentBucketStartTime] = bucket;
         }
 
@@ -220,19 +219,5 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
     private long BucketStartTimeForTimestamp(long timestampNs)
     {
         return timestampNs - (timestampNs % _bucketDurationInNs);
-    }
-
-    /// <summary>
-    /// Reference-equality comparer for string keys in backlog buckets.
-    /// Safe to use because backlog tag strings are reference-interned via
-    /// <see cref="DataStreamsManager.GetOrCreateBacklogTags{TKey}"/>.
-    /// </summary>
-    private sealed class StringReferenceEqualityComparer : IEqualityComparer<string>
-    {
-        internal static readonly StringReferenceEqualityComparer Instance = new();
-
-        public bool Equals(string? x, string? y) => ReferenceEquals(x, y);
-
-        public int GetHashCode(string obj) => RuntimeHelpers.GetHashCode(obj);
     }
 }

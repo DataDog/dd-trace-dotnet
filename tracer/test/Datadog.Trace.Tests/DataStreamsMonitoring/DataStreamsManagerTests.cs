@@ -451,7 +451,7 @@ public class DataStreamsManagerTests
     public void GetOrCreateEdgeTags_RabbitMQProduce_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var key = new RabbitMQProduceEdgeTagCacheKey("exchange1", string.Empty, hasRoutingKey: true);
+        var key = new RabbitMQProduceEdgeTagCacheKey("exchange1", string.Empty, HasRoutingKey: true);
 
         var first = dsm.GetOrCreateEdgeTags(key, static k => [$"exchange:{k.Exchange}", "has_routing_key:true", "type:rabbitmq"]);
         var second = dsm.GetOrCreateEdgeTags(key, static k => [$"exchange:{k.Exchange}", "has_routing_key:true", "type:rabbitmq"]);
@@ -475,8 +475,8 @@ public class DataStreamsManagerTests
     public void GetOrCreateEdgeTags_IbmMq_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var produceKey = new IbmMqEdgeTagCacheKey("queue1", isConsume: false);
-        var consumeKey = new IbmMqEdgeTagCacheKey("queue1", isConsume: true);
+        var produceKey = new IbmMqEdgeTagCacheKey("queue1", IsConsume: false);
+        var consumeKey = new IbmMqEdgeTagCacheKey("queue1", IsConsume: true);
 
         var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:ibmmq"]);
         var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:ibmmq"]);
@@ -492,8 +492,8 @@ public class DataStreamsManagerTests
     public void GetOrCreateEdgeTags_Kinesis_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var produceKey = new KinesisEdgeTagCacheKey("stream1", isConsume: false);
-        var consumeKey = new KinesisEdgeTagCacheKey("stream1", isConsume: true);
+        var produceKey = new KinesisEdgeTagCacheKey("stream1", IsConsume: false);
+        var consumeKey = new KinesisEdgeTagCacheKey("stream1", IsConsume: true);
 
         var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.StreamName}", "type:kinesis"]);
         var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.StreamName}", "type:kinesis"]);
@@ -521,8 +521,8 @@ public class DataStreamsManagerTests
     public void GetOrCreateEdgeTags_Sqs_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var produceKey = new SqsEdgeTagCacheKey("queue1", isConsume: false);
-        var consumeKey = new SqsEdgeTagCacheKey("queue1", isConsume: true);
+        var produceKey = new SqsEdgeTagCacheKey("queue1", IsConsume: false);
+        var consumeKey = new SqsEdgeTagCacheKey("queue1", IsConsume: true);
 
         var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
         var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);

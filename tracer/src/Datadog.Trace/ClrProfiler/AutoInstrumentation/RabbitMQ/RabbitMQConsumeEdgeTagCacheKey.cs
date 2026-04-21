@@ -5,29 +5,10 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
 /// <summary>
 /// Value-type cache key for RabbitMQ consume edge tags. Using a named struct avoids boxing and
 /// is compatible with all supported target frameworks.
 /// </summary>
-internal readonly struct RabbitMQConsumeEdgeTagCacheKey : IEquatable<RabbitMQConsumeEdgeTagCacheKey>
-{
-    public readonly string TopicOrRoutingKey;
-
-    public RabbitMQConsumeEdgeTagCacheKey(string topicOrRoutingKey)
-    {
-        TopicOrRoutingKey = topicOrRoutingKey;
-    }
-
-    public bool Equals(RabbitMQConsumeEdgeTagCacheKey other)
-        => TopicOrRoutingKey == other.TopicOrRoutingKey;
-
-    public override bool Equals(object? obj)
-        => obj is RabbitMQConsumeEdgeTagCacheKey other && Equals(other);
-
-    public override int GetHashCode()
-        => TopicOrRoutingKey?.GetHashCode() ?? 0;
-}
+internal readonly record struct RabbitMQConsumeEdgeTagCacheKey(string TopicOrRoutingKey);

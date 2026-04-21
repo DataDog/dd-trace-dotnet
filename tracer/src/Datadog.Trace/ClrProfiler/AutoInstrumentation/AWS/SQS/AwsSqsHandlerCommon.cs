@@ -67,7 +67,7 @@ internal sealed class AwsSqsHandlerCommon
         if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
         {
             var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
-                new SqsEdgeTagCacheKey(queueName, isConsume: false),
+                new SqsEdgeTagCacheKey(queueName, IsConsume: false),
                 static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
         }
@@ -86,9 +86,9 @@ internal sealed class AwsSqsHandlerCommon
         var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
         var edgeTags = dataStreamsManager is { IsEnabled: true }
                            ? dataStreamsManager.GetOrCreateEdgeTags(
-                               new SqsEdgeTagCacheKey(queueName, isConsume: false),
+                               new SqsEdgeTagCacheKey(queueName, IsConsume: false),
                                static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"])
-                           : new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
+                           : [];
         foreach (var e in requestProxy.Entries)
         {
             var entry = e.DuckCast<IContainsMessageAttributes>();
@@ -155,7 +155,7 @@ internal sealed class AwsSqsHandlerCommon
             if (dataStreamsManager is { IsEnabled: true })
             {
                 var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
-                    new SqsEdgeTagCacheKey((string)state.State, isConsume: true),
+                    new SqsEdgeTagCacheKey((string)state.State, IsConsume: true),
                     static k => ["direction:in", $"topic:{k.QueueName}", "type:sqs"]);
                 foreach (var o in response.Messages)
                 {

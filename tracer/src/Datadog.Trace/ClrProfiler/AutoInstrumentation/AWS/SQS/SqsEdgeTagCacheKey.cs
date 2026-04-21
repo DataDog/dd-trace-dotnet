@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 
 /// <summary>
@@ -15,31 +13,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 /// <see cref="IsConsume"/> distinguishes produce (direction:out) from consume (direction:in)
 /// so that both directions share a single cache type without key collision.
 /// </summary>
-internal readonly struct SqsEdgeTagCacheKey : IEquatable<SqsEdgeTagCacheKey>
-{
-    public readonly string QueueName;
-    public readonly bool IsConsume;
-
-    public SqsEdgeTagCacheKey(string queueName, bool isConsume)
-    {
-        QueueName = queueName;
-        IsConsume = isConsume;
-    }
-
-    public bool Equals(SqsEdgeTagCacheKey other)
-        => QueueName == other.QueueName && IsConsume == other.IsConsume;
-
-    public override bool Equals(object? obj)
-        => obj is SqsEdgeTagCacheKey other && Equals(other);
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            int hash = 17;
-            hash = (hash * 31) + (QueueName?.GetHashCode() ?? 0);
-            hash = (hash * 31) + IsConsume.GetHashCode();
-            return hash;
-        }
-    }
-}
+internal readonly record struct SqsEdgeTagCacheKey(string QueueName, bool IsConsume);

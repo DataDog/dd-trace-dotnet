@@ -392,22 +392,8 @@ internal sealed class DataStreamsManager
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
     /// <param name="factory">A static factory that builds the edge-tag array from the key on cache miss.</param>
     public string[] GetOrCreateEdgeTags<TKey>(TKey key, Func<TKey, string[]> factory)
-        where TKey : notnull, IEquatable<TKey>
-    {
-        var cache = EdgeTagCache<TKey>.Cache;
-        if (cache.TryGetValue(key, out var existing))
-        {
-            return existing;
-        }
-
-        if (cache.Count >= MaxEdgeTagCacheSize)
-        {
-            // High-cardinality key space — bypass cache to prevent unbounded memory growth
-            return factory(key);
-        }
-
-        return cache.GetOrAdd(key, factory);
-    }
+        where TKey : IEquatable<TKey>
+        => TagCache<TKey, string[]>.GetOrCreate(key, factory, MaxEdgeTagCacheSize);
 
     /// <summary>
     /// Returns a cached backlog tag string for the given key, creating and caching it on first use.
@@ -420,22 +406,8 @@ internal sealed class DataStreamsManager
     /// <param name="key">The cache key derived from the caller's natural identifiers.</param>
     /// <param name="factory">A static factory that builds the backlog tag string from the key on cache miss.</param>
     public string GetOrCreateBacklogTags<TKey>(TKey key, Func<TKey, string> factory)
-        where TKey : notnull, IEquatable<TKey>
-    {
-        var cache = BacklogTagCache<TKey>.Cache;
-        if (cache.TryGetValue(key, out var existing))
-        {
-            return existing;
-        }
-
-        if (cache.Count >= MaxEdgeTagCacheSize)
-        {
-            // High-cardinality key space — bypass cache to prevent unbounded memory growth
-            return factory(key);
-        }
-
-        return cache.GetOrAdd(key, factory);
-    }
+        where TKey : IEquatable<TKey>
+        => TagCache<TKey, string>.GetOrCreate(key, factory, MaxEdgeTagCacheSize);
 
     /// <summary>
     /// Make sure we only extract the schema (a costly operation) on select occasions
@@ -458,10 +430,34 @@ internal sealed class DataStreamsManager
         return false;
     }
 
+    private static class TagCache<TKey, TValue>
+        where TKey : IEquatable<TKey>
+    {
+        private static readonly ConcurrentDictionary<TKey, TValue> Cache = new();
+        private static int _count;
+
+        internal static TValue GetOrCreate(TKey key, Func<TKey, TValue> factory, int maxSize)
+        {
+            if (Cache.TryGetValue(key, out var existing))
+            {
+                return existing;
+            }
+
+            if (_count >= maxSize)
+            {
+                return factory(key);
+            }
+
+            var result = Cache.GetOrAdd(key, factory);
+            Interlocked.Increment(ref _count);
+            return result;
+        }
+    }
+
     /// <summary>
     /// Reference-equality comparer for string[] keys in <see cref="_nodeHashCache"/>.
     /// Two string[] objects are considered equal only when they are the same instance,
-    /// which is always true for the cached arrays held by <see cref="EdgeTagCache{TKey}"/>.
+    /// which is always true for the cached arrays held by <see cref="TagCache{TKey, TValue}"/>.
     /// </summary>
     private sealed class NodeHashCacheKeyComparer : IEqualityComparer<string[]>
     {

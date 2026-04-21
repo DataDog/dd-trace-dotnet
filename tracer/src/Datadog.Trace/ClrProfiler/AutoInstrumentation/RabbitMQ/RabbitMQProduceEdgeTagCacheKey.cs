@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
 /// <summary>
@@ -15,34 +13,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 /// When <see cref="Exchange"/> is empty the array uses <see cref="TopicOrRoutingKey"/> as the topic;
 /// otherwise it uses <see cref="Exchange"/> and <see cref="HasRoutingKey"/>.
 /// </summary>
-internal readonly struct RabbitMQProduceEdgeTagCacheKey : IEquatable<RabbitMQProduceEdgeTagCacheKey>
-{
-    public readonly string Exchange;
-    public readonly string TopicOrRoutingKey;
-    public readonly bool HasRoutingKey;
-
-    public RabbitMQProduceEdgeTagCacheKey(string exchange, string topicOrRoutingKey, bool hasRoutingKey)
-    {
-        Exchange = exchange;
-        TopicOrRoutingKey = topicOrRoutingKey;
-        HasRoutingKey = hasRoutingKey;
-    }
-
-    public bool Equals(RabbitMQProduceEdgeTagCacheKey other)
-        => Exchange == other.Exchange && TopicOrRoutingKey == other.TopicOrRoutingKey && HasRoutingKey == other.HasRoutingKey;
-
-    public override bool Equals(object? obj)
-        => obj is RabbitMQProduceEdgeTagCacheKey other && Equals(other);
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            int hash = 17;
-            hash = (hash * 31) + (Exchange?.GetHashCode() ?? 0);
-            hash = (hash * 31) + (TopicOrRoutingKey?.GetHashCode() ?? 0);
-            hash = (hash * 31) + HasRoutingKey.GetHashCode();
-            return hash;
-        }
-    }
-}
+internal readonly record struct RabbitMQProduceEdgeTagCacheKey(string Exchange, string TopicOrRoutingKey, bool HasRoutingKey);

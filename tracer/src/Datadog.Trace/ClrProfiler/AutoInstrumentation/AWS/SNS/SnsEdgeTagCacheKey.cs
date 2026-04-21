@@ -5,29 +5,10 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 
 /// <summary>
 /// Value-type cache key for SNS produce edge tags. Using a named struct avoids boxing and
 /// is compatible with all supported target frameworks.
 /// </summary>
-internal readonly struct SnsEdgeTagCacheKey : IEquatable<SnsEdgeTagCacheKey>
-{
-    public readonly string TopicName;
-
-    public SnsEdgeTagCacheKey(string topicName)
-    {
-        TopicName = topicName;
-    }
-
-    public bool Equals(SnsEdgeTagCacheKey other)
-        => TopicName == other.TopicName;
-
-    public override bool Equals(object? obj)
-        => obj is SnsEdgeTagCacheKey other && Equals(other);
-
-    public override int GetHashCode()
-        => TopicName?.GetHashCode() ?? 0;
-}
+internal readonly record struct SnsEdgeTagCacheKey(string TopicName);

@@ -5,29 +5,10 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 /// <summary>
 /// Value-type cache key for Azure Service Bus consume edge tags. Using a named struct avoids boxing and
 /// is compatible with all supported target frameworks.
 /// </summary>
-internal readonly struct ServiceBusEdgeTagCacheKey : IEquatable<ServiceBusEdgeTagCacheKey>
-{
-    public readonly string EntityPath;
-
-    public ServiceBusEdgeTagCacheKey(string entityPath)
-    {
-        EntityPath = entityPath;
-    }
-
-    public bool Equals(ServiceBusEdgeTagCacheKey other)
-        => EntityPath == other.EntityPath;
-
-    public override bool Equals(object? obj)
-        => obj is ServiceBusEdgeTagCacheKey other && Equals(other);
-
-    public override int GetHashCode()
-        => EntityPath?.GetHashCode() ?? 0;
-}
+internal readonly record struct ServiceBusEdgeTagCacheKey(string EntityPath);
