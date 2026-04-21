@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 /// </summary>
 internal interface IHttpContextItems
 {
-    IDictionary<object, object> Items { get; }
+    IDictionary<object, object?> Items { get; }
 }
 
 #endif

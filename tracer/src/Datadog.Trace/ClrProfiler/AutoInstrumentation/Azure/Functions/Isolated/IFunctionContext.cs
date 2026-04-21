@@ -19,7 +19,7 @@ internal interface IFunctionContext
 
     IEnumerable<KeyValuePair<Type, object?>>? Features { get; }
 
-    IDictionary<object, object>? Items { get; }
+    IDictionary<object, object?>? Items { get; }
 }
 
 #endif
