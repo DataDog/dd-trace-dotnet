@@ -601,9 +601,11 @@ namespace Datadog.Trace.Tests.Agent
                 AddedSpans.Add(spans);
             }
 
-            public bool ShouldKeepTrace(in SpanCollection spans) => shouldKeepTrace;
-
-            public SpanCollection ProcessTrace(in SpanCollection trace) => processTrace(trace);
+            public TraceKeepState ProcessTrace(ref SpanCollection spans)
+            {
+                spans = processTrace(spans);
+                return shouldKeepTrace ? TraceKeepState.AggregateAndExport : TraceKeepState.AggregateOnly;
+            }
 
             public Task DisposeAsync() => Task.CompletedTask;
 

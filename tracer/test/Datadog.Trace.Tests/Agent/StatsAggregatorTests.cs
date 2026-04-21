@@ -499,7 +499,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task Otlp_ShouldKeepTraces_TrueWhenTraceSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -511,11 +511,12 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoKeep, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
             var traceChunk = new SpanCollection([span]);
-            aggregator.ShouldKeepTrace(traceChunk).Should().BeTrue();
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().Be(TraceKeepState.AggregateAndExport);
         }
 
         [Fact]
-        public async Task Otlp_ShouldKeepTraces_FalseWhenTraceNotSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceNotSampled_ReturnsAggregateOnly()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -527,7 +528,293 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoReject, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
             var traceChunk = new SpanCollection([span]);
-            aggregator.ShouldKeepTrace(traceChunk).Should().BeFalse();
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().Be(TraceKeepState.AggregateOnly);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
+        {
+            var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+            span.SetService(string.Empty, "manual");
+            span.Finish();
+
+            span.ServiceName.Should().BeEmpty();
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
+            traceChunk.Count.Should().Be(1);
+            // normalized
+            span.ServiceName.Should().NotBeEmpty();
+            // obfuscated
+            traceChunk[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterRejects_ReturnsRejected()
+        {
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:production"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResources: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.Rejected);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterKeepsAndSampled_ReturnsAggregateAndExport()
+        {
+            // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResources: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterKeepsAndNotSampled_ReturnsAggregateOnly()
+        {
+            // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResources: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateOnly);
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenNoFilter_ReturnsFalse()
+        {
+            // No discovery service → no trace filter configured
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenFilterKeepsTrace_ReturnsFalse()
+        {
+            // Configure a reject filter that does NOT match the span → trace should be kept (not filtered)
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResources: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenFilterRejectsTrace_ReturnsTrue()
+        {
+            // Configure a reject filter that matches the span → trace should be filtered
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:production"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResources: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenIgnoreResourceMatches_ReturnsTrue()
+        {
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: null,
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResources: ["^GET /health"]);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "http.request" };
+            span.ResourceName = "GET /healthcheck";
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_WhenPrioritySampled_ReturnsTrue()
+        {
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_WhenNotSampled_ReturnsFalse()
+        {
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_Otlp_WhenSampled_ReturnsTrue()
+        {
+            await using var aggregator = (StatsAggregator)StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ObfuscateTrace_WhenNotEnabled_ReturnsUnmodified()
+        {
+            // Default: obfuscation version is 0 (not enabled), so ObfuscateTrace should return the same collection
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ObfuscateTrace(in traceChunk);
+
+            result.Count.Should().Be(1);
+            // The SQL should not have been obfuscated (numeric literal replaced)
+            result[0].ResourceName.Should().Be("SELECT * FROM users WHERE id = 123");
+        }
+
+        [Fact]
+        public async Task ObfuscateTrace_WhenEnabled_RunsObfuscation()
+        {
+            // Use StubDiscoveryService with obfuscation version 1 to enable tracer obfuscation
+            var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ObfuscateTrace(in traceChunk);
+
+            // Obfuscation should run and not throw; it should return a valid collection
+            result.Count.Should().Be(1);
+            // The SQL should have been obfuscated (numeric literal replaced)
+            result[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
         }
 
         [Fact]
@@ -929,7 +1216,10 @@ namespace Datadog.Trace.Tests.Agent
             return ns << shift;
         }
 
-        private class StubDiscoveryService(string agentVersion = "7.65.0") : IDiscoveryService
+        private class StubDiscoveryService(
+            string agentVersion = "7.65.0",
+            int obfuscationVersion = 0,
+            AgentTraceFilterConfig traceFilterConfig = null) : IDiscoveryService
         {
             public void SubscribeToChanges(Action<AgentConfiguration> callback)
             {
@@ -949,7 +1239,9 @@ namespace Datadog.Trace.Tests.Agent
                              clientDropP0: true,
                              spanMetaStructs: true,
                              spanEvents: true,
-                             peerTags: [Tags.PeerService]));
+                             peerTags: [Tags.PeerService],
+                             obfuscationVersion: obfuscationVersion,
+                             traceFilterConfig: traceFilterConfig));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)

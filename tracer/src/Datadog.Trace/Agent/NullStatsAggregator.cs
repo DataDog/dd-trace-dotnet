@@ -21,9 +21,7 @@ namespace Datadog.Trace.Agent
         {
         }
 
-        public bool ShouldKeepTrace(in SpanCollection spans) => true;
-
-        public SpanCollection ProcessTrace(in SpanCollection trace) => trace;
+        public TraceKeepState ProcessTrace(ref SpanCollection spans) => TraceKeepState.AggregateAndExport;
 
         public Task DisposeAsync()
         {
