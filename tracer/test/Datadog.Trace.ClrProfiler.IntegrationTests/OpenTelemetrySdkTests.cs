@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -254,10 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            using (var httpClient = new System.Net.Http.HttpClient())
-            {
-                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
-            }
+            await ClearTestAgentSession(testAgentHost);
 
             // This is the key configuration that is set differently from previous test cases:
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
@@ -281,6 +279,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             using var agent = EnvironmentHelper.GetMockAgent();
+            // When DD_AGENT_HOST=test-agent is set above, it also redirects the APM trace agent
+            // URL via the DD_TRACE_AGENT_HOSTNAME alias (the primary key wins). That points APM
+            // traces at test-agent:<mock-agent-port>, which does not exist, so AgentWriter
+            // retries fill the tracer's shutdown window and can starve the DirectLogSubmission
+            // final flush. Pin the APM URL back to the in-process MockAgent.
+            if (useAgentHostBackup && agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+            {
+                SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcpAgent.Port}");
+            }
+
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
                 using var httpClient = new System.Net.Http.HttpClient();
@@ -497,8 +505,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NET6_0_OR_GREATER
         [SkippableTheory]
-        [Trait("SkipInCI", "True")]
-        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol, bool useAgentHostBackup)
@@ -519,10 +525,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            using (var httpClient = new System.Net.Http.HttpClient())
-            {
-                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
-            }
+            await ClearTestAgentSession(testAgentHost);
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
@@ -531,7 +534,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
-            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+            // 60s so only the shutdown flush fires; periodic exports of observable instruments produce duplicate batches that break snapshot comparison
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "60000");
 
             if (useAgentHostBackup)
             {
@@ -546,15 +550,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", runtimeMajor >= 9 ? "delta" : "cumulative");
 
             using var agent = EnvironmentHelper.GetMockAgent();
+            // See comment in SubmitsOtlpTraces. DD_AGENT_HOST=test-agent also redirects the APM
+            // trace agent URL; pin it back to the in-process MockAgent.
+            if (useAgentHostBackup && agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+            {
+                SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcpAgent.Port}");
+            }
+
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                using var httpClient = new System.Net.Http.HttpClient();
-                var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/metrics");
-                metricsResponse.EnsureSuccessStatusCode();
-
-                var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
-                var metricsData = JToken.Parse(metricsJson);
-
+                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
 
                 foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
@@ -670,8 +675,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
-        [Trait("SkipInCI", "True")]
-        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol, bool useAgentHostBackup)
@@ -690,10 +693,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            using (var httpClient = new System.Net.Http.HttpClient())
-            {
-                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
-            }
+            await ClearTestAgentSession(testAgentHost);
 
             SetEnvironmentVariable("DD_ENV", "testing");
             SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
@@ -701,7 +701,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", datadogLogsEnabled);
             SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
-            SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
+            // Short delay gives the OTel SDK multiple periodic exports before LoggerProviderSdk.Dispose() hits its 5s shutdown timeout.
+            // This is especially important for gRPC, where the first export warms the HTTP/2 connection.
+            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "500");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
             if (useAgentHostBackup)
@@ -716,17 +718,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
             using var agent = EnvironmentHelper.GetMockAgent();
+            // See comment in SubmitsOtlpTraces. DD_AGENT_HOST=test-agent also redirects the APM
+            // trace agent URL; pin it back to the in-process MockAgent so AgentWriter retries
+            // don't starve the DirectLogSubmission final flush during shutdown.
+            if (useAgentHostBackup && agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+            {
+                SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcpAgent.Port}");
+            }
+
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
                 var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
-                using var httpClient = new System.Net.Http.HttpClient();
-                var logsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/logs");
-                logsResponse.EnsureSuccessStatusCode();
-
-                var logsJson = await logsResponse.Content.ReadAsStringAsync();
-                var logsData = JToken.Parse(logsJson);
-
+                var logsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/logs");
                 logsData.Should().NotBeNullOrEmpty();
                 logsData.SelectTokens("$..log_records[*]").Should().AllSatisfy(logRecord =>
                 {
@@ -780,6 +784,69 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 #endif
+
+        /// <summary>
+        /// Clears the test-agent session, retrying if the agent is not yet ready.
+        /// Ensures the OTLP HTTP endpoint is accepting connections before tests proceed.
+        /// </summary>
+        private static async Task ClearTestAgentSession(string testAgentHost, int maxRetries = 5, int delayMs = 1000)
+        {
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var url = $"http://{testAgentHost}:4318/test/session/clear";
+
+            for (var attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    var response = await httpClient.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    return;
+                }
+                catch (Exception) when (attempt < maxRetries)
+                {
+                    await Task.Delay(delayMs);
+                }
+            }
+
+            // Final attempt -- let it throw if it fails
+            var finalResponse = await httpClient.GetAsync(url);
+            finalResponse.EnsureSuccessStatusCode();
+        }
+
+        /// <summary>
+        /// Polls the test-agent for data until non-empty results are returned or timeout is reached.
+        /// The sample app exports data during shutdown, so there can be a brief delay
+        /// between process exit and data appearing in the test-agent. The timeout is generous
+        /// because first-time gRPC connections (TCP+HTTP/2+TLS handshake) plus tracer shutdown
+        /// flushing can stack up on slower CI runners.
+        /// </summary>
+        private static async Task<JToken> WaitForTestAgentData(string url, int timeoutSeconds = 60, int pollIntervalMs = 500)
+        {
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                var response = await httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+                var data = JToken.Parse(json);
+
+                if (data.HasValues)
+                {
+                    return data;
+                }
+
+                await Task.Delay(pollIntervalMs);
+            }
+
+            // Final attempt -- return whatever we get so the caller's assertion shows the actual value
+            var finalResponse = await httpClient.GetAsync(url);
+            finalResponse.EnsureSuccessStatusCode();
+            var finalJson = await finalResponse.Content.ReadAsStringAsync();
+            return JToken.Parse(finalJson);
+        }
 
         private static string GetSuffix(string packageVersion)
         {

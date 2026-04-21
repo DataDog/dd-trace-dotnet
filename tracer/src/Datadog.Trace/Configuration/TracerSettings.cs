@@ -250,10 +250,17 @@ namespace Datadog.Trace.Configuration
                                     },
                                     validator: null);
 
+            var otlpGeneralProtocolName = OtlpGeneralProtocol switch
+            {
+                OtlpProtocol.Grpc => "grpc",
+                OtlpProtocol.HttpProtobuf => "http/protobuf",
+                _ => "grpc",
+            };
+
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol)
                                  .GetAs(
-                                      defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                      defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
                                       converter: x => x switch
                                       {
                                           not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -312,7 +319,7 @@ namespace Datadog.Trace.Configuration
             OtlpLogsProtocol = config
                              .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol)
                              .GetAs(
-                                  defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                  defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
                                   converter: x => x switch
                                   {
                                       not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
