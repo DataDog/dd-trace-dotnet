@@ -249,7 +249,7 @@ public class MassTransit8Tests : TracingIntegrationTest
         // Default csproj version is 8.5.8 which falls in the 8.3.2+ (base) tier.
         if (string.IsNullOrEmpty(packageVersion))
         {
-            return ".pre_8_0_5";
+            return string.Empty;
         }
 
         return new Version(packageVersion) switch
