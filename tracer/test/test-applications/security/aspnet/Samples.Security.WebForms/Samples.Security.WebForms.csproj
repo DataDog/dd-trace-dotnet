@@ -153,6 +153,7 @@
     <Content Include="Iast\ExecuteCommand.aspx" />
     <Content Include="Iast\PopulateDDBB.aspx" />
     <Content Include="Iast\ExecuteQueryFromBodyQueryData.aspx" />
+    <Content Include="Iast\SqlQuery.aspx" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
@@ -217,6 +218,10 @@
     </Compile>
     <Compile Include="Iast\ExecuteQueryFromBodyQueryData.aspx.cs">
       <DependentUpon>ExecuteQueryFromBodyQueryData.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Iast\SqlQuery.aspx.cs">
+      <DependentUpon>SqlQuery.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Iast\DatabaseHelper.cs" />

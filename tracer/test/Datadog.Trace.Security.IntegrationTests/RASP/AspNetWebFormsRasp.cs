@@ -120,21 +120,28 @@ public abstract class AspNetWebFormsRaspTests : AspNetBase, IClassFixture<IisFix
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
-    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI", "{\"UserName\": \"' or '1'='1\"}")]
-    public async Task TestRaspRequestSqlInBody(string url, string exploit, string body = null)
+    [InlineData("/Iast/SqlQuery?username=' or '1'='1", "SqlI")]
+    public async Task TestRaspRequestSql(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.UseParameters(url, exploit, body);
+        settings.UseParameters(url, exploit);
         settings.AddIastScrubbing();
         var dateTime = DateTime.UtcNow;
         var answer = await SubmitRequest("/Iast/PopulateDDBB", null, string.Empty);
-        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("/Iast/PopulateDDBB"));
+        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("/Iast/PopulateDDBB") && !s.Resource.Contains("populatedbb"));
         await agent.WaitForSpansAsync(1, minDateTime: dateTime);
         dateTime = DateTime.UtcNow;
         var testName = _enableIast ? "RaspIast.AspNetWebForms" : "Rasp.AspNetWebForms";
         testName += _classicMode ? ".Classic" : ".Integrated";
-        await SubmitRequest(url, body, "application/json");
+        await SubmitRequest(url, null, "application/json");
         var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
         await VerifySpans(spansFiltered, settings, testName: testName, methodNameOverride: exploit);
@@ -146,7 +153,7 @@ public abstract class AspNetWebFormsRaspTests : AspNetBase, IClassFixture<IisFix
         SetHttpPort(_iisFixture.HttpPort);
         // warmup request to avoid initialization metrics interfering with test spans
         var answer = await SubmitRequest("/", null, string.Empty);
-        _iisFixture.Agent.SpanFilters.Add(s => s.Resource != "GET /" && !s.Resource.Contains("home/index"));
+        _iisFixture.Agent.SpanFilters.Add(s => s.Resource != "GET /" && !s.Resource.Contains("home/index") && !s.Resource.Contains("default.aspx"));
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
