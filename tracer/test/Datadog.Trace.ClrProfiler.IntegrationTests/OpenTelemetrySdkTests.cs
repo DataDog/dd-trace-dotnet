@@ -525,6 +525,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "false");
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);

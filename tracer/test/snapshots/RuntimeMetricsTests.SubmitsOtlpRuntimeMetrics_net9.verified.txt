@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "resource_metrics": [
       {
@@ -32,6 +32,12 @@
               "key": "deployment.environment.name",
               "value": {
                 "string_value": "<deployment.environment.name>"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "string_value": "<service.version>"
               }
             }
           ]

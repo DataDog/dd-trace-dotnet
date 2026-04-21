@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("RequiresDockerDependency", "true")]
-        public async Task OtlpRuntimeMetricsSubmitted()
+        public async Task SubmitsOtlpRuntimeMetrics()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var tfm = Environment.Version.Major >= 9 ? "net9" : "net6";
 
                 await Verifier.Verify(formattedJson, settings)
-                              .UseFileName($"{nameof(RuntimeMetricsTests)}.OtlpRuntimeMetricsSubmitted_{tfm}")
+                              .UseFileName($"{nameof(RuntimeMetricsTests)}.SubmitsOtlpRuntimeMetrics_{tfm}")
                               .DisableRequireUniquePrefix();
 
                 // Verify StatsD received nothing — OTLP should fully replace DogStatsD for runtime metrics
