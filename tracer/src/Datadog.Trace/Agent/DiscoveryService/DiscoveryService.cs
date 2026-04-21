@@ -348,7 +348,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var clientDropP0 = jObject["client_drop_p0s"]?.Value<bool>() ?? false;
             var spanMetaStructs = jObject["span_meta_structs"]?.Value<bool>() ?? false;
             var spanEvents = jObject["span_events"]?.Value<bool>() ?? false;
-            var peerTags = (jObject["peer_tags"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x).ToList();
+            var peerTags = (jObject["peer_tags"] as JArray)?.Values<string>().ToList();
             var obfuscationVersion = jObject["obfuscation_version"]?.Value<int>() ?? 0;
 
             // Parse trace filter configuration

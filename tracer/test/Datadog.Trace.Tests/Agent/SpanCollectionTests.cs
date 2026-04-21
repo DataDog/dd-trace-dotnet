@@ -146,7 +146,41 @@ public class SpanCollectionTests
     }
 
     [Fact]
-    public void Append_ToArrayWithCapacityCollection()
+    public void Append_ToArrayWithCapacityCollection0()
+    {
+        var collection = new SpanCollection(arrayBuilderCapacity: 4);
+        var array = collection.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Count.Should().Be(0);
+
+        foreach (var span in collection)
+        {
+            Assert.Fail("We shouldn't have a span to enumerate: " + span);
+        }
+    }
+
+    [Fact]
+    public void Append_ToArrayWithCapacityCollection1()
+    {
+        var spans = new[] { CreateSpan("span1"), null, null, null };
+        var collection = new SpanCollection(spans, 1);
+        var array = collection.TryGetArray();
+        array.HasValue.Should().BeTrue();
+        array!.Value.Count.Should().Be(1);
+        array.Value.Array.Should().BeSameAs(spans);
+
+        var enumerated = new List<Span>();
+        foreach (var span in collection)
+        {
+            enumerated.Add(span);
+        }
+
+        enumerated.Should().HaveCount(1);
+        enumerated[0].Should().BeSameAs(spans[0]);
+    }
+
+    [Fact]
+    public void Append_ToArrayWithCapacityCollection2()
     {
         var spans = new[] { CreateSpan("span1"), CreateSpan("span2"), null, null };
         var collection = new SpanCollection(spans, 2);
@@ -154,6 +188,16 @@ public class SpanCollectionTests
         array.HasValue.Should().BeTrue();
         array!.Value.Count.Should().Be(2);
         array.Value.Array.Should().BeSameAs(spans);
+
+        var enumerated = new List<Span>();
+        foreach (var span in collection)
+        {
+            enumerated.Add(span);
+        }
+
+        enumerated.Should().HaveCount(2);
+        enumerated[0].Should().BeSameAs(spans[0]);
+        enumerated[1].Should().BeSameAs(spans[1]);
 
         var span3 = CreateSpan("span3");
         var result = SpanCollection.Append(in collection, span3);
@@ -163,7 +207,18 @@ public class SpanCollectionTests
         result[1].Should().BeSameAs(spans[1]);
         result[2].Should().BeSameAs(span3);
 
-        collection.TryGetArray()!.Value.Array.Should().BeSameAs(spans);
+        enumerated = new List<Span>();
+        foreach (var span in result)
+        {
+            enumerated.Add(span);
+        }
+
+        enumerated.Should().HaveCount(3);
+        enumerated[0].Should().BeSameAs(spans[0]);
+        enumerated[1].Should().BeSameAs(spans[1]);
+        enumerated[2].Should().BeSameAs(span3);
+
+        result.TryGetArray()!.Value.Array.Should().BeSameAs(spans);
     }
 
     [Fact]
@@ -214,9 +269,93 @@ public class SpanCollectionTests
         array!.Value.Array!.Length.Should().Be(16);
     }
 
-    private static Span CreateSpan(string operationName = "test-span")
+    [Fact]
+    public void ContainsSpanId_DefaultCollection_ReturnsFalse()
     {
-        var spanContext = new SpanContext(traceId: 1UL, spanId: 2, samplingPriority: SamplingPriority.AutoKeep);
+        SpanCollection collection = default;
+
+        collection.ContainsSpanId(1, 0).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContainsSpanId_SingleSpan_FindsMatch()
+    {
+        var span = CreateSpan(spanId: 42);
+        var collection = new SpanCollection(span);
+
+        collection.ContainsSpanId(42, 0).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ContainsSpanId_SingleSpan_NoMatch()
+    {
+        var span = CreateSpan(spanId: 42);
+        var collection = new SpanCollection(span);
+
+        collection.ContainsSpanId(99, 0).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(5)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void ContainsSpanId_SingleSpan_IgnoresStartIndex(int startIndex)
+    {
+        var span = CreateSpan(spanId: 42);
+        var collection = new SpanCollection(span);
+
+        // startIndex is irrelevant for single-span collections
+        collection.ContainsSpanId(42, startIndex).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(-1)]
+    public void ContainsSpanId_EmptyArrayBackedCollection_ReturnsFalse(int startIndex)
+    {
+        var collection = new SpanCollection(arrayBuilderCapacity: 4);
+        collection.ContainsSpanId(spanId: 10, startIndex).Should().BeFalse();
+    }
+
+    [Theory]
+    [CombinatorialData]
+    public void ContainsSpanId_Array_FindsMatch(
+        [CombinatorialValues(10, 20, 30)]ulong spanToFind,
+        [CombinatorialValues(0, 1, 2, 3, 4)]int spanIndex)
+    {
+        var collection = new SpanCollection(
+            [CreateSpan(spanId: 10), CreateSpan(spanId: 20), CreateSpan(spanId: 30)]);
+
+        collection.ContainsSpanId(spanToFind, spanIndex).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ContainsSpanId_Array_NoMatch()
+    {
+        var collection = new SpanCollection(
+            [CreateSpan(spanId: 10), CreateSpan(spanId: 20), CreateSpan(spanId: 30)]);
+
+        collection.ContainsSpanId(99, 0).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContainsSpanId_ArrayWithCount_OnlySearchesWithinCount()
+    {
+        // Array has 4 slots but only 2 are logically populated.
+        // ContainsSpanId should only search within Count, not the entire backing array.
+        var collection = new SpanCollection(
+            [CreateSpan(spanId: 10), CreateSpan(spanId: 20), CreateSpan(spanId: 30), CreateSpan(spanId: 40)], count: 2);
+
+        collection.ContainsSpanId(10, 0).Should().BeTrue();
+        collection.ContainsSpanId(20, 0).Should().BeTrue();
+        collection.ContainsSpanId(30, 0).Should().BeFalse();
+        collection.ContainsSpanId(40, 0).Should().BeFalse();
+    }
+
+    private static Span CreateSpan(string operationName = "test-span", ulong spanId = 2)
+    {
+        var spanContext = new SpanContext(traceId: 1UL, spanId: spanId, samplingPriority: SamplingPriority.AutoKeep);
         return new Span(spanContext, DateTimeOffset.UtcNow)
         {
             OperationName = operationName

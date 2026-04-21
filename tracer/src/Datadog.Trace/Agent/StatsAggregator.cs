@@ -5,20 +5,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
@@ -30,12 +29,13 @@ namespace Datadog.Trace.Agent
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
         private static readonly List<byte[]> EmptyPeerTags = [];
         private static readonly byte[] PeerTagSeparator = [0];
+        private static readonly byte[] BaseServiceUtf8Prefix = EncodingHelpers.Utf8NoBom.GetBytes(Tags.BaseService + ":");
 
         private readonly StatsBuffer[] _buffers;
 
         private readonly IApi _api;
         private readonly bool _isOtlp;
-        private readonly ITraceProcessor[] _traceProcessors;
+        private readonly NormalizerTraceProcessor _normalizerProcessor;
         private readonly ObfuscatorTraceProcessor _obfuscatorProcessor;
 
         private readonly TaskCompletionSource<bool> _processExit;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Agent
 
         private int _tracerObfuscationVersion;
         private TraceFilter _traceFilter;
-        private List<string> _peerTagKeys = [];
+        private List<PeerTagKey> _peerTagKeys = [];
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
@@ -65,12 +65,8 @@ namespace Datadog.Trace.Agent
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
-            _traceProcessors = new ITraceProcessor[]
-            {
-                new Processors.NormalizerTraceProcessor(),
-            };
-
-            _obfuscatorProcessor = new Processors.ObfuscatorTraceProcessor();
+            _normalizerProcessor = new NormalizerTraceProcessor();
+            _obfuscatorProcessor = new ObfuscatorTraceProcessor();
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
@@ -140,13 +136,6 @@ namespace Datadog.Trace.Agent
 
         public void AddRange(in SpanCollection spans)
         {
-            // Trace-level filters from the agent must be applied before stats computation.
-            // Rejected traces should not contribute to stats.
-            if (IsTraceFiltered(in spans))
-            {
-                return;
-            }
-
             // Contention around this lock is expected to be very small:
             // AddRange is called from the serialization thread, and concurrent serialization
             // of traces is a rare corner-case (happening only during shutdown).
@@ -160,19 +149,73 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public bool ShouldKeepTrace(in SpanCollection trace)
+        public TraceKeepState ProcessTrace(ref SpanCollection spans)
+        {
+            // Follow the same processing steps as the Go tracer
+            spans = NormalizeTrace(in spans);
+            if (ShouldFilterTrace(in spans))
+            {
+                return TraceKeepState.Rejected;
+            }
+
+            spans = ObfuscateTrace(in spans);
+            if (!ShouldKeepTrace(in spans))
+            {
+                return TraceKeepState.AggregateOnly;
+            }
+
+            return TraceKeepState.AggregateAndExport; // keep
+        }
+
+        [TestingAndPrivateOnly]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal SpanCollection NormalizeTrace(in SpanCollection trace)
+        {
+            try
+            {
+                return _normalizerProcessor.Process(in trace);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error executing normalizer trace processor");
+                return trace;
+            }
+        }
+
+        [TestingAndPrivateOnly]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool ShouldFilterTrace(in SpanCollection trace)
+        {
+            var filter = Volatile.Read(ref _traceFilter);
+            if (filter is null)
+            {
+                return false;
+            }
+
+            // Find the local root span, searching from the last span, as that's where it normally is
+            var traceContext = TraceContext.GetTraceContext(in trace);
+            var localRoot = traceContext?.RootSpan;
+
+            if (localRoot is not null && trace.ContainsSpanId(localRoot.SpanId, trace.Count - 1))
+            {
+                // localRoot is in the trace chunk, so we can apply the filter directly
+                return !filter.ShouldKeepTrace(localRoot);
+            }
+
+            // local root isn't in the trace chunk (can happen with partial flushing)
+            // or we don't have a local root (I don't know when that happens!)
+            return false;
+        }
+
+        [TestingAndPrivateOnly]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool ShouldKeepTrace(in SpanCollection trace)
         {
             // For OTLP, align with the OpenTelemetry SDK behavior to export a trace based
             // solely on its sampling decision.
             if (_isOtlp)
             {
                 return _prioritySampler.Sample(in trace);
-            }
-
-            // Trace-level filters from the agent must reject traces before sampling.
-            if (IsTraceFiltered(in trace))
-            {
-                return false;
             }
 
             // Note: The RareSampler must be run before all other samplers so that
@@ -186,29 +229,17 @@ namespace Datadog.Trace.Agent
                 || _analyticsEventSampler.Sample(in trace);
         }
 
+        [TestingAndPrivateOnly]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SpanCollection ProcessTrace(in SpanCollection trace)
+        internal SpanCollection ObfuscateTrace(in SpanCollection trace)
         {
-            var spans = trace;
-            foreach (var processor in _traceProcessors)
-            {
-                try
-                {
-                    spans = processor.Process(in spans);
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
-                }
-            }
-
             // Only obfuscate resources when the tracer has negotiated obfuscation responsibility.
             // The tracer currently only supports obfuscation version 1 (SQL, Cassandra, Redis).
             if (Volatile.Read(ref _tracerObfuscationVersion) == 1)
             {
                 try
                 {
-                    spans = _obfuscatorProcessor.Process(in spans);
+                    return _obfuscatorProcessor.Process(in trace);
                 }
                 catch (Exception e)
                 {
@@ -216,13 +247,19 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            return spans;
+            return trace;
         }
 
-        public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
-            => BuildKey(span, Volatile.Read(ref _peerTagKeys), out utf8PeerTags);
+        public StatsAggregationKey BuildKey(Span span)
+            => BuildKey(span, Volatile.Read(ref _peerTagKeys), out _);
 
-        internal StatsAggregationKey BuildKey(Span span, List<string> peerTagKeys, out List<byte[]> utf8PeerTags)
+        /// <summary>
+        /// Computes a <see cref="StatsAggregationKey"/> for the given span, including the peer tags hash.
+        /// The <paramref name="peerTagResults"/> carries context to <see cref="GetEncodedPeerTags"/>
+        /// so the cold path can skip re-deriving spanKind/baseService and pre-allocate the result list.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -257,30 +294,24 @@ namespace Datadog.Trace.Agent
             }
 
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L53-L99
-            // Peer tags are extracted for client/producer/consumer spans
+            // Peer tags are extracted for client/server/producer/consumer spans.
             // If the span kind is missing or internal, and we have a "base service" tag `_dd.base_service`
-            // then we only aggregate based on the `_dd.base_service`
-            // TODO: work out how to optimize the peer tags allocations, to avoid all the extra utf8 allocations
-            // - on .NET Core these are only necessary for the first instance of the key, but this makes for a tricky
-            // chicken and egg - we need to convert everything to utf-8, so that we can get the hash, so that we
-            // know whether we need the tags as byte[] or not..
+            // then we only aggregate based on the `_dd.base_service`.
+            // This computes only the hash; see GetEncodedPeerTags() for the cold-path encoding.
             ulong peerTagsHash;
-            if ((string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal) && span.GetTag(Tags.BaseService) is { Length: >0 } baseService)
+            if ((string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal) && span.GetTag(Tags.BaseService) is { Length: > 0 } baseService)
             {
-                utf8PeerTags = [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{baseService}")];
-                peerTagsHash = FnvHash64.GenerateHash(utf8PeerTags[0], FnvHash64.Version.V1A);
+                peerTagsHash = HashTag(BaseServiceUtf8Prefix, baseService, FnvHash64.Version.V1A);
+                peerTagResults = new PeerTagResults { BaseService = baseService };
             }
             else if (spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer)
             {
-                // Hash should be generated as TAGNAME:TAGVALUE, and should be in sorted order (we sort ahead of time)
-                // peerTagKeys should already be in sorted order
-                // We serialize to the utf-8 bytes because we need to serialize them during sending anyway
-                // TODO: Verify we get the same results as the go code
-                utf8PeerTags = EmptyPeerTags;
-                peerTagsHash = 0;
-                foreach (var tagKey in peerTagKeys)
+                // Hash should be generated as TAGNAME:TAGVALUE, in sorted order (peerTagKeys is pre-sorted).
+                ulong? previousHash = null;
+                var peerTagCount = 0;
+                foreach (var peerTag in peerTagKeys)
                 {
-                    var tagValue = span.GetTag(tagKey);
+                    var tagValue = span.GetTag(peerTag.Name);
                     if (string.IsNullOrEmpty(tagValue))
                     {
                         continue;
@@ -288,27 +319,23 @@ namespace Datadog.Trace.Agent
 
                     tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
 
-                    if (ReferenceEquals(utf8PeerTags, EmptyPeerTags))
+                    if (previousHash.HasValue)
                     {
-                        // We're not setting the capacity here, because there's
-                        // a _lot_ of potential peer tags, and _most_ of them won't apply
-                        utf8PeerTags = new();
-                    }
-                    else
-                    {
-                        // add the separator
-                        peerTagsHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, peerTagsHash);
+                        // add the separator between tags
+                        previousHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, previousHash.Value);
                     }
 
-                    var bytes = EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey}:{tagValue}");
-                    peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A, peerTagsHash);
-                    utf8PeerTags.Add(bytes);
+                    previousHash = HashTag(peerTag.Utf8Prefix, tagValue, FnvHash64.Version.V1A, previousHash);
+                    peerTagCount++;
                 }
+
+                peerTagResults = new PeerTagResults { PeerTagCount = peerTagCount };
+                peerTagsHash = previousHash ?? 0;
             }
             else
             {
                 peerTagsHash = 0;
-                utf8PeerTags = EmptyPeerTags;
+                peerTagResults = default;
             }
 
             // When submitting trace metrics over OTLP, we must create inidividual timeseries
@@ -331,6 +358,80 @@ namespace Datadog.Trace.Agent
                 grpcStatusCode,
                 serviceSource,
                 peerTagsHash);
+        }
+
+        /// <summary>
+        /// Hashes "keyPrefix + tagValue" using FNV-64.
+        /// The <paramref name="keyPrefix"/> is a pre-encoded UTF-8 byte array (e.g. "tagKey:") and is
+        /// hashed directly. Only the <paramref name="tagValue"/> needs UTF-8 encoding at call time.
+        /// </summary>
+#if NETCOREAPP
+        [System.Runtime.CompilerServices.SkipLocalsInit]
+#endif
+        private static ulong HashTag(byte[] keyPrefix, string tagValue, FnvHash64.Version version, ulong? initialHash = null)
+        {
+            // Hash the pre-encoded key prefix (e.g. "peer.service:") directly — no encoding needed
+            var hash = initialHash is { } h
+                ? FnvHash64.GenerateHash(keyPrefix, version, h)
+                : FnvHash64.GenerateHash(keyPrefix, version);
+
+            // Now encode and hash just the tag value
+            var maxByteCount = EncodingHelpers.Utf8NoBom.GetMaxByteCount(tagValue.Length);
+#if NETCOREAPP
+            const int maxStackLimit = 256;
+
+            if (maxByteCount <= maxStackLimit)
+            {
+                Span<byte> buffer = stackalloc byte[maxStackLimit];
+                var written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, buffer);
+                return FnvHash64.GenerateHash(buffer.Slice(0, written), version, hash);
+            }
+#endif
+
+            var rented = ArrayPool<byte>.Shared.Rent(maxByteCount);
+            try
+            {
+                var written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, rented, byteIndex: 0);
+                return FnvHash64.GenerateHash(rented, 0, written, version, hash);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rented);
+            }
+        }
+
+        /// <summary>
+        /// Encodes the peer tags for a span into a <see cref="List{T}"/> of UTF-8 byte arrays.
+        /// Called only on the cold path (new bucket creation).
+        /// Uses <paramref name="results"/> from <see cref="BuildKey(Span, List{PeerTagKey}, out PeerTagResults)"/>
+        /// to skip re-deriving spanKind/baseService and to pre-allocate the result list.
+        /// </summary>
+        internal static List<byte[]> GetEncodedPeerTags(Span span, List<PeerTagKey> peerTagKeys, in PeerTagResults results)
+        {
+            if (results.BaseService is not null)
+            {
+                return [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{results.BaseService}")];
+            }
+
+            if (results.PeerTagCount == 0)
+            {
+                return EmptyPeerTags;
+            }
+
+            var result = new List<byte[]>(results.PeerTagCount);
+            foreach (var peerTag in peerTagKeys)
+            {
+                var tagValue = span.GetTag(peerTag.Name);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    continue;
+                }
+
+                tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
+                result.Add(EncodingHelpers.Utf8NoBom.GetBytes($"{peerTag.Name}:{tagValue}"));
+            }
+
+            return result;
         }
 
         internal async Task Flush()
@@ -411,13 +512,14 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
-            var key = BuildKey(span, out var peerTags);
-
             var buffer = CurrentBuffer;
+            var peerTagKeys = Volatile.Read(ref _peerTagKeys);
+            var key = BuildKey(span, peerTagKeys, out var peerTagResults);
 
             if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
-                bucket = new StatsBucket(key, peerTags);
+                // Cold path: encode the peer tags for storage in the new bucket
+                bucket = new StatsBucket(key, GetEncodedPeerTags(span, peerTagKeys, in peerTagResults));
                 buffer.Buckets.Add(key, bucket);
             }
 
@@ -448,26 +550,6 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private bool IsTraceFiltered(in SpanCollection spans)
-        {
-            var filter = Volatile.Read(ref _traceFilter);
-            if (filter is null)
-            {
-                return false;
-            }
-
-            // Find the root span (ParentId == null or 0) and apply the filter
-            foreach (var span in spans)
-            {
-                if (span.Context.ParentId is null or 0)
-                {
-                    return !filter.ShouldKeepTrace(span);
-                }
-            }
-
-            return false;
-        }
-
         private void HandleConfigUpdate(AgentConfiguration config)
         {
             // Client-side stats requires agent >= 7.65.0 which has full CSS v1.2.0 support.
@@ -481,9 +563,32 @@ namespace Datadog.Trace.Agent
                             || parsedVersion.Major >= 8
                             || (parsedVersion.Major == 7 && parsedVersion.Minor >= 65));
 
-            if (config.PeerTags is not null)
+            if (CanComputeStats.Value)
             {
-                Interlocked.Exchange(ref _peerTagKeys, config.PeerTags);
+                Log.Debug("Stats computation enabled.");
+            }
+            else
+            {
+                Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
+                // early return, because there's no point doing all the extra work if stats isn't enabled anyway
+                return;
+            }
+
+            if (config.PeerTags is { Count: > 0 })
+            {
+                // Sort, deduplicate, and pre-compute the UTF-8 key prefixes so that
+                // BuildKey can hash without per-call string encoding.
+                var precomputed = new List<PeerTagKey>(config.PeerTags.Count);
+                foreach (var tag in config.PeerTags.Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x))
+                {
+                    precomputed.Add(new PeerTagKey(tag));
+                }
+
+                Interlocked.Exchange(ref _peerTagKeys, precomputed);
+            }
+            else
+            {
+                Interlocked.Exchange(ref _peerTagKeys, []);
             }
 
             // Update trace filter from agent configuration
@@ -500,15 +605,19 @@ namespace Datadog.Trace.Agent
             const int tracerObfuscationVersion = 1;
             var agentVersion = config.ObfuscationVersion;
             Volatile.Write(ref _tracerObfuscationVersion, agentVersion > 0 && agentVersion <= tracerObfuscationVersion ? tracerObfuscationVersion : 0);
+        }
 
-            if (CanComputeStats.Value)
-            {
-                Log.Debug("Stats computation has been enabled.");
-            }
-            else
-            {
-                Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
-            }
+        internal readonly struct PeerTagKey(string name)
+        {
+            public readonly string Name = name;
+            public readonly byte[] Utf8Prefix = EncodingHelpers.Utf8NoBom.GetBytes(name + ":");
+        }
+
+        internal readonly struct PeerTagResults
+        {
+            public int PeerTagCount { get; init; }
+
+            public string BaseService { get; init; }
         }
     }
 }

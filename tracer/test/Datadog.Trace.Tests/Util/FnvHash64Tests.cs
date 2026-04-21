@@ -246,6 +246,36 @@ public class FnvHash64Tests
         v1A.ToString("x16").Should().Be("0803564445050395");
     }
 
+    [Theory]
+    [MemberData(nameof(BinaryData))]
+    public void CalculatesOffsetCountHashCorrectly(byte[] data, string v1HashAsHex, string v1AHashAsHex)
+    {
+        var v1 = FnvHash64.GenerateHash(data, 0, data.Length, FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(data, 0, data.Length, FnvHash64.Version.V1A);
+
+        using var a = new AssertionScope();
+        v1.ToString("x16").Should().Be(v1HashAsHex);
+        v1A.ToString("x16").Should().Be(v1AHashAsHex);
+    }
+
+    [Theory]
+    [MemberData(nameof(BinaryData))]
+    public void CalculatesOffsetCountHashCorrectlyWithOffset(byte[] data, string v1HashAsHex, string v1AHashAsHex)
+    {
+        // Embed the data in the middle of a larger array to test that offset is handled correctly
+        const int padding = 5;
+        var padded = new byte[data.Length + (padding * 2)];
+        new Random().NextBytes(padded);
+        Array.Copy(data, 0, padded, padding, data.Length);
+
+        var v1 = FnvHash64.GenerateHash(padded, padding, data.Length, FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(padded, padding, data.Length, FnvHash64.Version.V1A);
+
+        using var a = new AssertionScope();
+        v1.ToString("x16").Should().Be(v1HashAsHex);
+        v1A.ToString("x16").Should().Be(v1AHashAsHex);
+    }
+
 #if NETCOREAPP3_1_OR_GREATER
     [Theory]
     [MemberData(nameof(StringData))]
