@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Sampling;

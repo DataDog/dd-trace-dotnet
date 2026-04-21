@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
@@ -91,10 +90,6 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _topLevelSpanNameBytes = StringEncoding.UTF8.GetBytes(Metrics.TopLevelSpan);
 
         // ASM tags
-        private readonly byte[] _appSecEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.AppSecEnabled);
-        private readonly byte[] _wafRuleFileVersionBytes = StringEncoding.UTF8.GetBytes(Tags.AppSecRuleFileVersion);
-        private readonly byte[] _runtimeFamilyBytes = StringEncoding.UTF8.GetBytes(Tags.RuntimeFamily);
-        private readonly Dictionary<string, byte[]> _wafRuleFileVersionValues = new();
 
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
@@ -655,17 +650,6 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeFamilyBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
-
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _wafRuleFileVersionBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
-            }
-
             // AAS tags need to be set on any span for the backend to properly handle the billing.
             // That said, it's more intuitive to find it on the local root for the customer.
             // Skip adding AAS tags to inferred proxy spans as they represent infrastructure outside the AAS environment
@@ -893,13 +877,6 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, 0);
             }
 
-            if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _appSecEnabledBytes);
-                offset += MessagePackBinary.WriteDouble(ref bytes, offset, 1.0);
-            }
-
             // add "_sampling_priority_v1" tag to all "chunk orphans"
             // (spans whose parents are not found in the same chunk)
             if (model is { IsChunkOrphan: true, TraceChunk.SamplingPriority: { } samplingPriority })
@@ -962,20 +939,6 @@ namespace Datadog.Trace.Agent.MessagePack
         TraceChunkModel IMessagePackFormatter<TraceChunkModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
             throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
-        }
-
-        private byte[] GetAppSecRulesetVersion(string version)
-        {
-            if (_wafRuleFileVersionValues.TryGetValue(version, out byte[] bytes))
-            {
-                return bytes;
-            }
-            else
-            {
-                bytes = StringEncoding.UTF8.GetBytes(version);
-                _wafRuleFileVersionValues.Add(version, bytes);
-                return bytes;
-            }
         }
 
         private void InitializeAasTags()

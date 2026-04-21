@@ -28,18 +28,6 @@
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
     <None Include="$(GeneratedFolder)/*/**/*.cs" />
     
-    <Compile Update="AppSec\Coordinator\SecurityCoordinator.Core.cs">
-      <DependentUpon>SecurityCoordinator.cs</DependentUpon>
-    </Compile>
-    <Compile Update="AppSec\Coordinator\SecurityCoordinator.Framework.cs">
-      <DependentUpon>SecurityCoordinator.cs</DependentUpon>
-    </Compile>
-    <Compile Update="AppSec\Coordinator\SecurityReporter.Core.cs">
-      <DependentUpon>SecurityReporter.cs</DependentUpon>
-    </Compile>
-    <Compile Update="AppSec\Coordinator\SecurityReporter.Framework.cs">
-      <DependentUpon>SecurityReporter.cs</DependentUpon>
-    </Compile>
     <Compile Update="Configuration\PlatformKeys.Aws.cs">
       <DependentUpon>PlatformKeys.cs</DependentUpon>
     </Compile>
@@ -89,12 +77,6 @@
     <!--DuckTyping-->
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="AppSec\Waf\ConfigFiles\rule-set.json" />
-    <EmbeddedResource Include="AppSec\Waf\ConfigFiles\rule-set.json" />
-    <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 
   <!-- we don't need the vendored .NET runtime code when targetting .NET Core 3.1+ -->

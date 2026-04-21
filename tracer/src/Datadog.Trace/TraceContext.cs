@@ -172,11 +172,7 @@ namespace Datadog.Trace
                         }
                     }
 
-                    if (_appSecRequestContext is not null)
-                    {
-                        _appSecRequestContext.CloseWebSpan(span);
-                        _appSecRequestContext.DisposeAdditiveContext();
-                    }
+                    _appSecRequestContext?.CloseWebSpan(span);
                 }
             }
 

@@ -40,7 +40,7 @@ public sealed class EntityCommandAspect
 
             return command;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return command;

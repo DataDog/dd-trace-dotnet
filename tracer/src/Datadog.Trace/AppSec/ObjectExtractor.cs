@@ -11,7 +11,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -22,6 +21,9 @@ namespace Datadog.Trace.AppSec
 {
     internal static class ObjectExtractor
     {
+        private const int MaxContainerDepth = 20;
+        private const int MaxContainerSize = 256;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ObjectExtractor));
         private static readonly IReadOnlyDictionary<string, object?> EmptyDictionary = new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>(0));
 
@@ -128,12 +130,12 @@ namespace Datadog.Trace.AppSec
                 TypeToExtractorMap.TryAdd(bodyType, fieldExtractors);
             }
 
-            var dictSize = Math.Min(WafConstants.MaxContainerSize, fieldExtractors.Length);
+            var dictSize = Math.Min(MaxContainerSize, fieldExtractors.Length);
             var dict = new Dictionary<string, object?>(dictSize);
 
             for (var i = 0; i < fieldExtractors.Length; i++)
             {
-                if (dict.Count >= WafConstants.MaxContainerSize || depth >= WafConstants.MaxContainerDepth)
+                if (dict.Count >= MaxContainerSize || depth >= MaxContainerDepth)
                 {
                     return dict;
                 }
@@ -230,7 +232,7 @@ namespace Datadog.Trace.AppSec
             // some types, like System.Web.Routing.RouteValueDictionary don't inherit ICollection, but ICollection<,> which never inherits ICollection but IEnumerable instead.
             if (value is ICollection sourceColl)
             {
-                var dictSize = Math.Min(WafConstants.MaxContainerSize, sourceColl.Count);
+                var dictSize = Math.Min(MaxContainerSize, sourceColl.Count);
                 items = new Dictionary<string, object?>(dictSize);
             }
             else
@@ -257,7 +259,7 @@ namespace Datadog.Trace.AppSec
                             items.Add(dictKey, extractedvalue);
                         }
 
-                        if (items.Count >= WafConstants.MaxContainerSize)
+                        if (items.Count >= MaxContainerSize)
                         {
                             break;
                         }
@@ -276,7 +278,7 @@ namespace Datadog.Trace.AppSec
             }
 
             var sourceList = (ICollection)value;
-            var listSize = Math.Min(WafConstants.MaxContainerSize, sourceList.Count);
+            var listSize = Math.Min(MaxContainerSize, sourceList.Count);
             var items = new List<object?>(listSize);
 
             foreach (var item in sourceList)
@@ -291,7 +293,7 @@ namespace Datadog.Trace.AppSec
                     items.Add(extractedvalue);
                 }
 
-                if (items.Count >= WafConstants.MaxContainerSize)
+                if (items.Count >= MaxContainerSize)
                 {
                     break;
                 }

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Routing;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
@@ -185,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
-                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
+                    if (tracer.Settings.IpHeaderEnabled)
                     {
                         Headers.Ip.RequestIpExtractor.AddIpToTags(httpContext.Request.UserHostAddress, httpContext.Request.IsSecureConnection, key => httpContext.Request.Headers[key], tracer.Settings.IpHeader, tags);
                     }

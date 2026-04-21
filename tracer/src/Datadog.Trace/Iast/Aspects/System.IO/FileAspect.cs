@@ -99,7 +99,7 @@ public sealed class FileAspect
             IastModule.OnPathTraversal(path);
             return path;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return path;
@@ -150,7 +150,7 @@ public sealed class FileAspect
             VulnerabilitiesModule.OnPathTraversal(path);
             return path;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return path;

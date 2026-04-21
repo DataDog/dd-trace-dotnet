@@ -8,13 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Web;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -31,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "4",
         MaximumVersion = "5",
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
+        InstrumentationCategory = InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -85,36 +81,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <returns>Return value of the method</returns>
         internal static CallTargetReturn<TResult?> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult? returnValue, Exception? exception, in CallTargetState state)
         {
-            var security = Security.Instance;
-            if (security.AppsecEnabled && returnValue is not null)
-            {
-                if (returnValue.TryDuckCast<IJsonResultMvc>(out var actionResult))
-                {
-                    var responseObject = actionResult.Data;
-                    if (responseObject is not null)
-                    {
-                        var scope = SharedItems.TryPeekScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey);
-                        if (scope is not null)
-                        {
-                            var securityTransport = SecurityCoordinator.Get(security, scope.Span, HttpContext.Current);
-                            if (!securityTransport.IsBlocked)
-                            {
-                                var extractedObject = ObjectExtractor.Extract(responseObject);
-                                if (extractedObject is not null)
-                                {
-                                    var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObject } };
-                                    securityTransport.BlockAndReport(inputData);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Log.Debug("Scope was null in ControllerActionInvoker_InvokeAction_Integration.OnMethodEnd, cannot check security");
-                        }
-                    }
-                }
-            }
-
             return new CallTargetReturn<TResult?>(returnValue);
         }
     }

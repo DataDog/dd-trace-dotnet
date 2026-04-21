@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
-            catch (Exception ex) when (ex is not BlockException)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating scope.");
                 return scope;

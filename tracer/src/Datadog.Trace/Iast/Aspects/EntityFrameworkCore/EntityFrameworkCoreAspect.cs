@@ -38,7 +38,7 @@ public sealed class EntityFrameworkCoreAspect
             VulnerabilitiesModule.OnSqlQuery(sqlAsString, IntegrationId.SqlClient);
             return sqlAsString;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return sqlAsString;

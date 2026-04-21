@@ -10,8 +10,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Web;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -202,7 +200,7 @@ namespace Datadog.Trace.AspNet
 
                 tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
-                if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
+                if (tracer.Settings.IpHeaderEnabled)
                 {
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
@@ -227,28 +225,6 @@ namespace Datadog.Trace.AspNet
                 shouldDisposeScope = false;
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-
-                var security = Security.Instance;
-                if (security.AppsecEnabled)
-                {
-                    var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
-                    securityCoordinator.Reporter.ReportWafInitInfoOnce(security.WafInitResult);
-
-                    // request args
-                    var args = securityCoordinator.GetBasicRequestArgsForWaf();
-
-                    // body args
-                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                    {
-                        var bodyArgs = securityCoordinator.GetBodyFromRequest();
-                        if (bodyArgs is not null)
-                        {
-                            args.Add(AddressesConstants.RequestBody, bodyArgs);
-                        }
-                    }
-
-                    securityCoordinator.BlockAndReport(args, isInHttpTracingModule: true);
-                }
 
                 var iastInstance = Iast.Iast.Instance;
                 if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
@@ -293,39 +269,6 @@ namespace Datadog.Trace.AspNet
                         var currentSpan = scope.Span;
                         var rootScope = scope.Root;
                         var rootSpan = rootScope.Span;
-
-                        // the security needs to come before collecting the response code,
-                        // since blocking will change the response code
-                        var security = Security.Instance;
-                        if (security.AppsecEnabled)
-                        {
-                            var securityCoordinator = SecurityCoordinator.Get(security, rootSpan, app.Context);
-                            var args = securityCoordinator.GetBasicRequestArgsForWaf();
-                            args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
-
-                            if (HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
-                            {
-                                // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                try
-                                {
-                                    args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
-                                }
-                                catch (PlatformNotSupportedException ex)
-                                {
-                                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
-                                    Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                                    _canReadHttpResponseHeaders = false;
-                                }
-                                catch (Exception ex)
-                                {
-                                    Log.Error(ex, "Error extracting HTTP headers to create header tags.");
-                                }
-                            }
-
-                            securityCoordinator.BlockAndReport(args, true, isInHttpTracingModule: true);
-
-                            securityCoordinator.Reporter.AddResponseHeadersToSpan();
-                        }
 
                         if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
                         {
@@ -459,7 +402,7 @@ namespace Datadog.Trace.AspNet
                         AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
                     }
 
-                    if (exception != null && !is404 && exception is not AppSec.BlockException)
+                    if (exception != null && !is404)
                     {
                         scope.Span.SetException(exception);
                         proxyScope?.Span.SetException(exception);

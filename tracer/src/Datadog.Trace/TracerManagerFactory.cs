@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -119,12 +118,6 @@ namespace Datadog.Trace
                 settings.AzureAppServiceMetadata,
                 gitMetadataTagsProvider);
 
-            TelemetryFactory.Metrics.SetWafAndRulesVersion(Security.Instance.DdlibWafVersion, Security.Instance.WafRuleFileVersion);
-            ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
-                                       ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, Security.Instance.InitializationError)
-                                       : null;
-            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: Security.Instance.AppsecEnabled, initError);
-
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService);
 
             if (ShouldEnableRemoteConfiguration(settings))
@@ -224,13 +217,8 @@ namespace Datadog.Trace
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
-            // TODO: This may need to be updated to be dynamic, and to handle changes to enablement
-            // e.g. AppSec can be enabled/disabled dynamically, which could change this flag at runtime,
-            // leaving us with the wrong sampler in place
-            if (settings.ApmTracingEnabled == false &&
-                (Security.Instance.Settings.AppsecEnabled || Iast.Iast.Instance.Settings.Enabled))
+            if (settings.ApmTracingEnabled == false && Iast.Iast.Instance.Settings.Enabled)
             {
-                // Custom sampler for ASM and IAST standalone billing mode
                 var samplerStandalone = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
                 samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
                 return samplerStandalone.Build();

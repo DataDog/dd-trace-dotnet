@@ -36,7 +36,7 @@ public sealed class SmtpClientAspect
             IastModule.OnEmailHtmlInjection(message, EmailInjectionType.SystemNetMail);
             return message;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return message;

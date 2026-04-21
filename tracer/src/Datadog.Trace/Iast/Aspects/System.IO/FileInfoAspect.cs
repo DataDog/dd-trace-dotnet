@@ -39,7 +39,7 @@ public sealed class FileInfoAspect
             IastModule.OnPathTraversal(path);
             return path;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return path;

@@ -10,13 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
-using System.Web;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -33,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "5.1",
         MaximumVersion = "5",
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
+        InstrumentationCategory = InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -65,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Debug("Starting {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
                 controllerContext.MonitorBodyAndPathParams(parameters, AspNetWebApi2Integration.HttpContextKey);
             }
-            catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
             }
@@ -75,37 +71,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         internal static TResponse? OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse? response, Exception? exception, in CallTargetState state)
         {
-            var security = Security.Instance;
-            // response can be null if action returns null
-            if (security.AppsecEnabled && response is not null)
-            {
-                if (response.TryDuckCast<IJsonResultWebApi>(out var actionResult))
-                {
-                    var responseObject = actionResult.Content;
-                    if (responseObject is not null)
-                    {
-                        var scope = SharedItems.TryPeekScope(HttpContext.Current, AspNetWebApi2Integration.HttpContextKey);
-                        if (scope is not null)
-                        {
-                            var securityTransport = SecurityCoordinator.Get(security, scope.Span, HttpContext.Current);
-                            if (!securityTransport.IsBlocked)
-                            {
-                                var extractedObj = ObjectExtractor.Extract(responseObject);
-                                if (extractedObj is not null)
-                                {
-                                    var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObj } };
-                                    securityTransport.BlockAndReport(inputData);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Log.Debug("Scope was null in ReflectedHttpActionDescriptor_ExecuteAsync_Integration.OnAsyncMethodEnd, cannot check security");
-                        }
-                    }
-                }
-            }
-
             return response;
         }
     }

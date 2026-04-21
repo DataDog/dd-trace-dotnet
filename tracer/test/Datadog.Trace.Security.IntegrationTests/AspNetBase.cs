@@ -15,8 +15,6 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -40,17 +38,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected const string MainIp = "86.242.244.246";
         protected const string Prefix = "Security.";
         private const string XffHeader = "X-FORWARDED-FOR";
-        private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d+.\d+.\d+(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecWafRulesVersion = new(@"\s*_dd.appsec.event_rules.version: \d+.\d+.\d+(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecRaspWafDuration = new(@"_dd.appsec.rasp.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecFingerPrintHeaders = new(@"_dd.appsec.fp.http.header: hdr-\d+-\S*-\d+-\S*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecFingerPrintNetwork = new(@"_dd.appsec.fp.http.network: net-\d+-\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
         private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
         private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
         protected string _testName;
@@ -137,12 +124,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride, scrubCookiesFingerprint: scrubCookiesFingerprint);
         }
 
-        public void ScrubFingerprintHeaders(VerifySettings settings)
-        {
-            settings.AddRegexScrubber(AppSecFingerPrintHeaders, "_dd.appsec.fp.http.header: <HeaderPrint>");
-            settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
-        }
-
         public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false)
         {
             settings.ModifySerialization(
@@ -172,16 +153,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 }
                             }
 
-                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
-                            {
-                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                            }
-
                             if (target.MetaStruct != null)
                             {
-                                AppsecMetaStructScrubbing(target);
                                 IastVerifyScrubberExtensions.IastMetaStructScrubbing(target);
 
                                 target.MetaStruct = null;
@@ -190,24 +163,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                             return VerifyHelper.ScrubStringTags(target, target.Tags);
                         });
                 });
-            settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
-            settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
-            settings.AddRegexScrubber(AppSecRaspWafDuration, "_dd.appsec.rasp.duration: 0.0");
-            settings.AddRegexScrubber(AppSecRaspWafDurationWithBindings, "_dd.appsec.rasp.duration_ext: 0.0");
-            settings.AddRegexScrubber(AppSecSpanIdRegex, "\"span_id\": XXX");
+
             settings.ScrubSessionFingerprint(scrubCookiesFingerprint);
-
-            if (!testInit)
-            {
-                settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
-                settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
-                settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
-            }
-
-            if (!showRulesVersion && !testInit)
-            {
-                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
-            }
 
             var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
             if (appsecSpans.Any())
@@ -242,134 +199,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        protected static void FilterConnectionHeader(VerifySettings settings)
-        {
-            Regex appSecConnectionHeader0 = new(@"_dd.appsec.fp.http.header: hdr-0\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            Regex appSecConnectionHeader1 = new(@"_dd.appsec.fp.http.header: hdr-1\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            settings.AddRegexScrubber(appSecConnectionHeader0, "_dd.appsec.fp.http.header: hdr-0X");
-            settings.AddRegexScrubber(appSecConnectionHeader1, "_dd.appsec.fp.http.header: hdr-1X");
-        }
-
-        protected void AppsecMetaStructScrubbing(MockSpan target)
-        {
-            // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
-            // But that's hard to debug if we only see the binary data
-            // So copy the meta struct appsec data to a fake tag to validate it in snapshots
-            if (target.MetaStruct.TryGetValue("appsec", out var appsec))
-            {
-                var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
-                var json = JsonConvert.SerializeObject(appSecMetaStruct);
-                var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
-                var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
-                target.Tags[Tags.AppSecJson] = orderedJson;
-            }
-        }
-
-        protected void SetClientIp(string ip)
-        {
-            _httpClient.DefaultRequestHeaders.Remove(XffHeader);
-            _httpClient.DefaultRequestHeaders.Add(XffHeader, ip);
-        }
-
         protected string MetaStructToJson(byte[] data)
         {
             var metaStruct = MetaStructByteArrayToObject.Invoke(null, [data]);
             var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
             return json;
-        }
-
-        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
-        {
-            var errorMargin = 0.15;
-            int warmupRequests = 29;
-            await SendRequestsAsync(agent, url, null, warmupRequests, warmupRequests * spansPerRequest, string.Empty, "Warmup");
-
-            var iterations = 20;
-
-            var testStart = DateTime.UtcNow;
-            for (int i = 0; i < iterations; i++)
-            {
-                var start = DateTime.Now;
-                var nextBatch = start.AddSeconds(1);
-
-                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty);
-
-                var now = DateTime.Now;
-
-                if (now > nextBatch)
-                {
-                    // attempt to compensate for slow servers by increasing the error margin
-                    errorMargin *= 1.2;
-                    Console.WriteLine($"Failed to send all requests within a second now: {now:hh:mm:ss.fff}, nextBatch:{nextBatch:hh:mm:ss.fff}, error margin now: {errorMargin}");
-                }
-                else
-                {
-                    await Task.Delay(nextBatch - now);
-                }
-            }
-
-            var allSpansReceived = await WaitForSpansAsync(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
-
-            var groupedSpans = allSpansReceived.GroupBy(
-                s =>
-                {
-                    var time = new DateTimeOffset((s.Start / TimeConstants.NanoSecondsPerTick) + TimeConstants.UnixEpochInTicks, TimeSpan.Zero);
-                    return time.Second;
-                });
-
-            var spansWithUserKeep = allSpansReceived.Where(
-                s =>
-                {
-                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
-                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
-                });
-
-            var spansWithoutUserKeep = allSpansReceived.Where(
-                s =>
-                {
-                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
-                });
-            var itemsCount = allSpansReceived.Count();
-            var appsecItemsCount = allSpansReceived.Where(
-                                                        s =>
-                                                        {
-                                                            s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                                                            return appsecevent == "true";
-                                                        })
-                                                   .Count();
-            if (enableSecurity)
-            {
-                var message = "approximate because of parallel requests";
-                var rateLimitOverPeriod = appsecTraceRateLimit * iterations;
-                if (appsecItemsCount >= rateLimitOverPeriod)
-                {
-                    var excess = appsecItemsCount - rateLimitOverPeriod;
-                    var spansWithUserKeepCount = spansWithUserKeep.Count();
-                    var spansWithoutUserKeepCount = spansWithoutUserKeep.Count();
-
-                    Console.WriteLine($"spansWithUserKeepCount: {rateLimitOverPeriod}, appsecTraceRateLimit: {rateLimitOverPeriod}");
-                    Console.WriteLine($"spansWithoutUserKeepCount: {spansWithoutUserKeepCount}, excess: {excess}");
-
-                    spansWithUserKeepCount.Should().BeCloseTo(rateLimitOverPeriod, (uint)(rateLimitOverPeriod * errorMargin), message);
-                    spansWithoutUserKeepCount.Should().BeCloseTo(excess, (uint)(rateLimitOverPeriod * errorMargin), message);
-                }
-                else
-                {
-                    var spansWithUserKeepCount = spansWithUserKeep.Count();
-                    var spansWithoutUserKeepCount = spansWithoutUserKeep.Count();
-                    Console.WriteLine($"spansWithUserKeep: {spansWithUserKeepCount}, rateLimitOverPeriod: {rateLimitOverPeriod}");
-                    Console.WriteLine($"spansWithoutUserKeep: {spansWithoutUserKeepCount}, excess: 0");
-
-                    spansWithUserKeepCount.Should().BeLessThan(rateLimitOverPeriod + (int)(rateLimitOverPeriod * errorMargin));
-                    spansWithoutUserKeepCount.Should().BeCloseTo(0, (uint)(rateLimitOverPeriod * errorMargin), message);
-                }
-            }
-            else
-            {
-                spansWithoutUserKeep.Count().Should().Be(itemsCount);
-            }
         }
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
@@ -530,12 +364,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 
                     break;
             }
-        }
-
-        internal class AppSecJson
-        {
-            [JsonProperty("triggers")]
-            public WafMatch[] Triggers { get; set; }
         }
     }
 }

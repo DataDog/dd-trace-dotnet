@@ -51,7 +51,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 OnNext(value.Key, value.Value);
             }
-            catch (Exception ex) when (ex is not BlockException)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Event Exception: {EventName}", value.Key);
 

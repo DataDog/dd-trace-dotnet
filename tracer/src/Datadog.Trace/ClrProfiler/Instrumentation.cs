@@ -12,7 +12,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
@@ -93,12 +92,6 @@ namespace Datadog.Trace.ClrProfiler
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
-                        if (Security.Instance.AppsecEnabled)
-                        {
-                            Log.Debug("Enabling AppSec call target category");
-                            enabledCategories |= InstrumentationCategory.AppSec;
-                        }
-
                         var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(enabledCategories, ConfigTelemetryData.TargetFramework);
                         Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                         TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
@@ -236,16 +229,6 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                Log.Debug("Initializing security singleton instance.");
-                _ = Security.Instance;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing Security");
-            }
-
-            try
-            {
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
                 {
                     // check if DiagnosticSource is available before trying to use it
@@ -359,11 +342,11 @@ namespace Datadog.Trace.ClrProfiler
 #if NET6_0_OR_GREATER
             if (Tracer.Instance.Settings.SingleSpanAspNetCoreEnabled)
             {
-                return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance);
+                return new SingleSpanAspNetCoreDiagnosticObserver(Tracer.Instance, Iast.Iast.Instance);
             }
 #endif // #if NET6_0_OR_GREATER
 
-            return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance);
+            return new AspNetCoreDiagnosticObserver(Tracer.Instance, Iast.Iast.Instance);
         }
 
         [Pure]

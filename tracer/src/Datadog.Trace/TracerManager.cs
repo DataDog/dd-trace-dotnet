@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -481,8 +480,6 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_error");
                     writer.WriteValue(agentError ?? string.Empty);
 
-                    WriteAsmInfo(writer);
-
                     writer.WritePropertyName("iast_enabled");
                     writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.Enabled);
 
@@ -604,43 +601,6 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
-            }
-        }
-
-        private static void WriteAsmInfo(JsonTextWriter writer)
-        {
-            var security = Security.Instance;
-            writer.WritePropertyName("appsec_enabled");
-            writer.WriteValue(security.Settings.AppsecEnabled);
-
-            if (security.Settings.UseUnsafeEncoder)
-            {
-                writer.WritePropertyName("appsec_use_unsafe_encoder");
-                writer.WriteValue(security.Settings.UseUnsafeEncoder);
-            }
-
-            writer.WritePropertyName("appsec_trace_rate_limit");
-            writer.WriteValue(security.Settings.TraceRateLimit);
-
-            writer.WritePropertyName("appsec_rules_file_path");
-            writer.WriteValue(security.Settings.Rules ?? "(default)");
-
-            writer.WritePropertyName("appsec_libddwaf_version");
-            writer.WriteValue(security.DdlibWafVersion ?? "(none)");
-
-            writer.WritePropertyName("dd_appsec_stack_trace_enabled");
-            writer.WriteValue(security.Settings.StackTraceEnabled);
-
-            writer.WritePropertyName("dd_appsec_max_stack_traces");
-            writer.WriteValue(security.Settings.MaxStackTraces);
-
-            writer.WritePropertyName("dd_appsec_max_stack_trace_depth");
-            writer.WriteValue(security.Settings.MaxStackTraceDepth);
-
-            if (security.WafExportsErrorHappened)
-            {
-                writer.WritePropertyName("appsec_libddwaf_export_errors");
-                writer.WriteValue(security.WafExportsErrorHappened);
             }
         }
 

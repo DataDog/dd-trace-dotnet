@@ -16,7 +16,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Web;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Aspects;
@@ -732,20 +731,7 @@ internal static partial class IastModule
             return null;
         }
 
-        string? stackId = null;
-        if (stack != null && Security.Instance.Settings.StackTraceEnabled)
-        {
-            if (currentSpan is null)
-            {
-                stackId = "1";
-            }
-            else
-            {
-                stackId = currentSpan.Context.TraceContext.IastRequestContext?.GetNextVulnerabilityStackId();
-            }
-        }
-
-        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
+        return new Location(stackFrame, stack, stackId: null, currentSpan?.SpanId);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability, bool closeAfterCreation = true)

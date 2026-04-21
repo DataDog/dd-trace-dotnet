@@ -32,7 +32,7 @@ public sealed class WebRequestAspect
             VulnerabilitiesModule.OnSSRF(parameter);
             return parameter;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return parameter;
@@ -54,7 +54,7 @@ public sealed class WebRequestAspect
             VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
             return parameter;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return parameter;

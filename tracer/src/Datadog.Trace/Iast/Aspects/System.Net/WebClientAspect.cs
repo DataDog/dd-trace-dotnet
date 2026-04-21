@@ -63,7 +63,7 @@ public sealed class WebClientAspect
 
             return parameter!;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return parameter;
@@ -137,7 +137,7 @@ public sealed class WebClientAspect
 
             return parameter!;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return parameter;

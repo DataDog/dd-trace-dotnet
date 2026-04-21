@@ -4,15 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.Logging;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -20,7 +13,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    public static partial class SpanExtensions
+    public static class SpanExtensions
     {
         /// <summary>
         /// Sets the details of the user on the local root span
@@ -39,11 +32,9 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null or the empty string", nameof(userDetails));
             }
 
-            var setTag = TaggingUtils.GetSpanSetter(span, out var spanClass);
+            var setTag = TaggingUtils.GetSpanSetter(span, out _);
 
-            // usr.id should always be set, even when PropagateId is true
             setTag(Tags.User.Id, userDetails.Id);
-            setTag(Tags.AppSec.EventsUsers.CollectionMode, Tags.AppSec.EventsUsers.Sdk);
 
             if (userDetails.PropagateId)
             {
@@ -76,11 +67,6 @@ namespace Datadog.Trace
             {
                 setTag(Tags.User.Scope, userDetails.Scope);
             }
-
-            if (spanClass != null)
-            {
-                RunBlockingCheck(spanClass, userDetails.Id, userDetails.SessionId);
-            }
         }
 
         /// <summary>
@@ -102,8 +88,6 @@ namespace Datadog.Trace
                 return internalSpan.SetMetric(key, value);
             }
 
-            // If is not an internal span, we add the numeric value as string as a fallback only
-            // so it can be converted automatically by the backend (only if a measurement facet is created for this tag)
             return span.SetTag(key, value?.ToString());
         }
 

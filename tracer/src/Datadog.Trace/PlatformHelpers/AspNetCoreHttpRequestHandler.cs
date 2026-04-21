@@ -9,8 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
@@ -97,19 +95,19 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
-            return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
+            return StartAspNetCorePipelineScope(tracer, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
         }
 
 #if NET6_0_OR_GREATER
-        public Scope StartAspNetCoreSingleSpanPipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
-            => StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, new AspNetCoreSingleSpanTags(), useSingleSpanRequestTracking: true);
+        public Scope StartAspNetCoreSingleSpanPipelineScope(Tracer tracer, Iast.Iast iast, HttpContext httpContext, string resourceName)
+            => StartAspNetCorePipelineScope(tracer, iast, httpContext, resourceName, new AspNetCoreSingleSpanTags(), useSingleSpanRequestTracking: true);
 #endif
 
-        private Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, WebTags tags, bool useSingleSpanRequestTracking)
+        private Scope StartAspNetCorePipelineScope(Tracer tracer, Iast.Iast iast, HttpContext httpContext, string resourceName, WebTags tags, bool useSingleSpanRequestTracking)
         {
             var request = httpContext.Request;
             string host = request.Host.Value;
@@ -150,7 +148,7 @@ namespace Datadog.Trace.PlatformHelpers
             httpContext.Items[HttpContextTrackingKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
 #endif
 
-            if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
+            if (tracer.Settings.IpHeaderEnabled)
             {
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
                 string GetRequestHeaderFromKey(string key) => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
@@ -169,10 +167,10 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
-        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
-            => StopAspNetCorePipelineScope(tracer, security, rootScope, httpContext, proxyScope: (httpContext.Items[HttpContextTrackingKey] as RequestTrackingFeature)?.ProxyScope);
+        public void StopAspNetCorePipelineScope(Tracer tracer, Scope rootScope, HttpContext httpContext)
+            => StopAspNetCorePipelineScope(tracer, rootScope, httpContext, proxyScope: (httpContext.Items[HttpContextTrackingKey] as RequestTrackingFeature)?.ProxyScope);
 
-        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext, Scope proxyScope)
+        public void StopAspNetCorePipelineScope(Tracer tracer, Scope rootScope, HttpContext httpContext, Scope proxyScope)
         {
             if (rootScope != null)
             {
@@ -210,23 +208,15 @@ namespace Datadog.Trace.PlatformHelpers
                     proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
-                if (security.AppsecEnabled)
-                {
-                    var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
-                    securityCoordinator.Reporter.AddResponseHeadersToSpan();
-                }
-
-                CoreHttpContextStore.Instance.Remove();
-
                 rootScope.Dispose();
                 proxyScope?.Dispose();
             }
         }
 
-        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
-            => HandleAspNetCoreException(tracer, security, rootSpan, httpContext, exception, proxyScope: (httpContext.Items[HttpContextTrackingKey] as RequestTrackingFeature)?.ProxyScope);
+        public void HandleAspNetCoreException(Tracer tracer, Span rootSpan, HttpContext httpContext, Exception exception)
+            => HandleAspNetCoreException(tracer, rootSpan, httpContext, exception, proxyScope: (httpContext.Items[HttpContextTrackingKey] as RequestTrackingFeature)?.ProxyScope);
 
-        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception, Scope proxyScope)
+        public void HandleAspNetCoreException(Tracer tracer, Span rootSpan, HttpContext httpContext, Exception exception, Scope proxyScope)
         {
             // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
             // root span. In "normal" operation, this will be the same span returned by
@@ -249,15 +239,10 @@ namespace Datadog.Trace.PlatformHelpers
                     proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
                 }
 
-                if (BlockException.GetBlockException(exception) is null)
+                rootSpan.SetException(exception);
+                if (proxyScope?.Span != null)
                 {
-                    rootSpan.SetException(exception);
-                    if (proxyScope?.Span != null)
-                    {
-                        proxyScope.Span.SetException(exception);
-                    }
-
-                    security.CheckAndBlock(httpContext, rootSpan);
+                    proxyScope.Span.SetException(exception);
                 }
             }
         }

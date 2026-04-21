@@ -6,7 +6,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -46,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId))
             {
-                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, Iast.Iast.Instance, httpContext, resourceName: null);
+                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Iast.Iast.Instance, httpContext, resourceName: null);
 
                 if (scope != null)
                 {
@@ -72,18 +71,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             if (state.Scope is { } scope)
             {
                 var tracer = Tracer.Instance;
-                var security = Security.Instance;
                 var httpContext = state.State as HttpContext;
                 try
                 {
                     if (exception != null)
                     {
-                        AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, security, scope.Span, httpContext, exception);
+                        AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, scope.Span, httpContext, exception);
                     }
                 }
                 finally
                 {
-                    AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, security, scope, httpContext);
+                    AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, scope, httpContext);
                 }
             }
 

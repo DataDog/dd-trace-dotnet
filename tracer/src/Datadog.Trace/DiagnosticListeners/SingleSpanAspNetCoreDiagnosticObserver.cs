@@ -8,8 +8,6 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Reflection;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -43,7 +41,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SingleSpanAspNetCoreDiagnosticObserver>();
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
         private readonly Tracer _tracer;
-        private readonly Security _security;
         private readonly Iast.Iast _iast;
         private string? _hostingHttpRequestInStartEventKey;
         private string? _mvcBeforeActionEventKey;
@@ -52,10 +49,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private string? _hostingHttpRequestInStopEventKey;
         private string? _routingEndpointMatchedKey;
 
-        public SingleSpanAspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast)
+        public SingleSpanAspNetCoreDiagnosticObserver(Tracer tracer, Iast.Iast iast)
         {
             _tracer = tracer;
-            _security = security;
             _iast = iast;
         }
 
@@ -147,9 +143,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnHostingHttpRequestInStart(object arg)
         {
             var integrationEnabled = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
-            var appsecEnabled = _security.AppsecEnabled;
 
-            if (!integrationEnabled && !appsecEnabled)
+            if (!integrationEnabled)
             {
                 return;
             }
@@ -157,21 +152,8 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStartStruct>(out var requestStruct))
             {
                 var httpContext = requestStruct.HttpContext;
-                if (integrationEnabled)
-                {
-                    // Use an empty resource name here, as we will likely replace it as part of the request
-                    // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    // If the app is using resource-based sampling rules, then we need to set a resource straight
-                    // away, so force that by using null.
-                    var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
-                    var scope = AspNetCoreRequestHandler.StartAspNetCoreSingleSpanPipelineScope(_tracer, _security, _iast, httpContext, resourceName);
-                    if (appsecEnabled)
-                    {
-                        CoreHttpContextStore.Instance.Set(httpContext);
-                        var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
-                        securityReporter.ReportWafInitInfoOnce(_security.WafInitResult);
-                    }
-                }
+                var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
+                AspNetCoreRequestHandler.StartAspNetCoreSingleSpanPipelineScope(_tracer, _iast, httpContext, resourceName);
             }
         }
 
@@ -251,12 +233,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
                 }
 
-                // We check appsec enabled in here, but this avoids the method call if it's not needed
-                if (_security.AppsecEnabled)
-                {
-                    _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
-                }
-
                 if (_iast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
@@ -266,10 +242,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var appsecEnabled = _security.AppsecEnabled;
-            var iastEnabled = _iast.Settings.Enabled;
-
-            if (!appsecEnabled && !iastEnabled)
+            if (!_iast.Settings.Enabled)
             {
                 return;
             }
@@ -278,12 +251,7 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                _security.CheckPathParamsFromAction(httpContext, rootSpan, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
-
-                if (iastEnabled)
-                {
-                    rootSpan.Context.TraceContext.IastRequestContext?.AddRequestData(httpContext.Request, typedArg.RouteData?.Values);
-                }
+                rootSpan.Context.TraceContext.IastRequestContext?.AddRequestData(httpContext.Request, typedArg.RouteData?.Values);
             }
         }
 
@@ -297,7 +265,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStopStruct>().HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope: { } rootScope, ProxyScope: var proxyScope })
             {
-                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext, proxyScope);
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, rootScope, httpContext, proxyScope);
             }
         }
 
@@ -312,7 +280,7 @@ namespace Datadog.Trace.DiagnosticListeners
              && unhandledStruct.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan, ProxyScope: var proxyScope })
             {
-                AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
+                AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
             }
         }
     }

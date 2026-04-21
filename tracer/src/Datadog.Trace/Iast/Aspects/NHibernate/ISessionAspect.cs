@@ -33,7 +33,7 @@ public sealed class ISessionAspect
             VulnerabilitiesModule.OnSqlQuery(query, IntegrationId.NHibernate);
             return query;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex);
             return query;

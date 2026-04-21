@@ -9,13 +9,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    private const int DefaultMaxStackTraceDepth = 32;
+    private const int DefaultMaxStackTraceDepthTopPercent = 75;
+    private const int DefaultMaxStackTraces = 2;
+
     internal readonly StackTrace? _stack = null;
 
     public Location(string method)
@@ -79,11 +82,11 @@ internal readonly struct Location
         if (span is not null && StackId is not null && _stack is not null && _stack.FrameCount > 0)
         {
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types. Some TFMs (pre net 6) don't have null annotations
-            var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, Security.Instance.Settings.MaxStackTraceDepthTopPercent, StackId, _stack.GetFrames());
+            var stack = StackReporter.GetStack(DefaultMaxStackTraceDepth, DefaultMaxStackTraceDepthTopPercent, StackId, _stack.GetFrames());
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
             if (stack is not null)
             {
-                span.Context.TraceContext?.AppSecRequestContext.AddVulnerabilityStackTrace(stack, Security.Instance.Settings.MaxStackTraces);
+                span.Context.TraceContext?.AppSecRequestContext.AddVulnerabilityStackTrace(stack, DefaultMaxStackTraces);
             }
         }
     }

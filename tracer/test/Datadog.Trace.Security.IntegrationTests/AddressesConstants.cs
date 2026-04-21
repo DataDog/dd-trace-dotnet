@@ -1,13 +1,11 @@
-﻿// <copyright file="AutoUserInstrum.cs" company="Datadog">
+// <copyright file="AddressesConstants.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
+namespace Datadog.Trace.Security.IntegrationTests;
 
-namespace Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
-
-internal sealed class AutoUserInstrum
+internal static class AddressesConstants
 {
-    public string? Mode { get; set; }
+    public const string RequestQuery = "server.request.query";
 }

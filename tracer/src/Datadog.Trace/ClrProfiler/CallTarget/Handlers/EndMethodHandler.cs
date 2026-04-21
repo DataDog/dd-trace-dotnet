@@ -24,7 +24,7 @@ internal static class EndMethodHandler<TIntegration, TTarget>
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             throw new CallTargetInvokerException(ex);
         }

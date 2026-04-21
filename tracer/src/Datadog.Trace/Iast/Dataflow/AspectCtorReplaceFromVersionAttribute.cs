@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-
 namespace Datadog.Trace.Iast.Dataflow;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

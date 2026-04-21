@@ -1,4 +1,4 @@
-﻿// <copyright file="AppSecRequestContext.cs" company="Datadog">
+// <copyright file="AppSecRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,83 +6,25 @@
 #nullable enable
 
 using System.Collections.Generic;
-using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
 
-internal sealed partial class AppSecRequestContext
+internal sealed class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string VulnerabilityStackKey = "vulnerability";
-    private const string AppsecKey = "appsec";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecRequestContext>();
     private readonly object _sync = new();
-    private readonly List<object> _wafSecurityEvents = new();
-    private int _wafTimeout;
-    private int? _wafError;
     private Dictionary<string, List<Dictionary<string, object>>>? _stackTraces;
 
     internal void CloseWebSpan(Span span)
     {
         lock (_sync)
         {
-            if (_wafSecurityEvents.Count > 0)
-            {
-                // Older version of the Agent doesn't support meta struct
-                // Fallback to the _dd.appsec.json tag
-                if (Security.Instance.IsMetaStructSupported())
-                {
-                    span.SetMetaStruct(AppsecKey, MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", _wafSecurityEvents } }));
-                }
-                else
-                {
-                    var triggers = JsonHelper.SerializeObject(_wafSecurityEvents);
-                    span.Tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
-                }
-            }
-
-            if (_wafTimeout > 0)
-            {
-                span.Tags.SetMetric(Metrics.WafTimeouts, _wafTimeout);
-            }
-
-            if (_wafError != null)
-            {
-                span.Tags.SetMetric(Metrics.WafError, _wafError);
-            }
-
             if (_stackTraces?.Count > 0)
             {
                 span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_stackTraces));
             }
-        }
-    }
-
-    internal void CheckWAFError(IResult result)
-    {
-        if (result.Timeout)
-        {
-            _wafTimeout++;
-        }
-
-        var code = (int)result.ReturnCode;
-        if (code < 0 && (_wafError == null || _wafError < code))
-        {
-            _wafError = code;
-        }
-    }
-
-    internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
-    {
-        lock (_sync)
-        {
-            _wafSecurityEvents.AddRange(events);
         }
     }
 
@@ -108,38 +50,5 @@ internal sealed partial class AppSecRequestContext
 
             _stackTraces[stackCategory].Add(stackTrace);
         }
-    }
-}
-
-internal partial class AppSecRequestContext
-{
-    private bool _isAdditiveContextDisposed;
-
-    private IContext? _context;
-
-    /// <summary>
-    /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
-    /// </summary>
-    internal void DisposeAdditiveContext()
-    {
-        _context?.Dispose();
-        _isAdditiveContextDisposed = true;
-    }
-
-    internal IContext? GetOrCreateAdditiveContext(Security security)
-    {
-        if (_isAdditiveContextDisposed)
-        {
-            Log.Debug("Additive context was requested when already disposed");
-            return null;
-        }
-
-        if (_context is not null)
-        {
-            return _context;
-        }
-
-        _context = security.CreateAdditiveContext();
-        return _context;
     }
 }

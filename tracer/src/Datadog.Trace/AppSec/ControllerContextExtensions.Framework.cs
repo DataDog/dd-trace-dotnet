@@ -9,7 +9,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.Iast;
@@ -38,36 +37,28 @@ namespace Datadog.Trace.AppSec
                 return;
             }
 
-            var security = Security.Instance;
-            var runIast = Iast.Iast.Instance.Settings.Enabled;
-            IastRequestContext? iastRequestContext = null;
-            if (runIast)
+            if (!Iast.Iast.Instance.Settings.Enabled)
             {
-                iastRequestContext = scope.Span?.Context?.TraceContext?.IastRequestContext;
-                runIast = iastRequestContext is not null;
+                return;
             }
 
-            // if neither iast or security is enabled leave
-            if (!security.AppsecEnabled && !runIast)
+            var iastRequestContext = scope.Span?.Context?.TraceContext?.IastRequestContext;
+            if (iastRequestContext is null)
             {
                 return;
             }
 
             var bodyDic = new Dictionary<string, object>();
-            var pathParamsDic = new Dictionary<string, object>();
             foreach (var item in parameters)
             {
                 if (controllerContext.RouteData?.Values?.ContainsKey(item.Key) ?? false)
                 {
-                    pathParamsDic[item.Key] = item.Value;
+                    continue;
                 }
-                else
+
+                if (!RequestDataHelper.GetQueryString(context.Request)?.AllKeys.Contains(item.Key) ?? false)
                 {
-                    // We exclude the query string params
-                    if (!RequestDataHelper.GetQueryString(context.Request)?.AllKeys.Contains(item.Key) ?? false)
-                    {
-                        bodyDic[item.Key] = item.Value;
-                    }
+                    bodyDic[item.Key] = item.Value;
                 }
             }
 
@@ -77,42 +68,14 @@ namespace Datadog.Trace.AppSec
                 requestBody = ObjectExtractor.Extract(bodyDic);
             }
 
-            if (security.AppsecEnabled)
+            if (controllerContext.RouteData?.Values?.Count > 0)
             {
-                var securityTransport = SecurityCoordinator.Get(security, scope.Span!, context);
-                if (!securityTransport.IsBlocked)
-                {
-                    var inputData = new Dictionary<string, object>();
-                    if (requestBody is not null)
-                    {
-                        inputData.Add(AddressesConstants.RequestBody, requestBody);
-                    }
-
-                    if (pathParamsDic.Count > 0)
-                    {
-                        var pathParams = ObjectExtractor.Extract(pathParamsDic);
-
-                        if (pathParams is not null)
-                        {
-                            inputData.Add(AddressesConstants.RequestPathParams, pathParams);
-                        }
-                    }
-
-                    securityTransport.BlockAndReport(inputData);
-                }
+                iastRequestContext.AddRequestData(context.Request, controllerContext.RouteData.Values);
             }
 
-            if (runIast)
+            if (requestBody is not null)
             {
-                if (controllerContext.RouteData?.Values?.Count > 0)
-                {
-                    iastRequestContext!.AddRequestData(context.Request, controllerContext.RouteData.Values);
-                }
-
-                if (requestBody is not null)
-                {
-                    iastRequestContext!.AddRequestBody(null, requestBody);
-                }
+                iastRequestContext.AddRequestBody(null, requestBody);
             }
         }
     }

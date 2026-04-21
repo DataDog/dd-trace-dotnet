@@ -327,6 +327,56 @@ ASM API Security feature removed:
 | Cleaned `supported-configurations.yaml` | Removed `DD_API_SECURITY_*` environment variable definitions |
 | Cleaned test files | Removed `ConfigurationKeys.AppSec.ApiSecurityEnabled` references from `AspNetBase.cs` and `AspNetMvc5.cs` |
 
+### WAF and AppSec removal
+
+Removed the WAF (Web Application Firewall) and most of AppSec. Only IAST-required infrastructure kept.
+
+**Deleted directories:**
+
+| Directory | Files | Purpose |
+|---|---|---|
+| `AppSec/Waf/` | 32 | WAF native bindings, initialization, return types |
+| `AppSec/WafEncoding/` | 4 | WAF encoders |
+| `AppSec/Concurrency/` | 3 | WAF context locks |
+| `AppSec/Coordinator/` | 8 | SecurityCoordinator, SecurityReporter, helpers |
+| `AppSec/Rcm/` | 15 | ASM remote config models (rules, IP blocking, exclusions) |
+| `ClrProfiler/AutoInstrumentation/AspNetCore/UserEvents/` | — | User event tracking SDK |
+| `ClrProfiler/AutoInstrumentation/ManualInstrumentation/AppSec/` | — | Manual AppSec SDK instrumentation |
+
+**Deleted root files:** `Security.cs`, `SecuritySettings.cs`, `EventTrackingSdk.cs`, `EventTrackingSdkV2.cs`, `BlockException.cs`, `IDatadogSecurity.cs`, `SpanExtensions.cs`, `IEvent.cs`, `AddressesConstants.cs`, `AppSecRateLimiter.cs`, `BlockingAction.cs`, `CoreHttpContextStore.cs`, `SecurityConstants.cs`
+
+**Deleted integrations:** `AspNetCoreBlockMiddlewareIntegrationEnd.cs`, `BlockingMiddleware.cs`, `MvcOptionsIntegration.cs`, `ActionResponseFilter.cs`, `DefaultModelBindingContext_SetResult_Integration.cs`, `FireOnStartCommon.cs`, `SpanExtensions.Core.cs`, `SpanExtensions.Framework.cs`, `UserDetails.Internal.cs`
+
+**Kept (IAST requires):**
+
+| File | Reason |
+|---|---|
+| `AppSec/Rasp/MetaStructHelper.cs` | IAST VulnerabilityBatch serialization |
+| `AppSec/Rasp/StackReporter.cs` | IAST stack trace reporting |
+| `AppSec/VulnerabilitiesModule.cs` | IAST dispatcher |
+| `AppSec/AppSecRequestContext.cs` | Simplified to only vulnerability stack traces (`_stackTraces`, `AddVulnerabilityStackTrace`, `CloseWebSpan` MetaStruct emission) |
+| `AppSec/ObjectExtractor.cs` | Recreated IAST-only for body extraction |
+| `AppSec/ControllerContextExtensions.Framework.cs` | IAST-only for MVC/WebApi body + path params |
+
+**Files cleaned of WAF/AppSec references:**
+- `TracerManager.cs`, `TracerManagerFactory.cs`, `ClrProfiler/Instrumentation.cs`
+- Diagnostic observers (`AspNetCoreDiagnosticObserver.cs`, `SingleSpanAspNetCoreDiagnosticObserver.cs`)
+- `PlatformHelpers/AspNetCoreHttpRequestHandler.cs`
+- `Agent/MessagePack/SpanMessagePackFormatter.cs` (removed WAF tag emission)
+- ASP.NET integrations (`TracingHttpModule.cs`, MVC/WebApi integrations — removed blocking, kept IAST body/path param monitoring)
+- `Iast/Location.cs` (hardcoded stack trace config defaults)
+- `Iast/IastModule.cs` (removed `Security.Instance.Settings.StackTraceEnabled` check)
+- 17 IAST aspect files (`catch (ex) when (ex is not BlockException)` → `catch (Exception ex)`)
+- `Span.cs`, `TraceContext.cs` (removed `BlockException` checks, `DisposeAdditiveContext`)
+- ASP.NET integration attributes: `InstrumentationCategory.AppSec | .Iast` → `.Iast`
+- Test file `VulnerabilityBatchTests.Bundle.cs` (removed unused `using Datadog.Trace.AppSec.Waf`)
+
+### Test results after WAF removal
+
+| Test Suite | Result |
+|---|---|
+| **IAST Unit Tests** | **523/523 pass** |
+
 ---
 
 ## Current Architecture
