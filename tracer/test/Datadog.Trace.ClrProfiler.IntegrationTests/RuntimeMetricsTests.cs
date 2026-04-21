@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var formattedJson = collapsed.ToString(Formatting.Indented);
+                var formattedJson = new JArray(collapsed).ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 var tfm = Environment.Version.Major >= 9 ? "net9" : "net6";
 
