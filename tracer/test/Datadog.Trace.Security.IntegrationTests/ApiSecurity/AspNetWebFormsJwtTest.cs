@@ -101,7 +101,7 @@ public abstract class AspNetWebFormsJwtTest : AspNetBase, IClassFixture<IisFixtu
             Output.WriteLine($"[jwt] AppSec JSON snippet: {appSecJson.Substring(0, Math.Min(500, appSecJson.Length))}");
         }
 
-        Output.WriteLine($"[jwt] AppSec enabled metric: {requestSpan.Metrics.GetValueOrDefault("_dd.appsec.enabled")}");
+        Output.WriteLine($"[jwt] AppSec enabled metric: {(requestSpan.Metrics.TryGetValue("_dd.appsec.enabled", out var enabled) ? enabled : 0)}");
         Output.WriteLine($"[jwt] Span tags: {string.Join(", ", requestSpan.Tags.Keys)}");
 
         if (_enableSecurity)
