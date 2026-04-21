@@ -497,6 +497,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NET6_0_OR_GREATER
         [SkippableTheory]
+        [Trait("SkipInCI", "True")]
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTestData))]
@@ -594,6 +595,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
+        [Trait("SkipInCI", "True")]
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTestData))]
