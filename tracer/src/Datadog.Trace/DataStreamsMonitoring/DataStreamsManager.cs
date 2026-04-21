@@ -44,9 +44,9 @@ internal sealed class DataStreamsManager
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
     private readonly bool _isInDefaultState;
-    // Keyed by string[] identity (reference equality) — safe because EdgeTagCache holds strong
+    // Keyed by string[] identity (reference equality) — safe because TagCache holds strong
     // references to the cached arrays (bounded by MaxEdgeTagCacheSize).
-    private readonly ConcurrentDictionary<string[], NodeHashCacheEntry> _nodeHashCache =
+    private readonly ConcurrentDictionary<string[], NodeHash> _nodeHashCache =
         new(NodeHashCacheKeyComparer.Instance);
 
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
@@ -127,6 +127,7 @@ internal sealed class DataStreamsManager
         Interlocked.Exchange(
             ref _nodeHashBase,
             unchecked((long)value.Value)); // reinterpret as a long
+        _nodeHashCache.Clear();
     }
 
     public static DataStreamsManager Create(
@@ -316,22 +317,11 @@ internal sealed class DataStreamsManager
 
             // Don't blame me, blame the fact we can't do Volatile.Read with a ulong in .NET FX...
             var nodeHashBase = new NodeHashBase(unchecked((ulong)Volatile.Read(ref _nodeHashBase)));
-            var cacheEntry = _nodeHashCache.GetOrAdd(edgeTags, static _ => new NodeHashCacheEntry());
-            NodeHash nodeHash;
 
-            // Fast lock-free path: snapshot is an immutable object published via a volatile field.
-            // If the base still matches we avoid taking any lock on the hot path.
-            if (!cacheEntry.TryGetNodeHash(nodeHashBase, out nodeHash))
+            // Fast path: hash already cached for current base (cleared on settings updates).
+            if (!_nodeHashCache.TryGetValue(edgeTags, out var nodeHash))
             {
-                lock (cacheEntry)
-                {
-                    // Double-check under lock in case another thread raced to update
-                    if (!cacheEntry.TryGetNodeHash(nodeHashBase, out nodeHash))
-                    {
-                        nodeHash = HashHelper.CalculateNodeHash(nodeHashBase, edgeTags);
-                        cacheEntry.Store(nodeHashBase, nodeHash);
-                    }
-                }
+                nodeHash = _nodeHashCache.GetOrAdd(edgeTags, tags => HashHelper.CalculateNodeHash(nodeHashBase, tags));
             }
 
             var parentHash = previousContext?.Hash ?? default;
@@ -449,6 +439,8 @@ internal sealed class DataStreamsManager
             }
 
             var result = Cache.GetOrAdd(key, factory);
+            // May overcount by at most O(concurrent threads) when threads race on the same unseen key
+            // and both reach GetOrAdd. Acceptable for a soft limit — we stop caching slightly early.
             Interlocked.Increment(ref _count);
             return result;
         }
@@ -465,60 +457,6 @@ internal sealed class DataStreamsManager
 
         public bool Equals(string[]? x, string[]? y) => ReferenceEquals(x, y);
 
-        public int GetHashCode(string[] obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
-    }
-
-    /// <summary>
-    /// Memoized NodeHash associated with a specific edge-tag array instance and nodeHashBase value.
-    /// The volatile <see cref="_snapshot"/> field enables a lock-free fast path: callers read the
-    /// snapshot without a lock, and only acquire the lock when the base has changed or is missing.
-    /// </summary>
-    private sealed class NodeHashCacheEntry
-    {
-        // Immutable snapshot published via volatile write; null until first computation.
-        private volatile NodeHashSnapshot? _snapshot;
-
-        /// <summary>
-        /// Tries to return the cached <see cref="NodeHash"/> for <paramref name="nodeHashBase"/>
-        /// without acquiring any lock (lock-free read via volatile field).
-        /// </summary>
-        public bool TryGetNodeHash(NodeHashBase nodeHashBase, out NodeHash nodeHash)
-        {
-            var snap = _snapshot; // volatile read — acts as a load-acquire barrier
-            if (snap is not null && snap.Base == nodeHashBase.Value)
-            {
-                nodeHash = snap.Hash;
-                return true;
-            }
-
-            nodeHash = default;
-            return false;
-        }
-
-        /// <summary>
-        /// Stores a newly-computed <see cref="NodeHash"/>. Must be called under a lock held by the caller.
-        /// The volatile write ensures the snapshot is visible to all threads before the lock is released.
-        /// </summary>
-        public void Store(NodeHashBase nodeHashBase, NodeHash nodeHash)
-        {
-            _snapshot = new NodeHashSnapshot(nodeHashBase.Value, nodeHash); // volatile write
-        }
-
-        /// <summary>Immutable payload published atomically via the volatile <see cref="_snapshot"/> field.</summary>
-        private sealed class NodeHashSnapshot
-        {
-            private readonly ulong _base;
-            private readonly NodeHash _hash;
-
-            internal NodeHashSnapshot(ulong @base, NodeHash hash)
-            {
-                _base = @base;
-                _hash = hash;
-            }
-
-            internal ulong Base => _base;
-
-            internal NodeHash Hash => _hash;
-        }
+        public int GetHashCode(string[] obj) => RuntimeHelpers.GetHashCode(obj);
     }
 }
