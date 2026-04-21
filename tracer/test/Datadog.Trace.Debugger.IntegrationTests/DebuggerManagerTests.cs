@@ -33,6 +33,8 @@ public class DebuggerManagerTests : TestHelper
     private const string RemoteConfigNotAvailableLogEntry = "Remote configuration is not available in this environment";
     private const string DebuggerConfigurationLogEntry = "DATADOG DEBUGGER CONFIGURATION";
     private const string TracerInitialized = "The profiler has been initialized";
+    private const string CodeOriginDisabledLogEntry = "Code Origin for Spans is disabled";
+    private const string ClrMdLiveHeapSnapshotAssertionSkipReason = "ClrMD live-heap snapshots are unstable for Windows x86 on .NET Core 3.0, so tests that rely on live-heap snapshot assertions are skipped in that configuration.";
 
     public DebuggerManagerTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -102,6 +104,13 @@ public class DebuggerManagerTests : TestHelper
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
+
+        if (ShouldSkipClrMdLiveHeapSnapshotAssertions())
+        {
+            await RunDebuggerManagerTestWithMemoryAssertions(expectedLogEntry: CodeOriginDisabledLogEntry);
+            return;
+        }
+
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
             memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
@@ -188,6 +197,8 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_MultipleFeaturesCombined_CreatesAppropriateObjects()
     {
+        Skip.If(ShouldSkipClrMdLiveHeapSnapshotAssertions(), ClrMdLiveHeapSnapshotAssertionSkipReason);
+
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
@@ -214,6 +225,15 @@ public class DebuggerManagerTests : TestHelper
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
         await RunDebuggerManagerTestWithMemoryAssertions(null, DebuggerConfigurationLogEntry);
+    }
+
+    private static bool ShouldSkipClrMdLiveHeapSnapshotAssertions()
+    {
+#if NETCOREAPP3_0
+        return !EnvironmentTools.IsTestTarget64BitProcess();
+#else
+        return false;
+#endif
     }
 
     private async Task RunDebuggerManagerTestWithMemoryAssertions(
