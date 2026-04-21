@@ -30,6 +30,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class AzureFunctionsCommon
     {
+        // Key used by the Azure Functions .NET Worker to store the ASP.NET Core HttpContext in FunctionContext.Items.
+        // Defined in Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore:
+        //   https://github.com/Azure/azure-functions-dotnet-worker/blob/596a94ef97f458d68381678fec6d92585e80d83d/extensions/Worker.Extensions.Http.AspNetCore/src/Constants.cs#L14
+        // Set by FunctionsHttpProxyingMiddleware:
+        //   https://github.com/Azure/azure-functions-dotnet-worker/blob/596a94ef97f458d68381678fec6d92585e80d83d/extensions/Worker.Extensions.Http.AspNetCore/src/FunctionsMiddleware/FunctionsHttpProxyingMiddleware.cs#L124
         private const string HttpRequestContextKey = "HttpRequestContext";
         private const string SpanType = SpanTypes.Serverless;
 
