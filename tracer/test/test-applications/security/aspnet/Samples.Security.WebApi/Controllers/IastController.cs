@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Web;
 using System.Web.Http;
@@ -11,6 +13,17 @@ using Samples.Security.Data;
 
 namespace Samples.Security.WebApi.Controllers
 {
+    public class QueryData
+    {
+        public string Query { get; set; }
+        public int IntField { get; set; }
+        public List<string> Arguments { get; set; }
+        public Dictionary<string, string> StringMap { get; set; }
+        public string[] StringArrayArguments { get; set; }
+        public QueryData InnerQuery { get; set; }
+        public string UserName { get; set; }
+    }
+
     public class IastController : ApiController
     {
         private static SQLiteConnection _dbConnection;
@@ -69,6 +82,89 @@ namespace Samples.Security.WebApi.Controllers
             catch
             {
                 return "The provided file " + miscModel?.Id + " could not be opened";
+            }
+        }
+
+        [AcceptVerbs("GET")]
+        [Route("Iast/GetFileContent")]
+        public string GetFileContent(string file)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(file))
+                {
+                    var result = System.IO.File.ReadAllText(file);
+                    return "file content: " + result;
+                }
+
+                return "No file was provided";
+            }
+            catch
+            {
+                return "The provided file " + file + " could not be opened";
+            }
+        }
+
+        [AcceptVerbs("GET")]
+        [Route("Iast/SsrfAttack")]
+        public string SsrfAttack(string host)
+        {
+            string result = string.Empty;
+            try
+            {
+                result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return result;
+        }
+
+        [AcceptVerbs("GET")]
+        [Route("Iast/SsrfAttackNoCatch")]
+        public string SsrfAttackNoCatch(string host)
+        {
+            var result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+            return result;
+        }
+
+        [AcceptVerbs("GET")]
+        [Route("Iast/PopulateDDBB")]
+        public string PopulateDDBB()
+        {
+            try
+            {
+                if (_dbConnection == null)
+                {
+                    _dbConnection = IastControllerHelper.CreateSystemDataDatabase();
+                }
+
+                return "OK";
+            }
+            catch (SQLiteException ex)
+            {
+                return IastControllerHelper.ToFormattedString(ex);
+            }
+        }
+
+        [AcceptVerbs("POST")]
+        [Route("Iast/ExecuteQueryFromBodyQueryData")]
+        public string ExecuteQueryFromBodyQueryData([FromBody] QueryData queryInstance)
+        {
+            try
+            {
+                if (_dbConnection == null)
+                {
+                    _dbConnection = IastControllerHelper.CreateSystemDataDatabase();
+                }
+
+                return QueryFromData(queryInstance);
+            }
+            catch (SQLiteException ex)
+            {
+                return IastControllerHelper.ToFormattedString(ex);
             }
         }
 
@@ -250,6 +346,70 @@ namespace Samples.Security.WebApi.Controllers
             var file = HttpContext.Current.Request.Cookies["file"]?.Value;
             var argumentLine = HttpContext.Current.Request.Cookies["argumentLine"]?.Value;
             return ExecuteCommandInternal(file, argumentLine);
+        }
+
+        private string QueryFromData(QueryData query)
+        {
+            if (!string.IsNullOrEmpty(query?.Query))
+            {
+                return ExecuteQueryInternal(query.Query);
+            }
+
+            if (!string.IsNullOrEmpty(query?.UserName))
+            {
+                return ExecuteQueryInternal("SELECT Surname from Persons where name = '" + query.UserName + "'");
+            }
+
+            if (query?.Arguments != null)
+            {
+                foreach (var value in query.Arguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQueryInternal(value);
+                    }
+                }
+            }
+
+            if (query?.StringArrayArguments != null)
+            {
+                foreach (var value in query.StringArrayArguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQueryInternal(value);
+                    }
+                }
+            }
+
+            if (query?.StringMap != null)
+            {
+                foreach (var value in query.StringMap)
+                {
+                    if (!string.IsNullOrEmpty(value.Value))
+                    {
+                        return ExecuteQueryInternal(value.Value);
+                    }
+
+                    if (!string.IsNullOrEmpty(value.Key))
+                    {
+                        return ExecuteQueryInternal(value.Key);
+                    }
+                }
+            }
+
+            if (query?.InnerQuery != null)
+            {
+                return QueryFromData(query.InnerQuery);
+            }
+
+            return "No query or username was provided";
+        }
+
+        private string ExecuteQueryInternal(string query)
+        {
+            var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
+            return "Result: " + rname;
         }
 
         private string ExecuteCommandInternal(string file, string argumentLine, bool fromShell = false)
