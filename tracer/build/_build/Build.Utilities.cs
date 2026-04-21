@@ -262,26 +262,18 @@ partial class Build
                return name => blocked.Contains(name) ? CooldownMode.Freeze : CooldownMode.Normal;
            }
 
+           // supported_versions.json is still loaded for Pipeline B (dependabot + supported_versions.json
+           // regeneration). The cooldown filter in Pipeline A sources its previous-max data from the
+           // generated .g.cs files directly, because those retain per-major version history that
+           // supported_versions.json's single-max-per-package shape cannot represent.
            var previousSupportedVersions = await GenerateSupportMatrix.LoadPreviousVersions(supportedVersionsPath);
            Logger.Information("Loaded previous supported versions with {Count} entries", previousSupportedVersions.Count);
-
-           // Pull the max tested version per package from supported_versions.json. The cooldown
-           // filter keeps anything at or below this value so we never downgrade a version we
-           // already shipped against. Collected as a list per package (not a single global max)
-           // so split-range packages (e.g. GraphQL 4.x-6.x and 7.x-9.x) get a per-range value.
-           var previousMaxVersions = previousSupportedVersions
-               .Where(kvp => kvp.Value.MaxVersionTestedInclusive is not null)
-               .GroupBy(kvp => kvp.Key.PackageName)
-               .ToDictionary(
-                   g => g.Key,
-                   g => g.Select(kvp => new Version(kvp.Value.MaxVersionTestedInclusive!)).ToList());
-           Logger.Information("Loaded previous max tested versions for {Count} packages from supported_versions.json", previousMaxVersions.Count);
 
            var effectiveCooldownDays = PackageVersionCooldownDays ?? 2;
 
            // Pipeline A: generate .g.props/.g.cs files
            Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, getCooldownMode, effectiveCooldownDays, previousMaxVersions);
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, getCooldownMode, effectiveCooldownDays);
            var testedVersions = await versionGenerator.GenerateVersions(Solution);
 
            // Log version changes: bumps, unchanged, and overridden
@@ -291,8 +283,8 @@ partial class Build
            foreach (var tested in testedVersions)
            {
                var packageName = tested.NugetPackageSearchName;
-               previousMaxVersions.TryGetValue(packageName, out var previousMaxCandidates);
-               var previousMax = previousMaxCandidates?
+               var previousMax = versionGenerator
+                   .GetPreviouslyTestedVersions(tested.IntegrationName)
                    .Where(v => v >= tested.MinVersion && v <= tested.MaxVersion)
                    .OrderByDescending(v => v)
                    .FirstOrDefault();

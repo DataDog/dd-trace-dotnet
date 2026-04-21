@@ -24,7 +24,6 @@ namespace GeneratePackageVersions
         private readonly PackageGroup _latestSpecific;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
         private readonly DateTimeOffset _cutoffDate;
-        private readonly Dictionary<string, List<Version>> _previousMaxVersions;
 
         /// <summary>
         /// NuGet query results from this run, keyed by package name. Not persisted across runs.
@@ -43,12 +42,10 @@ namespace GeneratePackageVersions
             AbsolutePath tracerDirectory,
             AbsolutePath testProjectDirectory,
             Func<string, CooldownMode> getCooldownMode,
-            int cooldownDays,
-            Dictionary<string, List<Version>> previousMaxVersions)
+            int cooldownDays)
         {
             _getCooldownMode = getCooldownMode;
             _cutoffDate = DateTimeOffset.UtcNow.AddDays(-cooldownDays);
-            _previousMaxVersions = previousMaxVersions;
             CooldownReport = new CooldownReport(cooldownDays);
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
@@ -168,7 +165,7 @@ namespace GeneratePackageVersions
                 {
                     var earliestVersion = allVersions.First();
                     var lastVersion = allVersions.Last();
-                    testedVersions.Add(new(entry.NugetPackageSearchName, earliestVersion, lastVersion));
+                    testedVersions.Add(new(entry.NugetPackageSearchName, entry.IntegrationName, earliestVersion, lastVersion));
                 }
             }
 
@@ -182,19 +179,24 @@ namespace GeneratePackageVersions
         /// <summary>
         /// Drops versions that were published too recently to have been vetted, recording each
         /// dropped version in the cooldown report. Versions at or below the previous max (the highest
-        /// version we shipped against in a prior run for this entry's range) are kept regardless,
-        /// so the cooldown never downgrades an already-tested version.
+        /// version we shipped against in a prior run for this entry's range, scoped to the same major
+        /// as the candidate) are kept regardless, so the cooldown never downgrades an already-tested
+        /// version -- and a late backport to an older major can't hide behind a higher max that came
+        /// from a newer major line.
         /// Only called for CooldownMode.Normal entries; Freeze and BypassCooldown are handled by the caller.
         /// </summary>
         private List<VersionWithDate> ApplyCooldown(PackageVersionEntry entry, List<VersionWithDate> versions)
         {
-            var previousMax = FindPreviousMaxForEntry(entry);
+            var previouslyTested = GetPreviouslyTestedVersions(entry.IntegrationName);
             var result = new List<VersionWithDate>();
 
             foreach (var v in versions)
             {
+                var parsedVersion = new Version(v.Version);
+                var previousMax = FindPreviousMaxForEntry(entry, parsedVersion, previouslyTested);
+
                 var publishedTooRecently = WasPublishedTooRecently(v.Published);
-                var atOrBelowPreviousMax = previousMax is not null && new Version(v.Version) <= previousMax;
+                var atOrBelowPreviousMax = previousMax is not null && parsedVersion <= previousMax;
 
                 if (publishedTooRecently && !atOrBelowPreviousMax)
                 {
@@ -214,14 +216,18 @@ namespace GeneratePackageVersions
         }
 
         /// <summary>
-        /// Returns the highest previously-tested version for the given entry, restricted to its
-        /// [MinVersion, MaxVersionExclusive) range. The range restriction matters for split-range
-        /// packages (e.g. GraphQL 4.x-6.x and 7.x-9.x): a high max from the 7.x-9.x entry must not
-        /// suppress cooldown checks on the 4.x-6.x entry.
+        /// Returns the highest previously-tested version for the given entry that falls in its
+        /// [MinVersion, MaxVersionExclusive) range AND shares the candidate version's major. The
+        /// range filter guards split-range packages (e.g. GraphQL 4.x-6.x and 7.x-9.x) and the
+        /// major filter guards wide single-range packages (e.g. AwsSdk 3.x-5.x) where a late
+        /// backport to an older major would otherwise slip through under a higher newer-major max.
         /// </summary>
-        private Version FindPreviousMaxForEntry(PackageVersionEntry entry)
+        private static Version FindPreviousMaxForEntry(
+            PackageVersionEntry entry,
+            Version version,
+            IReadOnlyCollection<Version> previouslyTested)
         {
-            if (!_previousMaxVersions.TryGetValue(entry.NugetPackageSearchName, out var versions))
+            if (previouslyTested.Count == 0)
             {
                 return null;
             }
@@ -229,10 +235,41 @@ namespace GeneratePackageVersions
             var min = new Version(entry.MinVersion);
             var max = new Version(entry.MaxVersionExclusive);
 
-            return versions
-                .Where(v => v >= min && v < max)
+            return previouslyTested
+                .Where(v => v >= min && v < max && v.Major == version.Major)
                 .OrderByDescending(v => v)
                 .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Returns every version we shipped against in the previous run for the given integration,
+        /// unioned across the three output groups (LatestMinors, LatestMajors, LatestSpecific) and
+        /// deduplicated. Sourced from the generated .g.cs files so cooldown stops depending on
+        /// supported_versions.json, which only records a single max per (assembly, package).
+        /// </summary>
+        public IReadOnlyCollection<Version> GetPreviouslyTestedVersions(string integrationName)
+        {
+            var result = new HashSet<Version>();
+            AddFrozenVersions(_latestMinors, integrationName, result);
+            AddFrozenVersions(_latestMajors, integrationName, result);
+            AddFrozenVersions(_latestSpecific, integrationName, result);
+            return result;
+
+            static void AddFrozenVersions(PackageGroup group, string integrationName, HashSet<Version> target)
+            {
+                if (!group.TryGetFrozenVersions(integrationName, out var perFramework))
+                {
+                    return;
+                }
+
+                foreach (var (_, versions) in perFramework)
+                {
+                    foreach (var version in versions)
+                    {
+                        target.Add(version);
+                    }
+                }
+            }
         }
 
         private bool WasPublishedTooRecently(DateTimeOffset? publishedDate)
@@ -396,6 +433,6 @@ namespace GeneratePackageVersions
             }
         }
 
-        public record TestedPackage(string NugetPackageSearchName, Version MinVersion, Version MaxVersion);
+        public record TestedPackage(string NugetPackageSearchName, string IntegrationName, Version MinVersion, Version MaxVersion);
     }
 }
