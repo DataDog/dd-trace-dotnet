@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent
         private readonly int _batchInterval;
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
-        private readonly IStatsAggregator? _statsAggregator;
+        private readonly IStatsAggregator _statsAggregator;
 
         private readonly bool _apmTracingEnabled;
 
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Agent
 
         internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
         {
-            _statsAggregator = statsAggregator;
+            _statsAggregator = statsAggregator ?? new NullStatsAggregator();
 
             _api = api;
             _statsd = statsd;
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        public bool CanComputeStats => _apmTracingEnabled && _statsAggregator?.CanComputeStats == true;
+        public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
 
         public Task<bool> Ping() => _api.Ping();
 
@@ -207,10 +207,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Once all the spans have been processed, flush the stats
-            if (_statsAggregator != null)
-            {
-                await _statsAggregator.DisposeAsync().ConfigureAwait(false);
-            }
+            await _statsAggregator.DisposeAsync().ConfigureAwait(false);
 
             if (_api is IDisposable disposableApi)
             {
@@ -433,30 +430,43 @@ namespace Datadog.Trace.Agent
             var chunk = spans;
             if (CanComputeStats)
             {
-                chunk = _statsAggregator?.ProcessTrace(in chunk) ?? chunk;
-                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(in chunk) ?? true;
-                _statsAggregator?.AddRange(in chunk);
-                var singleSpanSamplingSpans = new List<Span>(); // TODO maybe we can store this from above?
+                var keepState = _statsAggregator.ProcessTrace(ref chunk);
 
-                foreach (var span in chunk)
+                // if the trace was _filtered_ then it should also be excluded from stats aggregation entirely
+                // and we can just stop before we go any further.
+                if (keepState == TraceKeepState.Rejected)
                 {
-                    if (span.GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
-                    {
-                        singleSpanSamplingSpans.Add(span);
-                    }
+                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.TraceFilter);
+                    // These aren't p0 traces/spans, so presumably we _don't_ increment _droppedP0Traces/_droppedP0Spans
+                    TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.TraceFilter, chunk.Count);
+                    return;
                 }
 
-                if (shouldSendTrace)
+                // Trace wasn't filtered
+                _statsAggregator.AddRange(in chunk);
+
+                if (keepState == TraceKeepState.AggregateAndExport)
                 {
                     TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.P0Keep);
                     TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.P0Keep, chunk.Count);
                 }
                 else
                 {
-                    // If stats computation determined that we can drop the P0 Trace,
+                    List<Span>? singleSpanSamplingSpans = null; // TODO maybe we can store this from above?
+
+                    foreach (var span in chunk)
+                    {
+                        if (span.GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
+                        {
+                            singleSpanSamplingSpans ??= new();
+                            singleSpanSamplingSpans.Add(span);
+                        }
+                    }
+
+                    // If stats computation determined that we can drop the trace,
                     // skip all other processing
                     TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.P0Drop);
-                    if (singleSpanSamplingSpans.Count == 0)
+                    if (singleSpanSamplingSpans is null)
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
                         Interlocked.Add(ref _droppedP0Spans, chunk.Count);

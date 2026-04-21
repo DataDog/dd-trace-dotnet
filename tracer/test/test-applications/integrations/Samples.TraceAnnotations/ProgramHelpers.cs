@@ -133,6 +133,13 @@ namespace Samples.TraceAnnotations
             await WaitUsingOfficialAttribute();
             await NewRelicTransactionMethodAsync("Hello World");
             NewRelicTraceMethod(42);
+
+            // Test extreme exception handling patterns (APMS-19196 regression test)
+            // This exercises the IL rewriter with complex try/catch/finally nesting
+            await ExtremeExceptionHandling.DeepNestedExceptionHandlingAsync();
+
+            // Validate that multi-catch and filter handler ordering is preserved after instrumentation
+            ExtremeExceptionHandling.ValidateExceptionHandlerOrdering();
         }
 
         [OfficialTrace(OperationName = "overridden.attribute", ResourceName = "Program_WaitUsingOfficialAttribute")]

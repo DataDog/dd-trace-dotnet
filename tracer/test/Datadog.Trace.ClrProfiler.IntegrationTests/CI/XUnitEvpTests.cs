@@ -54,6 +54,24 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     {
         foreach (var row in GetData())
         {
+            var paginatedKnownTestsFirstPage =
+                """
+                {
+                    "data":{
+                        "id":"lNemDTwOV8U",
+                        "type":"ci_app_libraries_tests",
+                        "attributes":{
+                            "tests":{},
+                            "page_info":{
+                                "cursor":"page-2-cursor",
+                                "size":0,
+                                "has_next":true
+                            }
+                        }
+                    }
+                }
+                """;
+
             // settings json, efd tests json, expected spans, friendlyName
 
             // EFD for all tests
@@ -118,6 +136,94 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 1,
                 115,
                 "efd_with_test_bypass");
+
+            // EFD with paginated known tests (TraitPassTest arrives on page 2)
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0"),
+                    [
+                        paginatedKnownTestsFirstPage,
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{
+                                        "Samples.XUnitTests":{
+                                            "Samples.XUnitTests.TestSuite":["TraitPassTest"]
+                                        }
+                                    },
+                                    "page_info":{
+                                        "cursor":"",
+                                        "size":1,
+                                        "has_next":false
+                                    }
+                                }
+                            }
+                        }
+                        """
+                    ],
+                    string.Empty),
+                1,
+                115,
+                "efd_with_test_bypass_paginated");
+
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0"),
+                    [
+                        paginatedKnownTestsFirstPage
+                    ],
+                    string.Empty),
+                1,
+                ExpectedTestCount,
+                "efd_with_test_bypass_paginated_missing_followup_page");
+
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0"),
+                    [
+                        paginatedKnownTestsFirstPage,
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests"
+                            }
+                        }
+                        """
+                    ],
+                    string.Empty),
+                1,
+                ExpectedTestCount,
+                "efd_with_test_bypass_paginated_invalid_followup_payload");
+
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0"),
+                    [
+                        paginatedKnownTestsFirstPage,
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{
+                                        "Samples.XUnitTests":{
+                                            "Samples.XUnitTests.TestSuite":["TraitPassTest"]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """
+                    ],
+                    string.Empty),
+                1,
+                ExpectedTestCount,
+                "efd_with_test_bypass_paginated_missing_followup_page_info");
         }
     }
 
@@ -614,6 +720,16 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                         if (friendlyName == "all_efd_with_atr")
                         {
                             AssertEfdSelectedOverAtr(data, "Samples.XUnitTests.TestSuite.SimplePassTest");
+                        }
+                        else if (friendlyName is
+                                     "efd_with_test_bypass_paginated_missing_followup_page" or
+                                     "efd_with_test_bypass_paginated_invalid_followup_payload" or
+                                     "efd_with_test_bypass_paginated_missing_followup_page_info")
+                        {
+                            data.Tests.Should().OnlyContain(
+                                t => !t.Meta.ContainsKey(TestTags.TestIsNew) &&
+                                     !t.Meta.ContainsKey(TestTags.TestIsRetry) &&
+                                     !t.Meta.ContainsKey(TestTags.TestRetryReason));
                         }
                     },
                     useDotnetExec: false))

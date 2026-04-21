@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
@@ -20,13 +21,37 @@ namespace Datadog.Trace.Agent
         {
         }
 
-        public bool ShouldKeepTrace(in SpanCollection spans) => true;
-
-        public SpanCollection ProcessTrace(in SpanCollection trace) => trace;
+        public TraceKeepState ProcessTrace(ref SpanCollection spans) => TraceKeepState.AggregateAndExport;
 
         public Task DisposeAsync()
         {
             return Task.CompletedTask;
+        }
+
+        public StatsAggregationKey BuildKey(Span span)
+        {
+            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
+            if (rawHttpStatusCode is null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+            {
+                httpStatusCode = 0;
+            }
+
+            return new StatsAggregationKey(
+                span.ResourceName,
+                span.ServiceName,
+                span.OperationName,
+                span.Type,
+                httpStatusCode,
+                isSyntheticsRequest: span.Context.Origin?.StartsWith("synthetics") == true,
+                spanKind: string.Empty,
+                isError: false,
+                isTopLevel: false,
+                isTraceRoot: false,
+                httpMethod: string.Empty,
+                httpEndpoint: string.Empty,
+                grpcStatusCode: string.Empty,
+                serviceSource: string.Empty,
+                peerTagsHash: 0);
         }
     }
 }
