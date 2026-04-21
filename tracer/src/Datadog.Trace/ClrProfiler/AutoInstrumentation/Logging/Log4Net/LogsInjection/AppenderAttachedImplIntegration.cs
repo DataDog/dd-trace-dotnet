@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
@@ -34,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="loggingEvent">The logging event</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
+        internal static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent? loggingEvent)
             where TLoggingEvent : ILoggingEvent
         {
             if (loggingEvent?.Instance is null)
@@ -44,11 +46,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 
             var tracer = Tracer.Instance;
 
-            var mutableSettings = tracer.CurrentTraceSettings.Settings;
-            var properties = loggingEvent.Properties;
-            if (mutableSettings.LogsInjectionEnabled && properties != null && !properties.Contains(CorrelationIdentifier.ServiceKey))
+            var mutableSettings = tracer.CurrentTraceSettings?.Settings;
+            if (mutableSettings is null || !mutableSettings.LogsInjectionEnabled)
             {
-                properties[CorrelationIdentifier.ServiceKey] = mutableSettings.DefaultServiceName;
+                return CallTargetState.GetDefault();
+            }
+
+            var properties = loggingEvent.Properties;
+            if (properties is not null && !properties.Contains(CorrelationIdentifier.ServiceKey))
+            {
+                properties[CorrelationIdentifier.ServiceKey] = mutableSettings.DefaultServiceName ?? string.Empty;
                 properties[CorrelationIdentifier.VersionKey] = mutableSettings.ServiceVersion ?? string.Empty;
                 properties[CorrelationIdentifier.EnvKey] = mutableSettings.Environment ?? string.Empty;
 
@@ -60,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
                 }
             }
 
-            return new CallTargetState(scope: null, state: null);
+            return CallTargetState.GetDefault();
         }
 
         /// <summary>
@@ -73,9 +80,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         {
-            return new CallTargetReturn<TReturn>(returnValue);
+            return new CallTargetReturn<TReturn?>(returnValue);
         }
     }
 }

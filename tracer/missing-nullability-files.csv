@@ -585,7 +585,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/ILoggingEventLegacyDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/LevelDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/LevelDuckExtensions.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/LogsInjection/AppenderAttachedImplIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/LogsInjection/ILoggingEvent.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/NLogConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/LogsInjection/DiagnosticContextHelper.cs
