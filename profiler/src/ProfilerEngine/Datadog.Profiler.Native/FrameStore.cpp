@@ -126,16 +126,17 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 
         if (!functionId.has_value())
         {
-            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
-        }
-
-        if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
-        {
             // We have a value but not a valid one. This is fake function ID.
             // This can occur when the calling into the CLR from managed code cache
             // resulted in a crash(lucky us on windows, we can catch on linux ....:grimacing:)
             // This is to preserve the current semantic
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+
+        // if native frame
+        if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
+        {
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
 
