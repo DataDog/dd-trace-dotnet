@@ -599,34 +599,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableFact]
-        [Trait("SkipInCI", "True")]
-        [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsOtlpRuntimeMetrics()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
 
-            using (var httpClient = new System.Net.Http.HttpClient())
-            {
-                await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/clear");
-            }
+            await ClearTestAgentSession(testAgentHost);
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
-            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "60000");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using (await RunSampleAndWaitForExit(agent, packageVersion: "1.13.1"))
             {
-                using var httpClient = new System.Net.Http.HttpClient();
-                var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/metrics");
-                metricsResponse.EnsureSuccessStatusCode();
-
-                var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
-                var metricsData = JToken.Parse(metricsJson);
+                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
 
                 var dedupedMetrics = new JArray(
