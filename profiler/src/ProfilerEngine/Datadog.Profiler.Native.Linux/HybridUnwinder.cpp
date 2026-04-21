@@ -161,25 +161,24 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
         return false;
     }
 
-    // When libunwind falls back to LR-only (no DWARF, no frame record found for the
-    // last native frame), IP is set from X30 but X29 (FP) is left unchanged, pointing
-    // to that native frame rather than to the first managed frame.
-    // That native frame's saved LR at [FP+8] is the raw return address into managed
-    // code, which equals the raw cursor IP. Note: when ctx==nullptr (flag=0,
-    // use_prev_instr=1), unw_get_reg(IP) returns cursor.ip-1, so we compare against
-    // ip+1 to recover the raw value.
-    // const uintptr_t rawIp = (ctx == nullptr) ? (ip + 1) : ip;
-    // const auto firstLr = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
-    // if (firstLr == rawIp)
-    // {
-    //     const uintptr_t staleFp = fp;
-    //     fp = *reinterpret_cast<uintptr_t*>(staleFp);
-    //     if (!IsValidFp(fp, staleFp, stackBase, stackEnd))
-    //     {
-    //         if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::InvalidFp);
-    //         return i;
-    //     }
-    // }
+    unw_word_t lr = 0;
+    auto lrResult = unw_get_reg(&cursor->cursor, UNW_AARCH64_X30, &lr);
+    if (lrResult == 0)
+    {
+        const auto savedLr = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
+        if (lr != savedLr)
+        {
+            auto lrIsManaged = IsManaged(lr);
+            if (!lrIsManaged.has_value())
+            {
+                buffer[i++] = 0x42; // Unknown managed function
+            }
+            else if (lrIsManaged.value())
+            {
+                buffer[i++] = lr; // Managed function
+            }
+        }
+    }
 
     // Walk the FP chain, skipping non-managed (native/stub) frames.
     // In .NET 10+, user managed code calls throw via 3 native frames before reaching
@@ -204,19 +203,26 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
         auto ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
         if (ip == 0)
         {
-            finishReason = FinishReason::InvalidIp;
             break;
         }
 
         if (tracer) tracer->Record(EventType::FrameChainStep, ip, fp);
 
         auto isManaged = IsManaged(ip);
-        if (isManaged.has_value() && isManaged.value())
+        if (!isManaged.has_value() || isManaged.value())
+        //if (isManaged.has_value() && isManaged.value())
         {
-            buffer[i++] = ip;
-            consecutiveNativeFrames = 0;
+            if (!isManaged.has_value())
+            {
+                buffer[i++] = 0x42; // Unknown managed function
+            }
+            else
+            {
+                buffer[i++] = ip;
+                consecutiveNativeFrames = 0;
+            }
         }
-        else if (!isManaged.has_value() || !isManaged.value())
+        else if (!isManaged.value())
         {
             static constexpr std::size_t MaxConsecutiveNativeFrames = 9;
             if (++consecutiveNativeFrames > MaxConsecutiveNativeFrames)
