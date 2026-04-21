@@ -76,8 +76,10 @@ internal sealed class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEv
 
     public override async Task DisposeAsync()
     {
+        // Final flush is awaited by base.DisposeAsync() and bounded by the HTTP
+        // client timeout; Shutdown() just releases the HTTP client resources.
         await base.DisposeAsync().ConfigureAwait(false);
-        if (!_otlpExporter.Shutdown(timeoutMilliseconds: 5000))
+        if (!_otlpExporter.Shutdown())
         {
             _logger.Warning("OTLP exporter shutdown did not complete successfully.");
         }

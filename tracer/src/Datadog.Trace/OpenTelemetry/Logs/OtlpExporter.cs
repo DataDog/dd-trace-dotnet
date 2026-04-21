@@ -129,11 +129,12 @@ internal sealed class OtlpExporter : IOtlpExporter
     }
 
     /// <summary>
-    /// Shuts down the exporter and ensures all pending exports complete.
+    /// Releases the exporter's HTTP resources. The final flush already ran
+    /// synchronously in the sink's DisposeAsync (bounded by the HTTP client
+    /// timeout, OTEL_EXPORTER_OTLP_TIMEOUT), so there is nothing further to wait on.
     /// </summary>
-    /// <param name="timeoutMilliseconds">Maximum time to wait for shutdown</param>
     /// <returns>True if shutdown completed successfully</returns>
-    public bool Shutdown(int timeoutMilliseconds)
+    public bool Shutdown()
     {
         try
         {
