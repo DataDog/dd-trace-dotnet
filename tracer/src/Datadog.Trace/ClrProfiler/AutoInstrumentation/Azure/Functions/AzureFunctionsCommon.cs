@@ -15,6 +15,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
@@ -210,20 +211,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                var scope = CreateIsolatedFunctionScope(tracer, functionContext);
-
-                if (scope != null)
-                {
-                    return new CallTargetState(scope);
-                }
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            // Look up the aspnet_core.request scope once so we can both use it as parent
+            // (in CreateIsolatedFunctionScope) and propagate exceptions onto it later
+            // (in OnAsyncMethodEnd of the calling integration).
+            var aspNetCoreScope = GetAspNetCoreScope(functionContext);
+
+            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope);
+
+            if (scope == null && aspNetCoreScope == null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            return new CallTargetState(scope, state: aspNetCoreScope);
         }
 
-        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -305,10 +313,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     FullName = functionContext.FunctionDefinition.EntryPoint,
                 };
 
-                // Try to get parent scope from (in order):
-                // 1. HttpContext.Items bridge, for HTTP triggers using ASP.NET Core integration.
-                // 2. Existing local span (fallback).
-                var aspNetCoreScope = GetAspNetCoreScope(functionContext);
+                // Use the supplied aspnet_core.request scope (from HttpContext.Items bridge)
+                // if available, otherwise fall back to the existing local active scope.
                 var activeScope = tracer.InternalActiveScope;
 
                 // Check if the ASP.NET Core scope is already active
@@ -381,10 +387,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private static Scope? GetAspNetCoreScope<T>(T functionContext)
             where T : IFunctionContext
         {
-            Log.Debug("Azure Functions span creation: AsyncLocal context not available - attempting HttpContext.Items bridge");
-
-            // AsyncLocal context didn't flow - try to get parent scope from HttpContext.Items
-            // This happens in Azure Functions isolated worker where middleware breaks AsyncLocal flow
+            // Try to retrieve the aspnet_core.request scope via the HttpContext.Items bridge.
+            // This is needed because AsyncLocal context doesn't reliably flow between the worker's
+            // ASP.NET Core pipeline and the Azure Functions worker middleware pipeline.
             Scope? parentScope = null;
 
             try
@@ -404,22 +409,50 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         var spanContext = parentScope.Span.Context;
 
                         Log.Debug(
-                            "Azure Functions span creation: Retrieved AspNetCore scope {TraceId}-{SpanId}",
+                            "Azure Functions: retrieved AspNetCore scope from HttpContext.Items {TraceId}-{SpanId}",
                             spanContext.RawTraceId,
                             spanContext.RawSpanId);
                     }
                 }
                 else
                 {
-                    Log.Debug("Azure Functions span creation: Could not retrieve AspNetCore scope from HttpContext.Items");
+                    Log.Debug("Azure Functions: could not retrieve AspNetCore scope from HttpContext.Items");
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Azure Functions span creation: Error retrieving AspNetCore scope from HttpContext.Items");
+                Log.Error(ex, "Azure Functions: error retrieving AspNetCore scope from HttpContext.Items");
             }
 
             return parentScope;
+        }
+
+        /// <summary>
+        /// Propagates an exception thrown by an isolated worker user function onto the
+        /// aspnet_core.request span. The exception is caught internally by the worker's
+        /// FunctionExecutionMiddleware, so the ASP.NET Core diagnostic observer never sees it
+        /// and the worker's HttpContext.Response.StatusCode remains at the default 200. Mirror
+        /// what AspNetCoreHttpRequestHandler.HandleAspNetCoreException does, without the AppSec
+        /// side effects (which already ran when the request entered ASP.NET Core).
+        /// </summary>
+        public static void SetExceptionOnAspNetCoreScope(Scope aspNetCoreScope, Exception exception, Tracer tracer)
+        {
+            try
+            {
+                var span = aspNetCoreScope.Span;
+                var settings = tracer.CurrentTraceSettings.Settings;
+
+                if (!span.HasHttpStatusCode())
+                {
+                    span.SetHttpStatusCode(statusCode: 500, isServer: true, settings);
+                }
+
+                span.SetException(exception);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Azure Functions: error propagating user function exception to AspNetCore scope");
+            }
         }
 
         private static PropagationContext ExtractPropagatedContextFromHttp<T>(T functionContext, string? bindingName)
