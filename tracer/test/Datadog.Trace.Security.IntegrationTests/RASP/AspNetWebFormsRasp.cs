@@ -146,7 +146,7 @@ public abstract class AspNetWebFormsRaspTests : AspNetBase, IClassFixture<IisFix
         SetHttpPort(_iisFixture.HttpPort);
         // warmup request to avoid initialization metrics interfering with test spans
         var answer = await SubmitRequest("/", null, string.Empty);
-        _iisFixture.Agent.SpanFilters.Add(s => s.Resource == "GET /" || s.Resource.Contains("home/index"));
+        _iisFixture.Agent.SpanFilters.Add(s => s.Resource != "GET /" && !s.Resource.Contains("home/index"));
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
