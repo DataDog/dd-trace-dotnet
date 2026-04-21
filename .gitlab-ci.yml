@@ -226,6 +226,7 @@ benchmark-serverless-trigger:
   needs: []
   trigger:
     project: ${GITLAB_GROUP}/serverless-tools
+    branch: v1.0.0
     strategy: depend
   allow_failure: true
   variables:
