@@ -300,6 +300,33 @@ Deleted `RuntimeMetrics/` (14 files) and cleaned external references:
 | Cleaned `TestOptimizationTracerManagerFactory.cs` | Removed `RuntimeMetricsWriter` parameter from `CreateTracerManagerFrom` |
 | Cleaned `Tracer.cs` | Removed `runtimeMetrics: null` named argument from test-only constructor |
 
+### AttackerFingerprint removal
+
+ASM attacker fingerprint feature removed:
+
+| Change | Details |
+|---|---|
+| Deleted `AppSec/AttackerFingerprint/` | `AttackerFingerprintHelper.cs` |
+| Cleaned `SecurityReporter.cs` | Removed `AttackerFingerprintHelper.AddSpanTags` call and using |
+
+### API Security removal
+
+ASM API Security feature removed:
+
+| Change | Details |
+|---|---|
+| Deleted `AppSec/ApiSec/` | `ApiSecurity.cs`, `EndpointsCollection.cs`, `MapEndpointsCollection.cs`, `DuckType/` |
+| Deleted `ClrProfiler/AutoInstrumentation/AspNetCore/EndpointsCollection/` | KestrelServerImplStartAsync, MapExtensions v2/v3/v5+, RunExtensions integrations |
+| Cleaned `Security.cs` | Removed `ApiSecurity` property and initialization |
+| Cleaned `SecurityCoordinator.cs` | Removed `ApiSecurity.ShouldAnalyzeSchema` call in `RunWaf` |
+| Cleaned `SecurityCoordinatorHelpers.Core.cs` | Removed `ApiSecurityParseResponseBody` gate in `CheckBody` |
+| Cleaned `SecurityReporter.cs` | Removed `MaxApiSecurityTagValueLength` constant and `ExtractSchemaDerivatives` block |
+| Cleaned `SecuritySettings.cs` | Removed all ApiSecurity* settings (Enabled, SampleDelay, EndpointCollectionEnabled, EndpointCollectionMessageLimit, ParseResponseBody) |
+| Cleaned `RcmCapabilitiesIndices.cs` | Removed `AsmApiSecuritySampleRate` capability |
+| Cleaned `TracerManager.cs` | Removed API Security diagnostic log entries |
+| Cleaned `supported-configurations.yaml` | Removed `DD_API_SECURITY_*` environment variable definitions |
+| Cleaned test files | Removed `ConfigurationKeys.AppSec.ApiSecurityEnabled` references from `AspNetBase.cs` and `AspNetMvc5.cs` |
+
 ---
 
 ## Current Architecture

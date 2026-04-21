@@ -5,12 +5,8 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.IO;
-using System.IO.Compression;
-using Datadog.Trace.AppSec.AttackerFingerprint;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Headers;
@@ -18,8 +14,6 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -27,8 +21,6 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal sealed partial class SecurityReporter
 {
-    private const int MaxApiSecurityTagValueLength = 25000;
-
     private static readonly Dictionary<string, string?> RequestHeaders = new()
     {
         { "x-forwarded-for", string.Empty },
@@ -99,31 +91,6 @@ internal sealed partial class SecurityReporter
 
     private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
 
-    private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
-    {
-        if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
-        {
-            foreach (var result in results)
-            {
-                if (result is Dictionary<string, object?> match)
-                {
-                    if (blocked)
-                    {
-                        Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match["rule"]);
-                    }
-                    else
-                    {
-                        Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match["rule"]);
-                    }
-                }
-                else
-                {
-                    Log.Debug("{Result} not of expected type", result);
-                }
-            }
-        }
-    }
-
     internal static void RecordWafTelemetry(IResult? result)
     {
         if (result is null)
@@ -150,6 +117,31 @@ internal sealed partial class SecurityReporter
         {
             TelemetryFactory.Metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
+        }
+    }
+
+    private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
+    {
+        if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
+        {
+            foreach (var result in results)
+            {
+                if (result is Dictionary<string, object?> match)
+                {
+                    if (blocked)
+                    {
+                        Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match["rule"]);
+                    }
+                    else
+                    {
+                        Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match["rule"]);
+                    }
+                }
+                else
+                {
+                    Log.Debug("{Result} not of expected type", result);
+                }
+            }
         }
     }
 
@@ -188,8 +180,6 @@ internal sealed partial class SecurityReporter
                 _httpTransport.ReportedExternalWafsRequestHeaders = true;
             }
         }
-
-        AttackerFingerprintHelper.AddSpanTags(_span, result);
 
         if (result.ShouldReportSecurityResult)
         {
@@ -237,40 +227,6 @@ internal sealed partial class SecurityReporter
             if (status is not null)
             {
                 _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
-            }
-        }
-
-        if (result.ExtractSchemaDerivatives?.Count > 0)
-        {
-            bool written = false;
-            foreach (var derivative in result.ExtractSchemaDerivatives)
-            {
-                var serializeObject = JsonHelper.SerializeObject(derivative.Value);
-                var bytes = System.Text.Encoding.UTF8.GetBytes(serializeObject);
-                if (bytes.Length <= MaxApiSecurityTagValueLength)
-                {
-                    var memoryStream = new MemoryStream();
-                    using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
-                    {
-                        gZipStream.Write(bytes, 0, bytes.Length);
-                    }
-
-                    if (memoryStream.TryGetBuffer(out var bytesResult))
-                    {
-                        var gzipBase64 = Convert.ToBase64String(bytesResult.Array!, bytesResult.Offset, bytesResult.Count);
-                        _span.SetTag(derivative.Key, gzipBase64);
-                        written = true;
-                    }
-                    else
-                    {
-                        Log.Debug("Could not TryGetBuffer from the appsec schema extraction memoryStream");
-                    }
-                }
-            }
-
-            if (written)
-            {
-                Security.Instance?.SetTraceSamplingPriority(_span, false); // Avoid downstream propagation in Standalone mode
             }
         }
     }

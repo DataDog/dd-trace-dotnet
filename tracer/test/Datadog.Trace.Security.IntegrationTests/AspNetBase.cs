@@ -82,7 +82,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 #endif
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
 
-            SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
             // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
             SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
         }

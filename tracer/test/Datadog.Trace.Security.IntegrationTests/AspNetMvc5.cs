@@ -65,7 +65,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "0");
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;

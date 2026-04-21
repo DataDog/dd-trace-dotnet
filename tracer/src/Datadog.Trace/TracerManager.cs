@@ -613,15 +613,6 @@ namespace Datadog.Trace
             writer.WritePropertyName("appsec_enabled");
             writer.WriteValue(security.Settings.AppsecEnabled);
 
-            if (security.Settings.ApiSecurityEnabled)
-            {
-                writer.WritePropertyName("appsec_apisecurity_enabled");
-                writer.WriteValue(security.Settings.ApiSecurityEnabled);
-
-                writer.WritePropertyName("appsec_apisecurity_sampling");
-                writer.WriteValue(security.Settings.ApiSecuritySampling);
-            }
-
             if (security.Settings.UseUnsafeEncoder)
             {
                 writer.WritePropertyName("appsec_use_unsafe_encoder");

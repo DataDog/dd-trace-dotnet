@@ -125,24 +125,6 @@ namespace Datadog.Trace.AppSec
                 UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
             }
 
-            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled)
-                                       .AsBool(true);
-
-            ApiSecuritySampleDelay = config.WithKeys(ConfigurationKeys.AppSec.ApiSecuritySampleDelay)
-                                           .AsDouble(30.0, val => val >= 0.0)
-                                           .Value;
-
-            ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
-                                                         .AsBool(true);
-
-            ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
-                                                              .AsInt32(300, val => val >= 0)
-                                                              .Value;
-
-            ApiSecurityParseResponseBody = config
-                                          .WithKeys(ConfigurationKeys.AppSec.ApiSecurityParseResponseBody)
-                                          .AsBool(true);
-
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
 
@@ -181,16 +163,6 @@ namespace Datadog.Trace.AppSec
         public string? DdDotnetTracerHome { get; set; }
 
         public string? InternalTraceNativeEnginePath { get; set; }
-
-        public double ApiSecuritySampleDelay { get; set; }
-
-        public double ApiSecuritySampling { get; }
-
-        public int ApiSecurityMaxConcurrentRequests { get; }
-
-        public bool ApiSecurityEndpointCollectionEnabled { get; }
-
-        public int ApiSecurityEndpointCollectionMessageLimit { get; }
 
         public bool AppsecEnabled { get; }
 
@@ -268,19 +240,12 @@ namespace Datadog.Trace.AppSec
         public string? BlockedJsonTemplatePath { get; }
 
         /// <summary>
-        /// Gets a value indicating whether or not api security is enabled, defaults to false.
-        /// </summary>
-        public bool ApiSecurityEnabled { get; }
-
-        /// <summary>
         /// Gets a value indicating whether or not SCA (Software Composition Analysis) is enabled, defaults to null.
         /// It is not use locally, but ready by the backend.
         /// </summary>
         public bool? ScaEnabled { get; }
 
         public bool NoCustomLocalRules { get; }
-
-        public bool ApiSecurityParseResponseBody { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

@@ -18,31 +18,6 @@ internal static partial class ConfigurationKeys
     internal static class AppSec
     {
         /// <summary>
-        /// When ASM is enabled, collects in spans endpoints apis schemas analyzed by the waf, default value is true.
-        /// </summary>
-        public const string ApiSecurityEnabled = "DD_API_SECURITY_ENABLED";
-
-        /// <summary>
-        /// with a default value of true, it allows a customer to disable the collection of endpoints for API Security.
-        /// </summary>
-        public const string ApiSecurityEndpointCollectionEnabled = "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED";
-
-        /// <summary>
-        /// with a default value of 300, it defines the maximum number of endpoints to be collected (serialized) for API Security.
-        /// </summary>
-        public const string ApiSecurityEndpointCollectionMessageLimit = "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT";
-
-        /// <summary>
-        /// Enables the parsing of the response body in the API Security module. Defaults to true
-        /// </summary>
-        public const string ApiSecurityParseResponseBody = "DD_API_SECURITY_PARSE_RESPONSE_BODY";
-
-        /// <summary>
-        /// Api security sample delay in seconds , should be a float. Set to 0 for testing purposes. default value of 30.
-        /// </summary>
-        public const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
-
-        /// <summary>
         /// Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
         /// </summary>
         public const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";

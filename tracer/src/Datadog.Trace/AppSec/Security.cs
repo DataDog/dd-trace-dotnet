@@ -94,7 +94,6 @@ namespace Datadog.Trace.AppSec
             finally
             {
                 _settings ??= new(source: null, telemetry);
-                ApiSecurity = new(_settings);
                 _configurationState?.IncomingUpdateState.Dispose();
             }
         }
@@ -117,8 +116,6 @@ namespace Datadog.Trace.AppSec
         }
 
         internal bool AppsecEnabled => _configurationState.AppsecEnabled;
-
-        internal ApiSecurity ApiSecurity { get; }
 
         internal string? InitializationError { get; private set; }
 

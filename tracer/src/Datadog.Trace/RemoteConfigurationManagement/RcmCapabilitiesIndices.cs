@@ -31,8 +31,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger AsmTrustedIps = Create(10);
 
-        public static readonly BigInteger AsmApiSecuritySampleRate = Create(11);
-
         public static readonly BigInteger ApmTracingSampleRate = Create(12);
 
         public static readonly BigInteger ApmTracingLogsInjection = Create(13);

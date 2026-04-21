@@ -66,8 +66,6 @@ internal readonly partial struct SecurityCoordinator
                 args[AddressesConstants.UserSessionId] = sessionId!;
             }
 
-            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode?.ToString(), _httpTransport.RouteData);
-
             // run the WAF and execute the results
             result = runWithEphemeral
                          ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp)
