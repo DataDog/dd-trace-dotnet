@@ -63,7 +63,7 @@ public static class CustomMeterProviderBuilderExtensions
 public static class CustomLoggerFactoryBuilderExtensions
 {
     // Returns an IServiceProvider rather than an ILoggerFactory so callers can resolve
-    // the underlying OpenTelemetry.Logs.LoggerProvider and call ForceFlush before disposal.
+    // the underlying OpenTelemetry.Logs.LoggerProvider and call Shutdown before process exit.
     // LoggerProviderSdk.Dispose() caps its shutdown flush at 5s; with gRPC, the first export
     // can exceed that due to TCP/HTTP/2/TLS handshake, causing batched logs to be dropped.
     public static ServiceProvider CreateLoggerServices()

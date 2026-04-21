@@ -54,7 +54,11 @@ public static class Program
 #endif
 
 #if OTEL_1_9
-        using var loggerServices = CustomLoggerFactoryBuilderExtensions.CreateLoggerServices();
+        // Not `using var`: we call Shutdown on the LoggerProvider below with a generous
+        // timeout. Letting the ServiceProvider dispose here would trigger a second shutdown
+        // via LoggerProviderSdk.Dispose, which caps at 5s and can guillotine in-flight OTLP
+        // exports. Process exit handles cleanup, matching the meterProvider pattern above.
+        var loggerServices = CustomLoggerFactoryBuilderExtensions.CreateLoggerServices();
         var loggerFactory = loggerServices.GetRequiredService<ILoggerFactory>();
 #endif
 
@@ -158,11 +162,12 @@ public static class Program
         meterProvider?.Shutdown(timeoutMilliseconds: 30_000);
 #endif
 #if OTEL_1_9
-        // Flush OTLP log batches before the ServiceProvider's `using` disposes them.
-        // LoggerProviderSdk.Dispose caps shutdown flush at 5s, which is often insufficient
-        // for the first gRPC export (TCP+HTTP/2+TLS handshake). A generous ForceFlush here
-        // drains pending batches on the critical path instead of racing a hard-coded timeout.
-        loggerServices.GetService<LoggerProvider>()?.ForceFlush(timeoutMilliseconds: 10_000);
+        // Shutdown rather than ForceFlush: ForceFlush drains the processor queue but does not
+        // tear down the exporter's HttpClient, so a subsequent ServiceProvider dispose would
+        // still run LoggerProviderSdk.Dispose with its hard 5s shutdown cap and could guillotine
+        // in-flight exports. Shutdown drains and stops the processor with our timeout; we then
+        // let process exit clean up the ServiceProvider rather than risking the 5s Dispose race.
+        loggerServices.GetService<LoggerProvider>()?.Shutdown(timeoutMilliseconds: 30_000);
 #endif
     }
 
