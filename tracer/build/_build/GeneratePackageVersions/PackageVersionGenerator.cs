@@ -348,7 +348,7 @@ namespace GeneratePackageVersions
         {
             private readonly MSBuildPropsFileGenerator _msBuildPropsFileGenerator;
             private readonly XUnitFileGenerator _xUnitFileGenerator;
-            private readonly Dictionary<string, List<(TargetFramework Framework, List<Version> Versions)>> _frozenVersions;
+            private readonly Dictionary<string, List<(TargetFramework Framework, IEnumerable<Version> Versions)>> _frozenVersions;
 
             public PackageGroup(string propsDirectory, string testDirectoryPath, string postfix)
             {
@@ -369,7 +369,7 @@ namespace GeneratePackageVersions
             {
                 if (_frozenVersions.TryGetValue(integrationName, out var loaded))
                 {
-                    versions = loaded.Select(x => (x.Framework, (IEnumerable<Version>)x.Versions)).ToList();
+                    versions = loaded;
                     return true;
                 }
 

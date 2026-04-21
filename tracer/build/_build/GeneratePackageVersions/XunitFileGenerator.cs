@@ -124,9 +124,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// output because the writer is deterministic.
         /// Returns an empty dictionary if the file does not exist yet.
         /// </summary>
-        public Dictionary<string, List<(TargetFramework Framework, List<Version> Versions)>> LoadExistingVersions()
+        public Dictionary<string, List<(TargetFramework Framework, IEnumerable<Version> Versions)>> LoadExistingVersions()
         {
-            var result = new Dictionary<string, List<(TargetFramework, List<Version>)>>();
+            var result = new Dictionary<string, List<(TargetFramework, IEnumerable<Version>)>>();
             if (!File.Exists(Filename))
             {
                 return result;
@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var ifRegex = new Regex(@"^\s*#if\s+(\w+)\s*$");
             var versionRegex = new Regex(@"new object\[\]\s*\{\s*""([^""]+)""\s*\}");
 
-            List<(TargetFramework, List<Version>)> currentIntegration = null;
+            List<(TargetFramework, IEnumerable<Version>)> currentIntegration = null;
             List<Version> currentVersions = null;
 
             foreach (var line in File.ReadAllLines(Filename))
@@ -152,7 +152,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var integrationMatch = integrationRegex.Match(line);
                 if (integrationMatch.Success)
                 {
-                    currentIntegration = new List<(TargetFramework, List<Version>)>();
+                    currentIntegration = new List<(TargetFramework, IEnumerable<Version>)>();
                     result[integrationMatch.Groups[1].Value] = currentIntegration;
                     currentVersions = null;
                     continue;
