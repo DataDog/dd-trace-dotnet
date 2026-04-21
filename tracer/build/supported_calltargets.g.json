@@ -6664,13 +6664,12 @@
     "TargetMethodName": "TrackTransaction",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "Datadog.Trace.ISpan",
       "System.String",
       "System.String"
     ],
     "MinimumVersion": {
       "Item1": 3,
-      "Item2": 0,
+      "Item2": 43,
       "Item3": 0
     },
     "MaximumVersion": {
