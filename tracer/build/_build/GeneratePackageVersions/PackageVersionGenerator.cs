@@ -109,7 +109,7 @@ namespace GeneratePackageVersions
                 if (mode is CooldownMode.Freeze)
                 {
                     Logger.Warning(
-                        "Freeze requested for {Package} ({Integration}) but no existing output was found; generating fresh",
+                        "Freeze requested for {Package} ({Integration}) but no existing output was found; switching to Normal cooldown mode",
                         entry.NugetPackageSearchName,
                         entry.IntegrationName);
                     mode = CooldownMode.Normal;
