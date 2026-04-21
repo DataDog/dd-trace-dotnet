@@ -8,41 +8,38 @@
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.DataStreams;
 
 /// <summary>
-/// System.Void Datadog.Trace.DataStreams::TrackTransaction(Datadog.Trace.ISpan,System.String,System.String) calltarget instrumentation
+/// System.Void Datadog.Trace.DataStreams::TrackTransaction(System.String,System.String) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.Trace.Manual",
     TypeName = "Datadog.Trace.DataStreams",
     MethodName = "TrackTransaction",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = ["Datadog.Trace.ISpan", ClrNames.String, ClrNames.String],
-    MinimumVersion = ManualInstrumentationConstants.MinVersion,
+    ParameterTypeNames = [ClrNames.String, ClrNames.String],
+    MinimumVersion = "3.43.0",
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class DataStreamsTrackTransactionIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, string transactionId, string checkpointName)
+    internal static CallTargetState OnMethodBegin<TTarget>(string transactionId, string checkpointName)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.DataStreams_TrackTransaction);
 
-        var manager = Datadog.Trace.Tracer.Instance.TracerManager.DataStreamsManager;
+        var tracer = Datadog.Trace.Tracer.Instance;
+        var manager = tracer.TracerManager.DataStreamsManager;
+        var activeSpan = tracer.InternalActiveScope?.Span;
 
-        if (span is IDuckType { Instance: Span s })
+        if (activeSpan is not null)
         {
-            s.TrackTransaction(manager, transactionId, checkpointName);
-        }
-        else if (span is Span autoSpan)
-        {
-            autoSpan.TrackTransaction(manager, transactionId, checkpointName);
+            activeSpan.TrackTransaction(manager, transactionId, checkpointName);
         }
         else
         {

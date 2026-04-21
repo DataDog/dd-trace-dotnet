@@ -17,16 +17,14 @@ namespace Datadog.Trace;
 public static class DataStreams
 {
     /// <summary>
-    /// Records a Data Streams Monitoring transaction checkpoint on the given span.
-    /// Sets the <c>dsm.transaction.id</c> tag on the span and sends the transaction
-    /// to the Data Streams backend (if DSM is enabled).
+    /// Records a Data Streams Monitoring transaction checkpoint on the current active span.
+    /// Sets the <c>dsm.transaction.id</c> tag on the span.
     /// </summary>
-    /// <param name="span">The active span representing the current operation. Can be null.</param>
     /// <param name="transactionId">A stable identifier for the transaction being tracked (e.g. a message ID or trace ID).</param>
     /// <param name="checkpointName">The logical name of the checkpoint (e.g. "kafka-produce", "http-send").</param>
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void TrackTransaction(ISpan span, string transactionId, string checkpointName)
+    public static void TrackTransaction(string transactionId, string checkpointName)
     {
     }
 }

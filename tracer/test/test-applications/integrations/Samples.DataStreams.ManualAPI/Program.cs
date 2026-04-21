@@ -31,7 +31,7 @@ public class Program
         Console.WriteLine("Sending one message to the queue...");
         if (trackTransaction)
         {
-            Datadog.Trace.DataStreams.TrackTransaction(scope.Span, "my-transaction-id", "send-checkpoint");
+            Datadog.Trace.DataStreams.TrackTransaction("my-transaction-id", "send-checkpoint");
         }
         var sb = new StringBuilder();
         var injector = new SpanContextInjector();
