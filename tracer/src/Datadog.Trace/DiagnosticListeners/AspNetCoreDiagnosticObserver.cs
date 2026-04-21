@@ -454,12 +454,19 @@ namespace Datadog.Trace.DiagnosticListeners
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
-                var codeOrigin = CurrentCodeOrigin;
-                var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
-
-                if (!routeTemplateResourceNamesEnabled && !isCodeOriginEnabled)
+                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
+                // Only modify tracking feature if _not_ using legacy feature names
+                if (isFirstExecution && routeTemplateResourceNamesEnabled)
                 {
-                    return;
+                    trackingFeature.IsUsingEndpointRouting = true;
+                    trackingFeature.IsFirstPipelineExecution = false;
+
+                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
+                    {
+                        // URL has changed from original, so treat this execution as a "subsequent" request
+                        // Typically occurs for 404s for example
+                        isFirstExecution = false;
+                    }
                 }
 
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
@@ -500,6 +507,9 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+                var codeOrigin = CurrentCodeOrigin;
+                var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
+
                 if (isCodeOriginEnabled &&
                     AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint.Value, out var endpointType, out var endpointMethod))
                 {
@@ -519,20 +529,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // customer is using legacy resource names
                     return;
-                }
-
-                var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
-                if (isFirstExecution)
-                {
-                    trackingFeature.IsUsingEndpointRouting = true;
-                    trackingFeature.IsFirstPipelineExecution = false;
-
-                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
-                    {
-                        // URL has changed from original, so treat this execution as a "subsequent" request
-                        // Typically occurs for 404s for example
-                        isFirstExecution = false;
-                    }
                 }
 
                 if (isFirstExecution)

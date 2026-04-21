@@ -147,6 +147,38 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             trackingFeature.IsFirstPipelineExecution.Should().BeTrue();
         }
 
+        [Fact]
+        public async Task EndpointMatched_MutatesTrackingFeature_WhenRouteEndpointCannotBeExtracted()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent(new TracerSettings());
+            var (security, iast) = GetSecurity();
+            var spanCodeOrigin = GetSpanCodeOrigin();
+
+            IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin);
+
+            var httpContext = GetHttpContext();
+            var startContext = new HostingApplication.Context { HttpContext = httpContext };
+
+            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Start", startContext));
+
+            var trackingFeature = httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey]
+                                             .Should()
+                                             .BeOfType<AspNetCoreHttpRequestHandler.RequestTrackingFeature>()
+                                             .Subject;
+
+            trackingFeature.IsUsingEndpointRouting.Should().BeFalse();
+            trackingFeature.IsFirstPipelineExecution.Should().BeTrue();
+
+            httpContext.Features.Set<IEndpointFeature>(new TestEndpointFeature(new Endpoint(TestEndpointDelegate, EndpointMetadataCollection.Empty, "FallbackEndpoint")));
+
+            observer.OnNext(new KeyValuePair<string, object>(
+                "Microsoft.AspNetCore.Routing.EndpointMatched",
+                new { HttpContext = httpContext }));
+
+            trackingFeature.IsUsingEndpointRouting.Should().BeTrue();
+            trackingFeature.IsFirstPipelineExecution.Should().BeFalse();
+        }
+
 #if NET6_0_OR_GREATER
         [Fact]
         public async Task CompleteSingleSpanDiagnosticObserverTest()
