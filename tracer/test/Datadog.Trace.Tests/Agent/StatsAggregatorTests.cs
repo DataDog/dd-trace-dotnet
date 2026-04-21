@@ -17,6 +17,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -223,7 +224,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 foreach (var span in spans)
                 {
-                    var key = aggregator.BuildKey(span, out _);
+                    var key = aggregator.BuildKey(span);
                     buffer.Buckets.Should().ContainKey(key);
 
                     var bucket = buffer.Buckets[key];
@@ -357,7 +358,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 buffer.Buckets.Should().HaveCount(2);
 
-                var serviceKey = aggregator.BuildKey(simpleSpan, out _);
+                var serviceKey = aggregator.BuildKey(simpleSpan);
                 buffer.Buckets.Should().ContainKey(serviceKey);
                 var serviceBucket = buffer.Buckets[serviceKey];
 
@@ -371,7 +372,7 @@ namespace Datadog.Trace.Tests.Agent
                 serviceBucket.OkSummary.GetSum().Should().BeApproximately(
                     expectedOkDuration, expectedOkDuration * serviceBucket.OkSummary.IndexMapping.RelativeAccuracy);
 
-                var httpClientServiceKey = aggregator.BuildKey(httpClientServiceSpan, out _);
+                var httpClientServiceKey = aggregator.BuildKey(httpClientServiceSpan);
                 buffer.Buckets.Should().ContainKey(httpClientServiceKey);
                 var httpClientServiceBucket = buffer.Buckets[httpClientServiceKey];
 
@@ -568,7 +569,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:production"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -594,7 +595,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:staging"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -621,7 +622,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:staging"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -662,7 +663,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:staging"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -687,7 +688,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: ["env:production"],
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: null);
+                IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -711,7 +712,7 @@ namespace Datadog.Trace.Tests.Agent
                 FilterTagsReject: null,
                 FilterTagsRegexRequire: null,
                 FilterTagsRegexReject: null,
-                IgnoreResources: ["^GET /health"]);
+                IgnoreResourcesRegex: ["^GET /health"]);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
@@ -857,11 +858,11 @@ namespace Datadog.Trace.Tests.Agent
 
                 // parent, server child, client child are included; internal and no-kind are not
                 buffer.Buckets.Should().HaveCount(3);
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan, out _));
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(serverChildSpan, out _));
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(clientChildSpan, out _));
-                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(internalChildSpan, out _));
-                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(noKindChildSpan, out _));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(serverChildSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(clientChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(internalChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(noKindChildSpan));
             }
             finally
             {
@@ -924,8 +925,8 @@ namespace Datadog.Trace.Tests.Agent
                 // They have the same resource/operation/type but different IsTraceRoot → 2 buckets
                 buffer.Buckets.Should().HaveCount(2);
 
-                var rootKey = aggregator.BuildKey(rootSpan, out _);
-                var entryKey = aggregator.BuildKey(entrySpan, out _);
+                var rootKey = aggregator.BuildKey(rootSpan);
+                var entryKey = aggregator.BuildKey(entrySpan);
                 rootKey.IsTraceRoot.Should().BeTrue();
                 entryKey.IsTraceRoot.Should().BeFalse();
             }
@@ -1133,8 +1134,8 @@ namespace Datadog.Trace.Tests.Agent
                 aggregator.Add(sampledSpan, unweightedSpan);
 
                 var buffer = aggregator.CurrentBuffer;
-                var sampledKey = aggregator.BuildKey(sampledSpan, out _);
-                var unweightedKey = aggregator.BuildKey(unweightedSpan, out _);
+                var sampledKey = aggregator.BuildKey(sampledSpan);
+                var unweightedKey = aggregator.BuildKey(unweightedSpan);
 
                 buffer.Buckets[sampledKey].Hits.Should().BeApproximately(10.0, 0.001);
                 buffer.Buckets[unweightedKey].Hits.Should().BeApproximately(1.0, 0.001);
@@ -1177,6 +1178,155 @@ namespace Datadog.Trace.Tests.Agent
             {
                 await aggregator.DisposeAsync();
             }
+        }
+
+        [Theory]
+        [InlineData(SpanKinds.Client)]
+        [InlineData(SpanKinds.Producer)]
+        public async Task PeerTagsHash_MatchesGoAgent_SingleTag(string spanKind)
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // peer.service:remote-service → hash 3430395298086625290
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, spanKind);
+            span.Tags.SetTag("peer.service", "remote-service");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_MultipleTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // db.instance:i-1234, db.system:postgres, peer.service:remote-service → hash 9894752672193411515
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            // Keys must be pre-sorted (matching agent behavior)
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(9894752672193411515UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_ConsumerMessagingTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // messaging.destination:topic-foo, messaging.system:kafka → hash 0xf5eeb51fbe7929b4
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            span.Tags.SetTag("messaging.destination", "topic-foo");
+            span.Tags.SetTag("messaging.system", "kafka");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("messaging.destination"), new("messaging.system")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(0xf5eeb51fbe7929b4UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_EmptyTagsSkipped()
+        {
+            // Same hash as single tag — empty db.instance and db.system values are skipped
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", string.Empty);
+            span.Tags.SetTag("db.system", string.Empty);
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_MultipleTags()
+        {
+            // Verify that the fast-path hash from BuildKey matches
+            // what you'd get by hashing the GetEncodedPeerTags output directly
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            // Hash the encoded tags the same way the Go agent does:
+            // FNV-1a of each tag's bytes, chained with a [0] separator
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+            for (var i = 1; i < encodedTags.Count; i++)
+            {
+                expectedHash = FnvHash64.GenerateHash(new byte[] { 0 }, FnvHash64.Version.V1A, expectedHash);
+                expectedHash = FnvHash64.GenerateHash(encodedTags[i], FnvHash64.Version.V1A, expectedHash);
+            }
+
+            key.PeerTagsHash.Should().Be(expectedHash);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_BaseService()
+        {
+            // Verify that the fast-path hash from BuildKey matches the encoded base service tag
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.Tags.SetTag(Tags.BaseService, "my-base-service");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            encodedTags.Should().HaveCount(1);
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+
+            key.PeerTagsHash.Should().Be(expectedHash);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_NoMatchingTags_ReturnsZero()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            // No peer tags set on the span
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(0UL);
         }
 
         /// <summary>

@@ -26,7 +26,7 @@ internal sealed class TraceFilter
     private readonly List<KeyValuePair<string, string>> _filterTagKeyValuesReject;
     private readonly List<RegexTagFilter> _filterTagsRegexRequire;
     private readonly List<RegexTagFilter> _filterTagsRegexReject;
-    private readonly List<Regex> _ignoreResources;
+    private readonly List<Regex> _ignoreResourcesRegex;
     private readonly bool _hasFilters;
 
     public TraceFilter(AgentTraceFilterConfig config)
@@ -35,7 +35,7 @@ internal sealed class TraceFilter
         BuildFilterTags(config.FilterTagsReject, out _filterTagKeysReject, out _filterTagKeyValuesReject);
         _filterTagsRegexRequire = CompileTagFilters(config.FilterTagsRegexRequire);
         _filterTagsRegexReject = CompileTagFilters(config.FilterTagsRegexReject);
-        _ignoreResources = CompilePatterns(config.IgnoreResources);
+        _ignoreResourcesRegex = CompilePatterns(config.IgnoreResourcesRegex);
 
         // Short circuit because these are _relatively_ rare, so we can avoid all the work if needs be
         _hasFilters = _filterTagKeysRequire.Count > 0
@@ -44,7 +44,7 @@ internal sealed class TraceFilter
                    || _filterTagKeyValuesReject.Count > 0
                    || _filterTagsRegexRequire.Count > 0
                    || _filterTagsRegexReject.Count > 0
-                   || _ignoreResources.Count > 0;
+                   || _ignoreResourcesRegex.Count > 0;
 
         static void BuildFilterTags(List<string>? filters, out List<string> keyFilters, out List<KeyValuePair<string, string>> keyValueFilters)
         {
@@ -82,9 +82,9 @@ internal sealed class TraceFilter
         }
 
         // 1. Resource filtering: reject if resource matches any ignore_resources pattern
-        if (_ignoreResources.Count > 0 && !string.IsNullOrEmpty(rootSpan.ResourceName))
+        if (_ignoreResourcesRegex.Count > 0 && !string.IsNullOrEmpty(rootSpan.ResourceName))
         {
-            foreach (var pattern in _ignoreResources)
+            foreach (var pattern in _ignoreResourcesRegex)
             {
                 if (pattern.IsMatch(rootSpan.ResourceName))
                 {

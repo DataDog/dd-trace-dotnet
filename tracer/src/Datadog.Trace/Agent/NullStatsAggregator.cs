@@ -28,10 +28,8 @@ namespace Datadog.Trace.Agent
             return Task.CompletedTask;
         }
 
-        public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+        public StatsAggregationKey BuildKey(Span span)
         {
-            utf8PeerTags = [];
-
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
             if (rawHttpStatusCode is null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
             {

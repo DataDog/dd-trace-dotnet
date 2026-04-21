@@ -91,7 +91,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private bool SampleSpan(Span span)
         {
-            var key = _aggregator.BuildKey(span, out _);
+            var key = _aggregator.BuildKey(span);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private void UpdateSpan(Span span)
         {
-            var key = _aggregator.BuildKey(span, out _);
+            var key = _aggregator.BuildKey(span);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)
