@@ -13,6 +13,7 @@ namespace Samples.Security.WebForms
             routes.RouteExistingFiles = true;
             routes.MapPageRoute("HealthParams", "Health/Params/{id}/", "~/Health.aspx");
             routes.Add("RouteHandlerParams", new Route("RouteHandler/Params/{id}", new RouteHandlerParamsRouteHandler()));
+            routes.Add("ApiSecurity", new Route("api/security/{id}", new ApiSecurityRouteHandler()));
             routes.MapPageRoute("Shutdown", "home/shutdown", "~/Default.aspx");
             var settings = new FriendlyUrlSettings();
             settings.AutoRedirectMode = RedirectMode.Permanent;

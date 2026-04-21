@@ -138,6 +138,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ApiSecurity.ashx" />
     <Content Include="print.aspx" />
     <Content Include="User.aspx" />
     <Content Include="Health.aspx" />
@@ -157,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="ApiSecurityHandler.cs" />
     <Compile Include="print.aspx.cs">
       <DependentUpon>print.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
