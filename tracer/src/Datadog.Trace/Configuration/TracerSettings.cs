@@ -703,7 +703,7 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
-            OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && OpenTelemetryMetricsEnabled;
+            OtlpRuntimeMetricsEnabled = (OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled) && RuntimeMetricsEnabled;
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 

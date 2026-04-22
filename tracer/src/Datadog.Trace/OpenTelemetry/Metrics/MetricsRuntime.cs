@@ -79,10 +79,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 return;
             }
 
+            await _instance.StopAsync().ConfigureAwait(false);
+
             _runtimeMetricsPolyfill?.Dispose();
             _runtimeMetricsPolyfill = null;
-
-            await _instance.StopAsync().ConfigureAwait(false);
         }
     }
 }
