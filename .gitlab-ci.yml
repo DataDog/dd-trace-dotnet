@@ -25,7 +25,6 @@ variables:
   GITLAB_GROUP_OSS: DataDog
   # GitHub org for internal repos (used in git insteadOf redirects) - update to new org after the split
   GITHUB_ORG_INTERNAL: DataDog
-  CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
   OCI_PACKAGE_MAX_SIZE_BYTES: 40000000
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 40000000
@@ -33,12 +32,8 @@ variables:
 
 build-windows-ci-image:
   stage: build
-  # Runs on a 2022 runner with Hyper-V isolation because the Dockerfile pulls
-  # ltsc2022-only dependency images (ci-identities client) via COPY --from.
-  # The produced image is still ltsc2019-based and runs on the 2019 consumer
-  # jobs below with process isolation.
   timeout: 2h
-  tags: ["windows-v2:2022"]
+  tags: ["windows-v2:2019"]
   when: manual
   allow_failure: false
   hooks:
@@ -61,12 +56,17 @@ build-windows-ci-image:
       }
       Write-Output "Image does not exist yet - building."
 
+      # Download the ci-identities client into the Docker build context. The URL is
+      # pinned in the download script, which is hashed — so URL bumps invalidate the tag.
+      & tracer/build/_build/docker/gitlab/download-ci-identities-client.ps1
+      if ($LASTEXITCODE -ne 0) { throw "download-ci-identities-client.ps1 failed" }
+
       docker pull "${base}:latest"
       if ($LASTEXITCODE -ne 0) {
-        Write-Output "No :latest tag available to warm the build cache (first build or tag expired). Continuing without cache."
+        Write-Output "No :ci-identities tag available to warm the build cache (first build or tag expired). Continuing without cache."
       }
 
-      docker build --isolation=hyperv --cache-from "${base}:latest" `
+      docker build --cache-from "${base}:ci-latest" `
         -f tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile `
         --tag $image `
         --tag "${base}:latest" `
@@ -155,10 +155,11 @@ publish:
     pre_get_sources_script:
       - git config --system core.longpaths true
   script:
-    # TODO remove the aws s3 cp command
-    # when the client is installed in the Windows runner image
-    - aws s3 cp --only-show-errors ${CI_IDENTITIES_CLIENT_URL} ./ci-identities-gitlab-job-client.exe
-    - ./ci-identities-gitlab-job-client.exe assume-role
+    # TODO remove the download step when the client is installed in the Windows runner image
+    - |
+      & tracer/build/_build/docker/gitlab/download-ci-identities-client.ps1
+      if ($LASTEXITCODE -ne 0) { throw "download-ci-identities-client.ps1 failed" }
+    - tracer/build/_build/docker/gitlab/ci-identities-gitlab-job-client.exe assume-role
     - |
       $i = 0
       do {

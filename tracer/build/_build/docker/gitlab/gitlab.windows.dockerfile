@@ -40,8 +40,11 @@ ENV DOTNET_VERSION="10.0.100" \
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
 
-# Copy the CI Identities GitLab Job Client
-COPY --from=registry.ddbuild.io/ci-identities/ci-identities-gitlab-job-client:v0.2.0-windows-amd64 C:/ci-identities-gitlab-job-client.exe c:/devtools/ci-identities-gitlab-job-client.exe
+# Copy the CI Identities GitLab Job Client.
+# The .exe is downloaded from S3 into this directory by download-ci-identities-client.ps1
+# (invoked by build-windows-ci-image before `docker build`). The URL is pinned in that
+# script, which is hashed into the image tag — so version bumps invalidate the tag.
+COPY ci-identities-gitlab-job-client.exe c:/devtools/ci-identities-gitlab-job-client.exe
 
 # Java and code signing tool environment variables
 ENV JAVA_VERSION "25.0.1"
