@@ -48,7 +48,6 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
         _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
     }
 
-
     // For now have one metric for both walltime and cpu (naive)
     _samplingRequest = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_walltime_cpu_sampling_requests");
     _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_walltime_cpu_sample_discarded");
