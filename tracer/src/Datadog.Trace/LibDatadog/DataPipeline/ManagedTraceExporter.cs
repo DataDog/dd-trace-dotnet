@@ -143,11 +143,22 @@ internal sealed class ManagedTraceExporter : IApi, IDisposable
         // so we disable telemetry in this case
         if (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null)
         {
+            // Session correlation: mirror the header semantics of the managed
+            // telemetry transport (see TelemetryHttpHeaderNames). DD-Session-ID
+            // is always emitted and equals the local runtime id. DD-Root-Session-ID
+            // is passed unconditionally; libdatadog's worker suppresses the
+            // header when it equals the session id. DD-Parent-Session-ID is not
+            // emitted by the .NET tracer today.
+            var sessionId = Tracer.RuntimeId;
+            var rootSessionId = Datadog.Trace.Util.RuntimeId.GetRootSessionId();
             telemetryClientConfiguration = new TelemetryClientConfiguration
             {
                 Interval = (ulong)telemetrySettings.HeartbeatInterval.TotalMilliseconds,
-                RuntimeId = new CharSlice(Tracer.RuntimeId),
-                DebugEnabled = telemetrySettings.DebugEnabled
+                RuntimeId = new CharSlice(sessionId),
+                DebugEnabled = telemetrySettings.DebugEnabled,
+                SessionId = new CharSlice(sessionId),
+                RootSessionId = new CharSlice(rootSessionId),
+                ParentSessionId = new CharSlice(null),
             };
         }
 

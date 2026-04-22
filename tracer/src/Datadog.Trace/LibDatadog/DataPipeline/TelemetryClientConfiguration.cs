@@ -34,4 +34,26 @@ internal struct TelemetryClientConfiguration
     /// Defaults to false.
     /// </summary>
     public bool DebugEnabled;
+
+    /// <summary>
+    /// Stable session identifier for the instrumented process. Attached to
+    /// telemetry requests as the DD-Session-ID HTTP header. An empty
+    /// CharSlice is treated as unset.
+    /// </summary>
+    public CharSlice SessionId;
+
+    /// <summary>
+    /// Identifier of the root process in a hierarchy of instrumented
+    /// processes. Attached to telemetry requests as the DD-Root-Session-ID
+    /// HTTP header when distinct from <see cref="SessionId"/>. An empty
+    /// CharSlice is treated as unset.
+    /// </summary>
+    public CharSlice RootSessionId;
+
+    /// <summary>
+    /// Identifier of the immediate parent process. Attached to telemetry
+    /// requests as the DD-Parent-Session-ID HTTP header when distinct from
+    /// <see cref="SessionId"/>. An empty CharSlice is treated as unset.
+    /// </summary>
+    public CharSlice ParentSessionId;
 }
