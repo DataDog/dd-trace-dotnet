@@ -40,12 +40,11 @@ jobs:
   create_draft_release:
     runs-on: ubuntu-latest
     environment: publish-debug-symbols-env
-    # These permissions need to map to the ones demanded in create_normal_draft_release.yml and create_hotfix_draft_release.yml
+    # All GitHub API access goes through the dd-octo-sts token; see
+    # .github/chainguard/self.github.create-draft-release.sts.yaml
     permissions:
-      contents: write # create release
-      actions: read # read secrets
-      issues: write # change milestones 
-      id-token: write  # enable GitHub OIDC token issuance for this job
+      contents: read # actions/checkout uses the workflow token to clone
+      id-token: write # required for dd-octo-sts OIDC and NuGet trusted publishing
     env:
       # Have to use external token with explicit workflow permissions because we are creating
       # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
