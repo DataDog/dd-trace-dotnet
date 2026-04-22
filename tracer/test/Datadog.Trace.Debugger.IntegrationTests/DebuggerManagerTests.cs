@@ -33,7 +33,6 @@ public class DebuggerManagerTests : TestHelper
     private const string RemoteConfigNotAvailableLogEntry = "Remote configuration is not available in this environment";
     private const string DebuggerConfigurationLogEntry = "DATADOG DEBUGGER CONFIGURATION";
     private const string TracerInitialized = "The profiler has been initialized";
-    private const string CodeOriginDisabledLogEntry = "Code Origin for Spans is disabled";
     private const string ClrMdLiveHeapSnapshotAssertionSkipReason = "ClrMD live-heap snapshots are unstable for Windows x86 on .NET Core 3.0, so tests that rely on live-heap snapshot assertions are skipped in that configuration.";
 
     public DebuggerManagerTests(ITestOutputHelper output)
@@ -104,12 +103,7 @@ public class DebuggerManagerTests : TestHelper
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
-
-        if (ShouldSkipClrMdLiveHeapSnapshotAssertions())
-        {
-            await RunDebuggerManagerTestWithMemoryAssertions(expectedLogEntry: CodeOriginDisabledLogEntry);
-            return;
-        }
+        Skip.If(ShouldSkipClrMdLiveHeapSnapshotAssertions(), ClrMdLiveHeapSnapshotAssertionSkipReason);
 
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
