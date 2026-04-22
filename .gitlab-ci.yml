@@ -43,7 +43,9 @@ build-windows-ci-image:
   script:
     - |
       $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-      if ($LASTEXITCODE -ne 0) { throw "compute-image-hash.ps1 failed" }
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
       $base = $env:WINDOWS_BUILD_IMAGE_BASE
       $image = "${base}:${hash}"
       Write-Output "Target image: $image"
@@ -92,7 +94,9 @@ build:
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - |
       $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-      if ($LASTEXITCODE -ne 0) { throw "compute-image-hash.ps1 failed" }
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
       $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
       Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
 
