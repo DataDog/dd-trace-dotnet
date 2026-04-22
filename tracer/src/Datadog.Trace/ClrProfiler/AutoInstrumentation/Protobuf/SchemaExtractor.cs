@@ -21,11 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 internal static class SchemaExtractor
 {
-    private const int MaxProtobufSchemas = 100;
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SchemaExtractor));
-
-    private static readonly SmallCacheOrNoCache<string, Schema> SchemaCache = new(MaxProtobufSchemas, "protobuf schema names");
 
     /// <summary>
     /// Get the current span, add some tags about the schema,
@@ -36,7 +32,7 @@ internal static class SchemaExtractor
         var tracer = Tracer.Instance;
 
         var settings = tracer.CurrentTraceSettings;
-        if (!tracer.Settings.IsDataStreamsSchemaExtractionEnabled || !settings.Settings.IsIntegrationEnabled(IntegrationId.Protobuf))
+        if (!settings.Settings.IsIntegrationEnabled(IntegrationId.Protobuf))
         {
             return;
         }
@@ -56,27 +52,6 @@ internal static class SchemaExtractor
         activeSpan.SetTag(Tags.SchemaType, "protobuf");
         activeSpan.SetTag(Tags.SchemaName, descriptor.Value.FullName);
         activeSpan.SetTag(Tags.SchemaOperation, operationName);
-
-        // check rate limit
-        var dsm = tracer.TracerManager.DataStreamsManager;
-        if (!dsm.ShouldExtractSchema(activeSpan, operationName, out var weight))
-        {
-            return;
-        }
-
-        // check cache (it will be disabled if too many schemas)
-        var schema = SchemaCache.GetOrAdd(
-            descriptor.Value.Name,
-            _ =>
-            {
-                var schema = Extractor.ExtractSchemas(descriptor.Value);
-                Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", descriptor.Value.Name, schema.JsonDefinition.Length);
-                return schema;
-            });
-
-        activeSpan.SetTag(Tags.SchemaDefinition, schema.JsonDefinition);
-        activeSpan.SetTag(Tags.SchemaId, schema.Hash.ToString(CultureInfo.InvariantCulture));
-        activeSpan.SetTag(Tags.SchemaWeight, weight.ToString(CultureInfo.InvariantCulture));
     }
 
     private sealed class Extractor

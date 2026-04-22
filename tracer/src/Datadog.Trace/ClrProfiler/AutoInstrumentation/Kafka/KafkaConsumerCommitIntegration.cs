@@ -3,10 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
 #nullable enable
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
@@ -34,24 +32,6 @@ public sealed class KafkaConsumerCommitIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
-        var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-        if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance != null)
-        {
-            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _, out var clusterId);
-
-            foreach (var offset in offsets)
-            {
-                if (offset.TryDuckCast<ITopicPartitionOffset>(out var item))
-                {
-                    var backlogTags = StringUtil.IsNullOrEmpty(clusterId)
-                        ? $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit"
-                        : $"consumer_group:{groupId},kafka_cluster_id:{clusterId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
-
-                    dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
-                }
-            }
-        }
-
         return CallTargetReturn.GetDefault();
     }
 }

@@ -63,7 +63,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
                     scope.Span,
-                    Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
                     message,
                     instance);

@@ -5,7 +5,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
@@ -29,27 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         public object? OnDelegateBegin<TConsumer, TResult>(object? sender, ref TConsumer consumer, ref TResult result)
         {
-            if (result.TryDuckCast<ICommittedOffsets>(out var committedOffsets))
-            {
-                var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-
-                string? clusterId = null;
-                if (consumer is not null)
-                {
-                    ConsumerCache.TryGetConsumerGroup(consumer, out var _, out var _, out clusterId);
-                }
-
-                for (var i = 0; i < committedOffsets?.Offsets.Count; i++)
-                {
-                    var item = committedOffsets.Offsets[i];
-                    var backlogTags = StringUtil.IsNullOrEmpty(clusterId)
-                        ? $"consumer_group:{GroupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit"
-                        : $"consumer_group:{GroupId},kafka_cluster_id:{clusterId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
-
-                    dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
-                }
-            }
-
             return null;
         }
     }

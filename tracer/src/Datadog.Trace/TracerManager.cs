@@ -15,7 +15,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
@@ -64,7 +63,6 @@ namespace Datadog.Trace
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -80,7 +78,6 @@ namespace Datadog.Trace
             ScopeManager = scopeManager;
             Statsd = statsd;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
-            DataStreamsManager = dataStreamsManager;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
@@ -164,8 +161,6 @@ namespace Datadog.Trace
         public ITelemetryController Telemetry { get; }
 
         public IDiscoveryService DiscoveryService { get; }
-
-        public DataStreamsManager DataStreamsManager { get; }
 
         public IRemoteConfigurationManager RemoteConfigurationManager { get; }
 
@@ -272,13 +267,6 @@ namespace Datadog.Trace
                     await oldManager.DiscoveryService.DisposeAsync().ConfigureAwait(false);
                 }
 
-                var dataStreamsReplaced = false;
-                if (oldManager.DataStreamsManager != newManager.DataStreamsManager && oldManager.DataStreamsManager is not null)
-                {
-                    dataStreamsReplaced = true;
-                    await oldManager.DataStreamsManager.DisposeAsync().ConfigureAwait(false);
-                }
-
                 var configurationManagerReplaced = false;
                 if (oldManager.RemoteConfigurationManager != newManager.RemoteConfigurationManager && oldManager.RemoteConfigurationManager is not null)
                 {
@@ -302,8 +290,8 @@ namespace Datadog.Trace
 
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, Discovery: {DiscoveryReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, discoveryReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -533,12 +521,6 @@ namespace Datadog.Trace
                     writer.WritePropertyName("inject_context_into_stored_procedures_enabled");
                     writer.WriteValue(instanceSettings.InjectContextIntoStoredProceduresEnabled);
 
-                    writer.WritePropertyName("data_streams_enabled");
-                    writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
-
-                    writer.WritePropertyName("data_streams_legacy_headers_enabled");
-                    writer.WriteValue(instanceSettings.IsDataStreamsLegacyHeadersEnabled);
-
                     writer.WritePropertyName("span_sampling_rules");
                     writer.WriteValue(instanceSettings.SpanSamplingRules);
 
@@ -681,13 +663,11 @@ namespace Datadog.Trace
                     var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DiscoveryService.");
                     var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing Data streams.");
-                    var dataStreamsTask = instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing RemoteConfigurationManager");
                     instance.RemoteConfigurationManager?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService).ConfigureAwait(false);
 
                     Log.Debug("Disposing Telemetry");
                     if (instance.Telemetry is { })

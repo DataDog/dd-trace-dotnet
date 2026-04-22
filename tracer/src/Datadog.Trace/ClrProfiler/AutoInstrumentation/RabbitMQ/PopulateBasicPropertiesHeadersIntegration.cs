@@ -94,13 +94,6 @@ public sealed class PopulateBasicPropertiesHeadersIntegration
         var context = new PropagationContext(span.Context, Baggage.Current);
         tracer.TracerManager.SpanContextPropagator.Inject(context, duckType.Headers, default(ContextPropagation));
 
-        RabbitMQIntegration.SetDataStreamsCheckpointOnProduce(
-            tracer,
-            span,
-            tags,
-            duckType.Headers,
-            int.TryParse(tags.MessageSize, out var bodyLength) ? bodyLength : 0);
-
         return new CallTargetReturn<TReturn?>(basicProperties);
     }
 }

@@ -8,12 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -28,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     internal static class RabbitMQIntegration
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
-        internal const int DefaultMaxMessageSize = 128 * 1024;
 
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.RabbitMQ;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
@@ -111,82 +107,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             };
         }
 
-        internal static long GetHeadersSize(IDictionary<string, object>? headers)
-        {
-            if (headers == null)
-            {
-                return 0;
-            }
-
-            long size = 0;
-            foreach (var pair in headers)
-            {
-                size += Encoding.UTF8.GetByteCount(pair.Key);
-                size += MessageSizeHelper.TryGetSize(pair.Value);
-            }
-
-            return size;
-        }
-
-        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize)
-        {
-            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
-            {
-                return;
-            }
-
-            try
-            {
-                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
-                var edgeTags = string.IsNullOrEmpty(tags.Exchange)
-                                   ?
-                                   // exchange can be empty for "direct"
-                                   new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" }
-                                   : new[] { "direction:out", $"exchange:{tags.Exchange}", string.IsNullOrEmpty(tags.RoutingKey) ? "has_routing_key:false" : "has_routing_key:true", "type:rabbitmq" };
-                var size = dataStreamsManager.IsInDefaultState ? messageSize : GetHeadersSize(headers) + messageSize;
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, size, 0);
-                // DSM context will not be injected in default state if its size exceeds 128kb
-                if (dataStreamsManager.IsInDefaultState && size > DefaultMaxMessageSize)
-                {
-                    return;
-                }
-
-                dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to set data streams checkpoint on produce");
-            }
-        }
-
-        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object>? headers, int messageSize, long messageTimestamp)
-        {
-            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
-            {
-                return;
-            }
-
-            try
-            {
-                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
-                var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
-                var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
-                span.SetDataStreamsCheckpoint(
-                    dataStreamsManager,
-                    CheckpointKind.Consume,
-                    edgeTags,
-                    GetHeadersSize(headers) + messageSize,
-                    messageTimestamp,
-                    pathwayContext);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to set data streams checkpoint on consume");
-            }
-        }
-
         internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IReadOnlyBasicProperties
             where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
@@ -242,15 +162,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 {
                     tags.MessageSize = body.Length.ToString() ?? "0";
                 }
-
-                var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
-                SetDataStreamsCheckpointOnConsume(
-                    Tracer.Instance,
-                    scope.Span,
-                    tags,
-                    basicProperties?.Headers,
-                    body?.Length ?? 0,
-                    timeInQueue);
             }
 
             return new CallTargetState(scope);

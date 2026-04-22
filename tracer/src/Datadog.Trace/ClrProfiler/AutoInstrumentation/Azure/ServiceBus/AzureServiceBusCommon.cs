@@ -9,12 +9,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
@@ -36,30 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
         public static bool TryGetMessage(object applicationProperties, out object? message)
             => ApplicationPropertiesToMessageMap.TryGetValue(applicationProperties, out message);
-
-        internal static long GetMessageSize<T>(T message)
-            where T : IServiceBusMessage
-        {
-            if (message.Instance is null)
-            {
-                return 0;
-            }
-
-            long size = message.Body.ToMemory().Length;
-
-            if (message.ApplicationProperties is null)
-            {
-                return size;
-            }
-
-            foreach (var pair in message.ApplicationProperties)
-            {
-                size += Encoding.UTF8.GetByteCount(pair.Key);
-                size += MessageSizeHelper.TryGetSize(pair.Value);
-            }
-
-            return size;
-        }
 
         internal static CallTargetState CreateSenderSpan(
             IServiceBusSender instance,

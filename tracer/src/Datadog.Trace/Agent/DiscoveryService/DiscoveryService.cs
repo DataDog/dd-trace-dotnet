@@ -32,7 +32,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedSymbolDbEndpoint = "symdb/v1/input";
         private const string SupportedConfigurationEndpoint = "v0.7/config";
         private const string SupportedStatsEndpoint = "v0.6/stats";
-        private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
         private const string SupportedEventPlatformProxyEndpointV2 = "evp_proxy/v2";
         private const string SupportedEventPlatformProxyEndpointV4 = "evp_proxy/v4";
         private const string SupportedTelemetryProxyEndpoint = "telemetry/proxy";
@@ -107,7 +106,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedSymbolDbEndpoint,
                 SupportedConfigurationEndpoint,
                 SupportedStatsEndpoint,
-                SupportedDataStreamsEndpoint,
                 SupportedEventPlatformProxyEndpointV2,
                 SupportedEventPlatformProxyEndpointV4,
                 SupportedTelemetryProxyEndpoint,
@@ -356,7 +354,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
             string? diagnosticsEndpoint = null;
             string? symbolDbEndpoint = null;
             string? statsEndpoint = null;
-            string? dataStreamsMonitoringEndpoint = null;
             string? eventPlatformProxyEndpoint = null;
             string? telemetryProxyEndpoint = null;
             string? tracerFlareEndpoint = null;
@@ -396,10 +393,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     {
                         statsEndpoint = endpoint;
                     }
-                    else if (endpoint.Equals(SupportedDataStreamsEndpoint, StringComparison.OrdinalIgnoreCase))
-                    {
-                        dataStreamsMonitoringEndpoint = endpoint;
-                    }
                     else if (eventPlatformProxyEndpoint is null && endpoint.Equals(SupportedEventPlatformProxyEndpointV2, StringComparison.OrdinalIgnoreCase))
                     {
                         eventPlatformProxyEndpoint = endpoint;
@@ -429,7 +422,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
                 statsEndpoint: statsEndpoint,
-                dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,

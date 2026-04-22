@@ -8,7 +8,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
@@ -63,14 +62,7 @@ internal sealed class AwsSqsHandlerCommon
             return;
         }
 
-        var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-        if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
-        {
-            var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
-            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-        }
-
-        ContextPropagation.InjectHeadersIntoMessage(tracer, requestProxy, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageRequest>.Instance);
+        ContextPropagation.InjectHeadersIntoMessage(tracer, requestProxy, scope.Span.Context, CachedMessageHeadersHelper<TSendMessageRequest>.Instance);
     }
 
     private static void InjectForBatch<TSendMessageBatchRequest>(Tracer tracer, TSendMessageBatchRequest request, Scope scope, string queueName)
@@ -81,18 +73,12 @@ internal sealed class AwsSqsHandlerCommon
             return;
         }
 
-        var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
         foreach (var e in requestProxy.Entries)
         {
             var entry = e.DuckCast<IContainsMessageAttributes>();
             if (entry != null)
             {
-                // this has no effect if DSM is disabled
-                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-                scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                // this needs to be done for context propagation even when DSM is disabled
-                // (when DSM is enabled, it injects the pathway context on top of the trace context)
-                ContextPropagation.InjectHeadersIntoMessage(tracer, entry, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageBatchRequest>.Instance);
+                ContextPropagation.InjectHeadersIntoMessage(tracer, entry, scope.Span.Context, CachedMessageHeadersHelper<TSendMessageBatchRequest>.Instance);
             }
         }
     }
@@ -143,36 +129,6 @@ internal sealed class AwsSqsHandlerCommon
     internal static TResponse AfterReceive<TResponse>(TResponse response, Exception? exception, in CallTargetState state)
         where TResponse : IReceiveMessageResponse
     {
-        if (response.Instance != null && response.Messages is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
-        {
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (dataStreamsManager is { IsEnabled: true })
-            {
-                var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:sqs" };
-                foreach (var o in response.Messages)
-                {
-                    var message = o.DuckCast<IMessage>();
-                    if (message == null)
-                    {
-                        continue; // should not happen
-                    }
-
-                    var sentTime = 0;
-                    if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
-                    {
-                        if (!int.TryParse(sentTimeStr, out sentTime))
-                        {
-                            sentTime = 0;
-                        }
-                    }
-
-                    var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
-                    var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
-                }
-            }
-        }
-
         state.Scope.DisposeWithException(exception);
         return response;
     }

@@ -14,7 +14,6 @@ using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -45,7 +44,6 @@ namespace Datadog.Trace.Ci
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -58,10 +56,10 @@ namespace Datadog.Trace.Ci
             telemetry.RecordTestOptimizationSettings(_settings);
             if (_testOptimizationTracerManagement.UseLockedTracerManager)
             {
-                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
+                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
             }
 
-            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
+            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
         }
 
         protected override TelemetrySettings CreateTelemetrySettings(TracerSettings settings)

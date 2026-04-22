@@ -377,6 +377,19 @@ Removed the WAF (Web Application Firewall) and most of AppSec. Only IAST-require
 |---|---|
 | **IAST Unit Tests** | **523/523 pass** |
 
+### WAF build infrastructure removal
+
+Removed WAF download and ruleset deployment from the Nuke build system:
+
+| Change | File |
+|---|---|
+| Removed `DependsOn(DownloadLibDdwaf)` and `DependsOn(CopyLibDdwaf)` from `BuildManagedTracerHome` and `BuildManagedTracerHomeR2R` | `tracer/build/_build/Build.cs` |
+| Made `DownloadLibDdwaf` and `CopyLibDdwaf` targets empty no-ops | `tracer/build/_build/Build.Steps.cs` |
+| Removed `libddwaf` package reference and all ruleset `<None Update>` entries | `tracer/test/Datadog.Trace.Security.IntegrationTests/Datadog.Trace.Security.IntegrationTests.csproj` |
+| Removed `AppSec/Waf/ConfigFiles/rule-set.json` content include and ruleset `<None Update>` entries | `tracer/test/Datadog.Trace.Security.Unit.Tests/Datadog.Trace.Security.Unit.Tests.csproj` |
+
+**Deleted 13 ruleset JSON files** from both security test projects: `ruleset.3.0.json`, `ruleset.3.0-full.json`, `ruleset.blocked.users.json`, `rasp-rule-set.json`, `remote-rules.json`, `remote-rules-override-blocking.json`, `wrong-tags-name-rule-set.json`, `wrong-tags-rule-set.json`, `rule-data1.json`, `rule-set-withschema.json`, `ruleset-withblockips.json`.
+
 ---
 
 ## Current Architecture

@@ -6,16 +6,11 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.ComponentModel;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -50,14 +45,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             Scope? messageScope = null;
 
             var tracer = Tracer.Instance;
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-             && tracer.TracerManager.DataStreamsManager.IsEnabled)
-            {
-                // Adding DSM to the send operation of ServiceBusMessageBatch - Step One:
-                // While we have access to the message object itself, create a mapping from the
-                // message application properties dictionary to the message object itself
-                AzureServiceBusCommon.SetMessage(message.ApplicationProperties, message.Instance);
-            }
 
             // Create TryAdd message spans for batch with links when enabled
             if (tracer.Settings.AzureServiceBusBatchLinksEnabled)

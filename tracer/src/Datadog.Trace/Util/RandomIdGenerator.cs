@@ -27,7 +27,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
 
 namespace Datadog.Trace.Util;
 

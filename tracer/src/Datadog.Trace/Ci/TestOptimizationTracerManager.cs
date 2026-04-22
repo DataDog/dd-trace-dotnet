@@ -12,7 +12,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -36,7 +35,6 @@ namespace Datadog.Trace.Ci
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -53,7 +51,6 @@ namespace Datadog.Trace.Ci
                 logSubmissionManager,
                 telemetry,
                 discoveryService,
-                dataStreamsManager,
                 gitMetadataTagsProvider,
                 traceSampler,
                 spanSampler,
@@ -152,7 +149,6 @@ namespace Datadog.Trace.Ci
                 DirectLogSubmissionManager logSubmissionManager,
                 ITelemetryController telemetry,
                 IDiscoveryService discoveryService,
-                DataStreamsManager dataStreamsManager,
                 IGitMetadataTagsProvider gitMetadataTagsProvider,
                 ITraceSampler traceSampler,
                 ISpanSampler spanSampler,
@@ -169,7 +165,6 @@ namespace Datadog.Trace.Ci
                 logSubmissionManager,
                 telemetry,
                 discoveryService,
-                dataStreamsManager,
                 gitMetadataTagsProvider,
                 traceSampler,
                 spanSampler,

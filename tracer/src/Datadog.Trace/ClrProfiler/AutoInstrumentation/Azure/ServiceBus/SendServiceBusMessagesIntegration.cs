@@ -7,10 +7,8 @@
 
 using System.Collections;
 using System.ComponentModel;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
@@ -44,25 +42,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         internal static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, IEnumerable messages, string activityName, TOperation operation)
             where TTarget : ITransportSender, IDuckType
         {
-            var tracer = Tracer.Instance;
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-             && tracer.TracerManager.DataStreamsManager.IsEnabled)
-            {
-                if (messages is not null)
-                {
-                    foreach (var message in messages)
-                    {
-                        if (message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage))
-                        {
-                            // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage> - Step One:
-                            // While we have access to the message object itself, create a mapping from the
-                            // message application properties dictionary to the message object itself
-                            AzureServiceBusCommon.SetMessage(serviceBusMessage.ApplicationProperties, message);
-                        }
-                    }
-                }
-            }
-
             return CallTargetState.GetDefault();
         }
     }

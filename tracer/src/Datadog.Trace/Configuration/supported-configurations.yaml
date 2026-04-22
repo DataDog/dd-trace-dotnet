@@ -468,25 +468,6 @@ supportedConfigurations:
     default: null
     product: CIVisibility
     documentation: Jenkins CI environment variable for custom trace ID correlation.
-  DD_DATA_STREAMS_ENABLED:
-  - implementation: B
-    type: boolean
-    default: 'true'
-    product: DataStreamsMonitoring
-    const_name: Enabled
-    documentation: |-
-      Enables data streams monitoring support
-      <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsMonitoringEnabled"/>
-  DD_DATA_STREAMS_LEGACY_HEADERS:
-  - implementation: A
-    type: boolean
-    default: 'false'
-    product: DataStreamsMonitoring
-    const_name: LegacyHeadersEnabled
-    documentation: |-
-      Configuration key for enabling legacy binary headers in Data Streams Monitoring.
-      false by default if DSM is in default state, true otherwise
-      <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
   DD_DBM_PROPAGATION_MODE:
   - implementation: A
     type: string

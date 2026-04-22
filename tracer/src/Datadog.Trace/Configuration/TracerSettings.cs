@@ -572,24 +572,6 @@ namespace Datadog.Trace.Configuration
                              .WithKeys(ConfigurationKeys.IpHeaderEnabled)
                              .AsBool(false);
 
-            // DSM is now enabled by default in non-serverless environments
-            IsDataStreamsMonitoringEnabled = config
-                                            .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                            .AsBool(
-                                                  !AwsInfo.Instance.IsAwsLambda &&
-                                                  !AzureInfo.Instance.IsAzureAppService &&
-                                                  !AzureInfo.Instance.IsAzureFunction &&
-                                                  !GcpInfo.Instance.IsCloudFunction);
-
-            IsDataStreamsMonitoringInDefaultState = config
-                                                    .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                                    .AsBool() == null;
-
-            // no legacy headers if we are in "enbaled by default" state
-            IsDataStreamsLegacyHeadersEnabled = config
-                                               .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
-                                               .AsBool(!IsDataStreamsMonitoringInDefaultState);
-
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
                                   .AsBool(false);
@@ -1197,26 +1179,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether data streams monitoring is enabled or not.
-        /// </summary>
-        internal bool IsDataStreamsMonitoringEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether data streams configuration is present or not (set to true or false).
-        /// </summary>
-        internal bool IsDataStreamsMonitoringInDefaultState { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether data streams schema extraction is enabled or not.
-        /// </summary>
-        internal bool IsDataStreamsSchemaExtractionEnabled => IsDataStreamsMonitoringEnabled && !IsDataStreamsMonitoringInDefaultState;
-
-        /// <summary>
-        /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
-        /// </summary>
-        internal bool IsDataStreamsLegacyHeadersEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the rare sampler is enabled or not.

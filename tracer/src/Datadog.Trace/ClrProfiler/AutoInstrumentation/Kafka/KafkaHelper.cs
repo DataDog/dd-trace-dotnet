@@ -8,11 +8,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -26,7 +23,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string BootstrapServersKey = "bootstrap.servers";
         internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
-        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
         private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
         private static bool _headersInjectionEnabled = true;
 
@@ -111,39 +107,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
-        private static long GetMessageSize<T>(T message)
-            where T : IMessage
-        {
-            if (((IDuckType)message).Instance is null)
-            {
-                return 0;
-            }
-
-            var size = MessageSizeHelper.TryGetSize(message.Key);
-            size += MessageSizeHelper.TryGetSize(message.Value);
-
-            if (message.Headers == null)
-            {
-                return size;
-            }
-
-            for (var i = 0; i < message.Headers.Count; i++)
-            {
-                var header = message.Headers[i];
-                size += Encoding.UTF8.GetByteCount(header.Key);
-                var value = header.GetValueBytes();
-                if (value != null)
-                {
-                    size += value.Length;
-                }
-            }
-
-            return size;
-        }
-
         internal static Scope? CreateConsumerScope(
             Tracer tracer,
-            DataStreamsManager dataStreamsManager,
             object consumer,
             string topic,
             Partition? partition,
@@ -170,7 +135,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 PropagationContext extractedContext = default;
-                PathwayContext? pathwayContext = null;
 
                 // Try to extract propagated context from headers
                 if (message?.Headers is not null)
@@ -184,18 +148,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Error extracting propagated headers from Kafka message");
-                    }
-
-                    if (dataStreamsManager.IsEnabled)
-                    {
-                        try
-                        {
-                            pathwayContext = dataStreamsManager.ExtractPathwayContext(headers);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error extracting PathwayContext from Kafka message");
-                        }
                     }
                 }
 
@@ -252,43 +204,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 span.SetTag(Tags.Measured, "1");
 
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-
-                if (dataStreamsManager.IsEnabled)
-                {
-                    // TODO: we could pool these arrays to reduce allocations
-                    // NOTE: the tags must be sorted in alphabetical order
-                    string[] edgeTags;
-                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
-                                       : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
-                    }
-                    else
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
-                                       : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
-                    }
-
-                    span.SetDataStreamsCheckpoint(
-                        dataStreamsManager,
-                        CheckpointKind.Consume,
-                        edgeTags,
-                        message?.Instance is null || dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message),
-                        tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
-                        pathwayContext);
-
-                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext); // remove eventual junk
-                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
-                    {
-                        // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
-                        // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
-                        // Note that this header only exists on the consume side, and Kafka never sees it.
-                        var base64PathwayContext = Convert.ToBase64String(BitConverter.GetBytes(span.Context.PathwayContext.Value.Hash.Value));
-                        message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
-                    }
-                }
             }
             catch (Exception ex)
             {
@@ -331,7 +246,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// Try to inject the prop
         /// </summary>
         /// <param name="span">Current span</param>
-        /// <param name="dataStreamsManager">The global data streams manager</param>
         /// <param name="topic">Topic name</param>
         /// <param name="message">The duck-typed Kafka Message object</param>
         /// <param name="producer">The Kafka producer instance, used to look up cluster_id from the cache</param>
@@ -339,7 +253,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <typeparam name="TMessage">The type of the duck-type proxy</typeparam>
         internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(
             Span span,
-            DataStreamsManager dataStreamsManager,
             string topic,
             TMessage message,
             object producer)
@@ -361,38 +274,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var context = new PropagationContext(span.Context, Baggage.Current);
                 Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, adapter);
-
-                if (dataStreamsManager.IsEnabled)
-                {
-                    ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
-
-                    string[] edgeTags;
-                    if (!StringUtil.IsNullOrEmpty(producerClusterId))
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? ["direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka"]
-                                       : ["direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka"];
-                    }
-                    else
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? DefaultProduceEdgeTags
-                                       : ["direction:out", $"topic:{topic}", "type:kafka"];
-                    }
-
-                    var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
-                    // produce is always the start of the edge, so defaultEdgeStartMs is always 0
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
-                    // DSM context should NOT be injected state if the message value size is <= DSM header size (~34 bytes).
-                    // This is needed to avoid situations when DSM context injection causes a significant
-                    // percentage increase in overall message size, leading to capacity issues on the kafka server.
-                    if (dataStreamsManager.IsInDefaultState && MessageSizeHelper.TryGetSize(message.Value) <= 34)
-                    {
-                        return;
-                    }
-
-                    dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
-                }
             }
             catch (Exception ex)
             {

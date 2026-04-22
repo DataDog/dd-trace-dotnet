@@ -17,7 +17,6 @@ internal sealed record AgentConfiguration
         string? symbolDbEndpoint,
         string? agentVersion,
         string? statsEndpoint,
-        string? dataStreamsMonitoringEndpoint,
         string? eventPlatformProxyEndpoint,
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
@@ -33,7 +32,6 @@ internal sealed record AgentConfiguration
         SymbolDbEndpoint = symbolDbEndpoint;
         AgentVersion = agentVersion;
         StatsEndpoint = statsEndpoint;
-        DataStreamsMonitoringEndpoint = dataStreamsMonitoringEndpoint;
         EventPlatformProxyEndpoint = eventPlatformProxyEndpoint;
         TelemetryProxyEndpoint = telemetryProxyEndpoint;
         TracerFlareEndpoint = tracerFlareEndpoint;
@@ -68,8 +66,6 @@ internal sealed record AgentConfiguration
     public string? AgentVersion { get; }
 
     public string? StatsEndpoint { get; }
-
-    public string? DataStreamsMonitoringEndpoint { get; }
 
     public string? EventPlatformProxyEndpoint { get; }
 

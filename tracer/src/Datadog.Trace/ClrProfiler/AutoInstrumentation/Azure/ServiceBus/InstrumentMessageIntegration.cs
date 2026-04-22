@@ -45,16 +45,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         {
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
             {
-                if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
-                {
-                    // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Two:
-                    // In between the OnMethodBegin and OnMethodEnd, a new Activity will be created to represent
-                    // the Azure Service Bus message. To access the active message that is being instrumented,
-                    // save the active message properties object to an AsyncLocal field. This will limit
-                    // our lookup to one AsyncLocal field and one static field
-                    AzureServiceBusCommon.ActiveMessageProperties.Value = properties;
-                }
-
                 // Inject tracing context into the final message properties
                 var activeScope = Tracer.Instance.ActiveScope;
                 if (activeScope?.Span?.Context is SpanContext spanContext && properties != null)

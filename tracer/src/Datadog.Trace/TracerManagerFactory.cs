@@ -9,7 +9,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
@@ -52,7 +51,6 @@ namespace Datadog.Trace
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
-                dataStreamsManager: null,
                 remoteConfigurationManager: null,
                 dynamicConfigurationManager: null,
                 tracerFlareManager: null,
@@ -74,7 +72,6 @@ namespace Datadog.Trace
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
@@ -118,8 +115,6 @@ namespace Datadog.Trace
                 settings.AzureAppServiceMetadata,
                 gitMetadataTagsProvider);
 
-            dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService);
-
             if (ShouldEnableRemoteConfiguration(settings))
             {
                 if (remoteConfigurationManager == null)
@@ -162,7 +157,6 @@ namespace Datadog.Trace
                 logSubmissionManager,
                 telemetry,
                 discoveryService,
-                dataStreamsManager,
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
@@ -202,7 +196,6 @@ namespace Datadog.Trace
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -212,7 +205,7 @@ namespace Datadog.Trace
             ISpanEventsManager spanEventsManager,
             ServiceRemappingHash serviceRemappingHash)
         {
-            return new TracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
+            return new TracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
         }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)

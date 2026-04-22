@@ -8,11 +8,8 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
@@ -56,25 +53,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
             where TResponse : IGetRecordsResponse, IDuckType
         {
-            if (response.Instance != null && response.Records is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
-            {
-                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreamsManager is { IsEnabled: true })
-                {
-                    var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:kinesis" };
-                    foreach (var o in response.Records)
-                    {
-                        var record = o.DuckCast<IRecord>();
-                        if (record == null)
-                        {
-                            continue; // should not happen
-                        }
-
-                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                    }
-                }
-            }
-
             state.Scope.DisposeWithException(exception);
             return response;
         }

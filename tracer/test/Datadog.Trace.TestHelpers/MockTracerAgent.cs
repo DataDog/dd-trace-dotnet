@@ -22,7 +22,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -79,8 +78,6 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
 
-        public IImmutableList<MockDataStreamsPayload> DataStreams { get; private set; } = ImmutableList<MockDataStreamsPayload>.Empty;
-
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public IImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)> TracerFlareRequests { get; private set; } = ImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)>.Empty;
@@ -101,8 +98,6 @@ namespace Datadog.Trace.TestHelpers
         public AgentConfiguration Configuration { get; set; }
 
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
-
-        public IImmutableList<NameValueCollection> DataStreamsRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
 
@@ -300,50 +295,6 @@ namespace Datadog.Trace.TestHelpers
             return stats;
         }
 
-        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
-            int timeoutInMilliseconds,
-            Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
-        {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
-
-            IImmutableList<MockDataStreamsPayload> stats = ImmutableList<MockDataStreamsPayload>.Empty;
-
-            while (DateTime.UtcNow < deadline)
-            {
-                stats = DataStreams;
-
-                if (waitFunc(stats))
-                {
-                    break;
-                }
-
-                await Task.Delay(250);
-            }
-
-            return stats;
-        }
-
-        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsPointsAsync(
-            int statsCount,
-            int timeoutInMilliseconds = 20000)
-        {
-            return await WaitForDataStreamsAsync(
-                timeoutInMilliseconds,
-                (stats) =>
-                {
-                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) >= statsCount;
-                });
-        }
-
-        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
-            int payloadCount,
-            int timeoutInMilliseconds = 20000)
-        {
-            return await WaitForDataStreamsAsync(
-                timeoutInMilliseconds,
-                (stats) => stats.Count == payloadCount);
-        }
-
         /// <summary>
         /// Wait for the given number of probe snapshots to appear.
         /// </summary>
@@ -539,11 +490,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 HandlePotentialRemoteConfig(request);
                 responseType = MockTracerResponseType.RemoteConfig;
-            }
-            else if (request.PathAndQuery.StartsWith("/v0.1/pipeline_stats"))
-            {
-                HandlePotentialDataStreams(request);
-                responseType = MockTracerResponseType.DataStreams;
             }
             else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/") || request.PathAndQuery.StartsWith("/evp_proxy/v4/"))
             {
@@ -812,46 +758,6 @@ namespace Datadog.Trace.TestHelpers
                     var body = request.ReadStreamBody();
                     var rc = Encoding.UTF8.GetString(body);
                     RemoteConfigRequests.Enqueue(rc);
-                }
-                catch (Exception ex)
-                {
-                    var message = ex.Message.ToLowerInvariant();
-
-                    if (message.Contains("beyond the end of the stream"))
-                    {
-                        // Accept call is likely interrupted by a dispose
-                        // Swallow the exception and let the test finish
-                        return;
-                    }
-
-                    throw;
-                }
-            }
-        }
-
-        private void HandlePotentialDataStreams(MockHttpRequest request)
-        {
-            if (ShouldDeserializeTraces && request.ContentLength >= 1)
-            {
-                try
-                {
-                    var body = request.ReadStreamBody();
-
-                    var dataStreamsPayload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(body);
-                    var headerCollection = new NameValueCollection();
-                    foreach (var header in request.Headers)
-                    {
-                        foreach (var value in header.Value)
-                        {
-                            headerCollection.Add(header.Key, value);
-                        }
-                    }
-
-                    lock (this)
-                    {
-                        DataStreams = DataStreams.Add(dataStreamsPayload);
-                        DataStreamsRequestHeaders = DataStreamsRequestHeaders.Add(headerCollection);
-                    }
                 }
                 catch (Exception ex)
                 {

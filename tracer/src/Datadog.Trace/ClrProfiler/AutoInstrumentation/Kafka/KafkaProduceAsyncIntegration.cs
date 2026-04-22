@@ -54,7 +54,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
                     scope.Span,
-                    Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
                     message,
                     instance);
@@ -97,16 +96,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     tags.Partition = deliveryResult.Partition.ToString();
                     tags.Offset = deliveryResult.Offset.ToString();
-
-                    var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                    if (dataStreams.IsEnabled)
-                    {
-                        var backlogTags = tags.ClusterId is null
-                            ? $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce"
-                            : $"kafka_cluster_id:{tags.ClusterId},partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce";
-
-                        dataStreams.TrackBacklog(backlogTags, deliveryResult.Offset.Value);
-                    }
                 }
             }
 

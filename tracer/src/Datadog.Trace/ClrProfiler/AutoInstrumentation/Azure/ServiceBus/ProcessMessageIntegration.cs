@@ -5,14 +5,10 @@
 
 #nullable enable
 
-using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -32,8 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class ProcessMessageIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessMessageIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -47,55 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             where TTarget : IReceiverManager
             where TMessage : IServiceBusReceivedMessage
         {
-            // Do not create a span, this will automatically be created by the Azure.Messaging.ServiceBus ActivitySource(s)
-            // when the following requirements are met:
-            // - AzureServiceBus integration enabled
-            // - DD_TRACE_OTEL_ENABLED=true
-            var tracer = Tracer.Instance;
-            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && tracer.InternalActiveScope?.Span is Span span
-                && dataStreamsManager.IsEnabled)
-            {
-                PathwayContext? pathwayContext = null;
-
-                if (message.ApplicationProperties is not null)
-                {
-                    var headers = new AzureHeadersCollectionAdapter(message.ApplicationProperties);
-
-                    try
-                    {
-                        pathwayContext = dataStreamsManager.ExtractPathwayContextAsBase64String(headers);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting PathwayContext from Azure Service Bus message");
-                    }
-                }
-
-                var consumeTime = span.StartTime.UtcDateTime;
-                var produceTime = message.EnqueuedTime.UtcDateTime;
-                var messageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
-                span.Tags.SetMetric(Trace.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
-
-                var namespaceString = instance.Processor.EntityPath;
-
-                // TODO: we could pool these arrays to reduce allocations
-                // NOTE: the tags must be sorted in alphabetical order
-                var edgeTags = string.IsNullOrEmpty(namespaceString)
-                                    ? new[] { "direction:in", "type:servicebus" }
-                                    : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
-                var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
-                span.SetDataStreamsCheckpoint(
-                    dataStreamsManager,
-                    CheckpointKind.Consume,
-                    edgeTags,
-                    msgSize,
-                    (long)messageQueueTimeMs,
-                    pathwayContext);
-            }
-
             return CallTargetState.GetDefault();
         }
     }

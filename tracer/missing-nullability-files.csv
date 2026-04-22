@@ -70,7 +70,6 @@ src/Datadog.Trace/Configuration/IntegrationRegistry.cs
 src/Datadog.Trace/Configuration/TracerSettingsConstants.cs
 src/Datadog.Trace/DatabaseMonitoring/MultiPartIdentifier.cs
 src/Datadog.Trace/DatabaseMonitoring/VendoredSqlHelpers.cs
-src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/EndpointFeatureProxy.cs
@@ -194,9 +193,6 @@ src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs
 src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs
-src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsHttpHeaderNames.cs
-src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsTransportStrategy.cs
-src/Datadog.Trace/DataStreamsMonitoring/Utils/BinaryPrimitivesHelper.cs
 src/Datadog.Trace/Headers/Ip/ExtractedHeadersAndIpInfos.cs
 src/Datadog.Trace/Headers/Ip/IpInfo.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/BufferContent.cs

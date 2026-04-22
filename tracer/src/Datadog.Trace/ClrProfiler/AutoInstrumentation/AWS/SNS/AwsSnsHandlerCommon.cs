@@ -4,10 +4,8 @@
 // </copyright>
 
 #nullable enable
-using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
@@ -36,14 +34,9 @@ internal sealed class AwsSnsHandlerCommon
 
         if (scope?.Span.Context is { } context && !string.IsNullOrEmpty(topicName))
         {
-            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            // avoid allocation if edgeTags are not going to be used
-            var edgeTags = dataStreamsManager is { IsEnabled: true } ? ["direction:out", $"topic:{topicName}", "type:sns"] : Array.Empty<string>();
-
             if (sendType == SendType.SingleMessage)
             {
-                scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                ContextPropagation.InjectHeadersIntoMessage(tracer, request.DuckCast<IContainsMessageAttributes>(), context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                ContextPropagation.InjectHeadersIntoMessage(tracer, request.DuckCast<IContainsMessageAttributes>(), context, CachedMessageHeadersHelper<TPublishRequest>.Instance);
             }
             else if (sendType == SendType.Batch)
             {
@@ -57,8 +50,7 @@ internal sealed class AwsSnsHandlerCommon
 
                         if (entry != null)
                         {
-                            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                            ContextPropagation.InjectHeadersIntoMessage(tracer, entry, context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                            ContextPropagation.InjectHeadersIntoMessage(tracer, entry, context, CachedMessageHeadersHelper<TPublishRequest>.Instance);
                         }
                     }
                 }

@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Datadog.Trace.Ci;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -149,7 +148,6 @@ namespace Datadog.Trace
             if (parent is SpanContext spanContext)
             {
                 _rawTraceId = spanContext._rawTraceId ?? rawTraceId;
-                PathwayContext = spanContext.PathwayContext;
             }
             else
             {
@@ -292,8 +290,6 @@ namespace Datadog.Trace
         /// to allow for the re-parenting of spans in cases where spans in distributed traces have missing spans.
         /// </summary>
         internal string LastParentId { get; set; }
-
-        internal PathwayContext? PathwayContext { get; private set; }
 
         /// <summary>
         /// Gets or sets the source that set the service name on this span.
@@ -488,34 +484,6 @@ namespace Datadog.Trace
 
             var propagatedTags = PrepareTagsForPropagation();
             return propagatedTags?.ToPropagationHeader(headerMaxLength);
-        }
-
-        /// <summary>
-        /// Sets a DataStreams checkpoint
-        /// </summary>
-        /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
-        /// <param name="checkpointKind">The type of the checkpoint</param>
-        /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
-        /// <param name="payloadSizeBytes">Payload size in bytes</param>
-        /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
-        /// <param name="parent">The parent context, if known</param>
-        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent)
-        {
-            if (manager != null)
-            {
-                PathwayContext = manager.SetCheckpoint(parent, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
-            }
-        }
-
-        /// <summary>
-        /// There shouldn't be any need to manually set the pathway context to a known value,
-        /// except in the case where messages are consumed in batch, and then processed individually to produce more messages,
-        /// in which case we need to recover the consume checkpoint so that the produce checkpoint is properly linked to it.
-        /// Kafka is the only integration offering that feature for now.
-        /// </summary>
-        internal void ManuallySetPathwayContextToPairMessages(PathwayContext? pathwayContext)
-        {
-            PathwayContext = pathwayContext;
         }
 
         internal static class Keys

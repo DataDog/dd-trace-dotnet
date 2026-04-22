@@ -67,7 +67,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var tracer = Tracer.Instance;
                 Scope scope = KafkaHelper.CreateConsumerScope(
                     tracer,
-                    tracer.TracerManager.DataStreamsManager,
                     instance,
                     consumeResult.Topic,
                     consumeResult.Partition,

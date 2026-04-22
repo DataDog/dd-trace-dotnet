@@ -14,7 +14,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.Ci;
-using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using VerifyTests;
@@ -322,23 +321,6 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public static void AddDataStreamsScrubber(this VerifySettings settings)
-        {
-            settings.ModifySerialization(
-                _ =>
-                {
-                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
-                        x => x.EdgeLatency,
-                        (_, v) => v?.Length == 0 ? v : new byte[] { 0xFF });
-                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
-                        x => x.PathwayLatency,
-                        (_, v) => v?.Length == 0 ? v : new byte[] { 0xFF });
-                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
-                        x => x.PayloadSize,
-                        (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
-                });
-        }
-
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
         {
             var value = builder.ToString();
@@ -392,6 +374,9 @@ namespace Datadog.Trace.TestHelpers
         // Based on https://github.com/VerifyTests/Verify.DiffPlex/blob/9f9f2a18f35074680be47c9043e95d1857e457e0/src/Verify.DiffPlex/VerifyDiffPlex.cs
         public static class VerifyDiffPlex
         {
+            /// <summary>
+            /// OutputType.
+            /// </summary>
             public enum OutputType
             {
                 Full,

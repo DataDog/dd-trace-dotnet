@@ -98,11 +98,8 @@ internal abstract class LambdaCommon
 
         try
         {
-            await Task.WhenAll(
-                Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
-                    .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)),
-                Tracer.Instance.TracerManager.DataStreamsManager.FlushAsync()
-                    .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)))
+            await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
                 .ConfigureAwait(false);
         }
         catch (Exception ex)

@@ -104,17 +104,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     {
                         scope.Span.SetException(exception);
                     }
-
-                    if (basicProperties != null && tags is not null)
-                    {
-                        RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
-                            Tracer.Instance,
-                            scope.Span,
-                            tags,
-                            basicProperties.Headers,
-                            basicGetResult.Body?.Length ?? 0,
-                            basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0);
-                    }
                 }
             }
 

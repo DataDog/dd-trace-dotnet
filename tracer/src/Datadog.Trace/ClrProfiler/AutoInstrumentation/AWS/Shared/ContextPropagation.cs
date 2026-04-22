@@ -8,7 +8,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
@@ -17,17 +16,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
     {
         internal const string InjectionKey = "_datadog";
 
-        private static void Inject(Tracer tracer, PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
+        private static void Inject(Tracer tracer, PropagationContext context, IDictionary messageAttributes, IMessageHeadersHelper messageHeadersHelper)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire();
             sb.Append('{');
             tracer.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
-
-            if (context.SpanContext?.PathwayContext is { } pathwayContext)
-            {
-                dataStreamsManager?.InjectPathwayContext(pathwayContext, AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(sb));
-            }
 
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
@@ -36,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             messageAttributes[InjectionKey] = messageHeadersHelper.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage(Tracer tracer, IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
+        public static void InjectHeadersIntoMessage(Tracer tracer, IContainsMessageAttributes carrier, SpanContext spanContext, IMessageHeadersHelper messageHeadersHelper)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -53,8 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                 foreach (var attribute in carrier.MessageAttributes.Keys)
                 {
                     if (attribute is string attributeName &&
-                        (attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase)
-                            || attributeName.Equals(DataStreamsPropagationHeaders.PropagationKey, StringComparison.OrdinalIgnoreCase)))
+                        attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase))
                     {
 #if !NETCOREAPP2_1_OR_GREATER
                         attributesToRemove ??= new List<string>();
@@ -81,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             if (carrier.MessageAttributes.Count < 10)
             {
                 var context = new PropagationContext(spanContext, Baggage.Current);
-                Inject(tracer, context, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
+                Inject(tracer, context, carrier.MessageAttributes, messageHeadersHelper);
             }
         }
 

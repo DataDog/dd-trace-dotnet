@@ -8,7 +8,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
@@ -41,15 +40,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
             var scope = IbmMqHelper.CreateProducerScope(Tracer.Instance, instance, msg);
             if (scope is not null)
             {
-                var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreams.IsEnabled && (instance).Instance != null && (msg).Instance != null)
-                {
-                    var queueName = IbmMqHelper.SanitizeQueueName(instance.Name);
-                    var edgeTags = new[] { "direction:out", $"topic:{queueName}", $"type:{IbmMqConstants.QueueType}" };
-                    scope.Span.SetDataStreamsCheckpoint(dataStreams, CheckpointKind.Produce, edgeTags, msg.MessageLength, 0);
-                    dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, IbmMqHelper.GetHeadersAdapter(msg));
-                }
-
                 return new CallTargetState(scope);
             }
 
