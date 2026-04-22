@@ -34,19 +34,23 @@ UnwindTracersProvider& UnwindTracersProvider::GetInstance()
 
 UnwindTracersProvider::ScopedTracer UnwindTracersProvider::GetTracer()
 {
-    return ScopedTracer(*this);
+    return ScopedTracer(this);
 }
 
-UnwindTracersProvider::ScopedTracer::ScopedTracer(UnwindTracersProvider& provider)
-    : _provider(provider), _node(_provider.AcquireTracer())
+UnwindTracersProvider::ScopedTracer::ScopedTracer(UnwindTracersProvider* provider)
+    : _provider(provider)
 {
+    if (_provider != nullptr)
+    {
+        _node = _provider->AcquireTracer();
+    }
 }
 
 UnwindTracersProvider::ScopedTracer::~ScopedTracer()
 {
-    if (_node != nullptr)
+    if (_provider != nullptr && _node != nullptr)
     {
-        _provider.ReleaseTracer(_node);
+        _provider->ReleaseTracer(_node);
     }
 }
 

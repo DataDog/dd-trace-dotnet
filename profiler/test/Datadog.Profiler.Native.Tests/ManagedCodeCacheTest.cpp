@@ -349,6 +349,91 @@ TEST_F(ManagedCodeCacheTest, GetFunctionId_GetFunctionFromIPRaisesAccessViolatio
 }
 #endif
 
+// Test: IsManaged is signal-safe - it must return std::nullopt rather than block
+// when another thread holds the writer lock on the pages mutex. This guards the
+// contract relied on by the HybridUnwinder in a signal handler on ARM64.
+TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsPagesMutex_ReturnsNullopt) {
+    FunctionID testFuncId = 321;
+    uintptr_t codeStart = 0xC000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId);
+    WaitForWorkerThread();
+
+    // Sanity: with no contention, IsManaged returns a concrete value.
+    auto baseline = cache->IsManaged(codeStart + 0x50);
+    ASSERT_TRUE(baseline.has_value());
+    EXPECT_TRUE(baseline.value());
+
+    // Simulate signal-handler contention: another thread holds the pages mutex
+    // exclusively. IsManaged must fail the try_to_lock and return std::nullopt
+    // instead of blocking (which would deadlock if called from a signal handler).
+    std::atomic<bool> writerHoldsLock{false};
+    std::atomic<bool> readerDone{false};
+    std::thread writer([&]() {
+        auto lock = cache->LockPagesMutexExclusiveForTest();
+        writerHoldsLock.store(true);
+        // Hold the lock until the reader side of the test has observed the nullopt.
+        while (!readerDone.load())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+
+    // Wait for the writer to actually hold the lock before probing.
+    while (!writerHoldsLock.load())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    auto contended = cache->IsManaged(codeStart + 0x50);
+    EXPECT_FALSE(contended.has_value())
+        << "IsManaged must return nullopt under writer-lock contention so the "
+           "signal handler can back off instead of deadlocking.";
+
+    readerDone.store(true);
+    writer.join();
+
+    // Sanity: once contention clears, IsManaged resumes normal behavior.
+    auto afterRelease = cache->IsManaged(codeStart + 0x50);
+    ASSERT_TRUE(afterRelease.has_value());
+    EXPECT_TRUE(afterRelease.value());
+}
+
+// Test: IsManaged must also return nullopt when the writer holds the modules
+// mutex exclusively and the probed IP is not in any JIT page (i.e. the code path
+// falls through to IsCodeInR2RModule(ip, /*signalSafe*/true)).
+TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsModulesMutex_ReturnsNullopt) {
+    // Probe an IP that is not covered by any registered JIT range, so IsManaged
+    // falls through to IsCodeInR2RModule which try_to_locks _modulesMutex.
+    const uintptr_t ipOutsideJit = 0xDEADBEEF;
+
+    std::atomic<bool> writerHoldsLock{false};
+    std::atomic<bool> readerDone{false};
+    std::thread writer([&]() {
+        auto lock = cache->LockModulesMutexExclusiveForTest();
+        writerHoldsLock.store(true);
+        while (!readerDone.load())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+
+    while (!writerHoldsLock.load())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    auto contended = cache->IsManaged(ipOutsideJit);
+    EXPECT_FALSE(contended.has_value())
+        << "IsManaged must return nullopt when the modules-mutex writer is active "
+           "and the IP is not in any JIT page (R2R fallback path).";
+
+    readerDone.store(true);
+    writer.join();
+}
+
 // Test: IsManaged falls back to R2R module check when IP is not in the JIT page map
 TEST_F(ManagedCodeCacheTest, IsManaged_IPInR2RModule_NotInPageMap_ReturnsTrue) {
     // Register an R2R module range directly (bypassing PE parsing)
