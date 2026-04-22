@@ -109,7 +109,6 @@ public class SmokeTestImageDigests
             var atIndex = image.IndexOf('@');
             if (atIndex < 0)
             {
-                // No digest - store as-is (maps to itself)
                 const string message = "Missing sha256 digest for service {ServiceName} ({Image}). "
                                      + "Add entries for these images to smoke-test-images.docker-compose.yml, and resolve their digests with:\n"
                                      + "  docker buildx imagetools inspect <image> --format '{{json .Manifest.Digest}}'";
