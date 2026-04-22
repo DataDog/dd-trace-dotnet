@@ -6,6 +6,7 @@
 #nullable enable
 using System.Threading.Tasks;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 
@@ -14,6 +15,8 @@ internal interface IDataStreamsWriter
     void Add(in StatsPoint point);
 
     void AddBacklog(in BacklogPoint point);
+
+    void AddTransaction(in DataStreamsTransactionInfo transaction);
 
     Task FlushAsync();
 

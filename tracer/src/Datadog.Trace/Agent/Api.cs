@@ -1,4 +1,4 @@
-// <copyright file="Api.cs" company="Datadog">
+﻿// <copyright file="Api.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -98,13 +99,14 @@ namespace Datadog.Trace.Agent
 
         public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 
-        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         {
             _log.Debug("Sending stats to the Datadog Agent.");
 
-            var state = new SendStatsState(stats, bucketDuration);
+            var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
-            return SendWithRetry(_statsEndpoint, _sendStats, state);
+            // We are supposed to be fire and forget for these stats, with no retries
+            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0);
         }
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
@@ -138,10 +140,9 @@ namespace Datadog.Trace.Agent
             return false;
         }
 
-        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state)
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5)
         {
             // retry up to 5 times with exponential back-off
-            var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
@@ -217,6 +218,11 @@ namespace Datadog.Trace.Agent
             IApiResponse response = null;
 
             request.AddContainerMetadataHeaders(_containerMetadata);
+
+            if (state.TracerObfuscationVersion > 0)
+            {
+                request.AddHeader("Datadog-Obfuscation-Version", state.TracerObfuscationVersion.ToString(CultureInfo.InvariantCulture));
+            }
 
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
@@ -441,11 +447,13 @@ namespace Datadog.Trace.Agent
         {
             public readonly StatsBuffer Stats;
             public readonly long BucketDuration;
+            public readonly int TracerObfuscationVersion;
 
-            public SendStatsState(StatsBuffer stats, long bucketDuration)
+            public SendStatsState(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
             {
                 Stats = stats;
                 BucketDuration = bucketDuration;
+                TracerObfuscationVersion = tracerObfuscationVersion;
             }
         }
     }

@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: MSTest.TestFramework -->
     <!--    Assembly: MSTest.TestFramework -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestFramework/4.1.0 -->
-    <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestFramework/4.2.1 -->
+    <PackageReference Include="MSTest.TestFramework" Version="4.2.1" />
   </ItemGroup>
 
 </Project>

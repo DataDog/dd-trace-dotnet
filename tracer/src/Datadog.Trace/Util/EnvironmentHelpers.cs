@@ -41,7 +41,7 @@ internal static class EnvironmentHelpers
     /// <summary>
     /// Safe wrapper around Environment.MachineName
     /// </summary>
-    /// <returns>The value of <see cref="Environment.MachineName"/>, or null if an error occured</returns>
+    /// <returns>The value of <see cref="Environment.MachineName"/>, or null if an error occurred</returns>
     public static string? GetMachineName()
     {
         try
@@ -62,7 +62,7 @@ internal static class EnvironmentHelpers
     /// </summary>
     /// <param name="key">Name of the environment variable to fetch</param>
     /// <param name="defaultValue">Value to return in case of error</param>
-    /// <returns>The value of the environment variable, or the default value if an error occured</returns>
+    /// <returns>The value of the environment variable, or the default value if an error occurred</returns>
     public static string? GetEnvironmentVariable(string key, string? defaultValue = null)
     {
         try
@@ -83,7 +83,7 @@ internal static class EnvironmentHelpers
     /// <summary>
     /// Safe wrapper around Environment.GetEnvironmentVariables
     /// </summary>
-    /// <returns>A dictionary that contains all environment variables or an empty dictionary if an error occured</returns>
+    /// <returns>A dictionary that contains all environment variables or an empty dictionary if an error occurred</returns>
     public static IDictionary GetEnvironmentVariables()
     {
         try

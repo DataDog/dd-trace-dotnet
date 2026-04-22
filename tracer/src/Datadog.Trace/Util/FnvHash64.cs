@@ -90,7 +90,7 @@ internal static class FnvHash64
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
     public static ulong GenerateHash(byte[] data, Version version)
-        => GenerateHash(data, version, OffsetBasis);
+        => GenerateHash(data, 0, data.Length, version, OffsetBasis);
 
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>.
@@ -99,16 +99,32 @@ internal static class FnvHash64
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
     public static ulong GenerateHash(byte[] data, Version version, ulong initialHash)
+        => GenerateHash(data, 0, data.Length, version, initialHash);
+
+    /// <summary>
+    /// Generates the 64-bit FNV hash of a region of <paramref name="data"/> using hash version <paramref name="version"/>.
+    /// </summary>
+    /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
+    public static ulong GenerateHash(byte[] data, int offset, int count, Version version)
+        => GenerateHash(data, offset, count, version, OffsetBasis);
+
+    /// <summary>
+    /// Generates the 64-bit FNV hash of a region of <paramref name="data"/> using hash version <paramref name="version"/>.
+    /// Appends the hash to the existing value <paramref name="initialHash"/>. Equivalent to concatenating
+    /// the two data values and subsequently calling GenerateHash.
+    /// </summary>
+    /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
+    public static ulong GenerateHash(byte[] data, int offset, int count, Version version, ulong initialHash)
         => version == Version.V1
-               ? GenerateV1Hash(data, initialHash)
-               : GenerateV1AHash(data, initialHash);
+               ? GenerateV1Hash(data, offset, count, initialHash)
+               : GenerateV1AHash(data, offset, count, initialHash);
 
 #if NETCOREAPP
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>.
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
-    public static ulong GenerateHash(Span<byte> data, Version version)
+    public static ulong GenerateHash(ReadOnlySpan<byte> data, Version version)
         => GenerateHash(data, version, OffsetBasis);
 
     /// <summary>
@@ -117,38 +133,40 @@ internal static class FnvHash64
     /// the two data values and subsequently calling GenerateHash.
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
-    public static ulong GenerateHash(Span<byte> data, Version version, ulong initialHash)
+    public static ulong GenerateHash(ReadOnlySpan<byte> data, Version version, ulong initialHash)
         => version == Version.V1
                ? GenerateV1Hash(data, initialHash)
                : GenerateV1AHash(data, initialHash);
 #endif
 
-    private static ulong GenerateV1Hash(byte[] bytes, ulong hash)
+    private static ulong GenerateV1Hash(byte[] bytes, int offset, int count, ulong hash)
     {
         // for each octet_of_data to be hashed
-        foreach (var b in bytes)
+        var max = offset + count;
+        for (var i = offset; i < max; i++)
         {
             unchecked
             {
                 // hash = hash * FNV_prime
                 hash *= FnvPrime;
                 // hash = hash xor octet_of_data
-                hash ^= b;
+                hash ^= bytes[i];
             }
         }
 
         return hash;
     }
 
-    private static ulong GenerateV1AHash(byte[] bytes, ulong hash)
+    private static ulong GenerateV1AHash(byte[] bytes, int offset, int count, ulong hash)
     {
         // for each octet_of_data to be hashed
-        foreach (var b in bytes)
+        var max = offset + count;
+        for (var i = offset; i < max; i++)
         {
             unchecked
             {
                 // hash = hash xor octet_of_data
-                hash ^= b;
+                hash ^= bytes[i];
                 // hash = hash * FNV_prime
                 hash *= FnvPrime;
             }

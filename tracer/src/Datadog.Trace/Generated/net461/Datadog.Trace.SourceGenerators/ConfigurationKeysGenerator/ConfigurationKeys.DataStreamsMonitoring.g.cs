@@ -29,5 +29,11 @@ internal static partial class ConfigurationKeys
         /// <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
         /// </summary>
         public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";
+
+        /// <summary>
+        /// Configuration key for transaction extractors in Data Streams Monitoring.
+        /// <see cref="Datadog.Trace.Configuration.TracerSettings.DataStreamsTransactionExtractors"/>
+        /// </summary>
+        public const string TransactionExtractors = "DD_DATA_STREAMS_TRANSACTION_EXTRACTORS";
     }
 }

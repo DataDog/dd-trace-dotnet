@@ -6,9 +6,13 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
@@ -42,6 +46,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     integrationId,
                     out var tags);
 
+                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+                if (dataStreamsManager.IsTransactionTrackingEnabled)
+                {
+                    var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders);
+                    if (extractors != null)
+                    {
+                        foreach (var extractor in extractors)
+                        {
+                            if (headers.TryGetValues(extractor.Value, out var headerValues))
+                            {
+                                foreach (var headerValue in headerValues)
+                                {
+                                    scope?.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (scope is not null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
@@ -51,7 +74,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
-                    return new CallTargetState(scope);
+
+                    bool executeOnDownstreamResponse = false;
+#if NETCOREAPP
+                    if (requestMessage != null)
+                    {
+                        var rootSpan = tracer.InternalActiveScope?.Root?.Span;
+                        try
+                        {
+                            executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(requestMessage, scope.Span.SpanId, rootSpan);
+                        }
+                        catch (AppSec.BlockException ex)
+                        {
+                            scope.DisposeWithException(ex);
+                            throw;
+                        }
+                    }
+#endif
+
+                    return new CallTargetState(scope, executeOnDownstreamResponse);
                 }
             }
 
@@ -78,6 +119,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;
+                    if (state.State is true)
+                    {
+                        RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+                    }
 #else
                 if (responseMessage.Instance is not null)
                 {

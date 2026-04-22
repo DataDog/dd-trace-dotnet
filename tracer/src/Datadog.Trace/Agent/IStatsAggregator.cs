@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.SourceGenerators;
 
@@ -41,14 +42,15 @@ namespace Datadog.Trace.Agent
         void AddRange(in SpanCollection spans);
 
         /// <summary>
-        /// Runs a series of samplers over the entire trace chunk
+        /// Apply normalization, filtering, obfuscation, and sampling, to understand if the
+        /// trace should be kept
         /// </summary>
-        /// <param name="spans">The trace chunk to sample</param>
-        /// <returns>True if the trace chunk should be sampled, false otherwise.</returns>
-        bool ShouldKeepTrace(in SpanCollection spans);
-
-        SpanCollection ProcessTrace(in SpanCollection trace);
+        /// <param name="spans">The spans chunk to process</param>
+        /// <returns>The keep state of the chunk after processing</returns>
+        TraceKeepState ProcessTrace(ref SpanCollection spans);
 
         Task DisposeAsync();
+
+        StatsAggregationKey BuildKey(Span span);
     }
 }
