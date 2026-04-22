@@ -116,8 +116,10 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noe
     // Level 2: Check if the IP is within a module code range
     
     auto isR2r = IsCodeInR2RModule(ip, false);
-    // in that context (in GetfunctionId), IsCodeInR2RModule always returns
-    // an optional with a value (cf. false in the call to IsCodeInR2RModule)
+    // GetFunctionId is NOT signal-safe: we pass signalSafe=false, so
+    // IsCodeInR2RModule takes the shared lock unconditionally and always
+    // returns an engaged optional. The !has_value() guard below is defence
+    // in depth in case IsCodeInR2RModule ever grows a new failure path.
     if (!isR2r.has_value() || !isR2r.value())
     {
         // if it has value `false`, just return InvalidFunctionId

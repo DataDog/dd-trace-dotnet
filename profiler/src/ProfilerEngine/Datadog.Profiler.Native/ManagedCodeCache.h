@@ -134,10 +134,13 @@ private:
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
     void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
+
+// Expose the helpers below to tests without duplicating the declarations.
 #ifdef DD_TEST
 public:
+#endif
     void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
-
+#ifdef DD_TEST
     // Test-only hooks to simulate signal-handler contention. IsManaged uses
     // try_to_lock semantics on these two mutexes and returns std::nullopt when
     // ownership cannot be acquired. Holding an exclusive lock on either mutex
@@ -151,8 +154,6 @@ public:
         return std::unique_lock<std::shared_mutex>(_modulesMutex);
     }
 private:
-#else
-    void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
 #endif
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
