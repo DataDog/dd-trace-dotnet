@@ -16,6 +16,9 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless;
 
 public class ServerlessCompatIntegrationTests
 {
+    // Exception-path guard: OnMethodEnd short-circuits before reaching Tracer.Instance, so this
+    // unit test is safe. The non-exception path is covered by integration tests elsewhere —
+    // Tracer.Instance global state is unsafe to rely on in unit tests (per Andrew's review).
     [Theory]
     [InlineData("trace")]
     [InlineData("dogstatsd")]
@@ -29,20 +32,6 @@ public class ServerlessCompatIntegrationTests
             : CompatibilityLayer_CalculateDogStatsDPipeName_Integration.OnMethodEnd<object>(null!, originalValue, exception, default);
 
         result.GetReturnValue().Should().Be(originalValue);
-    }
-
-    [Theory]
-    [InlineData("trace", "dd_trace_from_compat_layer")]
-    [InlineData("dogstatsd", "dd_dogstatsd_from_compat_layer")]
-    public void OnMethodEnd_WhenTracerHasNoPipeName_FallsBackToReturnValue(string pipeType, string compatLayerName)
-    {
-        // In a unit test environment, Tracer.Instance won't have pipe names configured,
-        // so the integration should fall back to the compat layer's own calculated name.
-        CallTargetReturn<string> result = pipeType == "trace"
-            ? CompatibilityLayer_CalculateTracePipeName_Integration.OnMethodEnd<object>(null!, compatLayerName, null!, default)
-            : CompatibilityLayer_CalculateDogStatsDPipeName_Integration.OnMethodEnd<object>(null!, compatLayerName, null!, default);
-
-        result.GetReturnValue().Should().Be(compatLayerName);
     }
 }
 #endif
