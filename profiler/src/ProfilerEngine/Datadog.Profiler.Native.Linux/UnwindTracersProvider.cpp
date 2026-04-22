@@ -46,6 +46,29 @@ UnwindTracersProvider::ScopedTracer::ScopedTracer(UnwindTracersProvider* provide
     }
 }
 
+UnwindTracersProvider::ScopedTracer::ScopedTracer(ScopedTracer&& other) noexcept
+    : _provider(other._provider), _node(other._node)
+{
+    other._provider = nullptr;
+    other._node = nullptr;
+}
+
+UnwindTracersProvider::ScopedTracer& UnwindTracersProvider::ScopedTracer::operator=(ScopedTracer&& other) noexcept
+{
+    if (this != &other)
+    {
+        if (_provider != nullptr && _node != nullptr)
+        {
+            _provider->ReleaseTracer(_node);
+        }
+        _provider = other._provider;
+        _node = other._node;
+        other._provider = nullptr;
+        other._node = nullptr;
+    }
+    return *this;
+}
+
 UnwindTracersProvider::ScopedTracer::~ScopedTracer()
 {
     if (_provider != nullptr && _node != nullptr)
