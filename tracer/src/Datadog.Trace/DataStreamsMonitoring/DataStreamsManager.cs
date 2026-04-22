@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -46,8 +45,7 @@ internal sealed class DataStreamsManager
     private readonly bool _isInDefaultState;
     // Keyed by string[] identity (reference equality) — safe because TagCache holds strong
     // references to the cached arrays (bounded by MaxEdgeTagCacheSize).
-    private readonly ConcurrentDictionary<string[], NodeHash> _nodeHashCache =
-        new(NodeHashCacheKeyComparer.Instance);
+    private readonly ConcurrentDictionary<string[], NodeHash> _nodeHashCache = new();
 
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
@@ -444,19 +442,5 @@ internal sealed class DataStreamsManager
             Interlocked.Increment(ref _count);
             return result;
         }
-    }
-
-    /// <summary>
-    /// Reference-equality comparer for string[] keys in <see cref="_nodeHashCache"/>.
-    /// Two string[] objects are considered equal only when they are the same instance,
-    /// which is always true for the cached arrays held by <see cref="TagCache{TKey, TValue}"/>.
-    /// </summary>
-    private sealed class NodeHashCacheKeyComparer : IEqualityComparer<string[]>
-    {
-        internal static readonly NodeHashCacheKeyComparer Instance = new();
-
-        public bool Equals(string[]? x, string[]? y) => ReferenceEquals(x, y);
-
-        public int GetHashCode(string[] obj) => RuntimeHelpers.GetHashCode(obj);
     }
 }
