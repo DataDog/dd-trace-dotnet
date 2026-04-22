@@ -13,8 +13,32 @@ using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
-    internal static partial class ManagedProfilerAssemblyResolver
+    // This type owns the AppDomain.AssemblyResolve callback that the tracer
+    // registers at startup on .NET Framework. It is intentionally a separate
+    // static class from Startup so that invoking its static handler never
+    // forces CLR type-initialization of Startup itself.
+    //
+    // Why that matters: if a configBuilder attached to <appSettings> (e.g.
+    // AzureAppConfigurationBuilder with useAzureKeyVault and DefaultAzureCredential)
+    // issues sync-over-async work during the Startup..cctor chain, the async
+    // continuation can run on a ThreadPool thread that needs to resolve a type
+    // (Type.GetType), which fires AppDomain.AssemblyResolve. If the handler
+    // lives on Startup, that ThreadPool thread has to wait for Startup..cctor
+    // to finish; the main thread is already blocked inside that .cctor waiting
+    // for the Task, which is waiting for the ThreadPool thread -> classic
+    // .cctor deadlock (APMS-19239).
+    //
+    // Keeping the handler on a class with a trivial .cctor means Startup..cctor
+    // finishes the resolver's init before subscribing, so any ThreadPool thread
+    // that later dispatches the handler sees the type as already initialized
+    // and runs without blocking.
+    internal static class ManagedProfilerAssemblyResolver
     {
+        // Set by Startup..cctor before subscribing the handler below.
+        // An auto-property with no initializer keeps this type beforefieldinit
+        // and free of any meaningful class-init work.
+        internal static string? ManagedProfilerDirectory { get; set; }
+
         internal static Assembly? OnAssemblyResolve(object sender, ResolveEventArgs args)
         {
             try
