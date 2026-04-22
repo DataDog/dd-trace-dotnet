@@ -28,11 +28,19 @@ public:
         ScopedTracer(UnwindTracersProvider* provider);
         ~ScopedTracer();
 
+        // Ownership of _node is unique: a copied ScopedTracer would release the
+        // same node twice through its destructor, corrupting the free-list.
+        ScopedTracer(const ScopedTracer&) = delete;
+        ScopedTracer& operator=(const ScopedTracer&) = delete;
+
+        ScopedTracer(ScopedTracer&& other) noexcept;
+        ScopedTracer& operator=(ScopedTracer&& other) noexcept;
+
         UnwinderTracer* get();
 
     private:
-        UnwindTracersProvider* _provider;
-        TracerNode* _node;
+        UnwindTracersProvider* _provider = nullptr;
+        TracerNode* _node = nullptr;
     };
 
     ScopedTracer GetTracer();
