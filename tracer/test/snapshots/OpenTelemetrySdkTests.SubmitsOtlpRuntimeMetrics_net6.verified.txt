@@ -33,12 +33,6 @@
               "value": {
                 "string_value": "<deployment.environment.name>"
               }
-            },
-            {
-              "key": "service.version",
-              "value": {
-                "string_value": "<service.version>"
-              }
             }
           ]
         },

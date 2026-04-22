@@ -609,6 +609,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "NoneExistingMeter");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "60000");
