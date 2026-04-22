@@ -7,12 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,8 +22,6 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
-[Trait("RequiresDockerDependency", "true")]
-[Trait("DockerGroup", "1")]
 public class MassTransit7Tests : TracingIntegrationTest
 {
     public MassTransit7Tests(ITestOutputHelper output)
@@ -38,103 +38,107 @@ public class MassTransit7Tests : TracingIntegrationTest
     [SkippableTheory]
     [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitsTraces(string packageVersion)
+    [Trait("DockerGroup", "1")]
+    [Trait("RunOnWindows", "True")]
+    public async Task SubmitsTraces_InMemory(string packageVersion)
     {
-        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+        SetEnvironmentVariable("MASSTRANSIT_TRANSPORT", "inmemory");
+        SetCommonEnvironmentVariables();
 
-        // Set environment variables for RabbitMQ and LocalStack (for SQS/SNS)
-        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
-        var localStackEndpoint = Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
-
-        SetEnvironmentVariable("RABBITMQ_HOST", rabbitHost);
-        SetEnvironmentVariable("LOCALSTACK_ENDPOINT", $"http://{localStackEndpoint}");
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
-
-        // Enable debug logging to investigate MassTransit DiagnosticSource
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-        // Logs will be written to /var/log/datadog (or /tmp/dd-logs on macOS)
-
-        using (var telemetry = this.ConfigureTelemetry())
-        using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-        {
-            // Wait for the full exported trace set, including the late exception-path spans.
-            const int expectedMassTransitSpanCount = 42;
-            var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
-
-            using var s = new AssertionScope();
-
-            // Filter to MassTransit spans - component tag should be "MassTransit"
-            var massTransitSpans = spans.Where(span => span.GetTag("component") == "masstransit").ToList();
-            massTransitSpans.Count.Should().BeGreaterOrEqualTo(expectedMassTransitSpanCount, $"should have at least {expectedMassTransitSpanCount} MassTransit spans");
-
-            ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-
-            // // Ignore Metrics — values vary across library versions (e.g. _sampling_priority_v1 and
-            // // _dd.top_level differ depending on whether the span is a local root or in-process child,
-            // // which changes between MT7 versions due to in-memory transport header propagation differences).
-            // settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
-
-            // Scrub dynamic bus endpoint names (e.g., COMPFC3GTGXWHN_SamplesMassTransit7_bus_sf3yyyf1sq3y63brbdxf8pr6na)
-            var busEndpointRegex = new Regex(@"[A-Za-z0-9]+_SamplesMassTransit7_bus_[a-z0-9]+");
-            settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
-
-            // Scrub dynamic queue names for RabbitMQ and SQS
-            var queueNameRegex = new Regex(@"getting-started-message_[a-z0-9]+");
-            settings.AddRegexScrubber(queueNameRegex, "QueueName");
-
-            // Scrub saga-specific dynamic values (correlation IDs, saga IDs)
-            var sagaIdRegex = new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase);
-            settings.AddRegexScrubber(sagaIdRegex, "SagaGuid");
-
-            // Scrub saga queue names (e.g., order-state_[guid])
-            var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
-            settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
-
-            // Scrub RabbitMQ broker host which varies by environment (e.g., localhost vs rabbitmq_arm64)
-            var rabbitMqHostRegex = new Regex(@"rabbitmq://[^/]+/");
-            settings.AddRegexScrubber(rabbitMqHostRegex, "rabbitmq://rabbitmq-host/");
-
-            await VerifyHelper.VerifySpans(
-                massTransitSpans,
-                settings,
-                orderSpans: spans => spans
-                    .OrderBy(x => x.Resource.Split(' ')[0])  // Group by destination (Failing, GettingStarted, OrderState, etc.)
-                    .ThenBy(x => x.GetTag("messaging.operation") switch
-                    {
-                        "send" => 0,
-                        "receive" => 1,
-                        "process" => 2,
-                        _ => 3
-                    })
-                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
-                .UseFileName(nameof(MassTransit7Tests));
-
-            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
-        }
-
-        // Print the log files for debugging
-        PrintMassTransitLogs("/tmp/dd-logs");
+        // InMemory transport + saga + 3 exception scenarios
+        const int expectedMassTransitSpanCount = 30;
+        var snapshotSuffix = IsWindows() ? "InMemoryWindows" : "InMemory";
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, snapshotSuffix, includeWindowsStackScrub: IsWindows());
     }
 
     [SkippableTheory]
     [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public async Task SubmitsTracesWindowsInMemoryOnly(string packageVersion)
+    [Trait("DockerGroup", "1")]
+    [Trait("RequiresDockerDependency", "true")]
+    public async Task SubmitsTraces_RabbitMq(string packageVersion)
     {
-        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
-        SetEnvironmentVariable("MASSTRANSIT_INMEMORY_ONLY", "true");
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
+        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        SetEnvironmentVariable("RABBITMQ_HOST", rabbitHost);
+        SetEnvironmentVariable("MASSTRANSIT_TRANSPORT", "rabbitmq");
+        SetCommonEnvironmentVariables();
+
+        // RabbitMq only: 1 transport × 2 messages × 3 spans = 6
+        const int expectedMassTransitSpanCount = 6;
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "RabbitMq");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("DockerGroup", "2")]
+    [Trait("RequiresDockerDependency", "true")]
+    public async Task SubmitsTraces_Sqs(string packageVersion)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        var localStackEndpoint = Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
+        SetEnvironmentVariable("LOCALSTACK_ENDPOINT", $"http://{localStackEndpoint}");
+        SetEnvironmentVariable("MASSTRANSIT_TRANSPORT", "amazonsqs");
+        SetCommonEnvironmentVariables();
+
+        // Sqs only: 1 transport × 2 messages × 3 spans = 6
+        const int expectedMassTransitSpanCount = 6;
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "Sqs");
+    }
+
+    private static bool IsWindows() =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    private static VerifySettings BuildSpanVerifierSettings(bool includeWindowsStackScrub)
+    {
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+
+        // Scrub dynamic bus endpoint names (e.g., COMPFC3GTGXWHN_SamplesMassTransit7_bus_sf3yyyf1sq3y63brbdxf8pr6na)
+        settings.AddRegexScrubber(new Regex(@"[A-Za-z0-9]+_SamplesMassTransit7_bus_[a-z0-9]+"), "BusEndpoint");
+
+        // Scrub dynamic per-transport queue names (per-message-type suffix with random hash)
+        settings.AddRegexScrubber(new Regex(@"getting-started-with-(?:in-memory|rabbit-mq|sqs)_[a-z0-9]+"), "QueueName");
+
+        // Scrub saga-specific dynamic values (correlation IDs, saga IDs)
+        settings.AddRegexScrubber(new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase), "SagaGuid");
+
+        // Scrub saga queue names (e.g., order-state_[guid])
+        settings.AddRegexScrubber(new Regex(@"order-state_[a-z0-9]+"), "SagaQueueName");
+
+        // Scrub RabbitMQ broker host which varies by environment (e.g., localhost vs rabbitmq_arm64)
+        settings.AddRegexScrubber(new Regex(@"rabbitmq://[^/]+/"), "rabbitmq://rabbitmq-host/");
+
+        // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
+        settings.AddRegexScrubber(new Regex(@"messaging\.message\.body\.size: \d+"), "messaging.message.body.size: body_size");
+
+        if (includeWindowsStackScrub)
+        {
+            // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
+            settings.AddRegexScrubber(new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline), "error.stack: Scrubbed\n");
+        }
+
+        return settings;
+    }
+
+    private void SetCommonEnvironmentVariables()
+    {
+        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
+    }
+
+    private async Task RunTransportTest(
+        string packageVersion,
+        int expectedMassTransitSpanCount,
+        string snapshotSuffix,
+        bool includeWindowsStackScrub = false)
+    {
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
-            // Wait for the full exported trace set, including the late exception-path spans.
-            const int expectedMassTransitSpanCount = 30;
             var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
 
             using var s = new AssertionScope();
@@ -144,29 +148,7 @@ public class MassTransit7Tests : TracingIntegrationTest
 
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
 
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-
-            settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
-
-            var busEndpointRegex = new Regex(@"[A-Za-z0-9]+_SamplesMassTransit7_bus_[a-z0-9]+");
-            settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
-
-            var queueNameRegex = new Regex(@"getting-started-message_[a-z0-9]+");
-            settings.AddRegexScrubber(queueNameRegex, "QueueName");
-
-            var sagaIdRegex = new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase);
-            settings.AddRegexScrubber(sagaIdRegex, "SagaGuid");
-
-            var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
-            settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
-
-            // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
-            var bodySizeRegex = new Regex(@"messaging\.message\.body\.size: \d+");
-            settings.AddRegexScrubber(bodySizeRegex, "messaging.message.body.size: body_size");
-
-            // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
-            var errorStackRegex = new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
-            settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n");
+            var settings = BuildSpanVerifierSettings(includeWindowsStackScrub);
 
             await VerifyHelper.VerifySpans(
                 massTransitSpans,
@@ -181,10 +163,12 @@ public class MassTransit7Tests : TracingIntegrationTest
                         _ => 3
                     })
                     .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
-                .UseFileName(nameof(MassTransit7Tests) + "Windows");
+                .UseFileName(nameof(MassTransit7Tests) + snapshotSuffix);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
         }
+
+        PrintMassTransitLogs("/tmp/dd-logs");
     }
 
     private void PrintMassTransitLogs(string logDir)
@@ -200,7 +184,6 @@ public class MassTransit7Tests : TracingIntegrationTest
         {
             Output.WriteLine($"=== {Path.GetFileName(logFile)} ===");
             var content = File.ReadAllText(logFile);
-            // Filter to MassTransit and Diagnostic lines
             foreach (var line in content.Split('\n'))
             {
                 if (line.Contains("MassTransit") || line.Contains("Diagnostic"))

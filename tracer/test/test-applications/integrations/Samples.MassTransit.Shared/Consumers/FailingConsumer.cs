@@ -1,8 +1,8 @@
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Samples.MassTransit7.Contracts;
+using Samples.MassTransit.Contracts;
 
-namespace Samples.MassTransit7.Consumers;
+namespace Samples.MassTransit.Consumers;
 
 public class FailingConsumer : IConsumer<FailingMessage>
 {

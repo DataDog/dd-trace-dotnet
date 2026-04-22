@@ -1,4 +1,4 @@
-namespace Samples.MassTransit8.Contracts;
+namespace Samples.MassTransit.Contracts;
 
 /// <summary>
 /// Message to submit a new order - starts the saga

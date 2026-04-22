@@ -21,7 +21,8 @@
         "DD_TRACE_DEBUG": "true",
         "DD_TRACE_LOG_DIRECTORY": "/tmp/dd-logs",
 
-        "RABBITMQ_HOST": "localhost"
+        "RABBITMQ_HOST": "localhost",
+        "MASSTRANSIT_TRANSPORT": "all"
       },
       "nativeDebugging": false
     },

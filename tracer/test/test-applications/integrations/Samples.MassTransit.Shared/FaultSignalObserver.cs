@@ -1,6 +1,6 @@
 using MassTransit;
 
-namespace Samples.MassTransit7;
+namespace Samples.MassTransit;
 
 internal sealed class FaultSignalObserver : IPublishObserver, ISendObserver
 {

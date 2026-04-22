@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Samples.MassTransit8;
+namespace Samples.MassTransit;
 
 internal static class TestSignal
 {

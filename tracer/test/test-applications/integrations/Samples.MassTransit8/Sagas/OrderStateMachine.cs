@@ -1,5 +1,6 @@
 using MassTransit;
-using Samples.MassTransit8.Contracts;
+using Samples.MassTransit;
+using Samples.MassTransit.Contracts;
 
 namespace Samples.MassTransit8.Sagas;
 

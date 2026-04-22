@@ -1,6 +1,16 @@
-namespace Samples.MassTransit8.Contracts;
+namespace Samples.MassTransit.Contracts;
 
-public class GettingStartedMessage
+public class GettingStartedWithInMemory
+{
+    public string Value { get; set; } = string.Empty;
+}
+
+public class GettingStartedWithRabbitMq
+{
+    public string Value { get; set; } = string.Empty;
+}
+
+public class GettingStartedWithSqs
 {
     public string Value { get; set; } = string.Empty;
 }

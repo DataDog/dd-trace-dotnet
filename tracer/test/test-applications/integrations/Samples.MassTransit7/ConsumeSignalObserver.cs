@@ -1,4 +1,5 @@
 using MassTransit;
+using Samples.MassTransit;
 
 namespace Samples.MassTransit7;
 

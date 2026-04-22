@@ -1,50 +1,125 @@
-using System.Runtime.InteropServices;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Samples;
-using Samples.MassTransit8;
-using Samples.MassTransit8.Contracts;
-using Samples.MassTransit8.Consumers;
+using Samples.MassTransit;
+using Samples.MassTransit.Contracts;
+using Samples.MassTransit.Consumers;
 using Samples.MassTransit8.Sagas;
 
 var waitTimeout = TimeSpan.FromSeconds(30);
 
-Console.WriteLine("MassTransit 8 Sample - Testing all transports sequentially");
+var transport = Environment.GetEnvironmentVariable("MASSTRANSIT_TRANSPORT")?.Trim().ToLowerInvariant();
 
-// Run each transport one after another
-await RunWithTransport("inmemory", ConfigureInMemory);
-
-// Skip external transports when explicitly requested or when running on Windows (no Docker)
-var inMemoryOnly = string.Equals(Environment.GetEnvironmentVariable("MASSTRANSIT_INMEMORY_ONLY"), "true", StringComparison.OrdinalIgnoreCase)
-                   || RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-if (!inMemoryOnly)
+// Back-compat with MASSTRANSIT_INMEMORY_ONLY=true
+if (string.IsNullOrEmpty(transport)
+    && string.Equals(Environment.GetEnvironmentVariable("MASSTRANSIT_INMEMORY_ONLY"), "true", StringComparison.OrdinalIgnoreCase))
 {
-    await TryRunWithTransport("rabbitmq", ConfigureRabbitMq);
-    await TryRunWithTransport("amazonsqs", ConfigureAmazonSqs);
+    transport = "inmemory";
 }
 
-// Run saga test with in-memory transport
-await RunSagaTest();
+// Default (local dev): run every transport sequentially
+if (string.IsNullOrEmpty(transport))
+{
+    transport = "all";
+}
 
-// Run exception handling tests for all scenarios
-await RunExceptionTest();          // Consumer exception
-await RunHandlerExceptionTest();   // Handler exception
-await RunSagaExceptionTest();      // Saga exception
+Console.WriteLine($"MassTransit 8 Sample - MASSTRANSIT_TRANSPORT={transport}");
+
+switch (transport)
+{
+    case "inmemory":
+        await RunInMemory();
+        await RunInMemoryOnlyScenarios();
+        break;
+    case "rabbitmq":
+        await RunRabbitMq();
+        break;
+    case "amazonsqs":
+    case "sqs":
+        await RunAmazonSqs();
+        break;
+    case "all":
+        await RunInMemory();
+        await TryRun(RunRabbitMq, "rabbitmq");
+        await TryRun(RunAmazonSqs, "amazonsqs");
+        await RunInMemoryOnlyScenarios();
+        break;
+    default:
+        throw new InvalidOperationException($"Unknown MASSTRANSIT_TRANSPORT value: {transport}");
+}
 
 Console.WriteLine("All tests completed!");
 
-async Task FlushTracerAsync(string scenarioName)
+async Task RunInMemory() =>
+    await RunWithTransport<GettingStartedWithInMemory>(
+        "inmemory",
+        cfg =>
+        {
+            cfg.AddConsumer<GettingStartedWithInMemoryConsumer>();
+            cfg.UsingInMemory((context, bus) => bus.ConfigureEndpoints(context));
+        },
+        value => new GettingStartedWithInMemory { Value = value },
+        new Uri("queue:GettingStartedWithInMemory"));
+
+async Task RunRabbitMq() =>
+    await RunWithTransport<GettingStartedWithRabbitMq>(
+        "rabbitmq",
+        cfg =>
+        {
+            cfg.AddConsumer<GettingStartedWithRabbitMqConsumer>();
+            cfg.UsingRabbitMq((context, bus) =>
+            {
+                var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+                bus.Host(rabbitHost, "/", h =>
+                {
+                    h.Username("guest");
+                    h.Password("guest");
+                });
+                bus.ConfigureEndpoints(context);
+            });
+        },
+        value => new GettingStartedWithRabbitMq { Value = value },
+        new Uri("queue:GettingStartedWithRabbitMq"));
+
+async Task RunAmazonSqs() =>
+    await RunWithTransport<GettingStartedWithSqs>(
+        "amazonsqs",
+        cfg =>
+        {
+            cfg.AddConsumer<GettingStartedWithSqsConsumer>();
+            cfg.UsingAmazonSqs((context, bus) =>
+            {
+                var localStackEndpoint = Environment.GetEnvironmentVariable("LOCALSTACK_ENDPOINT") ?? "http://localhost:4566";
+                var region = Environment.GetEnvironmentVariable("AWS_REGION") ?? "us-east-1";
+
+                bus.Host(region, h =>
+                {
+                    h.Config(new Amazon.SQS.AmazonSQSConfig { ServiceURL = localStackEndpoint });
+                    h.Config(new Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceConfig { ServiceURL = localStackEndpoint });
+                    h.AccessKey("test");
+                    h.SecretKey("test");
+                });
+
+                bus.ConfigureEndpoints(context);
+            });
+        },
+        value => new GettingStartedWithSqs { Value = value },
+        new Uri("queue:GettingStartedWithSqs"));
+
+async Task RunInMemoryOnlyScenarios()
 {
-    Console.WriteLine($"[{scenarioName}] Flushing tracer...");
-    await SampleHelpers.ForceTracerFlushAsync();
+    await RunSagaTest();
+    await RunExceptionTest();
+    await RunHandlerExceptionTest();
+    await RunSagaExceptionTest();
 }
 
-async Task TryRunWithTransport(string transportName, Action<IBusRegistrationConfigurator> configureTransport)
+async Task TryRun(Func<Task> run, string transportName)
 {
     try
     {
-        await RunWithTransport(transportName, configureTransport);
+        await run();
     }
     catch (Exception ex)
     {
@@ -52,18 +127,25 @@ async Task TryRunWithTransport(string transportName, Action<IBusRegistrationConf
     }
 }
 
-async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigurator> configureTransport)
+async Task FlushTracerAsync(string scenarioName)
+{
+    Console.WriteLine($"[{scenarioName}] Flushing tracer...");
+    await SampleHelpers.ForceTracerFlushAsync();
+}
+
+async Task RunWithTransport<TMessage>(
+    string transportName,
+    Action<IBusRegistrationConfigurator> configure,
+    Func<string, TMessage> createMessage,
+    Uri sendEndpointUri)
+    where TMessage : class
 {
     Console.WriteLine($"\n========== Testing {transportName.ToUpperInvariant()} ==========");
 
     var services = new ServiceCollection();
     services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
 
-    services.AddMassTransit(x =>
-    {
-        x.AddConsumer<GettingStartedConsumer>();
-        configureTransport(x);
-    });
+    services.AddMassTransit(configure);
 
     var serviceProvider = services.BuildServiceProvider();
     var busControl = serviceProvider.GetRequiredService<IBusControl>();
@@ -73,21 +155,20 @@ async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigu
         Console.WriteLine($"[{transportName}] Starting the bus...");
         await busControl.StartAsync();
 
-        // Test Publish (fanout to all subscribers)
+        // Publish (fanout to all subscribers)
         var publishValue = $"Hello via Publish from {transportName} at {DateTimeOffset.Now}";
         Console.WriteLine($"[{transportName}] Publishing message (Publish)...");
-        await busControl.Publish(new GettingStartedMessage { Value = publishValue });
+        await busControl.Publish(createMessage(publishValue));
         await TestSignal.WaitAsync(publishValue, waitTimeout);
 
-        // Test Send (direct to specific endpoint)
+        // Send (direct to specific endpoint)
         var sendValue = $"Hello via Send from {transportName} at {DateTimeOffset.Now}";
         Console.WriteLine($"[{transportName}] Sending message (Send)...");
-        var sendEndpoint = await busControl.GetSendEndpoint(new Uri("queue:GettingStarted"));
-        await sendEndpoint.Send(new GettingStartedMessage { Value = sendValue });
+        var sendEndpoint = await busControl.GetSendEndpoint(sendEndpointUri);
+        await sendEndpoint.Send(createMessage(sendValue));
         await TestSignal.WaitAsync(sendValue, waitTimeout);
         await FlushTracerAsync(transportName);
 
-        Console.WriteLine($"[{transportName}] Waiting for messages to be consumed...");
         Console.WriteLine($"[{transportName}] Test completed successfully!");
     }
     finally
@@ -96,61 +177,6 @@ async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigu
         await busControl.StopAsync();
         await FlushTracerAsync($"{transportName}-shutdown");
     }
-}
-
-void ConfigureInMemory(IBusRegistrationConfigurator x)
-{
-    x.UsingInMemory((context, cfg) =>
-    {
-        cfg.ConfigureEndpoints(context);
-    });
-}
-
-void ConfigureRabbitMq(IBusRegistrationConfigurator x)
-{
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
-        cfg.Host(rabbitHost, "/", h =>
-        {
-            h.Username("guest");
-            h.Password("guest");
-        });
-
-        cfg.ConfigureEndpoints(context);
-    });
-}
-
-void ConfigureAmazonSqs(IBusRegistrationConfigurator x)
-{
-    x.UsingAmazonSqs((context, cfg) =>
-    {
-        // Use LocalStack for local testing (default endpoint)
-        // Set LOCALSTACK_ENDPOINT to override (e.g., "http://localhost:4566")
-        var localStackEndpoint = Environment.GetEnvironmentVariable("LOCALSTACK_ENDPOINT") ?? "http://localhost:4566";
-        var region = Environment.GetEnvironmentVariable("AWS_REGION") ?? "us-east-1";
-
-        cfg.Host(region, h =>
-        {
-            // Configure SQS client for LocalStack
-            h.Config(new Amazon.SQS.AmazonSQSConfig
-            {
-                ServiceURL = localStackEndpoint
-            });
-
-            // Configure SNS client for LocalStack (MassTransit uses SNS for pub/sub topics)
-            h.Config(new Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceConfig
-            {
-                ServiceURL = localStackEndpoint
-            });
-
-            // LocalStack doesn't require real credentials
-            h.AccessKey("test");
-            h.SecretKey("test");
-        });
-
-        cfg.ConfigureEndpoints(context);
-    });
 }
 
 async Task RunSagaTest()
@@ -162,7 +188,6 @@ async Task RunSagaTest()
 
     services.AddMassTransit(x =>
     {
-        // Register the saga state machine with in-memory repository
         x.AddSagaStateMachine<OrderStateMachine, OrderState>()
             .InMemoryRepository();
 
@@ -180,11 +205,9 @@ async Task RunSagaTest()
         Console.WriteLine("[saga] Starting the bus...");
         await busControl.StartAsync();
 
-        // Create an order ID for the saga
         var orderId = Guid.NewGuid();
         Console.WriteLine($"[saga] Testing order saga with OrderId: {orderId}");
 
-        // Step 1: Submit the order (Initial -> Submitted)
         Console.WriteLine("[saga] Publishing OrderSubmitted event...");
         await busControl.Publish(new OrderSubmitted
         {
@@ -194,12 +217,10 @@ async Task RunSagaTest()
         });
         await TestSignal.WaitAsync($"saga:submitted:{orderId}", waitTimeout);
 
-        // Step 2: Accept the order (Submitted -> Accepted)
         Console.WriteLine("[saga] Publishing OrderAccepted event...");
         await busControl.Publish(new OrderAccepted { OrderId = orderId });
         await TestSignal.WaitAsync($"saga:accepted:{orderId}", waitTimeout);
 
-        // Step 3: Complete the order (Accepted -> Completed)
         Console.WriteLine("[saga] Publishing OrderCompleted event...");
         await busControl.Publish(new OrderCompleted { OrderId = orderId });
         await TestSignal.WaitAsync($"saga:completed:{orderId}", waitTimeout);
@@ -246,7 +267,6 @@ async Task RunExceptionTest()
         var publishObserverHandle = busControl.ConnectPublishObserver(faultSignalObserver);
         var sendObserverHandle = busControl.ConnectSendObserver(faultSignalObserver);
 
-        // Send a message that will cause the consumer to throw an exception
         const string failingValue = "Consumer failure test";
         Console.WriteLine("[consumer-exception] Publishing message that will cause an exception...");
         await busControl.Publish(new FailingMessage { Value = failingValue });
@@ -278,8 +298,6 @@ async Task RunHandlerExceptionTest()
     {
         x.UsingInMemory((context, cfg) =>
         {
-            // Register a handler (not a consumer) that throws an exception
-            // Handlers use HandlerMessageFilter which starts a Consumer.Handle activity
             cfg.ReceiveEndpoint("handler-failing", e =>
             {
                 e.Handler<HandlerFailingMessage>(async ctx =>
@@ -307,7 +325,6 @@ async Task RunHandlerExceptionTest()
         var publishObserverHandle = busControl.ConnectPublishObserver(faultSignalObserver);
         var sendObserverHandle = busControl.ConnectSendObserver(faultSignalObserver);
 
-        // Send a message to the handler endpoint
         const string handlerFailureValue = "Handler will fail";
         Console.WriteLine("[handler-exception] Sending message to handler that will throw...");
         var sendEndpoint = await busControl.GetSendEndpoint(new Uri("loopback://localhost/handler-failing"));
@@ -338,7 +355,6 @@ async Task RunSagaExceptionTest()
 
     services.AddMassTransit(x =>
     {
-        // Register the saga state machine with in-memory repository
         x.AddSagaStateMachine<OrderStateMachine, OrderState>()
             .InMemoryRepository();
 
@@ -362,11 +378,9 @@ async Task RunSagaExceptionTest()
         var publishObserverHandle = busControl.ConnectPublishObserver(faultSignalObserver);
         var sendObserverHandle = busControl.ConnectSendObserver(faultSignalObserver);
 
-        // Create an order ID for the saga
         var orderId = Guid.NewGuid();
         Console.WriteLine($"[saga-exception] Testing saga exception with OrderId: {orderId}");
 
-        // Step 1: Submit the order (Initial -> Submitted)
         Console.WriteLine("[saga-exception] Publishing OrderSubmitted event...");
         await busControl.Publish(new OrderSubmitted
         {
@@ -376,7 +390,6 @@ async Task RunSagaExceptionTest()
         });
         await TestSignal.WaitAsync($"saga:submitted:{orderId}", waitTimeout);
 
-        // Step 2: Send OrderFailed which will cause the saga to throw an exception
         Console.WriteLine("[saga-exception] Publishing OrderFailed event (will cause saga to throw)...");
         await busControl.Publish(new OrderFailed
         {

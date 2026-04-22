@@ -20,4 +20,14 @@
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.7.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0" />
   </ItemGroup>
+
+  <!-- Shared MassTransit sample sources (common Contracts/Consumers/Observer/TestSignal, neutral namespace). -->
+  <ItemGroup>
+    <Compile Include="..\Samples.MassTransit.Shared\Contracts\GettingStarted.cs" Link="Contracts\GettingStarted.cs" />
+    <Compile Include="..\Samples.MassTransit.Shared\Contracts\OrderMessages.cs" Link="Contracts\OrderMessages.cs" />
+    <Compile Include="..\Samples.MassTransit.Shared\Consumers\GettingStartedConsumer.cs" Link="Consumers\GettingStartedConsumer.cs" />
+    <Compile Include="..\Samples.MassTransit.Shared\Consumers\FailingConsumer.cs" Link="Consumers\FailingConsumer.cs" />
+    <Compile Include="..\Samples.MassTransit.Shared\FaultSignalObserver.cs" Link="FaultSignalObserver.cs" />
+    <Compile Include="..\Samples.MassTransit.Shared\TestSignal.cs" Link="TestSignal.cs" />
+  </ItemGroup>
 </Project>

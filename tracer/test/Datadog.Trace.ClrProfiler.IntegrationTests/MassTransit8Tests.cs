@@ -7,12 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,8 +22,6 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
-[Trait("RequiresDockerDependency", "true")]
-[Trait("DockerGroup", "1")]
 public class MassTransit8Tests : TracingIntegrationTest
 {
     public MassTransit8Tests(ITestOutputHelper output)
@@ -38,210 +38,108 @@ public class MassTransit8Tests : TracingIntegrationTest
     [SkippableTheory]
     [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitsTraces(string packageVersion)
+    [Trait("DockerGroup", "1")]
+    [Trait("RunOnWindows", "True")]
+    public async Task SubmitsTraces_InMemory(string packageVersion)
     {
-        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+        SetEnvironmentVariable("MASSTRANSIT_TRANSPORT", "inmemory");
+        SetCommonEnvironmentVariables();
 
-        // Set environment variables for RabbitMQ and LocalStack (for SQS/SNS)
-        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
-        var localStackEndpoint = Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
-
-        SetEnvironmentVariable("RABBITMQ_HOST", rabbitHost);
-        SetEnvironmentVariable("LOCALSTACK_ENDPOINT", $"http://{localStackEndpoint}");
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-        SetEnvironmentVariable("DD_SERVICE", "Samples.MassTransit8");
-
-        // Enable debug logging to investigate MassTransit DiagnosticSource
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-        // Logs will be written to /var/log/datadog (or /tmp/dd-logs on macOS)
-
-        using (var telemetry = this.ConfigureTelemetry())
-        using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-        {
-            // Wait for spans to arrive
-            // MassTransit 8 uses OpenTelemetry ActivitySource which creates Activities automatically
-            // The sample tests:
-            // - 3 transports (inmemory, rabbitmq, amazonsqs) × 2 messages × 3 spans (send + receive + process) = 18 spans
-            // - Saga state machine: 3 events × 3 spans (send + receive + saga process) = 9 spans
-            // - Consumer exception: 1 message × 3 spans = 3 spans
-            // - Handler exception: 1 message × 3 spans = 3 spans
-            // - Saga exception: 2 events × 3 spans each = 6 spans
-            // Total expected: 18 + 9 + 3 + 3 + 6 = 39 spans
-            // Actual observed: 42 spans (may include additional internal MassTransit operations)
-            const int expectedMassTransitSpanCount = 42;
-            var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
-
-            using var s = new AssertionScope();
-
-            // Filter to MassTransit spans - component tag should be "masstransit"
-            var massTransitSpans = spans.Where(span => span.GetTag("component") == "masstransit").ToList();
-            massTransitSpans.Count.Should().BeGreaterOrEqualTo(expectedMassTransitSpanCount, $"should have at least {expectedMassTransitSpanCount} MassTransit spans");
-
-            ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit8", isExternalSpan: false);
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            var fileName = nameof(MassTransit8Tests) + GetSuffix(packageVersion);
-
-            // Ignore Metrics field which can vary between runs
-            settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
-
-            // Scrub dynamic bus endpoint names (e.g., COMPFC3GTGXWHN_SamplesMassTransit8_bus_sf3yyyf1sq3y63brbdxf8pr6na)
-            var busEndpointRegex = new Regex(@"[A-Za-z0-9]+_SamplesMassTransit8_bus_[a-z0-9]+");
-            settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
-
-            // Scrub dynamic queue names for RabbitMQ and SQS
-            var queueNameRegex = new Regex(@"getting-started-message_[a-z0-9]+");
-            settings.AddRegexScrubber(queueNameRegex, "QueueName");
-
-            // Scrub saga-specific dynamic values (correlation IDs, saga IDs)
-            var sagaIdRegex = new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase);
-            settings.AddRegexScrubber(sagaIdRegex, "SagaGuid");
-
-            // Scrub saga queue names (e.g., order-state_[guid])
-            var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
-            settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
-
-            // Scrub RabbitMQ broker host which varies by environment (e.g., localhost vs rabbitmq in Docker)
-            var rabbitMqHostRegex = new Regex(@"rabbitmq://[^/]+/");
-            settings.AddRegexScrubber(rabbitMqHostRegex, "rabbitmq://rabbitmq-host/");
-
-            // Scrub message payload sizes which vary (e.g., "1095", "1128", etc.)
-            // Older MT8 versions use underscores (messaging.message_payload_size_bytes),
-            // newer versions use dots (messaging.message.payload_size_bytes).
-            var payloadSizeRegex = new Regex(@"messaging\.message[._]payload_size_bytes: \d+");
-            settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
-
-            // Network/container address tags vary between local Docker runs and CI agents.
-            // We care that MassTransit 8.5.8 emits these tags, not the specific IP/host values.
-            settings.AddRegexScrubber(new Regex(@"client\.address: [^,\r\n]+"), "client.address: client-address");
-            settings.AddRegexScrubber(new Regex(@"server\.address: [^,\r\n]+"), "server.address: server-address");
-            settings.AddRegexScrubber(new Regex(@"network\.local\.address: [^,\r\n]+"), "network.local.address: local-address");
-            settings.AddRegexScrubber(new Regex(@"network\.peer\.address: [^,\r\n]+"), "network.peer.address: peer-address");
-            settings.AddRegexScrubber(new Regex(@"network\.type: [^,\r\n]+"), "network.type: network-type");
-
-            // Scrub MassTransit OTEL library version, which varies with the tested package version
-            var otelLibraryVersionRegex = new Regex(@"otel\.library\.version: [\d\.]+");
-            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: masstransit-version");
-
-            // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
-            var bodySizeRegex = new Regex(@"messaging\.message\.body\.size: \d+");
-            settings.AddRegexScrubber(bodySizeRegex, "messaging.message.body.size: body_size");
-
-            // Scrub OTEL events (contains timestamps and file paths that vary)
-            var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
-            settings.AddRegexScrubber(eventsRegex, "events: [scrubbed]");
-
-            await VerifyHelper.VerifySpans(
-                massTransitSpans,
-                settings,
-                orderSpans: spans => spans
-                    .OrderBy(x => x.Resource.Split(' ')[0])  // Group by destination (Failing, GettingStarted, OrderState, etc.)
-                    .ThenBy(x => x.GetTag("messaging.operation") switch
-                    {
-                        "send" => 0,
-                        "receive" => 1,
-                        "process" => 2,
-                        _ => 3
-                    })
-                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
-                .UseFileName(fileName);
-
-            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
-        }
-
-        // Print the log files for debugging
-        PrintMassTransitLogs("/tmp/dd-logs");
+        // InMemory transport + saga + 3 exception scenarios
+        const int expectedMassTransitSpanCount = 27;
+        var prefix = IsWindows() ? "InMemoryWindows" : "InMemory";
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, prefix, includeWindowsStackScrub: IsWindows());
     }
 
     [SkippableTheory]
     [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public async Task SubmitsTracesWindowsInMemoryOnly(string packageVersion)
+    [Trait("DockerGroup", "1")]
+    [Trait("RequiresDockerDependency", "true")]
+    public async Task SubmitsTraces_RabbitMq(string packageVersion)
     {
-        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
-        SetEnvironmentVariable("MASSTRANSIT_INMEMORY_ONLY", "true");
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-        using (var telemetry = this.ConfigureTelemetry())
-        using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        SetEnvironmentVariable("RABBITMQ_HOST", rabbitHost);
+        SetEnvironmentVariable("MASSTRANSIT_TRANSPORT", "rabbitmq");
+        SetCommonEnvironmentVariables();
+
+        // RabbitMq only: 1 transport × 2 messages × 3 spans = 6
+        const int expectedMassTransitSpanCount = 6;
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "RabbitMq");
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("DockerGroup", "2")]
+    [Trait("RequiresDockerDependency", "true")]
+    public async Task SubmitsTraces_Sqs(string packageVersion)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        var localStackEndpoint = Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
+        SetEnvironmentVariable("LOCALSTACK_ENDPOINT", $"http://{localStackEndpoint}");
+        SetEnvironmentVariable("MASSTRANSIT_TRANSPORT", "amazonsqs");
+        SetCommonEnvironmentVariables();
+
+        // Sqs only: 1 transport × 2 messages × 3 spans = 6
+        const int expectedMassTransitSpanCount = 6;
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "Sqs");
+    }
+
+    private static bool IsWindows() =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    private static VerifySettings BuildSpanVerifierSettings(bool includeWindowsStackScrub)
+    {
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+
+        // Ignore Metrics field which can vary between runs
+        settings.ModifySerialization(ss => ss.IgnoreMember<MockSpan>(x => x.Metrics));
+
+        // Scrub dynamic bus endpoint names (e.g., COMPFC3GTGXWHN_SamplesMassTransit8_bus_sf3yyyf1sq3y63brbdxf8pr6na)
+        settings.AddRegexScrubber(new Regex(@"[A-Za-z0-9]+_SamplesMassTransit8_bus_[a-z0-9]+"), "BusEndpoint");
+
+        // Scrub dynamic per-transport queue names (per-message-type suffix with random hash)
+        settings.AddRegexScrubber(new Regex(@"getting-started-with-(?:in-memory|rabbit-mq|sqs)_[a-z0-9]+"), "QueueName");
+
+        // Scrub saga-specific dynamic values (correlation IDs, saga IDs)
+        settings.AddRegexScrubber(new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase), "SagaGuid");
+
+        // Scrub saga queue names (e.g., order-state_[guid])
+        settings.AddRegexScrubber(new Regex(@"order-state_[a-z0-9]+"), "SagaQueueName");
+
+        // Scrub RabbitMQ broker host which varies by environment (e.g., localhost vs rabbitmq in Docker)
+        settings.AddRegexScrubber(new Regex(@"rabbitmq://[^/]+/"), "rabbitmq://rabbitmq-host/");
+
+        // Scrub message payload sizes (vary between runs). Older MT8 uses underscores, newer uses dots.
+        settings.AddRegexScrubber(new Regex(@"messaging\.message[._]payload_size_bytes: \d+"), "messaging.message.payload_size_bytes: size_bytes");
+
+        // Network/container address tags vary between local Docker runs and CI agents.
+        settings.AddRegexScrubber(new Regex(@"client\.address: [^,\r\n]+"), "client.address: client-address");
+        settings.AddRegexScrubber(new Regex(@"server\.address: [^,\r\n]+"), "server.address: server-address");
+        settings.AddRegexScrubber(new Regex(@"network\.local\.address: [^,\r\n]+"), "network.local.address: local-address");
+        settings.AddRegexScrubber(new Regex(@"network\.peer\.address: [^,\r\n]+"), "network.peer.address: peer-address");
+        settings.AddRegexScrubber(new Regex(@"network\.type: [^,\r\n]+"), "network.type: network-type");
+
+        // Scrub MassTransit OTEL library version, which varies with the tested package version
+        settings.AddRegexScrubber(new Regex(@"otel\.library\.version: [\d\.]+"), "otel.library.version: masstransit-version");
+
+        // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
+        settings.AddRegexScrubber(new Regex(@"messaging\.message\.body\.size: \d+"), "messaging.message.body.size: body_size");
+
+        // Scrub OTEL events (contains timestamps and file paths that vary)
+        settings.AddRegexScrubber(new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline), "events: [scrubbed]");
+
+        if (includeWindowsStackScrub)
         {
-            // In-memory only: 1 transport × 2 messages × 3 spans = 6
-            // Saga: 3 events × 3 spans = 9
-            // Consumer exception: 3 spans
-            // Handler exception: 3 spans
-            // Saga exception: ~6 spans
-            // Total expected: ~27 MassTransit spans
-            const int expectedMassTransitSpanCount = 27;
-            var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
-
-            using var s = new AssertionScope();
-
-            var massTransitSpans = spans.Where(span => span.GetTag("component") == "masstransit").ToList();
-            massTransitSpans.Count.Should().BeGreaterOrEqualTo(expectedMassTransitSpanCount, $"should have at least {expectedMassTransitSpanCount} MassTransit spans");
-
-            ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit8", isExternalSpan: false);
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            var fileName = nameof(MassTransit8Tests) + "Windows" + GetSuffix(packageVersion);
-
-            settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
-
-            var busEndpointRegex = new Regex(@"[A-Za-z0-9]+_SamplesMassTransit8_bus_[a-z0-9]+");
-            settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
-
-            var queueNameRegex = new Regex(@"getting-started-message_[a-z0-9]+");
-            settings.AddRegexScrubber(queueNameRegex, "QueueName");
-
-            var sagaIdRegex = new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase);
-            settings.AddRegexScrubber(sagaIdRegex, "SagaGuid");
-
-            var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
-            settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
-
-            var payloadSizeRegex = new Regex(@"messaging\.message[._]payload_size_bytes: \d+");
-            settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
-
-            // Windows in-memory runs should not depend on machine-specific network/address values if they appear.
-            settings.AddRegexScrubber(new Regex(@"client\.address: [^,\r\n]+"), "client.address: client-address");
-            settings.AddRegexScrubber(new Regex(@"server\.address: [^,\r\n]+"), "server.address: server-address");
-            settings.AddRegexScrubber(new Regex(@"network\.local\.address: [^,\r\n]+"), "network.local.address: local-address");
-            settings.AddRegexScrubber(new Regex(@"network\.peer\.address: [^,\r\n]+"), "network.peer.address: peer-address");
-            settings.AddRegexScrubber(new Regex(@"network\.type: [^,\r\n]+"), "network.type: network-type");
-
-            var otelLibraryVersionRegex = new Regex(@"otel\.library\.version: [\d\.]+");
-            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: masstransit-version");
-
-            // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
-            var bodySizeRegex = new Regex(@"messaging\.message\.body\.size: \d+");
-            settings.AddRegexScrubber(bodySizeRegex, "messaging.message.body.size: body_size");
-
-            var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
-            settings.AddRegexScrubber(eventsRegex, "events: [scrubbed]");
-
             // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
-            var errorStackRegex = new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
-            settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n");
-
-            await VerifyHelper.VerifySpans(
-                massTransitSpans,
-                settings,
-                orderSpans: spans => spans
-                    .OrderBy(x => x.Resource.Split(' ')[0])
-                    .ThenBy(x => x.GetTag("messaging.operation") switch
-                    {
-                        "send" => 0,
-                        "receive" => 1,
-                        "process" => 2,
-                        _ => 3
-                    })
-                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
-                .UseFileName(fileName);
-
-            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
+            settings.AddRegexScrubber(new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline), "error.stack: Scrubbed\n");
         }
+
+        return settings;
     }
 
     private static string GetSuffix(string packageVersion)
@@ -267,6 +165,57 @@ public class MassTransit8Tests : TracingIntegrationTest
         };
     }
 
+    private void SetCommonEnvironmentVariables()
+    {
+        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+        SetEnvironmentVariable("DD_SERVICE", "Samples.MassTransit8");
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
+    }
+
+    private async Task RunTransportTest(
+        string packageVersion,
+        int expectedMassTransitSpanCount,
+        string variantPrefix,
+        bool includeWindowsStackScrub = false)
+    {
+        using (var telemetry = this.ConfigureTelemetry())
+        using (var agent = EnvironmentHelper.GetMockAgent())
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+        {
+            var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
+
+            using var s = new AssertionScope();
+
+            var massTransitSpans = spans.Where(span => span.GetTag("component") == "masstransit").ToList();
+            massTransitSpans.Count.Should().BeGreaterOrEqualTo(expectedMassTransitSpanCount, $"should have at least {expectedMassTransitSpanCount} MassTransit spans");
+
+            ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit8", isExternalSpan: false);
+
+            var settings = BuildSpanVerifierSettings(includeWindowsStackScrub);
+
+            var fileName = nameof(MassTransit8Tests) + variantPrefix + GetSuffix(packageVersion);
+
+            await VerifyHelper.VerifySpans(
+                massTransitSpans,
+                settings,
+                orderSpans: spans => spans
+                    .OrderBy(x => x.Resource.Split(' ')[0])
+                    .ThenBy(x => x.GetTag("messaging.operation") switch
+                    {
+                        "send" => 0,
+                        "receive" => 1,
+                        "process" => 2,
+                        _ => 3
+                    })
+                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
+                .UseFileName(fileName);
+
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
+        }
+
+        PrintMassTransitLogs("/tmp/dd-logs");
+    }
+
     private void PrintMassTransitLogs(string logDir)
     {
         Output.WriteLine($"Log directory: {logDir}");
@@ -280,7 +229,6 @@ public class MassTransit8Tests : TracingIntegrationTest
         {
             Output.WriteLine($"=== {Path.GetFileName(logFile)} ===");
             var content = File.ReadAllText(logFile);
-            // Filter to MassTransit and Diagnostic lines
             foreach (var line in content.Split('\n'))
             {
                 if (line.Contains("MassTransit") || line.Contains("Diagnostic"))

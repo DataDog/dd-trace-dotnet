@@ -1,5 +1,6 @@
 using Automatonymous;
-using Samples.MassTransit7.Contracts;
+using Samples.MassTransit;
+using Samples.MassTransit.Contracts;
 
 namespace Samples.MassTransit7.Sagas;
 
