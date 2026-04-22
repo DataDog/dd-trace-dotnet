@@ -64,5 +64,5 @@ private:
     std::shared_ptr<DiscardMetrics> _discardMetrics;
     std::atomic<std::uint64_t> _nbThreadsInSignalHandler;
     std::unique_ptr<IUnwinder> _pUnwinder;
-    static thread_local UnwinderTracer* Tracer;
+    bool _useUnwinderTracer;
 };

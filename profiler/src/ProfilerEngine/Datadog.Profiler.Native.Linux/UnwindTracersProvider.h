@@ -25,13 +25,13 @@ public:
 
     struct ScopedTracer
     {
-        ScopedTracer(UnwindTracersProvider& provider);
+        ScopedTracer(UnwindTracersProvider* provider);
         ~ScopedTracer();
 
         UnwinderTracer* get();
 
     private:
-        UnwindTracersProvider& _provider;
+        UnwindTracersProvider* _provider;
         TracerNode* _node;
     };
 

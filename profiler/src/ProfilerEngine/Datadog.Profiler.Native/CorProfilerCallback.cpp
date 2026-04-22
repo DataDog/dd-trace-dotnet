@@ -628,7 +628,10 @@ void CorProfilerCallback::InitializeServices()
     {
 #ifdef ARM64
         // Initialize the UnwindTracersProvider
-        UnwindTracersProvider::GetInstance();
+        if (Log::IsDebugEnabled())
+        {
+            UnwindTracersProvider::GetInstance();
+        }
         _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
 #else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
@@ -1473,6 +1476,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     COR_PRF_RUNTIME_TYPE runtimeType;
     CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
 
+#if !defined(_WINDOWS) && defined(ARM64)
+    if (major < 5)
+    {
+        Log::Warn("ARM64 runtime detected - The profiler is disabled: .NET 5.0 runtime or greater is required on ARM architectures.");
+        return E_FAIL;
+    }
+#endif
     // We only need to get the complete version for .NET Framework
     // For the other runtimes, no need to wait for mscorlib to be loaded
     if (runtimeType != COR_PRF_DESKTOP_CLR)

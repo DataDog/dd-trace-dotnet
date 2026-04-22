@@ -22,7 +22,7 @@ if (RUN_ASAN)
 endif()
 
 if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
 endif()
 
 if (RUN_TSAN)

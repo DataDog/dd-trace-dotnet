@@ -37,6 +37,10 @@ endif()
 # ******************************************************
 
 SET(API_WRAPPER_BASENAME Datadog.Linux.ApiWrapper)
+# For arm64, we cannot replace the x64 suffix with arm64.
+# This library is already shipped and used by customers. Their scripts expect the x64 suffix.
+# SSI relies on this file.
+# Changing this would bring little value but lots of headaches.
 SET(API_WRAPPER_SHARED_LIB_NAME ${API_WRAPPER_BASENAME}.x64)
 
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEPLOY_DIR})
