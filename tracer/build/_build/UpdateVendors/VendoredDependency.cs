@@ -96,12 +96,70 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "System.Collections.Immutable",
-                version: "7.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Collections.Immutable" },
+                version: "7.0.20",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.20.zip",
+                pathToSrc: new[] { "runtime-7.0.20", "src", "libraries", "System.Collections.Immutable", "src" },
                 transform: filePath =>
                 {
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddIgnoreNullabilityWarningDisablePragma);
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents => FixSystemCollectionsImmutable(filePath, contents));
+                    }
+                },
+                onlyIncludePaths: new []
+                {
+                    "System/Collections/Generic/IHashKeyCollection.cs",
+                    "System/Collections/Immutable/AllocFreeConcurrentStack.cs",
+                    "System/Collections/Immutable/DictionaryEnumerator.cs",
+                    "System/Collections/Immutable/DisposableEnumeratorAdapter_2.cs",
+                    "System/Collections/Immutable/IBinaryTree.cs",
+                    "System/Collections/Immutable/IImmutableArray.cs",
+                    "System/Collections/Immutable/IImmutableDictionary.cs",
+                    "System/Collections/Immutable/IImmutableDictionaryInternal.cs",
+                    "System/Collections/Immutable/IImmutableList.cs",
+                    "System/Collections/Immutable/IImmutableListQueries.cs",
+                    "System/Collections/Immutable/IImmutableSet.cs",
+                    "System/Collections/Immutable/IOrderedCollection.cs",
+                    "System/Collections/Immutable/IStrongEnumerable_2.cs",
+                    "System/Collections/Immutable/IStrongEnumerator_1.cs",
+                    "System/Collections/Immutable/ImmutableArray.cs",
+                    "System/Collections/Immutable/ImmutableArray_1.cs",
+                    "System/Collections/Immutable/ImmutableArray_1.Builder.cs",
+                    "System/Collections/Immutable/ImmutableArray_1.Enumerator.cs",
+                    "System/Collections/Immutable/ImmutableArray_1.Minimal.cs",
+                    "System/Collections/Immutable/ImmutableDictionary.cs",
+                    "System/Collections/Immutable/ImmutableDictionary_2.cs",
+                    "System/Collections/Immutable/ImmutableDictionary_2.Builder.cs",
+                    "System/Collections/Immutable/ImmutableDictionary_2.Comparers.cs",
+                    "System/Collections/Immutable/ImmutableDictionary_2.Enumerator.cs",
+                    "System/Collections/Immutable/ImmutableDictionary_2.HashBucket.cs",
+                    "System/Collections/Immutable/ImmutableDictionary_2.MutationInput.cs",
+                    "System/Collections/Immutable/ImmutableDictionary_2.MutationResult.cs",
+                    "System/Collections/Immutable/ImmutableExtensions.cs",
+                    "System/Collections/Immutable/ImmutableExtensions.Minimal.cs",
+                    "System/Collections/Immutable/ImmutableHashSet.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.Builder.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.Enumerator.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.HashBucket.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.HashBucketByRefEqualityComparer.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.HashBucketByValueEqualityComparer.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.MutationInput.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.MutationResult.cs",
+                    "System/Collections/Immutable/ImmutableHashSet_1.NodeEnumerable.cs",
+                    "System/Collections/Immutable/ImmutableList.cs",
+                    "System/Collections/Immutable/ImmutableList_1.cs",
+                    "System/Collections/Immutable/ImmutableList_1.Builder.cs",
+                    "System/Collections/Immutable/ImmutableList_1.Enumerator.cs",
+                    "System/Collections/Immutable/ImmutableList_1.Node.cs",
+                    "System/Collections/Immutable/KeysOrValuesCollectionAccessor.cs",
+                    "System/Collections/Immutable/RefAsValueType.cs",
+                    "System/Collections/Immutable/SecureObjectPool.cs",
+                    "System/Collections/Immutable/SortedInt32KeyNode.cs",
+                    "System/Collections/Immutable/SortedInt32KeyNode.Enumerator.cs",
+                    "Validation/Requires.cs",
                 });
 
             Add(
@@ -261,13 +319,16 @@ namespace UpdateVendors
 
         public string[] RelativePathsToExclude { get; set; }
 
+        public string[] OnlyIncludeRelativePaths { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
             string downloadUrl,
             string[] pathToSrc,
             Action<string> transform,
-            string[] relativePathsToExclude = null)
+            string[] relativePathsToExclude = null,
+            string[] onlyIncludePaths = null)
         {
             All.Add(new VendoredDependency()
             {
@@ -277,6 +338,7 @@ namespace UpdateVendors
                 PathToSrc = pathToSrc,
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
+                OnlyIncludeRelativePaths = onlyIncludePaths,
             });
         }
 
@@ -298,6 +360,85 @@ namespace UpdateVendors
             }
 
             return content;
+        }
+
+        private static string FixSystemCollectionsImmutable(string filePath, string contents)
+        {
+            // Strip the [DebuggerTypeProxy] attributes out
+            contents = Regex.Replace(contents, @"^.*\[DebuggerTypeProxy\(.*\)\].*\r?\n?", "", RegexOptions.Multiline);
+
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "#nullable enable\n" +
+                                  "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            contents = contents
+               .Replace("[ValidatedNotNull]", string.Empty)
+               .Replace("#nullable restore", "#nullable enable");
+
+            // some somewhat hacky fixes for specific issues
+            if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Enumerator.cs"))
+            {
+                contents = contents.Replace("System.Collections.IEnumerator.Current", "global::System.Collections.IEnumerator.Current");
+            }
+
+            if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.cs"))
+            {
+                contents = contents
+                          .Replace("System.Collections.IEnumerator", "global::System.Collections.IEnumerator")
+                          .Replace("System.Collections.IEnumerable", "global::System.Collections.IEnumerable")
+                          .Replace("System.Collections.ICollection", "global::System.Collections.ICollection");
+            }
+
+            if (string.Equals(Path.GetFileName(filePath), "KeysOrValuesCollectionAccessor.cs"))
+            {
+                // Hacky, but it works
+                contents = contents.Replace("var sortedDictionary = this.Dictionary as ImmutableSortedDictionary<TKey, TValue>;", "var sortedDictionary = this.Dictionary as IImmutableDictionaryInternal<TKey, TValue>;");
+            }
+
+            if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Node.cs"))
+            {
+                contents = contents.Replace("root.AddRange(Linq.Enumerable.Select(this, converter));", "root.AddRange(global::System.Linq.Enumerable.Select(this, converter));");
+            }
+
+            if (string.Equals(Path.GetFileName(filePath), "ImmutableList_1.Builder.cs"))
+            {
+                contents = contents.Replace("System.Threading.Interlocked.CompareExchange", "global::System.Threading.Interlocked.CompareExchange");
+            }
+
+            if (string.Equals(Path.GetFileName(filePath), "ImmutableDictionary_2.Builder.cs"))
+            {
+                contents = contents.Replace("Threading.Interlocked.CompareExchange", "global::System.Threading.Interlocked.CompareExchange");
+            }
+
+            // replace SR, hard to do generally
+            contents = contents
+               .Replace("""ArgumentException(SR.Format(SR.DuplicateKey, key))""", """ArgumentException("DuplicateKey" + key)""")
+               .Replace("""KeyNotFoundException(SR.Format(SR.Arg_KeyNotFoundWithKey, key.ToString()))""", """KeyNotFoundException("Arg_KeyNotFoundWithKey" + key.ToString())""")
+               .Replace("""SR.Format(SR.Arg_KeyNotFoundWithKey, (object) key.ToString()));""", """key.ToString());""");
+            contents = Regex.Replace(contents, @"SR\.(\w+)(?=\W)", "@\"$1\"");
+
+            return contents;
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, params Func<string, string, string>[] extraTransform)
@@ -437,7 +578,7 @@ namespace UpdateVendors
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
                             result,
-                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
+                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(readonly\s+)?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
@@ -445,6 +586,7 @@ namespace UpdateVendors
 
         static string GenerateWarningDisablePragma() =>
             "#pragma warning disable " +
+            "CS0105, " +      // The using directive appeared previously
             "CS0618, " +      // Type or member is obsolete
             "CS0649, " +      // Field is never assigned to, and will always have its default value
             "CS1574, " +      // XML comment has a cref attribute that could not be resolved
