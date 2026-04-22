@@ -39,13 +39,19 @@ public class AspNetWebFormsApiSecurityDisabled : AspNetWebFormsApiSecurity
 
 /// <summary>
 /// Tests whether API Security schema extraction fires for plain ASP.NET WebForms.
-/// Hypothesis: TracingHttpModule uses WebTags (no HttpRoute property), so http.route is never
-/// set on the span, causing ApiSecurity.ShouldAnalyzeSchema to return false.
-/// These tests prove or disprove this for two routing mechanisms: IHttpHandler routes and MapPageRoute.
+/// Hypothesis 1 (request body): TracingHttpModule uses WebTags (no HttpRoute property), so
+/// http.route is never set on the span, causing ApiSecurity.ShouldAnalyzeSchema to return false.
+/// Hypothesis 2 (response body): NetFx response-body capture is implemented only by two CallTarget
+/// hooks — ControllerActionInvoker.InvokeActionMethod (MVC5, duck-cast to IJsonResultMvc) and
+/// ReflectedHttpActionDescriptor.ExecuteAsync (WebApi2, duck-cast to IJsonResultWebApi). Neither
+/// hook fires for an .aspx page or an IHttpHandler, so `server.response.body` can never be pushed
+/// to the WAF on plain WebForms, even when http.route is present. These tests prove or disprove
+/// both hypotheses for two routing mechanisms: IHttpHandler routes and MapPageRoute.
 /// </summary>
 public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private const string RequestBodySchemaTag = "_dd.appsec.s.req.body";
+    private const string ResponseBodySchemaTag = "_dd.appsec.s.res.body";
     private const string HttpRouteTag = "http.route";
 
     private readonly bool _enableApiSecurity;
@@ -113,6 +119,48 @@ public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisF
         AssertSchemaTagPresence(requestSpan, hasRoute);
     }
 
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("/api/security/12", """{"Dog":"23", "Dog2":"test"}""")]
+    public async Task TestResponseBodyHandlerRoute(string url, string body)
+    {
+        var agent = _iisFixture.Agent;
+        var dateTime = DateTime.UtcNow;
+        await SubmitRequest(url, body, "application/json");
+
+        var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
+        var requestSpan = spans.First(s => s.Tags.TryGetValue("http.url", out var u) && u.Contains(url));
+
+        var hasRoute = requestSpan.Tags.ContainsKey(HttpRouteTag);
+        var hasResponseBodySchema = requestSpan.Tags.ContainsKey(ResponseBodySchemaTag);
+        Output.WriteLine($"[res-body handler-route] http.route present: {hasRoute}, _dd.appsec.s.res.body present: {hasResponseBodySchema}");
+
+        AssertResponseBodySchemaTagPresence(requestSpan, hasRoute);
+    }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("/Health/Params/12", """{"Dog":"23", "Dog2":"test"}""")]
+    public async Task TestResponseBodyMappedPageRoute(string url, string body)
+    {
+        var agent = _iisFixture.Agent;
+        var dateTime = DateTime.UtcNow;
+        await SubmitRequest(url, body, "application/json");
+
+        var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
+        var requestSpan = spans.First(s => s.Tags.TryGetValue("http.url", out var u) && u.Contains(url));
+
+        var hasRoute = requestSpan.Tags.ContainsKey(HttpRouteTag);
+        var hasResponseBodySchema = requestSpan.Tags.ContainsKey(ResponseBodySchemaTag);
+        Output.WriteLine($"[res-body mapped-page-route] http.route present: {hasRoute}, _dd.appsec.s.res.body present: {hasResponseBodySchema}");
+
+        AssertResponseBodySchemaTagPresence(requestSpan, hasRoute);
+    }
+
     public async Task InitializeAsync()
     {
         await _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
@@ -144,6 +192,15 @@ public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisF
                 RequestBodySchemaTag,
                 "http.route is missing so ShouldAnalyzeSchema returns false");
         }
+    }
+
+    private void AssertResponseBodySchemaTagPresence(MockSpan requestSpan, bool hasRoute)
+    {
+        requestSpan.Tags.Should().NotContainKey(
+            ResponseBodySchemaTag,
+            hasRoute
+                ? "plain WebForms has no MVC ActionResult / WebApi HttpActionDescriptor hook, so server.response.body is never pushed to the WAF even when http.route is present"
+                : "http.route is missing so ShouldAnalyzeSchema short-circuits before any response-body analysis");
     }
 }
 #endif
