@@ -225,7 +225,7 @@ benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
   trigger:
-    project: DataDog/serverless-tools
+    project: ${GITLAB_GROUP}/serverless-tools
     branch: onzia/test-noble
     strategy: depend
   allow_failure: true
