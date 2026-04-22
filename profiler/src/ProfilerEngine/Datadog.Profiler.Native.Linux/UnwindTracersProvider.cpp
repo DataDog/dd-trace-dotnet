@@ -52,6 +52,10 @@ UnwindTracersProvider::ScopedTracer::~ScopedTracer()
 
 UnwinderTracer* UnwindTracersProvider::ScopedTracer::get()
 {
+    if (_node == nullptr)
+    {
+        return nullptr;
+    }
     return _node->tracer;
 }
 

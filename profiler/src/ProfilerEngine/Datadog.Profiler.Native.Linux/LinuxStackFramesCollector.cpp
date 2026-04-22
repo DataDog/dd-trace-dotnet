@@ -24,14 +24,10 @@
 #include "ScopeFinalizer.h"
 #include "StackSnapshotResultBuffer.h"
 
-#ifdef ARM64
-#include "UnwinderTracer.h"
-#endif
-
 using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
-LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
+std::atomic<LinuxStackFramesCollector*> LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
@@ -45,13 +41,13 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _pUnwinder{pUnwinder},
-    _tracer{nullptr}
+    _pUnwinder{pUnwinder}
 {
     if (_signalManager != nullptr)
     {
         _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
     }
+
 
     // For now have one metric for both walltime and cpu (naive)
     _samplingRequest = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_walltime_cpu_sampling_requests");
@@ -62,11 +58,6 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
 {
     _errorStatistics.Log();
-}
-
-void LinuxStackFramesCollector::SetTracer(UnwinderTracer* tracer)
-{
-    _tracer = tracer;
 }
 
 bool LinuxStackFramesCollector::ShouldLogStats()
@@ -111,13 +102,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 {
     long errorCode;
 
-    // If there a timer associated to the managed thread, we have to disarm it.
-    // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
-    auto timerId = pThreadInfo->GetTimerId();
-
-#ifdef ARM64
-    auto tracer = std::make_unique<UnwinderTracer>();
-#endif
     if (selfCollect)
     {
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
@@ -125,12 +109,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
         pThreadInfo->AcquireLock();
 
-#ifdef ARM64
-        _tracer = tracer.get();
-#endif
         on_leave
         {
-            _tracer = nullptr;
             pThreadInfo->ReleaseLock();
         };
 
@@ -149,11 +129,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         const auto threadId = static_cast<::pid_t>(pThreadInfo->GetOsThreadId());
 
         s_pInstanceCurrentlyStackWalking = this;
-#ifdef ARM64
-        s_pInstanceCurrentlyStackWalking->SetTracer(tracer.get());
-#endif
 
-        on_leave { s_pInstanceCurrentlyStackWalking->SetTracer(nullptr); s_pInstanceCurrentlyStackWalking = nullptr; };
+        on_leave { s_pInstanceCurrentlyStackWalking = nullptr; };
 
         _stackWalkFinished = false;
 
