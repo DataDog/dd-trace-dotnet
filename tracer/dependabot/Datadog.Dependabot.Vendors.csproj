@@ -40,8 +40,11 @@
     <!-- https://www.nuget.org/packages/System.Private.CoreLib/1.0.0 -->
     <PackageReference Include="System.Private.CoreLib" Version="1.0.0" />
 
-    <!-- https://www.nuget.org/packages/System.Reflection.Metadata/7.0.2 -->
-    <PackageReference Include="System.Reflection.Metadata" Version="7.0.2" />
+    <!-- https://www.nuget.org/packages/System.Reflection.Metadata.Interop/7.0.20 -->
+    <PackageReference Include="System.Reflection.Metadata.Interop" Version="7.0.20" />
+
+    <!-- https://www.nuget.org/packages/System.Reflection.Metadata/7.0.20 -->
+    <PackageReference Include="System.Reflection.Metadata" Version="7.0.20" />
 
     <!-- https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe/1.0.0 -->
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="1.0.0" />
