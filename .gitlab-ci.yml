@@ -289,3 +289,4 @@ update_central_configurations_version_range_v2:
     LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
     LANGUAGE_NAME: "dotnet"
     SEND_ALIASES: true
+    
