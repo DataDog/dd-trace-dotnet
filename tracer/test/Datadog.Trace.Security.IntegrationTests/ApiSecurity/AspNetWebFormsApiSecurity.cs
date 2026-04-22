@@ -196,11 +196,10 @@ public abstract class AspNetWebFormsApiSecurity : AspNetBase, IClassFixture<IisF
 
     private void AssertResponseBodySchemaTagPresence(MockSpan requestSpan, bool hasRoute)
     {
-        requestSpan.Tags.Should().NotContainKey(
-            ResponseBodySchemaTag,
-            hasRoute
-                ? "plain WebForms has no MVC ActionResult / WebApi HttpActionDescriptor hook, so server.response.body is never pushed to the WAF even when http.route is present"
-                : "http.route is missing so ShouldAnalyzeSchema short-circuits before any response-body analysis");
+        var reason = hasRoute
+            ? "plain WebForms has no MVC ActionResult / WebApi HttpActionDescriptor hook, so server.response.body is never pushed to the WAF even when http.route is present"
+            : "http.route is missing so ShouldAnalyzeSchema short-circuits before any response-body analysis";
+        requestSpan.Tags.Should().NotContainKey(ResponseBodySchemaTag, reason);
     }
 }
 #endif
