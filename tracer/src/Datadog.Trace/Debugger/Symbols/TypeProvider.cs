@@ -6,7 +6,12 @@
 #nullable enable
 
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata; // keep vendored versions for now because we access internal members
+
+#if NETCOREAPP
+using System.Reflection.Metadata;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+#endif
 
 namespace Datadog.Trace.Debugger.Symbols
 {

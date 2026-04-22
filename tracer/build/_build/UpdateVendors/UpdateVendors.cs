@@ -67,9 +67,12 @@ namespace UpdateVendors
             var projFile = Path.Combine(sourceLocation, $"{libraryName}.csproj");
 
             // Rename the proj file to a txt for reference
-            File.Copy(projFile, projFile + ".txt");
-            File.Delete(projFile);
-            Console.WriteLine($"Renamed {libraryName} project file.");
+            if (File.Exists(projFile))
+            {
+                File.Copy(projFile, projFile + ".txt");
+                File.Delete(projFile);
+                Console.WriteLine($"Renamed {libraryName} project file.");
+            }
 
             // Delete the assembly info file
             var assemblyInfo = Path.Combine(sourceLocation, @"Properties", "AssemblyInfo.cs");
@@ -89,7 +92,8 @@ namespace UpdateVendors
 
             foreach (var file in files)
             {
-                if (ShouldDropFile(dependency, sourceLocation, file))
+                var normalizedFilePath = Path.GetFullPath(file);
+                if(!ShouldKeepFile(dependency, sourceLocation, normalizedFilePath) || ShouldDropFile(dependency, sourceLocation, normalizedFilePath))
                 {
                     File.Delete(file);
                 }
@@ -109,21 +113,24 @@ namespace UpdateVendors
             Console.WriteLine($"Finished {libraryName} upgrade.");
         }
 
-        private static bool ShouldDropFile(VendoredDependency dependency, string basePath, string filePath)
-        {
-            var normalizedFilePath = filePath.Replace('/', '\\');
-            foreach (var relativeFileToDrop in dependency.RelativePathsToExclude)
-            {
-                var absolutePath = Path.Combine(basePath, relativeFileToDrop).Replace('/', '\\');
-                if (normalizedFilePath.Equals(absolutePath, StringComparison.OrdinalIgnoreCase)
-                 || (absolutePath.EndsWith('\\') &&
-                     normalizedFilePath.StartsWith(absolutePath, StringComparison.OrdinalIgnoreCase)))
-                {
-                    return true;
-                }
-            }
+        private static bool ShouldDropFile(VendoredDependency dependency, string sourceLocation, string normalizedFilePath)
+            => dependency.RelativePathsToExclude.Any(x => MatchesPath(x, sourceLocation, normalizedFilePath));
 
-            return false;
+        private static bool ShouldKeepFile(VendoredDependency dependency, string sourceLocation, string normalizedFilePath)
+            => dependency.OnlyIncludeRelativePaths is null
+            || dependency.OnlyIncludeRelativePaths.Any(x => MatchesPath(x, sourceLocation, normalizedFilePath));
+
+        private static bool MatchesPath(string relativeTargetPath, string basePath, string normalizedFilePath)
+        {
+            var normalizedRelativePath = relativeTargetPath
+                                        .Replace('\\', Path.DirectorySeparatorChar)
+                                        .Replace('/', Path.DirectorySeparatorChar);
+            var fullTargetPath = Path.GetFullPath(Path.Combine(basePath, normalizedRelativePath));
+
+            return string.Equals(normalizedFilePath, fullTargetPath, StringComparison.OrdinalIgnoreCase)
+                || normalizedFilePath.StartsWith(
+                       fullTargetPath.EndsWith(Path.DirectorySeparatorChar) ? fullTargetPath : fullTargetPath + Path.DirectorySeparatorChar,
+                       StringComparison.OrdinalIgnoreCase);
         }
 
         private static void SafeDeleteDirectory(string directoryPath)
