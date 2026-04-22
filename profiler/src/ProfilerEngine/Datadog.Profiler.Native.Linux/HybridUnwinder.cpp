@@ -67,8 +67,7 @@ struct UnwindCursor
 };
 
 bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-    ManagedCodeCache* managedCodeCache,
-                        UnwinderTracer* tracer, std::size_t& i) const
+    UnwinderTracer* tracer, std::size_t& i) const
 {
     unw_word_t ip = 0;
     while (true)
@@ -135,9 +134,8 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
 }
 
 bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-    ManagedCodeCache* managedCodeCache,
-                        UnwinderTracer* tracer, std::size_t& i,
-                        std::uintptr_t stackBase, std::uintptr_t stackEnd) const
+    UnwinderTracer* tracer, std::size_t& i,
+    std::uintptr_t stackBase, std::uintptr_t stackEnd) const
 {
     if (i >= bufferSize)
     {
@@ -161,31 +159,18 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
         return false;
     }
 
-    unw_word_t lr = 0;
-    auto lrResult = unw_get_reg(&cursor->cursor, UNW_AARCH64_X30, &lr);
-    if (lrResult == 0)
-    {
-        const auto savedLr = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
-        if (lr != savedLr)
-        {
-            auto lrIsManaged = IsManaged(lr);
-            if (!lrIsManaged.has_value())
-            {
-                buffer[i++] = 0x42; // Unknown managed function
-            }
-            else if (lrIsManaged.value())
-            {
-                buffer[i++] = lr; // Managed function
-            }
-        }
-    }
+    // For now we do not handle leaf function case.
+    // This is a TODO:
+    // The reason is that we may duplicate top frame in some cases.
+    // Instead, in a follow up PR, we will give unwinding info to the unwinder
+    // to make the callstack collection more accurate.
 
-    // Walk the FP chain, skipping non-managed (native/stub) frames.
+    // Walk the FP chain.
     // In .NET 10+, user managed code calls throw via 3 native frames before reaching
     // the managed RhThrowEx:
-    //   IL_Throw (asm stub) → IL_Throw_Impl (C++) → DispatchManagedException (C++) → RhThrowEx (managed)
+    //   IL_Throw (asm stub) -> IL_Throw_Impl (C++) -> DispatchManagedException (C++) -> RhThrowEx (managed)
     // In .NET 9, SoftwareExceptionFrame::Init() additionally calls PAL_VirtualUnwind(),
-    // which adds 1–3 extra native frames, bringing the total to 5–6.
+    // which adds 1-3 extra native frames, bringing the total to 5-6.
     // We must skip these native frames rather than stopping, or we lose the caller frame.
     // The limit of 8 consecutive non-managed frames (6 + 2 margin) stops useless walking
     // once we leave the managed portion of the stack entirely (e.g., thread startup code).
@@ -209,22 +194,19 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
         if (tracer) tracer->Record(EventType::FrameChainStep, ip, fp);
 
         auto isManaged = IsManaged(ip);
-        if (!isManaged.has_value() || isManaged.value())
-        //if (isManaged.has_value() && isManaged.value())
+        if (isManaged.has_value() && isManaged.value())
         {
+            buffer[i++] = ip;
+            consecutiveNativeFrames = 0;
+        }
+        else
+        {
+            static constexpr std::size_t MaxConsecutiveNativeFrames = 8;
+            // In case we were unable to identify, we assume it's a managed frame
             if (!isManaged.has_value())
             {
-                buffer[i++] = 0x42; // Unknown managed function
+                buffer[i++] = FrameStore::FakeUnknownIP;
             }
-            else
-            {
-                buffer[i++] = ip;
-                consecutiveNativeFrames = 0;
-            }
-        }
-        else if (!isManaged.value())
-        {
-            static constexpr std::size_t MaxConsecutiveNativeFrames = 9;
             if (++consecutiveNativeFrames > MaxConsecutiveNativeFrames)
             {
                 finishReason = FinishReason::TooManyNativeFrames;
@@ -289,7 +271,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
 
     // === Phase 1: Walk native frames with libunwind until managed code is reached ===
     std::size_t i = 0;
-    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, buffer, bufferSize, _codeCache, tracer, i);
+    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, buffer, bufferSize, tracer, i);
     if (!keepOnUnwinding)
     {
         // already recorded state
@@ -305,14 +287,8 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     // === Phase 2: Walk managed frames using the FP chain ===
     // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
     // every managed method, so FP chaining is reliable once we enter managed code.
-    // buffer[i++] = ip;
-    // if (i >= bufferSize)
-    // {
-    //     if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
-    //     return i;
-    // }
 
-    auto _ = UnwindManagedFrames(&unwindCursor, buffer, bufferSize, _codeCache, tracer, i, stackBase, stackEnd);
+    auto _ = UnwindManagedFrames(&unwindCursor, buffer, bufferSize, tracer, i, stackBase, stackEnd);
 
     // Already recorded state in tracer
     return i;

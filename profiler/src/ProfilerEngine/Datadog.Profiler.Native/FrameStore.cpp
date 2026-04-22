@@ -111,12 +111,17 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
         if (!result.has_value())
         {
+            // Windows-only: GetFunctionFromIP was wrapped in __try/__except and caught an
+            // SEH exception coming out of the CLR. Surface the frame as resolved
+            // (isResolved=true) so the existing Windows pipeline keeps its placeholder
+            // frame rather than silently dropping it.
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
         std::tie(hr, functionId) = result.value();
-        // if native frame
         if (FAILED(hr))
         {
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
@@ -126,16 +131,17 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 
         if (!functionId.has_value())
         {
-            // We have a value but not a valid one. This is fake function ID.
-            // This can occur when the calling into the CLR from managed code cache
-            // resulted in a crash(lucky us on windows, we can catch on linux ....:grimacing:)
-            // This is to preserve the current semantic
+            // Windows-only: the ICorProfilerInfo::GetFunctionFromIP call inside
+            // ManagedCodeCache was wrapped in __try/__except and caught an SEH
+            // exception from the CLR. Keep isResolved=true so the Windows pipeline
+            // preserves the placeholder frame (legacy semantic).
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
-        // if native frame
         if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
         {
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }

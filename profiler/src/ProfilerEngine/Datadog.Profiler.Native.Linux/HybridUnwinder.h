@@ -23,10 +23,8 @@ public:
 private:
     std::optional<bool> IsManaged(std::uintptr_t ip) const;
     bool UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-                        ManagedCodeCache* managedCodeCache,
                         UnwinderTracer* tracer, std::size_t& i) const;
     bool UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-                        ManagedCodeCache* managedCodeCache,
                         UnwinderTracer* tracer, std::size_t& i,
                         std::uintptr_t stackBase, std::uintptr_t stackEnd) const;
 

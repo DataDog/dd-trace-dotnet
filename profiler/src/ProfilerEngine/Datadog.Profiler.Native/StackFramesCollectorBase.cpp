@@ -174,18 +174,21 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequired(ManagedThreadInfo* p
     ResumeTargetThreadIfRequiredImplementation(pThreadInfo, isTargetThreadSuspended, pErrorCodeHR);
 }
 
-StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
+StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, UnwinderTracer* tracer)
 {
     // Update state with the info for the thread that we are collecting:
     _pCurrentCollectionThreadInfo = pThreadInfo;
 
     const auto currentThreadId = OpSysTools::GetThreadId();
 
+    _tracer.store(tracer);
+
     // Execute the actual collection:
     StackSnapshotResultBuffer* result = CollectStackSampleImplementation(pThreadInfo, pHR, pThreadInfo->GetOsThreadId() == currentThreadId);
 
     // No longer collecting the specified thread:
     _pCurrentCollectionThreadInfo = nullptr;
+    _tracer.store(nullptr);
 
     // If someone has requested an abort, notify them now:
 
