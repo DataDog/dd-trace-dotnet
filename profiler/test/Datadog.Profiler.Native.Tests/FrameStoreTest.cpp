@@ -15,11 +15,17 @@ using namespace testing;
 
 namespace {
 
-// The string produced by FrameStore::GetFrame when an IP cannot be resolved to a managed
-// function (see FrameStore.cpp). Kept in sync with the private constant in the .cpp file.
-// If the production string changes, update this constant so the test intent stays explicit.
+// The strings produced by FrameStore::GetFrame. Kept in sync with the private constants
+// in FrameStore.cpp. If the production strings change, update these so the test intent
+// stays explicit.
 constexpr const char* NotResolvedFrameText =
     "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:NotResolvedFrame |fg: |sg:(?)";
+constexpr const char* FakeContentionFrameText =
+    "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)";
+constexpr const char* FakeAllocationFrameText =
+    "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)";
+constexpr const char* UnknownManagedFrameText =
+    "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Method |fg: |sg:(?)";
 
 } // namespace
 
@@ -105,3 +111,102 @@ TEST(FrameStoreTest, GetFrame_WithCache_NativeIp_ReturnsNotResolvedAndDropped)
 
     cache.reset();
 }
+
+// Test: fake IPs (addresses < 4KB used by the profiler for synthetic frames such as
+// lock-contention or allocation) short-circuit at the top of GetFrame. They must be
+// returned as {resolved=true, <placeholder frame>} so the RawSampleTransformer keeps
+// them in the final sample. Regressing this behavior would hide contention/allocation
+// profiles.
+TEST(FrameStoreTest, GetFrame_FakeIps_ShortCircuitToResolvedPlaceholders)
+{
+    auto mockProfiler = MockProfilerInfo{};
+
+    // No call to GetFunctionFromIP is expected: the fake-IP branch short-circuits
+    // before reaching the resolver. Setting a strict mock verifies this contract.
+    EXPECT_CALL(mockProfiler, GetFunctionFromIP(_, _)).Times(0);
+
+    FrameStore frameStore(
+        /*pCorProfilerInfo*/ &mockProfiler,
+        /*pConfiguration  */ nullptr,
+        /*pDebugInfoStore */ nullptr,
+        /*pManagedCodeCache*/ nullptr);
+
+    {
+        auto [isResolved, frameInfo] = frameStore.GetFrame(FrameStore::FakeLockContentionIP);
+        EXPECT_TRUE(isResolved);
+        EXPECT_EQ(std::string(frameInfo.Frame), std::string(FakeContentionFrameText));
+    }
+    {
+        auto [isResolved, frameInfo] = frameStore.GetFrame(FrameStore::FakeAllocationIP);
+        EXPECT_TRUE(isResolved);
+        EXPECT_EQ(std::string(frameInfo.Frame), std::string(FakeAllocationFrameText));
+    }
+    {
+        auto [isResolved, frameInfo] = frameStore.GetFrame(FrameStore::FakeUnknownIP);
+        EXPECT_TRUE(isResolved);
+        EXPECT_EQ(std::string(frameInfo.Frame), std::string(UnknownManagedFrameText));
+    }
+}
+
+#ifdef _WINDOWS
+// Test (Windows only): cached-path "nullopt" branch simulates the SEH mirror inside
+// ManagedCodeCache::GetFunctionId. When ICorProfilerInfo::GetFunctionFromIP crashes
+// (e.g. module unloaded concurrently) the __try/__except in the cache returns
+// std::nullopt. FrameStore must translate that to {isResolved=true, NotResolvedFrame}
+// so the Windows pipeline preserves the placeholder frame rather than dropping it.
+//
+// This guards the distinction between "cache returned nullopt" (SEH, keep the frame)
+// and "cache returned InvalidFunctionId" (native, drop the frame).
+TEST(FrameStoreTest, GetFrame_WithCache_CachedPathNullopt_ReturnsResolvedPlaceholder)
+{
+    auto mockProfiler = MockProfilerInfo{};
+
+    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler);
+    cache->Initialize();
+
+    // Register an R2R module range so GetFunctionId falls through to
+    // GetFunctionFromIP_Original (which wraps the ICorProfilerInfo call in __try/__except).
+    const uintptr_t r2rCodeStart = 0xC0000000;
+    const uintptr_t r2rCodeEnd   = 0xC000FFFF;
+    const uintptr_t ipInR2R      = r2rCodeStart + 0x500;
+
+    std::vector<ModuleCodeRange> moduleRanges;
+    moduleRanges.emplace_back(r2rCodeStart, r2rCodeEnd);
+    cache->AddModuleRangesToCache(std::move(moduleRanges));
+
+    // Simulate a crash during GetFunctionFromIP by raising an access violation.
+    // Mirrors the real-world scenario where the CLR unloads the module containing
+    // the target symbol while we resolve the IP.
+    EXPECT_CALL(mockProfiler, GetFunctionFromIP(reinterpret_cast<LPCBYTE>(ipInR2R), _))
+        .WillOnce([](LPCBYTE, FunctionID*) -> HRESULT {
+            ::RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 0, nullptr);
+            return S_OK; // unreachable
+        });
+
+    FrameStore frameStore(
+        /*pCorProfilerInfo*/ &mockProfiler,
+        /*pConfiguration  */ nullptr,
+        /*pDebugInfoStore */ nullptr,
+        /*pManagedCodeCache*/ cache.get());
+
+    // Sanity-check the upstream contract: the cache reports nullopt (SEH path).
+    ASSERT_FALSE(cache->GetFunctionId(ipInR2R).has_value());
+
+    // Re-arm the mock for the GetFrame call.
+    EXPECT_CALL(mockProfiler, GetFunctionFromIP(reinterpret_cast<LPCBYTE>(ipInR2R), _))
+        .WillOnce([](LPCBYTE, FunctionID*) -> HRESULT {
+            ::RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 0, nullptr);
+            return S_OK;
+        });
+
+    auto [isResolved, frameInfo] = frameStore.GetFrame(ipInR2R);
+
+    EXPECT_TRUE(isResolved) << "When the cache signals SEH (nullopt), FrameStore must "
+                               "keep the frame (isResolved=true) to preserve the "
+                               "legacy Windows placeholder behavior.";
+    EXPECT_EQ(std::string(frameInfo.Frame), std::string(NotResolvedFrameText));
+
+    cache.reset();
+}
+#endif
+
