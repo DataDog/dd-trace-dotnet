@@ -615,7 +615,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
-            using (await RunSampleAndWaitForExit(agent, packageVersion: "1.13.1"))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
