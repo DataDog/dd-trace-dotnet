@@ -253,6 +253,11 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
+            // arch resolves via GetUnixArchitectureAndExtension() to one of:
+            //   linux-x64, linux-arm64, linux-musl-x64, linux-musl-arm64.
+            // On arm64 specifically, this target runs on both the glibc and the
+            // Alpine/musl CI legs, which together populate both linux-arm64 and
+            // linux-musl-arm64 RID folders in the aggregated monitoring home.
             var (arch, _) = GetUnixArchitectureAndExtension();
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
@@ -783,6 +788,11 @@ partial class Build
 
     Target CompileProfilerWithTsanLinux => _ => _
         .Unlisted()
+        // TODO: re-enable on arm64 once we have CI hosts whose kernel/hardware
+        // exposes the 48-bit VMA that TSAN's shadow memory mapping requires.
+        // Many AWS Graviton / Ampere arm64 instances still default to 39- or
+        // 42-bit VMA, which trips TSAN's initializer.
+        // Tracking: https://github.com/DataDog/dd-trace-dotnet/issues/TBD (replace with real issue id).
         .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Before(PublishProfiler)
         .Executes(() =>
@@ -798,6 +808,8 @@ partial class Build
 
     Target RunUnitTestsWithTsanLinux => _ => _
         .Unlisted()
+        // See CompileProfilerWithTsanLinux above for the arm64 VMA limitation
+        // and the tracking-issue link.
         .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Executes(() =>
         {
@@ -914,6 +926,11 @@ partial class Build
         {
             if (sanitizer is SanitizerKind.Asan)
             {
+                // libasan SONAME differs between the two ASAN CI images:
+                //   - arm64: older Ubuntu/Debian base shipping gcc 9 -> libasan.so.5.
+                //   - x64:   newer image shipping gcc 10+ -> libasan.so.6.
+                // If/when the arm64 image is upgraded to gcc 10+, this can be
+                // collapsed to libasan.so.6 unconditionally.
                 envVars["LD_PRELOAD"] = IsArm64 ? "libasan.so.5" : "libasan.so.6";
                 // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
                 envVars["ASAN_OPTIONS"] = "detect_leaks=0";

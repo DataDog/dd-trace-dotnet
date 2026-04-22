@@ -8,6 +8,11 @@
     <!-- only run .NET Framework tests on Windows -->
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net48;netcoreapp3.1;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT' And '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">netcoreapp3.1;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <!--
+      netcoreapp3.1 is deliberately excluded on arm64 Linux: the Continuous Profiler
+      refuses to initialize when major < 5 on that platform (see CorProfilerCallback::Initialize),
+      so running the demos against .NET Core 3.1 arm64 would produce no profiles at all.
+    -->
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT' And '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <Platforms>AnyCPU;x64;x86</Platforms>
 
