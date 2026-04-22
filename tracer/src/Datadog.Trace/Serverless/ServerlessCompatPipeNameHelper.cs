@@ -8,7 +8,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Serverless
@@ -23,9 +22,9 @@ namespace Datadog.Trace.Serverless
 
         /// <summary>
         /// Checks whether the Datadog Serverless Compat layer is deployed and has a version
-        /// that supports named pipe transport. This is called during ExporterSettings construction
-        /// (before the compat assembly is loaded) so it checks files on disk rather than
-        /// loaded assemblies.
+        /// that supports named pipe transport. Callers are expected to have already confirmed
+        /// the platform supports named pipes (Windows); this method only probes the compat
+        /// binary and DLL on disk.
         /// </summary>
         /// <param name="compatPathOverride">An override for the compat binary path, typically read
         /// from <c>DD_SERVERLESS_COMPAT_PATH</c> via the telemetry-enabled configuration readers
@@ -43,14 +42,6 @@ namespace Datadog.Trace.Serverless
         {
             try
             {
-                // Named pipes are Windows-only
-#if !NETFRAMEWORK
-                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    return false;
-                }
-#endif
-
                 // Check that the compat binary exists — it's what actually listens on the named pipe.
                 // DD_SERVERLESS_COMPAT_PATH overrides the default binary location
                 // (matches CompatibilityLayer.cs in datadog-serverless-compat-dotnet).
