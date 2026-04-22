@@ -15,58 +15,11 @@ namespace Datadog.Trace.Tests.Serverless
 {
     public class ServerlessCompatPipeNameHelperTests
     {
-        [Theory]
-        [InlineData("")]
-        [InlineData("x")]
-        [InlineData("dd_trace")]
-        [InlineData("dd_dogstatsd")]
-        public void GenerateUniquePipeName_ReturnsCorrectFormat(string baseName)
-        {
-            var result = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, "test");
-
-            // Format: {baseName}_{32-char-hex-guid}
-            result.Should().StartWith(baseName + "_");
-            var guidPart = result.Substring(baseName.Length + 1);
-            guidPart.Should().HaveLength(32);
-            Guid.TryParse(guidPart, out _).Should().BeTrue();
-        }
-
-        [Fact]
-        public void GenerateUniquePipeName_TruncatesBaseNameExceeding214Chars()
-        {
-            var longBase = new string('a', 215);
-
-            var result = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(longBase, "test");
-
-            // Truncated to 214 + "_" + 32-char guid = 247 total
-            result.Should().HaveLength(214 + 1 + 32);
-        }
-
-        [Fact]
-        public void GenerateUniquePipeName_BaseNameAtLimit_IsNotTruncated()
-        {
-            var exactBase = new string('a', 214);
-
-            var result = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(exactBase, "test");
-
-            result.Should().StartWith(exactBase + "_");
-            result.Should().HaveLength(214 + 1 + 32);
-        }
-
-        [Fact]
-        public void GenerateUniquePipeName_ProducesDifferentNamesPerCall()
-        {
-            var first = ServerlessCompatPipeNameHelper.GenerateUniquePipeName("dd_trace", "test");
-            var second = ServerlessCompatPipeNameHelper.GenerateUniquePipeName("dd_trace", "test");
-
-            first.Should().NotBe(second);
-        }
-
         [Fact]
         public void IsCompatLayerAvailableWithPipeSupport_DoesNotThrow()
         {
             // Should never throw regardless of environment — errors are caught internally
-            var act = () => ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport();
+            var act = () => ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(compatPathOverride: null);
 
             act.Should().NotThrow();
         }
@@ -76,7 +29,7 @@ namespace Datadog.Trace.Tests.Serverless
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport();
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(compatPathOverride: null);
 
             result.Should().BeFalse();
         }
@@ -88,6 +41,7 @@ namespace Datadog.Trace.Tests.Serverless
 
             // Binary missing, DLL present
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                compatPathOverride: null,
                 fileExists: path => !path.EndsWith(".exe"),
                 getAssemblyVersion: _ => new Version(1, 4, 0));
 
@@ -101,6 +55,7 @@ namespace Datadog.Trace.Tests.Serverless
 
             // Binary present, DLL missing
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                compatPathOverride: null,
                 fileExists: path => !path.EndsWith(".dll"),
                 getAssemblyVersion: _ => new Version(1, 4, 0));
 
@@ -113,6 +68,7 @@ namespace Datadog.Trace.Tests.Serverless
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                compatPathOverride: null,
                 fileExists: _ => true,
                 getAssemblyVersion: _ => null);
 
@@ -128,6 +84,7 @@ namespace Datadog.Trace.Tests.Serverless
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                compatPathOverride: null,
                 fileExists: _ => true,
                 getAssemblyVersion: _ => new Version(major, minor, build));
 
@@ -144,6 +101,7 @@ namespace Datadog.Trace.Tests.Serverless
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                compatPathOverride: null,
                 fileExists: _ => true,
                 getAssemblyVersion: _ => new Version(major, minor, build));
 
@@ -156,6 +114,7 @@ namespace Datadog.Trace.Tests.Serverless
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                compatPathOverride: null,
                 fileExists: _ => true,
                 getAssemblyVersion: _ => throw new BadImageFormatException("not a valid assembly"));
 

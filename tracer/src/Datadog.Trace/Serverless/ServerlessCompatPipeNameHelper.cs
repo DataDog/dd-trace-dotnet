@@ -14,38 +14,12 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Serverless
 {
     /// <summary>
-    /// Helper class for generating unique pipe names for serverless compat layer coordination.
-    /// Shared logic for both trace and metrics pipe name generation.
+    /// Checks whether the Datadog Serverless Compat layer is available and supports named-pipe
+    /// transport. Pipe-name generation itself lives in <see cref="ServerlessCompatPipeNames"/>.
     /// </summary>
     internal static class ServerlessCompatPipeNameHelper
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServerlessCompatPipeNameHelper));
-
-        /// <summary>
-        /// Generates a unique pipe name by appending a GUID to the base name.
-        /// Validates and truncates the base name if necessary to ensure the full pipe path stays within Windows limits.
-        /// </summary>
-        /// <param name="baseName">The base name for the pipe</param>
-        /// <param name="pipeType">The type of pipe for logging (e.g., "trace" or "DogStatsD")</param>
-        /// <returns>A unique pipe name in the format {base}_{guid}</returns>
-        internal static string GenerateUniquePipeName(string baseName, string pipeType)
-        {
-            // Validate base pipe name length before appending GUID
-            // Windows pipe path format: \\.\pipe\{base}_{guid}
-            // Max total: 256 - 9 (\\.\pipe\) - 1 (underscore) - 32 (GUID) = 214
-            const int maxBaseLength = 214;
-
-            if (baseName.Length > maxBaseLength)
-            {
-                Log.Warning<string, int, int>("{PipeType} pipe base name exceeds {MaxLength} characters ({ActualLength}). Truncating to allow for GUID suffix.", pipeType, maxBaseLength, baseName.Length);
-                baseName = baseName.Substring(0, maxBaseLength);
-            }
-
-            // "N" format removes hyphens (32 chars)
-            var uniqueName = $"{baseName}_{Guid.NewGuid():N}";
-
-            return uniqueName;
-        }
 
         /// <summary>
         /// Checks whether the Datadog Serverless Compat layer is deployed and has a version
@@ -53,13 +27,17 @@ namespace Datadog.Trace.Serverless
         /// (before the compat assembly is loaded) so it checks files on disk rather than
         /// loaded assemblies.
         /// </summary>
-        internal static bool IsCompatLayerAvailableWithPipeSupport()
-            => IsCompatLayerAvailableWithPipeSupport(File.Exists, path => AssemblyName.GetAssemblyName(path).Version);
+        /// <param name="compatPathOverride">An override for the compat binary path, typically read
+        /// from <c>DD_SERVERLESS_COMPAT_PATH</c> via the telemetry-enabled configuration readers
+        /// in <see cref="Configuration.ExporterSettings.Raw"/>. <c>null</c> means use the default path.</param>
+        internal static bool IsCompatLayerAvailableWithPipeSupport(string? compatPathOverride)
+            => IsCompatLayerAvailableWithPipeSupport(compatPathOverride, File.Exists, path => AssemblyName.GetAssemblyName(path).Version);
 
         /// <summary>
         /// Testable overload that accepts I/O dependencies as delegates.
         /// </summary>
         internal static bool IsCompatLayerAvailableWithPipeSupport(
+            string? compatPathOverride,
             Func<string, bool> fileExists,
             Func<string, Version?> getAssemblyVersion)
         {
@@ -77,8 +55,7 @@ namespace Datadog.Trace.Serverless
                 // DD_SERVERLESS_COMPAT_PATH overrides the default binary location
                 // (matches CompatibilityLayer.cs in datadog-serverless-compat-dotnet).
                 const string defaultCompatBinaryPath = @"C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe";
-                var compatBinaryPath = Util.EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.ServerlessCompatPath)
-                    ?? defaultCompatBinaryPath;
+                var compatBinaryPath = !string.IsNullOrEmpty(compatPathOverride) ? compatPathOverride! : defaultCompatBinaryPath;
 
                 // Check that the compat DLL exists and has a version that supports named pipes.
                 // Named pipe support was added in compat version 1.4.0 (dev builds use 0.0.0).
@@ -93,7 +70,7 @@ namespace Datadog.Trace.Serverless
 
                 if (version is null)
                 {
-                    Log.Warning("Could not read Serverless Compatibility Layer details at {Path}, using fallback agent communication methods. (No Named Pipes)", compatDllPath);
+                    Log.Debug("Could not read Serverless Compatibility Layer details at {Path}, using fallback agent communication methods. (No Named Pipes)", compatDllPath);
                     return false;
                 }
 
@@ -112,7 +89,7 @@ namespace Datadog.Trace.Serverless
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Failed to determine Serverless Compatibility layer availability or Named Pipe Support.");
+                Log.Error(ex, "Failed to determine Serverless Compatibility layer availability or Named Pipe Support.");
                 return false;
             }
         }
