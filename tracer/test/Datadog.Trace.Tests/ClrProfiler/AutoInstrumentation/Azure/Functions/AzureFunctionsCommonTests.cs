@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             public IEnumerable<KeyValuePair<Type, object?>>? Features { get; set; }
 
-            public IDictionary<object, object>? Items { get; }
+            public IDictionary<object, object?>? Items { get; }
         }
 
         // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs
