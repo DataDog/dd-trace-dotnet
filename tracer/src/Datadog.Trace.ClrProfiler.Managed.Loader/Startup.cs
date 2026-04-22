@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // the handler doesn't require Startup..cctor to have finished. If a configBuilder
                     // on <appSettings> issues sync-over-async work during Startup..cctor, the async
                     // continuation may fire AssemblyResolve on a ThreadPool thread; a handler on
-                    // Startup itself would deadlock waiting on Startup..cctor. See APMS-19239.
+                    // Startup itself would deadlock waiting on Startup..cctor.
                     ManagedProfilerAssemblyResolver.ManagedProfilerDirectory = ManagedProfilerDirectory;
                     AppDomain.CurrentDomain.AssemblyResolve += ManagedProfilerAssemblyResolver.OnAssemblyResolve;
 #else
