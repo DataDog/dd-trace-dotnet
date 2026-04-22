@@ -30,7 +30,7 @@ if (RUN_ASAN)
 endif()
 
 if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -DDD_SANITIZERS)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
 endif()
 
 if (RUN_TSAN)

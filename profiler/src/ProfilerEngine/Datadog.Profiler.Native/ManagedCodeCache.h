@@ -136,10 +136,23 @@ private:
     void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
 #ifdef DD_TEST
 public:
-#endif
     void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
-#ifdef DD_TEST
+
+    // Test-only hooks to simulate signal-handler contention. IsManaged uses
+    // try_to_lock semantics on these two mutexes and returns std::nullopt when
+    // ownership cannot be acquired. Holding an exclusive lock on either mutex
+    // from another thread deterministically reproduces that "contended" state.
+    std::unique_lock<std::shared_mutex> LockPagesMutexExclusiveForTest()
+    {
+        return std::unique_lock<std::shared_mutex>(_pagesMutex);
+    }
+    std::unique_lock<std::shared_mutex> LockModulesMutexExclusiveForTest()
+    {
+        return std::unique_lock<std::shared_mutex>(_modulesMutex);
+    }
 private:
+#else
+    void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
 #endif
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
