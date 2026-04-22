@@ -5,7 +5,7 @@
 # docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
 # docker push datadog/dd-trace-dotnet-docker-build:dotnet10
 
-ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2022
 FROM ${BASE_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
@@ -52,7 +52,7 @@ COPY helpers.ps1 install_java.ps1 ./
 RUN powershell -Command .\install_java.ps1
 
 # Install Windows Code Signer
-COPY --from=registry.ddbuild.io/windows-code-signer/go:v0.6.0-ltsc2019 c:/windows-code-signer/windows-code-signer.exe c:/devtools/windows-code-signer.exe
+COPY --from=registry.ddbuild.io/windows-code-signer/go:v0.6.0-ltsc2022 c:/windows-code-signer/windows-code-signer.exe c:/devtools/windows-code-signer.exe
 
 # Copy everything else
 COPY . .
