@@ -56,7 +56,7 @@ public:
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
     CallstackProvider* _callstackProvider;
-    std::atomic<UnwinderTracer*> _tracer;
+    std::atomic<UnwinderTracer*> _tracer{nullptr};
 
 private:
     std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;

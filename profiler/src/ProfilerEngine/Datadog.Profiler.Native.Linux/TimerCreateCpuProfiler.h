@@ -64,5 +64,12 @@ private:
     std::shared_ptr<DiscardMetrics> _discardMetrics;
     std::atomic<std::uint64_t> _nbThreadsInSignalHandler;
     std::unique_ptr<IUnwinder> _pUnwinder;
+    // Snapshot of Log::IsDebugEnabled() taken at construction time. This gates
+    // allocation / use of the UnwinderTracer pool inside the signal handler,
+    // so we deliberately avoid re-reading it on every sample. This relies on
+    // CorProfilerCallback::Initialize() calling Log::EnableDebug() BEFORE
+    // InitializeServices() constructs this profiler; changing that order, or
+    // toggling the log level at runtime (e.g. through RCM), will not enable
+    // the tracer path dynamically.
     bool _useUnwinderTracer;
 };
