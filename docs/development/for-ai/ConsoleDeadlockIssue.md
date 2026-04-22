@@ -107,3 +107,19 @@ Two orthogonal root-cause fixes, either of which would break the deadlock. Doing
 Fix #1 is the more general protection — it defends against *any* sync-over-async inside the
 `.cctor` chain, not just the `ConfigurationManager.AppSettings` case. Fix #2 is a pragmatic
 narrowing: `ConfigurationManager.AppSettings` is the specific trigger for this customer.
+
+
+## FIX SHIPPED (2026-04-22)
+
+Moved `AssemblyResolve_ManagedProfilerDependencies` (and the .NET Core ALC `Resolving` handler)
+off `Startup` onto a new `ManagedProfilerAssemblyResolver` class in
+`tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/`.
+
+The new class has a trivial `.cctor`, so a ThreadPool thread invoking the handler no longer has
+to wait on `Startup..cctor`. `Startup..cctor` seeds the resolver's state (`ManagedProfilerDirectory`,
+and on .NET Core the assembly cache) before subscribing, which forces the resolver's class-init to
+complete on the main thread before any ThreadPool work can be scheduled.
+
+Verified locally against the repro in `C:\Temp\APMS-19239\Dump\ConsoleApp1Repro\` with both
+`Datadog.Trace.Bundle.3.41.0` (pre-fix: hangs) and the local dd-trace-6 build (post-fix: reaches
+`Main()` normally).

@@ -17,7 +17,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public sealed partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=3.43.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        // internal so ManagedProfilerAssemblyResolver can reference it (const is inlined at compile time,
+        // so this does NOT create a runtime dependency on Startup's type initialization)
+        internal const string AssemblyName = "Datadog.Trace, Version=3.43.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
@@ -76,9 +78,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 StartupLogger.Debug("Resolved Datadog.Trace.dll TFM directory to: {0}", ManagedProfilerDirectory);
 
+                // Publish the resolver's state BEFORE subscribing the handler. Reading/writing a
+                // static field of ManagedProfilerAssemblyResolver triggers its (trivial) type init
+                // here on the main thread, so by the time any ThreadPool thread later dispatches
+                // the handler, the type is already fully initialized and the dispatch doesn't have
+                // to wait on Startup..cctor. See APMS-19239.
+                ManagedProfilerAssemblyResolver.ManagedProfilerDirectory = ManagedProfilerDirectory;
+
                 try
                 {
-                    AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+                    AppDomain.CurrentDomain.AssemblyResolve += ManagedProfilerAssemblyResolver.OnAssemblyResolve;
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #if NETCOREAPP
                 try
                 {
-                    System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += (_, assemblyName) => ResolveAssembly(assemblyName.Name);
+                    System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += ManagedProfilerAssemblyResolver.OnAssemblyLoadContextResolving;
                 }
                 catch (Exception ex)
                 {
@@ -181,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // We will try to resolve it manually as a last chance.
                 StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
 
-                var assembly = ResolveAssembly(assemblyString);
+                var assembly = ManagedProfilerAssemblyResolver.ResolveAssembly(assemblyString);
                 if (assembly is not null)
                 {
                     StartupLogger.Log("Assembly '{0}' was resolved manually.", assemblyString);
