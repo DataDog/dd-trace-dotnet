@@ -29,6 +29,52 @@ variables:
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
   OCI_PACKAGE_MAX_SIZE_BYTES: 40000000
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 40000000
+  WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
+
+build-windows-ci-image:
+  stage: build
+  timeout: 2h
+  tags: ["windows-v2:2019"]
+  when: manual
+  allow_failure: false
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0) { throw "compute-image-hash.ps1 failed" }
+      $base = $env:WINDOWS_BUILD_IMAGE_BASE
+      $image = "${base}:${hash}"
+      Write-Output "Target image: $image"
+
+      docker manifest inspect $image
+      if ($LASTEXITCODE -eq 0) {
+        Write-Output "Image $image already exists in the registry - skipping rebuild."
+        exit 0
+      }
+      Write-Output "Image does not exist yet - building."
+
+      docker pull "${base}:latest"
+      if ($LASTEXITCODE -ne 0) {
+        Write-Output "No :latest tag available to warm the build cache (first build or tag expired). Continuing without cache."
+      }
+
+      docker build --cache-from "${base}:latest" `
+        -f tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile `
+        --tag $image `
+        --tag "${base}:latest" `
+        tracer/build/_build/docker/gitlab
+      if ($LASTEXITCODE -ne 0) { throw "docker build failed" }
+
+      docker push $image
+      if ($LASTEXITCODE -ne 0) { throw "docker push $image failed" }
+
+      docker push "${base}:latest"
+      if ($LASTEXITCODE -ne 0) { throw "docker push ${base}:latest failed" }
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
 
 build:
   except:
@@ -45,6 +91,19 @@ build:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0) { throw "compute-image-hash.ps1 failed" }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
+
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
+        Write-Host "The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed."
+        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
+        exit 1
+      }
+    - |
       docker run --rm -m 10240M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
@@ -55,7 +114,7 @@ build:
         -e NUGET_CERT_REVOCATION_MODE=offline `
         -e CI_IDENTITIES_GITLAB_ID_TOKEN `
         -e CI_PROJECT_NAME `
-        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:ci-identities `
+        $env:WINDOWS_BUILD_IMAGE `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
