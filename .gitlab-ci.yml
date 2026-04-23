@@ -35,7 +35,6 @@ build-windows-ci-image:
   timeout: 2h
   tags: ["windows-v2:2019"]
   when: manual
-  allow_failure: false
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
