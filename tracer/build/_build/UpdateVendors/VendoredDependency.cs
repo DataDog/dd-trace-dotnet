@@ -163,34 +163,72 @@ namespace UpdateVendors
                 });
 
             Add(
-                libraryName: "System.Memory",
-                version: "4.5.5",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Memory" },
+                libraryName: "System.Buffers",
+                version: "4.6.1",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Buffers", "src" },
                 transform: filePath =>
                 {
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    if (filePath.EndsWith(Path.Join("Buffers", "Utilities.cs")))
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Buffers", AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Fix cases where we're relying on this behaviour:
-                        // private static ReadOnlySpan<byte> Property => new byte[32]
-                        // it "works" in .NET Core, but is very allocaty in .NET FX
-                        RewriteFileWithTransform(
-                            filePath,
-                            content => content.Replace(
-                                "        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]",
-                                """
-                                #if NETCOREAPP
-                                        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]
-                                #else
-                                        private static ReadOnlySpan<byte> Log2DeBruijn => _log2DeBruijn.AsSpan();
-                                        private static readonly byte[] _log2DeBruijn = new byte[32]
-                                #endif
-                                """
-                            ));
+                        RewriteFileWithTransform(filePath, contents => FixSystemBuffers(filePath, contents));
                     }
                 },
-                relativePathsToExclude: new[] { "Buffers/ArrayPoolEventSource.cs" });
+                relativePathsToExclude: new[]
+                {
+                    "Resources/Strings.resx",
+                    "System/Buffers/ArrayPoolEventSource.cs"
+                });
+
+            Add(
+                libraryName: "System.Numerics.Vectors",
+                version: "4.6.1",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Numerics.Vectors", "src" },
+                transform: filePath =>
+                {
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Numerics", AddIgnoreNullabilityWarningDisablePragma);
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents => FixSystemBuffers(filePath, contents));
+                    }
+                },
+                onlyIncludePaths: new[]
+                {
+                    "System/Numerics/ConstantHelper.cs",
+                    "System/Numerics/ConstantHelper.cs",
+                    "System/Numerics/Vector.cs",
+                    "System/Numerics/Vector_Operations.cs",
+                    "System/Numerics/Register.cs",
+                    "System/Numerics/Hashing/HashHelpers.cs",
+                });
+
+            Add(
+                libraryName: "System.Memory",
+                version: "4.6.3",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Memory", "src" },
+                transform: filePath =>
+                {
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents => FixSystemMemory(filePath, contents));
+                    }
+                },
+                relativePathsToExclude: new [] { "Resources/Strings.resx" });
 
             Add(
                 libraryName: "System.Private.CoreLib",
@@ -641,6 +679,179 @@ namespace UpdateVendors
                 new("UnsupportedFormatVersion", "Unsupported format version: {0}"),
                 new("ValueTooLarge", "Value is too large."),
                 new("WinMDMissingMscorlibRef", "Missing mscorlib reference in AssemblyRef table."),
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
+            }
+
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
+        }
+
+        private static string FixSystemMemory(string filePath, string contents)
+        {
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
+                                  "using System.Runtime.InteropServices;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            contents = contents.Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..omponentModel.",
+                                    "System.ComponentModel.")
+                               .Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..UInt",
+                                    "Datadog.Trace.VendoredMicrosoftCode.System.NUInt")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel",
+                                    "using System.ComponentModel")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics",
+                                    "using System.Diagnostics")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Globalization",
+                                    "using System.Globalization")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices",
+                                    "using System.Runtime.CompilerServices")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
+                                    "using System.Text")
+                               .Replace(
+                                    "namespace System\r\n",
+                                    "namespace System\n")
+                                // TODO: We should consider _not_ making this change in the future
+                               .Replace(
+                                    "namespace System\n",
+                                    "namespace Datadog.Trace.VendoredMicrosoftCode.System\n");
+
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("Argument_BadFormatSpecifier", "Format specifier was invalid."),
+                new("Argument_CannotParsePrecision", "Characters following the format symbol must be a number of {0} or less."),
+                new("Argument_DestinationTooShort", "Destination is too short."),
+                new("Argument_InvalidTypeWithPointersNotSupported", "Cannot use type '{0}'. Only value types without pointers or references are supported."),
+                new("Argument_OverlapAlignmentMismatch", "Overlapping spans have mismatching alignment."),
+                new("Argument_PrecisionTooLarge", "Precision cannot be larger than {0}."),
+                new("EndPositionNotReached", "End position was not reached during enumeration."),
+                new("NotSupported_CannotCallEqualsOnSpan", "Equals() on Span and ReadOnlySpan is not supported. Use operator== instead."),
+                new("NotSupported_CannotCallGetHashCodeOnSpan", "GetHashCode() on Span and ReadOnlySpan is not supported."),
+                new("OutstandingReferences", "Release all references before disposing this instance."),
+                new("UnexpectedSegmentType", "Unexpected segment type."),
+                new("Argument_GWithPrecisionNotSupported", "The 'G' format combined with a precision is not supported.")
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
+            }
+
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
+        }
+
+        private static string FixSystemBuffers(string filePath, string contents)
+        {
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
+                                  "using System.Runtime.InteropServices;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            if (string.Equals(Path.GetFileName(filePath), "DefaultArrayPool.cs"))
+            {
+                contents = contents
+                          .Replace("var log = ArrayPoolEventSource.Log;", "")
+                          .ReplaceLineEndings()
+                          .Replace(
+                               """
+                                           if (log.IsEnabled())
+                                           {
+                                               int bufferId = buffer.GetHashCode(), bucketId = -1; // no bucket for an on-demand allocated buffer
+                                               log.BufferRented(bufferId, buffer.Length, Id, bucketId);
+                                               log.BufferAllocated(bufferId, buffer.Length, Id, bucketId, index >= _buckets.Length ?
+                                                   ArrayPoolEventSource.BufferAllocatedReason.OverMaximumSize : ArrayPoolEventSource.BufferAllocatedReason.PoolExhausted);
+                                           }
+                               """, "")
+                          .Replace(
+                               """
+                                                       if (log.IsEnabled())
+                                                       {
+                                                           log.BufferRented(buffer.GetHashCode(), buffer.Length, Id, _buckets[i].Id);
+                                                       }
+                               """, "")
+                          .Replace(
+                               """
+                                           if (log.IsEnabled())
+                                           {
+                                               log.BufferReturned(array.GetHashCode(), array.Length, Id);
+                                           }
+                               """, "");
+            }
+            else if (string.Equals(Path.GetFileName(filePath), "DefaultArrayPoolBucket.cs"))
+            {
+                contents = contents
+                          .Replace("Debugger.IsAttached", "global::System.Diagnostics.Debugger.IsAttached")
+                          .ReplaceLineEndings()
+                          .Replace(
+                               """
+                                                   var log = ArrayPoolEventSource.Log;
+                                                   if (log.IsEnabled())
+                                                   {
+                                                       log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,
+                                                           ArrayPoolEventSource.BufferAllocatedReason.Pooled);
+                                                   }
+                               """, "");
+            }
+
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("Arg_ArgumentOutOfRangeException", "Index was out of bounds:"),
+                new("Arg_ElementsInSourceIsGreaterThanDestination", "Number of elements in source vector is greater than the destination array"),
+                new("Arg_InsufficientNumberOfElements", """At least {0} element(s) are expected in the parameter "{1}"."""),
+                new("Arg_NullArgumentNullRef", "The method was called with a null array argument."),
+                new("Arg_TypeNotSupported", "Specified type is not supported"),
+                new("ArgumentException_BufferNotFromPool", "The buffer is not associated with this pool and may not be returned to it."),
             };
 
             foreach (var kvp in resourceReplacements)
