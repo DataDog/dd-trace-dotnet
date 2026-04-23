@@ -213,7 +213,7 @@ namespace Datadog.Trace.IntegrationTests
             var expectedSamplingMechanism = 8;
 
             var spanContext = new SpanContext(4, 5, samplingPriority: null, serviceName: "serviceName");
-            var span = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test" };
+            var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.Now, operationName: "test");
             _writer.WriteTrace(new SpanCollection(span));
             var trace = _testApi.Wait();
             trace.Should().HaveCount(1);

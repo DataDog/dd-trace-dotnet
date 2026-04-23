@@ -126,6 +126,6 @@ public class InferredProxyCoordinatorTests : IAsyncLifetime
 
         result.Should().NotBeNull();
         result.Value.Scope.Should().Be(realScope);
-        result.Value.Context.SpanContext.Should().BeEquivalentTo(realScope.Span.Context);
+        result.Value.Context.SpanContext.Should().BeEquivalentTo(realScope!.Span.Context);
     }
 }

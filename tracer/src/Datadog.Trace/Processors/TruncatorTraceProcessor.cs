@@ -38,7 +38,7 @@ namespace Datadog.Trace.Processors
         public Span Process(Span span)
         {
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go#L17-L21
-            span.ResourceName = TruncateResource(span.ResourceName);
+            // span.ResourceName = TruncateResource(span.ResourceName);
 
             return span;
         }

@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
         internal static CallTargetState OnMethodBegin<TTarget, TMetadata>(TTarget instance, in TMetadata? headers)
         {
             var tracer = Tracer.Instance;
-            if (tracer.ActiveScope is Scope { Span: { Tags: GrpcServerTags } span } && headers is not null)
+            if (tracer.ActiveScope is Scope { Span: Span { Tags: GrpcServerTags } span } && headers is not null)
             {
                 var metadata = headers.DuckCast<IMetadata>();
                 if (metadata.Count > 0)

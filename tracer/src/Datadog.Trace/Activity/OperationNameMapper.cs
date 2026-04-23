@@ -32,7 +32,7 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            span.OperationName = GetOperationName(tags);
+            // span.OperationName = GetOperationName(tags);
         }
 
         internal static string GetOperationName(OpenTelemetryTags tags)

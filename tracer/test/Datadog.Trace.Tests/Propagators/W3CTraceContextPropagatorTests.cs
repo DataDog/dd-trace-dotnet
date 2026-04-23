@@ -197,7 +197,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             var traceContext = new TraceContext(new StubDatadogTracer());
             var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
-            var span = new Span(spanContext, DateTimeOffset.Now);
+            var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.Now);
 
             var user = new UserDetails("12345")
             {

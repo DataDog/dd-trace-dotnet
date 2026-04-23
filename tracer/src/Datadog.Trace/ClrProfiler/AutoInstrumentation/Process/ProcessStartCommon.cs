@@ -23,8 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
     internal static class ProcessStartCommon
     {
         private const IntegrationId IntegrationId = Configuration.IntegrationId.Process;
-        private const string OperationName = "command_execution";
-        private const string ServiceName = "command";
+        // private const string OperationName = "command_execution";
+        // private const string ServiceName = "command";
         internal const int MaxCommandLineLength = 4096;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartCommon));
@@ -68,21 +68,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             Scope? scope = null;
 
-            try
-            {
-                var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
-
-                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(ServiceName);
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
-                scope.Span.ResourceName = filename;
-                scope.Span.Type = SpanTypes.System;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating execute command scope.");
-            }
+            // try
+            // {
+            //     var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
+            //
+            //     var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(ServiceName);
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
+            //     scope.Span.ResourceName = filename;
+            //     scope.Span.Type = SpanTypes.System;
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating execute command scope.");
+            // }
 
             return scope;
         }

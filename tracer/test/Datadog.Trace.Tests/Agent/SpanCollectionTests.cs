@@ -356,9 +356,6 @@ public class SpanCollectionTests
     private static Span CreateSpan(string operationName = "test-span", ulong spanId = 2)
     {
         var spanContext = new SpanContext(traceId: 1UL, spanId: spanId, samplingPriority: SamplingPriority.AutoKeep);
-        return new Span(spanContext, DateTimeOffset.UtcNow)
-        {
-            OperationName = operationName
-        };
+        return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, operationName: operationName);
     }
 }

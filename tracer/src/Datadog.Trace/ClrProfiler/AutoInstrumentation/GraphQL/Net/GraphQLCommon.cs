@@ -52,23 +52,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             Scope scope = null;
 
-            try
-            {
-                var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
-                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(ServiceName);
-                scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
-
-                var span = scope.Span;
-                span.Type = SpanTypes.GraphQL;
-                tags.Source = documentSource;
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
+            //     var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(ServiceName);
+            //     scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
+            //
+            //     var span = scope.Span;
+            //     span.Type = SpanTypes.GraphQL;
+            //     tags.Source = documentSource;
+            //
+            //     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             return scope;
         }

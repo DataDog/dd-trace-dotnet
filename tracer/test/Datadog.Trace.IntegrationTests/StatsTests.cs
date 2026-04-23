@@ -179,9 +179,9 @@ namespace Datadog.Trace.IntegrationTests
             {
                 using (var scope = tracer.StartActiveInternal(operationName ?? "default-operation", finishOnClose: finishOnClose))
                 {
-                    var span = scope.Span;
+                    var span = (Span)scope.Span;
 
-                    span.ResourceName = resourceName ?? "default-resource";
+                    // span.ResourceName = resourceName ?? "default-resource"; // non-recording-spans experiment: setter removed
                     span.Type = type ?? "default-type";
                     span.SetTag(Tags.HttpStatusCode, httpStatusCode ?? "200");
                     span.SetService(serviceName ?? "default-service", null);
@@ -265,8 +265,8 @@ namespace Datadog.Trace.IntegrationTests
             {
                 using (var scope = tracer.StartActiveInternal("default-operation"))
                 {
-                    var span = scope.Span;
-                    span.ResourceName = resource;
+                    var span = (Span)scope.Span;
+                    // span.ResourceName = resource; // non-recording-spans experiment: setter removed
                     span.Type = type;
                     return span;
                 }
@@ -387,7 +387,7 @@ namespace Datadog.Trace.IntegrationTests
             Span span1;
             using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
-                span1 = scope.Span;
+                span1 = (Span)scope.Span;
                 span1.Error = true;
             }
 
@@ -402,7 +402,7 @@ namespace Datadog.Trace.IntegrationTests
             Span span2;
             using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
-                span2 = scope.Span;
+                span2 = (Span)scope.Span;
             }
 
             await tracer.FlushAsync();
@@ -415,7 +415,7 @@ namespace Datadog.Trace.IntegrationTests
             Span span3;
             using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
-                span3 = scope.Span;
+                span3 = (Span)scope.Span;
                 span3.Error = true;
             }
 
@@ -429,10 +429,10 @@ namespace Datadog.Trace.IntegrationTests
             Span span4;
             using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
-                span4 = scope.Span;
+                span4 = (Span)scope.Span;
 
                 using var innerScope = tracer.StartActiveInternal("child", finishOnClose: finishSpansOnClose);
-                innerScope.Span.Error = true;
+                innerScope.Span.SetError(true);
             }
 
             await tracer.FlushAsync();
@@ -446,7 +446,7 @@ namespace Datadog.Trace.IntegrationTests
             Span span5;
             using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
-                span5 = scope.Span;
+                span5 = (Span)scope.Span;
 
                 using var innerScope = tracer.StartActiveInternal("child", finishOnClose: finishSpansOnClose);
                 innerScope.Span.SetMetric(Tags.Analytics, 0);
@@ -462,7 +462,7 @@ namespace Datadog.Trace.IntegrationTests
             Span span6;
             using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
-                span6 = scope.Span;
+                span6 = (Span)scope.Span;
 
                 using var innerScope = tracer.StartActiveInternal("child", finishOnClose: finishSpansOnClose);
                 innerScope.Span.SetMetric(Tags.Analytics, 1);
@@ -530,8 +530,8 @@ namespace Datadog.Trace.IntegrationTests
             Scope CreateCommonSpan(Tracer tracer, bool finishSpansOnClose, TracerSettings tracerSettings)
             {
                 var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose);
-                var span = scope.Span;
-                span.ResourceName = "resourceName";
+                var span = (Span)scope.Span;
+                // span.ResourceName = "resourceName"; // non-recording-spans experiment: setter removed
                 span.SetHttpStatusCode(200, isServer: true, tracerSettings.Manager.InitialMutableSettings);
                 span.Type = "span1";
 

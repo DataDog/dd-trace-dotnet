@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 {
-    private const string OperationName = "azure_servicebus.receive";
+    // private const string OperationName = "azure_servicebus.receive";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessagesAsyncIntegration));
 
@@ -133,53 +133,54 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         System.Collections.IList? messagesList)
         where TTarget : IServiceBusReceiver
     {
-        var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Consumer);
+        // var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Consumer);
+        //
+        // var entityPath = receiverInstance.EntityPath ?? "unknown";
+        // tags.MessagingDestinationName = entityPath;
+        // tags.MessagingOperation = "receive";
+        // tags.MessagingSystem = "servicebus";
+        //
+        // var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureServiceBus);
+        // var scope = tracer.StartActiveInternal(
+        //     OperationName,
+        //     links: spanLinks,
+        //     tags: tags,
+        //     serviceName: serviceName,
+        //     serviceNameSource: serviceNameSource);
+        // var span = scope.Span;
+        //
+        // span.Type = SpanTypes.Queue;
+        // span.ResourceName = entityPath;
+        //
+        // if (messagesList?.Count > 1)
+        // {
+        //     span.SetTag(Tags.MessagingBatchMessageCount, messagesList.Count.ToString());
+        // }
+        //
+        // // Set MessagingMessageId if single message received
+        // if (messagesList?.Count == 1)
+        // {
+        //     var message = messagesList[0];
+        //     if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
+        //     {
+        //         var messageId = serviceBusMessage.MessageId;
+        //         if (!string.IsNullOrEmpty(messageId))
+        //         {
+        //             span.SetTag(Tags.MessagingMessageId, messageId);
+        //         }
+        //     }
+        // }
+        //
+        // var endpoint = receiverInstance.Connection?.ServiceEndpoint;
+        // if (endpoint != null)
+        // {
+        //     tags.ServerAddress = endpoint.Host;
+        // }
+        //
+        // tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
 
-        var entityPath = receiverInstance.EntityPath ?? "unknown";
-        tags.MessagingDestinationName = entityPath;
-        tags.MessagingOperation = "receive";
-        tags.MessagingSystem = "servicebus";
-
-        var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureServiceBus);
-        var scope = tracer.StartActiveInternal(
-            OperationName,
-            links: spanLinks,
-            tags: tags,
-            serviceName: serviceName,
-            serviceNameSource: serviceNameSource);
-        var span = scope.Span;
-
-        span.Type = SpanTypes.Queue;
-        span.ResourceName = entityPath;
-
-        if (messagesList?.Count > 1)
-        {
-            span.SetTag(Tags.MessagingBatchMessageCount, messagesList.Count.ToString());
-        }
-
-        // Set MessagingMessageId if single message received
-        if (messagesList?.Count == 1)
-        {
-            var message = messagesList[0];
-            if (message?.TryDuckCast<IServiceBusReceivedMessage>(out var serviceBusMessage) == true)
-            {
-                var messageId = serviceBusMessage.MessageId;
-                if (!string.IsNullOrEmpty(messageId))
-                {
-                    span.SetTag(Tags.MessagingMessageId, messageId);
-                }
-            }
-        }
-
-        var endpoint = receiverInstance.Connection?.ServiceEndpoint;
-        if (endpoint != null)
-        {
-            tags.ServerAddress = endpoint.Host;
-        }
-
-        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
-
-        return scope;
+        // return scope;
+        return null;
     }
 
     private static void ReinjectContextIntoMessages(Tracer tracer, Scope scope, System.Collections.IList messagesList)

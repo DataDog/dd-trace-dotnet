@@ -76,15 +76,15 @@ namespace Datadog.Trace.Activity.Handlers
                         else
                         {
                             // create a new parent span context for the ActivityContext
-                            _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
-                            _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
-
-                            parent = Tracer.Instance.CreateSpanContext(
-                                SpanContext.None,
-                                traceId: newActivityTraceId,
-                                spanId: newActivitySpanId,
-                                rawTraceId: activityTraceId,
-                                rawSpanId: parentSpanId);
+                            // _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
+                            // _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
+                            //
+                            // parent = Tracer.Instance.CreateSpanContext(
+                            //     SpanContext.None,
+                            //     traceId: newActivityTraceId,
+                            //     spanId: newActivitySpanId,
+                            //     rawTraceId: activityTraceId,
+                            //     rawSpanId: parentSpanId);
                         }
                     }
                 }
@@ -198,12 +198,12 @@ namespace Datadog.Trace.Activity.Handlers
 
 #if NETCOREAPP
                 // Avoid closure allocation if we can
-                activityMapping = ActivityMappingById.GetOrAdd(
-                    activityKey.Value,
-                    static (_, details) => new(details.activity.Instance!, CreateScopeFromActivity(details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
-                    (activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId));
+                // activityMapping = ActivityMappingById.GetOrAdd(
+                //     activityKey.Value,
+                //     static (_, details) => new(details.activity.Instance!, CreateScopeFromActivity(details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
+                //     (activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId));
 #else
-                activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                // activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
 #endif
             }
             catch (Exception ex)
@@ -212,21 +212,23 @@ namespace Datadog.Trace.Activity.Handlers
                 activityMapping = default;
             }
 
-            static Scope CreateScopeFromActivity(T activity, OpenTelemetryTags? tags, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
-            {
-                var span = Tracer.Instance.StartSpan(
-                    activity.OperationName,
-                    tags: tags ?? new OpenTelemetryTags(),
-                    parent: parent,
-                    startTime: activity.StartTimeUtc,
-                    traceId: traceId,
-                    spanId: spanId,
-                    rawTraceId: rawTraceId,
-                    rawSpanId: rawSpanId);
-
-                Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-                return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
-            }
+            // static Scope? CreateScopeFromActivity(T activity, OpenTelemetryTags? tags, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
+            // {
+            //     // var span = Tracer.Instance.StartSpan(
+            //     //     activity.OperationName,
+            //     //     tags: tags ?? new OpenTelemetryTags(),
+            //     //     parent: parent,
+            //     //     startTime: activity.StartTimeUtc,
+            //     //     traceId: traceId,
+            //     //     spanId: spanId,
+            //     //     rawTraceId: rawTraceId,
+            //     //     rawSpanId: rawSpanId);
+            //     //
+            //     // Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            //     // return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
+            //     return null;
+            // }
+            activityMapping = default;
         }
 
         public static void ActivityStopped<T>(string sourceName, T activity)
@@ -354,7 +356,7 @@ namespace Datadog.Trace.Activity.Handlers
                 where TInner : IActivity
             {
                 var span = scope.Span;
-                OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
+                // OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
 
                 // OpenTelemtry SDK / OTLP Fixups
                 // TODO

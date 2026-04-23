@@ -42,7 +42,7 @@ namespace Datadog.Trace.OpenTracing
 
         public global::OpenTracing.ISpan SetOperationName(string operationName)
         {
-            Span.OperationName = operationName;
+            // HACK: Span.OperationName = operationName;
             return this;
         }
 
@@ -93,13 +93,13 @@ namespace Datadog.Trace.OpenTracing
             switch (key)
             {
                 case DatadogTags.ResourceName:
-                    Span.ResourceName = value;
+                    // HACK: Span.ResourceName = value;
                     return this;
                 case DatadogTags.SpanType:
                     Span.Type = value;
                     return this;
                 case DatadogTags.ServiceName:
-                    Span.ServiceName = value;
+                    // HACK: Span.ServiceName = value;
                     return this;
                 case DatadogTags.ServiceVersion:
                     Span.SetTag(Tags.Version, value);

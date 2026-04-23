@@ -132,7 +132,7 @@ internal static class RaspModule
             return;
         }
 
-        rootSpan??= Tracer.Instance.InternalActiveScope?.Root?.Span;
+        rootSpan??= Tracer.Instance.InternalActiveScope?.Root?.Span as Span;
 
         if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
         {
@@ -395,7 +395,7 @@ internal static class RaspModule
                 return;
             }
 
-            var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
+            var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span as Span;
             if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
             {
                 return;

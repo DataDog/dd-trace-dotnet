@@ -19,7 +19,7 @@ internal static class SamplingRuleHelper
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SamplingRuleHelper));
 
     public static bool IsMatch(
-        Span span,
+        in SamplingContext context,
         Regex? serviceNameRegex,
         Regex? operationNameRegex,
         Regex? resourceNameRegex,
@@ -28,19 +28,14 @@ internal static class SamplingRuleHelper
     {
         timedOut = false;
 
-        if (span == null!)
-        {
-            return false;
-        }
-
         try
         {
             // if a regex is null (not specified), it always matches.
             // stop as soon as we find a non-match.
-            return IsMatch(serviceNameRegex, span.ServiceName) &&
-                   IsMatch(operationNameRegex, span.OperationName) &&
-                   IsMatch(resourceNameRegex, span.ResourceName) &&
-                   MatchSpanByTags(span, tagRegexes);
+            return IsMatch(serviceNameRegex, context.Context.ServiceName) &&
+                   IsMatch(operationNameRegex, context.OperationName) &&
+                   IsMatch(resourceNameRegex, context.ResourceName) &&
+                   MatchSpanByTags(in context, tagRegexes);
         }
         catch (RegexMatchTimeoutException e)
         {
@@ -74,7 +69,7 @@ internal static class SamplingRuleHelper
         return regex.Match(input).Success;
     }
 
-    private static bool MatchSpanByTags(Span span, List<KeyValuePair<string, Regex?>>? tagRegexes)
+    private static bool MatchSpanByTags(in SamplingContext context, List<KeyValuePair<string, Regex?>>? tagRegexes)
     {
         if (tagRegexes is null || tagRegexes.Count == 0)
         {
@@ -93,7 +88,7 @@ internal static class SamplingRuleHelper
                 continue;
             }
 
-            var tagValue = GetSpanTag(span, tagName);
+            var tagValue = GetTag(in context, tagName);
 
             if (tagValue is null || !tagRegex.Match(tagValue).Success)
             {
@@ -106,15 +101,15 @@ internal static class SamplingRuleHelper
         return true;
     }
 
-    private static string? GetSpanTag(Span span, string tagName)
+    private static string? GetTag(in SamplingContext context, string tagName)
     {
-        if (span.GetTag(tagName) is { } tagValue)
+        if (GetTraceOrSpanTag(in context, tagName) is { } tagValue)
         {
             return tagValue;
         }
 
         // if the string tag doesn't exist, try to get it as a numeric tag...
-        if (span.GetMetric(tagName) is not { } numericTagValue)
+        if (context.Tags?.GetMetric(tagName) is not { } numericTagValue)
         {
             return null;
         }
@@ -122,5 +117,21 @@ internal static class SamplingRuleHelper
         // ...but only if it is an integer
         var intValue = (int)numericTagValue;
         return Math.Abs(intValue - numericTagValue) < 0.0001 ? intValue.ToString(CultureInfo.InvariantCulture) : null;
+
+        // TODO: this clones the behaviour of Span.GetTag(), this is all a right mess, and needs fixing one way or another
+        static string? GetTraceOrSpanTag(in SamplingContext context, string key)
+        {
+            // since we don't expose a public API for getting trace-level attributes yet,
+            // allow retrieval through any span in the trace
+            return key switch
+            {
+                Tags.SamplingPriority => SamplingPriorityValues.ToString(context.Context.TraceContext?.SamplingPriority),
+                Tags.Env => context.Context.TraceContext?.Environment,
+                Tags.Version => context.Context.TraceContext?.ServiceVersion,
+                Tags.Origin => context.Context.TraceContext?.Origin,
+                Tags.TraceId => context.Context.RawTraceId,
+                _ => context.Tags?.GetTag(key)
+            };
+        }
     }
 }

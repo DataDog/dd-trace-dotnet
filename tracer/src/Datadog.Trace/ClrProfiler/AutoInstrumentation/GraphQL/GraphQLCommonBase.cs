@@ -25,19 +25,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         protected static Scope CreateScopeFromExecuteAsync(Tracer tracer, IntegrationId integrationId, GraphQLTags tags, string serviceName, string queryOperationName, string source, string queryOperationType)
         {
-            var (resolvedServiceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(serviceName);
-            var scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: resolvedServiceName, serviceNameSource: serviceNameSource, tags: tags);
-            var span = scope.Span;
-            span.Type = SpanTypes.GraphQL;
-            span.ResourceName = $"{queryOperationType} {queryOperationName ?? "operation"}";
-
-            tags.Source = source;
-            tags.OperationName = queryOperationName;
-            tags.OperationType = queryOperationType;
-
-            tags.SetAnalyticsSampleRate(integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-            return scope;
+            // var (resolvedServiceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(serviceName);
+            // var scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: resolvedServiceName, serviceNameSource: serviceNameSource, tags: tags);
+            // var span = scope.Span;
+            // span.Type = SpanTypes.GraphQL;
+            // span.ResourceName = $"{queryOperationType} {queryOperationName ?? "operation"}";
+            //
+            // tags.Source = source;
+            // tags.OperationName = queryOperationName;
+            // tags.OperationType = queryOperationType;
+            //
+            // tags.SetAnalyticsSampleRate(integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            // tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            // return scope;
+            return null;
         }
 
         protected static void RecordExecutionErrors(Span span, string errorType, int errorCount, string errors, List<SpanEvent> spanEvents)

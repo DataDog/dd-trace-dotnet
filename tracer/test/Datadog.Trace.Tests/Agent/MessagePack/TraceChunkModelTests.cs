@@ -478,6 +478,6 @@ public class TraceChunkModelTests
         var parentContent = new SpanContext(traceId, parentId);
         var traceContext = new TraceContext(new StubDatadogTracer());
         var spanContext = new SpanContext(parentContent, traceContext, serviceName: null, spanId: spanId);
-        return new Span(spanContext, DateTimeOffset.UtcNow);
+        return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow);
     }
 }

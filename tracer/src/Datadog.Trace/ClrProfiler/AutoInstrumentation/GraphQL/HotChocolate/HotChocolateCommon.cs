@@ -81,31 +81,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             var scope = tracer.InternalActiveScope;
             var span = scope?.Span;
-            if (span == null || span.OperationName != ExecuteOperationName)
-            {
-                // not in a Hotchocolate execution span
-                return;
-            }
-
-            try
-            {
-                if (span.Tags is GraphQLTags tags)
-                {
-                    tags.OperationName = operationName;
-                    span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
-                    tags.OperationType = operationType;
-                }
-                else
-                {
-                    var operationNameTag = span.GetTag(Trace.Tags.GraphQLOperationName);
-                    span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
-                    span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error updating HotChocolate scope.");
-            }
+            // if (span == null || span.OperationName != ExecuteOperationName)
+            // {
+            //     // not in a Hotchocolate execution span
+            //     return;
+            // }
+            //
+            // try
+            // {
+            //     if (span.Tags is GraphQLTags tags)
+            //     {
+            //         tags.OperationName = operationName;
+            //         span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
+            //         tags.OperationType = operationType;
+            //     }
+            //     else
+            //     {
+            //         var operationNameTag = span.GetTag(Trace.Tags.GraphQLOperationName);
+            //         span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
+            //         span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
+            //     }
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error updating HotChocolate scope.");
+            // }
         }
 
         internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, System.Collections.IEnumerable errors)

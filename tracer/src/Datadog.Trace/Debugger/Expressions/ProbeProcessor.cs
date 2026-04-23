@@ -1,4 +1,4 @@
-// <copyright file="ProbeProcessor.cs" company="Datadog">
+﻿// <copyright file="ProbeProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -452,10 +452,10 @@ namespace Datadog.Trace.Debugger.Expressions
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        targetSpan = scope.Root?.Span;
+                        targetSpan = scope.Root?.Span as Span;
                         break;
                     case TargetSpan.Active:
-                        targetSpan = scope.Span;
+                        targetSpan = scope.Span as Span;
                         break;
                     default:
                         Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span {Span} is invalid", decoration.TagName, ProbeInfo.ProbeId, ProbeInfo.TargetSpan);

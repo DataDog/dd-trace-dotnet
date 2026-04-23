@@ -56,41 +56,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session?.Connection?.Endpoint?.HostName);
 
             // Tags is not null if span is not null, but keep analysis happy, as there's no attribute for that
-            if (scope != null && tags is not null)
-            {
-                var tracer = Tracer.Instance;
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-
-                string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
-                string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
-                scope.Span.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
-
-                tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";
-
-                if (basicProperties.Instance != null)
-                {
-                    if (basicProperties.IsDeliveryModePresent())
-                    {
-                        tags.DeliveryMode = DeliveryModeStrings[0x3 & basicProperties.DeliveryMode];
-                    }
-
-                    // add distributed tracing headers to the message
-                    if (basicProperties.Headers == null)
-                    {
-                        basicProperties.Headers = new Dictionary<string, object>();
-                    }
-
-                    var context = new PropagationContext(scope.Span.Context, Baggage.Current);
-                    tracer.TracerManager.SpanContextPropagator.Inject(context, basicProperties.Headers, default(ContextPropagation));
-
-                    RabbitMQIntegration.SetDataStreamsCheckpointOnProduce(
-                        Tracer.Instance,
-                        scope.Span,
-                        tags,
-                        basicProperties.Headers,
-                        body.Instance != null ? body.Length : 0);
-                }
-            }
+            // if (scope != null && tags is not null)
+            // {
+            //     var tracer = Tracer.Instance;
+            //     tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            //
+            //     string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
+            //     string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
+            //     scope.Span.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
+            //
+            //     tags.MessageSize = body.Instance != null ? body.Length.ToString() : "0";
+            //
+            //     if (basicProperties.Instance != null)
+            //     {
+            //         if (basicProperties.IsDeliveryModePresent())
+            //         {
+            //             tags.DeliveryMode = DeliveryModeStrings[0x3 & basicProperties.DeliveryMode];
+            //         }
+            //
+            //         // add distributed tracing headers to the message
+            //         if (basicProperties.Headers == null)
+            //         {
+            //             basicProperties.Headers = new Dictionary<string, object>();
+            //         }
+            //
+            //         var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+            //         tracer.TracerManager.SpanContextPropagator.Inject(context, basicProperties.Headers, default(ContextPropagation));
+            //
+            //         RabbitMQIntegration.SetDataStreamsCheckpointOnProduce(
+            //             Tracer.Instance,
+            //             scope.Span,
+            //             tags,
+            //             basicProperties.Headers,
+            //             body.Instance != null ? body.Length : 0);
+            //     }
+            // }
 
             return new CallTargetState(scope);
         }

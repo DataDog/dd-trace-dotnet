@@ -28,14 +28,14 @@ public class AwsApiGatewaySpanFactoryTests
         var scope = factory.CreateSpan(tracer, data);
 
         scope.Should().NotBeNull();
-        var span = scope!.Span;
+        var span = (Span)scope!.Span;
         span.Should().NotBeNull();
         span.OperationName.Should().Be("aws.apigateway");
         span.ResourceName.Should().Be("GET /api/test"); // TODO obfuscation and quantization
         span.Type.Should().Be("web");
         span.StartTime.Should().Be(startTime);
 
-        var tags = scope.Span.Tags;
+        var tags = ((Span)scope.Span).Tags;
         tags.Should().NotBeNull();
         tags.GetTag(Tags.HttpMethod).Should().Be("GET");
         tags.GetTag(Tags.InstrumentationName).Should().Be("aws-apigateway");

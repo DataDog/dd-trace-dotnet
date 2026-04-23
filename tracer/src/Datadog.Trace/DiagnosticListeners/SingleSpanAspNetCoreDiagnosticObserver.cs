@@ -173,10 +173,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     // away, so force that by using null.
                     var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
                     var scope = AspNetCoreRequestHandler.StartAspNetCoreSingleSpanPipelineScope(_tracer, _security, _iast, httpContext, resourceName);
-                    if (appsecEnabled)
+                    // TODO: This is a problem, as security can affect the sampling decision _after_ the span starts
+                    if (appsecEnabled && scope.Span is Span span)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
-                        var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
+                        var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(httpContext));
                         securityReporter.ReportWafInitInfoOnce(_security.WafInitResult);
                     }
                 }
@@ -192,7 +193,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { Tags: AspNetCoreSingleSpanTags tags } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: Span { Tags: AspNetCoreSingleSpanTags tags } rootSpan } trackingFeature)
             {
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
@@ -270,9 +271,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
                     // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
                     // but for now, we just fast-path the no-path base case
-                    rootSpan.ResourceName = !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
-                                                ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
-                                                : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    // TODO: This is a problem for sampling
+                    rootSpan.SetResourceName(
+                        !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
+                            ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
+                            : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}");
 
                     tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
                 }
@@ -303,7 +306,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: Span rootSpan })
             {
                 if (isCodeOriginEnabled)
                 {

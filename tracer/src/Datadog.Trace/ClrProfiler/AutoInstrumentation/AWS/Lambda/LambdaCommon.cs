@@ -22,32 +22,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 internal abstract class LambdaCommon
 {
     // Name of the placeholder span to be filtered out by the Lambda Extension
-    private const string InvocationSpanName = "dd-tracer-serverless-span";
+    // private const string InvocationSpanName = "dd-tracer-serverless-span";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LambdaRuntimeAwsRequestIdHeader = "lambda-runtime-aws-request-id";
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers, string awsRequestId = null)
     {
-        var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
-
-        var span = tracer.StartSpan(
-            operationName: InvocationSpanName,
-            tags: null,
-            parent: context.SpanContext,
-            serviceName: InvocationSpanName,
-            addToTraceContext: true);
-
-        // The Lambda extension uses the resource name to identify placeholder span
-        span.ResourceName = InvocationSpanName;
-
-        // Need to set request_id to copy tracer tags to the aws.lambda span
-        if (awsRequestId != null)
-        {
-            span.SetTag("request_id", awsRequestId);
-        }
-
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
-        return tracer.TracerManager.ScopeManager.Activate(span, finishOnClose: true);
+        // var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
+        //
+        // var span = tracer.StartSpan(
+        //     operationName: InvocationSpanName,
+        //     tags: null,
+        //     parent: context.SpanContext,
+        //     serviceName: InvocationSpanName,
+        //     addToTraceContext: true);
+        //
+        // // The Lambda extension uses the resource name to identify placeholder span
+        // span.ResourceName = InvocationSpanName;
+        //
+        // // Need to set request_id to copy tracer tags to the aws.lambda span
+        // if (awsRequestId != null)
+        // {
+        //     span.SetTag("request_id", awsRequestId);
+        // }
+        //
+        // TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+        // return tracer.TracerManager.ScopeManager.Activate(span, finishOnClose: true);
+        return null;
     }
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, ILambdaContext context)
@@ -91,7 +92,7 @@ internal abstract class LambdaCommon
 
         if (exception != null && scope is { Span: var span })
         {
-            span.SetException(exception);
+            // span.SetException(exception);
         }
 
         scope?.Dispose();

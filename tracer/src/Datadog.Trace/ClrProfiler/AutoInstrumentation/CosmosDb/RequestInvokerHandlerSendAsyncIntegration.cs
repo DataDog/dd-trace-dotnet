@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class RequestInvokerHandlerSendAsyncIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestInvokerHandlerSendAsyncIntegration));
+    // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestInvokerHandlerSendAsyncIntegration));
 
     internal static CallTargetState OnMethodBegin<TTarget, TContainer>(TTarget instance, string resourceUriString, object resourceType, object operationType, object? requestOptions, TContainer cosmosContainerCore, object? feedRange, Stream? streamPayload, object? requestEnricher, object? trace, CancellationToken cancellationToken)
         where TContainer : IContainer, IDuckType
@@ -52,63 +52,63 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
 
         var operationTypeString = operationType?.ToString() ?? string.Empty;
 
-        try
-        {
-            // Skip what's already being traced by query tracing
-            if (operationTypeString.Equals("Query", StringComparison.Ordinal) ||
-                operationTypeString.Equals("QueryPlan", StringComparison.Ordinal))
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            string? containerId = null;
-            string? databaseId = null;
-
-            if (cosmosContainerCore?.Instance != null)
-            {
-                containerId = cosmosContainerCore.Id;
-                databaseId = cosmosContainerCore.Database?.Id;
-            }
-
-            var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
-            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.CosmosDb);
-            var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
-
-            tags.ContainerId = containerId;
-            tags.DatabaseId = databaseId;
-            tags.SetEndpoint(instance?.Client.Endpoint);
-
-            var clientContextObject = instance?.Client.ClientContext;
-            if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
-            {
-                tags.UserAgent = clientContext.UserAgent;
-
-                var connectionMode = clientContext.ClientOptions.ConnectionMode;
-                tags.ConnectionMode = connectionMode switch
-                {
-                    0 => "gateway",
-                    1 => "direct",
-                    _ => "other"
-                };
-            }
-
-            tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-            perTraceSettings.Schema.RemapPeerService(tags);
-
-            var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-            var span = scope.Span;
-
-            span.Type = SpanTypes.Sql;
-            span.ResourceName = $"{operationTypeString} {resourceUriString}";
-
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.CosmosDb);
-
-            return new CallTargetState(scope);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error creating CosmosDb span for operation {OperationType} on resource {ResourceUri}", operationTypeString, resourceUriString);
-        }
+        // try
+        // {
+        //     // Skip what's already being traced by query tracing
+        //     if (operationTypeString.Equals("Query", StringComparison.Ordinal) ||
+        //         operationTypeString.Equals("QueryPlan", StringComparison.Ordinal))
+        //     {
+        //         return CallTargetState.GetDefault();
+        //     }
+        //
+        //     string? containerId = null;
+        //     string? databaseId = null;
+        //
+        //     if (cosmosContainerCore?.Instance != null)
+        //     {
+        //         containerId = cosmosContainerCore.Id;
+        //         databaseId = cosmosContainerCore.Database?.Id;
+        //     }
+        //
+        //     var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
+        //     var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.CosmosDb);
+        //     var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
+        //
+        //     tags.ContainerId = containerId;
+        //     tags.DatabaseId = databaseId;
+        //     tags.SetEndpoint(instance?.Client.Endpoint);
+        //
+        //     var clientContextObject = instance?.Client.ClientContext;
+        //     if (clientContextObject != null && clientContextObject.TryDuckCast<CosmosContextClientStruct>(out var clientContext))
+        //     {
+        //         tags.UserAgent = clientContext.UserAgent;
+        //
+        //         var connectionMode = clientContext.ClientOptions.ConnectionMode;
+        //         tags.ConnectionMode = connectionMode switch
+        //         {
+        //             0 => "gateway",
+        //             1 => "direct",
+        //             _ => "other"
+        //         };
+        //     }
+        //
+        //     tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+        //     perTraceSettings.Schema.RemapPeerService(tags);
+        //
+        //     var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+        //     var span = scope.Span;
+        //
+        //     span.Type = SpanTypes.Sql;
+        //     span.ResourceName = $"{operationTypeString} {resourceUriString}";
+        //
+        //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.CosmosDb);
+        //
+        //     return new CallTargetState(scope);
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Error creating CosmosDb span for operation {OperationType} on resource {ResourceUri}", operationTypeString, resourceUriString);
+        // }
 
         return CallTargetState.GetDefault();
     }
@@ -118,28 +118,28 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
     {
         var scope = state.Scope;
 
-        if (scope != null && returnValue.Instance is not null)
-        {
-            try
-            {
-                var tags = (CosmosDbTags)scope.Span.Tags;
-                var statusCode = (int)returnValue.StatusCode;
-                tags.ResponseStatusCode = statusCode.ToString(CultureInfo.InvariantCulture);
-
-                if (returnValue.Headers?.Instance != null)
-                {
-                    var subStatusCode = returnValue.Headers.SubStatusCodeLiteral;
-                    if (!StringUtil.IsNullOrEmpty(subStatusCode))
-                    {
-                        tags.ResponseSubStatusCode = subStatusCode;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error extracting response metadata from CosmosDb operation {ResourceName}", scope.Span.ResourceName);
-            }
-        }
+        // if (scope != null && returnValue.Instance is not null)
+        // {
+        //     try
+        //     {
+        //         var tags = (CosmosDbTags)scope.Span.Tags;
+        //         var statusCode = (int)returnValue.StatusCode;
+        //         tags.ResponseStatusCode = statusCode.ToString(CultureInfo.InvariantCulture);
+        //
+        //         if (returnValue.Headers?.Instance != null)
+        //         {
+        //             var subStatusCode = returnValue.Headers.SubStatusCodeLiteral;
+        //             if (!StringUtil.IsNullOrEmpty(subStatusCode))
+        //             {
+        //                 tags.ResponseSubStatusCode = subStatusCode;
+        //             }
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Error(ex, "Error extracting response metadata from CosmosDb operation {ResourceName}", scope.Span.ResourceName);
+        //     }
+        // }
 
         scope?.DisposeWithException(exception);
         return returnValue;

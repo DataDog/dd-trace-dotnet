@@ -37,20 +37,21 @@ public sealed class TestSuite
         Name = name;
 
         var tags = new TestSuiteSpanTags(module.Tags, name);
-        var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
-            tags: tags,
-            startTime: startDate);
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
+        // var span = Tracer.Instance.StartSpan(
+        //     string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
+        //     tags: tags,
+        //     startTime: startDate);
+        // TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
+        //
+        // span.Type = SpanTypes.TestSuite;
+        // span.ResourceName = name;
+        // span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+        // span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        //
+        // tags.SuiteId = span.SpanId;
 
-        span.Type = SpanTypes.TestSuite;
-        span.ResourceName = name;
-        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-        span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
-
-        tags.SuiteId = span.SpanId;
-
-        _span = span;
+        // _span = span;
+        _span = null!;
         Current = this;
         lock (OpenedTestSuites)
         {
@@ -62,7 +63,7 @@ public sealed class TestSuite
         if (startDate is null)
         {
             // If a module doesn't have a fixed start time we reset it before running code
-            span.ResetStartTime();
+            // span.ResetStartTime();
         }
 
         // Record EventCreate telemetry metric

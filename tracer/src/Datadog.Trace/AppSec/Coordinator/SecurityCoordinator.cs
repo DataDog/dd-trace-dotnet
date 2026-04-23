@@ -103,7 +103,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
+    internal static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan as Span ?? span;
 
     public IResult? RunWafForUser(string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false, Dictionary<string, string>? otherTags = null)
     {

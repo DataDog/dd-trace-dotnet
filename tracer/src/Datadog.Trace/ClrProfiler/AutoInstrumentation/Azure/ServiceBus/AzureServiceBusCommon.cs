@@ -115,67 +115,68 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             int? messageCount,
             IEnumerable<SpanLink>? spanLinks)
         {
-            var tracer = Tracer.Instance;
-            var perTraceSettings = tracer.CurrentTraceSettings;
-            if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
-            {
-                return new CallTargetState(null);
-            }
-
-            var tags = perTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
-
-            tags.MessagingDestinationName = entityPath;
-            tags.MessagingOperation = operationName;
-            tags.MessagingSystem = "servicebus";
-
-            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureServiceBus);
-            var scope = tracer.StartActiveInternal(
-                "azure_servicebus." + operationName,
-                tags: tags,
-                serviceName: serviceName,
-                serviceNameSource: serviceNameSource,
-                links: spanLinks);
-            var span = scope.Span;
-
-            span.Type = SpanTypes.Queue;
-            span.ResourceName = entityPath;
-
-            var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
-            string? singleMessageId = null;
-
-            if (actualMessageCount > 1)
-            {
-                span.SetTag(Tags.MessagingBatchMessageCount, actualMessageCount.ToString());
-            }
-
-            if (actualMessageCount == 1 && messages != null)
-            {
-                foreach (var message in messages)
-                {
-                    var duckTypedMessage = message?.DuckCast<IServiceBusMessage>();
-                    singleMessageId = duckTypedMessage?.MessageId;
-                    break;
-                }
-
-                if (!string.IsNullOrEmpty(singleMessageId))
-                {
-                    span.SetTag(Tags.MessagingMessageId, singleMessageId);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(networkDestinationName))
-            {
-                tags.NetworkDestinationName = networkDestinationName;
-            }
-
-            if (!string.IsNullOrEmpty(networkDestinationPort))
-            {
-                tags.NetworkDestinationPort = networkDestinationPort;
-            }
-
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
-
-            return new CallTargetState(scope);
+            // var tracer = Tracer.Instance;
+            // var perTraceSettings = tracer.CurrentTraceSettings;
+            // if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
+            // {
+            //     return new CallTargetState(null);
+            // }
+            //
+            // var tags = perTraceSettings.Schema.Messaging.CreateAzureServiceBusTags(SpanKinds.Producer);
+            //
+            // tags.MessagingDestinationName = entityPath;
+            // tags.MessagingOperation = operationName;
+            // tags.MessagingSystem = "servicebus";
+            //
+            // var (serviceName, serviceNameSource) = perTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureServiceBus);
+            // var scope = tracer.StartActiveInternal(
+            //     "azure_servicebus." + operationName,
+            //     tags: tags,
+            //     serviceName: serviceName,
+            //     serviceNameSource: serviceNameSource,
+            //     links: spanLinks);
+            // var span = scope.Span;
+            //
+            // span.Type = SpanTypes.Queue;
+            // span.ResourceName = entityPath;
+            //
+            // var actualMessageCount = messageCount ?? (messages is ICollection collection ? collection.Count : 0);
+            // string? singleMessageId = null;
+            //
+            // if (actualMessageCount > 1)
+            // {
+            //     span.SetTag(Tags.MessagingBatchMessageCount, actualMessageCount.ToString());
+            // }
+            //
+            // if (actualMessageCount == 1 && messages != null)
+            // {
+            //     foreach (var message in messages)
+            //     {
+            //         var duckTypedMessage = message?.DuckCast<IServiceBusMessage>();
+            //         singleMessageId = duckTypedMessage?.MessageId;
+            //         break;
+            //     }
+            //
+            //     if (!string.IsNullOrEmpty(singleMessageId))
+            //     {
+            //         span.SetTag(Tags.MessagingMessageId, singleMessageId);
+            //     }
+            // }
+            //
+            // if (!string.IsNullOrEmpty(networkDestinationName))
+            // {
+            //     tags.NetworkDestinationName = networkDestinationName;
+            // }
+            //
+            // if (!string.IsNullOrEmpty(networkDestinationPort))
+            // {
+            //     tags.NetworkDestinationPort = networkDestinationPort;
+            // }
+            //
+            // tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureServiceBus);
+            //
+            // return new CallTargetState(scope);
+            return default;
         }
     }
 }

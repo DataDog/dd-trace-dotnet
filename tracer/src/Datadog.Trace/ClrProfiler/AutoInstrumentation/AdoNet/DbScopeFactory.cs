@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             Scope? scope = null;
-            SqlTags tags;
+            SqlTags? tags = null;
             var commandText = command.CommandText ?? string.Empty;
 
             try
@@ -55,24 +55,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 // We might block the SQL call from RASP depending on the query
                 VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
-                tags = perTraceSettings.Schema.Database.CreateSqlTags();
-                tags.DbType = dbType;
-                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
-                tags.DbName = tagsFromConnectionString.DbName;
-                tags.DbUser = tagsFromConnectionString.DbUser;
-                tags.OutHost = tagsFromConnectionString.OutHost;
+                var spanContext = tracer.CreateSpanContext(operationName, resourceName: commandText, serviceName: serviceName, serviceNameSource: serviceNameSource);
+                if (spanContext is UnrecordedSpanContext unrecorded)
+                {
+                    scope = tracer.StartActiveInternal(unrecorded);
+                    scope.Span.Type = SpanTypes.Sql;
+                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+                }
+                else if (spanContext is RecordedSpanContext recorded)
+                {
+                    tags = perTraceSettings.Schema.Database.CreateSqlTags();
+                    tags.DbType = dbType;
+                    tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
+                    tags.DbName = tagsFromConnectionString.DbName;
+                    tags.DbUser = tagsFromConnectionString.DbUser;
+                    tags.OutHost = tagsFromConnectionString.OutHost;
 
-                tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
+                    tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+                    perTraceSettings.Schema.RemapPeerService(tags);
 
-                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                scope.Span.ResourceName = commandText;
-                scope.Span.Type = SpanTypes.Sql;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+                    scope = tracer.StartActiveInternal(recorded, tags: tags);
+                    scope.Span.Type = SpanTypes.Sql;
+                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+                }
+                else
+                {
+                    return null;
+                }
             }
             catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Error creating or populating scope.");
+                return scope;
+            }
+
+            // only do dbm for recorded spans
+            if (scope.Span is not Span span)
+            {
                 return scope;
             }
 
@@ -93,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                             && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
                         {
                             _dbCommandCachingLogged = true;
-                            var spanContext = scope.Span.Context;
+                            var spanContext = span.Context;
                             Log.Warning(
                                 "The {CommandType} IDbCommand instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
                                 command.CommandType,
@@ -106,18 +125,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         if (baseHash != null)
                         {
                             // note: it's ok that we don't write the basehash in the span if "alreadyInjected" because we only need one span to get the tag values
-                            tags.BaseHash = baseHash;
+                            tags?.BaseHash = baseHash;
                         }
 
                         // PropagateDataViaComment (service) - this injects various trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, span);
 
                         if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {
-                            tags.DbmTraceInjected = "true";
+                            tags?.DbmTraceInjected = "true";
                         }
                     }
                 }
@@ -129,12 +148,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             // we have to start the span before doing the DBM propagation work (to have the span ID)
             // but ultimately, we don't want to measure the time spent instrumenting.
-            scope.Span.ResetStartTime();
+            span.ResetStartTime();
 
             return scope;
 
-            static bool HasDbType(Span span, string dbType)
+            static bool HasDbType(SpanBase spanBase, string dbType)
             {
+                // we assume it does if we're an unrecorded span
+                if (spanBase is not Span span)
+                {
+                    return true;
+                }
+
                 if (span.Tags is SqlTags sqlTags)
                 {
                     return sqlTags.DbType == dbType;
