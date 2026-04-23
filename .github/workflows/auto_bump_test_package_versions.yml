@@ -8,7 +8,6 @@ on:
 
 jobs:
   bump_package_versions:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: windows-latest
     permissions:
       actions: read # read secrets
