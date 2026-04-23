@@ -231,7 +231,6 @@ partial class Build
            }
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
            var supportedVersionsPath = BuildDirectory / "supported_versions.json";
 
@@ -347,13 +346,11 @@ partial class Build
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
 
-           // Pipeline B: generate dependabot files + supported_versions.json
+           // Pipeline B: generate supported_versions.json
            // TestedVersions are cooldown-filtered but the previous max pins prevent downgrades,
            // so they accurately reflect what we're testing.
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
                integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
-
-           await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
