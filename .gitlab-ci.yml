@@ -19,6 +19,7 @@ variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
+  CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
   # GitLab org for internal cross-repo references - parameterized for org migration resilience
   GITLAB_GROUP: DataDog
   # GitLab group path for OSS projects in CI - may differ from GITLAB_GROUP after org split
@@ -33,7 +34,7 @@ variables:
 build-windows-ci-image:
   stage: build
   timeout: 2h
-  tags: ["windows-v2:2019"]
+  tags: ["windows-v2:2022"]
   when: manual
   hooks:
     pre_get_sources_script:
@@ -55,17 +56,12 @@ build-windows-ci-image:
       }
       Write-Output "Image does not exist yet - building."
 
-      # Download the ci-identities client into the Docker build context. The URL is
-      # pinned in the download script, which is hashed — so URL bumps invalidate the tag.
-      & tracer/build/_build/docker/gitlab/download-ci-identities-client.ps1
-      if ($LASTEXITCODE -ne 0) { throw "download-ci-identities-client.ps1 failed" }
-
       docker pull "${base}:latest"
       if ($LASTEXITCODE -ne 0) {
         Write-Output "No :ci-identities tag available to warm the build cache (first build or tag expired). Continuing without cache."
       }
 
-      docker build --cache-from "${base}:ci-latest" `
+      docker build --cache-from "${base}:latest" `
         -f tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile `
         --tag $image `
         --tag "${base}:latest" `
@@ -88,7 +84,7 @@ build:
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
   timeout: 2h
-  tags: ["windows-v2:2019"]
+  tags: ["windows-v2:2022"]
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -147,18 +143,17 @@ publish:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
-  tags: ["windows-v2:2019"]
+  tags: ["windows-v2:2022"]
   dependencies:
     - build
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
   script:
-    # TODO remove the download step when the client is installed in the Windows runner image
-    - |
-      & tracer/build/_build/docker/gitlab/download-ci-identities-client.ps1
-      if ($LASTEXITCODE -ne 0) { throw "download-ci-identities-client.ps1 failed" }
-    - tracer/build/_build/docker/gitlab/ci-identities-gitlab-job-client.exe assume-role
+    # TODO remove the aws s3 cp command
+    # when the client is installed in the Windows runner image
+    - aws s3 cp --only-show-errors ${CI_IDENTITIES_CLIENT_URL} ./ci-identities-gitlab-job-client.exe
+    - ./ci-identities-gitlab-job-client.exe assume-role
     - |
       $i = 0
       do {
