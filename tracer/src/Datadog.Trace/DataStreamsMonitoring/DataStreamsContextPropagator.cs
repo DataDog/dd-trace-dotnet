@@ -34,6 +34,29 @@ internal sealed class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
+#if NETCOREAPP3_1_OR_GREATER
+        // Encode directly into stack buffers to avoid heap allocations for the intermediate byte arrays.
+        // The only unavoidable allocation is the final ToArray() for headers.Add, since Kafka takes ownership.
+        Span<byte> encodedBytes = stackalloc byte[PathwayContextEncoder.MaxEncodedSize];
+        var encodedLen = PathwayContextEncoder.EncodeInto(context, encodedBytes);
+        var encodedSlice = encodedBytes.Slice(0, encodedLen);
+
+        Span<byte> base64Bytes = stackalloc byte[PathwayContextEncoder.MaxBase64EncodedSize];
+        var status = Base64.EncodeToUtf8(encodedSlice, base64Bytes, out _, out int bytesWritten);
+
+        if (status != OperationStatus.Done)
+        {
+            Log.Error("Failed to encode Data Streams context to Base64. OperationStatus: {Status}", status);
+            return;
+        }
+
+        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64Bytes.Slice(0, bytesWritten).ToArray());
+
+        if (isDataStreamsLegacyHeadersEnabled)
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedSlice.ToArray());
+        }
+#else
         var encodedBytes = PathwayContextEncoder.Encode(context);
 
         // Calculate the maximum length of the base64 encoded data
@@ -62,6 +85,7 @@ internal sealed class DataStreamsContextPropagator
         {
             headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBytes);
         }
+#endif
     }
 
     /// <summary>
@@ -86,6 +110,19 @@ internal sealed class DataStreamsContextPropagator
         {
             try
             {
+#if NETCOREAPP3_1_OR_GREATER
+                // Decode directly into a stack buffer to avoid a heap allocation per consume.
+                Span<byte> decodedBytes = stackalloc byte[PathwayContextEncoder.MaxEncodedSize];
+                var status = Base64.DecodeFromUtf8(base64Bytes, decodedBytes, out _, out int bytesWritten);
+
+                if (status != OperationStatus.Done)
+                {
+                    Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                    return null;
+                }
+
+                return PathwayContextEncoder.Decode(decodedBytes.Slice(0, bytesWritten));
+#else
                 // Calculate the maximum decoded length
                 // Base64 encoding encodes 3 bytes of data into 4 bytes of encoded data
                 // So the maximum decoded length is (base64Bytes.Length * 3) / 4
@@ -110,6 +147,7 @@ internal sealed class DataStreamsContextPropagator
                         return PathwayContextEncoder.Decode(decodedBytes.AsSpan(0, bytesWritten).ToArray());
                     }
                 }
+#endif
             }
             catch (Exception ex)
             {

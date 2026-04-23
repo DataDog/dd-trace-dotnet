@@ -15,10 +15,15 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 
-// keep vendored versions for now because we access internal members
+#if NETCOREAPP
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+#endif
 
 namespace Datadog.Trace.Pdb
 {
@@ -66,6 +71,11 @@ namespace Datadog.Trace.Pdb
         internal bool IsPdbExist { get; set; }
 
         internal static int RidOf(int metadataToken) => metadataToken & RidMask;
+
+        internal static MethodDefinitionHandle GetMethodDefHandle(int methodToken)
+        {
+            return MetadataTokens.MethodDefinitionHandle(RidOf(methodToken));
+        }
 
         internal static DatadogMetadataReader? CreatePdbReader(Assembly? assembly)
         {
@@ -250,16 +260,17 @@ namespace Datadog.Trace.Pdb
 
             if (PdbReader != null)
             {
-                var methodDef = GetMethodDef(methodToken);
-                if (methodDef.Handle.IsNil)
+                var methodDefHandle = GetMethodDefHandle(methodToken);
+                if (methodDefHandle.IsNil)
                 {
                     return null;
                 }
 
-                MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDef.Handle.ToDebugInformationHandle());
+                var methodDef = GetMethodDef(methodDefHandle);
+                MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefHandle.ToDebugInformationHandle());
                 if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
                 {
-                    var moveNext = GetMoveNextMethod(methodDef);
+                    var moveNext = GetMoveNextMethod(methodDefHandle, methodDef);
                     if (moveNext.IsNil)
                     {
                         return null;
@@ -315,16 +326,17 @@ namespace Datadog.Trace.Pdb
 
             if (PdbReader != null)
             {
-                var methodDef = GetMethodDef(methodToken);
-                if (methodDef.Handle.IsNil)
+                var methodDefHandle = GetMethodDefHandle(methodToken);
+                var methodDef = GetMethodDef(methodDefHandle);
+                if (methodDefHandle.IsNil)
                 {
                     return null;
                 }
 
-                MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDef.Handle.ToDebugInformationHandle());
+                MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefHandle.ToDebugInformationHandle());
                 if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
                 {
-                    var moveNext = GetMoveNextMethod(methodDef);
+                    var moveNext = GetMoveNextMethod(methodDefHandle, methodDef);
                     if (moveNext.IsNil)
                     {
                         return null;
@@ -355,7 +367,7 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        private MethodDefinitionHandle GetMoveNextMethod(MethodDefinition methodDef)
+        private MethodDefinitionHandle GetMoveNextMethod(MethodDefinitionHandle methodDefHandle, MethodDefinition methodDef)
         {
             if (methodDef.GetDeclaringType().IsNil)
             {
@@ -365,7 +377,7 @@ namespace Datadog.Trace.Pdb
             TypeDefinitionHandle nestedTypeHandle = default;
             var enclosingType = MetadataReader.GetTypeDefinition(methodDef.GetDeclaringType());
             var provider = new AsyncStateMachineAttributeTypeProvider();
-            foreach (var attributeHandle in MetadataReader.GetCustomAttributes(methodDef.Handle))
+            foreach (var attributeHandle in MetadataReader.GetCustomAttributes(methodDefHandle))
             {
                 if (attributeHandle.IsNil)
                 {
@@ -449,7 +461,6 @@ namespace Datadog.Trace.Pdb
                     return null;
                 }
 
-                const int methodDefTablePrefix = 0x06000000;
                 foreach (MethodDefinitionHandle methodDefinitionHandle in MetadataReader.MethodDefinitions)
                 {
                     MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefinitionHandle);
@@ -472,7 +483,7 @@ namespace Datadog.Trace.Pdb
                             (column.HasValue == false || (sequencePoint.StartColumn <= column && sequencePoint.EndColumn >= column)))
                         {
                             byteCodeOffset = sequencePoint.Offset;
-                            return methodDefTablePrefix | methodDefinitionHandle.RowId;
+                            return MetadataTokens.GetToken(methodDefinitionHandle);
                         }
                     }
                 }
@@ -555,7 +566,8 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            var method = GetMethodDef(methodToken);
+            var methodDefHandle = GetMethodDefHandle(methodToken);
+            var method = GetMethodDef(methodDefHandle);
             int localsCount = 0;
             var methodLocalsCount = GetLocalVariablesCount(method);
             if (methodLocalsCount == 0)
@@ -572,7 +584,7 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            foreach (var scopeHandle in PdbReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
+            foreach (var scopeHandle in PdbReader.GetLocalScopes(methodDefHandle.ToDebugInformationHandle()))
             {
                 var localScope = PdbReader.GetLocalScope(scopeHandle);
                 foreach (var localVarHandle in localScope.GetLocalVariables())
@@ -596,7 +608,7 @@ namespace Datadog.Trace.Pdb
 
             if (localsCount == 0 && searchMoveNext)
             {
-                var moveNext = GetMoveNextMethod(method);
+                var moveNext = GetMoveNextMethod(methodDefHandle, method);
                 if (!moveNext.IsNil)
                 {
                     return GetLocalVariableNames(MetadataTokens.GetToken(moveNext), false);
@@ -616,7 +628,7 @@ namespace Datadog.Trace.Pdb
             CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
             if (PdbReader != null)
             {
-                var methodHandle = MethodDefinitionHandle.FromRowId(RidOf(methodToken));
+                var methodHandle = MetadataTokens.MethodDefinitionHandle(RidOf(methodToken));
                 if (methodHandle.IsNil)
                 {
                     return default;
@@ -656,14 +668,15 @@ namespace Datadog.Trace.Pdb
 
         internal bool IsCompilerGeneratedAttributeDefinedOnMethod(int methodToken)
         {
-            var method = GetMethodDef(methodToken);
+            var methodDefHandle = GetMethodDefHandle(methodToken);
+            var method = GetMethodDef(methodDefHandle);
             var attributes = method.GetCustomAttributes();
             return IsCompilerGeneratedAttributeDefine(attributes);
         }
 
         internal bool IsCompilerGeneratedAttributeDefinedOnType(int typeToken)
         {
-            var nestedType = MetadataReader.GetTypeDefinition(TypeDefinitionHandle.FromRowId(RidOf(typeToken)));
+            var nestedType = MetadataReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle(RidOf(typeToken)));
             var attributes = nestedType.GetCustomAttributes();
             return IsCompilerGeneratedAttributeDefine(attributes);
         }
@@ -745,9 +758,9 @@ namespace Datadog.Trace.Pdb
             }
         }
 
-        internal MethodDefinition GetMethodDef(int methodToken)
+        internal MethodDefinition GetMethodDef(MethodDefinitionHandle handle)
         {
-            return MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(RidOf(methodToken)));
+            return MetadataReader.GetMethodDefinition(handle);
         }
 
         internal ImmutableArray<LocalScope>? GetLocalSymbols(int methodToken, ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
@@ -760,7 +773,8 @@ namespace Datadog.Trace.Pdb
             ImmutableArray<LocalScope>.Builder? localScopes = default;
             if (PdbReader != null)
             {
-                MethodDefinition method = GetMethodDef(methodToken);
+                var methodDefHandle = GetMethodDefHandle(methodToken);
+                var method = GetMethodDef(methodDefHandle);
                 var methodLocalsCount = GetLocalVariablesCount(method);
                 if (methodLocalsCount == 0)
                 {
@@ -776,7 +790,7 @@ namespace Datadog.Trace.Pdb
                 var localTypes = signature.Value.DecodeLocalSignature(new TypeProvider(false), 0);
                 localScopes = ImmutableArray.CreateBuilder<LocalScope>();
 
-                foreach (var scopeHandle in PdbReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
+                foreach (var scopeHandle in PdbReader.GetLocalScopes(methodDefHandle.ToDebugInformationHandle()))
                 {
                     var localScope = PdbReader.GetLocalScope(scopeHandle);
                     var locals = localScope.GetLocalVariables();
@@ -884,7 +898,7 @@ namespace Datadog.Trace.Pdb
 
                 if (localScopes.Count == 0 && searchMoveNext)
                 {
-                    var moveNext = GetMoveNextMethod(method);
+                    var moveNext = GetMoveNextMethod(methodDefHandle, method);
                     return GetLocalSymbols(MetadataTokens.GetToken(moveNext), sequencePoints, false);
                 }
             }
@@ -894,7 +908,8 @@ namespace Datadog.Trace.Pdb
 
         internal bool HasMethodBody(int methodToken)
         {
-            var method = GetMethodDef(methodToken);
+            var methodDefHandle = GetMethodDefHandle(methodToken);
+            var method = GetMethodDef(methodDefHandle);
             if (method.RelativeVirtualAddress == 0)
             {
                 // Method has no RVA (typically abstract or extern method)

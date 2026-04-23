@@ -19,7 +19,6 @@ public class CooldownReport
 {
     private readonly int _cooldownDays;
     private readonly List<CooldownEntry> _entries = new();
-    private readonly HashSet<(string PackageName, string Version)> _seen = new();
 
     public CooldownReport(int cooldownDays)
     {
@@ -32,12 +31,7 @@ public class CooldownReport
 
     public void Add(CooldownEntry entry)
     {
-        // Deduplicate: the same version gets flagged once per framework and per selection group,
-        // but we only need to report it once.
-        if (_seen.Add((entry.PackageName, entry.OverriddenVersion)))
-        {
-            _entries.Add(entry);
-        }
+        _entries.Add(entry);
     }
 
     public string ToMarkdown()
@@ -53,18 +47,17 @@ public class CooldownReport
         sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been overridden.");
         sb.AppendLine("These require manual review before inclusion.");
         sb.AppendLine();
-        sb.AppendLine("| Package | Integration | Overridden Version | Published | Age (days) | Using Instead |");
-        sb.AppendLine("|---------|-------------|--------------------|-----------|------------|---------------|");
+        sb.AppendLine("| Package | Integration | Overridden Version | Published | Age (days) |");
+        sb.AppendLine("|---------|-------------|--------------------|-----------|------------|");
 
         foreach (var entry in _entries)
         {
-            var published = entry.PublishedDate?.ToString("yyyy-MM-dd") ?? "unknown";
+            var published = entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown";
             var age = entry.PublishedDate.HasValue
                 ? ((int)(DateTimeOffset.UtcNow - entry.PublishedDate.Value).TotalDays).ToString()
                 : "?";
-            var usingInstead = entry.ResolvedVersion ?? "(skipped)";
 
-            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.OverriddenVersion} | {published} | {age} | {usingInstead} |");
+            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.OverriddenVersion} | {published} | {age} |");
         }
 
         return sb.ToString();
@@ -84,6 +77,5 @@ public class CooldownReport
         string PackageName,
         string IntegrationName,
         string OverriddenVersion,
-        DateTimeOffset? PublishedDate,
-        string ResolvedVersion);
+        DateTimeOffset? PublishedDate);
 }
