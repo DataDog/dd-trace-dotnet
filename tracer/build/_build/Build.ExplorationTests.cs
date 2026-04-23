@@ -114,36 +114,15 @@ partial class Build
                 $"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
-        var useLatest = ExplorationTestCloneLatest;
-
-        // shallow clone רק כשעובדים על latest (HEAD)
-        var depth = testDescription.IsGitShallowCloneSupported && useLatest ? "--depth 1" : "";
+        var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
         var submodules = testDescription.IsGitSubmodulesRequired ? "--recurse-submodules" : "";
-
-        var repoUrl = testDescription.GitRepositoryUrl;
+        var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
         var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
         FileSystemTasks.EnsureCleanDirectory(target);
 
-        string cloneCommand;
-
-        if (useLatest)
-        {
-            // clone לפי HEAD
-            cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {repoUrl} {target}";
-        }
-        else
-        {
-            // clone מלא בלי -b ואז checkout ל-tag/commit
-            cloneCommand = $"clone -q -c advice.detachedHead=false {submodules} {repoUrl} {target}";
-        }
-
+        var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
         GitTasks.Git(cloneCommand);
-
-        if (!useLatest)
-        {
-            GitTasks.Git($"-C {target} checkout {testDescription.GitRepositoryTag}");
-        }
 
         var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
         if (!Directory.Exists(projectPath))
