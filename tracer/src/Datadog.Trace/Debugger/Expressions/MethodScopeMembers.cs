@@ -30,11 +30,6 @@ internal sealed class MethodScopeMembers : IPoolable<MethodScopeMembersParameter
 
     internal Exception Exception { get; set; }
 
-    /// <summary>
-    /// Gets the number of valid members currently stored in <see cref="Members"/>.
-    /// </summary>
-    internal int MemberCount => _index;
-
     // food for thought:
     // we can save Return and InvocationTarget as T if we will change the native side, so we will have MethodDebuggerState<T, TReturn> instead MethodDebuggerState.
     internal ScopeMember Return { get; set; }

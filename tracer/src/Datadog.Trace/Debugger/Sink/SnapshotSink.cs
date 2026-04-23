@@ -7,7 +7,6 @@
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.Sink
 {
@@ -38,7 +37,7 @@ namespace Datadog.Trace.Debugger.Sink
             }
         }
 
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string? snapshot)
         {
             if (snapshot == null)
             {

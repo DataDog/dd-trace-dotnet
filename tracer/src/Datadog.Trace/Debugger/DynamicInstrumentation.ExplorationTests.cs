@@ -16,7 +16,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 
 namespace Datadog.Trace.Debugger
 {
-    internal partial class DynamicInstrumentation
+    internal sealed partial class DynamicInstrumentation
     {
         // -------------------------
         // Helper: deterministic selection
@@ -49,9 +49,13 @@ namespace Datadog.Trace.Debugger
         /// </summary>
         private static ulong Sha1ToUInt64(string s)
         {
-            using var sha1 = SHA1.Create();
             var bytes = Encoding.UTF8.GetBytes(s);
+#if NET6_0_OR_GREATER
+            var hash = SHA1.HashData(bytes); // 20 bytes
+#else
+            using var sha1 = SHA1.Create();
             var hash = sha1.ComputeHash(bytes); // 20 bytes
+#endif
             return BitConverter.ToUInt64(hash, 0); // take first 8 bytes
         }
 

@@ -35,9 +35,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
-		 private readonly Func<string> _serviceNameProvider;
+        private readonly Func<string> _serviceNameProvider;
         private readonly Func<string?> _processTagsProvider;
-        private readonly bool _injectProcessTags;
 
         // Track opened JSON containers explicitly to avoid using JsonWriter.Path (allocations + heuristic parsing).
         // This class is on the hot path, so these flags should stay extremely cheap.
@@ -56,17 +55,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         private List<EvaluationError>? _errors;
         private string? _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
-
-        // Track opened JSON containers explicitly to avoid using JsonWriter.Path (allocations + heuristic parsing).
-        // This class is on the hot path, so these flags should stay extremely cheap.
-        private bool _debuggerOpen;
-        private bool _snapshotOpen;
-        private bool _capturesOpen;
-        private bool _entryOpen;
-        private bool _returnOpen;
-        private bool _linesOpen;
-        private bool _lineNumberOpen;
-        private LocalsOrArgsContainer _localsOrArgsOpen;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
         {

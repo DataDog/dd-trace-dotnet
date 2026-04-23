@@ -10,7 +10,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 
 namespace Datadog.Trace.Debugger;
 
-internal record BoundLineProbeLocation
+internal sealed record BoundLineProbeLocation
 {
     public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
     {

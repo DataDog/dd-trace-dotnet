@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -15,8 +14,6 @@ namespace Datadog.Trace.Debugger.Expressions;
 /// </summary>
 internal readonly struct ExpressionCacheKey : IEquatable<ExpressionCacheKey>
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExpressionCacheKey));
-
     private readonly int _hashCode;
     private readonly Type?[]? _memberRuntimeTypes;
 

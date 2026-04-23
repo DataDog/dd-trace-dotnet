@@ -13,7 +13,6 @@ using System.Text;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Sink
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Debugger.Sink
             _reportWriter = new ProbeReportWriter(reportFolderPath);
         }
 
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string? snapshot)
         {
             if (snapshot == null)
             {
@@ -38,13 +37,13 @@ namespace Datadog.Trace.Debugger.Sink
                 return;
             }
 
-            var slicedSnapshot = _snapshotSlicer.SliceIfNeeded(probeId, snapshot!);
+            var slicedSnapshot = _snapshotSlicer.SliceIfNeeded(probeId, snapshot);
             _reportWriter.Enqueue(probeId, slicedSnapshot);
         }
 
         public IList<string> GetSnapshots()
         {
-            return ImmutableList<string>.Empty;
+            return Array.Empty<string>();
         }
 
         public int RemainingCapacity()
@@ -60,6 +59,7 @@ namespace Datadog.Trace.Debugger.Sink
         private sealed class ProbeReportWriter : IDisposable
         {
             private const string _fileName = "SnapshotExplorationTestReport.csv";
+            private static readonly char[] CsvEscapeCharacters = { ',', '"', '\n', '\r' };
             private readonly string _fullPath;
             private readonly HashSet<string> _probesIds;
             private readonly object _lock = new();
@@ -73,7 +73,11 @@ namespace Datadog.Trace.Debugger.Sink
                     throw new ArgumentNullException(nameof(folderPath));
                 }
 
+#if NET6_0_OR_GREATER
+                var fileName = Environment.ProcessId + "_" + _fileName;
+#else
                 var fileName = Process.GetCurrentProcess().Id + "_" + _fileName;
+#endif
                 _fullPath = Path.Combine(folderPath, fileName);
                 _probesIds = new HashSet<string>();
 
@@ -212,7 +216,7 @@ namespace Datadog.Trace.Debugger.Sink
             private static string Csv(string value)
             {
                 // Minimal CSV escaping (commas/quotes/newlines)
-                if (value.IndexOfAny(new[] { ',', '"', '\n', '\r' }) >= 0)
+                if (value.IndexOfAny(CsvEscapeCharacters) >= 0)
                 {
                     return "\"" + value.Replace("\"", "\"\"") + "\"";
                 }

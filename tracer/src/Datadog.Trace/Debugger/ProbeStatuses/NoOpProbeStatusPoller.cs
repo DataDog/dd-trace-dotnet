@@ -6,7 +6,7 @@
 #nullable enable
 namespace Datadog.Trace.Debugger.ProbeStatuses
 {
-    internal class NoOpProbeStatusPoller : IProbeStatusPoller
+    internal sealed class NoOpProbeStatusPoller : IProbeStatusPoller
     {
         public static readonly NoOpProbeStatusPoller Instance = new();
 

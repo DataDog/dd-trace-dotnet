@@ -70,7 +70,7 @@ namespace DatadogDebugger.Util
                 sortedLeaves.Add(leaf);
             }
 
-            if (!sortedLeaves.Any())
+            if (sortedLeaves.Count == 0)
             {
                 // Nothing to prune (could be invalid JSON, or it doesn't contain any objects deep enough)
                 return snapshot;

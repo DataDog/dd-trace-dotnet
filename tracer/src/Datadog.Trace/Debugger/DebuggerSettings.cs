@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -156,8 +157,7 @@ namespace Datadog.Trace.Debugger
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
             IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
-            SnapshotExplorationTestProbesFilePath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestProbesFilePath).AsString(string.Empty);
-            SnapshotExplorationTestReportFolderPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestReportFolderPath).AsString(string.Empty);
+            SnapshotExplorationTestRootPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestRootPath).AsString(string.Empty);
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -208,9 +208,17 @@ namespace Datadog.Trace.Debugger
 		
         public bool IsSnapshotExplorationTestEnabled { get; }
 
-        public string SnapshotExplorationTestProbesFilePath { get; }
+        public string SnapshotExplorationTestRootPath { get; }
 
-        public string SnapshotExplorationTestReportFolderPath { get; }
+        public string SnapshotExplorationTestProbesFilePath =>
+            StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath)
+                ? string.Empty
+                : Path.Combine(SnapshotExplorationTestRootPath, "SnapshotExplorationTestProbes.csv");
+
+        public string SnapshotExplorationTestReportFolderPath =>
+            StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath)
+                ? string.Empty
+                : Path.Combine(SnapshotExplorationTestRootPath, "SnapshotExplorationTestReport");
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

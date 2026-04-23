@@ -45,8 +45,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             try
             {
                 using var cts = CreateCancellationTimeout();
-            	var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
-            	SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+                var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
+                SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
             }
             finally
             {

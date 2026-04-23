@@ -11,7 +11,7 @@ namespace Datadog.Trace.Debugger.Sink;
 
 internal interface ISnapshotSink : IDisposable
 {
-    public void Add(string probeId, string snapshot);
+    public void Add(string probeId, string? snapshot);
 
     IList<string> GetSnapshots();
 

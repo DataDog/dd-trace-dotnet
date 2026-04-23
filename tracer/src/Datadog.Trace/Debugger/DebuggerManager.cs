@@ -707,7 +707,7 @@ namespace Datadog.Trace.Debugger
         public void InitForSnapshotExploration()
         {
             var tracerManager = TracerManager.Instance;
-            var di = DebuggerFactory.CreateDynamicInstrumentation(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, tracerManager.Settings, ServiceName, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+            var di = DebuggerFactory.CreateDynamicInstrumentation(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, tracerManager.Settings, ServiceNameProvider, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
 
             // Enable metrics collection and probe tracking for performance optimization
             if (!string.IsNullOrEmpty(DebuggerSettings.SnapshotExplorationTestReportFolderPath))
@@ -732,7 +732,7 @@ namespace Datadog.Trace.Debugger
 
             static void WaitForProbeInstallation(int expectedCount, TimeSpan timeout)
             {
-                var logDir = Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY")
+                var logDir = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogDirectory)
                           ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Datadog .NET Tracer", "logs");
 
                 var deadline = DateTime.UtcNow + timeout;

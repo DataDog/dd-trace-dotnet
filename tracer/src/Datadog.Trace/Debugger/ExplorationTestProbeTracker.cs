@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger
 {
@@ -20,7 +21,10 @@ namespace Datadog.Trace.Debugger
     /// </summary>
     internal static class ExplorationTestProbeTracker
     {
-        private const string MaxSnapshotsEnvVar = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_MAX_SNAPSHOTS_PER_PROBE";
+        // Temporary debug/development escape hatch for snapshot exploration work.
+        // This env var is intentionally kept out of supported configuration metadata and telemetry normalization.
+        // We keep it for now to make local tuning easy, and it should be safe to remove once the workflow stabilizes.
+        private const string MaxSnapshotsPerProbeEnvVar = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_MAX_SNAPSHOTS_PER_PROBE";
 
         /// <summary>
         /// Number of snapshots to capture per probe before removing it.
@@ -158,7 +162,10 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var raw = System.Environment.GetEnvironmentVariable(MaxSnapshotsEnvVar);
+                // Debug-only exploration knobs are intentionally kept out of supported configuration metadata.
+#pragma warning disable DD0012
+                var raw = EnvironmentHelpers.GetEnvironmentVariable(MaxSnapshotsPerProbeEnvVar);
+#pragma warning restore DD0012
                 if (string.IsNullOrWhiteSpace(raw))
                 {
                     return DefaultMaxSnapshotsPerProbe;
@@ -171,8 +178,8 @@ namespace Datadog.Trace.Debugger
 
                 Log.Warning<string, string, int>(
                     "Invalid {EnvVar} value '{Value}'. Falling back to {Default}.",
-                    property0: MaxSnapshotsEnvVar,
-                    property1: raw,
+                    property0: MaxSnapshotsPerProbeEnvVar,
+                    property1: raw ?? string.Empty,
                     property2: DefaultMaxSnapshotsPerProbe);
             }
             catch

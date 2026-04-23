@@ -30,7 +30,7 @@ internal sealed class ProbeExpressionEvaluator
     private readonly ConcurrentDictionary<ProbeExpressionsBucketKey, ProbeExpressionsBucket> _cache = new();
 
     internal ProbeExpressionEvaluator(
-		string probeId,
+        string probeId,
         DebuggerExpression?[]? templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
@@ -549,6 +549,8 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         return compiledExpressions;
+    }
+
     private bool? IsLiteral(DebuggerExpression? expression)
     {
         if (expression is null)
@@ -628,14 +630,5 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         return relevant;
-    }
-
-    internal CompiledProbeExpressions CompileAll(MethodScopeMembers scopeMembers)
-    {
-        return new CompiledProbeExpressions(
-            templates: Templates == null ? null : CompileTemplates(scopeMembers),
-            condition: Condition == null ? null : CompileCondition(scopeMembers),
-            metric: Metric == null ? null : CompileMetric(scopeMembers),
-            decorations: SpanDecorations == null ? null : CompileDecorations(scopeMembers));
     }
 }

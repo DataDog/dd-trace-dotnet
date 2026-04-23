@@ -8,5 +8,5 @@ namespace Datadog.Trace.Debugger.Sink;
 
 internal interface ISnapshotUploader : IDebuggerUploader
 {
-    void Add(string probeId, string snapshot);
+    void Add(string probeId, string? snapshot);
 }

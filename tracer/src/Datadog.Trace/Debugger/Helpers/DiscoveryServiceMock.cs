@@ -10,7 +10,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
-    internal class DiscoveryServiceMock : IDiscoveryService
+    internal sealed class DiscoveryServiceMock : IDiscoveryService
     {
         internal bool Called { get; private set; }
 
@@ -30,12 +30,17 @@ namespace Datadog.Trace.Debugger.Helpers
                     eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                     telemetryProxyEndpoint: "telemetryProxyEndpoint",
                     tracerFlareEndpoint: "tracerFlareEndpoint",
+                    containerTagsHash: "containerTagsHash",
                     clientDropP0: false,
                     spanMetaStructs: true,
                     spanEvents: false));
         }
 
         public void RemoveSubscription(Action<AgentConfiguration> callback)
+        {
+        }
+
+        public void SetCurrentConfigStateHash(string configStateHash)
         {
         }
 

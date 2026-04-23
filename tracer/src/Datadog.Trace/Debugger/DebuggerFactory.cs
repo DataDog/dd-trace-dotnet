@@ -31,7 +31,11 @@ internal sealed class DebuggerFactory
     {
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
         var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
-        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        // Snapshot exploration tests write directly to a per-process CSV file, so both
+        // uploaders must share the same sink/report writer instead of opening it twice.
+        var logSink = debuggerSettings.IsSnapshotExplorationTestEnabled
+                          ? snapshotSink
+                          : SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
         var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
@@ -88,7 +92,7 @@ internal sealed class DebuggerFactory
         return debuggerSink;
     }
 
-    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
+    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, ISnapshotSink snapshotSink)
     {
         var logUploaderApi = DebuggerUploadApiFactory.CreateLogUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var logBatchUploader = BatchUploader.Create(logUploaderApi);
@@ -110,10 +114,11 @@ internal sealed class DebuggerFactory
 
     internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-		if (settings.IsSnapshotExplorationTestEnabled)
+        if (settings.IsSnapshotExplorationTestEnabled)
         {
             return NoOpSymbolUploader.Instance;
         }
+
         var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceNameProvider, settings.SymbolDatabaseCompressionEnabled);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, tracerSettings, settings, serviceNameProvider);
         return symbolsUploader;

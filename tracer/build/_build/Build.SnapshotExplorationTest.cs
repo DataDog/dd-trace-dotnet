@@ -18,8 +18,7 @@ partial class Build
     const string SnapshotExplorationTestProbesFileName = "SnapshotExplorationTestProbes.csv";
     const string SnapshotExplorationTestReportFolderName = "SnapshotExplorationTestReport";
     const string SnapshotExplorationEnabledKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
-    const string SnapshotExplorationProbesFilePathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_FILE_PATH";
-    const string SnapshotExplorationReportFolderPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_FOLDER_PATH";
+    const string SnapshotExplorationRootPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH";
     const char SpecialSeparator = '#';
 
     readonly List<string> IgnoredNamespaces = new()
@@ -38,6 +37,15 @@ partial class Build
         "_build",
         "testhost"
     };
+
+    static string GetSnapshotExplorationRootPath(string testRootPath, TargetFramework framework)
+        => Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework);
+
+    static string GetSnapshotExplorationProbesFilePath(string snapshotExplorationRootPath)
+        => Path.Combine(snapshotExplorationRootPath, SnapshotExplorationTestProbesFileName);
+
+    static string GetSnapshotExplorationReportFolderPath(string snapshotExplorationRootPath)
+        => Path.Combine(snapshotExplorationRootPath, SnapshotExplorationTestReportFolderName);
 
     void RunSnapshotExplorationTestsInternal()
     {
@@ -80,15 +88,16 @@ partial class Build
             testDescription.IsSnapshotScenario = true;
             var envVariables = GetEnvironmentVariables(testDescription, framework);
             var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestReportFolderName));
+            var snapshotExplorationRootPath = GetSnapshotExplorationRootPath(testRootPath, framework);
+            FileSystemTasks.EnsureCleanDirectory(GetSnapshotExplorationReportFolderPath(snapshotExplorationRootPath));
 
             var testStopwatch = Stopwatch.StartNew();
             Test(testDescription, framework, envVariables);
             testStopwatch.Stop();
 
             VerifySnapshotExplorationTestResults(
-                envVariables[SnapshotExplorationProbesFilePathKey],
-                envVariables[SnapshotExplorationReportFolderPathKey],
+                GetSnapshotExplorationProbesFilePath(snapshotExplorationRootPath),
+                GetSnapshotExplorationReportFolderPath(snapshotExplorationRootPath),
                 testStopwatch.Elapsed);
         }
     }
@@ -117,7 +126,8 @@ partial class Build
         foreach (var framework in frameworks)
         {
             var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework));
+            var snapshotExplorationRootPath = GetSnapshotExplorationRootPath(testRootPath, framework);
+            FileSystemTasks.EnsureCleanDirectory(snapshotExplorationRootPath);
             var tracerAssemblyPath = GetTracerAssemblyPath(framework);
             var tracer = Assembly.LoadFile(tracerAssemblyPath);
             var extractorType = tracer.GetType("Datadog.Trace.Debugger.Symbols.SymbolExtractor");
@@ -158,7 +168,7 @@ partial class Build
                 }
             }
 
-            File.WriteAllText(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestProbesFileName), csvBuilder.ToString());
+            File.WriteAllText(GetSnapshotExplorationProbesFilePath(snapshotExplorationRootPath), csvBuilder.ToString());
         }
 
         return;
@@ -800,6 +810,13 @@ partial class Build
             }
 
             throw new Exception($"Snapshot exploration test failed: {invalidOrErrorProbes.Count} invalid snapshots, {failedDuringProcessing.Count} processing failures, {probeRelatedErrors.Count} probe errors, {criticalNativeFailures.Count} native rewriter failures, {skippedProbes.Count} signature mismatches");
+        }
+
+        if (installedCount == 0 && definedProbes.Count > 0)
+        {
+            Logger.Error("║ RESULT: FAILED - No probes installed                         ║");
+            Logger.Error("╚══════════════════════════════════════════════════════════════╝");
+            throw new Exception("Snapshot exploration test failed: No probes were installed. Check debugger initialization and probe loading.");
         }
 
         if (reportedCount == 0 && installedCount > 0)

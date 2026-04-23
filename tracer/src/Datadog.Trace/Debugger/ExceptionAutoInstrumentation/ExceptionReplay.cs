@@ -136,7 +136,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ShadowStackHolder.ShadowStack?.Clear();
         }
 
-        internal void AddSnapshot(string probeId, string snapshot)
+        internal void AddSnapshot(string probeId, string? snapshot)
         {
             if (_isDisabled)
             {

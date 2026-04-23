@@ -20,10 +20,12 @@ partial class Build
         if (description.IsSnapshotScenario)
         {
             envVars.Add("VSTEST_CONNECTION_TIMEOUT", "1800");
+            // Snapshot exploration runs don't need hands-off config, and disabling it
+            // avoids libdatadog startup crashes in isolated third-party test hosts.
+            envVars.Add("DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED", "0");
             envVars.Add(SnapshotExplorationEnabledKey, "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            envVars.Add(SnapshotExplorationProbesFilePathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestProbesFileName));
-            envVars.Add(SnapshotExplorationReportFolderPathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestReportFolderName));
+            envVars.Add(SnapshotExplorationRootPathKey, GetSnapshotExplorationRootPath(testRootPath, framework));
         }
         else if (description.LineProbesEnabled)
         {

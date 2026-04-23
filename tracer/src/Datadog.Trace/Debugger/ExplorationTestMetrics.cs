@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -48,7 +50,7 @@ internal static class ExplorationTestMetrics
     private static long _snapshotTimeoutCount;
 
     // Output path (set when enabled)
-    private static string _metricsFilePath;
+    private static string _metricsFilePath = string.Empty;
     private static bool _isEnabled;
     private static bool _isRegistered;
 
@@ -255,7 +257,7 @@ internal static class ExplorationTestMetrics
         Interlocked.Increment(ref _snapshotsSkippedCount);
     }
 
-    private static void OnProcessExit(object sender, EventArgs e)
+    private static void OnProcessExit(object? sender, EventArgs e)
     {
         if (!_isEnabled || string.IsNullOrEmpty(_metricsFilePath))
         {

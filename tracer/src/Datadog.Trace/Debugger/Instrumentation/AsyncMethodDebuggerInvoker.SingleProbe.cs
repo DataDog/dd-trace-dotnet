@@ -233,19 +233,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            // Some methods legitimately create "null refs" (e.g., MemoryMarshal.GetReference(emptySpan)).
-            // Capturing such locals would dereference a null byref when we read `local` and can throw.
-            // If we get a null byref, skip capture.
-            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
-            {
-                Log.Debug(
-                    "LogLocal: Skipping null byref local. probeId={ProbeId}, Index={Index}, TLocal={TLocal}",
-                    property0: asyncState.ProbeData.ProbeId,
-                    property1: index,
-                    property2: typeof(TLocal).FullName);
-                return;
-            }
-
             var localVariableNames = asyncState.MethodMetadataInfo.LocalVariableNames;
             if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
             {
