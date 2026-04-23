@@ -273,22 +273,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items.
                             // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC).
                             // The headers in the gRPC message are STALE (contain host's root span context).
-                            // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker
+                            // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker.
+                            // Only skip gRPC extraction when the ASP.NET Core active scope bridge is also present.
+                            const string activeScopeBridgeKey = "ActiveScope";
                             var isAspNetCoreIntegration = functionContext.Items?.ContainsKey(HttpRequestContextKey) == true;
+                            var hasAspNetCoreActiveScopeBridge = functionContext.Items?.ContainsKey(activeScopeBridgeKey) == true;
 
-                            if (isAspNetCoreIntegration)
+                            if (isAspNetCoreIntegration && hasAspNetCoreActiveScopeBridge)
                             {
-                                // Skip gRPC header extraction in HTTP proxying mode.
-                                // The gRPC message headers contain STALE context from the host process
-                                // (the host's root span), so extracting them would create an incorrect parent.
-                                // Instead, we rely on the HttpContext.Items bridge to get the ASP.NET Core scope.
-                                Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
+                                // Skip gRPC header extraction in HTTP proxying mode only when the ASP.NET Core
+                                // scope bridge is available. The gRPC message headers contain STALE context
+                                // from the host process (the host's root span), so extracting them would create
+                                // an incorrect parent.
+                                Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected and active scope bridge found");
                             }
                             else
                             {
-                                // Only extract from gRPC message when NOT using ASP.NET Core integration
+                                // Fall back to gRPC message extraction when not using ASP.NET Core integration,
+                                // or when proxying is detected but the ASP.NET Core scope bridge is unavailable.
                                 extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                                Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
+
+                                if (isAspNetCoreIntegration && !hasAspNetCoreActiveScopeBridge)
+                                {
+                                    Log.Debug("HTTP trigger detected ASP.NET Core integration, but no active scope bridge was found. Falling back to gRPC header extraction for trace correlation.");
+                                }
+                                else
+                                {
+                                    Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
+                                }
                             }
 
                             break;
