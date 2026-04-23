@@ -44,7 +44,11 @@ namespace Datadog.Trace.Tests.Debugger
                 HashInt = [1, 2, 3],
                 Array = ["first", "second"],
                 CustomArray = [new TestStruct.NestedObject() { NestedString = "Nested" }, new TestStruct.ChildNestedObject() { NestedString = "Nested Child" }],
-                Dictionary = new Dictionary<string, string> { { "hello", "world" } },
+                Dictionary = new Dictionary<string, string>
+                {
+                    { "hello", "world" },
+                    { "goodbye", "moon" },
+                },
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
                 String = "Hello world!",

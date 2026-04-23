@@ -52,18 +52,7 @@ internal partial class ProbeExpressionParser<T>
                 throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");
             }
 
-            Type itParameterType = null;
-            if (source.Type.IsArray)
-            {
-                itParameterType = source.Type.GetElementType();
-            }
-            else
-            {
-                if (source.Type.GetGenericArguments().Length > 0)
-                {
-                    itParameterType = source.Type.GetGenericArguments()[0];
-                }
-            }
+            var itParameterType = GetIteratorParameterType(source.Type);
 
             if (predicateMethod == null)
             {
@@ -213,6 +202,58 @@ internal partial class ProbeExpressionParser<T>
         var countOrLength = ProbeExpressionParserHelper.GetMethodByReflection(source.Type, source.Type.IsArray ? "get_Length" : "get_Count", Type.EmptyTypes);
 
         return Expression.Call(source, countOrLength);
+    }
+
+    private Type GetIteratorParameterType(Type sourceType)
+    {
+        if (sourceType.IsArray)
+        {
+            return sourceType.GetElementType();
+        }
+
+        var genericDictionaryType = sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == typeof(IDictionary<,>)
+                                        ? sourceType
+                                        : sourceType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+
+        if (genericDictionaryType != null)
+        {
+            return typeof(KeyValuePair<,>).MakeGenericType(genericDictionaryType.GetGenericArguments());
+        }
+
+        if (typeof(IDictionary).IsAssignableFrom(sourceType))
+        {
+            return typeof(DictionaryEntry);
+        }
+
+        var enumerableType = sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+                                 ? sourceType
+                                 : sourceType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+
+        if (enumerableType != null)
+        {
+            return enumerableType.GetGenericArguments()[0];
+        }
+
+        throw new InvalidOperationException("Fail to determined the iterator parameter type");
+    }
+
+    private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out MemberExpression propertyExpression)
+    {
+        propertyExpression = null;
+
+        if (itParameter.Type == typeof(DictionaryEntry))
+        {
+            propertyExpression = Expression.Property(itParameter, propertyName);
+            return true;
+        }
+
+        if (itParameter.Type.IsGenericType && itParameter.Type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+        {
+            propertyExpression = Expression.Property(itParameter, propertyName);
+            return true;
+        }
+
+        return false;
     }
 
     private bool IsSafeCollection(Type type)

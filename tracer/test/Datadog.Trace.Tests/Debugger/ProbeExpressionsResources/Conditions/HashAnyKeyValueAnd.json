@@ -1,0 +1,24 @@
+{
+  "dsl": "any(ref DictionaryLocal, { @key == 'hello' && @value == 'world' })",
+  "any": [
+    {
+      "ref": "DictionaryLocal"
+    },
+    {
+      "and": [
+        {
+          "eq": [
+            "@key",
+            "hello"
+          ]
+        },
+        {
+          "eq": [
+            "@value",
+            "world"
+          ]
+        }
+      ]
+    }
+  ]
+}
