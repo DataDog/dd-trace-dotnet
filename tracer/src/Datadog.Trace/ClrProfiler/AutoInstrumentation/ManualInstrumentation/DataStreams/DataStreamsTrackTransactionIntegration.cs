@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -29,8 +30,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Da
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class DataStreamsTrackTransactionIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget>(string transactionId, string checkpointName)
+    internal static CallTargetState OnMethodBegin<TTarget>(string? transactionId, string? checkpointName)
     {
+        if (StringUtil.IsNullOrEmpty(transactionId) || StringUtil.IsNullOrEmpty(checkpointName))
+        {
+            return CallTargetState.GetDefault();
+        }
+
         TelemetryFactory.Metrics.Record(PublicApiUsage.DataStreams_TrackTransaction);
 
         var tracer = Datadog.Trace.Tracer.Instance;
