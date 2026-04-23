@@ -284,10 +284,9 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (!DebuggerSettings.SymbolDatabaseUploadEnabled
-                 || !newDebuggerSettings.DynamicInstrumentationCanBeEnabled)
+                if (!newDebuggerSettings.SymbolDatabaseUploadEnabled)
                 {
-                    // explicitly disabled via local env var or DI can not be enabled
+                    // explicitly disabled via local env var
                     return;
                 }
 
@@ -297,15 +296,9 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if (!newDebuggerSettings.DynamicInstrumentationEnabled
-                 && newDebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled != true)
-                {
-                    return;
-                }
-
-                // Initialize symbol database uploader only if DI is enabled locally or remotely.
+                // Initialize the symbol uploader as soon as local settings allow it.
                 var tracerManager = TracerManager.Instance;
-                this.SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, () => ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                this.SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, () => ServiceName, tracerSettings, newDebuggerSettings, tracerManager.GitMetadataTagsProvider);
                 _ = this.SymbolsUploader.StartFlushingAsync()
                         .ContinueWith(
                              t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),

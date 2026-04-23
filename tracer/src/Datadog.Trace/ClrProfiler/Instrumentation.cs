@@ -543,7 +543,8 @@ namespace Datadog.Trace.ClrProfiler
 
             if (!debuggerSettings.DynamicInstrumentationEnabled
              && !debuggerSettings.CodeOriginForSpansEnabled
-             && !manager.ExceptionReplaySettings.Enabled)
+             && !manager.ExceptionReplaySettings.Enabled
+             && !debuggerSettings.SymbolDatabaseUploadEnabled)
             {
                 Log.Debug("Debugger products are not enabled");
             }
