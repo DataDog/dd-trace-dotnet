@@ -100,7 +100,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
         }
         else
         {
-            buffer[i++] = FrameStore::FakeUnknownIP;
+            buffer[i++] = FrameStore::UnknownFrameTypeIP;
             if (tracer)
             {
                 tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::FailedIsManaged);

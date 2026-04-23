@@ -83,7 +83,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 
     static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
     static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
-
+    static const std::string UnknownFrameType("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)");
 
     // check for fake IPs used in tests
     if (instructionPointer <= MaxFakeIP)
@@ -97,6 +97,13 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         if (instructionPointer == FrameStore::FakeAllocationIP)
         {
             return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::UnknownFrameTypeIP)
+        {
+            // We log it only when it debug to identify truncated callstack
+            // Example: during tests
+            const auto recordFrame = Log::IsDebugEnabled();
+            return { recordFrame, {FakeModuleName, UnknownFrameType, "", 0} };
         }
         else
         {
