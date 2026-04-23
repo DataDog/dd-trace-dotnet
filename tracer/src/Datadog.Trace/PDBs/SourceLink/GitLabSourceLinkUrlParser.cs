@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
@@ -14,11 +13,9 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 {
     /// <summary>
     /// Extract the git commit sha and repository url from a GitLab SourceLink mapping string.
-    /// For example, for the following SourceLink mapping string:
-    ///     https://test-gitlab-domain/test-org/test-repo/raw/dd35903c688a74b62d1c6a9e4f41371c65704db8/*
-    /// It will return:
-    ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
-    ///     - repository URL: https://test-gitlab-domain/test-org/test-repo
+    /// Supports both old and new GitLab URL formats, including nested groups/subgroups:
+    ///   GitLab &gt;= 12.0: https://{host}/{group}[/{subgroup}/...]/{repo}/-/raw/{sha}/*
+    ///   GitLab &lt;  12.0: https://{host}/{group}[/{subgroup}/...]/{repo}/raw/{sha}/*
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
@@ -27,53 +24,58 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
-            ReadOnlySpan<char> org = default;
-            ReadOnlySpan<char> repo = default;
-            ReadOnlySpan<char> sha = default;
-            var segmentCount = 0;
+            var path = uri.AbsolutePath;
 
-            foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+            // Try /-/raw/ first (GitLab >= 12.0), then /raw/ (GitLab < 12.0).
+            // Use LastIndexOf so that repo paths containing "raw" as a segment name don't confuse us.
+            int rawMarkerIndex = path.LastIndexOf("/-/raw/", StringComparison.Ordinal);
+            int repoPathEnd;
+            int afterRawStart;
+
+            if (rawMarkerIndex >= 0)
             {
-                ReadOnlySpan<char> span = segment;
-                if (span.IsEmpty)
+                // /-/raw/ found — new format
+                repoPathEnd = rawMarkerIndex;
+                afterRawStart = rawMarkerIndex + "/-/raw/".Length;
+            }
+            else
+            {
+                rawMarkerIndex = path.LastIndexOf("/raw/", StringComparison.Ordinal);
+                if (rawMarkerIndex <= 0)
                 {
-                    continue;
+                    // Not found, or /raw/ is at position 0 (which is the GHE pattern, not GitLab)
+                    return false;
                 }
 
-                switch (segmentCount)
-                {
-                    case 0: org = span; break;
-                    case 1: repo = span; break;
-                    case 2:
-                        if (!span.SequenceEqual("raw".AsSpan()))
-                        {
-                            return false;
-                        }
-
-                        break;
-                    case 3: sha = span; break;
-                    case 4:
-                        if (!span.SequenceEqual("*".AsSpan()))
-                        {
-                            return false;
-                        }
-
-                        break;
-                }
-
-                segmentCount++;
+                repoPathEnd = rawMarkerIndex;
+                afterRawStart = rawMarkerIndex + "/raw/".Length;
             }
 
-            if (segmentCount != 5 || !IsValidCommitSha(sha))
+            // After the raw marker we expect "{sha}/*"
+            var afterRaw = path.AsSpan().Slice(afterRawStart);
+            var slashIdx = afterRaw.IndexOf('/');
+            if (slashIdx <= 0)
             {
                 return false;
             }
 
-#if NET6_0_OR_GREATER
-            repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{org}/{repo}";
-#else
-            repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{org.ToString()}/{repo.ToString()}";
-#endif
+            var sha = afterRaw.Slice(0, slashIdx);
+            var rest = afterRaw.Slice(slashIdx + 1);
+
+            if (!rest.SequenceEqual("*".AsSpan()) || !IsValidCommitSha(sha))
+            {
+                return false;
+            }
+
+            // Require at least 2 non-empty segments before the raw marker (group + repo, or group/sub/repo).
+            // After trimming the leading/trailing '/', an inner '/' proves two segments exist.
+            var repoPath = path.AsSpan(0, repoPathEnd).TrimStart('/').TrimEnd('/');
+            if (repoPath.IndexOf('/') <= 0)
+            {
+                return false;
+            }
+
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}{path.Substring(0, repoPathEnd)}";
             commitSha = sha.ToString();
             return true;
         }
