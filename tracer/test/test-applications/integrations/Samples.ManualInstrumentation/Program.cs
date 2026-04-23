@@ -254,7 +254,7 @@ internal class Program
             var createSpan = new SpanCreationSettings { FinishOnClose = false, StartTime = DateTimeOffset.Now.AddHours(-1), Parent = parent, };
             using (var s1 = Tracer.Instance.StartActive($"Manual-{++count}.CustomContext", createSpan))
             {
-                s1.Span.ServiceName = Tracer.Instance.DefaultServiceName;
+                // s1.Span.ServiceName = Tracer.Instance.DefaultServiceName; // non-recording-spans experiment: ServiceName setter removed
                 await SendHttpRequest("CustomContext");
 
                 // Test injection
