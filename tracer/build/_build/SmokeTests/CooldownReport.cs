@@ -19,46 +19,77 @@ namespace SmokeTests;
 public class CooldownReport
 {
     readonly TimeSpan _cooldown;
-    readonly List<CooldownEntry> _entries = new();
+    readonly List<CooldownEntry> _cooldownEntries = new();
+    readonly List<FailureEntry> _failureEntries = new();
 
     public CooldownReport(TimeSpan cooldown)
     {
         _cooldown = cooldown;
     }
 
-    public bool HasEntries => _entries.Count > 0;
+    public bool HasEntries => _cooldownEntries.Count > 0 || _failureEntries.Count > 0;
 
-    public IReadOnlyList<CooldownEntry> Entries => _entries;
+    public IReadOnlyList<CooldownEntry> Entries => _cooldownEntries;
+
+    public IReadOnlyList<FailureEntry> Failures => _failureEntries;
 
     public void Add(CooldownEntry entry)
     {
-        _entries.Add(entry);
+        _cooldownEntries.Add(entry);
+    }
+
+    public void AddFailure(FailureEntry entry)
+    {
+        _failureEntries.Add(entry);
     }
 
     public string ToMarkdown()
     {
-        if (_entries.Count == 0)
+        if (!HasEntries)
         {
             return string.Empty;
         }
 
         var sb = new StringBuilder();
-        sb.AppendLine("## Smoke Test Image Digest Cooldown Report");
-        sb.AppendLine();
-        sb.AppendLine($"The following images have newer digests available but were published less than **{(int)_cooldown.TotalDays} day(s)** ago, so the existing pin is retained.");
-        sb.AppendLine("They will be picked up automatically by a future run once they age out of the cooldown window.");
-        sb.AppendLine();
-        sb.AppendLine("| Image | Current pinned | Available digest | Published | Age |");
-        sb.AppendLine("|-------|----------------|------------------|-----------|-----|");
 
-        foreach (var entry in _entries)
+        if (_cooldownEntries.Count > 0)
         {
-            var published = entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown";
-            var age = entry.PublishedDate.HasValue
-                ? FormatAge(DateTimeOffset.UtcNow - entry.PublishedDate.Value)
-                : "?";
+            sb.AppendLine("## Smoke Test Image Digest Cooldown Report");
+            sb.AppendLine();
+            sb.AppendLine($"The following images have newer digests available but were published less than **{(int)_cooldown.TotalDays} day(s)** ago, so the existing pin is retained.");
+            sb.AppendLine("They will be picked up automatically by a future run once they age out of the cooldown window.");
+            sb.AppendLine();
+            sb.AppendLine("| Image | Current pinned | Available digest | Published | Age |");
+            sb.AppendLine("|-------|----------------|------------------|-----------|-----|");
 
-            sb.AppendLine($"| `{entry.Image}` | `{Shorten(entry.CurrentDigest)}` | `{Shorten(entry.AvailableDigest)}` | {published} | {age} |");
+            foreach (var entry in _cooldownEntries)
+            {
+                var published = entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown";
+                var age = entry.PublishedDate.HasValue
+                    ? FormatAge(DateTimeOffset.UtcNow - entry.PublishedDate.Value)
+                    : "?";
+
+                sb.AppendLine($"| `{entry.Image}` | `{Shorten(entry.CurrentDigest)}` | `{Shorten(entry.AvailableDigest)}` | {published} | {age} |");
+            }
+        }
+
+        if (_failureEntries.Count > 0)
+        {
+            if (_cooldownEntries.Count > 0)
+            {
+                sb.AppendLine();
+            }
+            sb.AppendLine("## Smoke Test Image Digest Failures");
+            sb.AppendLine();
+            sb.AppendLine("The following images could not be evaluated this run. The existing pin has been kept. Investigate before the next scheduled run if these persist.");
+            sb.AppendLine();
+            sb.AppendLine("| Image | Error |");
+            sb.AppendLine("|-------|-------|");
+
+            foreach (var entry in _failureEntries)
+            {
+                sb.AppendLine($"| `{entry.Image}` | {EscapeTableCell(entry.ErrorMessage)} |");
+            }
         }
 
         return sb.ToString();
@@ -72,6 +103,15 @@ public class CooldownReport
             // Saved to disk so it can later be fed into the PR description of the automation workflow.
             await File.WriteAllTextAsync(path, markdown);
         }
+    }
+
+    static string EscapeTableCell(string value)
+    {
+        // Collapse newlines and escape the pipe so a single error string can't blow up the table.
+        return value
+            .Replace("\r", " ")
+            .Replace("\n", " ")
+            .Replace("|", "\\|");
     }
 
     static string FormatAge(TimeSpan age)
@@ -95,4 +135,8 @@ public class CooldownReport
         string CurrentDigest,
         string AvailableDigest,
         DateTimeOffset? PublishedDate);
+
+    public record FailureEntry(
+        string Image,
+        string ErrorMessage);
 }

@@ -53,7 +53,7 @@ public class SmokeTestImageDigestUpdater : IDisposable
     /// </summary>
     public CooldownReport CooldownReport { get; }
 
-    public async Task UpdateAsync(AbsolutePath composeFile)
+    public async Task UpdateAsync(AbsolutePath composeFile, AbsolutePath? reportPath = null)
     {
         Helpers.LogSection($"Updating pinned digests in {composeFile}");
 
@@ -91,6 +91,7 @@ public class SmokeTestImageDigestUpdater : IDisposable
             {
                 failed++;
                 Logger.Warning(ex, "Failed to evaluate {Image}", entry.ImagePrefix);
+                CooldownReport.AddFailure(new CooldownReport.FailureEntry(entry.ImagePrefix, ex.Message));
             }
         }
 
@@ -107,6 +108,22 @@ public class SmokeTestImageDigestUpdater : IDisposable
         Logger.Information(
             "Summary - updated: {Updated}, cooldown: {Cooldown}, unchanged: {Unchanged}, failed: {Failed}",
             updated, cooled, unchanged, failed);
+
+        // Save the report only when there's an update worth opening a PR for —
+        // the report is PR-body fodder, not a standalone artifact.
+        if (updated > 0 && reportPath is not null && CooldownReport.HasEntries)
+        {
+            await CooldownReport.SaveToFile(reportPath);
+            Logger.Information("Image digest report saved to {Path}", reportPath);
+        }
+
+        // With no updates to ship, failures have no visible channel but the build log —
+        // fail the target so the scheduled workflow's failure notification fires.
+        if (updated == 0 && failed > 0)
+        {
+            throw new InvalidOperationException(
+                $"{failed} image(s) failed to evaluate and no digest updates were produced; see warnings above for details.");
+        }
     }
 
     async Task<UpdateOutcome> EvaluateAsync(ImageEntry entry)

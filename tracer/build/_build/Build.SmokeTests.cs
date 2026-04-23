@@ -33,17 +33,11 @@ partial class Build
         .Executes(async () =>
         {
             var composeFile = TracerDirectory / "build" / "_build" / "SmokeTests" / "smoke-test-images.docker-compose.yml";
+            var reportPath = TemporaryDirectory / "smoke_test_image_cooldown_report.md";
             var cooldown = PackageVersionCooldownDays.HasValue
                              ? TimeSpan.FromDays(PackageVersionCooldownDays.Value)
                              : TimeSpan.FromDays(0);
             using var updater = new SmokeTests.SmokeTestImageDigestUpdater(cooldown);
-            await updater.UpdateAsync(composeFile);
-
-            if (updater.CooldownReport.HasEntries)
-            {
-                var reportPath = TemporaryDirectory / "smoke_test_image_cooldown_report.md";
-                await updater.CooldownReport.SaveToFile(reportPath);
-                Logger.Information("Image digest cooldown report saved to {Path}", reportPath);
-            }
+            await updater.UpdateAsync(composeFile, reportPath);
         });
 }
