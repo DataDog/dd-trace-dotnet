@@ -17,6 +17,7 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
@@ -42,6 +43,12 @@ namespace Datadog.Trace
         internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
             Tags = tags ?? new TagsList();
+
+            byte[] comment = new byte[1024];
+            comment[0] = 122;
+
+            GC.KeepAlive(comment); // Prevent compiler optimizations
+
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
