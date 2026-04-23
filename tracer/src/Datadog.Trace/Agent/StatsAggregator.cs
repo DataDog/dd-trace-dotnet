@@ -552,20 +552,22 @@ namespace Datadog.Trace.Agent
 
         private void HandleConfigUpdate(AgentConfiguration config)
         {
-            CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint)
-                           && config.ClientDropP0s;
+            var shouldCompute = !string.IsNullOrWhiteSpace(config.StatsEndpoint)
+                             && config.ClientDropP0s;
 
-            if (CanComputeStats.Value)
-            {
-                Log.Debug("Stats computation enabled.");
-            }
-            else
+            if (!shouldCompute)
             {
                 Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
-                // early return, because there's no point doing all the extra work if stats isn't enabled anyway
+                // No point setting up the rest of the config if stats isn't enabled anyway
+                CanComputeStats = false;
                 return;
             }
 
+            // Publish all config-derived state BEFORE CanComputeStats becomes true, so that any
+            // observer that sees CanComputeStats == true also sees the consistent config. Each of
+            // the writes below already uses release semantics (Interlocked / Volatile.Write); the
+            // final Volatile.Write to _tracerObfuscationVersion acts as a release fence for the
+            // plain store to CanComputeStats that follows.
             if (config.PeerTags is { Count: > 0 })
             {
                 // Sort, deduplicate, and pre-compute the UTF-8 key prefixes so that
@@ -584,19 +586,17 @@ namespace Datadog.Trace.Agent
             }
 
             // Update trace filter from agent configuration
-            if (config.TraceFilterConfig.HasFilters)
-            {
-                Volatile.Write(ref _traceFilter, new TraceFilter(config.TraceFilterConfig));
-            }
-            else
-            {
-                Volatile.Write(ref _traceFilter, null);
-            }
+            Volatile.Write(
+                ref _traceFilter,
+                config.TraceFilterConfig.HasFilters ? new TraceFilter(config.TraceFilterConfig) : null);
 
             // Tracer obfuscation version is 1. If the agent's version is > 0 and <= ours, the tracer obfuscates.
             const int tracerObfuscationVersion = 1;
             var agentVersion = config.ObfuscationVersion;
             Volatile.Write(ref _tracerObfuscationVersion, agentVersion > 0 && agentVersion <= tracerObfuscationVersion ? tracerObfuscationVersion : 0);
+
+            CanComputeStats = true;
+            Log.Debug("Stats computation enabled.");
         }
 
         internal readonly struct PeerTagKey(string name)
