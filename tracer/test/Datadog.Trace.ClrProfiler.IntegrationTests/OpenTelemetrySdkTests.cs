@@ -628,7 +628,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
             // Short delay gives the OTel SDK multiple periodic exports before LoggerProviderSdk.Dispose() hits its 5s shutdown timeout.
             // This is especially important for gRPC, where the first export warms the HTTP/2 connection.
-            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "500");
+            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "100");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
             if (useAgentHostBackup)
