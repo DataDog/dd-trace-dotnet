@@ -49,7 +49,7 @@ public class DuckTypingTests
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
 
         var scope = tracer.StartActiveInternal("manual");
-        var span = scope.Span;
+        var span = (Span)scope.Span;
         var spanContext = span.Context;
 
         var manualScope = scope.DuckCast<ManualIScope>();

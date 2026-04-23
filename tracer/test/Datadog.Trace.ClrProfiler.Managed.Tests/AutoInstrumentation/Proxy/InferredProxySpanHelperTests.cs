@@ -44,7 +44,7 @@ public class InferredProxySpanHelperTests : IAsyncLifetime
         result.Should().NotBeNull();
         result!.Value.Scope.Should().NotBeNull();
         result.Value.Scope.Span.OperationName.Should().Be("aws.apigateway");
-        result.Value.Scope.Span.StartTime.Should().Be(start);
+        ((Span)result.Value.Scope.Span).StartTime.Should().Be(start);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class InferredProxySpanHelperTests : IAsyncLifetime
         result.Should().NotBeNull();
         result!.Value.Scope.Should().NotBeNull();
         result.Value.Scope.Span.OperationName.Should().Be("azure.apim");
-        result.Value.Scope.Span.StartTime.Should().Be(start);
+        ((Span)result.Value.Scope.Span).StartTime.Should().Be(start);
     }
 
     [Fact]

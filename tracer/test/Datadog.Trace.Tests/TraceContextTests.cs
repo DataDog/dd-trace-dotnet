@@ -70,13 +70,13 @@ namespace Datadog.Trace.Tests
 
             void AddAndCloseSpan()
             {
-                var span = new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+                var span = TestSpanExtensions.CreateSpan(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
                 traceContext.AddSpan(span);
                 traceContext.CloseSpan(span);
             }
 
-            var rootSpan = new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            var rootSpan = TestSpanExtensions.CreateSpan(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             traceContext.AddSpan(rootSpan);
 
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 3;
 
-            Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => TestSpanExtensions.CreateSpan(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             var tracer = new StubDatadogTracer(TracerSettings.Create(new()
             {
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 2;
 
-            Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => TestSpanExtensions.CreateSpan(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             var tracer = new StubDatadogTracer(TracerSettings.Create(new()
             {

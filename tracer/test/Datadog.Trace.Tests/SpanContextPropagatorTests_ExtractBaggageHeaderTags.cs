@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags((Span)scope.Span, baggage, tracer.Settings.BaggageTagKeys);
             scope.Span.GetTag("baggage.user.id").Should().Be("doggo");
         }
 
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags((Span)scope.Span, baggage, tracer.Settings.BaggageTagKeys);
 
             // With wildcard, all baggage items should be added as tags
             scope.Span.GetTag("baggage.custom.key").Should().Be("custom-value");
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags((Span)scope.Span, baggage, tracer.Settings.BaggageTagKeys);
 
             // Only configured keys should be added as tags
             scope.Span.GetTag("baggage.custom.id").Should().Be("my-custom-id");
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests
             // Test
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, baggage, tracer.Settings.BaggageTagKeys);
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags((Span)scope.Span, baggage, tracer.Settings.BaggageTagKeys);
 
             // No baggage tags should be added when feature is disabled
             scope.Span.GetTag("user.id").Should().BeNull();

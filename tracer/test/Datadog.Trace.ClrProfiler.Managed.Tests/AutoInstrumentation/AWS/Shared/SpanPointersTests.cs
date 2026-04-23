@@ -74,7 +74,7 @@ public class SpanPointersTests
     {
         await using var tracer = GetTracer();
         var scope = AwsS3Common.CreateScope(tracer, "PutObject", out _);
-        var span = scope!.Span;
+        var span = (Span)scope!.Span;
         const string bucket = "test-bucket";
         const string key = "test-key";
         const string eTag = "\"test-etag\"";
@@ -97,7 +97,7 @@ public class SpanPointersTests
     {
         await using var tracer = GetTracer();
         var scope = AwsS3Common.CreateScope(tracer, "PutObject", out _);
-        var span = scope!.Span;
+        var span = (Span)scope!.Span;
         const string bucket = "test-bucket";
         const string key = "test-key";
         const string? eTag = null;
@@ -111,7 +111,7 @@ public class SpanPointersTests
     {
         await using var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "UpdateItem", out _);
-        var span = scope!.Span;
+        var span = (Span)scope!.Span;
         const string table = "test-table";
 
         // Mock IDynamoDbKeysObject

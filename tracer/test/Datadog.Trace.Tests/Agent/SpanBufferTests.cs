@@ -158,7 +158,7 @@ namespace Datadog.Trace.Tests.Agent
             for (ulong i = 0; i < (ulong)spanCount; i++)
             {
                 var spanContext = new SpanContext(startingId + i, startingId + i);
-                spans[i] = new Span(spanContext, DateTimeOffset.UtcNow);
+                spans[i] = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow);
             }
 
             return new SpanCollection(spans);

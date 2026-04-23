@@ -156,7 +156,7 @@ namespace Datadog.Trace.Tests.Sampling
             using var scope = (Scope)tracer.StartActive(OperationName);
             scope.Span.Context.TraceContext.Environment = Env;
 
-            var span = scope.Span;
+            var span = (Span)scope.Span;
             var builder = new TraceSampler.Builder(new NoLimits());
             builder.RegisterAgentSamplingRule(new AgentSamplingRule());
             var sampler = builder.Build();
@@ -191,9 +191,9 @@ namespace Datadog.Trace.Tests.Sampling
             {
                 using var scope = (Scope)tracer.StartActive(OperationName);
                 scope.Span.Context.TraceContext.Environment = Env;
-                scope.Span.ResourceName = ResourceName;
+                // scope.Span.ResourceName = ResourceName; // non-recording-spans experiment: setter removed
 
-                var decision = sampler.MakeSamplingDecision(scope.Span);
+                var decision = sampler.MakeSamplingDecision((Span)scope.Span);
 
                 if (decision.Priority == SamplingPriorityValues.AutoKeep)
                 {

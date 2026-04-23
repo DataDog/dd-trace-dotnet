@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var spanData = testItem[1];
                 testIndex++;
 
-                var span = new Span(context, time);
+                var span = TestSpanExtensions.CreateSpan(context, time);
                 CIEnvironmentValues.Create(envData).DecorateSpan(span);
 
                 foreach (var spanDataItem in spanData)

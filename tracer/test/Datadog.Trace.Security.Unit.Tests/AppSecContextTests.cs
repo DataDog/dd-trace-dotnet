@@ -32,7 +32,7 @@ public class AppSecContextTests
         appSecContext.CheckWAFError(new MockResult(raspErrorCode, timeouts-- > 0), true);
         appSecContext.CheckWAFError(new MockResult(wafErrorCode, timeouts-- > 0), false);
         appSecContext.CheckWAFError(new MockResult(wafErrorCode2, timeouts-- > 0), false);
-        appSecContext.CloseWebSpan(rootTestScope.Span);
+        appSecContext.CloseWebSpan((Span)rootTestScope.Span);
         rootTestScope.Span.GetMetric(Metrics.WafError).Should().Be(expectedWafErrorCode);
         rootTestScope.Span.GetMetric(Metrics.RaspWafError).Should().Be(expectedRaspErrorCode);
 

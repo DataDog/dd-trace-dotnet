@@ -27,14 +27,14 @@ public class AzureApiManagementSpanFactoryTests
         var scope = factory.CreateSpan(tracer, data);
 
         scope.Should().NotBeNull();
-        var span = scope!.Span;
+        var span = (Span)scope!.Span;
         span.Should().NotBeNull();
         span.OperationName.Should().Be("azure.apim");
         span.ResourceName.Should().Be("POST /api/v1/users"); // TODO obfuscation and quantization
         span.Type.Should().Be("web");
         span.StartTime.Should().Be(startTime);
 
-        var tags = scope.Span.Tags;
+        var tags = ((Span)scope.Span).Tags;
         tags.Should().NotBeNull();
         tags.GetTag(Tags.HttpMethod).Should().Be("POST");
         tags.GetTag(Tags.InstrumentationName).Should().Be("azure-apim");

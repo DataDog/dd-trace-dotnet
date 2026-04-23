@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
                 {
                     expectedSpanId = rootWebScope.Span.SpanId;
                     rootWebScope.Span.Type = SpanTypes.Web;
-                    rootWebScope.Span.ResourceName = "Wrong endpoint";
+                    // rootWebScope.Span.ResourceName = "Wrong endpoint"; // non-recording-spans experiment: setter removed
 
                     // The resource name of this scope shouldn't be propagated because it's not root
                     using (tracer.StartActive("child"))
@@ -53,14 +53,14 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
                     }
 
                     // Only the latest value of the resource name should be propagated
-                    rootWebScope.Span.ResourceName = expectedEndpoint;
+                    // rootWebScope.Span.ResourceName = expectedEndpoint; // non-recording-spans experiment: setter removed
                 }
 
                 // The resource name of this scope shouldn't be propagated because it's not web
                 using (var rootOtherScope = tracer.StartActive("Root2"))
                 {
                     rootOtherScope.Span.Type = SpanTypes.Http;
-                    rootOtherScope.Span.ResourceName = "Wrong endpoint";
+                    // rootOtherScope.Span.ResourceName = "Wrong endpoint"; // non-recording-spans experiment: setter removed
                 }
 
                 invocations.Should().BeEquivalentTo(new[] { (expectedSpanId, expectedEndpoint) });
