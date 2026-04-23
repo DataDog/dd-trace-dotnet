@@ -88,6 +88,14 @@ variables:
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+  # True when the build is for the automated smoke-test docker image bump PR.
+  # OR'd into the installer-test conditions so the updated digests are exercised
+  # before a human merges. Kept as a distinct variable (rather than redefining
+  # run_all_installer_tests in YAML) because defining run_all_installer_tests here
+  # would block queue-time overrides from the UI — YAML takes precedence and the
+  # "settable at queue time" UI value would be ignored. The branch name matches
+  # .github/workflows/auto_bump_smoke_test_docker_images.yml — keep both in sync.
+  isDockerImageBumpPr: $[eq(variables['System.PullRequest.SourceBranch'], 'refs/heads/bot/smoke-test-docker-image-bump')]
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
   CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
@@ -5040,7 +5048,7 @@ stages:
 
 # NuGet x64 (LinuxNuGet)
 - stage: smoke_x64_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5054,7 +5062,7 @@ stages:
 
 # NuGet arm64 (LinuxNuGetArm64)
 - stage: smoke_arm64_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5068,7 +5076,7 @@ stages:
 
   # AzureFunctions Nuget x64 (LinuxAzureFunctionsNuGet)
 - stage: smoke_x64_azurefunctions_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5082,7 +5090,7 @@ stages:
 
 # DotnetTool x64 (LinuxDotnetTool)
 - stage: smoke_x64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5095,7 +5103,7 @@ stages:
 
 # DotnetTool arm64 (LinuxDotnetToolArm64)
 - stage: smoke_arm64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5108,7 +5116,7 @@ stages:
 
 # DotnetToolNuget (LinuxDotnetToolNuget)
 - stage: smoke_x64_tool_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5121,7 +5129,7 @@ stages:
 
 # DotnetTool musl x64 (LinuxMuslDotnetTool)
 - stage: smoke_musl_x64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5134,7 +5142,7 @@ stages:
 
 # DotnetTool musl arm64 (LinuxMuslDotnetToolArm64)
 - stage: smoke_musl_arm64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5173,7 +5181,7 @@ stages:
 
 # Self-instrument (LinuxSelfInstrument)
 - stage: smoke_x64_self_instrument_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [package_linux, dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5187,7 +5195,7 @@ stages:
 
 # Windows MSI (WindowsMsi)
 - stage: smoke_win_msi_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5200,7 +5208,7 @@ stages:
 
 # Windows NuGet (WindowsNuGet)
 - stage: smoke_win_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5214,7 +5222,7 @@ stages:
 
 # Windows Azure Functions NuGet (WindowsAzureFunctionsNuGet)
 - stage: smoke_win_azurefunctions_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5228,7 +5236,7 @@ stages:
 
 # Windows DotnetTool (WindowsDotnetTool)
 - stage: smoke_win_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5266,7 +5274,7 @@ stages:
         - fleet-installer-telemetry-forwarder
 
 - stage: smoke_macos_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
