@@ -43,7 +43,15 @@ public class SmokeTestImageDigestUpdater : IDisposable
     {
         _cooldown = cooldown;
         _registry = new RegistryClient();
+        CooldownReport = new CooldownReport(cooldown);
     }
+
+    /// <summary>
+    /// Collected entries for images whose latest digest fell within the cooldown window.
+    /// Populated by <see cref="UpdateAsync"/>; intended to be rendered into a markdown
+    /// report and attached to the automation PR.
+    /// </summary>
+    public CooldownReport CooldownReport { get; }
 
     public async Task UpdateAsync(AbsolutePath composeFile)
     {
@@ -126,9 +134,14 @@ public class SmokeTestImageDigestUpdater : IDisposable
         var age = DateTime.UtcNow - created.Value;
         if (age < _cooldown)
         {
-            Logger.Information(
-                "Cooldown {Image}: new digest {Digest} is only {AgeH}h old (< {CooldownH}h cooldown)",
-                entry.ImagePrefix, Shorten(latestDigest), (int)age.TotalHours, (int)_cooldown.TotalHours);
+            Logger.Warning(
+                "Cooldown {Image}: new digest {Digest} is only {AgeH}h old (< {CooldownH}h cooldown); keeping current pin {Current}",
+                entry.ImagePrefix, Shorten(latestDigest), (int)age.TotalHours, (int)_cooldown.TotalHours, Shorten(entry.Digest));
+            CooldownReport.Add(new CooldownReport.CooldownEntry(
+                Image: entry.ImagePrefix,
+                CurrentDigest: entry.Digest,
+                AvailableDigest: latestDigest,
+                PublishedDate: new DateTimeOffset(created.Value, TimeSpan.Zero)));
             return UpdateOutcome.Cooldown;
         }
 

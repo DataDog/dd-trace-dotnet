@@ -38,5 +38,12 @@ partial class Build
                              : TimeSpan.FromDays(0);
             using var updater = new SmokeTests.SmokeTestImageDigestUpdater(cooldown);
             await updater.UpdateAsync(composeFile);
+
+            if (updater.CooldownReport.HasEntries)
+            {
+                var reportPath = TemporaryDirectory / "smoke_test_image_cooldown_report.md";
+                await updater.CooldownReport.SaveToFile(reportPath);
+                Logger.Information("Image digest cooldown report saved to {Path}", reportPath);
+            }
         });
 }
