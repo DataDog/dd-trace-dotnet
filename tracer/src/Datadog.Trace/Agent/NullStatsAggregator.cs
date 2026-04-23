@@ -21,19 +21,15 @@ namespace Datadog.Trace.Agent
         {
         }
 
-        public bool ShouldKeepTrace(in SpanCollection spans) => true;
-
-        public SpanCollection ProcessTrace(in SpanCollection trace) => trace;
+        public TraceKeepState ProcessTrace(ref SpanCollection spans) => TraceKeepState.AggregateAndExport;
 
         public Task DisposeAsync()
         {
             return Task.CompletedTask;
         }
 
-        public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+        public StatsAggregationKey BuildKey(Span span)
         {
-            utf8PeerTags = [];
-
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
             if (rawHttpStatusCode is null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
             {

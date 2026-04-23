@@ -17,6 +17,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -69,31 +70,6 @@ namespace Datadog.Trace.Tests.Agent
                 }
 
                 success.Should().BeTrue();
-            }
-            finally
-            {
-                await aggregator.DisposeAsync();
-            }
-        }
-
-        [Theory]
-        [InlineData("7.65.0", true)]
-        [InlineData("7.66.0", true)]
-        [InlineData("8.0.0", true)]
-        [InlineData("7.64.0", false)]
-        [InlineData("7.64.99", false)]
-        [InlineData("7.0.0", false)]
-        [InlineData("not-a-version", true)]  // Unparseable versions don't block (e.g. test agents)
-        [InlineData(null, true)]              // Null version doesn't block
-        public async Task StatsComputation_RequiresMinimumAgentVersion(string agentVersion, bool expectedEnabled)
-        {
-            var api = new Mock<IApi>();
-            var discovery = new StubDiscoveryService(agentVersion);
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), discovery, isOtlp: false);
-
-            try
-            {
-                aggregator.CanComputeStats.Should().Be(expectedEnabled);
             }
             finally
             {
@@ -223,7 +199,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 foreach (var span in spans)
                 {
-                    var key = aggregator.BuildKey(span, out _);
+                    var key = aggregator.BuildKey(span);
                     buffer.Buckets.Should().ContainKey(key);
 
                     var bucket = buffer.Buckets[key];
@@ -357,7 +333,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 buffer.Buckets.Should().HaveCount(2);
 
-                var serviceKey = aggregator.BuildKey(simpleSpan, out _);
+                var serviceKey = aggregator.BuildKey(simpleSpan);
                 buffer.Buckets.Should().ContainKey(serviceKey);
                 var serviceBucket = buffer.Buckets[serviceKey];
 
@@ -371,7 +347,7 @@ namespace Datadog.Trace.Tests.Agent
                 serviceBucket.OkSummary.GetSum().Should().BeApproximately(
                     expectedOkDuration, expectedOkDuration * serviceBucket.OkSummary.IndexMapping.RelativeAccuracy);
 
-                var httpClientServiceKey = aggregator.BuildKey(httpClientServiceSpan, out _);
+                var httpClientServiceKey = aggregator.BuildKey(httpClientServiceSpan);
                 buffer.Buckets.Should().ContainKey(httpClientServiceKey);
                 var httpClientServiceBucket = buffer.Buckets[httpClientServiceKey];
 
@@ -499,7 +475,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task Otlp_ShouldKeepTraces_TrueWhenTraceSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -511,11 +487,12 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoKeep, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
             var traceChunk = new SpanCollection([span]);
-            aggregator.ShouldKeepTrace(traceChunk).Should().BeTrue();
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().Be(TraceKeepState.AggregateAndExport);
         }
 
         [Fact]
-        public async Task Otlp_ShouldKeepTraces_FalseWhenTraceNotSampled()
+        public async Task Otlp_ProcessTrace_WhenTraceNotSampled_ReturnsAggregateOnly()
         {
             var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -527,7 +504,293 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoReject, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
             var traceChunk = new SpanCollection([span]);
-            aggregator.ShouldKeepTrace(traceChunk).Should().BeFalse();
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().Be(TraceKeepState.AggregateOnly);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
+        {
+            var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+            span.SetService(string.Empty, "manual");
+            span.Finish();
+
+            span.ServiceName.Should().BeEmpty();
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
+            traceChunk.Count.Should().Be(1);
+            // normalized
+            span.ServiceName.Should().NotBeEmpty();
+            // obfuscated
+            traceChunk[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterRejects_ReturnsRejected()
+        {
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:production"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.Rejected);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterKeepsAndSampled_ReturnsAggregateAndExport()
+        {
+            // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterKeepsAndNotSampled_ReturnsAggregateOnly()
+        {
+            // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateOnly);
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenNoFilter_ReturnsFalse()
+        {
+            // No discovery service → no trace filter configured
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenFilterKeepsTrace_ReturnsFalse()
+        {
+            // Configure a reject filter that does NOT match the span → trace should be kept (not filtered)
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenFilterRejectsTrace_ReturnsTrue()
+        {
+            // Configure a reject filter that matches the span → trace should be filtered
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:production"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenIgnoreResourceMatches_ReturnsTrue()
+        {
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: null,
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: ["^GET /health"]);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "http.request" };
+            span.ResourceName = "GET /healthcheck";
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_WhenPrioritySampled_ReturnsTrue()
+        {
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_WhenNotSampled_ReturnsFalse()
+        {
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_Otlp_WhenSampled_ReturnsTrue()
+        {
+            await using var aggregator = (StatsAggregator)StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ObfuscateTrace_WhenNotEnabled_ReturnsUnmodified()
+        {
+            // Default: obfuscation version is 0 (not enabled), so ObfuscateTrace should return the same collection
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ObfuscateTrace(in traceChunk);
+
+            result.Count.Should().Be(1);
+            // The SQL should not have been obfuscated (numeric literal replaced)
+            result[0].ResourceName.Should().Be("SELECT * FROM users WHERE id = 123");
+        }
+
+        [Fact]
+        public async Task ObfuscateTrace_WhenEnabled_RunsObfuscation()
+        {
+            // Use StubDiscoveryService with obfuscation version 1 to enable tracer obfuscation
+            var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ObfuscateTrace(in traceChunk);
+
+            // Obfuscation should run and not throw; it should return a valid collection
+            result.Count.Should().Be(1);
+            // The SQL should have been obfuscated (numeric literal replaced)
+            result[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
         }
 
         [Fact]
@@ -570,11 +833,11 @@ namespace Datadog.Trace.Tests.Agent
 
                 // parent, server child, client child are included; internal and no-kind are not
                 buffer.Buckets.Should().HaveCount(3);
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan, out _));
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(serverChildSpan, out _));
-                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(clientChildSpan, out _));
-                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(internalChildSpan, out _));
-                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(noKindChildSpan, out _));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(serverChildSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(clientChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(internalChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(noKindChildSpan));
             }
             finally
             {
@@ -637,8 +900,8 @@ namespace Datadog.Trace.Tests.Agent
                 // They have the same resource/operation/type but different IsTraceRoot → 2 buckets
                 buffer.Buckets.Should().HaveCount(2);
 
-                var rootKey = aggregator.BuildKey(rootSpan, out _);
-                var entryKey = aggregator.BuildKey(entrySpan, out _);
+                var rootKey = aggregator.BuildKey(rootSpan);
+                var entryKey = aggregator.BuildKey(entrySpan);
                 rootKey.IsTraceRoot.Should().BeTrue();
                 entryKey.IsTraceRoot.Should().BeFalse();
             }
@@ -846,8 +1109,8 @@ namespace Datadog.Trace.Tests.Agent
                 aggregator.Add(sampledSpan, unweightedSpan);
 
                 var buffer = aggregator.CurrentBuffer;
-                var sampledKey = aggregator.BuildKey(sampledSpan, out _);
-                var unweightedKey = aggregator.BuildKey(unweightedSpan, out _);
+                var sampledKey = aggregator.BuildKey(sampledSpan);
+                var unweightedKey = aggregator.BuildKey(unweightedSpan);
 
                 buffer.Buckets[sampledKey].Hits.Should().BeApproximately(10.0, 0.001);
                 buffer.Buckets[unweightedKey].Hits.Should().BeApproximately(1.0, 0.001);
@@ -892,6 +1155,155 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
+        [Theory]
+        [InlineData(SpanKinds.Client)]
+        [InlineData(SpanKinds.Producer)]
+        public async Task PeerTagsHash_MatchesGoAgent_SingleTag(string spanKind)
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // peer.service:remote-service → hash 3430395298086625290
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, spanKind);
+            span.Tags.SetTag("peer.service", "remote-service");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_MultipleTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // db.instance:i-1234, db.system:postgres, peer.service:remote-service → hash 9894752672193411515
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            // Keys must be pre-sorted (matching agent behavior)
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(9894752672193411515UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_ConsumerMessagingTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // messaging.destination:topic-foo, messaging.system:kafka → hash 0xf5eeb51fbe7929b4
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            span.Tags.SetTag("messaging.destination", "topic-foo");
+            span.Tags.SetTag("messaging.system", "kafka");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("messaging.destination"), new("messaging.system")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(0xf5eeb51fbe7929b4UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_EmptyTagsSkipped()
+        {
+            // Same hash as single tag — empty db.instance and db.system values are skipped
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", string.Empty);
+            span.Tags.SetTag("db.system", string.Empty);
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_MultipleTags()
+        {
+            // Verify that the fast-path hash from BuildKey matches
+            // what you'd get by hashing the GetEncodedPeerTags output directly
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            // Hash the encoded tags the same way the Go agent does:
+            // FNV-1a of each tag's bytes, chained with a [0] separator
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+            for (var i = 1; i < encodedTags.Count; i++)
+            {
+                expectedHash = FnvHash64.GenerateHash(new byte[] { 0 }, FnvHash64.Version.V1A, expectedHash);
+                expectedHash = FnvHash64.GenerateHash(encodedTags[i], FnvHash64.Version.V1A, expectedHash);
+            }
+
+            key.PeerTagsHash.Should().Be(expectedHash);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_BaseService()
+        {
+            // Verify that the fast-path hash from BuildKey matches the encoded base service tag
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.Tags.SetTag(Tags.BaseService, "my-base-service");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            encodedTags.Should().HaveCount(1);
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+
+            key.PeerTagsHash.Should().Be(expectedHash);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_NoMatchingTags_ReturnsZero()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            // No peer tags set on the span
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+
+            key.PeerTagsHash.Should().Be(0UL);
+        }
+
         /// <summary>
         /// Creates a top-level span with a TraceContext (required by GetWeight).
         /// </summary>
@@ -929,7 +1341,9 @@ namespace Datadog.Trace.Tests.Agent
             return ns << shift;
         }
 
-        private class StubDiscoveryService(string agentVersion = "7.65.0") : IDiscoveryService
+        private class StubDiscoveryService(
+            int obfuscationVersion = 0,
+            AgentTraceFilterConfig traceFilterConfig = null) : IDiscoveryService
         {
             public void SubscribeToChanges(Action<AgentConfiguration> callback)
             {
@@ -939,7 +1353,7 @@ namespace Datadog.Trace.Tests.Agent
                              debuggerV2Endpoint: "debuggerV2Endpoint",
                              diagnosticsEndpoint: "diagnosticsEndpoint",
                              symbolDbEndpoint: "symbolDbEndpoint",
-                             agentVersion: agentVersion,
+                             agentVersion: null,
                              statsEndpoint: "traceStatsEndpoint",
                              dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
@@ -949,7 +1363,9 @@ namespace Datadog.Trace.Tests.Agent
                              clientDropP0: true,
                              spanMetaStructs: true,
                              spanEvents: true,
-                             peerTags: [Tags.PeerService]));
+                             peerTags: [Tags.PeerService],
+                             obfuscationVersion: obfuscationVersion,
+                             traceFilterConfig: traceFilterConfig));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)

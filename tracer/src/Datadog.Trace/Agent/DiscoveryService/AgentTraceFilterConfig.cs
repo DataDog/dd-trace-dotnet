@@ -18,7 +18,7 @@ internal sealed record AgentTraceFilterConfig(
     List<string>? FilterTagsReject,
     List<string>? FilterTagsRegexRequire,
     List<string>? FilterTagsRegexReject,
-    List<string>? IgnoreResources)
+    List<string>? IgnoreResourcesRegex)
 {
     public static readonly AgentTraceFilterConfig Empty = new(null, null, null, null, null);
 
@@ -27,5 +27,5 @@ internal sealed record AgentTraceFilterConfig(
         FilterTagsReject is { Count: > 0 } ||
         FilterTagsRegexRequire is { Count: > 0 } ||
         FilterTagsRegexReject is { Count: > 0 } ||
-        IgnoreResources is { Count: > 0 };
+        IgnoreResourcesRegex is { Count: > 0 };
 }

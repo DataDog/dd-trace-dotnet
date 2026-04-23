@@ -101,6 +101,7 @@ updates:
 
     cooldown:
       default-days: 2
+
   - package-ecosystem: "github-actions"
     directories:
       - "/"

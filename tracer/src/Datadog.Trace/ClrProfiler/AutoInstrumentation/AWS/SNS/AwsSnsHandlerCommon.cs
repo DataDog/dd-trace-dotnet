@@ -34,11 +34,14 @@ internal sealed class AwsSnsHandlerCommon
             tags.TopicName = topicName;
         }
 
-        if (scope?.Span.Context is { } context && !string.IsNullOrEmpty(topicName))
+        if (scope?.Span.Context is { } context && !StringUtil.IsNullOrEmpty(topicName))
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            // avoid allocation if edgeTags are not going to be used
-            var edgeTags = dataStreamsManager is { IsEnabled: true } ? ["direction:out", $"topic:{topicName}", "type:sns"] : Array.Empty<string>();
+            var edgeTags = dataStreamsManager is { IsEnabled: true }
+                               ? dataStreamsManager.GetOrCreateEdgeTags(
+                                   new SnsEdgeTagCacheKey(topicName),
+                                   static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"])
+                               : [];
 
             if (sendType == SendType.SingleMessage)
             {
