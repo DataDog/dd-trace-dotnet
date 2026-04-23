@@ -147,7 +147,7 @@ public class MassTransit8Tests : TracingIntegrationTest
         // Default csproj version is 8.5.8 which falls in the 8.3.2+ (base) tier.
         if (string.IsNullOrEmpty(packageVersion))
         {
-            return string.Empty;
+            return ".pre_8_0_5";
         }
 
         return new Version(packageVersion) switch
@@ -199,16 +199,16 @@ public class MassTransit8Tests : TracingIntegrationTest
                 massTransitSpans,
                 settings,
                 orderSpans: spans => spans
-                    .OrderBy(x => x.Resource.Split(' ')[0])
+                    .OrderBy(x => x.Start)
                     .ThenBy(x => x.GetTag("messaging.operation") switch
                     {
                         "send" => 0,
                         "receive" => 1,
                         "process" => 2,
                         _ => 3
-                    })
-                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
-                .UseFileName(fileName);
+                    }))
+                .UseFileName(fileName)
+                .UseDirectory("MassTransit8");
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
         }

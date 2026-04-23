@@ -154,15 +154,14 @@ public class MassTransit7Tests : TracingIntegrationTest
                 massTransitSpans,
                 settings,
                 orderSpans: spans => spans
-                    .OrderBy(x => x.Resource.Split(' ')[0])
+                    .OrderBy(x => x.Start)
                     .ThenBy(x => x.GetTag("messaging.operation") switch
                     {
                         "send" => 0,
                         "receive" => 1,
                         "process" => 2,
                         _ => 3
-                    })
-                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
+                    }))
                 .UseFileName(nameof(MassTransit7Tests) + snapshotSuffix);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
