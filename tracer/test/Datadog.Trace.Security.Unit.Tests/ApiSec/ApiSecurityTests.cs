@@ -48,7 +48,7 @@ public class ApiSecurityTests
         var dic = new Dictionary<string, object>();
         var tc = new TraceContext(tracer, new TraceTagCollection());
         tc.SetSamplingPriority(samplingPriority);
-        var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), DateTimeOffset.Now);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(SpanContext.None, tc, "Test"), DateTimeOffset.Now);
         span.SetTag(Tags.HttpRoute, route);
         var statusCode = "200";
         span.SetTag(Tags.HttpStatusCode, statusCode);
@@ -93,7 +93,7 @@ public class ApiSecurityTests
             var tc = new TraceContext(tracer, new TraceTagCollection());
             tc.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
 
-            var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), dt);
+            var span = TestSpanExtensions.CreateSpan(new SpanContext(SpanContext.None, tc, "Test"), dt);
             span.SetTag(Tags.HttpRoute, route);
             span.SetTag(Tags.HttpStatusCode, statusCode);
             span.SetTag(Tags.HttpMethod, method);
@@ -119,7 +119,7 @@ public class ApiSecurityTests
         tc.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
         var dt = DateTime.UtcNow;
 
-        var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), dt);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(SpanContext.None, tc, "Test"), dt);
         span.SetTag(Tags.HttpRoute, "{controller}/{action}");
         span.SetTag(Tags.HttpStatusCode, "200");
         span.SetTag(Tags.HttpMethod, "GET");

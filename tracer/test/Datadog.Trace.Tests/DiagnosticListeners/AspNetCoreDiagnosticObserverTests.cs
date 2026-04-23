@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             Assert.NotNull(scope);
 
-            var span = scope.Span;
+            var span = (Span)scope.Span;
 
             Assert.NotNull(span);
 
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             Assert.NotNull(scope);
 
-            var span = scope.Span;
+            var span = (Span)scope.Span;
 
             Assert.NotNull(span);
 

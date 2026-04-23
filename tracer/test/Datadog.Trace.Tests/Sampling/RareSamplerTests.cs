@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tests.Sampling
             using var scope2 = tracer.StartActiveInternal("2");
 
             // Create a trace with the interesting span ("2") as a child
-            var trace = new[] { scope1.Span, scope2.Span };
+            var trace = new[] { (Span)scope1.Span, (Span)scope2.Span };
 
             sampler.Sample(new(trace)).Should().BeFalse();
         }
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests.Sampling
             scope2.Span.SetMetric(metricName, 1.0);
 
             // Create a trace with the interesting span ("2") as a child
-            var trace = new[] { scope1.Span, scope2.Span };
+            var trace = new[] { (Span)scope1.Span, (Span)scope2.Span };
             trace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             sampler.Sample(new(trace)).Should().BeTrue();

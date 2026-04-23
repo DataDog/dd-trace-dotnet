@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.Sampling
             rule.SetDefaultSampleRates(new Dictionary<string, float> { { key, .5f } });
 
             // assert that the sampling rate applied to the span is correct
-            rule.GetSamplingRate(scope.Span).Should().Be(expectedRate);
+            rule.GetSamplingRate((Span)scope.Span).Should().Be(expectedRate);
         }
 
         [Fact]
@@ -57,12 +57,12 @@ namespace Datadog.Trace.Tests.Sampling
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             var firstScope = (Scope)tracer.StartActive("first");
-            var firstSpan = firstScope.Span;
+            var firstSpan = (Span)firstScope.Span;
             firstSpan.SetService(configuredService, null);
             firstSpan.Context.TraceContext.Environment = configuredEnv;
 
             var secondScope = (Scope)tracer.StartActive("second");
-            var secondSpan = secondScope.Span;
+            var secondSpan = (Span)secondScope.Span;
             secondSpan.SetService(unconfiguredService, null);
 
             rule.GetSamplingRate(firstSpan).Should().Be(1f); // as we haven't configured it yet.

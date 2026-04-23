@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var tags = new TagsList();
             var scope = _tracer.StartActiveInternal("root", tags: tags);
-            var span = scope.Span;
+            var span = (Span)scope.Span;
 
             const int customTagCount = 15;
             SetupForSerializationTest(span, customTagCount);
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tests.Tagging
             string hexStringTraceId;
             using (var scope = _tracer.StartActiveInternal("root"))
             {
-                SetupForSerializationTest(scope.Span, customTagCount);
+                SetupForSerializationTest((Span)scope.Span, customTagCount);
                 hexStringTraceId = HexString.ToHexString(scope.Span.TraceId128.Upper);
             }
 
@@ -202,7 +202,7 @@ namespace Datadog.Trace.Tests.Tagging
             {
                 using (var childScope = _tracer.StartActiveInternal("child", serviceName: "service2"))
                 {
-                    SetupForSerializationTest(childScope.Span, customTagCount);
+                    SetupForSerializationTest((Span)childScope.Span, customTagCount);
                     hexStringTraceId = HexString.ToHexString(childScope.Span.TraceId128.Upper);
                 }
             }
@@ -244,7 +244,7 @@ namespace Datadog.Trace.Tests.Tagging
             {
                 using (var childScope = _tracer.StartActiveInternal("child", serviceName: "service1"))
                 {
-                    SetupForSerializationTest(childScope.Span, customTagCount);
+                    SetupForSerializationTest((Span)childScope.Span, customTagCount);
                     hexStringTraceId = HexString.ToHexString(childScope.Span.TraceId128.Upper);
                 }
             }
@@ -322,7 +322,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             using (var scope = _tracer.StartActiveInternal("root", tags: tags.Object))
             {
-                SetupForSerializationTest(scope.Span, customTagCount);
+                SetupForSerializationTest((Span)scope.Span, customTagCount);
             }
 
             await _tracer.FlushAsync();

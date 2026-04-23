@@ -33,7 +33,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void DefaultBehavior()
         {
             var target = new AppSec.Security();
-            var span = new Span(new SpanContext(1, 1), new System.DateTimeOffset());
+            var span = TestSpanExtensions.CreateSpan(new SpanContext(1, 1), new System.DateTimeOffset());
             var secCoord = SecurityCoordinator.TryGet(target, span);
             secCoord.Should().BeNull();
         }
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var traceContext = new TraceContext(new EmptyDatadogTracer());
             traceContext.AppSecRequestContext.DisposeAdditiveContext();
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
-            var span = new Span(spanContext, DateTimeOffset.Now);
+            var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.Now);
             var security = new AppSec.Security();
             var securityCoordinator = TryGet(security, span);
             securityCoordinator.Value.Scan();
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var traceContext = new TraceContext(new EmptyDatadogTracer());
             traceContext.AppSecRequestContext.DisposeAdditiveContext();
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
-            var span = new Span(spanContext, DateTimeOffset.Now);
+            var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.Now);
             var initResult = CreateWaf();
             var waf = initResult.Waf;
             waf.Should().NotBeNull();
@@ -108,7 +108,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             CoreHttpContextStore.Instance.Set(context);
 
             using var security = new AppSec.Security();
-            var securityCoordinator = TryGet(security, rootTestScope.Span);
+            var securityCoordinator = TryGet(security, (Span)rootTestScope.Span);
             securityCoordinator.HasValue.Should().BeTrue();
 
             var nativeResult = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var result = new Result(ref nativeResult, WafReturnCode.Match, ref duration, 0);
             securityCoordinator.Value.Reporter.TryReport(result, true);
 
-            rootTestScope.Span.Tags.GetTag(Tags.AppSecBlocked).Should().Be("true");
+            ((Span)rootTestScope.Span).Tags.GetTag(Tags.AppSecBlocked).Should().Be("true");
         }
 
         [Fact]
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             contextMoq.Setup(x => x.Features).Returns(mockedFeatures.Object);
 
             using var security = new AppSec.Security();
-            var securityCoordinator = SecurityCoordinator.Get(security, rootTestScope.Span, new HttpTransport(contextMoq.Object));
+            var securityCoordinator = SecurityCoordinator.Get(security, (Span)rootTestScope.Span, new HttpTransport(contextMoq.Object));
             var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, isRasp: true);
             result.Should().BeNull();
         }
@@ -154,7 +154,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var httpTransport = new HttpTransport(httpContextMock.Object);
             var traceContext = new TraceContext(new EmptyDatadogTracer());
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
-            var span = new Span(spanContext, DateTimeOffset.Now);
+            var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.Now);
             var initResult = CreateWaf();
             var waf = initResult.Waf;
             waf.Should().NotBeNull();
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var traceContext = new TraceContext(new EmptyDatadogTracer());
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
-            var span = new Span(spanContext, new DateTimeOffset());
+            var span = TestSpanExtensions.CreateSpan(spanContext, new DateTimeOffset());
             TextWriter textWriter = new StringWriter();
             var response = new HttpResponse(textWriter)
             {
