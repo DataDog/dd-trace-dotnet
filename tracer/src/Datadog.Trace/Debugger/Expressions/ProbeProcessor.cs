@@ -378,6 +378,13 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.HasError)
             {
+                // Probes with conditions defer sampling until after the condition is evaluated,
+                // so evaluation errors must honor that same sampler before emitting a snapshot.
+                if (ProbeInfo.HasCondition && !sampler.Sample())
+                {
+                    shouldStopCapture = true;
+                }
+
                 return evaluationResult;
             }
 

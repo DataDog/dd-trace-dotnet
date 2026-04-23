@@ -608,8 +608,8 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void SetEvaluationResult(ref ExpressionEvaluationResult evaluationResult)
         {
-            _message = evaluationResult.Template;
             _errors = evaluationResult.Errors;
+            _message = _errors?.FirstOrDefault(error => !string.IsNullOrEmpty(error.Message)).Message ?? evaluationResult.Template;
         }
 
         private void CaptureAsyncMethodArguments(System.Reflection.FieldInfo[] asyncHoistedArguments, object moveNextInvocationTarget)
