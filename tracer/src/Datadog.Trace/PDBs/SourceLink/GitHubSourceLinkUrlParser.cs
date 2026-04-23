@@ -14,12 +14,11 @@ namespace Datadog.Trace.Pdb.SourceLink;
 internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 {
     /// <summary>
-    /// Extract the git commit sha and repository url from a GitHub SourceLink mapping string.
-    /// For example, for the following SourceLink mapping string:
-    ///     https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*
-    /// It will return:
-    ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
-    ///     - repository URL: https://github.com/DataDog/dd-trace-dotnet
+    /// Extract the git commit sha and repository url from a GitHub or GitHub Enterprise SourceLink mapping string.
+    /// Supports three URL forms:
+    ///   1. GitHub.com:              https://raw.githubusercontent.com/{owner}/{repo}/{sha}/*
+    ///   2. GHE subdomain isolation: https://raw.{host}/{owner}/{repo}/{sha}/*
+    ///   3. GHE main-host /raw/:     https://{host}/raw/{owner}/{repo}/{sha}/*
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
@@ -28,46 +27,21 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
-            if (uri.Host != "raw.githubusercontent.com")
+            // Case 1: GitHub.com — https://raw.githubusercontent.com/{owner}/{repo}/{sha}/*
+            if (uri.Host.Equals("raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase))
             {
-                return false;
+                return TryParseStandardPath(uri, "https://github.com", out commitSha, out repositoryUrl);
             }
 
-            ReadOnlySpan<char> org = default;
-            ReadOnlySpan<char> repo = default;
-            ReadOnlySpan<char> sha = default;
-            var segmentCount = 0;
-
-            foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+            // Case 2: GHE with subdomain isolation — https://raw.{host}/{owner}/{repo}/{sha}/*
+            if (uri.Host.StartsWith("raw.", StringComparison.OrdinalIgnoreCase) && uri.Host.Length > 4)
             {
-                ReadOnlySpan<char> span = segment;
-                if (span.IsEmpty)
-                {
-                    continue;
-                }
-
-                switch (segmentCount)
-                {
-                    case 0: org = span; break;
-                    case 1: repo = span; break;
-                    case 2: sha = span; break;
-                }
-
-                segmentCount++;
+                var enterpriseHost = uri.Host.Substring(4);
+                return TryParseStandardPath(uri, BuildBaseUrl(uri, enterpriseHost), out commitSha, out repositoryUrl);
             }
 
-            if (segmentCount != 4 || !IsValidCommitSha(sha))
-            {
-                return false;
-            }
-
-#if NET6_0_OR_GREATER
-            repositoryUrl = $"https://github.com/{org}/{repo}";
-#else
-            repositoryUrl = $"https://github.com/{org.ToString()}/{repo.ToString()}";
-#endif
-            commitSha = sha.ToString();
-            return true;
+            // Case 3: GHE without subdomain isolation — https://{host}/raw/{owner}/{repo}/{sha}/*
+            return TryParseRawPrefixPath(uri, out commitSha, out repositoryUrl);
         }
         catch (Exception ex)
         {
@@ -76,4 +50,106 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
         return false;
     }
+
+    /// <summary>
+    /// Parses /{owner}/{repo}/{sha}/* (4 segments) and builds repo URL with the given base.
+    /// Used for GitHub.com and GHE with subdomain isolation.
+    /// </summary>
+    private static bool TryParseStandardPath(Uri uri, string repoUrlBase, out string? commitSha, out string? repositoryUrl)
+    {
+        commitSha = null;
+        repositoryUrl = null;
+
+        ReadOnlySpan<char> org = default;
+        ReadOnlySpan<char> repo = default;
+        ReadOnlySpan<char> sha = default;
+        var segmentCount = 0;
+
+        foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+        {
+            ReadOnlySpan<char> span = segment;
+            if (span.IsEmpty)
+            {
+                continue;
+            }
+
+            switch (segmentCount)
+            {
+                case 0: org = span; break;
+                case 1: repo = span; break;
+                case 2: sha = span; break;
+            }
+
+            segmentCount++;
+        }
+
+        if (segmentCount != 4 || !IsValidCommitSha(sha))
+        {
+            return false;
+        }
+
+#if NET6_0_OR_GREATER
+        repositoryUrl = $"{repoUrlBase}/{org}/{repo}";
+#else
+        repositoryUrl = $"{repoUrlBase}/{org.ToString()}/{repo.ToString()}";
+#endif
+        commitSha = sha.ToString();
+        return true;
+    }
+
+    /// <summary>
+    /// Parses /raw/{owner}/{repo}/{sha}/* (5 segments) for GHE without subdomain isolation.
+    /// </summary>
+    private static bool TryParseRawPrefixPath(Uri uri, out string? commitSha, out string? repositoryUrl)
+    {
+        commitSha = null;
+        repositoryUrl = null;
+
+        ReadOnlySpan<char> owner = default;
+        ReadOnlySpan<char> repo = default;
+        ReadOnlySpan<char> sha = default;
+        var segmentCount = 0;
+
+        foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+        {
+            ReadOnlySpan<char> span = segment;
+            if (span.IsEmpty)
+            {
+                continue;
+            }
+
+            switch (segmentCount)
+            {
+                case 0:
+                    if (!span.SequenceEqual("raw".AsSpan()))
+                    {
+                        return false;
+                    }
+
+                    break;
+                case 1: owner = span; break;
+                case 2: repo = span; break;
+                case 3: sha = span; break;
+            }
+
+            segmentCount++;
+        }
+
+        if (segmentCount != 5 || !IsValidCommitSha(sha))
+        {
+            return false;
+        }
+
+        var repoUrlBase = BuildBaseUrl(uri, uri.Host);
+#if NET6_0_OR_GREATER
+        repositoryUrl = $"{repoUrlBase}/{owner}/{repo}";
+#else
+        repositoryUrl = $"{repoUrlBase}/{owner.ToString()}/{repo.ToString()}";
+#endif
+        commitSha = sha.ToString();
+        return true;
+    }
+
+    private static string BuildBaseUrl(Uri uri, string host)
+        => uri.IsDefaultPort ? $"{uri.Scheme}://{host}" : $"{uri.Scheme}://{host}:{uri.Port}";
 }

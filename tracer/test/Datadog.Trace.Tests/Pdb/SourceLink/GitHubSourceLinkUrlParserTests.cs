@@ -31,6 +31,24 @@ public class GitHubSourceLinkUrlParserTests
         "https://raw.githubusercontent.com/some.org/some.repo-name/" + ValidSha + "/*",
         ValidSha,
         "https://github.com/some.org/some.repo-name")]
+    // GitHub Enterprise with subdomain isolation (raw.{host} form)
+    [InlineData(
+        "https://raw.github.ecorp.example.com/taggac/vsphere-automation-sdk-.net/" + ValidSha + "/*",
+        ValidSha,
+        "https://github.ecorp.example.com/taggac/vsphere-automation-sdk-.net")]
+    [InlineData(
+        "https://raw.ghe.internal/my-org/my-repo/" + ValidSha + "/*",
+        ValidSha,
+        "https://ghe.internal/my-org/my-repo")]
+    // GitHub Enterprise without subdomain isolation (/raw/ path form)
+    [InlineData(
+        "https://github.ecorp.test/raw/taggac/vsphere-automation-sdk-.net/" + ValidSha + "/*",
+        ValidSha,
+        "https://github.ecorp.test/taggac/vsphere-automation-sdk-.net")]
+    [InlineData(
+        "https://ghe.internal:8443/raw/my-org/my-repo/" + ValidSha + "/*",
+        ValidSha,
+        "https://ghe.internal:8443/my-org/my-repo")]
     public void TryParseSourceLinkUrl_ValidUrl_ReturnsTrue(string url, string expectedSha, string expectedRepoUrl)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);
@@ -41,12 +59,17 @@ public class GitHubSourceLinkUrlParserTests
     }
 
     [Theory]
-    [InlineData("https://raw.example.com/DataDog/dd-trace-dotnet/" + ValidSha + "/*")] // wrong host
     [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/*")] // missing sha
     [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/" + ValidSha + "/extra/*")] // too many segments
     [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/abc123/*")] // sha too short
     [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/zz35903c688a74b62d1c6a9e4f41371c65704db!/*")] // non-hex chars
     [InlineData("https://raw.githubusercontent.com/")] // empty path
+    [InlineData("https://raw./owner/repo/" + ValidSha + "/*")] // raw. with empty enterprise host
+    [InlineData("https://raw.ghe.internal/owner/repo/" + ValidSha)] // GHE subdomain isolation with too few segments (no trailing /*)
+    [InlineData("https://raw.ghe.internal/owner/" + ValidSha + "/*")] // GHE subdomain isolation with too few segments (3 instead of 4)
+    [InlineData("https://example.com/raw/owner/repo/not-a-sha/*")] // GHE /raw/ form with invalid sha
+    [InlineData("https://example.com/raw/owner/" + ValidSha + "/*")] // GHE /raw/ form with missing repo (4 segments, not 5)
+    [InlineData("https://example.com/notraw/owner/repo/" + ValidSha + "/*")] // /notraw/ is not /raw/
     public void TryParseSourceLinkUrl_InvalidUrl_ReturnsFalse(string url)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);
