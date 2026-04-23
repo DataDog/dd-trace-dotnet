@@ -1,0 +1,156 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: masstransit.send,
+    Resource: Samples.MassTransit.Contracts:GettingStartedWithRabbitMq send,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: Samples.MassTransit.Contracts:GettingStartedWithRabbitMq,
+      messaging.masstransit.destination_address: rabbitmq://rabbitmq-host/Samples.MassTransit.Contracts:GettingStartedWithRabbitMq,
+      messaging.masstransit.message_id: Guid_1,
+      messaging.masstransit.message_types: GettingStartedWithRabbitMq,
+      messaging.message.conversation_id: Guid_2,
+      messaging.operation: send,
+      messaging.system: rabbitmq,
+      runtime-id: Guid_3,
+      span.kind: producer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: masstransit.receive,
+    Resource: GettingStartedWithRabbitMq receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_4,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithRabbitMq,
+      messaging.masstransit.input_address: rabbitmq://rabbitmq-host/GettingStartedWithRabbitMq,
+      messaging.operation: receive,
+      messaging.system: rabbitmq,
+      runtime-id: Guid_3,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: masstransit.process,
+    Resource: GettingStartedWithRabbitMq process,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_3,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithRabbitMq,
+      messaging.masstransit.input_address: rabbitmq://rabbitmq-host/GettingStartedWithRabbitMq,
+      messaging.masstransit.message_types: GettingStartedWithRabbitMq,
+      messaging.operation: process,
+      messaging.system: rabbitmq,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_7,
+    Name: masstransit.send,
+    Resource: GettingStartedWithRabbitMq send,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithRabbitMq,
+      messaging.masstransit.destination_address: rabbitmq://rabbitmq-host/GettingStartedWithRabbitMq?bind=true,
+      messaging.masstransit.message_id: Guid_4,
+      messaging.masstransit.message_types: GettingStartedWithRabbitMq,
+      messaging.message.conversation_id: Guid_5,
+      messaging.operation: send,
+      messaging.system: rabbitmq,
+      runtime-id: Guid_3,
+      span.kind: producer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_8,
+    Name: masstransit.receive,
+    Resource: GettingStartedWithRabbitMq receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_9,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithRabbitMq,
+      messaging.masstransit.input_address: rabbitmq://rabbitmq-host/GettingStartedWithRabbitMq,
+      messaging.operation: receive,
+      messaging.system: rabbitmq,
+      runtime-id: Guid_3,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_10,
+    Name: masstransit.process,
+    Resource: GettingStartedWithRabbitMq process,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_8,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithRabbitMq,
+      messaging.masstransit.input_address: rabbitmq://rabbitmq-host/GettingStartedWithRabbitMq,
+      messaging.masstransit.message_types: GettingStartedWithRabbitMq,
+      messaging.operation: process,
+      messaging.system: rabbitmq,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  }
+]
