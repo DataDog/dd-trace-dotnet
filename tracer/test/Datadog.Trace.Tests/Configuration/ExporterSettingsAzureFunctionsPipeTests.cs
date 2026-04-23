@@ -39,10 +39,11 @@ namespace Datadog.Trace.Tests.Configuration
             }
             else
             {
-                // When no explicit pipe name is configured and not in Azure Functions,
+                // In Azure Functions, the constructor generates a unique name.
+                // An explicit pipe name can be also specified.
+                // If not in Azure Functions + compatibility layer,
+                // or if no name has been specified, then
                 // pipe transport is not used so TracesPipeName should be null.
-                // In Azure Functions, the constructor generates a unique name which
-                // is covered by integration tests.
                 settings.TracesPipeName.Should().BeNull();
             }
         }
