@@ -9,11 +9,7 @@
 $ErrorActionPreference = 'Stop'
 
 try {
-    # Exclude *.exe — those are artifacts downloaded at job time (ci-identities client), not source.
-    # (Get-ChildItem -Exclude is silently broken when -Path is a directory, so filter via Where-Object.)
-    $files = Get-ChildItem -Path $PSScriptRoot -File -Force |
-             Where-Object { $_.Extension -ne '.exe' } |
-             Sort-Object -Property Name
+    $files = Get-ChildItem -Path $PSScriptRoot -File -Force | Sort-Object -Property Name
     $combined = ($files | ForEach-Object { (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash }) -join ''
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($combined)
     $stream = [System.IO.MemoryStream]::new($bytes)
