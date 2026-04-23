@@ -31,6 +31,20 @@ endif()
 
 if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
+
+    # On arm64 Linux the CLR exports typeinfo for ProfToEEInterfaceImpl, so UBSAN's
+    # vptr check fires on every call through an ICorProfilerInfo* COM interface
+    # (QueryInterface, AddRef, Release, GetFunctionFromIP, ...). Those call sites
+    # are scattered across CorProfilerCallback, ManagedCodeCache, ManagedThreadList
+    # and most service ctors/dtors, so per-function __attribute__((no_sanitize("vptr")))
+    # turns into whack-a-mole and any missed site aborts under -fno-sanitize-recover=all.
+    # On x86_64 the CLR does not export that typeinfo, so the check is silently skipped
+    # and nothing is lost by disabling it globally. Scope the suppression to clang + arm64
+    # so x86_64 builds still benefit from the full UBSAN coverage.
+    if (ISARM64)
+        add_compile_options(-fno-sanitize=vptr)
+        add_link_options(-fno-sanitize=vptr)
+    endif()
 endif()
 
 if (RUN_TSAN)
