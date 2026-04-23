@@ -1124,16 +1124,6 @@ ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount() const
     return refCount;
 }
 
-// Rationale for no_sanitize("vptr") on the three CorProfilerCallback entry
-// points below (InspectRuntimeCompatibility, InspectRuntimeVersion, Initialize):
-// on arm64 Linux the CLR exports typeinfo for ProfToEEInterfaceImpl, so UBSAN's
-// vptr check fires on calls through COM interface pointers (e.g. QueryInterface).
-// On x86_64 the CLR does not export that typeinfo, so the check is silently
-// skipped there. We deliberately scope the suppression to clang + arm64 so
-// that x86_64 builds still benefit from the full UBSAN coverage.
-#if defined(__clang__) && defined(ARM64)
-__attribute__((no_sanitize("vptr")))
-#endif
 void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor)
 {
     runtimeMajor = 0;
@@ -1318,9 +1308,6 @@ void CorProfilerCallback::InspectProcessorInfo()
 #endif
 }
 
-#if defined(__clang__) && defined(ARM64)
-__attribute__((no_sanitize("vptr")))
-#endif
 void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType)
 {
     USHORT clrInstanceId;
@@ -1415,9 +1402,6 @@ void CorProfilerCallback::PrintEnvironmentVariables()
 const uint32_t InformationalVerbosity = 4;
 const uint32_t VerboseVerbosity = 5;
 
-#if defined(__clang__) && defined(ARM64)
-__attribute__((no_sanitize("vptr")))
-#endif
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerInfoUnk)
 {
     Log::Info("CorProfilerCallback is initializing.");
