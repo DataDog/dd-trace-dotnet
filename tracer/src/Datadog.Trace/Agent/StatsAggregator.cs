@@ -57,6 +57,7 @@ namespace Datadog.Trace.Agent
         private int _tracerObfuscationVersion;
         private TraceFilter _traceFilter;
         private List<PeerTagKey> _peerTagKeys = [];
+        private int _computStatsState;
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
@@ -113,7 +114,12 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
-        public bool? CanComputeStats { get; private set; }
+        public bool? CanComputeStats
+        {
+            // convert between -1 = false, 0 = null, 1 = true because we can't use volatile with a bool?
+            get => Volatile.Read(ref _computStatsState) switch { 1 => true, -1 => false, _ => null, };
+            private set => Volatile.Write(ref _computStatsState, value switch { true => 1, false => -1, _ => 0, });
+        }
 
         public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
