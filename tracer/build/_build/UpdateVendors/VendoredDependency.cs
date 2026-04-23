@@ -310,10 +310,31 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "System.Runtime.CompilerServices.Unsafe",
-                version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Runtime.CompilerServices.Unsafe" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
+                version: "6.1.2",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Runtime.CompilerServices.Unsafe", "src" },
+                transform: filePath =>
+                {
+                    // Convert .il file to InlineIL-based .cs file
+                    if (string.Equals(Path.GetFileName(filePath), "System.Runtime.CompilerServices.Unsafe.il", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var ilContent = File.ReadAllText(filePath);
+                        var csContent = ILToInlineILConverter.Convert(ilContent);
+
+                        // Remove IL file, and replace with c# file instead
+                        File.Delete(filePath);
+                        filePath = Path.Combine(Path.GetDirectoryName(filePath)!, "Unsafe.cs");
+                        File.WriteAllText(
+                            filePath,
+                            csContent,
+                            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+                        // Use the full namespace to avoid rewriting BCL usings
+                        RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime.CompilerServices.Unsafe");
+                    }
+                },
+                onlyIncludePaths: new[] { "System.Runtime.CompilerServices.Unsafe.il", });
 
             Add(
                 libraryName: "ICSharpCode.SharpZipLib",
