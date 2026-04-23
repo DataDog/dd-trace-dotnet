@@ -76,7 +76,7 @@ namespace Honeypot
             NugetPackages.Add("System.Data.SQLite", new [] { "System.Data.SQLite" });
             NugetPackages.Add("StackExchange.Redis", new [] { "StackExchange.Redis" });
             NugetPackages.Add("StackExchange.Redis.StrongName", new [] { "StackExchange.Redis.StrongName" });
-            NugetPackages.Add("System.ServiceModel", new [] { "System.ServiceModel.Http" });
+            NugetPackages.Add("System.ServiceModel", new string[] { });
             NugetPackages.Add("System.Net.Requests", new [] { "System.Net.Requests" });
             NugetPackages.Add("xunit.execution.dotnet", new [] { "xunit.extensibility.execution" });
             NugetPackages.Add("xunit.execution.desktop", new [] { "xunit" });

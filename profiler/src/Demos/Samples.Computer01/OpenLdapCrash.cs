@@ -55,7 +55,7 @@ namespace Samples.Computer01
             }
             catch (Exception e)
             {
-                Console.WriteLine($"[Error] An error occured while trying to connect to the LDAP server `{_serverHostname}:{_serverPort}`. Message: " + e.Message);
+                Console.WriteLine($"[Error] An error occurred while trying to connect to the LDAP server `{_serverHostname}:{_serverPort}`. Message: " + e.Message);
             }
         }
     }

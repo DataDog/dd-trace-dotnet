@@ -592,7 +592,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "An error occured in the serialization thread");
+                    Log.Error(ex, "An error occurred in the serialization thread");
                 }
 
                 if (_processExit.Task.IsCompleted)

@@ -1429,17 +1429,7 @@
     "assemblyName": "System.ServiceModel",
     "minAssemblyVersionInclusive": "4.0.0",
     "maxAssemblyVersionInclusive": "4.65535.65535",
-    "packages": [
-      {
-        "name": "System.ServiceModel.Http",
-        "minVersionAvailableInclusive": "3.9.0",
-        "minVersionSupportedInclusive": "4.0.0",
-        "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.10.3",
-        "maxVersionAvailableInclusive": "10.0.652802",
-        "maxVersionTestedInclusive": null
-      }
-    ]
+    "packages": []
   },
   {
     "integrationName": "WebRequest",
