@@ -43,10 +43,11 @@ public sealed class KafkaConsumerCommitIntegration
             {
                 if (offset.TryDuckCast<ITopicPartitionOffset>(out var item))
                 {
-                    var backlogTags = StringUtil.IsNullOrEmpty(clusterId)
-                        ? $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit"
-                        : $"consumer_group:{groupId},kafka_cluster_id:{clusterId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
-
+                    var cacheKey = new CommitBacklogTagCacheKey(groupId ?? string.Empty, clusterId ?? string.Empty, item.Partition.Value, item.Topic ?? string.Empty);
+                    var backlogTags = dataStreams.GetOrCreateBacklogTags(cacheKey, static k =>
+                        k.ClusterId.Length == 0
+                            ? $"consumer_group:{k.GroupId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit"
+                            : $"consumer_group:{k.GroupId},kafka_cluster_id:{k.ClusterId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit");
                     dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
                 }
             }
