@@ -121,7 +121,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public static bool TryFormatThrowFormatException(out int bytesWritten)
         {
             bytesWritten = 0;
-            ThrowHelper.ThrowFormatException_BadFormatSpecifier();
+            global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowFormatException_BadFormatSpecifier();
             return false;
         }
 
@@ -132,7 +132,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         {
             value = default;
             bytesConsumed = 0;
-            ThrowHelper.ThrowFormatException_BadFormatSpecifier();
+            global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowFormatException_BadFormatSpecifier();
             return false;
         }
 

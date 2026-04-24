@@ -52,7 +52,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     ReadOnlySequenceSegment<T> nextSegment = startSegment.Next;
 
                     if (nextSegment == null)
-                        ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
+                        global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
 
                     next = new SequencePosition(nextSegment, 0);
                     memory = startSegment.Memory.Slice(startIndex);
@@ -65,7 +65,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             else
             {
                 if (positionObject != endObject)
-                    ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
 
                 if (type == SequenceType.Array)
                 {
@@ -132,7 +132,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 else // endIndex < 0, SequenceType.Array
                 {
                     if (isMultiSegment)
-                        ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
+                        global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
 
                     return new ReadOnlyMemory<T>((T[])startObject, startIndex, (endIndex & ReadOnlySequence.IndexBitMask) - startIndex);
                 }
@@ -140,7 +140,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             else // startIndex < 0
             {
                 if (isMultiSegment)
-                    ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
 
                 // A == 1 && B == 1 means SequenceType.String
                 // A == 1 && B == 0 means SequenceType.MemoryManager
@@ -181,7 +181,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     goto IsSingleSegment;
 
                 if (currentLength < 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
 
                 // End of segment. Move to start of next.
                 return SeekMultiSegment(startSegment.Next, endObject, endIndex, offset - currentLength, argument);
@@ -190,7 +190,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             Debug.Assert(startObject == endObject);
 
             if (endIndex - startIndex < offset)
-                ThrowHelper.ThrowArgumentOutOfRangeException(argument);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(argument);
 
         // Single segment Seek
         IsSingleSegment:
@@ -218,7 +218,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 
             // Hit the end of the segments but didn't reach the count
             if (currentSegment == null || endIndex < offset)
-                ThrowHelper.ThrowArgumentOutOfRangeException(argument);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(argument);
 
         FoundSegment:
             return new SequencePosition(currentSegment, (int)offset);
@@ -238,7 +238,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             {
                 if (!InRange(sliceStartIndex, startIndex, endIndex))
                 {
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
                 }
             }
             else
@@ -251,7 +251,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     startRange,
                     (ulong)(((ReadOnlySequenceSegment<T>)endObject).RunningIndex + endIndex)))
                 {
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
                 }
             }
         }
@@ -273,7 +273,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     sliceStartIndex < startIndex ||
                     sliceEndIndex > endIndex)
                 {
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
                 }
             }
             else
@@ -286,12 +286,12 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 ulong sliceEndRange = (ulong)(((ReadOnlySequenceSegment<T>)sliceEndObject).RunningIndex + sliceEndIndex);
 
                 if (sliceStartRange > sliceEndRange)
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
 
                 if (sliceStartRange < (ulong)(((ReadOnlySequenceSegment<T>)startObject).RunningIndex + startIndex)
                     || sliceEndRange > (ulong)(((ReadOnlySequenceSegment<T>)endObject).RunningIndex + endIndex))
                 {
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
                 }
             }
         }
@@ -306,7 +306,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             }
 
             if (currentLength < 0)
-                ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
 
             return SeekMultiSegment(startSegment.Next, endObject, endIndex, length - currentLength, ExceptionArgument.length);
         }

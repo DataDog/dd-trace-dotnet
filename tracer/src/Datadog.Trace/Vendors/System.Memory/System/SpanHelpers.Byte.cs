@@ -11,7 +11,7 @@ using System.Diagnostics;
 using Datadog.Trace.VendoredMicrosoftCode.System.Numerics;
 using System.Runtime.CompilerServices;
 
-using nuint = Datadog.Trace.VendoredMicrosoftCode.System.NUInt;
+using nuint = System.NUInt;
 
 using System;
 using System.Collections;
@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     internal static partial class SpanHelpers
     {

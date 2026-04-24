@@ -62,7 +62,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     return TryParseByteX(source, out value, out bytesConsumed);
 
                 default:
-                    return ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
             }
         }
 
@@ -108,7 +108,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     return TryParseUInt16X(source, out value, out bytesConsumed);
 
                 default:
-                    return ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
             }
         }
 
@@ -154,7 +154,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     return TryParseUInt32X(source, out value, out bytesConsumed);
 
                 default:
-                    return ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
             }
         }
 
@@ -200,7 +200,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     return TryParseUInt64X(source, out value, out bytesConsumed);
 
                 default:
-                    return ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
             }
         }
     }

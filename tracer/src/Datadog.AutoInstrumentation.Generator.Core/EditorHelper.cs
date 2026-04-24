@@ -1,4 +1,4 @@
-﻿// <copyright file="EditorHelper.cs" company="Datadog">
+// <copyright file="EditorHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using System.Text;
 using dnlib.DotNet;
 // ReSharper disable InconsistentNaming
 
-namespace Datadog.AutoInstrumentation.Generator;
+namespace Datadog.AutoInstrumentation.Generator.Core;
 
 internal static class EditorHelper
 {

@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     //
     // This class exists solely so that arbitrary objects can be Unsafe-casted to it to get a ref to the start of the user data.

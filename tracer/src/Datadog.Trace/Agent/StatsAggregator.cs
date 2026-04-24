@@ -365,9 +365,7 @@ namespace Datadog.Trace.Agent
         /// The <paramref name="keyPrefix"/> is a pre-encoded UTF-8 byte array (e.g. "tagKey:") and is
         /// hashed directly. Only the <paramref name="tagValue"/> needs UTF-8 encoding at call time.
         /// </summary>
-#if NETCOREAPP
-        [System.Runtime.CompilerServices.SkipLocalsInit]
-#endif
+        [SkipLocalsInit]
         private static ulong HashTag(byte[] keyPrefix, string tagValue, FnvHash64.Version version, ulong? initialHash = null)
         {
             // Hash the pre-encoded key prefix (e.g. "peer.service:") directly — no encoding needed
@@ -377,22 +375,35 @@ namespace Datadog.Trace.Agent
 
             // Now encode and hash just the tag value
             var maxByteCount = EncodingHelpers.Utf8NoBom.GetMaxByteCount(tagValue.Length);
-#if NETCOREAPP
             const int maxStackLimit = 256;
 
             if (maxByteCount <= maxStackLimit)
             {
                 Span<byte> buffer = stackalloc byte[maxStackLimit];
-                var written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, buffer);
+                int written;
+#if NETCOREAPP
+                written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, buffer);
+#else
+                unsafe
+                {
+                    var tagValueSpan = tagValue.AsSpan();
+                    fixed (char* tagValuePointer = tagValueSpan)
+                    {
+                        fixed (byte* bufferPointer = buffer)
+                        {
+                            written = EncodingHelpers.Utf8NoBom.GetBytes(tagValuePointer, tagValueSpan.Length, bufferPointer, buffer.Length);
+                        }
+                    }
+                }
+#endif
                 return FnvHash64.GenerateHash(buffer.Slice(0, written), version, hash);
             }
-#endif
 
             var rented = ArrayPool<byte>.Shared.Rent(maxByteCount);
             try
             {
                 var written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, rented, byteIndex: 0);
-                return FnvHash64.GenerateHash(rented, 0, written, version, hash);
+                return FnvHash64.GenerateHash(rented.AsSpan().Slice(0, written), version, hash);
             }
             finally
             {

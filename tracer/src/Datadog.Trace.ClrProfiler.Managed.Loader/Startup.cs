@@ -17,7 +17,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public sealed partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=3.43.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        // internal so ManagedProfilerAssemblyResolver can reference it. Safe because const strings are inlined at compile time.
+        // Do not add non-const static members on Startup that the resolver needs - that would re-introduce the .cctor deadlock.
+        internal const string AssemblyName = "Datadog.Trace, Version=3.43.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
@@ -78,7 +80,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 try
                 {
+#if NETFRAMEWORK
+                    // On .NET Framework, route AssemblyResolve through a class other than Startup so
+                    // the handler doesn't require Startup..cctor to have finished. If a configBuilder
+                    // on <appSettings> issues sync-over-async work during Startup..cctor, the async
+                    // continuation may fire AssemblyResolve on a ThreadPool thread; a handler on
+                    // Startup itself would deadlock waiting on Startup..cctor.
+                    ManagedProfilerAssemblyResolver.ManagedProfilerDirectory = ManagedProfilerDirectory;
+                    AppDomain.CurrentDomain.AssemblyResolve += ManagedProfilerAssemblyResolver.OnAssemblyResolve;
+#else
                     AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+#endif
                 }
                 catch (Exception ex)
                 {
@@ -181,7 +193,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // We will try to resolve it manually as a last chance.
                 StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
 
+#if NETFRAMEWORK
+                var assembly = ManagedProfilerAssemblyResolver.ResolveAssembly(assemblyString);
+#else
                 var assembly = ResolveAssembly(assemblyString);
+#endif
                 if (assembly is not null)
                 {
                     StartupLogger.Log("Assembly '{0}' was resolved manually.", assemblyString);

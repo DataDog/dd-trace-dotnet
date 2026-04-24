@@ -60,7 +60,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     break;
 
                 default:
-                    return ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
             }
 
             NumberBuffer number = default;
