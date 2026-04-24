@@ -89,23 +89,11 @@ namespace ");
 
                     sb.Append(
                            @"
-#if NETCOREAPP
         private static ReadOnlySpan<byte> ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes => new byte[] { ")
+                      .Append(@"Bytes => [")
                       .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#else
-        private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#endif");
+                      .AppendLine(@"];");
                 }
             }
 
@@ -125,28 +113,15 @@ namespace ");
 
                     sb.Append(
                            @"
-#if NETCOREAPP
         private static ReadOnlySpan<byte> ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes => new byte[] { ")
+                      .Append(@"Bytes => [")
                       .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#else
-        private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#endif");
+                      .AppendLine(@"];");
                 }
 
                 sb.Append(
                     @"
-
         public override string? GetTag(string key)
         {
             return key switch
@@ -283,11 +258,6 @@ namespace ");
 
             if (tagList.MetricProperties.HasValues())
             {
-                if (tagList.TagProperties.IsDefaultOrEmpty)
-                {
-                    sb.AppendLine();
-                }
-
                 sb.Append(
                     @"
         public override double? GetMetric(string key)

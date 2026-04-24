@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Immutable;
+using System.Text;
 using Datadog.Trace.SourceGenerators.TagsListGenerator;
 using Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics;
 using Xunit;
@@ -32,11 +34,7 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""TestId"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> IdBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#else
-        private static readonly byte[] IdBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#endif
+        private static ReadOnlySpan<byte> IdBytes => [166, 84, 101, 115, 116, 73, 100];
 
         public override string? GetTag(string key)
         {
@@ -111,11 +109,7 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""TestId"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> IdBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#else
-        private static readonly byte[] IdBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#endif
+        private static ReadOnlySpan<byte> IdBytes => [166, 84, 101, 115, 116, 73, 100];
 
         public override double? GetMetric(string key)
         {
@@ -193,17 +187,10 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdTag"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> IdBytes => new byte[] { 165, 73, 100, 84, 97, 103 };
-#else
-        private static readonly byte[] IdBytes = new byte[] { 165, 73, 100, 84, 97, 103 };
-#endif
+        private static ReadOnlySpan<byte> IdBytes => [165, 73, 100, 84, 97, 103];
+
         // NameBytes = MessagePack.Serialize(""NameTag"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> NameBytes => new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
-#else
-        private static readonly byte[] NameBytes = new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
-#endif
+        private static ReadOnlySpan<byte> NameBytes => [167, 78, 97, 109, 101, 84, 97, 103];
 
         public override string? GetTag(string key)
         {
@@ -296,17 +283,10 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdMetric"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> IdBytes => new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
-#else
-        private static readonly byte[] IdBytes = new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
-#endif
+        private static ReadOnlySpan<byte> IdBytes => [168, 73, 100, 77, 101, 116, 114, 105, 99];
+
         // NameBytes = MessagePack.Serialize(""NameMetric"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> NameBytes => new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
-#else
-        private static readonly byte[] NameBytes = new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
-#endif
+        private static ReadOnlySpan<byte> NameBytes => [170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99];
 
         public override double? GetMetric(string key)
         {
@@ -402,23 +382,13 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdTag"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> IdBytes => new byte[] { 165, 73, 100, 84, 97, 103 };
-#else
-        private static readonly byte[] IdBytes = new byte[] { 165, 73, 100, 84, 97, 103 };
-#endif
+        private static ReadOnlySpan<byte> IdBytes => [165, 73, 100, 84, 97, 103];
+
         // TestBytes = MessagePack.Serialize(""TestId"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> TestBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#else
-        private static readonly byte[] TestBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#endif
+        private static ReadOnlySpan<byte> TestBytes => [166, 84, 101, 115, 116, 73, 100];
+
         // NameBytes = MessagePack.Serialize(""NameTag"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> NameBytes => new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
-#else
-        private static readonly byte[] NameBytes = new byte[] { 167, 78, 97, 109, 101, 84, 97, 103 };
-#endif
+        private static ReadOnlySpan<byte> NameBytes => [167, 78, 97, 109, 101, 84, 97, 103];
 
         public override string? GetTag(string key)
         {
@@ -528,23 +498,13 @@ namespace MyTests.TestListNameSpace
     partial class TestList
     {
         // IdBytes = MessagePack.Serialize(""IdMetric"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> IdBytes => new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
-#else
-        private static readonly byte[] IdBytes = new byte[] { 168, 73, 100, 77, 101, 116, 114, 105, 99 };
-#endif
+        private static ReadOnlySpan<byte> IdBytes => [168, 73, 100, 77, 101, 116, 114, 105, 99];
+
         // TestBytes = MessagePack.Serialize(""TestId"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> TestBytes => new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#else
-        private static readonly byte[] TestBytes = new byte[] { 166, 84, 101, 115, 116, 73, 100 };
-#endif
+        private static ReadOnlySpan<byte> TestBytes => [166, 84, 101, 115, 116, 73, 100];
+
         // NameBytes = MessagePack.Serialize(""NameMetric"");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> NameBytes => new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
-#else
-        private static readonly byte[] NameBytes = new byte[] { 170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
-#endif
+        private static ReadOnlySpan<byte> NameBytes => [170, 78, 97, 109, 101, 77, 101, 116, 114, 105, 99];
 
         public override double? GetMetric(string key)
         {
