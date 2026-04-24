@@ -14,6 +14,11 @@ using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
+#if NETCOREAPP3_1_OR_GREATER
+using MemoryExtensions = System.MemoryExtensions;
+#else
+using MemoryExtensions = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions;
+#endif
 
 namespace Datadog.Trace.Tests.Propagators
 {
@@ -721,7 +726,7 @@ namespace Datadog.Trace.Tests.Propagators
                 new('=', '3'),
             };
 
-            W3CTraceContextPropagator.NeedsCharacterReplacement(value, lowerBound, upperBound, invalidCharacterReplacements)
+            W3CTraceContextPropagator.NeedsCharacterReplacement(MemoryExtensions.AsSpan(value), lowerBound, upperBound, invalidCharacterReplacements)
                                      .Should()
                                      .Be(expected);
         }
@@ -751,7 +756,7 @@ namespace Datadog.Trace.Tests.Propagators
                 new('=', '3'),
             };
 
-            W3CTraceContextPropagator.ReplaceCharacters(value, lowerBound, upperBound, outOfBoundsReplacement, invalidCharacterReplacements)
+            W3CTraceContextPropagator.ReplaceCharacters(MemoryExtensions.AsSpan(value), lowerBound, upperBound, outOfBoundsReplacement, invalidCharacterReplacements)
                                      .ToString() // NETCOREAPP returns ReadOnlySpan<char>
                                      .Should()
                                      .Be(expected);

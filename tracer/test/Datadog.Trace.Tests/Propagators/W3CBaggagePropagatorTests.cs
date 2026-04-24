@@ -9,6 +9,11 @@ using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Moq;
 using Xunit;
+#if NETCOREAPP3_1_OR_GREATER
+using MemoryExtensions = System.MemoryExtensions;
+#else
+using MemoryExtensions = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions;
+#endif
 
 namespace Datadog.Trace.Tests.Propagators;
 
@@ -118,7 +123,7 @@ public class W3CBaggagePropagatorTests
     [InlineData("José 🐶\t我", "José 🐶\t我")]
     public void Decode(string value, string expected)
     {
-        W3CBaggagePropagator.Decode(value).Should().Be(expected);
+        W3CBaggagePropagator.Decode(MemoryExtensions.AsSpan(value)).Should().Be(expected);
     }
 
     [Theory]
