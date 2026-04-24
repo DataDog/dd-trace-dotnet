@@ -80,17 +80,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 try
                 {
-#if NETFRAMEWORK
-                    // On .NET Framework, route AssemblyResolve through a class other than Startup so
-                    // the handler doesn't require Startup..cctor to have finished. If a configBuilder
-                    // on <appSettings> issues sync-over-async work during Startup..cctor, the async
-                    // continuation may fire AssemblyResolve on a ThreadPool thread; a handler on
-                    // Startup itself would deadlock waiting on Startup..cctor.
+                    // Route AssemblyResolve through a class other than Startup so the handler can
+                    // be dispatched without Startup..cctor having finished. If any sync-over-async
+                    // work during Startup..cctor has a continuation that fires AssemblyResolve on a
+                    // ThreadPool thread, a handler on Startup itself would deadlock waiting on
+                    // Startup..cctor. The observed trigger on .NET Framework is a configBuilder on
+                    // <appSettings>; on .NET Core the same hazard applies to any equivalent pattern.
                     ManagedProfilerAssemblyResolver.ManagedProfilerDirectory = ManagedProfilerDirectory;
                     AppDomain.CurrentDomain.AssemblyResolve += ManagedProfilerAssemblyResolver.OnAssemblyResolve;
-#else
-                    AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
-#endif
                 }
                 catch (Exception ex)
                 {
@@ -100,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #if NETCOREAPP
                 try
                 {
-                    System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += (_, assemblyName) => ResolveAssembly(assemblyName.Name);
+                    System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += ManagedProfilerAssemblyResolver.OnAssemblyLoadContextResolving;
                 }
                 catch (Exception ex)
                 {
@@ -193,11 +190,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // We will try to resolve it manually as a last chance.
                 StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
 
-#if NETFRAMEWORK
                 var assembly = ManagedProfilerAssemblyResolver.ResolveAssembly(assemblyString);
-#else
-                var assembly = ResolveAssembly(assemblyString);
-#endif
                 if (assembly is not null)
                 {
                     StartupLogger.Log("Assembly '{0}' was resolved manually.", assemblyString);
