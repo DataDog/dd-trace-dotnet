@@ -100,7 +100,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
         }
         else
         {
-            buffer[i++] = FrameStore::UnknownFrameTypeIP;
+            // buffer[i++] = FrameStore::UnknownFrameTypeIP;
             if (tracer)
             {
                 tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::FailedIsManaged);
@@ -117,7 +117,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
             tracer->Record(EventType::NativeFrame, ip, nativeFp, sp);
         }
 
-        buffer[i++] = ip;
+        // buffer[i++] = ip;
 
         auto stepResult = unw_step(&cursor->cursor);
         unw_cursor_snapshot_t snapshot;
@@ -283,6 +283,15 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
         return i;
     }
+
+    // DEBUG: inject a sentinel between Phase 1 (native) and Phase 2 (managed).
+    // If the test output shows a managed frame ABOVE this sentinel, it means
+    // Phase 1 misclassified it as native (code cache race).
+    // buffer[i++] = FrameStore::SentinelFrameIP;
+    // if (i >= bufferSize)
+    // {
+    //     return i;
+    // }
 
     // === Phase 2: Walk managed frames using the FP chain ===
     // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
