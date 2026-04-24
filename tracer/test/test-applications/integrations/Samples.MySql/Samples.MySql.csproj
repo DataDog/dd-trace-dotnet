@@ -20,8 +20,8 @@
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
-  <!-- CodePagesEncodingProvider is in the shared framework for net5.0+, but must be package-referenced on .NET Framework -->
-  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+  <!-- CodePagesEncodingProvider is in the shared framework for net5.0+, but must be package-referenced on .NET Framework and .NET Core 2.x/3.x -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) OR $(TargetFramework.StartsWith('netcoreapp'))">
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
   </ItemGroup>
 
