@@ -165,7 +165,16 @@ namespace GeneratePackageVersions
                 {
                     var earliestVersion = allVersions.First();
                     var lastVersion = allVersions.Last();
-                    testedVersions.Add(new(entry.NugetPackageSearchName, entry.IntegrationName, earliestVersion, lastVersion));
+
+                    // One row per distinct selected version preserves split-range / per-glob slots
+                    // (e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.* each produce their own entry), so a
+                    // backport to 3.x is reported even when the overall max 4.x is unchanged.
+                    var selectedVersions = allVersions
+                        .Distinct()
+                        .OrderBy(v => v)
+                        .ToList();
+
+                    testedVersions.Add(new(entry.NugetPackageSearchName, entry.IntegrationName, earliestVersion, lastVersion, selectedVersions));
                 }
             }
 
@@ -433,6 +442,11 @@ namespace GeneratePackageVersions
             }
         }
 
-        public record TestedPackage(string NugetPackageSearchName, string IntegrationName, Version MinVersion, Version MaxVersion);
+        public record TestedPackage(
+            string NugetPackageSearchName,
+            string IntegrationName,
+            Version MinVersion,
+            Version MaxVersion,
+            IReadOnlyList<Version> SelectedVersions);
     }
 }

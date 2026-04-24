@@ -282,41 +282,49 @@ partial class Build
            foreach (var tested in testedVersions)
            {
                var packageName = tested.NugetPackageSearchName;
-               var previousMax = versionGenerator
-                   .GetPreviouslyTestedVersions(tested.IntegrationName)
-                   .Where(v => v >= tested.MinVersion && v <= tested.MaxVersion)
-                   .OrderByDescending(v => v)
-                   .FirstOrDefault();
+               var previouslyTested = versionGenerator.GetPreviouslyTestedVersions(tested.IntegrationName);
 
-               if (previousMax is null || tested.MaxVersion > previousMax)
+               foreach (var selected in tested.SelectedVersions)
                {
-                   bumped++;
-                   DateTimeOffset? publishedDate = null;
-                   if (queriedVersions.TryGetValue(packageName, out var versionsForPackage))
+                   // Compare per-slot: entries can have multiple selected versions (one per glob or
+                   // per major), e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.*. Bound the predecessor search
+                   // to same-major and <= selected so each slot's previous max is found independently
+                   // -- a 3.x backport is visible even when the 4.x slot is unchanged.
+                   var previousMax = previouslyTested
+                       .Where(v => v.Major == selected.Major && v <= selected)
+                       .OrderByDescending(v => v)
+                       .FirstOrDefault();
+
+                   if (previousMax is null || selected > previousMax)
                    {
-                       var match = versionsForPackage.FirstOrDefault(v => v.Version == tested.MaxVersion.ToString());
-                       publishedDate = match?.Published;
+                       bumped++;
+                       DateTimeOffset? publishedDate = null;
+                       if (queriedVersions.TryGetValue(packageName, out var versionsForPackage))
+                       {
+                           var match = versionsForPackage.FirstOrDefault(v => v.Version == selected.ToString());
+                           publishedDate = match?.Published;
+                       }
+
+                       versionGenerator.BumpReport.AddBump(new PackageBumpReport.BumpEntry(
+                           packageName,
+                           tested.IntegrationName,
+                           previousMax,
+                           selected,
+                           publishedDate));
+
+                       Logger.Information(
+                           "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
+                           packageName,
+                           previousMax?.ToString() ?? "(new)",
+                           selected,
+                           publishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "(unknown)",
+                           packageName,
+                           selected);
                    }
-
-                   versionGenerator.BumpReport.AddBump(new PackageBumpReport.BumpEntry(
-                       packageName,
-                       tested.IntegrationName,
-                       previousMax,
-                       tested.MaxVersion,
-                       publishedDate));
-
-                   Logger.Information(
-                       "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
-                       packageName,
-                       previousMax?.ToString() ?? "(new)",
-                       tested.MaxVersion,
-                       publishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "(unknown)",
-                       packageName,
-                       tested.MaxVersion);
-               }
-               else
-               {
-                   unchanged++;
+                   else
+                   {
+                       unchanged++;
+                   }
                }
            }
 
