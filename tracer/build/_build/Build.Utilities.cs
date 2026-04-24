@@ -291,22 +291,26 @@ partial class Build
                if (previousMax is null || tested.MaxVersion > previousMax)
                {
                    bumped++;
-                   var publishedDate = "(unknown)";
+                   DateTimeOffset? publishedDate = null;
                    if (queriedVersions.TryGetValue(packageName, out var versionsForPackage))
                    {
                        var match = versionsForPackage.FirstOrDefault(v => v.Version == tested.MaxVersion.ToString());
-                       if (match?.Published is not null)
-                       {
-                           publishedDate = match.Published.Value.UtcDateTime.ToString("yyyy-MM-dd");
-                       }
+                       publishedDate = match?.Published;
                    }
+
+                   versionGenerator.BumpReport.AddBump(new PackageBumpReport.BumpEntry(
+                       packageName,
+                       tested.IntegrationName,
+                       previousMax,
+                       tested.MaxVersion,
+                       publishedDate));
 
                    Logger.Information(
                        "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
                        packageName,
                        previousMax?.ToString() ?? "(new)",
                        tested.MaxVersion,
-                       publishedDate,
+                       publishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "(unknown)",
                        packageName,
                        tested.MaxVersion);
                }
@@ -318,14 +322,14 @@ partial class Build
 
            Logger.Information("{Bumped} package(s) bumped, {Unchanged} unchanged", bumped, unchanged);
 
-           if (versionGenerator.CooldownReport.HasEntries)
+           if (versionGenerator.BumpReport.CooldownEntries.Count > 0)
            {
                Logger.Warning(
                    "{Count} package version(s) were excluded due to the {Days}-day cooldown period",
-                   versionGenerator.CooldownReport.Entries.Count,
+                   versionGenerator.BumpReport.CooldownEntries.Count,
                    effectiveCooldownDays);
 
-               foreach (var entry in versionGenerator.CooldownReport.Entries)
+               foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
                {
                    Logger.Warning(
                        "  {Package} {Version} overridden (published {Date})",
@@ -333,10 +337,13 @@ partial class Build
                        entry.OverriddenVersion,
                        entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
                }
+           }
 
-               var reportPath = TemporaryDirectory / "cooldown_report.md";
-               await versionGenerator.CooldownReport.SaveToFile(reportPath);
-               Logger.Information("Cooldown report saved to {Path}", reportPath);
+           if (versionGenerator.BumpReport.HasEntries)
+           {
+               var reportPath = TemporaryDirectory / "bump_report.md";
+               await versionGenerator.BumpReport.SaveToFile(reportPath);
+               Logger.Information("Bump report saved to {Path}", reportPath);
            }
 
            var assemblies = MonitoringHomeDirectory

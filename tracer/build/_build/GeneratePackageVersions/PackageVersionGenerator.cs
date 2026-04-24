@@ -33,9 +33,9 @@ namespace GeneratePackageVersions
         public Dictionary<string, List<VersionWithDate>> QueriedVersions { get; } = new();
 
         /// <summary>
-        /// Report of package versions that were excluded by the cooldown filter.
+        /// Report of package versions bumped in this run and versions skipped by the cooldown filter.
         /// </summary>
-        public CooldownReport CooldownReport { get; }
+        public PackageBumpReport BumpReport { get; }
 
 
         public PackageVersionGenerator(
@@ -46,7 +46,7 @@ namespace GeneratePackageVersions
         {
             _getCooldownMode = getCooldownMode;
             _cutoffDate = DateTimeOffset.UtcNow.AddDays(-cooldownDays);
-            CooldownReport = new CooldownReport(cooldownDays);
+            BumpReport = new PackageBumpReport(cooldownDays);
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
@@ -200,7 +200,7 @@ namespace GeneratePackageVersions
 
                 if (publishedTooRecently && !atOrBelowPreviousMax)
                 {
-                    CooldownReport.Add(new CooldownReport.CooldownEntry(
+                    BumpReport.AddCooldown(new PackageBumpReport.CooldownEntry(
                         entry.NugetPackageSearchName,
                         entry.IntegrationName,
                         v.Version,
