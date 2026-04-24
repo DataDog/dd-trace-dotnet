@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Messaging.EventHubs" Version="$(ApiVersion)" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
   </ItemGroup>
 
 </Project>

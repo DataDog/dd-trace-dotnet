@@ -4,6 +4,9 @@
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.7.0</ApiVersion>
     <Nullable>enable</Nullable>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- CS0618: this sample intentionally exercises the deprecated Hangfire API surface (e.g. StateContext.JobId) -->
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

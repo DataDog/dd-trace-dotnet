@@ -18,7 +18,10 @@
     <PackageReference Include="System.Security.Permissions" Version="8.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
-    <PackageReference Include="System.Text.Encoding" Version="4.3.0" />
+  </ItemGroup>
+
+  <!-- CodePagesEncodingProvider is in the shared framework for net5.0+, but must be package-referenced on .NET Framework -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
   </ItemGroup>
 

@@ -11,6 +11,10 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+
+    <!-- MSTEST0044: this sample intentionally exercises the legacy DataTestMethod attribute -->
+    <!-- MSTEST0057: custom TestMethodAttribute subclasses here predate the CallerFilePath/CallerLineNumber guidance -->
+    <NoWarn>$(NoWarn);MSTEST0044;MSTEST0057</NoWarn>
   </PropertyGroup>
   
   <PropertyGroup Condition="$(ApiVersion.StartsWith('4.'))">

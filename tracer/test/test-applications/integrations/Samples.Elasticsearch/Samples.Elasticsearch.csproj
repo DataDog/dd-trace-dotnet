@@ -15,8 +15,4 @@
     <PackageReference Include="NEST" Version="$(ApiVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
-  </ItemGroup>
-
 </Project>
