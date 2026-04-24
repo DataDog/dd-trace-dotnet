@@ -151,13 +151,7 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
     private static void EncodeBytesAndAppend(StringBuilder sb, ReadOnlySpan<byte> bytes, bool isKey)
     {
-        // allocate a buffer on the stack (or rent one) for hexadecimal strings
-#if NETCOREAPP3_1_OR_GREATER
         Span<char> hexStringBuffer = stackalloc char[2];
-#else
-        var buffer = ArrayPool<char>.Shared.Rent(minimumLength: 2);
-        var hexStringBuffer = buffer.AsSpan(start: 0, length: 2);
-#endif
 
         for (var index = 0; index < bytes.Length; index++)
         {
@@ -177,10 +171,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 sb.Append(c);
             }
         }
-
-#if !NETCOREAPP3_1_OR_GREATER
-        ArrayPool<char>.Shared.Return(buffer);
-#endif
     }
 
     private static bool CharRequiresEncoding(char c, bool isKey)
