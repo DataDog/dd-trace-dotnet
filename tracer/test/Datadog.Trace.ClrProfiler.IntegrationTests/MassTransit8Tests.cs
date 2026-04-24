@@ -48,7 +48,7 @@ public class MassTransit8Tests : TracingIntegrationTest
         // InMemory transport + saga + 3 exception scenarios
         const int expectedMassTransitSpanCount = 27;
         var prefix = IsWindows() ? "InMemoryWindows" : "InMemory";
-        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, prefix, includeWindowsStackScrub: IsWindows());
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, prefix);
     }
 
     [SkippableTheory]
@@ -92,7 +92,7 @@ public class MassTransit8Tests : TracingIntegrationTest
     private static bool IsWindows() =>
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
-    private static VerifySettings BuildSpanVerifierSettings(bool includeWindowsStackScrub)
+    private static VerifySettings BuildSpanVerifierSettings()
     {
         var settings = VerifyHelper.GetSpanVerifierSettings();
 
@@ -133,11 +133,11 @@ public class MassTransit8Tests : TracingIntegrationTest
         // Scrub OTEL events (contains timestamps and file paths that vary)
         settings.AddRegexScrubber(new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline), "events: [scrubbed]");
 
-        if (includeWindowsStackScrub)
-        {
-            // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
-            settings.AddRegexScrubber(new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline), "error.stack: Scrubbed\n");
-        }
+        // Keep only the first line of error.stack (exception type + message) and drop
+        // stack frames, which vary across .NET runtimes (e.g., the
+        // "--- End of stack trace from previous location ---" async rethrow marker
+        // appears on some runtimes but not others).
+        settings.AddRegexScrubber(new Regex(@"error\.stack:[^\n]*\n([^\n]+)\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline), "error.stack: $1\n");
 
         return settings;
     }
@@ -175,8 +175,7 @@ public class MassTransit8Tests : TracingIntegrationTest
     private async Task RunTransportTest(
         string packageVersion,
         int expectedMassTransitSpanCount,
-        string variantPrefix,
-        bool includeWindowsStackScrub = false)
+        string variantPrefix)
     {
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
@@ -191,7 +190,7 @@ public class MassTransit8Tests : TracingIntegrationTest
 
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit8", isExternalSpan: false);
 
-            var settings = BuildSpanVerifierSettings(includeWindowsStackScrub);
+            var settings = BuildSpanVerifierSettings();
 
             var fileName = nameof(MassTransit8Tests) + variantPrefix + GetSuffix(packageVersion);
 

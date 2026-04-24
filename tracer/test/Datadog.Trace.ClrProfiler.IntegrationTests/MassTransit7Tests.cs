@@ -48,7 +48,7 @@ public class MassTransit7Tests : TracingIntegrationTest
         // InMemory transport + saga + 3 exception scenarios
         const int expectedMassTransitSpanCount = 30;
         var snapshotSuffix = IsWindows() ? "InMemoryWindows" : "InMemory";
-        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, snapshotSuffix, includeWindowsStackScrub: IsWindows());
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, snapshotSuffix);
     }
 
     [SkippableTheory]
@@ -92,7 +92,7 @@ public class MassTransit7Tests : TracingIntegrationTest
     private static bool IsWindows() =>
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
-    private static VerifySettings BuildSpanVerifierSettings(bool includeWindowsStackScrub)
+    private static VerifySettings BuildSpanVerifierSettings()
     {
         var settings = VerifyHelper.GetSpanVerifierSettings();
 
@@ -114,11 +114,11 @@ public class MassTransit7Tests : TracingIntegrationTest
         // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
         settings.AddRegexScrubber(new Regex(@"messaging\.message\.body\.size: \d+"), "messaging.message.body.size: body_size");
 
-        if (includeWindowsStackScrub)
-        {
-            // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
-            settings.AddRegexScrubber(new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline), "error.stack: Scrubbed\n");
-        }
+        // Keep only the first line of error.stack (exception type + message) and drop
+        // stack frames, which vary across .NET runtimes (e.g., the
+        // "--- End of stack trace from previous location ---" async rethrow marker
+        // appears on some runtimes but not others).
+        settings.AddRegexScrubber(new Regex(@"error\.stack:[^\n]*\n([^\n]+)\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline), "error.stack: $1\n");
 
         return settings;
     }
@@ -132,8 +132,7 @@ public class MassTransit7Tests : TracingIntegrationTest
     private async Task RunTransportTest(
         string packageVersion,
         int expectedMassTransitSpanCount,
-        string snapshotSuffix,
-        bool includeWindowsStackScrub = false)
+        string snapshotSuffix)
     {
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
@@ -148,7 +147,7 @@ public class MassTransit7Tests : TracingIntegrationTest
 
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
 
-            var settings = BuildSpanVerifierSettings(includeWindowsStackScrub);
+            var settings = BuildSpanVerifierSettings();
 
             await VerifyHelper.VerifySpans(
                 massTransitSpans,
