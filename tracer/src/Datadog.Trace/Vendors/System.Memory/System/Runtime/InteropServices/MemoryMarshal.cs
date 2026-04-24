@@ -156,11 +156,11 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<T>())
             {
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
             }
             if (Unsafe.SizeOf<T>() > source.Length)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
             }
             return Unsafe.ReadUnaligned<T>(ref GetReference(source));
         }
@@ -175,7 +175,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<T>())
             {
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
             }
             if (Unsafe.SizeOf<T>() > (uint)source.Length)
             {
@@ -195,11 +195,11 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<T>())
             {
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
             }
             if ((uint)Unsafe.SizeOf<T>() > (uint)destination.Length)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
             }
             Unsafe.WriteUnaligned<T>(ref GetReference(destination), value);
         }
@@ -214,7 +214,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<T>())
             {
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
             }
             if (Unsafe.SizeOf<T>() > (uint)destination.Length)
             {
@@ -245,13 +245,13 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
             if (array == null)
             {
                 if (start != 0 || length != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
                 return default;
             }
             if (default(T) == null && array.GetType() != typeof(T[]))
-                ThrowHelper.ThrowArrayTypeMismatchException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArrayTypeMismatchException();
             if ((uint)start > (uint)array.Length || (uint)length > (uint)(array.Length - start))
-                ThrowHelper.ThrowArgumentOutOfRangeException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
 
             // Before using _length, check if _length < 0, then 'and' it with RemoveFlagsBitMask
             return new Memory<T>((object)array, start, length | (1 << 31));

@@ -39,7 +39,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     T[] array = _array;
                     if (array == null)
                     {
-                        ThrowHelper.ThrowObjectDisposedException_ArrayMemoryPoolBuffer();
+                        global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowObjectDisposedException_ArrayMemoryPoolBuffer();
                     }
 
                     return new Memory<T>(array);

@@ -173,7 +173,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public static int ToLower(this ReadOnlySpan<char> source, Span<char> destination, CultureInfo culture)
         {
             if (culture == null)
-                ThrowHelper.ThrowArgumentNullException(ExceptionArgument.culture);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentNullException(ExceptionArgument.culture);
 
             // Assuming that changing case does not affect length
             if (destination.Length < source.Length)
@@ -213,7 +213,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public static int ToUpper(this ReadOnlySpan<char> source, Span<char> destination, CultureInfo culture)
         {
             if (culture == null)
-                ThrowHelper.ThrowArgumentNullException(ExceptionArgument.culture);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentNullException(ExceptionArgument.culture);
 
             // Assuming that changing case does not affect length
             if (destination.Length < source.Length)
@@ -311,11 +311,11 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (text == null)
             {
                 if (start != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
                 return default;
             }
             if ((uint)start > (uint)text.Length)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             return new ReadOnlySpan<char>(Unsafe.As<Pinnable<char>>(text), StringAdjustment + start * sizeof(char), text.Length - start);
         }
@@ -336,11 +336,11 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (text == null)
             {
                 if (start != 0 || length != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
                 return default;
             }
             if ((uint)start > (uint)text.Length || (uint)length > (uint)(text.Length - start))
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             return new ReadOnlySpan<char>(Unsafe.As<Pinnable<char>>(text), StringAdjustment + start * sizeof(char), length);
         }
@@ -368,11 +368,11 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (text == null)
             {
                 if (start != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
                 return default;
             }
             if ((uint)start > (uint)text.Length)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             return new ReadOnlyMemory<char>(text, start, text.Length - start);
         }
@@ -390,11 +390,11 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (text == null)
             {
                 if (start != 0 || length != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
                 return default;
             }
             if ((uint)start > (uint)text.Length || (uint)length > (uint)(text.Length - start))
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             return new ReadOnlyMemory<char>(text, start, length);
         }
