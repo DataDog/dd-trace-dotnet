@@ -10,6 +10,11 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+#if NETCOREAPP3_1_OR_GREATER
+using MemoryExtensions = System.MemoryExtensions;
+#else
+using MemoryExtensions = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions;
+#endif
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -250,8 +255,10 @@ public class FnvHash64Tests
     [MemberData(nameof(BinaryData))]
     public void CalculatesOffsetCountHashCorrectly(byte[] data, string v1HashAsHex, string v1AHashAsHex)
     {
-        var v1 = FnvHash64.GenerateHash(data.AsSpan(0, data.Length), FnvHash64.Version.V1);
-        var v1A = FnvHash64.GenerateHash(data.AsSpan(0, data.Length), FnvHash64.Version.V1A);
+        // not calling as extension method to avoid namespace ambiguity
+        var span = MemoryExtensions.AsSpan(data, 0, data.Length);
+        var v1 = FnvHash64.GenerateHash(span, FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(span, FnvHash64.Version.V1A);
 
         using var a = new AssertionScope();
         v1.ToString("x16").Should().Be(v1HashAsHex);
@@ -268,8 +275,10 @@ public class FnvHash64Tests
         new Random().NextBytes(padded);
         Array.Copy(data, 0, padded, padding, data.Length);
 
-        var v1 = FnvHash64.GenerateHash(padded.AsSpan(padding, data.Length), FnvHash64.Version.V1);
-        var v1A = FnvHash64.GenerateHash(padded.AsSpan(padding, data.Length), FnvHash64.Version.V1A);
+        var span = MemoryExtensions.AsSpan(padded, padding, data.Length);
+
+        var v1 = FnvHash64.GenerateHash(span, FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(span, FnvHash64.Version.V1A);
 
         using var a = new AssertionScope();
         v1.ToString("x16").Should().Be(v1HashAsHex);
