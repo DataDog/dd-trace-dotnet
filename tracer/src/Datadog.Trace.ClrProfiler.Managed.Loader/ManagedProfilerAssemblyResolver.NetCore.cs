@@ -52,12 +52,30 @@ internal static class ManagedProfilerAssemblyResolver
 
     internal static Assembly? OnAssemblyResolve(object sender, ResolveEventArgs args)
     {
-        return ResolveAssembly(args.Name);
+        try
+        {
+            return ResolveAssembly(args.Name);
+        }
+        catch (Exception ex)
+        {
+            StartupLogger.Log(ex, "Error resolving assembly: {0}", args.Name);
+        }
+
+        return null;
     }
 
     internal static Assembly? OnAssemblyLoadContextResolving(AssemblyLoadContext context, AssemblyName assemblyName)
     {
-        return ResolveAssembly(assemblyName.Name);
+        try
+        {
+            return ResolveAssembly(assemblyName.Name);
+        }
+        catch (Exception ex)
+        {
+            StartupLogger.Log(ex, "Error resolving assembly: {0}", assemblyName.Name);
+        }
+
+        return null;
     }
 
     internal static Assembly? ResolveAssembly(string name)
