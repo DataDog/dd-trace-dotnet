@@ -95,7 +95,7 @@ variables:
   # would block queue-time overrides from the UI — YAML takes precedence and the
   # "settable at queue time" UI value would be ignored. The branch name matches
   # .github/workflows/auto_bump_smoke_test_docker_images.yml — keep both in sync.
-  isDockerImageBumpPr: $[eq(variables['System.PullRequest.SourceBranch'], 'refs/heads/bot/smoke-test-docker-image-bump')]
+  isDockerImageBumpPr: $[eq(variables['System.PullRequest.SourceBranch'], 'bot/smoke-test-docker-image-bump')]
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
   CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
