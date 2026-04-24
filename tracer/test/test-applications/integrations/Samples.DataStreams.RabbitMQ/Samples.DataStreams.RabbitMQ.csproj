@@ -10,10 +10,23 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- NU1510: System.Threading.Channels / System.Net.* below are flagged as framework-provided, but they're retained for older RabbitMQ.Client matrix rows to resolve package downgrade (NU1605) -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="$(ApiVersion)" />
   </ItemGroup>
 
+  <ItemGroup Condition="$(ApiVersion) &lt; 6.3.0">
+    <PackageReference Include="System.Threading.Channels" Version="7.0.0" />
+  </ItemGroup>
+
+  <!-- Package versions < 5.x.x do not support netstandard2.0 and have package resolution issues unless directly referencing these packages -->
+  <ItemGroup Condition="$(ApiVersion) &lt; 5.0.0">
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
+  </ItemGroup>
+  
 </Project>

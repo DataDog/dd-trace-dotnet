@@ -7,11 +7,18 @@
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- NU1510: System.Net.Primitives below is flagged as framework-provided, but it's retained to resolve the transitive NEST -> NETStandard.Library 1.6.0 package downgrade (NU1605) on older ApiVersion matrix rows -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Elasticsearch.Net" Version="$(ApiVersion)" />
     <PackageReference Include="NEST" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
+    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

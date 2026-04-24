@@ -13,6 +13,9 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <PreserveCompilationContext>true</PreserveCompilationContext>
 
+    <!-- NU1510: System.IO.* / System.Text.Encoding.Extensions below are flagged as framework-provided, but they're retained to resolve transitive Serilog.Sinks.File 2.2.0 package downgrade (NU1605) -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +27,12 @@
     <!-- Use somewhat older versions of Serilog packages for easiest compatibility -->
     <PackageReference Include="Serilog.Formatting.Compact" Version="1.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="2.2.0" />
+
+    <!-- Directly reference dependencies of Serilog.Sinks.File to avoid package downgrade errors -->
+    <PackageReference Include="System.IO" Version="4.3.0" />
+    <PackageReference Include="System.Text.Encoding.Extensions" Version="4.3.0" />
+    <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
+    <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
   </ItemGroup>
 
   <!-- Load from config tests -->
