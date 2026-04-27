@@ -9,7 +9,6 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -71,7 +70,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     case MethodState.EntryAsync:
                         shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
                         var currentFrame = shadowStack.CurrentStackFrameNode;
-                        snapshotCreator.EnterHash = Fnv1aHash.Combine(info.Method.MetadataToken, shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias);
+                        snapshotCreator.EnterHash = SimpleHash.Combine(info.Method.MetadataToken, shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? SimpleHash.FnvOffsetBias);
 
                         if (currentFrame?.Method == info.Method && _isMisleadingMethod)
                         {

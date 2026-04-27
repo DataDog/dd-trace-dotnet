@@ -101,10 +101,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
                     if (dataStreams.IsEnabled)
                     {
-                        var backlogTags = tags.ClusterId is null
-                            ? $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce"
-                            : $"kafka_cluster_id:{tags.ClusterId},partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce";
-
+                        var cacheKey = new ProduceBacklogTagCacheKey(tags.ClusterId ?? string.Empty, deliveryResult.Partition.Value, deliveryResult.Topic ?? string.Empty);
+                        var backlogTags = dataStreams.GetOrCreateBacklogTags(cacheKey, static k =>
+                            k.ClusterId.Length == 0
+                                ? $"partition:{k.Partition},topic:{k.Topic},type:kafka_produce"
+                                : $"kafka_cluster_id:{k.ClusterId},partition:{k.Partition},topic:{k.Topic},type:kafka_produce");
                         dataStreams.TrackBacklog(backlogTags, deliveryResult.Offset.Value);
                     }
                 }

@@ -1,13 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>netstandard2.0;$(NetFrameworkMinimum);netstandard2.1;netcoreapp2.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <StrongNameKeyId>Open</StrongNameKeyId>
+    <Nullable>disable</Nullable>
+    <AssemblyVersion>4.0.2.0</AssemblyVersion> <!-- NO-INCREMENT: This version is frozen for netstandard2.0. -->
+    <IsPlaceholderTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.1' or '$(TargetFramework)' == 'netcoreapp2.1'">true</IsPlaceholderTargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\System.Runtime.CompilerServices.Unsafe\System.Runtime.CompilerServices.Unsafe.csproj" />
+  <!-- Package servicing properties -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <VersionPrefix>4.6.3</VersionPrefix>
+    <VersionPrefix Condition="'$(IsPackable)' == 'true'">4.6.4</VersionPrefix>
+    <AssemblyVersion Condition="$([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)')) == '.NETFramework'">4.0.5.0</AssemblyVersion>
+    <AssemblyVersion Condition="'$(IsPackable)' == 'true' and $([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)')) == '.NETFramework'">4.0.6.0</AssemblyVersion> <!-- Keep the new assembly version under 4.1.x.x! -->
+    <PackageValidationBaselineVersion>4.6.3</PackageValidationBaselineVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPlaceholderTargetFramework)' != 'true'">
+    <Compile Include="$(CommonPath)src\System\Numerics\Hashing\HashHelpers.cs" Link="Common\System\Numerics\Hashing\HashHelpers.cs" />
+
+    <ProjectReference Include="..\..\System.Buffers\src\System.Buffers.csproj" />
+    <ProjectReference Include="..\..\System.Numerics.Vectors\src\System.Numerics.Vectors.csproj" />
+    <ProjectReference Include="..\..\System.Runtime.CompilerServices.Unsafe\src\System.Runtime.CompilerServices.Unsafe.ilproj" />
   </ItemGroup>
 
 </Project>

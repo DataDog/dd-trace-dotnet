@@ -348,6 +348,23 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var clientDropP0 = jObject["client_drop_p0s"]?.Value<bool>() ?? false;
             var spanMetaStructs = jObject["span_meta_structs"]?.Value<bool>() ?? false;
             var spanEvents = jObject["span_events"]?.Value<bool>() ?? false;
+            var peerTags = (jObject["peer_tags"] as JArray)?.Values<string>().ToList();
+            var obfuscationVersion = jObject["obfuscation_version"]?.Value<int>() ?? 0;
+
+            // Parse trace filter configuration
+            var filterTags = jObject["filter_tags"];
+            var filterTagsRegex = jObject["filter_tags_regex"];
+            var ignoreResources = (jObject["ignore_resources"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRequire = (filterTags?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsReject = (filterTags?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexRequire = (filterTagsRegex?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexReject = (filterTagsRegex?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+
+            AgentTraceFilterConfig? traceFilterConfig = null;
+            if (ignoreResources is not null || filterTagsRequire is not null || filterTagsReject is not null || filterTagsRegexRequire is not null || filterTagsRegexReject is not null)
+            {
+                traceFilterConfig = new AgentTraceFilterConfig(filterTagsRequire!, filterTagsReject!, filterTagsRegexRequire!, filterTagsRegexReject!, ignoreResources!);
+            }
 
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             string? configurationEndpoint = null;
@@ -436,7 +453,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 containerTagsHash: _serviceRemappingHash.ContainerTagsHash, // either the value just received, or the one we stored before (prevents overriding with null)
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
-                spanEvents: spanEvents);
+                spanEvents: spanEvents,
+                peerTags: peerTags!,
+                obfuscationVersion: obfuscationVersion,
+                traceFilterConfig: traceFilterConfig);
 
             // Save the hash, whether the details we care about changed or not
             _configurationHash = HexString.ToHexString(sha256.Hash);

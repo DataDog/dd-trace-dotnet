@@ -978,6 +978,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("invalid", null, OtlpProtocol.Grpc)]
         [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
         [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
+        [InlineData(null, "http/protobuf", OtlpProtocol.HttpProtobuf)]
+        [InlineData(null, "grpc", OtlpProtocol.Grpc)]
         public void OtlpProtocolFallbacks(string metricsProtocol, string generalProtocol, object expected)
         {
             var source = CreateConfigurationSource(
@@ -1073,6 +1075,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("invalid", null, OtlpProtocol.Grpc)]
         [InlineData("http/protobuf", null, OtlpProtocol.HttpProtobuf)]
         [InlineData("grpc", "http/protobuf", OtlpProtocol.Grpc)]
+        [InlineData(null, "http/protobuf", OtlpProtocol.HttpProtobuf)]
+        [InlineData(null, "grpc", OtlpProtocol.Grpc)]
         public void OtlpLogsProtocolFallbacks(string logsProtocol, string generalProtocol, object expected)
         {
             var source = CreateConfigurationSource(

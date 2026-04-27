@@ -5,10 +5,8 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Helpers;
@@ -16,16 +14,18 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.PlatformHelpers
@@ -33,6 +33,7 @@ namespace Datadog.Trace.PlatformHelpers
     internal sealed class AspNetCoreHttpRequestHandler
     {
         internal const string HttpContextTrackingKey = "__Datadog.AspNetCoreHttpRequestHandler.Tracking";
+        internal const string HttpContextActiveScopeKey = "__Datadog.AspNetCoreHttpRequestHandler.ActiveScope";
 
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
@@ -136,6 +137,25 @@ namespace Datadog.Trace.PlatformHelpers
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
 
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager.IsTransactionTrackingEnabled)
+            {
+                var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders);
+                if (extractors != null)
+                {
+                    foreach (var extractor in extractors)
+                    {
+                        if (request.Headers.TryGetValue(extractor.Value, out var headerValues))
+                        {
+                            foreach (var headerValue in headerValues)
+                            {
+                                scope.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
+                            }
+                        }
+                    }
+                }
+            }
+
             var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
             if (headerTagsInternal.Count != 0)
             {
@@ -152,6 +172,21 @@ namespace Datadog.Trace.PlatformHelpers
 #else
             httpContext.Items[HttpContextTrackingKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
 #endif
+
+            if (AzureInfo.Instance.IsAzureFunction)
+            {
+                // Store scope in HttpContext.Items for Azure Functions middleware to retrieve
+                httpContext.Items[HttpContextActiveScopeKey] = scope;
+
+                if (_log.IsEnabled(LogEventLevel.Debug) && scope.Span.Context is { } spanContext)
+                {
+                    _log.Debug(
+                        "AspNetCore: Stored scope in HttpContext.Items, {TraceId}-{SpanId}, path: {Path}",
+                        spanContext.RawTraceId,
+                        spanContext.RawSpanId,
+                        request.Path);
+                }
+            }
 
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
