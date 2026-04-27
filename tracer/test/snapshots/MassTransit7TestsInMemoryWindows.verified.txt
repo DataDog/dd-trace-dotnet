@@ -453,7 +453,7 @@
       component: masstransit,
       env: integration_tests,
       error.msg: Intentional failure for testing: Consumer failure test,
-      error.stack: Scrubbed
+      error.stack: System.InvalidOperationException: Intentional failure for testing: Consumer failure test
       error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: Failing,
@@ -557,7 +557,7 @@
       component: masstransit,
       env: integration_tests,
       error.msg: Handler failure test: Handler will fail,
-      error.stack: Scrubbed
+      error.stack: System.InvalidOperationException: Handler failure test: Handler will fail
       error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: handler-failing,
@@ -711,7 +711,7 @@
       component: masstransit,
       env: integration_tests,
       error.msg: Saga failure test: Intentional saga failure for testing,
-      error.stack: Scrubbed
+      error.stack: System.InvalidOperationException: Saga failure test: Intentional saga failure for testing
       error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: OrderState,

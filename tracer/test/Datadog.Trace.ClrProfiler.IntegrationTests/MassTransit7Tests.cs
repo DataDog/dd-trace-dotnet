@@ -114,11 +114,15 @@ public class MassTransit7Tests : TracingIntegrationTest
         // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
         settings.AddRegexScrubber(new Regex(@"messaging\.message\.body\.size: \d+"), "messaging.message.body.size: body_size");
 
-        // Keep only the first line of error.stack (exception type + message) and drop
-        // stack frames, which vary across .NET runtimes (e.g., the
-        // "--- End of stack trace from previous location ---" async rethrow marker
-        // appears on some runtimes but not others).
-        settings.AddRegexScrubber(new Regex(@"error\.stack:[^\n]*\n([^\n]+)\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline), "error.stack: $1\n");
+        // Replace error.stack content with the deterministic "<error.type>: <error.msg>"
+        // first line. Stack frames (and the "--- End of stack trace from previous
+        // location ---" async rethrow marker) vary across .NET runtimes; some Windows
+        // runtimes render error.stack inline with the next field; .NET 6+ on Linux
+        // emits a multi-line stack. This single scrubber normalizes all cases by
+        // reconstructing the value from the surrounding fields.
+        settings.AddRegexScrubber(
+            new Regex(@"^(\s+)error\.msg:\s*([^\n,]+),\n\1error\.stack:.*?(?=error\.type:\s*([^\n,]+),)", RegexOptions.Multiline | RegexOptions.Singleline),
+            "$1error.msg: $2,\n$1error.stack: $3: $2\n$1");
 
         return settings;
     }
