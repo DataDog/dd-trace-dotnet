@@ -227,7 +227,7 @@ namespace Datadog.Trace
             try
             {
                 // We only need this workaround on .NET 10+ runtimes.
-                if (Environment.Version.Major < 10)
+                if (FrameworkDescription.Instance.RuntimeVersion.Major < 10)
                 {
                     // On .NET <= 9, the runtime provided default termination handlers that result in graceful exit,
                     // so we do not install our own to avoid changing long-standing behavior.
