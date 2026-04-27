@@ -2,6 +2,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "HybridUnwinder.h"
+
+#include "Callstack.h"
 #include "ManagedCodeCache.h"
 
 #include "UnwinderTracer.h"
@@ -66,18 +68,12 @@ struct UnwindCursor
     unw_cursor_t cursor;
 };
 
-bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-    UnwinderTracer* tracer, std::size_t& i) const
+bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack,
+    UnwinderTracer* tracer) const
 {
     unw_word_t ip = 0;
     while (true)
     {
-        if (i >= bufferSize)
-        {
-            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
-            return false;
-        }
-
         if (auto getResult = unw_get_reg(&cursor->cursor, UNW_REG_IP, &ip); getResult != 0 || ip == 0)
         {
             if (tracer) tracer->RecordFinish(getResult, FinishReason::FailedGetReg);
@@ -100,10 +96,10 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
         }
         else
         {
-            // buffer[i++] = FrameStore::UnknownFrameTypeIP;
+            callstack.Add(FrameStore::UnknownFrameTypeIP);
             if (tracer)
             {
-                tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::FailedIsManaged);
+                tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::FailedIsManaged);
             }
             return false;
         }
@@ -117,7 +113,11 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
             tracer->Record(EventType::NativeFrame, ip, nativeFp, sp);
         }
 
-        // buffer[i++] = ip;
+        if (!callstack.Add(ip))
+        {
+            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+            return false;
+        }
 
         auto stepResult = unw_step(&cursor->cursor);
         unw_cursor_snapshot_t snapshot;
@@ -125,7 +125,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
         if (tracer) tracer->Record(EventType::LibunwindStep, stepResult, snapshot);
         if (stepResult <= 0)
         {
-            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::FailedLibunwindStep);
+            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(stepResult), FinishReason::FailedLibunwindStep);
             return false;
         }
     }
@@ -133,16 +133,10 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* bu
     return true;
 }
 
-bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-    UnwinderTracer* tracer, std::size_t& i,
+bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack,
+    UnwinderTracer* tracer,
     std::uintptr_t stackBase, std::uintptr_t stackEnd) const
 {
-    if (i >= bufferSize)
-    {
-        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
-        return false;
-    }
-
     unw_word_t ip = 0;
     if (auto result = unw_get_reg(&cursor->cursor, UNW_REG_IP, &ip); result != 0 || ip == 0)
     {
@@ -150,12 +144,16 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
         return false;
     }
 
-    buffer[i++] = ip;
+    if (!callstack.Add(ip))
+    {
+        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+        return false;
+    }
 
     unw_word_t fp = 0;
     if (auto result = unw_get_reg(&cursor->cursor, UNW_REG_FP, &fp); result != 0 || !IsValidFp(fp, 0, stackBase, stackEnd))
     {
-        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::InvalidFp);
+        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(result), FinishReason::InvalidFp);
         return false;
     }
 
@@ -179,12 +177,6 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
     FinishReason finishReason = FinishReason::Success;
     while (true)
     {
-        if (i >= bufferSize)
-        {
-            finishReason = FinishReason::BufferFull;
-            break;
-        }
-
         auto ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
         if (ip == 0)
         {
@@ -196,7 +188,11 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
         auto isManaged = IsManaged(ip);
         if (isManaged.has_value() && isManaged.value())
         {
-            buffer[i++] = ip;
+            if (!callstack.Add(ip))
+            {
+                if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+                break;
+            }
             consecutiveNativeFrames = 0;
         }
         else
@@ -205,7 +201,11 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
             // In case we were unable to identify, we assume it's a managed frame
             if (!isManaged.has_value())
             {
-                buffer[i++] = FrameStore::FakeUnknownIP;
+                if (!callstack.Add(FrameStore::FakeUnknownIP))
+                {
+                    if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+                    break;
+                }
             }
             if (++consecutiveNativeFrames > MaxConsecutiveNativeFrames)
             {
@@ -222,19 +222,14 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* b
             break;
         }
     }
-    if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), finishReason);
+    if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), finishReason);
     return true;
 }
 
-std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize,
+std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
                                     uintptr_t stackBase, uintptr_t stackEnd,
                                     UnwinderTracer* tracer) const
 {
-    if (bufferSize == 0) [[unlikely]]
-    {
-        return 0;
-    }
-
     if (tracer) tracer->RecordStart(reinterpret_cast<ucontext_t*>(ctx));
 
     if (stackBase == 0 || stackEnd == 0)
@@ -270,23 +265,17 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     }
 
     // === Phase 1: Walk native frames with libunwind until managed code is reached ===
-    std::size_t i = 0;
-    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, buffer, bufferSize, tracer, i);
+    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, callstack, tracer);
     if (!keepOnUnwinding)
     {
         // already recorded state
-        return i;
-    }
-
-    if (i >= bufferSize)
-    {
-        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
-        return i;
+        return callstack.Size();
     }
 
     // DEBUG: inject a sentinel between Phase 1 (native) and Phase 2 (managed).
     // If the test output shows a managed frame ABOVE this sentinel, it means
     // Phase 1 misclassified it as native (code cache race).
+    callstack.Add(FrameStore::SentinelFrameIP);
     // buffer[i++] = FrameStore::SentinelFrameIP;
     // if (i >= bufferSize)
     // {
@@ -297,8 +286,8 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
     // every managed method, so FP chaining is reliable once we enter managed code.
 
-    auto _ = UnwindManagedFrames(&unwindCursor, buffer, bufferSize, tracer, i, stackBase, stackEnd);
+    auto _ = UnwindManagedFrames(&unwindCursor, callstack, tracer, stackBase, stackEnd);
 
     // Already recorded state in tracer
-    return i;
+    return callstack.Size();
 }

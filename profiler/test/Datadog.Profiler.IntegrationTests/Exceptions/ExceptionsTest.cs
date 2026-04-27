@@ -97,7 +97,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             if (EnvironmentHelper.GetPlatform() == "ARM64")
             {
                 alternateExpectedStack = new StackTrace(
-                    new StackFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)"));
+                        new StackFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)"));
             }
 
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);

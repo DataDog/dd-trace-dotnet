@@ -47,6 +47,11 @@ shared::span<uintptr_t> StackFramesCollectorBase::Data()
     return _pStackSnapshotResult->Data();
 }
 
+Callstack& StackFramesCollectorBase::CallStack()
+{
+    return _pStackSnapshotResult->GetCallstackRef();
+}
+
 void StackFramesCollectorBase::RequestAbortCurrentCollection()
 {
     std::lock_guard<std::mutex> lock(_collectionAbortNotificationLock);

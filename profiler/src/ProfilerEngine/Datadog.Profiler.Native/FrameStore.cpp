@@ -84,6 +84,9 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
     static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
     static const std::string UnknownFrameType("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)");
+    static const std::string SentinelFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Sentinel-Frame |fg: |sg:(?)");
+
+    static bool previousFrameStatus = false;
 
     // check for fake IPs used in tests
     if (instructionPointer <= MaxFakeIP)
@@ -91,11 +94,18 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
         {
+            previousFrameStatus = true;
             return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::SentinelFrameIP)
+        {
+            previousFrameStatus = true;
+            return { previousFrameStatus, {FakeModuleName, SentinelFrame, "", 0} };
         }
         else
         if (instructionPointer == FrameStore::FakeAllocationIP)
         {
+            previousFrameStatus = true;
             return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
         }
         else if (instructionPointer == FrameStore::UnknownFrameTypeIP)
@@ -103,10 +113,12 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
             // We log it only when it debug to identify truncated callstack
             // Example: during tests
             const auto recordFrame = Log::IsDebugEnabled();
+            previousFrameStatus = recordFrame;
             return { recordFrame, {FakeModuleName, UnknownFrameType, "", 0} };
         }
         else
         {
+            previousFrameStatus = true;
             return { true, {FakeModuleName, UnknownManagedFrame, "", 0} };
         }
     }
@@ -122,6 +134,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
             // SEH exception coming out of the CLR. Surface the frame as resolved
             // (isResolved=true) so the existing Windows pipeline keeps its placeholder
             // frame rather than silently dropping it.
+            previousFrameStatus = true;
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
         std::tie(hr, functionId) = result.value();
@@ -129,6 +142,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         {
             // IP is not in managed ranges (native frame). Return isResolved=false so
             // RawSampleTransformer drops it from the final callstack.
+            previousFrameStatus = false;
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
@@ -142,6 +156,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
             // ManagedCodeCache was wrapped in __try/__except and caught an SEH
             // exception from the CLR. Keep isResolved=true so the Windows pipeline
             // preserves the placeholder frame (legacy semantic).
+            previousFrameStatus = true;
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
@@ -149,11 +164,13 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         {
             // IP is not in managed ranges (native frame). Return isResolved=false so
             // RawSampleTransformer drops it from the final callstack.
+            previousFrameStatus = false;
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
 
     auto frameInfo = GetManagedFrame(functionId.value());
+    previousFrameStatus = true;
     return {true, frameInfo};
 }
 

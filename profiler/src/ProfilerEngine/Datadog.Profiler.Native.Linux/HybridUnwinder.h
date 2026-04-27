@@ -7,6 +7,7 @@
 
 #include <optional>
 
+class Callstack;
 class ManagedCodeCache;
 class UnwindCursor;
 
@@ -16,16 +17,14 @@ public:
     HybridUnwinder(ManagedCodeCache* managedCodeCache);
     ~HybridUnwinder() override = default;
 
-    std::int32_t Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize,
+    std::int32_t Unwind(void* ctx, Callstack& callstack,
                         std::uintptr_t stackBase = 0, std::uintptr_t stackEnd = 0,
                         UnwinderTracer* tracer = nullptr) const override;
 
 private:
     std::optional<bool> IsManaged(std::uintptr_t ip) const;
-    bool UnwindNativeFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-                        UnwinderTracer* tracer, std::size_t& i) const;
-    bool UnwindManagedFrames(UnwindCursor* cursor, std::uintptr_t* buffer, std::size_t bufferSize,
-                        UnwinderTracer* tracer, std::size_t& i,
+    bool UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack, UnwinderTracer* tracer) const;
+    bool UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack, UnwinderTracer* tracer,
                         std::uintptr_t stackBase, std::uintptr_t stackEnd) const;
 
     ManagedCodeCache* _codeCache;
