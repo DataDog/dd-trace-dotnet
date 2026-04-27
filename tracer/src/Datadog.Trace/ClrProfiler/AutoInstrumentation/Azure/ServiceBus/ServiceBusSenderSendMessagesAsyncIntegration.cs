@@ -74,11 +74,6 @@ public sealed class ServiceBusSenderSendMessagesAsyncIntegration
                 }
             }
 
-            // Signal that we already handled DSM for this send, so the Activity handler
-            // (AzureServiceBusActivityHandler) can skip its checkpoint logic and avoid
-            // double-counting. This is needed for backward compat with older SDK versions
-            // where the Message Activity still fires.
-            AzureServiceBusCommon.ProduceCheckpointSetByCalltarget.Value = true;
         }
 
         return state;
@@ -86,7 +81,6 @@ public sealed class ServiceBusSenderSendMessagesAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
-        AzureServiceBusCommon.ProduceCheckpointSetByCalltarget.Value = false;
         state.Scope?.DisposeWithException(exception);
         return returnValue;
     }

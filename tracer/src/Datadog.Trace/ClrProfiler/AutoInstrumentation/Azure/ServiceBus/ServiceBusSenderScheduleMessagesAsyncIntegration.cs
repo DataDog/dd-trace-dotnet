@@ -74,7 +74,6 @@ public sealed class ServiceBusSenderScheduleMessagesAsyncIntegration
                 }
             }
 
-            AzureServiceBusCommon.ProduceCheckpointSetByCalltarget.Value = true;
         }
 
         return state;
@@ -82,7 +81,6 @@ public sealed class ServiceBusSenderScheduleMessagesAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
-        AzureServiceBusCommon.ProduceCheckpointSetByCalltarget.Value = false;
         state.Scope?.DisposeWithException(exception);
         return returnValue;
     }

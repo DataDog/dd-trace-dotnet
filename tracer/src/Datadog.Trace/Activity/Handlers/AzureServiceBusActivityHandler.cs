@@ -5,20 +5,13 @@
 
 #nullable enable
 
-using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Activity.Handlers
 {
     /// <summary>
-    /// This Activity handler captures the "Message" Activity objects, whose span context
-    /// is injected into the AzureServiceBus message's properties.
+    /// Handles Activities emitted by the Azure.Messaging.ServiceBus ActivitySource.
     /// </summary>
     internal sealed class AzureServiceBusActivityHandler : IActivityHandler
     {
@@ -35,59 +28,6 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && dataStreamsManager.IsEnabled
-                && !AzureServiceBusCommon.ProduceCheckpointSetByCalltarget.Value
-                && activity.Instance is not null
-                && activity.OperationName == "Message"
-                && AzureServiceBusCommon.ActiveMessageProperties.Value is IDictionary<string, object> applicationProperties)
-            {
-                // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Three:
-                // If we can retrieve the active message properties object stored in the AsyncLocal field,
-                // then we can retrieve the active message object using our mapping. With access to the message
-                // object, we can accurately calculate the payload size for the DataStreamsCheckpoint
-
-                ActivityKey key = activity switch
-                {
-                    IW3CActivity { TraceId: not null, SpanId: not null } w3cActivity => new(w3cActivity.TraceId, w3cActivity.SpanId),
-                    _ => new(activity.Id)
-                };
-
-                if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out ActivityMapping activityMapping)
-                    && activityMapping.Scope?.Span is Span span)
-                {
-                    // Copy over the data to our Span object so we can do an efficient tags lookup
-                    OtlpHelpers.UpdateSpanFromActivity(activity, span);
-
-                    string namespaceString = span.Tags.GetTag("messaging.destination.name");
-                    long? payloadSize = null;
-                    if (!dataStreamsManager.IsInDefaultState && (AzureServiceBusCommon.TryGetMessage(applicationProperties, out var message)
-                        && message.TryDuckCast<IServiceBusMessage>(out var serviceBusMessage)))
-                    {
-                        payloadSize = AzureServiceBusCommon.GetMessageSize(serviceBusMessage);
-                    }
-
-                    var edgeTags = string.IsNullOrEmpty(namespaceString)
-                        ? new[] { "direction:out", "type:servicebus" }
-                        : new[] { "direction:out", $"topic:{namespaceString}", "type:servicebus" };
-
-                    span.SetDataStreamsCheckpoint(
-                        dataStreamsManager,
-                        CheckpointKind.Produce,
-                        edgeTags,
-                        payloadSize ?? 0,
-                        0);
-
-                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new AzureHeadersCollectionAdapter(applicationProperties));
-
-                    // Close the scope and return so we bypass the common code path
-                    span.Finish(activity.StartTimeUtc.Add(activity.Duration));
-                    activityMapping.Scope.Close();
-                    return;
-                }
-            }
-
             ActivityHandlerCommon.ActivityStopped(sourceName, activity);
         }
     }
