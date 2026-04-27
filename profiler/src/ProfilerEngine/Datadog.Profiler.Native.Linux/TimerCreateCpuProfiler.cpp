@@ -274,10 +274,8 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         tracer = scopedTracer.get();
     }
 #endif
-    auto buffer = rawCpuSample->Stack.AsSpan();
 
-    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size(), stackBase, stackEnd, tracer);
-    rawCpuSample->Stack.SetCount(count);
+    auto count = _pUnwinder->Unwind(ctx, rawCpuSample->Stack, stackBase, stackEnd, tracer);
 
     if (count == 0)
     {

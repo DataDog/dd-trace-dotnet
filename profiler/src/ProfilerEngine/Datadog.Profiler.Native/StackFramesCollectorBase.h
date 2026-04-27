@@ -27,6 +27,7 @@ protected:
     void SetFrameCount(std::uint16_t count);
 
     shared::span<uintptr_t> Data();
+    Callstack& CallStack();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();

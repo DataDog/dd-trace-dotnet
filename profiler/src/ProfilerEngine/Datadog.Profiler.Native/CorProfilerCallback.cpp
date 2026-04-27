@@ -2342,7 +2342,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     Backtrace2Unwinder warmup;
 #endif
     uintptr_t tab[1];
-    warmup.Unwind(nullptr, tab, 1);
+    Callstack callstack(shared::span<std::uintptr_t>(tab, 1));
+    warmup.Unwind(nullptr, callstack);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;
