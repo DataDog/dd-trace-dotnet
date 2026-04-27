@@ -68,9 +68,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         public StandardFormat(char symbol, byte precision = NoPrecision)
         {
             if (precision != NoPrecision && precision > MaxPrecision)
-                ThrowHelper.ThrowArgumentOutOfRangeException_PrecisionTooLarge();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PrecisionTooLarge();
             if (symbol != (byte)symbol)
-                ThrowHelper.ThrowArgumentOutOfRangeException_SymbolDoesNotFit();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_SymbolDoesNotFit();
 
             _format = (byte)symbol;
             _precision = precision;

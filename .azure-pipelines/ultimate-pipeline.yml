@@ -4320,7 +4320,7 @@ stages:
       - checkout: none
       - template: steps/create-github-app-token.yml
       - bash: |
-          REF=$(Build.SourceBranch)
+          REF="$(Build.SourceBranch)"
           BRANCH_NAME="latest_snapshot"
           if [ "$(Build.Reason)" = "PullRequest" ]; then
             LABELS=$(curl -s $(CURL_RETRY_FLAGS) \
@@ -4329,7 +4329,8 @@ stages:
             | jq -r '.labels[].name')
 
             if echo "$LABELS" | grep -q "docker_image_artifacts"; then
-              BRANCH_NAME="$(System.PullRequest.SourceBranch)"
+              BRANCH_NAME="$PR_SOURCE_BRANCH"
+              BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
               REF="refs/heads/$BRANCH_NAME"
             else
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
@@ -4358,6 +4359,7 @@ stages:
           )
         env:
           GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
+          PR_SOURCE_BRANCH: $(System.PullRequest.SourceBranch)
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['runCodeCoverage'], 'True'))

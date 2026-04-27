@@ -120,7 +120,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
         public static int GetMaxEncodedToUtf8Length(int length)
         {
             if ((uint)length > MaximumEncodeLength)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
 
             return (((length + 2) / 3) * 4);
         }
