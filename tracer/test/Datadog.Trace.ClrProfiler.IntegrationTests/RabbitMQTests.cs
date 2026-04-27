@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
@@ -30,11 +31,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.RabbitMQ
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch
             {
@@ -45,9 +41,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTraces(
+            [PackageVersionData(nameof(PackageVersions.RabbitMQ))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
 #if NET6_0_OR_GREATER
             if (packageVersion?.StartsWith("3.") == true)
