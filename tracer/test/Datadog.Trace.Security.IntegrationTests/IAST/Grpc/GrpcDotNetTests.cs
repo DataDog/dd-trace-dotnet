@@ -30,6 +30,7 @@ public class GrpcDotNetTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "200");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.MaxConcurrentRequests, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "1");
 
         SetEnvironmentVariable("IAST_GRPC_SOURCE_TEST", "1");
