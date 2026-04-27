@@ -25,6 +25,7 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Datadog.Trace, Version=2.41.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb, processorArchitecture=MSIL">
