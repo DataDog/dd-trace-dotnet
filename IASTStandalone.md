@@ -390,6 +390,44 @@ Removed WAF download and ruleset deployment from the Nuke build system:
 
 **Deleted 13 ruleset JSON files** from both security test projects: `ruleset.3.0.json`, `ruleset.3.0-full.json`, `ruleset.blocked.users.json`, `rasp-rule-set.json`, `remote-rules.json`, `remote-rules-override-blocking.json`, `wrong-tags-name-rule-set.json`, `wrong-tags-rule-set.json`, `rule-data1.json`, `rule-set-withschema.json`, `ruleset-withblockips.json`.
 
+### DataStreamsMonitoring removal
+
+Removed the entire DSM product (message pipeline monitoring for Kafka, RabbitMQ, SQS, etc.). Zero IAST dependencies.
+
+**Deleted directories:** `src/Datadog.Trace/DataStreamsMonitoring/` (37 files), `test/Datadog.Trace.TestHelpers/DataStreamsMonitoring/` (4 mock files).
+
+**Files cleaned of DSM references:**
+
+| File | Change |
+|---|---|
+| `TracerManager.cs`, `TracerManagerFactory.cs` | Removed `DataStreamsManager` parameter, property, and disposal |
+| `Ci/TestOptimizationTracerManager.cs`, `TestOptimizationTracerManagerFactory.cs` | Removed `DataStreamsManager` from constructor chains |
+| `SpanContext.cs` | Removed `PathwayContext` property, `SetCheckpoint`, `ManuallySetPathwayContextToPairMessages` |
+| `SpanContextInjector.cs`, `SpanContextExtractor.cs` | Removed DSM checkpoint blocks |
+| `Agent/DiscoveryService/AgentConfiguration.cs`, `DiscoveryService.cs` | Removed `DataStreamsMonitoringEndpoint` |
+| `Configuration/TracerSettings.cs` | Removed 4 DSM properties + config reading |
+| `Configuration/supported-configurations.yaml` | Removed `DD_DATA_STREAMS_ENABLED` and `DD_DATA_STREAMS_LEGACY_HEADERS` |
+| `Tracer.cs`, `Util/RandomIdGenerator.cs` | Removed DSM using directives |
+| 25 messaging integrations | Removed DSM checkpoint/pathway calls (Kafka, RabbitMQ, AWS SQS/SNS/Kinesis/Lambda, Azure Service Bus, IBM MQ, Protobuf) |
+| `test/Datadog.Trace.TestHelpers/MockTracerAgent.cs` | Removed `DataStreams` property, `WaitForDataStreams*` methods, pipeline_stats handler |
+
+**Test results:** 560/560 IAST unit tests pass.
+
+### APM integration removal
+
+Removed 25 APM-only `ClrProfiler/AutoInstrumentation` directories that have no IAST code:
+
+**Deleted:** AWS, Azure, Aerospike, Couchbase, CosmosDb, Elasticsearch, GraphQL, Hangfire, IbmMq, Kafka, Logging, ManualInstrumentation, MongoDb, Msmq, Protobuf, Quartz, RabbitMQ, Redis, Remoting, ServiceFabric, Testing, TraceAnnotations, VersionConflict, Wcf.
+
+**Kept (IAST-relevant):** AdoNet, AspNet, AspNetCore, Http, Process, Grpc, RestSharp, CryptographyAlgorithm, HashAlgorithm, StackTraceLeak, Proxy.
+
+Two small helpers were preserved from deleted directories because other parts of the tracer still depend on them:
+- `ManualInstrumentation/TracerSettingKeyConstants.cs` — used by configuration sources
+- `ManualInstrumentation/IntegrationSettingsSerializationHelper.cs` — used by legacy config source
+- `Logging/LogContext.cs` — used by `LogFormatter.cs` for trace/span ID injection
+
+**Test results:** 560/560 IAST unit tests pass.
+
 ---
 
 ## Current Architecture
@@ -731,8 +769,8 @@ tracer/src/Datadog.Trace/Configuration/                — Subset for IAST-only 
 - Remove `Agent/`, `HttpOverStreams/`, `LibDatadog/` directories
 
 ### Phase 5 — Gut non-IAST code
-- Delete directories listed above (~25 directories)
-- Delete non-IAST ClrProfiler integrations (~23 directories)
+- ~~Delete DataStreamsMonitoring~~ ✅ Done
+- ~~Delete non-IAST ClrProfiler integrations (~25 directories)~~ ✅ Done
 - Delete non-IAST tracer/src projects (~10 projects)
 - Remove `Span.cs`, `Scope.cs`, `Tracer.cs`, `TraceContext.cs` or replace with stubs
 

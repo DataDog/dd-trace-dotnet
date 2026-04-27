@@ -15,7 +15,6 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
-    private const int DefaultMaxStackTraceDepth = 32;
     private const int DefaultMaxStackTraceDepthTopPercent = 75;
     private const int DefaultMaxStackTraces = 2;
 
@@ -81,8 +80,9 @@ internal readonly struct Location
     {
         if (span is not null && StackId is not null && _stack is not null && _stack.FrameCount > 0)
         {
+            var maxDepth = Iast.Instance.Settings.MaxStackTraceDepth;
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types. Some TFMs (pre net 6) don't have null annotations
-            var stack = StackReporter.GetStack(DefaultMaxStackTraceDepth, DefaultMaxStackTraceDepthTopPercent, StackId, _stack.GetFrames());
+            var stack = StackReporter.GetStack(maxDepth, DefaultMaxStackTraceDepthTopPercent, StackId, _stack.GetFrames());
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
             if (stack is not null)
             {

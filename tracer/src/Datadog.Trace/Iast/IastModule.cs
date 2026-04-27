@@ -731,7 +731,14 @@ internal static partial class IastModule
             return null;
         }
 
-        return new Location(stackFrame, stack, stackId: null, currentSpan?.SpanId);
+        string? stackId = null;
+        if (IastSettings.StackTraceEnabled)
+        {
+            var requestContext = currentSpan?.Context?.TraceContext?.IastRequestContext;
+            stackId = requestContext?.GetNextVulnerabilityStackId();
+        }
+
+        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability, bool closeAfterCreation = true)

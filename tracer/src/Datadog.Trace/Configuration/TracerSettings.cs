@@ -11,7 +11,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.LibDatadog;
@@ -20,7 +19,6 @@ using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -97,8 +95,6 @@ namespace Datadog.Trace.Configuration
             IsRunningInCiVisibility = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
                                      .WithKeys(ConfigurationKeys.CIVisibility.IsRunningInCiVisMode)
                                      .AsBool(false);
-
-            LambdaMetadata = LambdaMetadata.Create();
 
             if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
             {
@@ -415,7 +411,7 @@ namespace Datadog.Trace.Configuration
             // If Lambda/GCP we don't want to have a flush interval. Some serverless integrations
             // manually calls flush and waits for the result before ending execution.
             // This can artificially increase the execution time of functions.
-            var defaultTraceBatchInterval = LambdaMetadata.IsRunningInLambda || IsRunningInGCPFunctions || IsRunningInAzureFunctions ? 0 : 100;
+            var defaultTraceBatchInterval = IsRunningInGCPFunctions || IsRunningInAzureFunctions ? 0 : 100;
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
                                 .AsInt32(defaultTraceBatchInterval);
@@ -1203,8 +1199,6 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the AWS Lambda settings, including whether we're currently running in Lambda
         /// </summary>
-        internal LambdaMetadata LambdaMetadata { get; }
-
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
@@ -1318,13 +1312,11 @@ namespace Datadog.Trace.Configuration
         /// RCM requires the "full" Go agent (not just the trace agent, and not the Rust agents),
         /// so is not available in some scenarios. It may also be explicitly disabled.
         /// </summary>
-        // NOTE: when we clean this up, see also EnvironmentHelpers.IsServerlessEnvironment()
         internal bool IsRemoteConfigurationAvailable =>
             RemoteConfigurationEnabled &&
             !IsRunningInAzureAppService &&
             !IsRunningInAzureFunctions &&
-            !IsRunningInGCPFunctions &&
-            !LambdaMetadata.IsRunningInLambda;
+            !IsRunningInGCPFunctions;
 
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, new());
@@ -1367,11 +1359,6 @@ namespace Datadog.Trace.Configuration
             if (IsRunningInAzureAppService)
             {
                 return ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions;
-            }
-
-            if (LambdaMetadata.IsRunningInLambda)
-            {
-                return LambdaMetadata.DefaultHttpClientExclusions;
             }
 
             return string.Empty;

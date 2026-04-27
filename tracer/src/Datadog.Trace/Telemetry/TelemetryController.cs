@@ -388,7 +388,6 @@ internal sealed class TelemetryController : ITelemetryController
             _cloudEnv = settings switch
             {
                 { IsRunningInGCPFunctions: true } => ",gcp",
-                { LambdaMetadata.IsRunningInLambda: true } => ",aws",
 
                 // check for Azure Functions first because it's a subset of Azure App Service
                 { IsRunningInAzureFunctions: true } => ",azf",

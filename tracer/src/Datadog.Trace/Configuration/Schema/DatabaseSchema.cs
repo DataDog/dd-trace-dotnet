@@ -6,9 +6,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
@@ -77,17 +74,8 @@ namespace Datadog.Trace.Configuration.Schema
         public CouchbaseTags CreateCouchbaseTags()
             => _useV0Tags ? new CouchbaseTags() : new CouchbaseV1Tags();
 
-        public ElasticsearchTags CreateElasticsearchTags()
-            => _useV0Tags ? new ElasticsearchTags() : new ElasticsearchV1Tags();
-
-        public MongoDbTags CreateMongoDbTags()
-            => _useV0Tags ? new MongoDbTags() : new MongoDbV1Tags();
-
         public SqlTags CreateSqlTags()
             => _useV0Tags ? new SqlTags() : new SqlV1Tags();
-
-        public RedisTags CreateRedisTags()
-            => _useV0Tags ? new RedisTags() : new RedisV1Tags();
 
         public CosmosDbTags CreateCosmosDbTags()
             => _useV0Tags ? new CosmosDbTags() : new CosmosDbV1Tags();

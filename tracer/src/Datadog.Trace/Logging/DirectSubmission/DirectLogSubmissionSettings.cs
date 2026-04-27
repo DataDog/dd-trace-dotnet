@@ -14,7 +14,6 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Serverless;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission
@@ -171,11 +170,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
             _enabledIntegrations = enabledIntegrations;
 
             var isEnabled = enabledIntegrations is not null;
-
-            if (!AzureFunctionsHostEnabled && AzureInfo.Instance.IsIsolatedFunctionHostProcess)
-            {
-                isEnabled = false;
-            }
 
             if (!otlpLogsEnabled)
             {

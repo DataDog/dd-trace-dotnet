@@ -64,7 +64,7 @@ namespace Datadog.Trace.Telemetry
         public string CompressionMethod { get; }
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, TracerSettings tracerSettings, bool? isAgentAvailable)
-            => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctions || tracerSettings.IsRunningInGCPFunctions);
+            => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.IsRunningInAzureFunctions || tracerSettings.IsRunningInGCPFunctions);
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, bool? isAgentAvailable, bool isServerless)
         {

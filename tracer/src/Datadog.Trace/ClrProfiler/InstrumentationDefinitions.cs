@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler
                 // Fixed Id for definitions payload (to avoid loading same integrations from multiple AppDomains)
                 DefinitionsId = "CDEF904668434E7693E99DBD91341808",
                 AssemblyName = assemblyFullName,
-                TypeName = typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration).FullName
+                TypeName = "Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"
             };
         }
 

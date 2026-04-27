@@ -22,6 +22,8 @@ internal sealed class IastSettings
     public const int RequestSamplingDefault = 30;
     public const int TruncationMaxValueLengthDefault = 250;
     public const int DataBaseRowsToTaintDefault = 1;
+    public const int MaxStackTraceDepthDefault = 32;
+    public const int MaxStackTraceDepthTopPercentDefault = 75;
 
     /// <summary>
     /// Default keys readaction regex if none specified via env DD_IAST_REDACTION_KEYS_REGEXP
@@ -89,6 +91,15 @@ internal sealed class IastSettings
         CookieFilterRegex = config
             .WithKeys(ConfigurationKeys.Iast.CookieFilterRegex)
             .AsString(DefaultCookieFilterRegex);
+
+        StackTraceEnabled = config
+            .WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
+            .AsBool(true);
+
+        MaxStackTraceDepth = config
+            .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
+            .AsInt32(MaxStackTraceDepthDefault, x => x >= 0)
+            .Value;
     }
 
     public bool Enabled { get; set; }
@@ -124,6 +135,10 @@ internal sealed class IastSettings
     public int DataBaseRowsToTaint { get; }
 
     public string CookieFilterRegex { get; }
+
+    public bool StackTraceEnabled { get; }
+
+    public int MaxStackTraceDepth { get; }
 
     public static IastSettings FromDefaultSources()
     {

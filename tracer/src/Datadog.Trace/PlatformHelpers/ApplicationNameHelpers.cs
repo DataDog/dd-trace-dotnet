@@ -38,11 +38,6 @@ internal static class ApplicationNameHelpers
                 return siteName;
             }
 
-            if (settings.LambdaMetadata is { IsRunningInLambda: true, ServiceName: var serviceName })
-            {
-                return serviceName;
-            }
-
             try
             {
                 if (TryLoadAspNetSiteName(out siteName))
