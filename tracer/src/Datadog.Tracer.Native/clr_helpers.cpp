@@ -686,6 +686,123 @@ ULONG TypeSignature::GetSignature(PCCOR_SIGNATURE& data) const
 }
 
 // FunctionMethodSignature
+FunctionMethodSignature::FunctionMethodSignature() : pbBase(nullptr), len(0)
+{
+}
+
+FunctionMethodSignature::FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer) :
+    pbBase(nullptr),
+    len(0)
+{
+    SetSignature(pb, cbBuffer);
+}
+
+FunctionMethodSignature::FunctionMethodSignature(const FunctionMethodSignature& other) :
+    signature(other.signature),
+    pbBase(signature.empty() ? nullptr : signature.data()),
+    len(other.len),
+    numberOfTypeArguments(other.numberOfTypeArguments),
+    numberOfArguments(other.numberOfArguments),
+    returnValue(other.returnValue),
+    params(other.params)
+{
+    RebindTypeSignatureViews();
+}
+
+FunctionMethodSignature::FunctionMethodSignature(FunctionMethodSignature&& other) noexcept :
+    signature(std::move(other.signature)),
+    pbBase(signature.empty() ? nullptr : signature.data()),
+    len(other.len),
+    numberOfTypeArguments(other.numberOfTypeArguments),
+    numberOfArguments(other.numberOfArguments),
+    returnValue(other.returnValue),
+    params(std::move(other.params))
+{
+    RebindTypeSignatureViews();
+    other.pbBase = other.signature.empty() ? nullptr : other.signature.data();
+    other.len = static_cast<unsigned>(other.signature.size());
+    other.numberOfTypeArguments = 0;
+    other.numberOfArguments = 0;
+    other.returnValue = {};
+    other.params.clear();
+    other.RebindTypeSignatureViews();
+}
+
+FunctionMethodSignature& FunctionMethodSignature::operator=(const FunctionMethodSignature& other)
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+
+    signature = other.signature;
+    pbBase = signature.empty() ? nullptr : signature.data();
+    len = other.len;
+    numberOfTypeArguments = other.numberOfTypeArguments;
+    numberOfArguments = other.numberOfArguments;
+    returnValue = other.returnValue;
+    params = other.params;
+    RebindTypeSignatureViews();
+    return *this;
+}
+
+FunctionMethodSignature& FunctionMethodSignature::operator=(FunctionMethodSignature&& other) noexcept
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+
+    signature = std::move(other.signature);
+    pbBase = signature.empty() ? nullptr : signature.data();
+    len = other.len;
+    numberOfTypeArguments = other.numberOfTypeArguments;
+    numberOfArguments = other.numberOfArguments;
+    returnValue = other.returnValue;
+    params = std::move(other.params);
+    RebindTypeSignatureViews();
+
+    other.pbBase = other.signature.empty() ? nullptr : other.signature.data();
+    other.len = static_cast<unsigned>(other.signature.size());
+    other.numberOfTypeArguments = 0;
+    other.numberOfArguments = 0;
+    other.returnValue = {};
+    other.params.clear();
+    other.RebindTypeSignatureViews();
+    return *this;
+}
+
+void FunctionMethodSignature::SetSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer)
+{
+    if (pb == nullptr || cbBuffer == 0)
+    {
+        signature.clear();
+        pbBase = nullptr;
+        len = 0;
+    }
+    else
+    {
+        signature.assign(pb, pb + cbBuffer);
+        pbBase = signature.data();
+        len = static_cast<unsigned>(signature.size());
+    }
+
+    numberOfTypeArguments = 0;
+    numberOfArguments = 0;
+    returnValue = {};
+    params.clear();
+    RebindTypeSignatureViews();
+}
+
+void FunctionMethodSignature::RebindTypeSignatureViews()
+{
+    returnValue.pbBase = pbBase;
+    for (auto& param : params)
+    {
+        param.pbBase = pbBase;
+    }
+}
+
 bool ParseByte(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned char* pbOut)
 {
     if (pbCur < pbEnd)
@@ -925,9 +1042,18 @@ bool ParseRetType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 
 HRESULT FunctionMethodSignature::TryParse()
 {
+    if (pbBase == nullptr || len == 0)
+    {
+        return E_FAIL;
+    }
+
     PCCOR_SIGNATURE pbCur = pbBase;
     PCCOR_SIGNATURE pbEnd = pbBase + len;
     unsigned char elem_type;
+    ULONG parsedNumberOfTypeArguments = 0;
+    ULONG parsedNumberOfArguments = 0;
+    TypeSignature parsedReturnValue{};
+    std::vector<TypeSignature> parsedParams;
 
     IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &elem_type));
 
@@ -935,19 +1061,19 @@ HRESULT FunctionMethodSignature::TryParse()
     {
         unsigned gen_param_count;
         IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &gen_param_count));
-        numberOfTypeArguments = gen_param_count;
+        parsedNumberOfTypeArguments = gen_param_count;
     }
 
     unsigned param_count;
     IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &param_count));
-    numberOfArguments = param_count;
+    parsedNumberOfArguments = param_count;
 
     const PCCOR_SIGNATURE pbRet = pbCur;
 
     IfFalseRetFAIL(ParseRetType(pbCur, pbEnd));
-    returnValue.pbBase = pbBase;
-    returnValue.length = (ULONG) (pbCur - pbRet);
-    returnValue.offset = (ULONG) (pbCur - pbBase - returnValue.length);
+    parsedReturnValue.pbBase = pbBase;
+    parsedReturnValue.length = (ULONG) (pbCur - pbRet);
+    parsedReturnValue.offset = (ULONG) (pbCur - pbBase - parsedReturnValue.length);
 
     auto fEncounteredSentinal = false;
     for (unsigned i = 0; i < param_count; i++)
@@ -971,9 +1097,13 @@ HRESULT FunctionMethodSignature::TryParse()
         argument.length = (ULONG)(pbCur - pbParam);
         argument.offset = (ULONG)(pbCur - pbBase - argument.length);
 
-        params.push_back(argument);
+        parsedParams.push_back(argument);
     }
 
+    numberOfTypeArguments = parsedNumberOfTypeArguments;
+    numberOfArguments = parsedNumberOfArguments;
+    returnValue = parsedReturnValue;
+    params = std::move(parsedParams);
     return S_OK;
 }
 
