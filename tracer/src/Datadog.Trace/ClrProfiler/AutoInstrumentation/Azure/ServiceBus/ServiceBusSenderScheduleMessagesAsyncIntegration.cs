@@ -73,7 +73,6 @@ public sealed class ServiceBusSenderScheduleMessagesAsyncIntegration
                     }
                 }
             }
-
         }
 
         return state;
