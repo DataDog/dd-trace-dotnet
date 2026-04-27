@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -32,36 +33,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> TestData
-            => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
-               select new object[] { behaviour, metadataSchemaVersion, dataPipelineEnabled };
-
         [SkippableTheory]
-        [MemberData(nameof(TestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Flaky("Named pipes is flaky", maxRetries: 3)]
-        public Task NamedPipes_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+        public Task NamedPipes_SubmitsTraces(
+            AgentBehaviour behaviour,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [CombinatorialValues(false)] bool dataPipelineEnabled) // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
         {
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
             return SubmitsTraces(behaviour, TestTransports.WindowsNamedPipe, metadataSchemaVersion, dataPipelineEnabled);
         }
 
         [SkippableTheory]
-        [MemberData(nameof(TestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task Tcp_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+        public Task Tcp_SubmitsTraces(
+            AgentBehaviour behaviour,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [CombinatorialValues(false)] bool dataPipelineEnabled) // TODO: re-enable datapipeline tests
             => SubmitsTraces(behaviour, TestTransports.Tcp, metadataSchemaVersion, dataPipelineEnabled);
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
-        [MemberData(nameof(TestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task Uds_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+        public Task Uds_SubmitsTraces(
+            AgentBehaviour behaviour,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [CombinatorialValues(false)] bool dataPipelineEnabled) // TODO: re-enable datapipeline tests
             => SubmitsTraces(behaviour, TestTransports.Uds, metadataSchemaVersion, dataPipelineEnabled);
 #endif
 
