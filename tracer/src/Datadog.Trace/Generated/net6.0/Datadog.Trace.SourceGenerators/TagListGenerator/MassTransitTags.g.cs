@@ -15,143 +15,73 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     partial class MassTransitTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
+
         // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
+
         // MessagingOperationBytes = MessagePack.Serialize("messaging.operation");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> MessagingOperationBytes => new byte[] { 179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
-#else
-        private static readonly byte[] MessagingOperationBytes = new byte[] { 179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
-#endif
+        private static ReadOnlySpan<byte> MessagingOperationBytes => [179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110];
+
         // MessagingSystemBytes = MessagePack.Serialize("messaging.system");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> MessagingSystemBytes => new byte[] { 176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109 };
-#else
-        private static readonly byte[] MessagingSystemBytes = new byte[] { 176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109 };
-#endif
+        private static ReadOnlySpan<byte> MessagingSystemBytes => [176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109];
+
         // DestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> DestinationNameBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] DestinationNameBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-#endif
+        private static ReadOnlySpan<byte> DestinationNameBytes => [186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101];
+
         // MessageIdBytes = MessagePack.Serialize("messaging.masstransit.message_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> MessageIdBytes => new byte[] { 217, 32, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 105, 100 };
-#else
-        private static readonly byte[] MessageIdBytes = new byte[] { 217, 32, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 105, 100 };
-#endif
+        private static ReadOnlySpan<byte> MessageIdBytes => [217, 32, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 105, 100];
+
         // ConversationIdBytes = MessagePack.Serialize("messaging.message.conversation_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ConversationIdBytes => new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 99, 111, 110, 118, 101, 114, 115, 97, 116, 105, 111, 110, 95, 105, 100 };
-#else
-        private static readonly byte[] ConversationIdBytes = new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 99, 111, 110, 118, 101, 114, 115, 97, 116, 105, 111, 110, 95, 105, 100 };
-#endif
+        private static ReadOnlySpan<byte> ConversationIdBytes => [217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 99, 111, 110, 118, 101, 114, 115, 97, 116, 105, 111, 110, 95, 105, 100];
+
         // CorrelationIdBytes = MessagePack.Serialize("messaging.masstransit.correlation_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CorrelationIdBytes => new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
-#else
-        private static readonly byte[] CorrelationIdBytes = new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
-#endif
+        private static ReadOnlySpan<byte> CorrelationIdBytes => [217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100];
+
         // SourceAddressBytes = MessagePack.Serialize("messaging.masstransit.source_address");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SourceAddressBytes => new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 111, 117, 114, 99, 101, 95, 97, 100, 100, 114, 101, 115, 115 };
-#else
-        private static readonly byte[] SourceAddressBytes = new byte[] { 217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 111, 117, 114, 99, 101, 95, 97, 100, 100, 114, 101, 115, 115 };
-#endif
+        private static ReadOnlySpan<byte> SourceAddressBytes => [217, 36, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 111, 117, 114, 99, 101, 95, 97, 100, 100, 114, 101, 115, 115];
+
         // DestinationAddressBytes = MessagePack.Serialize("messaging.masstransit.destination_address");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> DestinationAddressBytes => new byte[] { 217, 41, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 95, 97, 100, 100, 114, 101, 115, 115 };
-#else
-        private static readonly byte[] DestinationAddressBytes = new byte[] { 217, 41, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 95, 97, 100, 100, 114, 101, 115, 115 };
-#endif
+        private static ReadOnlySpan<byte> DestinationAddressBytes => [217, 41, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 95, 97, 100, 100, 114, 101, 115, 115];
+
         // InputAddressBytes = MessagePack.Serialize("messaging.masstransit.input_address");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InputAddressBytes => new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 112, 117, 116, 95, 97, 100, 100, 114, 101, 115, 115 };
-#else
-        private static readonly byte[] InputAddressBytes = new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 112, 117, 116, 95, 97, 100, 100, 114, 101, 115, 115 };
-#endif
+        private static ReadOnlySpan<byte> InputAddressBytes => [217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 112, 117, 116, 95, 97, 100, 100, 114, 101, 115, 115];
+
         // MessageTypesBytes = MessagePack.Serialize("messaging.masstransit.message_types");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> MessageTypesBytes => new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 116, 121, 112, 101, 115 };
-#else
-        private static readonly byte[] MessageTypesBytes = new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 116, 121, 112, 101, 115 };
-#endif
+        private static ReadOnlySpan<byte> MessageTypesBytes => [217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 116, 121, 112, 101, 115];
+
         // MessageSizeBytes = MessagePack.Serialize("messaging.message.body.size");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> MessageSizeBytes => new byte[] { 187, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 98, 111, 100, 121, 46, 115, 105, 122, 101 };
-#else
-        private static readonly byte[] MessageSizeBytes = new byte[] { 187, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 98, 111, 100, 121, 46, 115, 105, 122, 101 };
-#endif
+        private static ReadOnlySpan<byte> MessageSizeBytes => [187, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 98, 111, 100, 121, 46, 115, 105, 122, 101];
+
         // InitiatorIdBytes = MessagePack.Serialize("messaging.masstransit.initiator_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InitiatorIdBytes => new byte[] { 217, 34, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 105, 116, 105, 97, 116, 111, 114, 95, 105, 100 };
-#else
-        private static readonly byte[] InitiatorIdBytes = new byte[] { 217, 34, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 105, 116, 105, 97, 116, 111, 114, 95, 105, 100 };
-#endif
+        private static ReadOnlySpan<byte> InitiatorIdBytes => [217, 34, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 105, 110, 105, 116, 105, 97, 116, 111, 114, 95, 105, 100];
+
         // RequestIdBytes = MessagePack.Serialize("messaging.masstransit.request_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> RequestIdBytes => new byte[] { 217, 32, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 114, 101, 113, 117, 101, 115, 116, 95, 105, 100 };
-#else
-        private static readonly byte[] RequestIdBytes = new byte[] { 217, 32, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 114, 101, 113, 117, 101, 115, 116, 95, 105, 100 };
-#endif
+        private static ReadOnlySpan<byte> RequestIdBytes => [217, 32, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 114, 101, 113, 117, 101, 115, 116, 95, 105, 100];
+
         // ResponseAddressBytes = MessagePack.Serialize("messaging.masstransit.response_address");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ResponseAddressBytes => new byte[] { 217, 38, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 114, 101, 115, 112, 111, 110, 115, 101, 95, 97, 100, 100, 114, 101, 115, 115 };
-#else
-        private static readonly byte[] ResponseAddressBytes = new byte[] { 217, 38, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 114, 101, 115, 112, 111, 110, 115, 101, 95, 97, 100, 100, 114, 101, 115, 115 };
-#endif
+        private static ReadOnlySpan<byte> ResponseAddressBytes => [217, 38, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 114, 101, 115, 112, 111, 110, 115, 101, 95, 97, 100, 100, 114, 101, 115, 115];
+
         // FaultAddressBytes = MessagePack.Serialize("messaging.masstransit.fault_address");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> FaultAddressBytes => new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 102, 97, 117, 108, 116, 95, 97, 100, 100, 114, 101, 115, 115 };
-#else
-        private static readonly byte[] FaultAddressBytes = new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 102, 97, 117, 108, 116, 95, 97, 100, 100, 114, 101, 115, 115 };
-#endif
+        private static ReadOnlySpan<byte> FaultAddressBytes => [217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 102, 97, 117, 108, 116, 95, 97, 100, 100, 114, 101, 115, 115];
+
         // BeginStateBytes = MessagePack.Serialize("messaging.masstransit.begin_state");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> BeginStateBytes => new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 98, 101, 103, 105, 110, 95, 115, 116, 97, 116, 101 };
-#else
-        private static readonly byte[] BeginStateBytes = new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 98, 101, 103, 105, 110, 95, 115, 116, 97, 116, 101 };
-#endif
+        private static ReadOnlySpan<byte> BeginStateBytes => [217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 98, 101, 103, 105, 110, 95, 115, 116, 97, 116, 101];
+
         // EndStateBytes = MessagePack.Serialize("messaging.masstransit.end_state");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> EndStateBytes => new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 101, 110, 100, 95, 115, 116, 97, 116, 101 };
-#else
-        private static readonly byte[] EndStateBytes = new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 101, 110, 100, 95, 115, 116, 97, 116, 101 };
-#endif
+        private static ReadOnlySpan<byte> EndStateBytes => [191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 101, 110, 100, 95, 115, 116, 97, 116, 101];
+
         // SagaIdBytes = MessagePack.Serialize("messaging.masstransit.saga_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SagaIdBytes => new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 105, 100 };
-#else
-        private static readonly byte[] SagaIdBytes = new byte[] { 189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 105, 100 };
-#endif
+        private static ReadOnlySpan<byte> SagaIdBytes => [189, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 105, 100];
+
         // SagaTypeBytes = MessagePack.Serialize("messaging.masstransit.saga_type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SagaTypeBytes => new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] SagaTypeBytes = new byte[] { 191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 116, 121, 112, 101 };
-#endif
+        private static ReadOnlySpan<byte> SagaTypeBytes => [191, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 115, 97, 103, 97, 95, 116, 121, 112, 101];
+
         // PeerAddressBytes = MessagePack.Serialize("peer.address");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> PeerAddressBytes => new byte[] { 172, 112, 101, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
-#else
-        private static readonly byte[] PeerAddressBytes = new byte[] { 172, 112, 101, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115 };
-#endif
+        private static ReadOnlySpan<byte> PeerAddressBytes => [172, 112, 101, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115];
+
         // ConsumerTypeBytes = MessagePack.Serialize("messaging.masstransit.consumer_type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ConsumerTypeBytes => new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 110, 115, 117, 109, 101, 114, 95, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] ConsumerTypeBytes = new byte[] { 217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 110, 115, 117, 109, 101, 114, 95, 116, 121, 112, 101 };
-#endif
+        private static ReadOnlySpan<byte> ConsumerTypeBytes => [217, 35, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 99, 111, 110, 115, 117, 109, 101, 114, 95, 116, 121, 112, 101];
 
         public override string? GetTag(string key)
         {

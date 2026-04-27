@@ -210,8 +210,7 @@ public class MassTransit8Tests : TracingIntegrationTest
                         "process" => 2,
                         _ => 3
                     }))
-                .UseFileName(fileName)
-                .UseDirectory("MassTransit8");
+                .UseFileName(fileName);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
         }
