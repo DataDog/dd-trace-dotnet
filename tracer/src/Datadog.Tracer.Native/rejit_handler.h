@@ -35,7 +35,11 @@ private:
 protected:
     mdMethodDef m_methodDef;
     ICorProfilerFunctionControl* m_pFunctionControl;
-    std::unique_ptr<FunctionInfo> m_functionInfo;
+    // Stored as shared_ptr so callers can pin the snapshot for the duration of their work even if
+    // SetFunctionInfo races with them. Set swaps in a fresh instance, leaving any in-flight
+    // readers' shared_ptr (and the underlying FunctionInfo) intact until the last reader drops it.
+    std::shared_ptr<FunctionInfo> m_functionInfo;
+    std::mutex m_functionInfoLock;
 
     RejitHandlerModule* m_module;
 
@@ -45,7 +49,7 @@ public:
     mdMethodDef GetMethodDef();
     RejitHandlerModule* GetModule();
 
-    FunctionInfo* GetFunctionInfo();
+    std::shared_ptr<FunctionInfo> GetFunctionInfo();
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
     bool RequestRejitForInlinersInModule(ModuleID moduleId);

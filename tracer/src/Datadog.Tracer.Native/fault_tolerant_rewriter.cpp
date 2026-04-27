@@ -51,7 +51,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     m_rejit_handler->EnqueueRequestRejit(requests, promise);
     future.get();
 
-    FunctionInfo* caller = methodHandler->GetFunctionInfo();
+    const auto callerHandle = methodHandler->GetFunctionInfo();
+    FunctionInfo* caller = callerHandle.get();
     int numArgs = caller->method_signature.NumberOfArguments();
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
@@ -416,7 +417,8 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
     const auto methodId = methodHandler->GetMethodDef();
     const auto instrumentationId = m_methodRewriter->GetInstrumentationId(moduleHandler, methodHandler);
     const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
-    FunctionInfo* caller = methodHandler->GetFunctionInfo();
+    const auto callerHandle = methodHandler->GetFunctionInfo();
+    FunctionInfo* caller = callerHandle.get();
     FaultTolerantTokens* faultTolerantTokens = moduleHandler->GetModuleMetadata()->GetFaultTolerantTokens();
     faultTolerantTokens->EnsureCorLibTokens();
 
