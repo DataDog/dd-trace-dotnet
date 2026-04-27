@@ -127,6 +127,11 @@ else()
     add_compile_options(-stdlib=libstdc++)
 endif()
 
+if (ISMACOS)
+    # Apple clang 21 rejects fmt 9.1.0's consteval format-string path in C++20 mode.
+    add_compile_options(-DFMT_CONSTEVAL=)
+endif()
+
 if(ISLINUX)
     add_compile_options(-DLINUX -Wno-pragmas)
 endif()
