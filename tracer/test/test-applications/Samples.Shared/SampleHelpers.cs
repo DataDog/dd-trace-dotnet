@@ -53,8 +53,8 @@ namespace Samples
         private static readonly MethodInfo? GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo? RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? SetUserIdMethod = UserDetailsType?.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)?.SetMethod;
-        private static readonly MethodInfo? TrackUserLoginSuccessEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginSuccessEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IDictionary<string, string>), TracerType! }, null);
-        private static readonly MethodInfo? TrackUserLoginFailureEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginFailureEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(bool), typeof(IDictionary<string, string>), TracerType! }, null);
+        private static readonly MethodInfo? TrackUserLoginSuccessEventMethod;
+        private static readonly MethodInfo? TrackUserLoginFailureEventMethod;
 #if NETCOREAPP
         private static readonly MethodInfo? SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static | BindingFlags.DoNotWrapExceptions);
 #else
@@ -67,15 +67,30 @@ namespace Samples
             if (TracerType is null)
             {
                 Console.WriteLine("*** [Warning] SampleHelpers.TracerType is null so you may experience missing spans. Ensure automatic instrumentation is correctly enabled for this application to make sure spans are generated. ***");
+                return;
             }
-            else
-            {
-                if (SpanCreationSettingsType is null)
-                {
-                    return;
-                }
 
+            if (SpanCreationSettingsType is not null)
+            {
                 StartActiveWithContextMethod = TracerType.GetMethod("StartActive", types: new[] { typeof(string), SpanCreationSettingsType });
+            }
+
+            // Look up the EventTrackingSdk methods here (rather than as field initializers) so the Type[] signature
+            // can include TracerType without a null-forgiving cast — the early return above guarantees it's non-null.
+            if (EventTrackingSdk is not null)
+            {
+                TrackUserLoginSuccessEventMethod = EventTrackingSdk.GetMethod(
+                    "TrackUserLoginSuccessEvent",
+                    BindingFlags.Public | BindingFlags.Static,
+                    null,
+                    new Type[] { typeof(string), typeof(IDictionary<string, string>), TracerType },
+                    null);
+                TrackUserLoginFailureEventMethod = EventTrackingSdk.GetMethod(
+                    "TrackUserLoginFailureEvent",
+                    BindingFlags.Public | BindingFlags.Static,
+                    null,
+                    new Type[] { typeof(string), typeof(bool), typeof(IDictionary<string, string>), TracerType },
+                    null);
             }
         }
 
@@ -209,9 +224,9 @@ namespace Samples
             spanId = (ulong)(SpanIdProperty.Invoke(parentScope, null) ?? 0UL);
         }
 
-        public static void InjectScope<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, object scope)
+        public static void InjectScope<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, object? scope)
         {
-            if (InjectMethod is null || SpanContextInjectorType is null || carrier == null || GetTracerInstance is null)
+            if (InjectMethod is null || SpanContextInjectorType is null || carrier == null || scope is null || GetTracerInstance is null)
             {
                 return;
             }
@@ -225,27 +240,35 @@ namespace Samples
 
         public static ulong GetTraceId(IDisposable? scope = null)
         {
-            if (TraceIdProperty is null)
+            var target = scope ?? GetActiveSpanContext();
+            if (TraceIdProperty is null || target is null)
             {
                 return 0;
             }
 
-            return (ulong)(TraceIdProperty.Invoke(scope ?? GetActiveSpanContext(), Array.Empty<object>()) ?? 0UL);
+            return (ulong)(TraceIdProperty.Invoke(target, Array.Empty<object>()) ?? 0UL);
         }
 
         public static ulong GetSpanId(IDisposable? scope = null)
         {
-            if (SpanIdProperty is null)
+            var target = scope ?? GetActiveSpanContext();
+            if (SpanIdProperty is null || target is null)
             {
                 return 0;
             }
 
-            return (ulong)(SpanIdProperty.Invoke(scope ?? GetActiveSpanContext(), Array.Empty<object>()) ?? 0UL);
+            return (ulong)(SpanIdProperty.Invoke(target, Array.Empty<object>()) ?? 0UL);
         }
 
         public static int? GetOrMakeSamplingDecision()
         {
-            return (int?)GetOrMakeSamplingDecisionMethod?.Invoke(GetActiveSpanContext(), Array.Empty<object>());
+            var ctx = GetActiveSpanContext();
+            if (GetOrMakeSamplingDecisionMethod is null || ctx is null)
+            {
+                return null;
+            }
+
+            return (int?)GetOrMakeSamplingDecisionMethod.Invoke(ctx, Array.Empty<object>());
         }
 
         public static Task ForceTracerFlushAsync()
@@ -270,20 +293,20 @@ namespace Samples
             return (IDisposable?)ActiveScopeProperty.Invoke(tracer, Array.Empty<object>()) ?? new NoOpDisposable();
         }
 
-        public static object GetActiveSpanContext()
+        public static object? GetActiveSpanContext()
         {
             if (SpanContextProperty is null || SpanProperty is null)
             {
-                return new NoOpDisposable();
+                return null;
             }
 
             var span = SpanProperty.Invoke(GetActiveScope(), Array.Empty<object>());
             if (span is null)
             {
-                return new NoOpDisposable();
+                return null;
             }
 
-            return SpanContextProperty.Invoke(span, Array.Empty<object>()) ?? new NoOpDisposable();
+            return SpanContextProperty.Invoke(span, Array.Empty<object>());
         }
 
         public static void TrySetResourceName(object scope, string resourceName)
