@@ -25,7 +25,18 @@ internal sealed class AwsSnsHandlerCommon
         var requestProxy = request.DuckCast<IAmazonSNSRequestWithTopicArn>();
 
         var tracer = Tracer.Instance;
-        var scope = AwsSnsCommon.CreateScope(tracer, sendType.OperationName, SpanKinds.Producer, out var tags);
+
+        // Check if message attributes already contain trace context (e.g., injected by MassTransit or other messaging frameworks).
+        // This allows the SNS span to be a child of the framework's producer span, maintaining trace continuity.
+        ISpanContext? parentContext = null;
+        if (sendType == SendType.SingleMessage)
+        {
+            var messageAttributesProxy = request.DuckCast<IContainsMessageAttributes>();
+            var extractedContext = ContextPropagation.ExtractHeadersFromMessage(tracer, messageAttributesProxy);
+            parentContext = extractedContext.SpanContext;
+        }
+
+        var scope = AwsSnsCommon.CreateScope(tracer, sendType.OperationName, SpanKinds.Producer, out var tags, parentContext);
 
         var topicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
         if (tags is not null && requestProxy.TopicArn is not null)

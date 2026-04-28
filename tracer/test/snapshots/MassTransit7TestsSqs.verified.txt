@@ -1,0 +1,156 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: masstransit.send,
+    Resource: Samples_MassTransit_Contracts-GettingStartedWithSqs send,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: Samples_MassTransit_Contracts-GettingStartedWithSqs,
+      messaging.masstransit.destination_address: amazonsqs://us-east-1/Samples_MassTransit_Contracts-GettingStartedWithSqs?type=topic,
+      messaging.masstransit.message_id: Guid_1,
+      messaging.masstransit.message_types: GettingStartedWithSqs,
+      messaging.message.conversation_id: Guid_2,
+      messaging.operation: send,
+      messaging.system: sqs,
+      runtime-id: Guid_3,
+      span.kind: producer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: masstransit.receive,
+    Resource: GettingStartedWithSqs receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_2,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithSqs,
+      messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStartedWithSqs,
+      messaging.operation: receive,
+      messaging.system: sqs,
+      runtime-id: Guid_3,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: masstransit.process,
+    Resource: GettingStartedWithSqs process,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_3,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithSqs,
+      messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStartedWithSqs,
+      messaging.masstransit.message_types: GettingStartedWithSqs,
+      messaging.operation: process,
+      messaging.system: sqs,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: masstransit.send,
+    Resource: GettingStartedWithSqs send,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithSqs,
+      messaging.masstransit.destination_address: amazonsqs://us-east-1/GettingStartedWithSqs,
+      messaging.masstransit.message_id: Guid_4,
+      messaging.masstransit.message_types: GettingStartedWithSqs,
+      messaging.message.conversation_id: Guid_5,
+      messaging.operation: send,
+      messaging.system: sqs,
+      runtime-id: Guid_3,
+      span.kind: producer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_7,
+    Name: masstransit.receive,
+    Resource: GettingStartedWithSqs receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_6,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithSqs,
+      messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStartedWithSqs,
+      messaging.operation: receive,
+      messaging.system: sqs,
+      runtime-id: Guid_3,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_8,
+    Name: masstransit.process,
+    Resource: GettingStartedWithSqs process,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_7,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStartedWithSqs,
+      messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStartedWithSqs,
+      messaging.masstransit.message_types: GettingStartedWithSqs,
+      messaging.operation: process,
+      messaging.system: sqs,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  }
+]
