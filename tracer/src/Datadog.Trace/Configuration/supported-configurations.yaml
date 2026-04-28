@@ -664,6 +664,13 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling Dynamic Instrumentation.
       Default value is false (disabled).
+  DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE:
+  - implementation: A
+    type: string
+    default: null
+    product: Debugger
+    const_name: DynamicInstrumentationProbeFile
+    documentation: Configuration key for loading Dynamic Instrumentation probe definitions from a local JSON file.
   DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE:
   - implementation: A
     type: int

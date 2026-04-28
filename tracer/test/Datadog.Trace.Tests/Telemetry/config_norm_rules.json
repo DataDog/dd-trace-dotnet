@@ -516,6 +516,7 @@
   "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE": "dynamic_instrumentation_upload_batch_size",
   "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL": "dynamic_instrumentation_diagnostics_interval",
   "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL": "dynamic_instrumentation_upload_interval",
+  "DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE": "dynamic_instrumentation_probe_file",
   "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS": "dynamic_instrumentation_redacted_identifiers",
   "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS": "dynamic_instrumentation_redaction_excluded_identifiers",
   "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS": "dynamic_instrumentation_redacted_excluded_identifiers",
