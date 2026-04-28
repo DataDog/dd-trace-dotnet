@@ -5,7 +5,8 @@
 
 #pragma once
 //
-// include bundled or external copy of fmtlib's ranges support
+// include bundled or external copy of fmtlib's std support (for formatting e.g.
+// std::filesystem::path, std::thread::id, std::monostate, std::variant, ...)
 //
 #include <spdlog/tweakme.h>
 
@@ -16,8 +17,8 @@
 #define FMT_HEADER_ONLY
 #endif
 #endif
-#include <spdlog/fmt/bundled/ranges.h>
+#include <spdlog/fmt/bundled/std.h>
 #else
-#include <fmt/ranges.h>
+#include <fmt/std.h>
 #endif
 #endif
