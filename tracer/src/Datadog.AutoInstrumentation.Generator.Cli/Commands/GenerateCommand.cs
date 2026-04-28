@@ -221,6 +221,15 @@ internal class GenerateCommand : Command
 
         if (methodDef is null)
         {
+            if (!browser.TypeExists(type))
+            {
+                return OutputHelper.WriteError(
+                    jsonMode,
+                    "generate",
+                    ErrorCodes.TypeNotFound,
+                    $"Error: Type '{type}' not found in assembly '{assemblyPath.Name}'. Use `inspect --list-types` to discover types.");
+            }
+
             var overloads = browser.ListOverloads(type, method);
             if (overloads.Count == 0)
             {

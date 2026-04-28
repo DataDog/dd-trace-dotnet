@@ -89,6 +89,22 @@ public class AssemblyBrowser : IDisposable
     }
 
     /// <summary>
+    /// Returns true if the given fully-qualified type name resolves in the assembly.
+    /// </summary>
+    public bool TypeExists(string typeFullName)
+    {
+        foreach (var module in _assemblyDef.Modules)
+        {
+            if (FindType(module, typeFullName) is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Lists all available overloads for a method, useful for disambiguation.
     /// </summary>
     public IReadOnlyList<MethodDef> ListOverloads(string typeFullName, string methodName)
