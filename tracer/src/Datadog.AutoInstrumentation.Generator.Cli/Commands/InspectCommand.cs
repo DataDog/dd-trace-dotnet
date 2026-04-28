@@ -100,8 +100,7 @@ internal class InspectCommand : Command
                 })
                 .ToList();
 
-            var isAsync = method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task", StringComparison.Ordinal)
-                       || method.ReturnType.FullName.StartsWith("System.Threading.Tasks.ValueTask", StringComparison.Ordinal);
+            var isAsync = GenerationConfiguration.IsAsyncReturnType(method.ReturnType.FullName);
 
             dtos.Add(new MethodInfoDto
             {

@@ -91,7 +91,7 @@ Notes:
 - Excludes compiler-generated methods
 - Includes constructors (`.ctor`), property accessors (`get_*`, `set_*`), event accessors, and operators — CallTarget can instrument all of these
 - `overloadIndex` and `overloadCount` tell you upfront if disambiguation is needed
-- `isAsync` is true when return type starts with `System.Threading.Tasks.Task` or `System.Threading.Tasks.ValueTask`
+- `isAsync` is true when the return type is exactly `Task`, `Task<T>`, `ValueTask`, or `ValueTask<T>` (not `TaskScheduler`, `TaskCompletionSource`, etc.)
 
 ### `generate` — Generate instrumentation code
 
