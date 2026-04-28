@@ -18,6 +18,7 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 
+#include <atomic>
 #include <math.h>
 
 using namespace std::chrono_literals;
@@ -192,7 +193,7 @@ void ContentionProvider::AddContentionSample(
 
     // Synchronous case where the current thread is the contended thread
     // (i.e. receiving the contention events directly from ICorProfilerCallback)
-    static uint64_t failureCount = 0;
+    static std::atomic<uint64_t> failureCount{0};
     if ((timestamp == 0ns) && (threadId == -1) && stack.empty())
     {
         auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
@@ -208,11 +209,9 @@ void ContentionProvider::AddContentionSample(
 
         uint32_t hrCollectStack = E_FAIL;
         const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
-        if ((result->GetFramesCount() == 0) && (failureCount % 1000 == 0))
+        if ((result->GetFramesCount() == 0) && (failureCount.fetch_add(1) % 1000 == 0))
         {
-            // log every 1000 failures
-            failureCount++;
-            Log::Info("Failed to walk ", failureCount, " stacks for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
+            Log::Info("Failed to walk ", failureCount.load(), " stacks for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
             return;
         }
 
@@ -229,11 +228,9 @@ void ContentionProvider::AddContentionSample(
     // CLR events are received asynchronously from the Agent
     {
         // avoid the case where the ClrStackWalk event has been missed for the ContentionStart
-        if ((stack.size() == 0) && (failureCount % 1000 == 0))
+        if ((stack.size() == 0) && (failureCount.fetch_add(1) % 1000 == 0))
         {
-            // log every 1000 failures
-            failureCount++;
-            Log::Info("Failed to get ", failureCount, " call stacks for sampled contention");
+            Log::Info("Failed to get ", failureCount.load(), " call stacks for sampled contention");
             return;
         }
 
