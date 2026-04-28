@@ -326,16 +326,7 @@ internal class GenerateCommand : Command
         var generator = new InstrumentationGenerator();
         var result = generator.Generate(methodDef, config);
 
-        string outputText;
-        if (jsonMode)
-        {
-            outputText = JsonOutputFormatter.Format(result, config);
-        }
-        else if (result.Success)
-        {
-            outputText = result.SourceCode!;
-        }
-        else
+        if (!result.Success)
         {
             return OutputHelper.WriteError(
                 jsonMode,
@@ -343,6 +334,10 @@ internal class GenerateCommand : Command
                 ErrorCodes.GenerationError,
                 $"Error: {result.ErrorMessage}");
         }
+
+        var outputText = jsonMode
+            ? JsonOutputFormatter.Format(result, config)
+            : result.SourceCode!;
 
         var output = parseResult.GetValue(_outputOption);
         if (output is not null)

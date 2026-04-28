@@ -18,16 +18,11 @@ internal static class JsonOutputFormatter
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public static string Format(GenerationResult result, GenerationConfiguration config)
-    {
-        if (!result.Success)
-        {
-            return JsonSerializer.Serialize(
-                new { success = false, errorMessage = result.ErrorMessage ?? string.Empty },
-                SerializerOptions);
-        }
-
-        return JsonSerializer.Serialize(
+    // Failures are routed through OutputHelper.WriteError to emit the unified
+    // envelope (with command + errorCode) and a nonzero exit code, so this
+    // formatter only needs to handle the success case.
+    public static string Format(GenerationResult result, GenerationConfiguration config) =>
+        JsonSerializer.Serialize(
             new
             {
                 success = true,
@@ -37,7 +32,6 @@ internal static class JsonOutputFormatter
                 configuration = config,
             },
             SerializerOptions);
-    }
 
     public static string FormatResult(CliResult result) =>
         JsonSerializer.Serialize(result, SerializerOptions);
