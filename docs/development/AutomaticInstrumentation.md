@@ -305,8 +305,8 @@ There are two tools to help developers create the boilerplate code for new instr
 # Via Nuke
 .\tracer\build.cmd RunInstrumentationGeneratorCli --assembly-path "path/to/MyLib.dll" --type-name "MyLib.MyClass" --method-name "DoSomething"
 
-# Via dotnet run
-dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net8.0 -- generate path/to/MyLib.dll -t MyLib.MyClass -m DoSomething
+# Via dotnet run (the CLI targets net10.0; omit --framework or pass net10.0 explicitly)
+dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ -- generate path/to/MyLib.dll -t MyLib.MyClass -m DoSomething
 ```
 
 #### GUI screenshots:
