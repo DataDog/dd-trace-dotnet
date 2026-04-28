@@ -13,8 +13,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
@@ -565,8 +563,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         globalTags.Remove(Tags.Service);
         globalTags.Remove(Tags.Env);
         globalTags.Remove(Tags.Version);
-        globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
-        globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+        globalTags.Remove("git.commit.sha");
+        globalTags.Remove("git.repository_url");
     }
 
     /// <summary>
@@ -914,29 +912,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // DD_SERVICE has precedence over DD_TAGS
         serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName, telemetry);
 
-        if (tracerSettings.IsRunningInCiVisibility)
-        {
-            // Set the service name if not set
-            var isUserProvidedTestServiceTag = true;
-            var ciVisServiceName = serviceName;
-            if (string.IsNullOrEmpty(serviceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-                isUserProvidedTestServiceTag = false;
-            }
-
-            globalTags[Ci.Tags.CommonTags.UserProvidedTestServiceTag] = isUserProvidedTestServiceTag ? "true" : "false";
-
-            // Normalize the service name
-            ciVisServiceName = NormalizerTraceProcessor.NormalizeService(ciVisServiceName);
-            if (ciVisServiceName != serviceName)
-            {
-                serviceName = ciVisServiceName;
-                telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
-            }
-        }
-
         var serviceVersion = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
                             .AsString();
@@ -949,14 +924,14 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                           .AsString();
 
         // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.CIVisibility.GitCommitSha, telemetry);
+        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, "git.commit.sha", ConfigurationKeys.CIVisibility.GitCommitSha, telemetry);
 
         var gitRepositoryUrl = config
                               .WithKeys(ConfigurationKeys.CIVisibility.GitRepositoryUrl)
                               .AsString();
 
         // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.CIVisibility.GitRepositoryUrl, telemetry);
+        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, "git.repository_url", ConfigurationKeys.CIVisibility.GitRepositoryUrl, telemetry);
 
         var otelTraceEnabled = config
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)

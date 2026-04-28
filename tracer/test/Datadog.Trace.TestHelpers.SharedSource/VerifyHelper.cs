@@ -257,48 +257,10 @@ namespace Datadog.Trace.TestHelpers
                            // scrub stack trace for errors
                            Tags.ErrorMsg => new KeyValuePair<string, string>(kvp.Key, "ErrorMessage"),
                            Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, "StackTrace"),
-                           Trace.Ci.Tags.CommonTags.GitBranch => new KeyValuePair<string, string>(kvp.Key, "branch"),
-                           Trace.Ci.Tags.CommonTags.GitTag => new KeyValuePair<string, string>(kvp.Key, "tag"),
-                           Trace.Ci.Tags.CommonTags.BuildSourceRoot => new KeyValuePair<string, string>(kvp.Key, "sourceRoot"),
-                           Trace.Ci.Tags.CommonTags.CIWorkspacePath => new KeyValuePair<string, string>(kvp.Key, "workspacePath"),
-                           Trace.Ci.Tags.CommonTags.GitRepository => new KeyValuePair<string, string>(kvp.Key, "repository"),
-                           Trace.Ci.Tags.CommonTags.GitCommit => new KeyValuePair<string, string>(kvp.Key, "aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
-                           Trace.Ci.Tags.CommonTags.GitCommitMessage => new KeyValuePair<string, string>(kvp.Key, "CommitMessage"),
-                           Trace.Ci.Tags.CommonTags.GitCommitAuthorDate => new KeyValuePair<string, string>(kvp.Key, "AuthorDate"),
-                           Trace.Ci.Tags.CommonTags.GitCommitAuthorEmail => new KeyValuePair<string, string>(kvp.Key, "author@email.com"),
-                           Trace.Ci.Tags.CommonTags.GitCommitAuthorName => new KeyValuePair<string, string>(kvp.Key, "author name"),
-                           Trace.Ci.Tags.CommonTags.GitCommitCommitterDate => new KeyValuePair<string, string>(kvp.Key, "CommitterDate"),
-                           Trace.Ci.Tags.CommonTags.GitCommitCommitterEmail => new KeyValuePair<string, string>(kvp.Key, "committer@email.com"),
-                           Trace.Ci.Tags.CommonTags.GitCommitCommitterName => new KeyValuePair<string, string>(kvp.Key, "committer name"),
-                           Trace.Ci.Tags.TestTags.CodeOwners => new KeyValuePair<string, string>(kvp.Key, "[ \"@MyTeam\" ]"),
-                           Trace.Ci.Tags.CommonTags.OSArchitecture => new KeyValuePair<string, string>(kvp.Key, "OSArchitecture"),
-                           Trace.Ci.Tags.CommonTags.OSPlatform => new KeyValuePair<string, string>(kvp.Key, "OSPlatform"),
-                           Trace.Ci.Tags.CommonTags.OSVersion => new KeyValuePair<string, string>(kvp.Key, "OSVersion"),
-                           Trace.Ci.Tags.CommonTags.RuntimeArchitecture => new KeyValuePair<string, string>(kvp.Key, "RuntimeArchitecture"),
-                           Trace.Ci.Tags.CommonTags.RuntimeName => new KeyValuePair<string, string>(kvp.Key, "RuntimeName"),
-                           Trace.Ci.Tags.CommonTags.RuntimeVersion => new KeyValuePair<string, string>(kvp.Key, "RuntimeVersion"),
-                           Trace.Ci.Tags.CommonTags.LibraryVersion => new KeyValuePair<string, string>(kvp.Key, "LibraryVersion"),
-                           Trace.Ci.Tags.TestTags.SourceFile => new KeyValuePair<string, string>(kvp.Key, ScrubSourceFile(kvp.Value)),
-                           Trace.Ci.Tags.TestTags.Command => new KeyValuePair<string, string>(kvp.Key, "Command"),
-                           Trace.Ci.Tags.TestTags.CommandWorkingDirectory => new KeyValuePair<string, string>(kvp.Key, "CommandWorkingDirectory"),
-                           Trace.Ci.Tags.TestTags.FrameworkVersion => new KeyValuePair<string, string>(kvp.Key, "FrameworkVersion"),
-                           Trace.Ci.Tags.BrowserTags.BrowserDriverVersion => new KeyValuePair<string, string>(kvp.Key, "BrowserDriverVersion"),
-                           Trace.Ci.Tags.BrowserTags.BrowserVersion => new KeyValuePair<string, string>(kvp.Key, "BrowserVersion"),
                            _ => kvp
                        })
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
-
-            // In CI, we build the samples separately, so can end up with additional prefixes in the source file, dependent on the build agent
-            static string ScrubSourceFile(string path) =>
-                path switch
-                {
-                    _ when path.StartsWith(@"D:/a/1/s/") => path.Substring(9),
-                    _ when path.StartsWith(@"D:/a/_work/1/s/") => path.Substring(15),
-                    _ when Environment.GetEnvironmentVariable("BUILD_REPOSITORY_LOCALPATH") is { Length: > 0 } x
-                        && path.StartsWith(x) => path.Substring(x.Length),
-                    _ => path,
-                };
         }
 
         public static Dictionary<string, double>? ScrubCIVisibilityMetrics(MockSpan span, Dictionary<string, double>? metrics) => ScrubCIVisibilityMetrics(metrics);
@@ -310,13 +272,7 @@ namespace Datadog.Trace.TestHelpers
             return metrics
                  ?.Where(kvp => kvp.Key != Metrics.SamplingAgentDecision)
                   .Select(
-                       kvp => kvp.Key switch
-                       {
-                           Trace.Ci.Tags.TestTags.SourceStart => new KeyValuePair<string, double>(kvp.Key, 42),
-                           Trace.Ci.Tags.TestTags.SourceEnd => new KeyValuePair<string, double>(kvp.Key, 84),
-                           Trace.Ci.Tags.CommonTags.LogicalCpuCount => new KeyValuePair<string, double>(kvp.Key, 2),
-                           _ => kvp
-                       })
+                       kvp => kvp)
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
         }

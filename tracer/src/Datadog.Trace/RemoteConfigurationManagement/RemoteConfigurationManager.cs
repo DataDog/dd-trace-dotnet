@@ -11,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
@@ -187,8 +186,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             if (gitMetadata != GitMetadata.Empty)
             {
-                details.Tags.Add($"{CommonTags.GitCommit}:{gitMetadata.CommitSha}");
-                details.Tags.Add($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}");
+                details.Tags.Add($"git.commit.sha:{gitMetadata.CommitSha}");
+                details.Tags.Add($"git.repository_url:{gitMetadata.RepositoryUrl}");
             }
 
             details.IsGitMetadataAddedToRequestTags = true;

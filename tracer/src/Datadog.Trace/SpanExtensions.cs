@@ -90,8 +90,5 @@ namespace Datadog.Trace
 
             return span.SetTag(key, value?.ToString());
         }
-
-        internal static bool IsCiVisibilitySpan(this ISpan span)
-            => span.Type is SpanTypes.TestSession or SpanTypes.TestModule or SpanTypes.TestSuite or SpanTypes.Test or SpanTypes.Browser;
     }
 }

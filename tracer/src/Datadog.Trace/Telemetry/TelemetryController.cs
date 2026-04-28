@@ -11,8 +11,6 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -133,12 +131,6 @@ internal sealed class TelemetryController : ITelemetryController
     {
         _products.ProductChanged(product, enabled, error);
         _logTagBuilder.Update(product, enabled);
-    }
-
-    public void RecordTestOptimizationSettings(TestOptimizationSettings settings)
-    {
-        // Test optimization records the settings _directly_ in the global config so don't need to record them again here
-        _logTagBuilder.Update(settings, TestOptimization.Instance.Enabled);
     }
 
     public void IntegrationRunning(IntegrationId integrationId)
@@ -375,7 +367,6 @@ internal sealed class TelemetryController : ITelemetryController
 
     internal sealed class TagBuilder
     {
-        private bool _isCiVisEnabled;
         private bool _isAsmEnabled;
         private bool _isProfilingEnabled;
         private bool _isDynamicInstrumentationEnabled;
@@ -396,15 +387,6 @@ internal sealed class TelemetryController : ITelemetryController
                 { IsRunningInAzureAppService: true, IsRunningInAzureFunctions: false } => ",aas",
                 _ => null,
             };
-            _isUpdateRequired = true;
-        }
-
-        public void Update(TestOptimizationSettings settings, bool enabled)
-        {
-            // We don't actually need to record these, because they're added to the global config
-            // This isn't nice, as it calls the static property,
-            // but we don't have a better way of getting this info right now
-            _isCiVisEnabled = enabled;
             _isUpdateRequired = true;
         }
 
@@ -436,8 +418,7 @@ internal sealed class TelemetryController : ITelemetryController
                 var trimState = TrimmingDetector.DetectedTrimmingState;
 #endif
                 // using 1/0 to save bytes!
-                _tags = $"ci:{(_isCiVisEnabled ? '1' : '0')}" +
-                        $",asm:{(_isAsmEnabled ? '1' : '0')}" +
+                _tags = $"asm:{(_isAsmEnabled ? '1' : '0')}" +
                         $",prof:{(_isProfilingEnabled ? '1' : '0')}" +
                         $",dyn:{(_isDynamicInstrumentationEnabled ? '1' : '0')}" +
 #if NET6_0_OR_GREATER

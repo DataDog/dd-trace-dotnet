@@ -11,7 +11,6 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
@@ -39,7 +38,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private readonly bool _use128Bits;
 
         private string? _gitMetadataTags;
-        private string? _ciVisibilityDdTags;
         private ServiceTags _serviceTags;
 
         public LogFormatter(
@@ -169,7 +167,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             if (gitMetadata != GitMetadata.Empty)
             {
                 // we take a lock here to handle the case where we're running concurrently with a settings update
-                var gitMetadataTags = $"{CommonTags.GitCommit}{KeyValueTagSeparator}{gitMetadata.CommitSha},{CommonTags.GitRepository}{KeyValueTagSeparator}{RemoveScheme(gitMetadata.RepositoryUrl)}";
+                var gitMetadataTags = $"git.commit.sha{KeyValueTagSeparator}{gitMetadata.CommitSha},git.repository_url{KeyValueTagSeparator}{RemoveScheme(gitMetadata.RepositoryUrl)}";
                 Volatile.Write(ref _gitMetadataTags, gitMetadataTags);
                 lock (_lock)
                 {
@@ -378,110 +376,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             }
 
             writer.WriteEndObject();
-        }
-
-        internal void FormatCIVisibilityLog(StringBuilder sb, string source, string? logLevel, string message, Span? span)
-        {
-            using var writer = GetJsonWriter(sb);
-
-            // Based on JsonFormatter
-            writer.WriteStartObject();
-
-            writer.WritePropertyName("ddsource", escape: false);
-            writer.WriteValue(source);
-
-            if (_host is not null)
-            {
-                writer.WritePropertyName("hostname", escape: false);
-                writer.WriteValue(_host);
-            }
-
-            writer.WritePropertyName("timestamp", escape: false);
-            writer.WriteValue(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() / 1_000_000);
-
-            if (logLevel is not null)
-            {
-                writer.WritePropertyName("status", escape: false);
-                writer.WriteValue(logLevel);
-            }
-
-            writer.WritePropertyName("message", escape: false);
-            writer.WriteValue(message);
-
-            EnrichTagsStringWithGitMetadata();
-            var serviceTags = _serviceTags;
-
-            var env = serviceTags.Env ?? string.Empty;
-            var ddTags = _ciVisibilityDdTags;
-            if (ddTags is null)
-            {
-                ddTags = GetCIVisiblityDDTagsString(serviceTags, env);
-                _ciVisibilityDdTags = ddTags;
-            }
-
-            var service = serviceTags.Service;
-            if (span is not null)
-            {
-                if (span.GetTag(Trace.Tags.Env) is { } spanEnv && spanEnv != env)
-                {
-                    ddTags = GetCIVisiblityDDTagsString(serviceTags, spanEnv);
-                }
-
-                if (!string.IsNullOrEmpty(span.ServiceName))
-                {
-                    service = span.ServiceName;
-                }
-
-                if (LogContext.TryGetValues(span.Context, out var traceId, out var spanId, _use128Bits))
-                {
-                    writer.WritePropertyName("dd.trace_id", escape: false);
-                    writer.WriteValue(traceId);
-
-                    writer.WritePropertyName("dd.span_id", escape: false);
-                    writer.WriteValue(spanId);
-                }
-
-                if (span.GetTag(TestTags.Suite) is { } suite)
-                {
-                    writer.WritePropertyName(TestTags.Suite, escape: false);
-                    writer.WriteValue(suite);
-                }
-
-                if (span.GetTag(TestTags.Name) is { } name)
-                {
-                    writer.WritePropertyName(TestTags.Name, escape: false);
-                    writer.WriteValue(name);
-                }
-
-                if (span.GetTag(TestTags.Bundle) is { } bundle)
-                {
-                    writer.WritePropertyName(TestTags.Bundle, escape: false);
-                    writer.WriteValue(bundle);
-                }
-            }
-
-            writer.WritePropertyName("service", escape: false);
-            writer.WriteValue(service);
-
-            writer.WritePropertyName("ddtags", escape: false);
-            writer.WriteValue(ddTags);
-
-            writer.WriteEndObject();
-        }
-
-        private string GetCIVisiblityDDTagsString(ServiceTags serviceTags, string environment)
-        {
-            // spaces are not allowed inside ddtags
-            environment = environment.Replace(" ", string.Empty);
-            environment = environment.Replace(":", string.Empty);
-
-            var ddtags = $"env:{environment},datadog.product:citest";
-            if (serviceTags.Tags is { Length: > 0 } globalTags)
-            {
-                ddtags += "," + globalTags;
-            }
-
-            return ddtags;
         }
 
         public void Dispose() => _settingSub.Dispose();

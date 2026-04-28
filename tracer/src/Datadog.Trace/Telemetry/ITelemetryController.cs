@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
 
@@ -28,11 +27,6 @@ namespace Datadog.Trace.Telemetry
         /// Should be called when an integration is disabled for some reason.
         /// </summary>
         void IntegrationDisabledDueToError(IntegrationId integrationId, string error);
-
-        /// <summary>
-        /// Called to record test-optimization-related telemetry
-        /// </summary>
-        public void RecordTestOptimizationSettings(TestOptimizationSettings settings);
 
         /// <summary>
         /// Dispose resources for sending telemetry

@@ -13,7 +13,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
@@ -189,16 +188,6 @@ namespace Datadog.Trace
 
                 if (_openSpans == 0)
                 {
-                    spansToWrite = _spans;
-                    _spans = default;
-                    TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
-                }
-                else if (TestOptimization.Instance.IsRunning && span.IsCiVisibilitySpan())
-                {
-                    // TestSession, TestModule, TestSuite, Test and Browser spans are part of CI Visibility
-                    // all of them are known to be Root spans, so we can flush them as soon as they are closed
-                    // even if their children have not been closed yet.
-                    // An unclosed/unfinished child span should never block the report of a test.
                     spansToWrite = _spans;
                     _spans = default;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();

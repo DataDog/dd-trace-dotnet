@@ -12,7 +12,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -208,23 +207,7 @@ namespace Datadog.Trace.ClrProfiler
             // inherit it even if spawned before the first telemetry flush.
             _ = RuntimeId.GetRootSessionId();
 
-            try
-            {
-                // ensure global instance is created if it's not already
-                var testOptimization = TestOptimization.Instance;
-                if (testOptimization.Enabled)
-                {
-                    testOptimization.Initialize();
-                }
-                else
-                {
-                    Log.Debug("Initializing tracer singleton instance.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing CIVisibility");
-            }
+            Log.Debug("Initializing tracer singleton instance.");
 
             try
             {

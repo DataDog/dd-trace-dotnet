@@ -8,7 +8,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Datadog.Trace.Ci;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -165,15 +164,6 @@ namespace Datadog.Trace
                              : traceId;
 
             ServiceName = serviceName;
-
-            // Because we have a ctor as part of the public api without accepting the origin tag,
-            // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
-            // tag if the CI Visibility mode is running to ensure the correct propagation
-            // to children spans and distributed trace.
-            if (TestOptimization.Instance.IsRunning)
-            {
-                Origin = Ci.Tags.TestTags.CIAppTestOriginName;
-            }
         }
 
         // Constructor for creating an empty span context.

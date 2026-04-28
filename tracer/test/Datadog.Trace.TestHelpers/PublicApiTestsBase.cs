@@ -11,7 +11,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text;
-using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
@@ -44,7 +43,6 @@ namespace Datadog.Trace.Tests
                 ExcludeAttributes = new[]
                 {
                     typeof(InternalsVisibleToAttribute).FullName,
-                    typeof(AvoidCoverageAttribute).FullName,
                     "System.Runtime.CompilerServices.IsByRefLike",
                 },
 

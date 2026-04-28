@@ -91,11 +91,6 @@ namespace Datadog.Trace.Configuration
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
-            // We don't want/need to record this value, so explicitly use null telemetry
-            IsRunningInCiVisibility = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
-                                     .WithKeys(ConfigurationKeys.CIVisibility.IsRunningInCiVisMode)
-                                     .AsBool(false);
-
             if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, telemetry);
@@ -587,16 +582,6 @@ namespace Datadog.Trace.Configuration
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
                                    .AsString(GetDefaultHttpClientExclusions());
 
-            if (IsRunningInCiVisibility)
-            {
-                // always add the additional exclude in ci vis
-                const string fakeSessionEndpoint = "/session/FakeSessionIdForPollingPurposes";
-                urlSubstringSkips = string.IsNullOrEmpty(urlSubstringSkips)
-                                        ? fakeSessionEndpoint
-                                        : $"{urlSubstringSkips},{fakeSessionEndpoint}";
-                telemetry.Record(ConfigurationKeys.HttpClientExcludedUrlSubstrings, urlSubstringSkips, recordValue: true, ConfigurationOrigins.Calculated);
-            }
-
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
                                                   : [];
@@ -785,8 +770,6 @@ namespace Datadog.Trace.Configuration
                 }
             }
         }
-
-        internal bool IsRunningInCiVisibility { get; }
 
         internal HashSet<string> ExperimentalFeaturesEnabled { get; }
 

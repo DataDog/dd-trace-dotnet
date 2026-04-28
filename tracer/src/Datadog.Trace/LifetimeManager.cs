@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 #if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
-using Datadog.Trace.Ci;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
