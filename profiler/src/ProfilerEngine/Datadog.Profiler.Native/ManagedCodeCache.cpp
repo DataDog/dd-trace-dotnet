@@ -11,7 +11,6 @@
 
 #include "Log.h"
 
-
 template <typename Container, typename Value>
 std::optional<typename Container::value_type> FindRange(Container const& container, Value const& value)
 {
@@ -204,6 +203,26 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip)
 
 // can be called in a signal handler
 std::optional<bool> ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
+{
+    // This is temporary workaround to try at best identifying an instruction pointer.
+    // Once ManagedCodeCache has a better concurrent data structure, we can remove this function.
+    // Best effort to get the managed code address range
+    // If IsManaged returns nullopt (which means that we failed at acquiring the lock),
+    // we try MaxRetries times.
+    auto constexpr MaxRetries = 3;
+    for (auto i = 0; i < MaxRetries; i++)
+    {
+        auto result = IsManagedImpl(ip);
+        if (result.has_value())
+        {
+            return result;
+        }
+        std::this_thread::yield();
+    }
+    return std::nullopt;
+}
+
+std::optional<bool> ManagedCodeCache::IsManagedImpl(std::uintptr_t ip) const noexcept
 {
     uint64_t page = GetPageNumber(static_cast<UINT_PTR>(ip));
     

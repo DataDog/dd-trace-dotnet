@@ -22,9 +22,8 @@ public:
                         UnwindingRecorder* recorder = nullptr) const override;
 
 private:
-    std::optional<bool> IsManaged(std::uintptr_t ip) const;
     bool UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder) const;
-    bool UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder,
+    void UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder,
                         std::uintptr_t stackBase, std::uintptr_t stackEnd) const;
 
     ManagedCodeCache* _codeCache;

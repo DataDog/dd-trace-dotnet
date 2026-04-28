@@ -164,10 +164,9 @@ private:
     
     // Helper: Ensure a page exists in the map
     void EnsurePageExists(uint64_t page);
-    
+    std::optional<bool> IsManagedImpl(std::uintptr_t ip) const noexcept;
+
     // Map from page number -> page entry (with its own lock)
-
-
     PagesMap _pagesMap;
     std::vector<ModuleCodeRange> _modulesCodeRanges;
     mutable std::shared_mutex _modulesMutex;
