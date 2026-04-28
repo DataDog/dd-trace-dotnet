@@ -6661,7 +6661,7 @@
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.DataStreams",
-    "TargetMethodName": "TrackTransaction",
+    "TargetMethodName": "TrackTransactionInternal",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.String",
