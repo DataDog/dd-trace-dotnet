@@ -426,6 +426,8 @@ namespace UpdateVendors
 
         public RelativePath RelativePathToVendorDirectoryOverride { get; set; }
 
+        public bool IsNuGetPackage { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
@@ -434,7 +436,8 @@ namespace UpdateVendors
             Action<string> transform,
             string[] relativePathsToExclude = null,
             string[] onlyIncludePaths = null,
-            RelativePath relatePathToVendorDirectoryOverride = null)
+            RelativePath relativePathToVendorDirectoryOverride = null,
+            bool isNuGetPackage = true)
         {
             All.Add(new VendoredDependency()
             {
@@ -445,7 +448,8 @@ namespace UpdateVendors
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
                 OnlyIncludeRelativePaths = onlyIncludePaths,
-                RelatePathToVendorDirectoryOverride = relatePathToVendorDirectoryOverride,
+                RelativePathToVendorDirectoryOverride = relativePathToVendorDirectoryOverride,
+                IsNuGetPackage = isNuGetPackage,
             });
         }
 
