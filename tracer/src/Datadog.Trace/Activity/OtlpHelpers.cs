@@ -606,7 +606,7 @@ namespace Datadog.Trace.Activity
         /// The type of <c>Activity</c> - note that only <see cref="IActivity5"/> and up have support for events.
         /// </typeparam>
         /// <remarks>OpenTelemetry creates these attributes via it's <c>Activity.RecordException</c> function.</remarks>
-        private static void ExtractExceptionAttributes<TInner>(TInner activity, Span span)
+        internal static void ExtractExceptionAttributes<TInner>(TInner activity, Span span)
             where TInner : IActivity5
         {
             // OpenTelemetry stores the exception attributes in Activity.Events
