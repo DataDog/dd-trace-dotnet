@@ -29,7 +29,7 @@ internal class GenerateCommand : Command
     private readonly Option<string?> _methodOption = new("--method") { Description = "Method name to instrument" };
 
     // Method resolution
-    private readonly Option<string[]?> _parameterTypesOption = new("--parameter-types") { Description = "Parameter type full names for overload disambiguation" };
+    private readonly Option<string[]?> _parameterTypesOption = new("--parameter-types") { Description = "Parameter type full names for overload disambiguation (space-separated, e.g., --parameter-types System.String System.Int32)", AllowMultipleArgumentsPerToken = true };
     private readonly Option<int?> _overloadIndexOption = new("--overload-index") { Description = "0-based overload index for disambiguation" };
 
     // Shortcut flags (most common toggles); async detection is automatic via auto-detect.
