@@ -194,9 +194,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         /// <summary>
-        /// Validates that CallTarget-based Activity interception produces spans identical to the
-        /// managed ActivityListener approach. Uses the same snapshot as <see cref="SubmitsTraces"/>
-        /// to assert functional equivalence between the two approaches.
+        /// Validates that CallTarget-based Activity interception produces spans nearly identical
+        /// to the managed ActivityListener approach. Uses a dedicated <c>.Interception</c> snapshot
+        /// because of one outstanding gap: when an in-process child is started via an explicit
+        /// <c>ActivityContext</c> parent (e.g. <c>StartActiveSpan(name, kind, parentTelemetrySpan)</c>),
+        /// the OTel SDK does not set <c>Activity.Parent</c> on the child, so the interception path
+        /// can't find the parent <see cref="Scope"/> and treats it as a remote parent. The child
+        /// span ends up as a local trace root (extra <c>runtime-id</c> tag and Metrics block) instead
+        /// of being attached to the parent's <c>TraceContext</c>. This is the same parentage class
+        /// as the W3C-only-parent gap and is tracked alongside it.
         /// </summary>
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -210,16 +216,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                // The interception path captures 37 spans instead of 38. One span is missing because
-                // the "service.name should be the DefaultServiceName value" span uses a second
-                // TracerProvider that builds after the first; the interception path applies
-                // the first TracerProvider's cached resource to all spans, so that span gets
-                // MyServiceName instead of CustomServiceName — causing it to be counted differently.
-                const int expectedSpanCount = 37;
+                const int expectedSpanCount = 38;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 using var s = new AssertionScope();
-                spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount);
+                spans.Count.Should().Be(expectedSpanCount);
+
+                var otelSpans = spans.Where(s => s.Service == "MyServiceName");
+                var activitySourceSpans = spans.Where(s => s.Service == CustomServiceName);
+
+                otelSpans.Count().Should().Be(expectedSpanCount - 3); // there is another span w/ service == ServiceNameOverride
+                activitySourceSpans.Count().Should().Be(2);
+
+                ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
+                ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: CustomServiceName, isExternalSpan: false);
+
+                var filename = nameof(OpenTelemetrySdkTests) + ".Interception" + GetSuffix(packageVersion);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
+                settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+                settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(filename)
+                                  .DisableRequireUniquePrefix();
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
             }
