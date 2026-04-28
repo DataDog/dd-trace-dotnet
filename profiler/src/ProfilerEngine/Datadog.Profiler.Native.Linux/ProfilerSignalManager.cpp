@@ -28,7 +28,7 @@ ProfilerSignalManager::~ProfilerSignalManager() noexcept
         _isHandlerInPlace = false;
         sigaction(_signalToSend, &_previousAction, nullptr);
     }
-    _handler = nullptr;
+    _handler.store(nullptr, std::memory_order_release);
 }
 
 ProfilerSignalManager* ProfilerSignalManager::Get(int signal)
@@ -49,7 +49,7 @@ ProfilerSignalManager* ProfilerSignalManager::Get(int signal)
 
 bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
 {
-    HandlerFn_t current = _handler;
+    HandlerFn_t current = _handler.load(std::memory_order_acquire);
 
     if (current != nullptr)
     {
@@ -58,7 +58,7 @@ bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
     }
     std::unique_lock<std::mutex> lock(_handlerRegisterMutex);
 
-    current = _handler;
+    current = _handler.load(std::memory_order_acquire);
     if (current != nullptr)
     {
         assert(current == handler);
@@ -69,7 +69,7 @@ bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
 
     if (_isHandlerInPlace)
     {
-        _handler = handler;
+        _handler.store(handler, std::memory_order_release);
     }
 
     return _isHandlerInPlace;
@@ -205,7 +205,7 @@ void ProfilerSignalManager::SignalHandler(int signal, siginfo_t* info, void* con
 
 bool ProfilerSignalManager::CallCustomHandler(int32_t signal, siginfo_t* info, void* context)
 {
-    HandlerFn_t handler = _handler;
+    HandlerFn_t handler = _handler.load(std::memory_order_acquire);
     return handler != nullptr && handler(signal, info, context);
 }
 
