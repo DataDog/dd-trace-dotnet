@@ -208,7 +208,7 @@ partial class Build
                appArgs.AddRange(TokenizeShellArgs(GeneratorArgs));
            }
 
-           var applicationArguments = string.Join(" ", appArgs.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
+           var applicationArguments = string.Join(" ", appArgs.Select(EscapeArgForCommandLine));
 
            var dotnetRunSettings = new DotNetRunSettings()
                                   .SetDotnetPath(TargetPlatform)
@@ -221,6 +221,53 @@ partial class Build
            var process = ProcessTasks.StartProcess(dotnetRunSettings);
            process.AssertZeroExitCode();
        });
+
+    /// <summary>
+    /// Escapes a single argument so the receiving process recovers the original value via
+    /// CommandLineToArgvW rules. Naive double-quote wrapping mishandles embedded quotes and
+    /// trailing backslashes, which corrupts inline JSON for --config and paths that end in
+    /// "\". Algorithm follows the standard PasteArguments approach used in .NET's
+    /// ProcessStartInfo.ArgumentList.
+    /// </summary>
+    private static string EscapeArgForCommandLine(string arg)
+    {
+        if (arg.Length > 0
+            && arg.IndexOf(' ') < 0
+            && arg.IndexOf('\t') < 0
+            && arg.IndexOf('"') < 0
+            && arg.IndexOf('\\') < 0)
+        {
+            return arg;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append('"');
+
+        var backslashes = 0;
+        foreach (var c in arg)
+        {
+            if (c == '\\')
+            {
+                backslashes++;
+            }
+            else if (c == '"')
+            {
+                sb.Append('\\', (backslashes * 2) + 1);
+                sb.Append('"');
+                backslashes = 0;
+            }
+            else
+            {
+                sb.Append('\\', backslashes);
+                sb.Append(c);
+                backslashes = 0;
+            }
+        }
+
+        sb.Append('\\', backslashes * 2);
+        sb.Append('"');
+        return sb.ToString();
+    }
 
     /// <summary>
     /// Splits a command-line string into tokens, respecting single and double quotes.
