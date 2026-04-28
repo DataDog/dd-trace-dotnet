@@ -349,7 +349,18 @@ internal class GenerateCommand : Command
             }
 
             File.WriteAllText(output.FullName, outputText);
-            Console.WriteLine($"Output written to: {output.FullName}");
+
+            // In JSON mode, stdout must remain a structured envelope (the same one written
+            // to the file) so callers honoring the --json contract can parse it. In plain
+            // mode, a human-readable confirmation is more useful.
+            if (jsonMode)
+            {
+                Console.Write(outputText);
+            }
+            else
+            {
+                Console.WriteLine($"Output written to: {output.FullName}");
+            }
         }
         else
         {
