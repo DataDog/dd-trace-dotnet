@@ -224,7 +224,7 @@ inline std::int32_t LinuxStackFramesCollector::CollectStack(void* ctx)
     {
         std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
     }
-    auto count = _pUnwinder->Unwind(ctx, callstack, stackBase, stackEnd, _tracer);
+    auto count = _pUnwinder->Unwind(ctx, callstack, stackBase, stackEnd, _recorder);
 
     if (count == 0)
     {

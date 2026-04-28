@@ -104,9 +104,9 @@ inline CursorSnapshot SnapshotCursor(const unw_cursor_snapshot_t& snapshot)
 }
 
 // ---------------------------------------------------------------------------
-// UnwinderTracer
+// UnwindingRecorder
 // ---------------------------------------------------------------------------
-class UnwinderTracer
+class UnwindingRecorder
 {
 public:
     void Reset()

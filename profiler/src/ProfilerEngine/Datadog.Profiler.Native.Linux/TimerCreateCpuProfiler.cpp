@@ -12,7 +12,7 @@
 #include "ProfilerSignalManager.h"
 #include "IConfiguration.h"
 #ifdef ARM64
-#include "UnwindTracersProvider.h"
+#include "UnwindingRecorderFactory.h"
 #endif
 
 #include <sys/syscall.h> /* Definition of SYS_* constants */
@@ -28,7 +28,8 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IManagedThreadList* pManagedThreadsList,
     CpuSampleProvider* pProvider,
     MetricsRegistry& metricsRegistry,
-    IUnwinder* pUnwinder) noexcept
+    IUnwinder* pUnwinder,
+    UnwindingRecorderFactory* pUnwindingRecorderFactory) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
@@ -36,7 +37,7 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
     _nbThreadsInSignalHandler{0},
     _pUnwinder{pUnwinder},
-    _useUnwinderTracer{Log::IsDebugEnabled()}
+    _pUnwindingRecorderFactory{pUnwindingRecorderFactory}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -265,17 +266,17 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
     }
 
-    UnwinderTracer* tracer = nullptr;
+    UnwindingRecorder* recorder = nullptr;
 #ifdef ARM64
-    auto scopedTracer = UnwindTracersProvider::ScopedTracer(nullptr);
-    if (_useUnwinderTracer)
+    auto scopedTracer = UnwindingRecorderFactory::ScopedTracer(nullptr);
+    if (_pUnwindingRecorderFactory != nullptr)
     {
-        scopedTracer = UnwindTracersProvider::GetInstance().GetTracer();
-        tracer = scopedTracer.get();
+        scopedTracer = _pUnwindingRecorderFactory->GetTracer();
+        recorder = scopedTracer.get();
     }
 #endif
 
-    auto count = _pUnwinder->Unwind(ctx, rawCpuSample->Stack, stackBase, stackEnd, tracer);
+    auto count = _pUnwinder->Unwind(ctx, rawCpuSample->Stack, stackBase, stackEnd, recorder);
 
     if (count == 0)
     {

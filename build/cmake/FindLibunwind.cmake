@@ -5,7 +5,7 @@
 #   - unw_cursor_snapshot_t / unw_cursor_snapshot(): a signal-safe public API
 #     to inspect the dwarf cursor (CFA, loc_fp/loc_lr/loc_sp, frame_type,
 #     cfa_reg_sp, cfa_reg_offset, dwarf_step_ret, step_method, loc_info).
-#     Used by UnwinderTracer.h / HybridUnwinder.cpp without having to mirror
+#     Used by UnwindingRecorder.h / HybridUnwinder.cpp without having to mirror
 #     libunwind's internal layouts.
 #   - unw_init_local2() + UNW_INIT_SIGNAL_FRAME flag: lets us initialize the
 #     cursor directly from a signal-delivered ucontext_t and flag the first
