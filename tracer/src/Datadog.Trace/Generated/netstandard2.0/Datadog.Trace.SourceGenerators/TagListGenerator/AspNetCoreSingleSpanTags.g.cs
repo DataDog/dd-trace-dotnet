@@ -25,30 +25,18 @@ namespace Datadog.Trace.Tagging
 
         // HttpRouteBytes = MessagePack.Serialize("http.route");
         private static ReadOnlySpan<byte> HttpRouteBytes => [170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101];
+
         // CodeOriginTypeBytes = MessagePack.Serialize("_dd.code_origin.type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginTypeBytes => new byte[] { 180, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] CodeOriginTypeBytes = new byte[] { 180, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 116, 121, 112, 101 };
-#endif
+        private static ReadOnlySpan<byte> CodeOriginTypeBytes => [180, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 116, 121, 112, 101];
+
         // CodeOriginFrameIndexBytes = MessagePack.Serialize("_dd.code_origin.frames.0.index");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginFrameIndexBytes => new byte[] { 190, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 105, 110, 100, 101, 120 };
-#else
-        private static readonly byte[] CodeOriginFrameIndexBytes = new byte[] { 190, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 105, 110, 100, 101, 120 };
-#endif
+        private static ReadOnlySpan<byte> CodeOriginFrameIndexBytes => [190, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 105, 110, 100, 101, 120];
+
         // CodeOriginFrameMethodBytes = MessagePack.Serialize("_dd.code_origin.frames.0.method");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginFrameMethodBytes => new byte[] { 191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 109, 101, 116, 104, 111, 100 };
-#else
-        private static readonly byte[] CodeOriginFrameMethodBytes = new byte[] { 191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 109, 101, 116, 104, 111, 100 };
-#endif
+        private static ReadOnlySpan<byte> CodeOriginFrameMethodBytes => [191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 109, 101, 116, 104, 111, 100];
+
         // CodeOriginFrameTypeBytes = MessagePack.Serialize("_dd.code_origin.frames.0.type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginFrameTypeBytes => new byte[] { 189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] CodeOriginFrameTypeBytes = new byte[] { 189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101 };
-#endif
+        private static ReadOnlySpan<byte> CodeOriginFrameTypeBytes => [189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101];
 
         public override string? GetTag(string key)
         {
