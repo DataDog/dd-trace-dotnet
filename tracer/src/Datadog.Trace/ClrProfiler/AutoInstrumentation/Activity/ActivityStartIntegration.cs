@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                         if (parentActivityIface?.Instance is { } parentInstance
                          && parentInstance.TryDuckCast<IActivity5>(out var parentActivity5))
                         {
-                            if (parentActivity5.GetCustomProperty("__dd_span__") is Scope parentScope)
+                            if (parentActivity5.GetCustomProperty(ActivityCustomPropertyKeys.Span) is Scope parentScope)
                             {
                                 parent = parentScope.Span.Context;
                             }
@@ -219,6 +219,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 ? displayName
                 : activity5.OperationName;
 
+            // Apply OTel resource attributes (service.name, service.version, etc.) to the span.
+            // In the managed ActivityListener path, resource attributes are applied by the
+            // ResourceAttributeProcessor.OnStart callback which fires during Activity.Start().
+            // With interception, that callback fires before we create the span, so OnStart stashed the
+            // resource on the activity and we apply it here. This ties each span to its specific
+            // TracerProvider's resource (so multiple TracerProviders work correctly).
+            // Apply BEFORE the activity tag copy so reserved tags like "service.name" can override the resource.
+            OpenTelemetry.ResourceAttributeProcessorHelper.ApplyResourceAttributesFromActivity(span, activity5);
+
             // Save the initial operation name BEFORE copying tags so ActivityStopIntegration can
             // detect explicit overrides via "operation.name" tag. Initial tags (passed to StartActivity)
             // may include "operation.name" which changes OperationName during tag copy below.
@@ -237,12 +246,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                     return true;
                 });
             }
-
-            // Apply OTel resource attributes (service.name, service.version, etc.) to the span.
-            // In the managed ActivityListener path, resource attributes are applied by the
-            // ResourceAttributeProcessor.OnStart callback which fires during Activity.Start().
-            // With interception, that callback fires before we create the span, so we apply them here.
-            OpenTelemetry.ResourceAttributeProcessorHelper.ApplyCachedResourceAttributes(span);
 
             // Bi-directional link: Activity → Scope (via custom property — zero-alloc cached delegate)
             ActivityCustomPropertyAccessor<TTarget>.SetScope(instance, scope);

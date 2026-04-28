@@ -23,9 +23,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
     /// <typeparam name="TTarget">The concrete Activity type (monomorphized by the JIT per CallTarget site).</typeparam>
     internal static class ActivityCustomPropertyAccessor<TTarget>
     {
-        private const string SpanPropertyKey = "__dd_span__";
-        private const string InitialOpNameKey = "__dd_initial_op__";
-
         /// <summary>
         /// Open-instance delegate for <c>Activity.GetCustomProperty(string)</c>.
         /// Null when the target type does not expose the method (DiagnosticSource &lt; 5.0).
@@ -39,17 +36,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         public static readonly Action<TTarget, string, object?>? SetCustomProperty = CreateSetDelegate();
 
         /// <summary>
-        /// Retrieves the <see cref="Scope"/> stored on the activity via <see cref="SpanPropertyKey"/>.
+        /// Retrieves the <see cref="Scope"/> stored on the activity via <see cref="ActivityCustomPropertyKeys.Span"/>.
         /// Returns null if the activity is not tracked by this integration or if the delegate is unavailable.
         /// </summary>
         public static Scope? GetScope(TTarget instance)
-            => GetCustomProperty?.Invoke(instance, SpanPropertyKey) as Scope;
+            => GetCustomProperty?.Invoke(instance, ActivityCustomPropertyKeys.Span) as Scope;
 
         /// <summary>
-        /// Stores the given <paramref name="scope"/> on the activity under <see cref="SpanPropertyKey"/>.
+        /// Stores the given <paramref name="scope"/> on the activity under <see cref="ActivityCustomPropertyKeys.Span"/>.
         /// </summary>
         public static void SetScope(TTarget instance, Scope? scope)
-            => SetCustomProperty?.Invoke(instance, SpanPropertyKey, scope);
+            => SetCustomProperty?.Invoke(instance, ActivityCustomPropertyKeys.Span, scope);
 
         /// <summary>
         /// Retrieves the initial operation name saved at Activity.Start() time.
@@ -57,13 +54,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         /// overrode the operation name via an "operation.name" tag.
         /// </summary>
         public static string? GetInitialOperationName(TTarget instance)
-            => GetCustomProperty?.Invoke(instance, InitialOpNameKey) as string;
+            => GetCustomProperty?.Invoke(instance, ActivityCustomPropertyKeys.InitialOpName) as string;
 
         /// <summary>
         /// Stores the initial operation name on the activity.
         /// </summary>
         public static void SetInitialOperationName(TTarget instance, string? operationName)
-            => SetCustomProperty?.Invoke(instance, InitialOpNameKey, operationName);
+            => SetCustomProperty?.Invoke(instance, ActivityCustomPropertyKeys.InitialOpName, operationName);
 
         private static Func<TTarget, string, object?>? CreateGetDelegate()
         {
