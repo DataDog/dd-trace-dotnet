@@ -26,10 +26,12 @@ internal sealed class AwsSnsHandlerCommon
 
         var tracer = Tracer.Instance;
 
-        // Check if message attributes already contain trace context (e.g., injected by MassTransit or other messaging frameworks).
-        // This allows the SNS span to be a child of the framework's producer span, maintaining trace continuity.
+        // If we already have an active scope, prefer that as the parent so we don't reparent
+        // under stale headers when callers reuse the same PublishRequest across publishes.
+        // Only fall back to extracting from message attributes when publish is decoupled from
+        // the original producer scope, e.g. injected by MassTransit before reaching us.
         ISpanContext? parentContext = null;
-        if (sendType == SendType.SingleMessage)
+        if (sendType == SendType.SingleMessage && tracer.ActiveScope is null)
         {
             var messageAttributesProxy = request.DuckCast<IContainsMessageAttributes>();
             var extractedContext = ContextPropagation.ExtractHeadersFromMessage(tracer, messageAttributesProxy);
