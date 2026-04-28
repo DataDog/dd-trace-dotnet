@@ -290,11 +290,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                     {
                         if (string.IsNullOrEmpty(defaultValue))
                         {
-                            Log.Error("CIEnvironmentValues: DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
+                            Log.ErrorSkipTelemetry("CIEnvironmentValues: DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), and the The Git commit sha couldn't be automatically extracted.", value);
                         }
                         else
                         {
-                            Log.Error("CIEnvironmentValues: DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
+                            Log.ErrorSkipTelemetry("CIEnvironmentValues: DD_GIT_COMMIT_SHA must be a full-length git SHA ({Value}), defaulting to '{Default}", value, defaultValue);
                         }
 
                         return false;
