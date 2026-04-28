@@ -83,6 +83,20 @@ internal static class JsonHelper
         return o;
     }
 
+    public static JArray ParseJArray(string json)
+    {
+        // equivalent to Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JArray.Parse()
+        // differs from the vendored version, in that we use an array pool
+        using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared };
+        var a = JArray.Load(reader);
+        while (reader.Read())
+        {
+            // validate no trailing content
+        }
+
+        return a;
+    }
+
     public static string TokenToString(JToken token, Formatting formatting = Formatting.Indented, params JsonConverter[] converters)
     {
         // equivalent to Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JToken.ToString()

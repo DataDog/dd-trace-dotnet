@@ -20,8 +20,11 @@ namespace Datadog.Trace.Debugger.Configurations
         private readonly string? _env;
         private readonly string? _version;
         private readonly int _maxProbesPerType;
+        private readonly HashSet<string> _removedRcmProbeIds = new(StringComparer.Ordinal);
 
         private ProbeConfiguration _currentConfiguration;
+        private ProbeConfiguration? _fileConfiguration;
+        private ProbeConfiguration _rcmConfiguration;
 
         private ConfigurationUpdater(string? env, string? version, int maxProbesPerType)
         {
@@ -29,6 +32,7 @@ namespace Datadog.Trace.Debugger.Configurations
             _version = version;
             _maxProbesPerType = maxProbesPerType;
             _currentConfiguration = new ProbeConfiguration();
+            _rcmConfiguration = new ProbeConfiguration();
         }
 
         public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType)
@@ -38,15 +42,47 @@ namespace Datadog.Trace.Debugger.Configurations
 
         public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
         {
+            foreach (var probeId in ProbeConfigurationUtils.GetProbeIds(configuration))
+            {
+                _removedRcmProbeIds.Remove(probeId);
+            }
+
+            _rcmConfiguration = ProbeConfigurationUtils.Merge(_rcmConfiguration, configuration);
+            return ApplyEffectiveConfiguration();
+        }
+
+        public List<UpdateResult> AcceptFile(ProbeConfiguration configuration)
+        {
+            _fileConfiguration = configuration;
+            return ApplyEffectiveConfiguration();
+        }
+
+        public void AcceptRemoved(List<RemoteConfigurationPath> paths)
+        {
+            try
+            {
+                var removedProbeIds = paths.Where(ProbeConfigurationUtils.IsProbePath).Select(ProbeConfigurationUtils.GetProbeIdFromPath).ToArray();
+                var isServiceConfigurationRemoved = paths.Any(path => path.Id.StartsWith(DefinitionPaths.ServiceConfiguration, StringComparison.Ordinal));
+                foreach (var probeId in removedProbeIds)
+                {
+                    _removedRcmProbeIds.Add(probeId);
+                }
+
+                _rcmConfiguration = ProbeConfigurationUtils.RemoveItems(_rcmConfiguration, removedProbeIds, isServiceConfigurationRemoved);
+                HandleRemovedProbesChanges(removedProbeIds);
+                _ = ApplyEffectiveConfiguration();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to remove configurations");
+            }
+        }
+
+        private List<UpdateResult> ApplyEffectiveConfiguration()
+        {
             var result = new List<UpdateResult>();
-            var filteredConfiguration = ApplyConfigurationFilters(configuration);
-
-            // Merge the new filtered configuration with the existing one so that
-            // _currentConfiguration always represents the union of all accepted
-            // configurations from both file and RCM
-            var mergedConfiguration = MergeConfigurations(_currentConfiguration, filteredConfiguration);
-
-            var comparer = new ProbeConfigurationComparer(_currentConfiguration, mergedConfiguration);
+            var filteredConfiguration = ApplyConfigurationFilters(GetEffectiveConfiguration());
+            var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
 
             if (comparer.HasProbeRelatedChanges)
             {
@@ -58,45 +94,20 @@ namespace Datadog.Trace.Debugger.Configurations
                 HandleRateLimitChanged(comparer);
             }
 
-            _currentConfiguration = mergedConfiguration;
+            _currentConfiguration = filteredConfiguration;
 
             return result;
         }
 
-        public void AcceptRemoved(List<RemoteConfigurationPath> paths)
+        private ProbeConfiguration GetEffectiveConfiguration()
         {
-            try
+            var fileConfiguration = _fileConfiguration;
+            if (fileConfiguration != null && _removedRcmProbeIds.Count != 0)
             {
-                HandleRemovedProbesChanges(paths);
+                fileConfiguration = ProbeConfigurationUtils.RemoveItems(fileConfiguration, _removedRcmProbeIds, removeServiceConfiguration: false);
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to remove configurations");
-            }
-        }
 
-        private static ProbeConfiguration MergeConfigurations(ProbeConfiguration current, ProbeConfiguration incoming)
-        {
-            return new ProbeConfiguration
-            {
-                LogProbes = current.LogProbes
-                                   .Concat(incoming.LogProbes)
-                                   .Distinct()
-                                   .ToArray(),
-                MetricProbes = current.MetricProbes
-                                      .Concat(incoming.MetricProbes)
-                                      .Distinct()
-                                      .ToArray(),
-                SpanProbes = current.SpanProbes
-                                    .Concat(incoming.SpanProbes)
-                                    .Distinct()
-                                    .ToArray(),
-                SpanDecorationProbes = current.SpanDecorationProbes
-                                              .Concat(incoming.SpanDecorationProbes)
-                                              .Distinct()
-                                              .ToArray(),
-                ServiceConfiguration = incoming.ServiceConfiguration ?? current.ServiceConfiguration
-            };
+            return ProbeConfigurationUtils.Merge(fileConfiguration, _rcmConfiguration);
         }
 
         private ProbeConfiguration ApplyConfigurationFilters(ProbeConfiguration configuration)
@@ -152,9 +163,9 @@ namespace Datadog.Trace.Debugger.Configurations
             return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions) ?? [];
         }
 
-        private void HandleRemovedProbesChanges(List<RemoteConfigurationPath> paths)
+        private void HandleRemovedProbesChanges(string[] probeIds)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths);
+            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(probeIds);
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)

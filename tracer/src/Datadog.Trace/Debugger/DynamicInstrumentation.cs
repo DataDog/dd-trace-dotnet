@@ -8,7 +8,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +24,6 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
@@ -51,7 +49,6 @@ namespace Datadog.Trace.Debugger
         private readonly DebuggerSettings _settings;
         private readonly object _instanceLock = new();
         private int _disposeState;
-        private volatile ProbeConfiguration? _fileProbes;
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -107,7 +104,7 @@ namespace Datadog.Trace.Debugger
             try
             {
                 // Start loading probes from file and checking RCM availability in parallel
-                var fileProbesTask = LoadProbesFromFileAsync();
+                var fileProbesTask = ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile);
                 var rcmAvailabilityTask = WaitForRcmAvailabilityAsync();
 
                 var hasFileProbes = false;
@@ -116,28 +113,30 @@ namespace Datadog.Trace.Debugger
                 var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
                 if (probeConfiguration != null)
                 {
-                    _fileProbes = probeConfiguration;
-                    _configurationUpdater.AcceptAdded(probeConfiguration);
+                    _configurationUpdater.AcceptFile(probeConfiguration);
                     hasFileProbes = (probeConfiguration.LogProbes.Length
                                    + probeConfiguration.MetricProbes.Length
                                    + probeConfiguration.SpanProbes.Length
                                    + probeConfiguration.SpanDecorationProbes.Length) > 0;
+
+                    if (hasFileProbes)
+                    {
+                        StartRuntimeIfNeeded();
+                    }
                 }
 
                 var isRcmAvailable = await rcmAvailabilityTask.ConfigureAwait(false);
                 if (isRcmAvailable)
                 {
                     _subscriptionManager.SubscribeToChanges(_subscription);
+                    StartRuntimeIfNeeded();
                 }
 
                 // Start background processing and register the assembly load callback if either:
                 // - RCM is available
                 // - There are probes from file
-                if (isRcmAvailable || hasFileProbes)
+                if (IsInitialized)
                 {
-                    AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
-                    StartBackgroundProcess();
-                    IsInitialized = true;
                     Log.Information("Dynamic Instrumentation initialization completed successfully");
                 }
                 else
@@ -153,6 +152,18 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Error(e, "Dynamic Instrumentation initialization failed");
             }
+        }
+
+        private void StartRuntimeIfNeeded()
+        {
+            if (IsInitialized)
+            {
+                return;
+            }
+
+            AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
+            StartBackgroundProcess();
+            IsInitialized = true;
         }
 
         private void StartBackgroundProcess()
@@ -278,7 +289,10 @@ namespace Datadog.Trace.Debugger
 
                     using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
                     using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
-                    DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                    if (methodProbes.Count != 0 || lineProbes.Count != 0 || spanProbes.Count != 0)
+                    {
+                        DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                    }
 
                     var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
                     _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
@@ -312,19 +326,11 @@ namespace Datadog.Trace.Debugger
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }
 
-        internal void UpdateRemovedProbeInstrumentations(List<RemoteConfigurationPath> paths)
+        internal void UpdateRemovedProbeInstrumentations(string[] removedProbesIds)
         {
             if (IsDisposed)
             {
                 return;
-            }
-
-            var removedProbesIds = paths
-                                  .Select(TrimProbeTypeFromPath)
-                                  .ToArray();
-            string TrimProbeTypeFromPath(RemoteConfigurationPath path)
-            {
-                return path.Id.Split('_').Last();
             }
 
             if (removedProbesIds.Length == 0)
@@ -586,24 +592,21 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            // Merge file probes with RCM probes (RCM takes precedence on ID conflicts)
-            var currentFileProbes = _fileProbes;
-
-            var probeConfiguration = new ProbeConfiguration()
+            var rcmUpdate = new ProbeConfiguration()
             {
                 ServiceConfiguration = serviceConfig,
-                LogProbes = MergeProbes(currentFileProbes?.LogProbes, logs.ToArray()),
-                MetricProbes = MergeProbes(currentFileProbes?.MetricProbes, metrics.ToArray()),
-                SpanProbes = MergeProbes(currentFileProbes?.SpanProbes, spans.ToArray()),
-                SpanDecorationProbes = MergeProbes(currentFileProbes?.SpanDecorationProbes, spanDecoration.ToArray())
+                LogProbes = logs.ToArray(),
+                MetricProbes = metrics.ToArray(),
+                SpanProbes = spans.ToArray(),
+                SpanDecorationProbes = spanDecoration.ToArray()
             };
 
             try
             {
-                var updateResults = _configurationUpdater.AcceptAdded(probeConfiguration);
+                var updateResults = _configurationUpdater.AcceptAdded(rcmUpdate);
                 foreach (var updateResult in updateResults)
                 {
-                    var config = configs.FirstOrDefault(c => c.Path.Id == updateResult.Id);
+                    var config = configs.FirstOrDefault(c => ProbeConfigurationUtils.GetProbeIdFromPath(c.Path) == updateResult.Id);
                     if (config != null)
                     {
                         result.Add(
@@ -749,199 +752,6 @@ namespace Datadog.Trace.Debugger
                     rcmAvailabilityTcs.TrySetResult(true);
                 }
             }
-        }
-
-        private async Task<ProbeConfiguration?> LoadProbesFromFileAsync()
-        {
-            if (string.IsNullOrEmpty(_settings.ProbeFile))
-            {
-                return null;
-            }
-
-            try
-            {
-                if (!File.Exists(_settings.ProbeFile))
-                {
-                    Log.Warning("Probe file specified but not found: {ProbeFile}", _settings.ProbeFile);
-                    return null;
-                }
-
-                Log.Information("Loading probes from file: {ProbeFile}", _settings.ProbeFile);
-
-                string fileContent;
-                using (var reader = new StreamReader(_settings.ProbeFile))
-                {
-                    fileContent = await reader.ReadToEndAsync().ConfigureAwait(false);
-                }
-
-                if (string.IsNullOrWhiteSpace(fileContent))
-                {
-                    Log.Debug("Probe file is empty: {ProbeFile}", _settings.ProbeFile);
-                    return null;
-                }
-
-                var jArray = JArray.Parse(fileContent);
-                var logs = new List<LogProbe>();
-                var metrics = new List<MetricProbe>();
-                var spans = new List<SpanProbe>();
-                var spanDecorations = new List<SpanDecorationProbe>();
-
-                foreach (var jToken in jArray)
-                {
-                    var jObject = jToken as JObject;
-                    if (jObject == null)
-                    {
-                        Log.Warning("Invalid probe entry in file, skipping");
-                        continue;
-                    }
-
-                    var typeToken = jObject["type"];
-                    if (typeToken == null)
-                    {
-                        Log.Warning("Probe entry missing 'type' field, skipping");
-                        continue;
-                    }
-
-                    var type = typeToken.ToString();
-                    try
-                    {
-                        switch (type)
-                        {
-                            case "LOG_PROBE":
-                                var logProbe = jObject.ToObject<LogProbe>();
-                                if (logProbe != null)
-                                {
-                                    logs.Add(logProbe);
-                                }
-
-                                break;
-                            case "METRIC_PROBE":
-                                var metricProbe = jObject.ToObject<MetricProbe>();
-                                if (metricProbe != null)
-                                {
-                                    metrics.Add(metricProbe);
-                                }
-
-                                break;
-                            case "SPAN_PROBE":
-                                var spanProbe = jObject.ToObject<SpanProbe>();
-                                if (spanProbe != null)
-                                {
-                                    spans.Add(spanProbe);
-                                }
-
-                                break;
-                            case "SPAN_DECORATION_PROBE":
-                                var spanDecorationProbe = jObject.ToObject<SpanDecorationProbe>();
-                                if (spanDecorationProbe != null)
-                                {
-                                    spanDecorations.Add(spanDecorationProbe);
-                                }
-
-                                break;
-                            default:
-                                Log.Warning("Unknown probe type '{Type}' in file, skipping", type);
-                                break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Failed to deserialize probe of type '{Type}', skipping", type);
-                    }
-                }
-
-                var totalProbes = logs.Count + metrics.Count + spans.Count + spanDecorations.Count;
-                if (totalProbes == 0)
-                {
-                    Log.Warning("No valid probes found in file: {ProbeFile}", _settings.ProbeFile);
-                    return null;
-                }
-
-                // Deduplicate probes within the file by ID
-                var uniqueLogs = DeduplicateProbes(logs);
-                var uniqueMetrics = DeduplicateProbes(metrics);
-                var uniqueSpans = DeduplicateProbes(spans);
-                var uniqueSpanDecorations = DeduplicateProbes(spanDecorations);
-
-                var uniqueCount = uniqueLogs.Length + uniqueMetrics.Length + uniqueSpans.Length + uniqueSpanDecorations.Length;
-                if (uniqueCount < totalProbes)
-                {
-                    Log.Debug("Removed {Count} duplicate probe(s) from file", property: totalProbes - uniqueCount);
-                }
-
-                Log.Information("Successfully loaded {Count} probes from file.", property: uniqueCount);
-
-                return new ProbeConfiguration
-                {
-                    LogProbes = uniqueLogs,
-                    MetricProbes = uniqueMetrics,
-                    SpanProbes = uniqueSpans,
-                    SpanDecorationProbes = uniqueSpanDecorations
-                };
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to load probes from file: {ProbeFile}", _settings.ProbeFile);
-                return null;
-            }
-        }
-
-        private T[] DeduplicateProbes<T>(List<T> probes)
-            where T : ProbeDefinition
-        {
-            if (probes.Count == 0)
-            {
-                return [];
-            }
-
-            return probes
-                  .GroupBy(p => p.Id)
-                  .Select(g =>
-                   {
-                       if (g.Count() > 1)
-                       {
-                           Log.Warning("Duplicate probe ID '{Id}' found in file, using first occurrence", g.Key);
-                       }
-
-                       return g.First();
-                   })
-                  .ToArray();
-        }
-
-        private T[] MergeProbes<T>(T[]? fileProbes, T[] rcmProbes)
-            where T : ProbeDefinition
-        {
-            if (fileProbes == null || fileProbes.Length == 0)
-            {
-                return rcmProbes;
-            }
-
-            if (rcmProbes.Length == 0)
-            {
-                return fileProbes;
-            }
-
-            // Combine and deduplicate by ID (RCM takes precedence over file if conflict)
-            var mergedProbes = new Dictionary<string, T>(StringComparer.Ordinal);
-
-            // Add file probes first
-            foreach (var probe in fileProbes)
-            {
-                mergedProbes[probe.Id] = probe;
-            }
-
-            // Add/overwrite with RCM probes (RCM wins on conflicts)
-            foreach (var probe in rcmProbes)
-            {
-                if (mergedProbes.ContainsKey(probe.Id))
-                {
-                    Log.Debug("Probe ID '{Id}' exists in both file and RCM, using RCM version", probe.Id);
-                }
-
-                mergedProbes[probe.Id] = probe;
-            }
-
-            return mergedProbes.Values.ToArray();
         }
 
         public void Dispose()

@@ -127,6 +127,7 @@ public class DynamicInstrumentationTests
                 {
                     ""id"": ""100c9a5c-45ad-49dc-818b-c570d31e11d1"",
                     ""version"": 0,
+                    ""language"": ""dotnet"",
                     ""type"": ""LOG_PROBE"",
                     ""where"": { ""sourceFile"": ""MyClass.cs"", ""lines"": [""25""] },
                     ""template"": ""Hello World"",
@@ -137,6 +138,7 @@ public class DynamicInstrumentationTests
                 },
                 {
                     ""id"": ""metric-1"",
+                    ""language"": ""dotnet"",
                     ""type"": ""METRIC_PROBE"",
                     ""where"": { ""typeName"": ""MyClass"", ""methodName"": ""MyMethod"" },
                     ""kind"": ""COUNT"",
@@ -144,6 +146,7 @@ public class DynamicInstrumentationTests
                 },
                 {
                     ""id"": ""span-1"",
+                    ""language"": ""dotnet"",
                     ""type"": ""SPAN_PROBE"",
                     ""where"": { ""typeName"": ""MyClass"", ""methodName"": ""MyMethod"" }
                 }
@@ -182,7 +185,7 @@ public class DynamicInstrumentationTests
         [InlineData("{ invalid json }", true, "invalid json")]
         [InlineData("", true, "empty file")]
         [InlineData("[]", true, "empty array")]
-        public async Task ProbeFile_InvalidOrMissingProbeFile_InitializationContinues(string fileContent, bool createFile, string scenario)
+        public async Task ProbeFile_InvalidOrMissingProbeFile_InitializationContinues(string? fileContent, bool createFile, string scenario)
         {
             string probeFilePath;
 
@@ -235,18 +238,20 @@ public class DynamicInstrumentationTests
             var probeJson = @"[
                 {
                     ""id"": ""valid-1"",
+                    ""language"": ""dotnet"",
                     ""type"": ""LOG_PROBE"",
-                    ""where"": { ""sourceFile"": ""test.js"", ""lines"": [""10""] },
+                    ""where"": { ""sourceFile"": ""test.cs"", ""lines"": [""10""] },
                     ""captureSnapshot"": true
                 },
                 {
                     ""id"": ""invalid-no-type"",
-                    ""where"": { ""sourceFile"": ""test.js"", ""lines"": [""20""] }
+                    ""where"": { ""sourceFile"": ""test.cs"", ""lines"": [""20""] }
                 },
                 {
                     ""id"": ""valid-2"",
+                    ""language"": ""dotnet"",
                     ""type"": ""LOG_PROBE"",
-                    ""where"": { ""sourceFile"": ""test.js"", ""lines"": [""30""] },
+                    ""where"": { ""sourceFile"": ""test.cs"", ""lines"": [""30""] },
                     ""captureSnapshot"": false
                 }
             ]";
@@ -283,21 +288,24 @@ public class DynamicInstrumentationTests
             var probeJson = @"[
                 {
                     ""id"": ""duplicate-id"",
+                    ""language"": ""dotnet"",
                     ""type"": ""LOG_PROBE"",
-                    ""where"": { ""sourceFile"": ""first.js"", ""lines"": [""10""] },
+                    ""where"": { ""sourceFile"": ""first.cs"", ""lines"": [""10""] },
                     ""template"": ""First occurrence"",
                     ""captureSnapshot"": true
                 },
                 {
                     ""id"": ""unique-id"",
+                    ""language"": ""dotnet"",
                     ""type"": ""LOG_PROBE"",
-                    ""where"": { ""sourceFile"": ""unique.js"", ""lines"": [""20""] },
+                    ""where"": { ""sourceFile"": ""unique.cs"", ""lines"": [""20""] },
                     ""captureSnapshot"": true
                 },
                 {
                     ""id"": ""duplicate-id"",
+                    ""language"": ""dotnet"",
                     ""type"": ""LOG_PROBE"",
-                    ""where"": { ""sourceFile"": ""second.js"", ""lines"": [""30""] },
+                    ""where"": { ""sourceFile"": ""second.cs"", ""lines"": [""30""] },
                     ""template"": ""Second occurrence"",
                     ""captureSnapshot"": false
                 }
@@ -331,15 +339,55 @@ public class DynamicInstrumentationTests
             // Verify the first occurrence is kept
             var duplicateProbe = fileProbes.LogProbes.FirstOrDefault(p => p.Id == "duplicate-id");
             duplicateProbe.Should().NotBeNull();
-            duplicateProbe!.Where.SourceFile.Should().Be("first.js", "First occurrence should be kept");
+            duplicateProbe!.Where.SourceFile.Should().Be("first.cs", "First occurrence should be kept");
             duplicateProbe.Template.Should().Be("First occurrence");
         }
 
-        private static ProbeConfiguration GetFileProbes(DynamicInstrumentation debugger)
+        [Fact]
+        public async Task ProbeFile_ValidFileWithoutRcm_InitializesWithoutWaitingForRcmTimeout()
         {
-            var field = typeof(DynamicInstrumentation).GetField("_fileProbes", BindingFlags.Instance | BindingFlags.NonPublic);
+            var probeJson = @"[
+                {
+                    ""id"": ""file-only-id"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""sourceFile"": ""file-only.cs"", ""lines"": [""10""] },
+                    ""captureSnapshot"": true
+                }
+            ]";
+
+            var tempFile = CreateTempProbeFile(probeJson);
+
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, tempFile }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            var debugger = CreateDebugger(settings, new DiscoveryServiceWithoutRcmMock());
+            debugger.Initialize();
+            await WaitForInitializationAsync(debugger);
+
+            debugger.IsInitialized.Should().BeTrue("file probes should not wait for the RCM availability timeout");
+            GetFileProbes(debugger).Should().NotBeNull();
+            debugger.Dispose();
+        }
+
+        private static ProbeConfiguration? GetFileProbes(DynamicInstrumentation debugger)
+        {
+            var updater = GetConfigurationUpdater(debugger);
+            var field = typeof(ConfigurationUpdater).GetField("_fileConfiguration", BindingFlags.Instance | BindingFlags.NonPublic);
             field.Should().NotBeNull();
-            return (ProbeConfiguration)field.GetValue(debugger);
+            return (ProbeConfiguration?)field!.GetValue(updater);
+        }
+
+        private static ConfigurationUpdater GetConfigurationUpdater(DynamicInstrumentation debugger)
+        {
+            var field = typeof(DynamicInstrumentation).GetField("_configurationUpdater", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return (ConfigurationUpdater)field!.GetValue(debugger)!;
         }
 
         private string CreateTempProbeFile(string content)
@@ -350,9 +398,8 @@ public class DynamicInstrumentationTests
             return tempFile;
         }
 
-        private DynamicInstrumentation CreateDebugger(DebuggerSettings settings)
+        private DynamicInstrumentation CreateDebugger(DebuggerSettings settings, IDiscoveryService? discoveryService = null)
         {
-            var discoveryService = new DiscoveryServiceMock();
             var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
             var lineProbeResolver = new LineProbeResolverMock();
             var snapshotUploader = new SnapshotUploaderMock();
@@ -362,15 +409,15 @@ public class DynamicInstrumentationTests
 
             return new DynamicInstrumentation(
                 settings,
-                discoveryService,
+                discoveryService ?? new DiscoveryServiceMock(),
                 rcmSubscriptionManagerMock,
                 lineProbeResolver,
                 snapshotUploader,
                 logUploader,
                 diagnosticsUploader,
                 probeStatusPoller,
-                ConfigurationUpdater.Create("env", "version"),
-                new DogStatsd.NoOpStatsd());
+                ConfigurationUpdater.Create("env", "version", 0),
+                global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance);
         }
     }
 
@@ -379,101 +426,108 @@ public class DynamicInstrumentationTests
         [Fact]
         public void MergeProbes_FileAndRcm_UnionOfIds()
         {
-            var debugger = CreateDebugger();
-
-            var fileProbes = new[]
+            var fileProbes = new ProbeConfiguration
             {
-                new LogProbe { Id = "file-probe-1" },
+                LogProbes = [new LogProbe { Id = "file-probe-1" }]
             };
 
-            var rcmProbes = new[]
+            var rcmProbes = new ProbeConfiguration
             {
-                new LogProbe { Id = "rcm-probe-1" },
+                LogProbes = [new LogProbe { Id = "rcm-probe-1" }]
             };
 
-            var merged = InvokeMergeProbes(debugger, fileProbes, rcmProbes);
+            var merged = ProbeConfigurationUtils.Merge(fileProbes, rcmProbes);
 
-            merged.Select(p => p.Id).Should().BeEquivalentTo("file-probe-1", "rcm-probe-1");
+            merged.LogProbes.Select(p => p.Id).Should().BeEquivalentTo("file-probe-1", "rcm-probe-1");
         }
 
         [Fact]
         public void MergeProbes_DuplicateIds_RcmWins()
         {
-            var debugger = CreateDebugger();
-
-            var fileProbes = new[]
+            var fileProbes = new ProbeConfiguration
             {
-                new LogProbe
-                {
-                    Id = "shared-id",
-                    Where = new Where { SourceFile = "file.js", Lines = new[] { "10" } },
-                    Template = "From file",
-                    CaptureSnapshot = true,
-                },
+                LogProbes =
+                [
+                    new LogProbe
+                    {
+                        Id = "shared-id",
+                        Where = new Where { SourceFile = "file.cs", Lines = new[] { "10" } },
+                        Template = "From file",
+                        CaptureSnapshot = true,
+                    }
+                ]
             };
 
-            var rcmProbes = new[]
+            var rcmProbes = new ProbeConfiguration
             {
-                new LogProbe
-                {
-                    Id = "shared-id",
-                    Where = new Where { SourceFile = "rcm.js", Lines = new[] { "99" } },
-                    Template = "From RCM",
-                    CaptureSnapshot = false,
-                },
+                LogProbes =
+                [
+                    new LogProbe
+                    {
+                        Id = "shared-id",
+                        Where = new Where { SourceFile = "rcm.cs", Lines = new[] { "99" } },
+                        Template = "From RCM",
+                        CaptureSnapshot = false,
+                    }
+                ]
             };
 
-            var merged = InvokeMergeProbes(debugger, fileProbes, rcmProbes);
+            var merged = ProbeConfigurationUtils.Merge(fileProbes, rcmProbes);
 
-            merged.Should().HaveCount(1);
+            merged.LogProbes.Should().HaveCount(1);
 
-            var probe = merged[0];
+            var probe = merged.LogProbes[0];
             probe.Id.Should().Be("shared-id");
-            probe.Where.SourceFile.Should().Be("rcm.js");
+            probe.Where.SourceFile.Should().Be("rcm.cs");
             probe.Template.Should().Be("From RCM");
             probe.CaptureSnapshot.Should().BeFalse();
         }
 
-        private static DynamicInstrumentation CreateDebugger()
+        [Fact]
+        public void RcmRemovalSuppressesFileProbeWithSameId()
         {
-            var settings = DebuggerSettings.FromSource(
-                new NameValueConfigurationSource(new()
+            var updater = ConfigurationUpdater.Create("env", "version", 0);
+
+            updater.AcceptFile(
+                new ProbeConfiguration
                 {
-                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" },
-                }),
-                NullConfigurationTelemetry.Instance);
+                    LogProbes =
+                    [
+                        new LogProbe
+                        {
+                            Id = "shared-id",
+                            Language = "dotnet",
+                            Where = new Where { SourceFile = "file.cs", Lines = new[] { "10" } },
+                            Template = "From file",
+                        }
+                    ]
+                });
 
-            var discoveryService = new DiscoveryServiceMock();
-            var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
-            var lineProbeResolver = new LineProbeResolverMock();
-            var snapshotUploader = new SnapshotUploaderMock();
-            var logUploader = new LogUploaderMock();
-            var diagnosticsUploader = new UploaderMock();
-            var probeStatusPoller = new ProbeStatusPollerMock();
-            var updater = ConfigurationUpdater.Create("env", "version");
+            updater.AcceptAdded(
+                new ProbeConfiguration
+                {
+                    LogProbes =
+                    [
+                        new LogProbe
+                        {
+                            Id = "shared-id",
+                            Language = "dotnet",
+                            Where = new Where { SourceFile = "rcm.cs", Lines = new[] { "99" } },
+                            Template = "From RCM",
+                        }
+                    ]
+                });
 
-            return new DynamicInstrumentation(
-                settings,
-                discoveryService,
-                rcmSubscriptionManagerMock,
-                lineProbeResolver,
-                snapshotUploader,
-                logUploader,
-                diagnosticsUploader,
-                probeStatusPoller,
-                updater,
-                new DogStatsd.NoOpStatsd());
+            updater.AcceptRemoved([RemoteConfigurationPath.FromPath($"employee/{RcmProducts.LiveDebugging}/logProbe_shared-id/config")]);
+
+            GetCurrentConfiguration(updater).LogProbes.Should().BeEmpty("an RCM removal for a probe ID should suppress the file probe with the same ID");
         }
 
-        private static T[] InvokeMergeProbes<T>(DynamicInstrumentation debugger, T[] fileProbes, T[] rcmProbes)
-            where T : ProbeDefinition
+        private static ProbeConfiguration GetCurrentConfiguration(ConfigurationUpdater updater)
         {
-            var method = typeof(DynamicInstrumentation).GetMethod("MergeProbes", BindingFlags.Instance | BindingFlags.NonPublic);
-            method.Should().NotBeNull();
-
-            return (T[])method!
-                       .MakeGenericMethod(typeof(T))
-                       .Invoke(debugger, [fileProbes, rcmProbes])!;
+            var field = typeof(ConfigurationUpdater).GetField("_currentConfiguration", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return (ProbeConfiguration)field!.GetValue(updater)!;
         }
     }
 
@@ -514,13 +568,50 @@ public class DynamicInstrumentationTests
         public Task DisposeAsync() => Task.CompletedTask;
     }
 
+    private class DiscoveryServiceWithoutRcmMock : IDiscoveryService
+    {
+        internal bool Called { get; private set; }
+
+        public void SubscribeToChanges(Action<AgentConfiguration> callback)
+        {
+            Called = true;
+            callback(
+                new AgentConfiguration(
+                    configurationEndpoint: null,
+                    debuggerEndpoint: "debuggerEndpoint",
+                    debuggerV2Endpoint: "debuggerV2Endpoint",
+                    diagnosticsEndpoint: "diagnosticsEndpoint",
+                    symbolDbEndpoint: "symbolDbEndpoint",
+                    agentVersion: "agentVersion",
+                    statsEndpoint: "traceStatsEndpoint",
+                    dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                    eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
+                    telemetryProxyEndpoint: "telemetryProxyEndpoint",
+                    tracerFlareEndpoint: "tracerFlareEndpoint",
+                    containerTagsHash: "containerTagsHash",
+                    clientDropP0: false,
+                    spanMetaStructs: true,
+                    spanEvents: true));
+        }
+
+        public void RemoveSubscription(Action<AgentConfiguration> callback)
+        {
+        }
+
+        public void SetCurrentConfigStateHash(string configStateHash)
+        {
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+    }
+
     private class RcmSubscriptionManagerMock : IRcmSubscriptionManager
     {
         public bool HasAnySubscription { get; }
 
         public ICollection<string> ProductKeys { get; } = new List<string>();
 
-        public ISubscription LastSubscription { get; private set; }
+        public ISubscription? LastSubscription { get; private set; }
 
         public void SubscribeToChanges(ISubscription subscription)
         {
@@ -574,7 +665,9 @@ public class DynamicInstrumentationTests
 
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation? location, LineProbeDiagnosticLevel diagnosticLevel = LineProbeDiagnosticLevel.Full)
         {
-            throw new NotImplementedException();
+            Called = true;
+            location = null;
+            return new LineProbeResolveResult(LiveProbeResolveStatus.Error, LineProbeResolveReason.MissingPdb, "PDB not available in unit test");
         }
     }
 
