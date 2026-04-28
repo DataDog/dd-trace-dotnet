@@ -181,14 +181,15 @@ If disambiguation is needed but not provided, the tool lists available overloads
 
 #### Generation Flags
 
-Three shortcut flags are available for the most common toggles:
+Shortcut flags for the most common toggles. Async methods are auto-detected and generate `OnAsyncMethodEnd` automatically — no explicit flag required.
 
 | Flag | Description |
 |---|---|
 | `--no-method-begin` | Skip `OnMethodBegin` handler |
 | `--no-method-end` | Skip `OnMethodEnd` handler |
-| `--async-method-end` | Generate `OnAsyncMethodEnd` handler |
 | `--no-auto-detect` | Disable smart defaults (see [Auto-Detection](#auto-detection)) |
+
+For finer control (e.g., forcing `OnAsyncMethodEnd` on a non-async method), use `--set createOnAsyncMethodEnd=true`.
 
 #### Configuration Overrides
 

@@ -2,17 +2,17 @@
 
 > This document is a complete reference for AI agents using the `dd-autoinstrumentation` CLI to generate CallTarget auto-instrumentation code. It covers all commands, options, JSON schemas, error codes, and recommended workflows.
 
-## Quick Start
+## Invocation
 
 ```bash
-# Run via dotnet (from repo root)
+# From repo root
 dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net10.0 -- <command> [options]
 
-# Or if installed as a global tool
+# Or, if installed as a global tool
 dd-autoinstrumentation <command> [options]
 ```
 
-Always pass `--json` for structured output. It is a global flag and can appear anywhere on the command line.
+Always pass `--json` for structured output. `--json` is a global flag and can appear anywhere on the command line.
 
 ## Commands
 
@@ -117,8 +117,9 @@ If a method has multiple overloads, you must provide one of:
 |---|---|
 | `--no-method-begin` | Skip `OnMethodBegin` handler |
 | `--no-method-end` | Skip `OnMethodEnd` handler |
-| `--async-method-end` | Generate `OnAsyncMethodEnd` handler |
 | `--no-auto-detect` | Disable smart defaults |
+
+Async methods are auto-detected: when the inspect output shows `isAsync: true`, the generator emits `OnAsyncMethodEnd` (and skips `OnMethodEnd`) without any extra flag. To force `OnAsyncMethodEnd` on a non-async method, use `--set createOnAsyncMethodEnd=true`.
 
 #### Configuration overrides
 
@@ -308,5 +309,5 @@ Applied in order (highest wins):
 
 1. **Auto-detect** from method signature (unless `--no-auto-detect`)
 2. **Base config** from `--config-file` or `--config` (replaces layer 1)
-3. **Shortcut flags** (`--no-method-begin`, `--async-method-end`, etc.)
+3. **Shortcut flags** (`--no-method-begin`, `--no-method-end`)
 4. **`--set` overrides** (applied last, highest priority)
