@@ -16,7 +16,6 @@ using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Logging.Internal.Sinks;
 using Datadog.Trace.Logging.Internal.TextFormatters;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -48,14 +47,12 @@ internal static class DatadogLoggingFactory
             GetConsoleLoggingConfiguration(source) :
             (ConsoleLoggingConfiguration?)null;
 
-        var redactedErrorLogsConfig = GetRedactedErrorTelemetryConfiguration(source, telemetry);
-
         var rateLimit = new ConfigurationBuilder(source, telemetry)
                        .WithKeys(ConfigurationKeys.LogRateLimit)
                        .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
 
-        return new DatadogLoggingConfiguration(rateLimit, redactedErrorLogsConfig, fileConfig, consoleConfig);
+        return new DatadogLoggingConfiguration(rateLimit, fileConfig, consoleConfig);
 
         static bool Contains(string[] items, string value)
         {
@@ -84,7 +81,7 @@ internal static class DatadogLoggingFactory
         in DatadogLoggingConfiguration config,
         DomainMetadata domainMetadata)
     {
-        if (config is { File: null, ErrorLogging: null, Console: null })
+        if (config is { File: null, Console: null })
         {
             // no enabled sinks
             return null;
@@ -94,17 +91,6 @@ internal static class DatadogLoggingFactory
             new LoggerConfiguration()
                .Enrich.FromLogContext()
                .MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch);
-
-        if (config.ErrorLogging is { } telemetry)
-        {
-            // Write error logs to the redacted log sink
-            loggerConfiguration
-               .WriteTo.Logger(
-                    lc => lc
-                         .MinimumLevel.Error()
-                         .Filter.ByExcluding(Matching.WithProperty(DatadogSerilogLogger.SkipTelemetryProperty))
-                         .WriteTo.Sink(new RedactedErrorLogSink(telemetry.Collector)));
-        }
 
         if (config.File is { } fileConfig)
         {
@@ -314,24 +300,6 @@ internal static class DatadogLoggingFactory
                                   .Value;
 
         return new FileLoggingConfiguration(maxLogFileSize, logDirectory, logFileRetentionDays);
-    }
-
-    private static RedactedErrorLoggingConfiguration? GetRedactedErrorTelemetryConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
-    {
-        var config = new ConfigurationBuilder(source, telemetry);
-
-        // We only check for the top-level key here, telemetry may be _indirectly_ disabled (because other keys are etc)
-        // in which case the collector will be disabled later, but this is a preferable option.
-        var telemetryEnabled = config.WithKeys(ConfigurationKeys.Telemetry.Enabled).AsBool(true);
-        if (telemetryEnabled)
-        {
-            return config.WithKeys(ConfigurationKeys.Telemetry.TelemetryLogsEnabled).AsBool(true)
-                       ? new RedactedErrorLoggingConfiguration(TelemetryFactory.RedactedErrorLogs) // use the global collector
-                       : null;
-        }
-
-        // If telemetry is disabled
-        return null;
     }
 
     private sealed class RemovePropertyEnricher(LogEventLevel minLevel, string propertyName) : ILogEventEnricher

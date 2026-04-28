@@ -4,8 +4,6 @@
 // </copyright>
 
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 #nullable enable
@@ -14,19 +12,17 @@ namespace Datadog.Trace.Configuration;
 
 internal sealed class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {
-    private readonly ITelemetryController _telemetry;
     private readonly TracerSettings _immutableTracerSettings;
     private readonly string? _gitCommitSha;
     private readonly string? _gitRepositoryUrl;
     private GitMetadata? _cachedGitTags;
 
-    public GitMetadataTagsProvider(TracerSettings immutableTracerSettings, MutableSettings settings, ITelemetryController telemetry)
+    public GitMetadataTagsProvider(TracerSettings immutableTracerSettings, MutableSettings settings)
     {
         _immutableTracerSettings = immutableTracerSettings;
         // These never change, even though they are exposed on MutableSettings, so we can safely grab them once here
         _gitCommitSha = settings.GitCommitSha;
         _gitRepositoryUrl = settings.GitRepositoryUrl;
-        _telemetry = telemetry;
     }
 
     public bool TryExtractGitMetadata([NotNullWhen(true)] out GitMetadata? gitMetadata)
@@ -47,7 +43,6 @@ internal sealed class GitMetadataTagsProvider : IGitMetadataTagsProvider
         var gitRepositoryUrl = string.IsNullOrWhiteSpace(_gitRepositoryUrl) ? null : _gitRepositoryUrl;
 
         gitMetadata = _cachedGitTags = new GitMetadata(gitCommitSha ?? string.Empty, gitRepositoryUrl ?? string.Empty);
-        _telemetry.RecordGitMetadata(gitMetadata);
         return true;
     }
 }

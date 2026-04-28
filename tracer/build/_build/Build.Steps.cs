@@ -60,8 +60,8 @@ partial class Build
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
-    [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
-    [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
+    readonly Solution ProfilerSamplesSolution;
+    readonly Solution ProfilerSolution;
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
     AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
     AbsolutePath ProfilerBuildDataDirectory => ProfilerDirectory / "build_data";

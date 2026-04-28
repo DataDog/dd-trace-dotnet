@@ -11,7 +11,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog;
-using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -88,8 +87,7 @@ namespace Datadog.Trace
 
             serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
             discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
-            var telemetrySettings = CreateTelemetrySettings(settings);
-            telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
+            telemetry ??= CreateTelemetryController();
 
             statsd ??= new StatsdManager(settings);
 
@@ -99,8 +97,7 @@ namespace Datadog.Trace
                 statsd,
                 rates => sampler.SetDefaultSampleRates(rates),
                 discoveryService is NullDiscoveryService ? null : discoveryService.SetCurrentConfigStateHash,
-                discoveryService,
-                telemetrySettings);
+                discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
@@ -131,19 +128,12 @@ namespace Datadog.Trace
                 serviceRemappingHash);
         }
 
-        protected virtual TelemetrySettings CreateTelemetrySettings(TracerSettings settings) =>
-            TelemetrySettings.FromSource(
-                GlobalConfigurationSource.Instance,
-                TelemetryFactory.Config,
-                settings,
-                isAgentAvailable: null);
-
-        protected virtual ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
-            => TelemetryFactory.Instance.CreateTelemetryController(settings, telemetrySettings, discoveryService);
+        protected virtual ITelemetryController CreateTelemetryController()
+            => TelemetryFactory.Instance.CreateTelemetryController();
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, MutableSettings initialMutableSettings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
-            return new GitMetadataTagsProvider(settings, initialMutableSettings, telemetry);
+            return new GitMetadataTagsProvider(settings, initialMutableSettings);
         }
 
         protected virtual TracerManager CreateTracerManagerFrom(
@@ -187,15 +177,10 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
+        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService)
         {
-            // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
-            IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
-                           ? traceExporter
-                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
-
+            IApi api = new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, isOtlp: false);
-
             return new AgentWriter(api, statsAggregator, statsd, settings);
         }
 

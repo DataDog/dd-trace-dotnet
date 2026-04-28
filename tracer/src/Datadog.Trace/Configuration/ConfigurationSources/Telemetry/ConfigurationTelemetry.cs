@@ -64,6 +64,10 @@ internal sealed partial class ConfigurationTelemetry : IConfigurationTelemetry
         }
     }
 
+    public void CopyTo(IConfigurationTelemetry destination)
+    {
+    }
+
     /// <summary>
     /// Gets the currently enqueued values. Should only be used for testing
     /// </summary>
