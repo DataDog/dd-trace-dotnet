@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using Nuke.Common.IO;
 
 namespace UpdateVendors
 {
@@ -414,6 +415,8 @@ namespace UpdateVendors
 
         public string[] OnlyIncludeRelativePaths { get; set; }
 
+        public RelativePath RelativePathToVendorDirectoryOverride { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
@@ -421,7 +424,8 @@ namespace UpdateVendors
             string[] pathToSrc,
             Action<string> transform,
             string[] relativePathsToExclude = null,
-            string[] onlyIncludePaths = null)
+            string[] onlyIncludePaths = null,
+            RelativePath relatePathToVendorDirectoryOverride = null)
         {
             All.Add(new VendoredDependency()
             {
@@ -432,6 +436,7 @@ namespace UpdateVendors
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
                 OnlyIncludeRelativePaths = onlyIncludePaths,
+                RelatePathToVendorDirectoryOverride = relatePathToVendorDirectoryOverride,
             });
         }
 
