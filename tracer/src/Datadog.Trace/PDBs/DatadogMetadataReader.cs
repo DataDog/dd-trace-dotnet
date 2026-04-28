@@ -215,13 +215,13 @@ namespace Datadog.Trace.Pdb
             return true;
         }
 
-        internal static bool TryDecodeLocalSignature(ref BlobReader blobReader, out ImmutableArray<string> localTypes)
+        internal static bool TryDecodeLocalSignature(MetadataReader metadataReader, ref BlobReader blobReader, out ImmutableArray<string> localTypes)
         {
             localTypes = default;
 
             try
             {
-                localTypes = new SignatureDecoder<string, int>(new TypeProvider(false), default!, 0).DecodeLocalSignature(ref blobReader);
+                localTypes = new SignatureDecoder<string, int>(new TypeProvider(false), metadataReader, 0).DecodeLocalSignature(ref blobReader);
                 return true;
             }
             catch (BadImageFormatException)
@@ -832,7 +832,7 @@ namespace Datadog.Trace.Pdb
                 }
 
                 BlobReader signatureReader = MetadataReader.GetBlobReader(signature.Value.Signature);
-                if (!TryDecodeLocalSignature(ref signatureReader, out var localTypes))
+                if (!TryDecodeLocalSignature(MetadataReader, ref signatureReader, out var localTypes))
                 {
                     return null;
                 }

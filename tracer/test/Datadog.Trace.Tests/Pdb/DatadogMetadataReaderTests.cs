@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Pdb;
 using FluentAssertions;
 using Xunit;
@@ -55,8 +56,14 @@ public class DatadogMetadataReaderTests
         fixed (byte* ptr = signature)
         {
             var reader = new BlobReader(ptr, signature.Length);
+            using var metadataReader = DatadogMetadataReader.CreatePdbReader(typeof(DatadogMetadataReaderTests).Assembly);
 
-            DatadogMetadataReader.TryDecodeLocalSignature(ref reader, out var localTypes).Should().BeTrue();
+            if (metadataReader is null)
+            {
+                throw new InvalidOperationException("Could not create metadata reader for test assembly.");
+            }
+
+            DatadogMetadataReader.TryDecodeLocalSignature(metadataReader.MetadataReader, ref reader, out var localTypes).Should().BeTrue();
             localTypes.Should().Equal("System.Int32");
         }
     }
@@ -69,8 +76,14 @@ public class DatadogMetadataReaderTests
         fixed (byte* ptr = signature)
         {
             var reader = new BlobReader(ptr, signature.Length);
+            using var metadataReader = DatadogMetadataReader.CreatePdbReader(typeof(DatadogMetadataReaderTests).Assembly);
 
-            DatadogMetadataReader.TryDecodeLocalSignature(ref reader, out var localTypes).Should().BeFalse();
+            if (metadataReader is null)
+            {
+                throw new InvalidOperationException("Could not create metadata reader for test assembly.");
+            }
+
+            DatadogMetadataReader.TryDecodeLocalSignature(metadataReader.MetadataReader, ref reader, out var localTypes).Should().BeFalse();
             localTypes.IsDefault.Should().BeTrue();
         }
     }
