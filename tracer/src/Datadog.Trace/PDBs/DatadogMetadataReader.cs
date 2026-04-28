@@ -192,6 +192,29 @@ namespace Datadog.Trace.Pdb
             return MetadataReader.GetStandaloneSignature(methodBodyBlock.LocalSignature);
         }
 
+        internal static bool TryReadLocalVariablesCount(ref BlobReader blobReader, out int variableCount)
+        {
+            variableCount = 0;
+
+            if (blobReader.RemainingBytes == 0)
+            {
+                return false;
+            }
+
+            if (blobReader.ReadByte() != (byte)SignatureKind.LocalVariables)
+            {
+                return false;
+            }
+
+            if (!blobReader.TryReadCompressedInteger(out variableCount))
+            {
+                variableCount = 0;
+                return false;
+            }
+
+            return true;
+        }
+
         private int GetLocalVariablesCount(MethodDefinition method)
         {
             var signature = GetLocalSignature(method);
@@ -200,12 +223,18 @@ namespace Datadog.Trace.Pdb
                 return 0;
             }
 
-            BlobReader blobReader = MetadataReader.GetBlobReader(signature.Value.Signature);
-
-            if (blobReader.ReadByte() == (byte)SignatureKind.LocalVariables)
+            try
             {
-                int variableCount = blobReader.ReadCompressedInteger();
-                return variableCount;
+                BlobReader blobReader = MetadataReader.GetBlobReader(signature.Value.Signature);
+                if (TryReadLocalVariablesCount(ref blobReader, out var variableCount))
+                {
+                    return variableCount;
+                }
+            }
+            catch (BadImageFormatException)
+            {
+                // Some customer assemblies contain malformed local signatures.
+                // Treat them as "no locals" so the debugger metadata path remains best-effort.
             }
 
             return 0;
