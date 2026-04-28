@@ -119,11 +119,16 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- spdlog 1.17 bundles fmt 11+, which static_asserts that narrow string literals are UTF-8.
-           We don't compile with /utf-8, because it would change the encoding of every narrow string
-           literal in our codebase. We log via std::string (ASCII-only log messages), so disabling
-           fmt's Unicode requirement is safe. -->
-      <PreprocessorDefinitions>FMT_UNICODE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- spdlog 1.17 (and the bundled fmt 11+) need two build flags:
+           - FMT_UNICODE=0: fmt 11+ static_asserts that narrow string literals are UTF-8.
+             We don't compile with /utf-8 (would change the encoding of every narrow string in
+             the codebase) and we only log ASCII via std::string, so disabling Unicode is safe.
+           - DD_SPDLOG_NO_MDC: spdlog 1.13's MDC feature uses `thread_local std::map`, which on
+             the Linux universal build breaks linking against static libc++abi. We don't use MDC;
+             this macro pairs with a vendored-source patch that gates MDC behind it (see
+             PatchSpdlogFile in tracer/build/_build/UpdateVendors/VendoredDependency.cs).
+             Defined here on Windows for consistency. -->
+      <PreprocessorDefinitions>FMT_UNICODE=0;DD_SPDLOG_NO_MDC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

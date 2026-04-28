@@ -11,7 +11,7 @@
 #include <spdlog/details/log_msg.h>
 #include <spdlog/details/os.h>
 
-#ifndef SPDLOG_NO_TLS
+#if !defined(SPDLOG_NO_TLS) && !defined(DD_SPDLOG_NO_MDC)
 #include <spdlog/mdc.h>
 #endif
 
@@ -805,7 +805,7 @@ private:
 
 // Class for formatting Mapped Diagnostic Context (MDC) in log messages.
 // Example: [logger-name] [info] [mdc_key_1:mdc_value_1 mdc_key_2:mdc_value_2] some message
-#ifndef SPDLOG_NO_TLS
+#if !defined(SPDLOG_NO_TLS) && !defined(DD_SPDLOG_NO_MDC)
 template <typename ScopedPadder>
 class mdc_formatter : public flag_formatter {
 public:
@@ -922,7 +922,7 @@ public:
             dest.push_back(' ');
         }
 
-#ifndef SPDLOG_NO_TLS
+#if !defined(SPDLOG_NO_TLS) && !defined(DD_SPDLOG_NO_MDC)
         // add mdc if present
         auto &mdc_map = mdc::get_context();
         if (!mdc_map.empty()) {
@@ -940,7 +940,7 @@ private:
     std::chrono::seconds cache_timestamp_{0};
     memory_buf_t cached_datetime_;
 
-#ifndef SPDLOG_NO_TLS
+#if !defined(SPDLOG_NO_TLS) && !defined(DD_SPDLOG_NO_MDC)
     mdc_formatter<null_scoped_padder> mdc_formatter_{padding_info {}};
 #endif
 };
@@ -1236,7 +1236,7 @@ SPDLOG_INLINE void pattern_formatter::handle_flag_(char flag, details::padding_i
                     padding));
             break;
 
-#ifndef SPDLOG_NO_TLS  // mdc formatter requires TLS support
+#if !defined(SPDLOG_NO_TLS) && !defined(DD_SPDLOG_NO_MDC)  // mdc formatter requires TLS support
         case ('&'):
             formatters_.push_back(details::make_unique<details::mdc_formatter<Padder>>(padding));
             break;
