@@ -22,9 +22,24 @@ public static class DataStreams
     /// </summary>
     /// <param name="transactionId">A stable identifier for the transaction being tracked (e.g. a message ID or trace ID).</param>
     /// <param name="checkpointName">The logical name of the checkpoint (e.g. "kafka-produce", "http-send").</param>
+    public static void TrackTransaction(string transactionId, string checkpointName)
+    {
+        if (string.IsNullOrEmpty(transactionId))
+        {
+            throw new ArgumentException("Argument is null or empty", nameof(transactionId));
+        }
+
+        if (string.IsNullOrEmpty(checkpointName))
+        {
+            throw new ArgumentException("Argument is null or empty", nameof(checkpointName));
+        }
+
+        TrackTransactionInternal(transactionId, checkpointName);
+    }
+
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void TrackTransaction(string transactionId, string checkpointName)
+    private static void TrackTransactionInternal(string transactionId, string checkpointName)
     {
     }
 }

@@ -15,12 +15,12 @@ using Datadog.Trace.Telemetry.Metrics;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.DataStreams;
 
 /// <summary>
-/// System.Void Datadog.Trace.DataStreams::TrackTransaction(System.String,System.String) calltarget instrumentation
+/// System.Void Datadog.Trace.DataStreams::TrackTransactionInternal(System.String,System.String) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.Trace.Manual",
     TypeName = "Datadog.Trace.DataStreams",
-    MethodName = "TrackTransaction",
+    MethodName = "TrackTransactionInternal",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.String, ClrNames.String],
     MinimumVersion = "3.43.0",
@@ -30,13 +30,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Da
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class DataStreamsTrackTransactionIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget>(string? transactionId, string? checkpointName)
+    internal static CallTargetState OnMethodBegin<TTarget>(string transactionId, string checkpointName)
     {
-        if (StringUtil.IsNullOrEmpty(transactionId) || StringUtil.IsNullOrEmpty(checkpointName))
-        {
-            return CallTargetState.GetDefault();
-        }
-
         TelemetryFactory.Metrics.Record(PublicApiUsage.DataStreams_TrackTransaction);
 
         var tracer = Datadog.Trace.Tracer.Instance;
