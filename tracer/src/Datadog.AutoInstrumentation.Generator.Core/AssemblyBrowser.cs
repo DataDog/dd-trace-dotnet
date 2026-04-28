@@ -135,7 +135,9 @@ public class AssemblyBrowser : IDisposable
     }
 
     /// <summary>
-    /// Lists all instrumentable methods on a type (excludes compiler-generated and special-name methods).
+    /// Lists all instrumentable methods on a type (excludes only compiler-generated methods).
+    /// Special-name methods (.ctor, get_/set_ accessors, event accessors, operators) are kept
+    /// because CallTarget integrations target them.
     /// </summary>
     public IReadOnlyList<MethodDef> ListMethods(string typeFullName)
     {
@@ -155,7 +157,7 @@ public class AssemblyBrowser : IDisposable
         }
 
         return typeDef.Methods
-            .Where(m => !m.IsSpecialName && !IsCompilerGenerated(m))
+            .Where(m => !IsCompilerGenerated(m))
             .ToList();
     }
 
