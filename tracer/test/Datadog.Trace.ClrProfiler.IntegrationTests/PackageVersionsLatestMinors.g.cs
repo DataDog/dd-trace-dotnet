@@ -9452,5 +9452,56 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> Ocelot =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET6_0
+                new object[] { "23.0.0" },
+                new object[] { "23.1.0" },
+                new object[] { "23.2.2" },
+                new object[] { "23.3.6" },
+                new object[] { "23.4.3" },
+#endif
+#if NET7_0
+                new object[] { "23.0.0" },
+                new object[] { "23.1.0" },
+                new object[] { "23.2.2" },
+                new object[] { "23.3.6" },
+                new object[] { "23.4.3" },
+#endif
+#if NET8_0
+                new object[] { "23.0.0" },
+                new object[] { "23.1.0" },
+                new object[] { "23.2.2" },
+                new object[] { "23.3.6" },
+                new object[] { "23.4.3" },
+                new object[] { "24.0.1" },
+                new object[] { "24.1.0" },
+#endif
+#if NET9_0
+                new object[] { "23.0.0" },
+                new object[] { "23.1.0" },
+                new object[] { "23.2.2" },
+                new object[] { "23.3.6" },
+                new object[] { "23.4.3" },
+                new object[] { "24.0.1" },
+                new object[] { "24.1.0" },
+#endif
+#if NET10_0
+                new object[] { "23.0.0" },
+                new object[] { "23.1.0" },
+                new object[] { "23.2.2" },
+                new object[] { "23.3.6" },
+                new object[] { "23.4.3" },
+                new object[] { "24.0.1" },
+                new object[] { "24.1.0" },
+#endif
+#endif
+            };
+
     }
 }
