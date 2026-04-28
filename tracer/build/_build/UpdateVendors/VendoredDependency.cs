@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using Nuke.Common.IO;
 
 namespace UpdateVendors
 {
@@ -396,6 +397,15 @@ namespace UpdateVendors
                     "OtlpTraceExporter.cs",
                     "OtlpTraceExporterHelperExtensions.cs"
                 });
+
+            Add(
+                libraryName: "spdlog",
+                version: "1.11.0",
+                downloadUrl: "https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.zip",
+                pathToSrc: new[] {"spdlog-1.11.0", "include", "spdlog"},
+                transform: filePath => { },
+                relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/spdlog/include",
+                isNuGetPackage: false);
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -414,6 +424,10 @@ namespace UpdateVendors
 
         public string[] OnlyIncludeRelativePaths { get; set; }
 
+        public RelativePath RelativePathToVendorDirectoryOverride { get; set; }
+
+        public bool IsNuGetPackage { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
@@ -421,7 +435,9 @@ namespace UpdateVendors
             string[] pathToSrc,
             Action<string> transform,
             string[] relativePathsToExclude = null,
-            string[] onlyIncludePaths = null)
+            string[] onlyIncludePaths = null,
+            RelativePath relativePathToVendorDirectoryOverride = null,
+            bool isNuGetPackage = true)
         {
             All.Add(new VendoredDependency()
             {
@@ -432,6 +448,8 @@ namespace UpdateVendors
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
                 OnlyIncludeRelativePaths = onlyIncludePaths,
+                RelativePathToVendorDirectoryOverride = relativePathToVendorDirectoryOverride,
+                IsNuGetPackage = isNuGetPackage,
             });
         }
 

@@ -381,7 +381,7 @@ partial class Build
             var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
             EnsureCleanDirectory(downloadDirectory);
-            await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
+            await UpdateVendorsTool.UpdateVendors(downloadDirectory, RootDirectory, vendorDirectory);
        });
 
     Target UpdateVersion => _ => _

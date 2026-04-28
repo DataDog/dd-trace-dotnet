@@ -18,25 +18,29 @@ namespace UpdateVendors
     {
         public static async Task UpdateVendors(
             AbsolutePath downloadDirectory,
-            AbsolutePath vendorDirectory)
+            AbsolutePath rootDirectory,
+            AbsolutePath defaultVendorDirectory)
         {
             foreach (var dependency in VendoredDependency.All)
             {
-                await UpdateVendor(dependency, downloadDirectory, vendorDirectory);
+                await UpdateVendor(dependency, downloadDirectory, rootDirectory, defaultVendorDirectory);
             }
         }
 
-        private static async Task UpdateVendor(VendoredDependency dependency, AbsolutePath downloadDirectory, AbsolutePath vendorDirectory)
+        private static async Task UpdateVendor(VendoredDependency dependency, AbsolutePath downloadDirectory, AbsolutePath rootDirectory, AbsolutePath defaultVendorDirectory)
         {
             var libraryName = dependency.LibraryName;
             var downloadUrl = dependency.DownloadUrl;
             var pathToSrc = dependency.PathToSrc;
 
             Console.WriteLine($"Starting {libraryName} upgrade.");
+            var vendorDirectory = dependency.RelativePathToVendorDirectoryOverride is not null
+                ? rootDirectory / dependency.RelativePathToVendorDirectoryOverride
+                : defaultVendorDirectory;
 
             var zipLocation = Path.Combine(downloadDirectory, $"{libraryName}.zip");
             var extractLocation = Path.Combine(downloadDirectory, $"{libraryName}");
-            var vendorFinalPath = Path.Combine(vendorDirectory, libraryName);
+            var vendorFinalPath = vendorDirectory / libraryName;
             var sourceUrlLocation = Path.Combine(vendorFinalPath, "_last_downloaded_source_url.txt");
 
             // Ensure the url has changed, or don't bother upgrading

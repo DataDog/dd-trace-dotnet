@@ -16,14 +16,16 @@ internal abstract class EventMessagePackFormatter
 {
     private readonly IDatadogLogger _log;
 
-    protected static readonly byte[] TypeBytes = StringEncoding.UTF8.GetBytes("type");
-    protected static readonly byte[] VersionBytes = StringEncoding.UTF8.GetBytes("version");
-    protected static readonly byte[] ContentBytes = StringEncoding.UTF8.GetBytes("content");
-
     protected EventMessagePackFormatter()
     {
         _log = DatadogLogging.GetLoggerFor(GetType());
     }
+
+#pragma warning disable SA1516 // Elements should be separated by blank line
+    protected static ReadOnlySpan<byte> TypeBytes => "type"u8;
+    protected static ReadOnlySpan<byte> VersionBytes => "version"u8;
+    protected static ReadOnlySpan<byte> ContentBytes => "content"u8;
+#pragma warning restore SA1516
 
     protected IDatadogLogger Log => _log;
 }
