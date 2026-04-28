@@ -1535,7 +1535,7 @@ partial class Build
         .DependsOn(RunProfilerNativeUnitTestsLinux)
         .After(CompileProfilerNativeTests);
 
-    Target CompileIntegrationTests => _ => _
+    Target CompileWindowsIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
@@ -1803,7 +1803,7 @@ partial class Build
     Target RunIntegrationTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileWindowsIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
         .After(BuildIntegrationTests)
@@ -1943,7 +1943,7 @@ partial class Build
     Target RunWindowsAzureFunctionsTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileWindowsIntegrationTests)
         .After(CompileAzureFunctionsSamplesWindows)
         .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
@@ -1985,7 +1985,7 @@ partial class Build
     Target RunWindowsRegressionTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileWindowsIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
         .After(BuildNativeLoader)
@@ -2027,7 +2027,7 @@ partial class Build
 
     Target RunWindowsTracerIisIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileWindowsIntegrationTests)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -2070,7 +2070,7 @@ partial class Build
 
     Target RunWindowsMsiIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileWindowsIntegrationTests)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
