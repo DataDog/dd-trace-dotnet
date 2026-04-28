@@ -88,7 +88,8 @@ Response:
 ```
 
 Notes:
-- Excludes compiler-generated methods and special-name methods (property getters/setters, event accessors)
+- Excludes compiler-generated methods
+- Includes constructors (`.ctor`), property accessors (`get_*`, `set_*`), event accessors, and operators — CallTarget can instrument all of these
 - `overloadIndex` and `overloadCount` tell you upfront if disambiguation is needed
 - `isAsync` is true when return type starts with `System.Threading.Tasks.Task` or `System.Threading.Tasks.ValueTask`
 
