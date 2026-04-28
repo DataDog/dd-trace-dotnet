@@ -47,9 +47,9 @@ internal partial class ProbeExpressionParser<T>
                 ReturnDefaultValueExpression();
             }
 
-            if (!IsSafeCollection(source.Type))
+            if (!IsSafeCollection(source.Type) && !IsSafeNonGenericDictionary(source.Type))
             {
-                throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");
+                throw new InvalidOperationException("Source must be an array or implement ICollection, IReadOnlyCollection, or IDictionary");
             }
 
             var itParameterType = GetIteratorParameterType(source.Type);
@@ -63,7 +63,7 @@ internal partial class ProbeExpressionParser<T>
             var predicate = ParseTree(reader, new List<ParameterExpression> { Expression.Parameter(source.Type) }, itParameter);
             var lambda = Expression.Lambda(predicate, itParameter);
             var genericPredicateMethod = predicateMethod.MakeGenericMethod(itParameterType);
-            callExpression = Expression.Call(null, genericPredicateMethod, source, lambda);
+            callExpression = Expression.Call(null, genericPredicateMethod, PredicateSource(source, itParameterType), lambda);
             if (IsIEnumerable(callExpression.Type))
             {
                 var toListMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
@@ -237,6 +237,17 @@ internal partial class ProbeExpressionParser<T>
         throw new InvalidOperationException("Fail to determined the iterator parameter type");
     }
 
+    private Expression PredicateSource(Expression source, Type itParameterType)
+    {
+        if (itParameterType != typeof(DictionaryEntry) || !IsSafeNonGenericDictionary(source.Type))
+        {
+            return source;
+        }
+
+        var castMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.Cast), [typeof(IEnumerable)], [typeof(DictionaryEntry)]);
+        return Expression.Call(null, castMethod, source);
+    }
+
     private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out MemberExpression propertyExpression)
     {
         propertyExpression = null;
@@ -264,6 +275,11 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return type.IsArray || (IsMicrosoftType(type) && IsCollection(type));
+    }
+
+    private bool IsSafeNonGenericDictionary(Type type)
+    {
+        return type != null && IsMicrosoftType(type) && typeof(IDictionary).IsAssignableFrom(type);
     }
 
     private bool IsIEnumerable(Type type)
