@@ -384,14 +384,15 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled && !Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled || Tracer.Instance.Settings.IsActivityInterceptionEnabled)
                 {
+                    // In interception mode the listener still has to be registered so that
+                    // ActivitySources without an external subscriber still produce activities (otherwise
+                    // ActivitySource.StartActivity returns null and our CallTarget intercept never fires).
+                    // ActivityListenerHandler short-circuits its ActivityStarted/Stopped callbacks in
+                    // interception mode, so no Datadog spans are created via the listener path.
                     Log.Debug("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
-                }
-                else if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
-                {
-                    Log.Debug("Activity interception is enabled via CallTarget; skipping managed ActivityListener.");
                 }
             }
             catch (Exception ex)

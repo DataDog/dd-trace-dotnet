@@ -21,12 +21,25 @@ namespace Datadog.Trace.Activity
         public static void OnActivityStarted<T>(T activity)
             where T : IActivity5
         {
+            // In interception mode, ActivityStartIntegration handles span creation.
+            // The managed listener is registered only so unsubscribed ActivitySources still create activities
+            // (otherwise ActivitySource.StartActivity returns null and our CallTarget intercept never fires).
+            if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+            {
+                return;
+            }
+
             OnActivityWithSourceStarted(activity.Source.Name, activity);
         }
 
         public static void OnActivityStopped<T>(T activity)
             where T : IActivity5
         {
+            if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+            {
+                return;
+            }
+
             OnActivityWithSourceStopped(activity.Source.Name, activity);
         }
 
