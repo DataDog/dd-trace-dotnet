@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "resource_logs": [
       {
@@ -47,10 +47,28 @@
                 "severity_number": "SEVERITY_NUMBER_INFO",
                 "severity_text": "Information",
                 "body": {
+                  "string_value": "Hello from OpenTelemetry logger outside span context"
+                },
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_INFO",
+                "severity_text": "Information",
+                "body": {
                   "string_value": "Hello from OpenTelemetry logger within span context"
                 },
                 "trace_id": "normalized-trace-id",
                 "span_id": "normalized-span-id",
+                "observed_time_unix_nano": "0"
+              },
+              {
+                "time_unix_nano": "0",
+                "severity_number": "SEVERITY_NUMBER_FATAL",
+                "severity_text": "Critical",
+                "body": {
+                  "string_value": "This is a critical message"
+                },
                 "observed_time_unix_nano": "0"
               },
               {
@@ -85,24 +103,6 @@
                 "trace_id": "normalized-trace-id",
                 "span_id": "normalized-span-id",
                 "observed_time_unix_nano": "0"
-              },
-              {
-                "time_unix_nano": "0",
-                "severity_number": "SEVERITY_NUMBER_INFO",
-                "severity_text": "Information",
-                "body": {
-                  "string_value": "Hello from OpenTelemetry logger outside span context"
-                },
-                "observed_time_unix_nano": "0"
-              },
-              {
-                "time_unix_nano": "0",
-                "severity_number": "SEVERITY_NUMBER_FATAL",
-                "severity_text": "Critical",
-                "body": {
-                  "string_value": "This is a critical message"
-                },
-                "observed_time_unix_nano": "0"
               }
             ]
           },
@@ -113,10 +113,10 @@
             "log_records": [
               {
                 "time_unix_nano": "0",
-                "severity_number": "SEVERITY_NUMBER_INFO",
-                "severity_text": "Information",
+                "severity_number": "SEVERITY_NUMBER_DEBUG",
+                "severity_text": "Debug",
                 "body": {
-                  "string_value": "Response from other library"
+                  "string_value": "Debug information from other library"
                 },
                 "trace_id": "normalized-trace-id",
                 "span_id": "normalized-span-id",
@@ -124,10 +124,10 @@
               },
               {
                 "time_unix_nano": "0",
-                "severity_number": "SEVERITY_NUMBER_DEBUG",
-                "severity_text": "Debug",
+                "severity_number": "SEVERITY_NUMBER_INFO",
+                "severity_text": "Information",
                 "body": {
-                  "string_value": "Debug information from other library"
+                  "string_value": "Response from other library"
                 },
                 "trace_id": "normalized-trace-id",
                 "span_id": "normalized-span-id",
