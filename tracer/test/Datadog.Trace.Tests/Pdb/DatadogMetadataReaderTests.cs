@@ -46,4 +46,32 @@ public class DatadogMetadataReaderTests
             count.Should().Be(0);
         }
     }
+
+    [Fact]
+    public unsafe void TryDecodeLocalSignature_ValidSignature_ReturnsLocalTypes()
+    {
+        byte[] signature = [(byte)SignatureKind.LocalVariables, 1, 0x08];
+
+        fixed (byte* ptr = signature)
+        {
+            var reader = new BlobReader(ptr, signature.Length);
+
+            DatadogMetadataReader.TryDecodeLocalSignature(ref reader, out var localTypes).Should().BeTrue();
+            localTypes.Should().Equal("System.Int32");
+        }
+    }
+
+    [Fact]
+    public unsafe void TryDecodeLocalSignature_TruncatedAfterCount_ReturnsFalse()
+    {
+        byte[] signature = [(byte)SignatureKind.LocalVariables, 1];
+
+        fixed (byte* ptr = signature)
+        {
+            var reader = new BlobReader(ptr, signature.Length);
+
+            DatadogMetadataReader.TryDecodeLocalSignature(ref reader, out var localTypes).Should().BeFalse();
+            localTypes.IsDefault.Should().BeTrue();
+        }
+    }
 }

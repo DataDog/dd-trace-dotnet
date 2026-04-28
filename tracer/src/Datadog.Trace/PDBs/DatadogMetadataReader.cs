@@ -215,6 +215,21 @@ namespace Datadog.Trace.Pdb
             return true;
         }
 
+        internal static bool TryDecodeLocalSignature(ref BlobReader blobReader, out ImmutableArray<string> localTypes)
+        {
+            localTypes = default;
+
+            try
+            {
+                localTypes = new SignatureDecoder<string, int>(new TypeProvider(false), default!, 0).DecodeLocalSignature(ref blobReader);
+                return true;
+            }
+            catch (BadImageFormatException)
+            {
+                return false;
+            }
+        }
+
         private int GetLocalVariablesCount(MethodDefinition method)
         {
             var signature = GetLocalSignature(method);
@@ -816,7 +831,12 @@ namespace Datadog.Trace.Pdb
                     return null;
                 }
 
-                var localTypes = signature.Value.DecodeLocalSignature(new TypeProvider(false), 0);
+                BlobReader signatureReader = MetadataReader.GetBlobReader(signature.Value.Signature);
+                if (!TryDecodeLocalSignature(ref signatureReader, out var localTypes))
+                {
+                    return null;
+                }
+
                 localScopes = ImmutableArray.CreateBuilder<LocalScope>();
 
                 foreach (var scopeHandle in PdbReader.GetLocalScopes(methodDefHandle.ToDebugInformationHandle()))
