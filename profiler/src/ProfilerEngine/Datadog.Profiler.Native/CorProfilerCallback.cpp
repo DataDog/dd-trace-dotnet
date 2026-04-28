@@ -58,7 +58,7 @@
 #ifdef LINUX
 #ifdef ARM64
 #include "HybridUnwinder.h"
-#include "UnwindTracersProvider.h"
+#include "UnwindingRecorderFactory.h"
 #else
 #include "Backtrace2Unwinder.h"
 #endif
@@ -623,15 +623,18 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
+#ifdef ARM64
+    if (Log::IsDebugEnabled())
+    {
+        // For now just 50 is a magic number. We should size based on the number of
+        // cores + extra.
+        _pUnwindingRecorderFactory = std::make_unique<UnwindingRecorderFactory>(50);
+    }
+#endif
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
 #ifdef ARM64
-        // Initialize the UnwindTracersProvider
-        if (Log::IsDebugEnabled())
-        {
-            UnwindTracersProvider::GetInstance();
-        }
         _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
 #else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
@@ -644,7 +647,8 @@ void CorProfilerCallback::InitializeServices()
             _pManagedThreadList,
             _pCpuSampleProvider,
             _metricsRegistry,
-            _pUnwinder.get());
+            _pUnwinder.get(),
+            _pUnwindingRecorderFactory.get());
     }
 #endif
 

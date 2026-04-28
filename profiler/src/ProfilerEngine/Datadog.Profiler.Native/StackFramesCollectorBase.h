@@ -14,7 +14,7 @@
 #include "StackSnapshotResultBuffer.h"
 
 class IConfiguration;
-class UnwinderTracer;
+class UnwindingRecorder;
 
 class StackFramesCollectorBase
 {
@@ -52,12 +52,12 @@ public:
     void PrepareForNextCollection();
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
-    StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, UnwinderTracer* tracer = nullptr);
+    StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, UnwindingRecorder* recorder = nullptr);
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
     CallstackProvider* _callstackProvider;
-    std::atomic<UnwinderTracer*> _tracer{nullptr};
+    std::atomic<UnwindingRecorder*> _recorder{nullptr};
 
 private:
     std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;

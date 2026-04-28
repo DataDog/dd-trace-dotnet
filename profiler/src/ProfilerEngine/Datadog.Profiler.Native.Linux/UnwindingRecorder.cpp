@@ -1,7 +1,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "UnwinderTracer.h"
+#include "UnwindingRecorder.h"
 
 #include <iomanip>
 #include <ostream>
@@ -40,10 +40,10 @@ static const char* FinishReasonName(FinishReason r)
     }
 }
 
-void UnwinderTracer::WriteTo(std::ostream& os) const
+void UnwindingRecorder::WriteTo(std::ostream& os) const
 {
     auto recorded = RecordedEvents();
-    os << "# UnwinderTrace: " << recorded << " events recorded, "
+    os << "# UnwindingRecorder: " << recorded << " events recorded, "
        << _totalEvents << " total";
     if (Overflowed())
         os << " (" << (_totalEvents - Capacity) << " discarded)";

@@ -6,7 +6,7 @@
 #include "Callstack.h"
 #include "ManagedCodeCache.h"
 
-#include "UnwinderTracer.h"
+#include "UnwindingRecorder.h"
 
 #include "FrameStore.h"
 
@@ -69,14 +69,17 @@ struct UnwindCursor
 };
 
 bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack,
-    UnwinderTracer* tracer) const
+    UnwindingRecorder* recorder) const
 {
     unw_word_t ip = 0;
     while (true)
     {
         if (auto getResult = unw_get_reg(&cursor->cursor, UNW_REG_IP, &ip); getResult != 0 || ip == 0)
         {
-            if (tracer) tracer->RecordFinish(getResult, FinishReason::FailedGetReg);
+            if (recorder)
+            {
+                recorder->RecordFinish(getResult, FinishReason::FailedGetReg);
+            }
             return false;
         }
 
@@ -85,11 +88,11 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
         {
             if (isManaged.value())
             {
-                if (tracer)
+                if (recorder)
                 {
                     unw_word_t managedFp = 0;
                     unw_get_reg(&cursor->cursor, UNW_REG_FP, &managedFp);
-                    tracer->Record(EventType::ManagedTransition, ip, managedFp);
+                    recorder->Record(EventType::ManagedTransition, ip, managedFp);
                 }
                 break;
             }
@@ -97,35 +100,41 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
         else
         {
             callstack.Add(FrameStore::UnknownFrameTypeIP);
-            if (tracer)
+            if (recorder)
             {
-                tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::FailedIsManaged);
+                recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::FailedIsManaged);
             }
             return false;
         }
 
-        if (tracer)
+        if (recorder)
         {
             unw_word_t sp = 0;
             unw_word_t nativeFp = 0;
             unw_get_reg(&cursor->cursor, UNW_AARCH64_SP, &sp);
             unw_get_reg(&cursor->cursor, UNW_REG_FP, &nativeFp);
-            tracer->Record(EventType::NativeFrame, ip, nativeFp, sp);
+            recorder->Record(EventType::NativeFrame, ip, nativeFp, sp);
         }
 
         if (!callstack.Add(ip))
         {
-            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+            if (recorder) recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
             return false;
         }
 
         auto stepResult = unw_step(&cursor->cursor);
-        unw_cursor_snapshot_t snapshot;
-        unw_get_cursor_snapshot(&cursor->cursor, &snapshot);
-        if (tracer) tracer->Record(EventType::LibunwindStep, stepResult, snapshot);
+        if (recorder)
+        {
+            unw_cursor_snapshot_t snapshot;
+            unw_get_cursor_snapshot(&cursor->cursor, &snapshot);
+            recorder->Record(EventType::LibunwindStep, stepResult, snapshot);
+        }
         if (stepResult <= 0)
         {
-            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(stepResult), FinishReason::FailedLibunwindStep);
+            if (recorder)
+            {
+                recorder->RecordFinish(static_cast<std::int32_t>(stepResult), FinishReason::FailedLibunwindStep);
+            }
             return false;
         }
     }
@@ -134,26 +143,35 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
 }
 
 bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack,
-    UnwinderTracer* tracer,
+    UnwindingRecorder* recorder,
     std::uintptr_t stackBase, std::uintptr_t stackEnd) const
 {
     unw_word_t ip = 0;
     if (auto result = unw_get_reg(&cursor->cursor, UNW_REG_IP, &ip); result != 0 || ip == 0)
     {
-        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(UNW_REG_IP), FinishReason::FailedGetReg);
+        if (recorder)
+        {
+            recorder->RecordFinish(static_cast<std::int32_t>(UNW_REG_IP), FinishReason::FailedGetReg);
+        }
         return false;
     }
 
     if (!callstack.Add(ip))
     {
-        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+        if (recorder)
+        {
+            recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+        }
         return false;
     }
 
     unw_word_t fp = 0;
     if (auto result = unw_get_reg(&cursor->cursor, UNW_REG_FP, &fp); result != 0 || !IsValidFp(fp, 0, stackBase, stackEnd))
     {
-        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(result), FinishReason::InvalidFp);
+        if (recorder)
+        {
+            recorder->RecordFinish(static_cast<std::int32_t>(result), FinishReason::InvalidFp);
+        }
         return false;
     }
 
@@ -183,14 +201,17 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
             break;
         }
 
-        if (tracer) tracer->Record(EventType::FrameChainStep, ip, fp);
+        if (recorder) recorder->Record(EventType::FrameChainStep, ip, fp);
 
         auto isManaged = IsManaged(ip);
         if (isManaged.has_value() && isManaged.value())
         {
             if (!callstack.Add(ip))
             {
-                if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+                if (recorder)
+                {
+                    recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+                }
                 break;
             }
             consecutiveNativeFrames = 0;
@@ -203,7 +224,10 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
             {
                 if (!callstack.Add(FrameStore::FakeUnknownIP))
                 {
-                    if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+                    if (recorder)
+                    {
+                        recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
+                    }
                     break;
                 }
             }
@@ -222,19 +246,25 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
             break;
         }
     }
-    if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(callstack.Size()), finishReason);
+    if (recorder)
+    {
+        recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), finishReason);
+    }
     return true;
 }
 
 std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
                                     uintptr_t stackBase, uintptr_t stackEnd,
-                                    UnwinderTracer* tracer) const
+                                    UnwindingRecorder* recorder) const
 {
-    if (tracer) tracer->RecordStart(reinterpret_cast<ucontext_t*>(ctx));
+    if (recorder) recorder->RecordStart(reinterpret_cast<ucontext_t*>(ctx));
 
     if (stackBase == 0 || stackEnd == 0)
     {
-        if (tracer) tracer->RecordFinish(0, FinishReason::NoStackBounds);
+        if (recorder)
+        {
+            recorder->RecordFinish(0, FinishReason::NoStackBounds);
+        }
         return 0;
     }
 
@@ -247,7 +277,10 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
         flag = static_cast<unw_init_local2_flags_t>(0);
         if (auto getResult = unw_getcontext(&localContext) != 0)
         {
-            if (tracer) tracer->RecordFinish(getResult, FinishReason::FailedGetContext);
+            if (recorder)
+            {
+                recorder->RecordFinish(getResult, FinishReason::FailedGetContext);
+            }
             return -1;
         }
         context = &localContext;
@@ -255,17 +288,23 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
 
     UnwindCursor unwindCursor{0};
     auto initResult = unw_init_local2(&unwindCursor.cursor, context, flag);
-    unw_cursor_snapshot_t snapshot= {0};
-    unw_get_cursor_snapshot(&unwindCursor.cursor, &snapshot);
-    if (tracer) tracer->Record(EventType::InitCursor, initResult, snapshot);
+    if (recorder)
+    {
+        unw_cursor_snapshot_t snapshot= {0};
+        unw_get_cursor_snapshot(&unwindCursor.cursor, &snapshot);
+        recorder->Record(EventType::InitCursor, initResult, snapshot);
+    }
     if (initResult != 0)
     {
-        if (tracer) tracer->RecordFinish(initResult, FinishReason::FailedInitLocal2);
+        if (recorder)
+        {
+            recorder->RecordFinish(initResult, FinishReason::FailedInitLocal2);
+        }
         return -1;
     }
 
     // === Phase 1: Walk native frames with libunwind until managed code is reached ===
-    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, callstack, tracer);
+    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, callstack, recorder);
     if (!keepOnUnwinding)
     {
         // already recorded state
@@ -286,8 +325,8 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
     // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
     // every managed method, so FP chaining is reliable once we enter managed code.
 
-    auto _ = UnwindManagedFrames(&unwindCursor, callstack, tracer, stackBase, stackEnd);
+    auto _ = UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd);
 
-    // Already recorded state in tracer
+    // Already recorded state in recorder
     return callstack.Size();
 }

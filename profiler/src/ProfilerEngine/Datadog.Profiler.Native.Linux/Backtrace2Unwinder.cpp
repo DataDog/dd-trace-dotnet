@@ -12,7 +12,7 @@ Backtrace2Unwinder::Backtrace2Unwinder() = default;
 
 std::int32_t Backtrace2Unwinder::Unwind(void* ctx, Callstack& callstack,
                                         std::uintptr_t stackBase, std::uintptr_t stackEnd,
-                                        UnwinderTracer* tracer) const
+                                        UnwindingRecorder* recorder) const
 {
     // unw_backtrace2 handles the case ctx == nullptr
     auto* context = reinterpret_cast<unw_context_t*>(ctx);

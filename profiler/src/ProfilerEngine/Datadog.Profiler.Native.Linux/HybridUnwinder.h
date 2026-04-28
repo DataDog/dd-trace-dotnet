@@ -19,12 +19,12 @@ public:
 
     std::int32_t Unwind(void* ctx, Callstack& callstack,
                         std::uintptr_t stackBase = 0, std::uintptr_t stackEnd = 0,
-                        UnwinderTracer* tracer = nullptr) const override;
+                        UnwindingRecorder* recorder = nullptr) const override;
 
 private:
     std::optional<bool> IsManaged(std::uintptr_t ip) const;
-    bool UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack, UnwinderTracer* tracer) const;
-    bool UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack, UnwinderTracer* tracer,
+    bool UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder) const;
+    bool UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack, UnwindingRecorder* recorder,
                         std::uintptr_t stackBase, std::uintptr_t stackEnd) const;
 
     ManagedCodeCache* _codeCache;

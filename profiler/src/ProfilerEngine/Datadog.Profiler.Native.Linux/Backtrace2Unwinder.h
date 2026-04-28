@@ -15,6 +15,6 @@ public:
     // Returns the number of frames unwound
     std::int32_t Unwind(void* ctx, Callstack& callstack,
                         std::uintptr_t stackBase = 0, std::uintptr_t stackEnd = 0,
-                        UnwinderTracer* tracer = nullptr) const override;
+                        UnwindingRecorder* recorder = nullptr) const override;
 
 };
