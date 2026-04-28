@@ -21,6 +21,8 @@ namespace Datadog.Trace.Debugger.Configurations
         private readonly string? _version;
         private readonly int _maxProbesPerType;
         private readonly HashSet<string> _removedRcmProbeIds = new(StringComparer.Ordinal);
+        private Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>>? _handleAddedProbesChanges;
+        private Action<string[]>? _handleRemovedProbesChanges;
 
         private ProbeConfiguration _currentConfiguration;
         private ProbeConfiguration? _fileConfiguration;
@@ -40,6 +42,12 @@ namespace Datadog.Trace.Debugger.Configurations
             return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType);
         }
 
+        public void SetProbeInstrumentationHandlers(Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>> handleAddedProbesChanges, Action<string[]> handleRemovedProbesChanges)
+        {
+            _handleAddedProbesChanges = handleAddedProbesChanges;
+            _handleRemovedProbesChanges = handleRemovedProbesChanges;
+        }
+
         public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
         {
             foreach (var probeId in ProbeConfigurationUtils.GetProbeIds(configuration))
@@ -55,6 +63,15 @@ namespace Datadog.Trace.Debugger.Configurations
         {
             _fileConfiguration = configuration;
             return ApplyEffectiveConfiguration();
+        }
+
+        public bool HasAnyEffectiveProbeForFile(ProbeConfiguration configuration)
+        {
+            var effectiveConfiguration = GetEffectiveConfiguration(configuration);
+            return HasAnyEffectiveProbe(effectiveConfiguration.LogProbes)
+                || HasAnyEffectiveProbe(effectiveConfiguration.MetricProbes)
+                || HasAnyEffectiveProbe(effectiveConfiguration.SpanProbes)
+                || HasAnyEffectiveProbe(effectiveConfiguration.SpanDecorationProbes);
         }
 
         public void AcceptRemoved(List<RemoteConfigurationPath> paths)
@@ -99,9 +116,9 @@ namespace Datadog.Trace.Debugger.Configurations
             return result;
         }
 
-        private ProbeConfiguration GetEffectiveConfiguration()
+        private ProbeConfiguration GetEffectiveConfiguration(ProbeConfiguration? fileConfigurationOverride = null)
         {
-            var fileConfiguration = _fileConfiguration;
+            var fileConfiguration = fileConfigurationOverride ?? _fileConfiguration;
             if (fileConfiguration != null && _removedRcmProbeIds.Count != 0)
             {
                 fileConfiguration = ProbeConfigurationUtils.RemoveItems(fileConfiguration, _removedRcmProbeIds, removeServiceConfiguration: false);
@@ -126,8 +143,7 @@ namespace Datadog.Trace.Debugger.Configurations
             {
                 var filtered =
                     probes
-                       .Where(probe => probe.Language == TracerConstants.Language)
-                       .Where(IsEnvAndVersionMatch);
+                       .Where(IsProbeIncluded);
 
                 if (_maxProbesPerType > 0)
                 {
@@ -135,37 +151,48 @@ namespace Datadog.Trace.Debugger.Configurations
                 }
 
                 return filtered.ToArray();
-
-                bool IsEnvAndVersionMatch(ProbeDefinition probe)
-                {
-                    if (probe.Tags == null || probe.Tags.Length == 0)
-                    {
-                        return true;
-                    }
-
-                    var tagMap =
-                            probe.Tags
-                                 .Distinct()
-                                 .Select(Tag.FromString)
-                                 .ToDictionary(tag => tag.Key, tag => tag.Value)
-                        ;
-
-                    var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _env;
-                    var versionNotExistsOrMatch = !tagMap.TryGetValue("version", out var probeVersion) || probeVersion == _version;
-
-                    return envNotExistsOrMatch && versionNotExistsOrMatch;
-                }
             }
+        }
+
+        private bool HasAnyEffectiveProbe<T>(T[] probes)
+            where T : ProbeDefinition
+        {
+            return probes.Any(IsProbeIncluded);
+        }
+
+        private bool IsProbeIncluded(ProbeDefinition probe)
+        {
+            return probe.Language == TracerConstants.Language && IsEnvAndVersionMatch(probe);
+        }
+
+        private bool IsEnvAndVersionMatch(ProbeDefinition probe)
+        {
+            if (probe.Tags == null || probe.Tags.Length == 0)
+            {
+                return true;
+            }
+
+            var tagMap =
+                    probe.Tags
+                         .Distinct()
+                         .Select(Tag.FromString)
+                         .ToDictionary(tag => tag.Key, tag => tag.Value)
+                ;
+
+            var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _env;
+            var versionNotExistsOrMatch = !tagMap.TryGetValue("version", out var probeVersion) || probeVersion == _version;
+
+            return envNotExistsOrMatch && versionNotExistsOrMatch;
         }
 
         private List<UpdateResult> HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
         {
-            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions) ?? [];
+            return _handleAddedProbesChanges?.Invoke(comparer.AddedDefinitions) ?? [];
         }
 
         private void HandleRemovedProbesChanges(string[] probeIds)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(probeIds);
+            _handleRemovedProbesChanges?.Invoke(probeIds);
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)

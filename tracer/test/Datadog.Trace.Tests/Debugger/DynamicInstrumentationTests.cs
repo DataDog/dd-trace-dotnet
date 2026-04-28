@@ -97,6 +97,17 @@ public class DynamicInstrumentationTests
         }
     }
 
+    private static async Task WaitUntilAsync(Func<bool> condition, int timeoutSeconds = 5)
+    {
+        var timeout = TimeSpan.FromSeconds(timeoutSeconds);
+        var startTime = DateTime.UtcNow;
+
+        while (!condition() && DateTime.UtcNow - startTime < timeout)
+        {
+            await Task.Delay(50);
+        }
+    }
+
     public class ProbeFileLoadingTests : IDisposable
     {
         private readonly List<string> _tempFiles = new();
@@ -178,6 +189,84 @@ public class DynamicInstrumentationTests
             fileProbes!.LogProbes.Should().HaveCount(1);
             fileProbes.MetricProbes.Should().HaveCount(1);
             fileProbes.SpanProbes.Should().HaveCount(1);
+        }
+
+        [Fact]
+        public async Task ProbeFile_ValidProbe_AppliesInstrumentation()
+        {
+            var probeJson = @"[
+                {
+                    ""id"": ""applied-file-probe"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""sourceFile"": ""MyClass.cs"", ""lines"": [""25""] },
+                    ""captureSnapshot"": true
+                }
+            ]";
+
+            var tempFile = CreateTempProbeFile(probeJson);
+
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, tempFile }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            var lineProbeResolver = new LineProbeResolverMock();
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            debugger.Initialize();
+
+            await WaitUntilAsync(() => GetCurrentConfiguration(debugger).LogProbes.Any(probe => probe.Id == "applied-file-probe"));
+
+            lineProbeResolver.Called.Should().BeTrue("file probes should be applied to the owning DynamicInstrumentation instance");
+            probeStatusPoller.Called.Should().BeTrue("applying a file probe should update probe statuses");
+            GetCurrentConfiguration(debugger).LogProbes.Should().ContainSingle(probe => probe.Id == "applied-file-probe");
+        }
+
+        [Fact]
+        public async Task ProbeFile_FilteredOutProbe_DoesNotStartRuntimeWithoutRcm()
+        {
+            var probeJson = @"[
+                {
+                    ""id"": ""filtered-file-probe"",
+                    ""language"": ""java"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""sourceFile"": ""MyClass.cs"", ""lines"": [""25""] },
+                    ""captureSnapshot"": true
+                }
+            ]";
+
+            var tempFile = CreateTempProbeFile(probeJson);
+
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, tempFile }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            var lineProbeResolver = new LineProbeResolverMock();
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, new DiscoveryServiceWithoutRcmMock(), lineProbeResolver, probeStatusPoller);
+            try
+            {
+                debugger.Initialize();
+
+                await WaitUntilAsync(() => GetFileProbes(debugger) is not null);
+
+                GetCurrentConfiguration(debugger).LogProbes.Should().BeEmpty("non-dotnet file probes should be filtered out before starting the runtime");
+                debugger.IsInitialized.Should().BeFalse("a file with no effective probes should not start DI without RCM");
+                lineProbeResolver.Called.Should().BeFalse();
+                probeStatusPoller.Called.Should().BeFalse();
+            }
+            finally
+            {
+                debugger.Dispose();
+            }
         }
 
         [Theory]
@@ -390,6 +479,14 @@ public class DynamicInstrumentationTests
             return (ConfigurationUpdater)field!.GetValue(debugger)!;
         }
 
+        private static ProbeConfiguration GetCurrentConfiguration(DynamicInstrumentation debugger)
+        {
+            var updater = GetConfigurationUpdater(debugger);
+            var field = typeof(ConfigurationUpdater).GetField("_currentConfiguration", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return (ProbeConfiguration)field!.GetValue(updater)!;
+        }
+
         private string CreateTempProbeFile(string content)
         {
             var tempFile = Path.GetTempFileName();
@@ -398,14 +495,18 @@ public class DynamicInstrumentationTests
             return tempFile;
         }
 
-        private DynamicInstrumentation CreateDebugger(DebuggerSettings settings, IDiscoveryService? discoveryService = null)
+        private DynamicInstrumentation CreateDebugger(
+            DebuggerSettings settings,
+            IDiscoveryService? discoveryService = null,
+            LineProbeResolverMock? lineProbeResolver = null,
+            ProbeStatusPollerMock? probeStatusPoller = null)
         {
             var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
-            var lineProbeResolver = new LineProbeResolverMock();
+            lineProbeResolver ??= new LineProbeResolverMock();
             var snapshotUploader = new SnapshotUploaderMock();
             var logUploader = new LogUploaderMock();
             var diagnosticsUploader = new UploaderMock();
-            var probeStatusPoller = new ProbeStatusPollerMock();
+            probeStatusPoller ??= new ProbeStatusPollerMock();
 
             return new DynamicInstrumentation(
                 settings,

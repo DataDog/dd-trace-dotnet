@@ -73,6 +73,7 @@ namespace Datadog.Trace.Debugger
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
+            _configurationUpdater.SetProbeInstrumentationHandlers(UpdateAddedProbeInstrumentations, UpdateRemovedProbeInstrumentations);
             _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
             _subscription = new Subscription(
@@ -113,23 +114,20 @@ namespace Datadog.Trace.Debugger
                 var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
                 if (probeConfiguration != null)
                 {
-                    _configurationUpdater.AcceptFile(probeConfiguration);
-                    hasFileProbes = (probeConfiguration.LogProbes.Length
-                                   + probeConfiguration.MetricProbes.Length
-                                   + probeConfiguration.SpanProbes.Length
-                                   + probeConfiguration.SpanDecorationProbes.Length) > 0;
-
+                    hasFileProbes = _configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration);
                     if (hasFileProbes)
                     {
                         StartRuntimeIfNeeded();
                     }
+
+                    _configurationUpdater.AcceptFile(probeConfiguration);
                 }
 
                 var isRcmAvailable = await rcmAvailabilityTask.ConfigureAwait(false);
                 if (isRcmAvailable)
                 {
-                    _subscriptionManager.SubscribeToChanges(_subscription);
                     StartRuntimeIfNeeded();
+                    _subscriptionManager.SubscribeToChanges(_subscription);
                 }
 
                 // Start background processing and register the assembly load callback if either:
