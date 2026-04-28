@@ -58,10 +58,10 @@ bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
     }
     std::unique_lock<std::mutex> lock(_handlerRegisterMutex);
 
-    if (current != nullptr)
+    if (_handler != nullptr)
     {
-        assert(current == handler);
-        return current == handler;
+        assert(_handler == handler);
+        return _handler == handler;
     }
 
     _isHandlerInPlace = SetupSignalHandler();
