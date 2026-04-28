@@ -1261,6 +1261,6 @@ std::vector<CallTargetDefinition3> callTargets =
 {(WCHAR*)WStr("xunit.v3.core"),(WCHAR*)WStr("Xunit.v3.XunitTestMethodRunnerBase`3"),(WCHAR*)WStr("RunTestCase"),sig319,3,1,0,0,3,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("xunit.v3.core"),(WCHAR*)WStr("Xunit.v3.XunitTestMethodRunnerContext"),(WCHAR*)WStr(".ctor"),sig401,8,1,0,0,3,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration"),CallTargetKind::Default,1,15},
 };
-return profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), callTargets.data(), callTargets.size(), enabledCategories, platform);
+return profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), callTargets.data(), static_cast<int>(callTargets.size()), enabledCategories, platform);
 }
 }

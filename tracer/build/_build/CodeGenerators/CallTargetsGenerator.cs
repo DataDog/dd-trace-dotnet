@@ -591,7 +591,7 @@ namespace CodeGenerators
 
             sb.AppendLine("""
                 };
-                return profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), callTargets.data(), callTargets.size(), enabledCategories, platform);
+                return profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), callTargets.data(), static_cast<int>(callTargets.size()), enabledCategories, platform);
                 }
                 }
                 """);

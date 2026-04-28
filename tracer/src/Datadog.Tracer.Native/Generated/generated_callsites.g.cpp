@@ -724,6 +724,6 @@ std::vector<WCHAR*> callSites =
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String)\",\"\",[0],[False],[None],Default,[])] ReviewPath(System.String) 15"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String,System.Xml.IXmlNamespaceResolver)\",\"\",[1],[False],[None],Default,[])] ReviewPath(System.String) 15"),
 };
-return trace::profiler->RegisterIastAspects((WCHAR**) callSites.data(), callSites.size(), enabledCategories, platform);
+return trace::profiler->RegisterIastAspects((WCHAR**) callSites.data(), static_cast<int>(callSites.size()), enabledCategories, platform);
 }
 }

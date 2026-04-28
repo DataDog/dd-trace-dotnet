@@ -298,7 +298,7 @@ namespace CodeGenerators
 
             sb.AppendLine("""
                 };
-                return trace::profiler->RegisterIastAspects((WCHAR**) callSites.data(), callSites.size(), enabledCategories, platform);
+                return trace::profiler->RegisterIastAspects((WCHAR**) callSites.data(), static_cast<int>(callSites.size()), enabledCategories, platform);
                 }
                 }
                 """);
