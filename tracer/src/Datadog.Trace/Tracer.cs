@@ -52,7 +52,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IStatsdManager statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null, ServiceRemappingHash serviceRemappingHash = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null, serviceRemappingHash: serviceRemappingHash))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null, serviceRemappingHash: serviceRemappingHash))
         {
         }
 

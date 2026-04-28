@@ -110,14 +110,6 @@ src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs
 src/Datadog.Trace/Processors/TraceUtil.cs
 src/Datadog.Trace/Processors/TruncatorTagsProcessor.cs
 src/Datadog.Trace/Processors/TruncatorTraceProcessor.cs
-src/Datadog.Trace/RemoteConfigurationManagement/ApplyStates.cs
-src/Datadog.Trace/RemoteConfigurationManagement/IRemoteConfigurationManager.cs
-src/Datadog.Trace/RemoteConfigurationManagement/ProductConfigChangedEventArgs.cs
-src/Datadog.Trace/RemoteConfigurationManagement/RcmCapabilitiesIndices.cs
-src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfiguration.cs
-src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfigurationCache.cs
-src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfigurationException.cs
-src/Datadog.Trace/RemoteConfigurationManagement/RemoteConfigurationPath.cs
 src/Datadog.Trace/Sampling/IRateLimiter.cs
 src/Datadog.Trace/Sampling/ISpanSamplingRule.cs
 src/Datadog.Trace/Sampling/OverheadController.cs
@@ -200,9 +192,6 @@ src/Datadog.Trace/Iast/Analyzers/UserStringInterop.cs
 src/Datadog.Trace/Iast/Aspects/DebugAspects.cs
 src/Datadog.Trace/Iast/Dataflow/AspectFilter.cs
 src/Datadog.Trace/Iast/Dataflow/AspectType.cs
-src/Datadog.Trace/PDBs/dnlibAdditions/DssSymbolReaderImpl.Additions.cs
-src/Datadog.Trace/PDBs/dnlibAdditions/PdbReader.Additions.cs
-src/Datadog.Trace/PDBs/dnlibAdditions/PortablePdbReader.Additions.cs
 src/Datadog.Trace/Telemetry/DTOs/IPayload.cs
 src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs
 src/Datadog.Trace/Telemetry/Transports/TelemetryTransportStrategy.cs

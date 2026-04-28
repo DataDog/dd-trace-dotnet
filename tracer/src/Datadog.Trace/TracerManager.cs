@@ -23,7 +23,6 @@ using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -66,7 +65,6 @@ namespace Datadog.Trace
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
-            IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
@@ -94,7 +92,6 @@ namespace Datadog.Trace
 
             TagProcessors = lstTagProcessors.ToArray();
 
-            RemoteConfigurationManager = remoteConfigurationManager;
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = spanEventsManager;
@@ -162,8 +159,6 @@ namespace Datadog.Trace
 
         public IDiscoveryService DiscoveryService { get; }
 
-        public IRemoteConfigurationManager RemoteConfigurationManager { get; }
-
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
         public ITracerFlareManager TracerFlareManager { get; }
@@ -226,7 +221,6 @@ namespace Datadog.Trace
             Telemetry?.Start();
             DynamicConfigurationManager.Start();
             TracerFlareManager.Start();
-            RemoteConfigurationManager.Start();
             SpanEventsManager.Start();
         }
 
@@ -267,13 +261,6 @@ namespace Datadog.Trace
                     await oldManager.DiscoveryService.DisposeAsync().ConfigureAwait(false);
                 }
 
-                var configurationManagerReplaced = false;
-                if (oldManager.RemoteConfigurationManager != newManager.RemoteConfigurationManager && oldManager.RemoteConfigurationManager is not null)
-                {
-                    configurationManagerReplaced = true;
-                    oldManager.RemoteConfigurationManager.Dispose();
-                }
-
                 var dynamicConfigurationManagerReplaced = false;
                 if (oldManager.DynamicConfigurationManager != newManager.DynamicConfigurationManager && oldManager.DynamicConfigurationManager is not null)
                 {
@@ -290,8 +277,8 @@ namespace Datadog.Trace
 
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, Discovery: {DiscoveryReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, discoveryReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, Discovery: {DiscoveryReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, discoveryReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -663,8 +650,6 @@ namespace Datadog.Trace
                     var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DiscoveryService.");
                     var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing RemoteConfigurationManager");
-                    instance.RemoteConfigurationManager?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService).ConfigureAwait(false);

@@ -17,12 +17,9 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -51,7 +48,6 @@ namespace Datadog.Trace
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
-                remoteConfigurationManager: null,
                 dynamicConfigurationManager: null,
                 tracerFlareManager: null,
                 spanEventsManager: null);
@@ -72,7 +68,6 @@ namespace Datadog.Trace
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
@@ -115,39 +110,9 @@ namespace Datadog.Trace
                 settings.AzureAppServiceMetadata,
                 gitMetadataTagsProvider);
 
-            if (ShouldEnableRemoteConfiguration(settings))
-            {
-                if (remoteConfigurationManager == null)
-                {
-                    var sw = RefStopwatch.Create();
-
-                    remoteConfigurationManager =
-                        RemoteConfigurationManager.Create(
-                            discoveryService,
-                            RemoteConfigurationSettings.FromDefaultSource(),
-                            settings,
-                            gitMetadataTagsProvider,
-                            RcmSubscriptionManager.Instance);
-
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
-                }
-
-                dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
-                tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.CreateManaged(settings.Manager));
-                spanEventsManager ??= new SpanEventsManager(discoveryService);
-            }
-            else
-            {
-                remoteConfigurationManager ??= new NullRemoteConfigurationManager();
-                dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
-                tracerFlareManager ??= new NullTracerFlareManager();
-                spanEventsManager ??= new NullSpanEventsManager();
-
-                if (RcmSubscriptionManager.Instance.HasAnySubscription)
-                {
-                    Log.Debug($"{nameof(RcmSubscriptionManager)} has subscriptions but remote configuration is not available in this scenario.");
-                }
-            }
+            dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
+            tracerFlareManager ??= new NullTracerFlareManager();
+            spanEventsManager ??= new NullSpanEventsManager();
 
             return CreateTracerManagerFrom(
                 settings,
@@ -160,7 +125,6 @@ namespace Datadog.Trace
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
-                remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
@@ -182,9 +146,6 @@ namespace Datadog.Trace
             return new GitMetadataTagsProvider(settings, initialMutableSettings, telemetry);
         }
 
-        protected virtual bool ShouldEnableRemoteConfiguration(TracerSettings settings)
-            => settings.IsRemoteConfigurationAvailable;
-
         protected virtual TracerManager CreateTracerManagerFrom(
             TracerSettings settings,
             IAgentWriter agentWriter,
@@ -196,13 +157,12 @@ namespace Datadog.Trace
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
-            IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
             ServiceRemappingHash serviceRemappingHash)
         {
-            return new TracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
+            return new TracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, gitMetadataTagsProvider, traceSampler, spanSampler, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
         }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
