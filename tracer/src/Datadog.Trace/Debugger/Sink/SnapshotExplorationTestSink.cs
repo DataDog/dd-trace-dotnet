@@ -147,25 +147,49 @@ namespace Datadog.Trace.Debugger.Sink
                     // would incorrectly mark probes as invalid in the exploration test report.
                     // Instead, extract just the minimal fields we need ("logger.name" and "logger.method")
                     // using a streaming JSON reader for robustness and performance.
+                    //
+                    // We only inspect the root-level "logger" object. Captured values can legitimately contain
+                    // nested properties named "logger", and treating the first match anywhere in the payload as the
+                    // snapshot metadata causes valid snapshots to be reported as N/A.N/A.
                     using var stringReader = new StringReader(snapshot);
                     using var reader = new JsonTextReader(stringReader);
 
+                    if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+                    {
+                        return false;
+                    }
+
                     while (reader.Read())
                     {
+                        if (reader.TokenType == JsonToken.EndObject)
+                        {
+                            break;
+                        }
+
                         if (reader.TokenType != JsonToken.PropertyName)
                         {
                             continue;
                         }
 
-                        if (!string.Equals(reader.Value as string, "logger", StringComparison.Ordinal))
+                        var propertyName = reader.Value as string;
+                        if (!reader.Read())
                         {
+                            break;
+                        }
+
+                        if (!string.Equals(propertyName, "logger", StringComparison.Ordinal))
+                        {
+                            if (reader.TokenType is JsonToken.StartObject or JsonToken.StartArray)
+                            {
+                                reader.Skip();
+                            }
+
                             continue;
                         }
 
-                        // Move to logger object
-                        if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+                        if (reader.TokenType != JsonToken.StartObject)
                         {
-                            break;
+                            return false;
                         }
 
                         while (reader.Read())
@@ -194,6 +218,10 @@ namespace Datadog.Trace.Debugger.Sink
                             {
                                 methodName = reader.Value as string;
                             }
+                            else if (reader.TokenType is JsonToken.StartObject or JsonToken.StartArray)
+                            {
+                                reader.Skip();
+                            }
 
                             if (!string.IsNullOrEmpty(typeName) && !string.IsNullOrEmpty(methodName))
                             {
@@ -201,8 +229,7 @@ namespace Datadog.Trace.Debugger.Sink
                             }
                         }
 
-                        // We found "logger" but didn't find both required fields
-                        break;
+                        return false;
                     }
 
                     return false;
