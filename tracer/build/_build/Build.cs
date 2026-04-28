@@ -293,14 +293,16 @@ partial class Build : NukeBuild
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(RunNativeTests);
 
-    Target BuildWindowsIntegrationTests => _ => _
+    Target BuildIntegrationTests => _ => _
         .Unlisted()
-        .Requires(() => IsWin)
-        .Description("Builds the integration tests for Windows")
+        .Description("Builds the integration tests")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(CopyNativeFilesForTests)
-        .DependsOn(BuildRunnerTool);
+        .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
@@ -317,13 +319,13 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests);
 
-    Target BuildAndRunWindowsIntegrationTests => _ => _
-        .Requires(() => IsWin)
-        .Description("Builds and runs the Windows (non-IIS) integration tests")
-        .DependsOn(BuildWindowsIntegrationTests)
+    Target BuildAndRunIntegrationTests => _ => _
+        .Description("Builds and runs the integration tests")
+        .DependsOn(BuildIntegrationTests)
         .DependsOn(CompileSamples)
         .DependsOn(CompileTrimmingSamples)
-        .DependsOn(RunIntegrationTests);
+        .DependsOn(RunIntegrationTests)
+        .DependsOn(RunLinuxDdDotnetIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
@@ -340,40 +342,6 @@ partial class Build : NukeBuild
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(RunWindowsAzureFunctionsTests);
-
-    Target BuildLinuxIntegrationTests => _ => _
-        .Requires(() => !IsWin)
-        .Description("Builds the linux integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileLinuxOrOsxIntegrationTests)
-        .DependsOn(CompileLinuxDdDotnetIntegrationTests)
-        .DependsOn(BuildRunnerTool)
-        .DependsOn(CopyNativeFilesForTests)
-        .DependsOn(CopyServerlessArtifacts);
-
-    Target BuildAndRunLinuxIntegrationTests => _ => _
-        .Requires(() => !IsWin)
-        .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
-        .DependsOn(BuildLinuxIntegrationTests)
-        .DependsOn(RunIntegrationTests)
-        .DependsOn(RunLinuxDdDotnetIntegrationTests);
-
-    Target BuildOsxIntegrationTests => _ => _
-        .Requires(() => IsOsx)
-        .Description("Builds the osx integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileLinuxOrOsxIntegrationTests)
-        .DependsOn(BuildRunnerTool)
-        .DependsOn(CopyNativeFilesForTests)
-        .DependsOn(CopyServerlessArtifacts);
-
-    Target BuildAndRunOsxIntegrationTests => _ => _
-        .Requires(() => IsOsx)
-        .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
-        .DependsOn(BuildOsxIntegrationTests)
-        .DependsOn(CompileSamples)
-        .DependsOn(CompileTrimmingSamples)
-        .DependsOn(RunIntegrationTests);
 
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")

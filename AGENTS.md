@@ -109,7 +109,7 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 **Quick start:**
 - Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
-- Integration tests: `BuildAndRunLinuxIntegrationTests` / `BuildAndRunWindowsIntegrationTests` / `BuildAndRunOsxIntegrationTests`
+- Integration tests: `BuildAndRunIntegrationTests`
 
 📖 **Load when**: Setting up development environment, running builds, or troubleshooting build issues
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)

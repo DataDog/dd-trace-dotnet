@@ -1541,6 +1541,7 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .After(PublishIisSamples)
         .After(BuildRunnerTool)
+        .OnlyWhenStatic(() => IsWin)
         .Requires(() => Framework)
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
@@ -1805,7 +1806,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
-        .After(BuildWindowsIntegrationTests)
+        .After(BuildIntegrationTests)
         .After(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Requires(() => Framework)
@@ -1944,7 +1945,7 @@ partial class Build
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileAzureFunctionsSamplesWindows)
-        .After(BuildWindowsIntegrationTests)
+        .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
         .Requires(() => Framework)
@@ -2118,6 +2119,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
         .After(BuildRunnerTool)
+        .OnlyWhenStatic(() => IsLinux || IsOsx)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -2140,6 +2142,7 @@ partial class Build
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
+        .OnlyWhenStatic(() => IsLinux)
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
@@ -2150,7 +2153,7 @@ partial class Build
         .After(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Description("Runs the linux dd-dotnet integration tests")
-        .Requires(() => !IsWin)
+        .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
@@ -2302,6 +2305,7 @@ partial class Build
        .Description("Copies monitoring-home into the serverless artifacts directory")
        .Unlisted()
        .After(CompileSamples, CompileTrimmingSamples)
+       .OnlyWhenStatic(() => IsLinux || IsOsx)
        .Executes(() =>
         {
             // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too

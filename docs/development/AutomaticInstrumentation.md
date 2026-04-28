@@ -425,7 +425,7 @@ On Windows, we _don't_ typically run multi-api-version tests. There is experimen
 # Build and run the integration tests, building only
 # your sample, and running only your new tests
 # You can choose whichever framework is appropriate
-./tracer/build.ps1 BuildAndRunWindowsIntegrationTests -buildConfiguration Debug -framework net48 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
+./tracer/build.ps1 BuildAndRunIntegrationTests -buildConfiguration Debug -framework net48 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
 ```
 
 ##### On macOs
@@ -441,7 +441,7 @@ On MacOs, you won't be able to run all tests as some images aren't arm compatibl
 # Build and run the integration tests, building only
 # your sample, and running only your new tests
 # You can choose whichever framework is appropriate
-./tracer/build.sh BuildAndRunOSxIntegrationTests -buildConfiguration Debug -framework net6.0 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
+./tracer/build.sh BuildAndRunIntegrationTests -buildConfiguration Debug -framework net6.0 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
 ```
 
 #### Testing in CI

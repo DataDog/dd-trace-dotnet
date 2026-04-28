@@ -65,7 +65,7 @@ For example:
 .\build.cmd PackageTracerHome
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-.\build.cmd BuildAndRunWindowsIntegrationTests
+.\build.cmd BuildAndRunIntegrationTests
 ```
 
 ### Dev Containers
@@ -117,12 +117,12 @@ The recommended approach for Linux is to build using Docker. You can use this ap
 ./build_in_docker.sh BuildAndRunManagedUnitTests
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-./build_in_docker.sh BuildAndRunLinuxIntegrationTests
+./build_in_docker.sh BuildAndRunIntegrationTests
 ```
 
 Alternatively, on Windows:
 ```powershell
-./build_in_docker.ps1 BuildTracerHome BuildAndRunLinuxIntegrationTests
+./build_in_docker.ps1 BuildTracerHome BuildAndRunIntegrationTests
 ```
 
 ### macOS
@@ -158,10 +158,10 @@ docker-compose up rabbitmq_osx_arm64
 docker-compose up StartDependencies.OSXARM64
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-./build.sh BuildAndRunOsxIntegrationTests
+./build.sh BuildAndRunIntegrationTests
 
 # Build and run integration tests filtering on one framework, one set of tests and a sample app.
-./build.sh BuildAndRunOsxIntegrationTests --framework "net6.0" --filter "Datadog.Trace.ClrProfiler.IntegrationTests.RabbitMQTests" --SampleName "Samples.Rabbit"
+./build.sh BuildAndRunIntegrationTests --framework "net6.0" --filter "Datadog.Trace.ClrProfiler.IntegrationTests.RabbitMQTests" --SampleName "Samples.Rabbit"
 
 # Stop IntegrationTests dependencies.
 docker-compose down
