@@ -179,7 +179,7 @@ namespace Datadog.Trace
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, MutableSettings initialMutableSettings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
-            return new GitMetadataTagsProvider(settings, initialMutableSettings, scopeManager, telemetry);
+            return new GitMetadataTagsProvider(settings, initialMutableSettings, telemetry);
         }
 
         protected virtual bool ShouldEnableRemoteConfiguration(TracerSettings settings)
