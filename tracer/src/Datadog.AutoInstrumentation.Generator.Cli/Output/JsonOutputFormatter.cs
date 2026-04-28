@@ -33,21 +33,7 @@ internal static class JsonOutputFormatter
                 success = true,
                 fileName = result.FileName ?? string.Empty,
                 sourceCode = result.SourceCode ?? string.Empty,
-                metadata = result.Metadata is { } meta
-                    ? new
-                    {
-                        meta.AssemblyName,
-                        meta.TypeName,
-                        meta.MethodName,
-                        meta.ReturnTypeName,
-                        meta.ParameterTypeNames,
-                        meta.MinimumVersion,
-                        meta.MaximumVersion,
-                        meta.IntegrationName,
-                        meta.IntegrationClassName,
-                        meta.IsInterface,
-                    }
-                    : null,
+                metadata = result.Metadata,
                 configuration = config,
             },
             SerializerOptions);

@@ -32,10 +32,9 @@ internal class GenerateCommand : Command
     private readonly Option<string[]?> _parameterTypesOption = new("--parameter-types") { Description = "Parameter type full names for overload disambiguation" };
     private readonly Option<int?> _overloadIndexOption = new("--overload-index") { Description = "0-based overload index for disambiguation" };
 
-    // Shortcut flags (3 most common toggles)
+    // Shortcut flags (most common toggles); async detection is automatic via auto-detect.
     private readonly Option<bool> _noMethodBeginOption = new("--no-method-begin") { Description = "Skip OnMethodBegin handler generation" };
     private readonly Option<bool> _noMethodEndOption = new("--no-method-end") { Description = "Skip OnMethodEnd handler generation" };
-    private readonly Option<bool> _asyncMethodEndOption = new("--async-method-end") { Description = "Generate OnAsyncMethodEnd handler" };
 
     // Configuration mechanisms
     private readonly Option<string?> _configOption = new("--config") { Description = "Inline JSON configuration object (accepts the 'configuration' block from --json output). Mutually exclusive with --config-file." };
@@ -66,7 +65,6 @@ internal class GenerateCommand : Command
         Add(_overloadIndexOption);
         Add(_noMethodBeginOption);
         Add(_noMethodEndOption);
-        Add(_asyncMethodEndOption);
         Add(_configOption);
         Add(_configFileOption);
         Add(_setOption);
@@ -118,14 +116,28 @@ internal class GenerateCommand : Command
 
     private static void PrintAvailableKeys()
     {
+        var rows = ConfigurationApplier.GetAvailableKeys()
+            .Select(k => (Key: k.Key, Type: k.Type, Default: k.DefaultValue?.ToString() ?? string.Empty))
+            .ToList();
+
+        const string keyHeader = "Key";
+        const string typeHeader = "Type";
+        const string defaultHeader = "Default";
+
+        var keyWidth = Math.Max(keyHeader.Length, rows.Max(r => r.Key.Length));
+        var typeWidth = Math.Max(typeHeader.Length, rows.Max(r => r.Type.Length));
+        var defaultWidth = Math.Max(defaultHeader.Length, rows.Max(r => r.Default.Length));
+
+        var format = $"  {{0,-{keyWidth}}} {{1,-{typeWidth}}} {{2,-{defaultWidth}}}";
+
         Console.WriteLine("Available configuration keys for --set (camelCase, same as --json output):");
         Console.WriteLine();
-        Console.WriteLine("  {0,-45} {1,-10} {2}", "Key", "Type", "Default");
-        Console.WriteLine("  {0,-45} {1,-10} {2}", new string('-', 45), new string('-', 10), new string('-', 7));
+        Console.WriteLine(format, keyHeader, typeHeader, defaultHeader);
+        Console.WriteLine(format, new string('-', keyWidth), new string('-', typeWidth), new string('-', defaultWidth));
 
-        foreach (var (key, typeName, defaultValue) in ConfigurationApplier.GetAvailableKeys())
+        foreach (var row in rows)
         {
-            Console.WriteLine("  {0,-45} {1,-10} {2}", key, typeName, defaultValue);
+            Console.WriteLine(format, row.Key, row.Type, row.Default);
         }
 
         Console.WriteLine();
@@ -293,11 +305,6 @@ internal class GenerateCommand : Command
         if (parseResult.GetValue(_noMethodEndOption))
         {
             config.CreateOnMethodEnd = false;
-        }
-
-        if (parseResult.GetValue(_asyncMethodEndOption))
-        {
-            config.CreateOnAsyncMethodEnd = true;
         }
 
         // Step 4: Apply --set overrides
