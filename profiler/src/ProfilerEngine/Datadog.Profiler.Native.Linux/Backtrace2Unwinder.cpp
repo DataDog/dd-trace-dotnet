@@ -18,7 +18,7 @@ std::int32_t Backtrace2Unwinder::Unwind(void* ctx, Callstack& callstack,
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto buffer = callstack.AsSpan();
 
-    auto nbFrames = unw_backtrace2(reinterpret_cast<void**>(buffer.data()), bufferSize.size(), context, UNW_INIT_SIGNAL_FRAME);
+    auto nbFrames = unw_backtrace2(reinterpret_cast<void**>(buffer.data()), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
     callstack.SetCount(nbFrames);
     return nbFrames;
 }

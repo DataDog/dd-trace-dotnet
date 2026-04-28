@@ -44,25 +44,6 @@ HybridUnwinder::HybridUnwinder(ManagedCodeCache* managedCodeCache) :
 {
 }
 
-// This is temporary workaround to try at best identifying an instruction pointer.
-// Once ManagedCodeCache has a better concurrent data structure, we can remove this function.
-std::optional<bool> HybridUnwinder::IsManaged(uintptr_t ip) const
-{
-    // best effort to get the managed code address range
-    // If IsManaged returns nullopt (which means that we failed at acquiring the lock),
-    // we try 3 times.
-    const std::size_t MaxRetries = 3;
-    for (auto i = 0; i < MaxRetries; i++)
-    {
-        auto isManaged = _codeCache->IsManaged(ip);
-        if (isManaged.has_value())
-        {
-            return isManaged;
-        }
-    }
-    return std::nullopt;
-}
-
 struct UnwindCursor
 {
     unw_cursor_t cursor;
@@ -83,7 +64,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
             return false;
         }
 
-        auto isManaged = IsManaged(ip);
+        auto isManaged = _codeCache->IsManaged(ip);
         if (isManaged.has_value())
         {
             if (isManaged.value())
@@ -142,7 +123,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
     return true;
 }
 
-bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack,
+void HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack,
     UnwindingRecorder* recorder,
     std::uintptr_t stackBase, std::uintptr_t stackEnd) const
 {
@@ -153,7 +134,7 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
         {
             recorder->RecordFinish(static_cast<std::int32_t>(UNW_REG_IP), FinishReason::FailedGetReg);
         }
-        return false;
+        return;
     }
 
     if (!callstack.Add(ip))
@@ -162,7 +143,7 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
         {
             recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
         }
-        return false;
+        return;
     }
 
     unw_word_t fp = 0;
@@ -172,7 +153,7 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
         {
             recorder->RecordFinish(static_cast<std::int32_t>(result), FinishReason::InvalidFp);
         }
-        return false;
+        return;
     }
 
     // For now we do not handle leaf function case.
@@ -198,12 +179,13 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
         auto ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
         if (ip == 0)
         {
+            // We hit the bottom of the stack. Most of the time, ip == 0  means end of calls
             break;
         }
 
         if (recorder) recorder->Record(EventType::FrameChainStep, ip, fp);
 
-        auto isManaged = IsManaged(ip);
+        auto isManaged = _codeCache->IsManaged(ip);
         if (isManaged.has_value() && isManaged.value())
         {
             if (!callstack.Add(ip))
@@ -250,7 +232,7 @@ bool HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
     {
         recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), finishReason);
     }
-    return true;
+    return;
 }
 
 std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
@@ -325,7 +307,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
     // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
     // every managed method, so FP chaining is reliable once we enter managed code.
 
-    auto _ = UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd);
+    UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd);
 
     // Already recorded state in recorder
     return callstack.Size();
