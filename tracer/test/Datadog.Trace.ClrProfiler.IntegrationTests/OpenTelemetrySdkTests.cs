@@ -628,7 +628,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
             // Short delay gives the OTel SDK multiple periodic exports before LoggerProviderSdk.Dispose() hits its 5s shutdown timeout.
             // This is especially important for gRPC, where the first export warms the HTTP/2 connection.
-            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "500");
+            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "100");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
             if (useAgentHostBackup)
@@ -695,6 +695,58 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (logRecord is JObject jObj)
                     {
                         jObj.Remove("flags");
+                    }
+                }
+
+                // The OTel SDK can emit multiple OTLP batches during the sample run (periodic export(s) plus shutdown flush),
+                // and the test-agent can return them as separate top-level elements in any order. Collapse everything
+                // into a single batch, then sort scope_logs by scope.name and log_records by body.string_value so the
+                // snapshot is stable regardless of batch split, arrival order, or the exporter's internal scope grouping.
+                if (logsData is JArray logsArray && logsArray.Count > 1)
+                {
+                    // Add all the subsequent logs to the first array
+                    var mergedScopeLogs = (JArray)logsArray[0]["resource_logs"][0]["scope_logs"];
+                    for (var i = 1; i < logsArray.Count; i++)
+                    {
+                        foreach (var scopeLog in (JArray)logsArray[i]["resource_logs"][0]["scope_logs"])
+                        {
+                            var scopeName = scopeLog["scope"]?["name"]?.ToString();
+                            var existing = mergedScopeLogs.FirstOrDefault(s => s["scope"]?["name"]?.ToString() == scopeName);
+                            if (existing != null && scopeLog["log_records"] is JArray incoming)
+                            {
+                                var existingRecords = (JArray)existing["log_records"];
+                                foreach (var record in incoming)
+                                {
+                                    existingRecords.Add(record);
+                                }
+                            }
+                            else
+                            {
+                                mergedScopeLogs.Add(scopeLog);
+                            }
+                        }
+                    }
+
+                    while (logsArray.Count > 1)
+                    {
+                        logsArray.RemoveAt(1);
+                    }
+                }
+
+                // Fix the ordering to ensure it's deterministic
+                foreach (var resourceLog in logsData.SelectTokens("$[0].resource_logs[*]"))
+                {
+                    if (resourceLog["scope_logs"] is JArray scopeLogsArray)
+                    {
+                        foreach (var scopeLog in scopeLogsArray)
+                        {
+                            if (scopeLog["log_records"] is JArray recordsArray)
+                            {
+                                scopeLog["log_records"] = new JArray(recordsArray.OrderBy(r => r["body"]?["string_value"]?.ToString()));
+                            }
+                        }
+
+                        resourceLog["scope_logs"] = new JArray(scopeLogsArray.OrderBy(s => s["scope"]?["name"]?.ToString()));
                     }
                 }
 
