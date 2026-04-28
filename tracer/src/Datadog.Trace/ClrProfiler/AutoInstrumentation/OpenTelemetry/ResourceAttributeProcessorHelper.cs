@@ -9,6 +9,7 @@ using System;
 using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
@@ -17,34 +18,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     {
         private static Func<object, object>? _getResourceDelegate;
 
-        /// <summary>
-        /// Cached OTel resource, populated on the first <see cref="OnStart"/> call from
-        /// the dynamic ResourceAttributeProcessor. Used by the CallTarget Activity
-        /// interception path to apply resource attributes after Activity.Start() returns,
-        /// because the processor's OnStart fires *during* Activity.Start() — before
-        /// the interception integration has had a chance to create the Datadog span.
-        /// </summary>
-        private static volatile IResource? _cachedResource;
-
         static ResourceAttributeProcessorHelper()
         {
             _getResourceDelegate = CreateGetResourceDelegate();
         }
 
         /// <summary>
-        /// Applies the cached OTel resource attributes (service.name, service.version, etc.)
-        /// to the given <paramref name="span"/>. Called from <c>ActivityStartIntegration.OnMethodEnd</c>
-        /// after the span has been created.
+        /// Applies the OTel resource attributes (service.name, service.version, etc.) previously
+        /// stashed on the activity via <see cref="OnStart"/>. Called from
+        /// <c>ActivityStartIntegration.OnMethodEnd</c> after the span has been created.
         /// </summary>
-        internal static void ApplyCachedResourceAttributes(Span span)
+        /// <remarks>
+        /// The processor's OnStart fires *during* Activity.Start() — before our OnMethodEnd runs.
+        /// At that point the Datadog span doesn't exist yet, so OnStart stashes the resource on the
+        /// Activity itself (via a custom property). Reading it back here ties each span to the resource
+        /// of the specific TracerProvider that produced its Activity, so multiple TracerProviders with
+        /// different resources are handled correctly.
+        /// </remarks>
+        internal static void ApplyResourceAttributesFromActivity(Span span, IActivity5 activity5)
         {
-            var resource = _cachedResource;
-            if (resource is null)
+            var resourceObject = activity5.GetCustomProperty(ActivityCustomPropertyKeys.Resource);
+            if (resourceObject is null)
             {
                 return;
             }
 
-            ApplyResourceToSpan(span, resource);
+            if (resourceObject.TryDuckCast<IResource>(out var resource))
+            {
+                ApplyResourceToSpan(span, resource);
+            }
         }
 
         public static void OnStart(object processor, object activityData)
@@ -56,22 +58,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return;
             }
 
-            // Cache the resource from the TracerProvider on first call so the interception path can use it later
-            if (_cachedResource is null && baseProcessor.ParentProvider is not null)
-            {
-                var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
-                if (resourceObject.TryDuckCast<IResource>(out var resource))
-                {
-                    _cachedResource = resource;
-                }
-            }
-
-            // When CallTarget-based Activity interception is enabled, the span is set on the Activity
-            // custom property. However, the processor's OnStart fires during Activity.Start() — before
-            // our OnMethodEnd integration runs. So the custom property will be null at this point.
-            // The interception path applies resource attributes itself via ApplyCachedResourceAttributes().
+            // When CallTarget-based Activity interception is enabled, the Datadog span doesn't exist yet
+            // (this OnStart fires during Activity.Start(), before ActivityStartIntegration.OnMethodEnd).
+            // Stash the raw resource object on the activity so OnMethodEnd can apply it to the span.
+            // This naturally handles multiple TracerProviders with different resources, since each Activity
+            // carries the resource of the provider that started it.
             if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
             {
+                if (baseProcessor.ParentProvider is not null
+                 && activityData.TryDuckCast<IActivity5>(out var activity5))
+                {
+                    var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
+                    activity5.SetCustomProperty(ActivityCustomPropertyKeys.Resource, resourceObject);
+                }
+
                 return;
             }
 
