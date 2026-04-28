@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -44,7 +45,11 @@ namespace Datadog.Trace.Tests.Debugger
                 HashInt = [1, 2, 3],
                 Array = ["first", "second"],
                 CustomArray = [new TestStruct.NestedObject() { NestedString = "Nested" }, new TestStruct.ChildNestedObject() { NestedString = "Nested Child" }],
-                Dictionary = new Dictionary<string, string> { { "hello", "world" } },
+                Dictionary = new Dictionary<string, string>
+                {
+                    { "hello", "world" },
+                    { "goodbye", "moon" },
+                },
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
                 String = "Hello world!",
@@ -209,6 +214,95 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.NotNull(result);
             Assert.IsType<TimeSpan>(result);
             Assert.Equal(default(TimeSpan), (TimeSpan)result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Theory]
+        [InlineData("""
+                    {
+                      "any": [
+                        {
+                          "ref": "HashtableLocal"
+                        },
+                        {
+                          "and": [
+                            {
+                              "eq": [
+                                "@key",
+                                "hello"
+                              ]
+                            },
+                            {
+                              "eq": [
+                                "@value",
+                                "world"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                    """)]
+        [InlineData("""
+                    {
+                      "all": [
+                        {
+                          "ref": "HashtableLocal"
+                        },
+                        {
+                          "ne": [
+                            "@value",
+                            "sun"
+                          ]
+                        }
+                      ]
+                    }
+                    """)]
+        [InlineData("""
+                    {
+                      "any": [
+                        {
+                          "filter": [
+                            {
+                              "ref": "HashtableLocal"
+                            },
+                            {
+                              "eq": [
+                                "@key",
+                                "hello"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "eq": [
+                            "@value",
+                            "world"
+                          ]
+                        }
+                      ]
+                    }
+                    """)]
+        public void ProbeExpressionParser_NonGenericDictionaryPredicates_CanUseKeyAndValue(string json)
+        {
+            var hashtable = new Hashtable
+            {
+                { "hello", "world" },
+                { "goodbye", "moon" },
+            };
+
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("HashtableLocal", typeof(Hashtable), hashtable, ScopeMemberKind.Local));
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
