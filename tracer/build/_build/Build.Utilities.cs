@@ -205,7 +205,7 @@ partial class Build
 
            if (!string.IsNullOrEmpty(GeneratorArgs))
            {
-               appArgs.AddRange(GeneratorArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+               appArgs.AddRange(TokenizeShellArgs(GeneratorArgs));
            }
 
            var applicationArguments = string.Join(" ", appArgs.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
@@ -221,6 +221,54 @@ partial class Build
            var process = ProcessTasks.StartProcess(dotnetRunSettings);
            process.AssertZeroExitCode();
        });
+
+    /// <summary>
+    /// Splits a command-line string into tokens, respecting single and double quotes.
+    /// A naive Split(' ') corrupts values like inline JSON for --config or paths with
+    /// spaces (e.g. under "Program Files"); this honors the surrounding quotes so the
+    /// value reaches the generator intact.
+    /// </summary>
+    private static IEnumerable<string> TokenizeShellArgs(string input)
+    {
+        var current = new System.Text.StringBuilder();
+        char? quote = null;
+
+        foreach (var c in input)
+        {
+            if (quote.HasValue)
+            {
+                if (c == quote.Value)
+                {
+                    quote = null;
+                }
+                else
+                {
+                    current.Append(c);
+                }
+            }
+            else if (c == '"' || c == '\'')
+            {
+                quote = c;
+            }
+            else if (char.IsWhiteSpace(c))
+            {
+                if (current.Length > 0)
+                {
+                    yield return current.ToString();
+                    current.Clear();
+                }
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+
+        if (current.Length > 0)
+        {
+            yield return current.ToString();
+        }
+    }
 
     Target BuildIisSampleApp => _ => _
         .Description("Rebuilds an IIS sample app")
