@@ -77,8 +77,6 @@ void UnwindingRecorder::WriteTo(std::ostream& os) const
                    << " locLr=0x" << cs.locLr
                    << " locSp=0x" << cs.locSp
                    << std::dec
-                   << " nextToSignalFrame=" << cs.nextToSignalFrame
-                   << " cfaIsUnreliable=" << cs.cfaIsUnreliable
                    << " frameType=" << cs.frameType
                    << " cfaRegSp=" << cs.cfaRegSp
                    << " cfaRegOffset=" << cs.cfaRegOffset
