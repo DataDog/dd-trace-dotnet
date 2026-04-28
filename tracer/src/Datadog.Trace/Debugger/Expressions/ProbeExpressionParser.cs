@@ -25,6 +25,8 @@ internal partial class ProbeExpressionParser<T>
     private const string @Exceptions = "@exception";
     private const string @Duration = "@duration";
     private const string @It = "@it";
+    private const string @Key = "@key";
+    private const string @Value = "@value";
     private const string @This = "this";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionParser<T>));
@@ -55,7 +57,8 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression ParseRoot(
         JsonTextReader reader,
-        List<ParameterExpression> parameters)
+        List<ParameterExpression> parameters,
+        ParameterExpression itParameter = null)
     {
         var readerValue = reader.Value?.ToString();
         switch (reader.TokenType)
@@ -65,27 +68,27 @@ internal partial class ProbeExpressionParser<T>
                 {
                     case "and":
                         {
-                            return ConditionalOperator(reader, Expression.AndAlso, parameters);
+                            return ConditionalOperator(reader, Expression.AndAlso, parameters, itParameter);
                         }
 
                     case "or":
                         {
-                            return ConditionalOperator(reader, Expression.OrElse, parameters);
+                            return ConditionalOperator(reader, Expression.OrElse, parameters, itParameter);
                         }
 
                     default:
-                        return ParseTree(reader, parameters, null, false);
+                        return ParseTree(reader, parameters, itParameter, false);
                 }
         }
 
         return null;
     }
 
-    private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters)
+    private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         _arrayStack++;
         reader.Read();
-        var right = ParseTree(reader, parameters, null);
+        var right = ParseTree(reader, parameters, itParameter);
         var left = Combine(null, right, combiner);
 
         while (reader.Read())
@@ -111,7 +114,7 @@ internal partial class ProbeExpressionParser<T>
                 break;
             }
 
-            right = ParseTree(reader, parameters, null, false);
+            right = ParseTree(reader, parameters, itParameter, false);
             left = Combine(left, right, combiner);
         }
 
@@ -153,14 +156,14 @@ internal partial class ProbeExpressionParser<T>
                                 case "and":
                                 case "&&":
                                     {
-                                        var right = ParseRoot(reader, parameters);
+                                        var right = ParseRoot(reader, parameters, itParameter);
                                         return right;
                                     }
 
                                 case "or":
                                 case "||":
                                     {
-                                        var right = ParseRoot(reader, parameters);
+                                        var right = ParseRoot(reader, parameters, itParameter);
                                         return right;
                                     }
 
@@ -356,6 +359,40 @@ internal partial class ProbeExpressionParser<T>
                                 }
 
                                 return itParameter;
+                            }
+
+                            if (readerValue == Key)
+                            {
+                                if (itParameter == null)
+                                {
+                                    AddError(readerValue, "current item in iterator is null");
+                                    return UndefinedValue();
+                                }
+
+                                if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Key), out var keyExpression))
+                                {
+                                    return keyExpression;
+                                }
+
+                                AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
+                                return UndefinedValue();
+                            }
+
+                            if (readerValue == Value)
+                            {
+                                if (itParameter == null)
+                                {
+                                    AddError(readerValue, "current item in iterator is null");
+                                    return UndefinedValue();
+                                }
+
+                                if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Value), out var valueExpression))
+                                {
+                                    return valueExpression;
+                                }
+
+                                AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
+                                return UndefinedValue();
                             }
 
                             return Expression.Constant(readerValue);
