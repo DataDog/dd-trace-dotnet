@@ -191,7 +191,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
 
     // Get new locals token
     mdToken newLocalVarSig;
-    hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromSig(newSignature.GetSignature(), newSignature.Size(),
+    hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromSig(newSignature.GetSignature(),
+                                                                            static_cast<ULONG>(newSignature.Size()),
                                                                             &newLocalVarSig);
     if (FAILED(hr))
     {

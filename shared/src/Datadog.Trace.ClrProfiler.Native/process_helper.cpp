@@ -105,7 +105,7 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     }    
 
     DWORD written;
-    WriteFile(hStdinWrite, input.c_str(), input.length(), &written, nullptr);
+    WriteFile(hStdinWrite, input.c_str(), static_cast<DWORD>(input.length()), &written, nullptr);
 
     CloseHandle(hStdinRead);
     CloseHandle(hStdinWrite);
