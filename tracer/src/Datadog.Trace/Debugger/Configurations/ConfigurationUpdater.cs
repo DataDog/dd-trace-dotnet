@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
@@ -20,20 +21,35 @@ namespace Datadog.Trace.Debugger.Configurations
         private readonly string? _env;
         private readonly string? _version;
         private readonly int _maxProbesPerType;
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
 
         private ProbeConfiguration _currentConfiguration;
 
-        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType)
+        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter)
         {
             _env = env;
             _version = version;
             _maxProbesPerType = maxProbesPerType;
+            _globalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
             _currentConfiguration = new ProbeConfiguration();
         }
 
-        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType)
+        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter = null)
         {
-            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType);
+            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType, globalRateLimiter);
+        }
+
+        private static bool IsProbeConfigurationPath(RemoteConfigurationPath path)
+        {
+            return path.Id.StartsWith(DefinitionPaths.LogProbe)
+                || path.Id.StartsWith(DefinitionPaths.MetricProbe)
+                || path.Id.StartsWith(DefinitionPaths.SpanProbe)
+                || path.Id.StartsWith(DefinitionPaths.SpanDecorationProbe);
+        }
+
+        private static bool IsServiceConfigurationPath(RemoteConfigurationPath path)
+        {
+            return path.Id.StartsWith(DefinitionPaths.ServiceConfiguration);
         }
 
         public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
@@ -49,7 +65,7 @@ namespace Datadog.Trace.Debugger.Configurations
 
             if (comparer.HasRateLimitChanged)
             {
-                HandleRateLimitChanged(comparer);
+                HandleRateLimitChanged(filteredConfiguration);
             }
 
             _currentConfiguration = configuration;
@@ -61,7 +77,17 @@ namespace Datadog.Trace.Debugger.Configurations
         {
             try
             {
-                HandleRemovedProbesChanges(paths);
+                if (paths.Any(IsServiceConfigurationPath))
+                {
+                    _currentConfiguration.ServiceConfiguration = null;
+                    _globalRateLimiter.ResetRate();
+                }
+
+                var probePaths = paths.Where(IsProbeConfigurationPath).ToList();
+                if (probePaths.Count > 0)
+                {
+                    HandleRemovedProbesChanges(probePaths);
+                }
             }
             catch (Exception ex)
             {
@@ -127,9 +153,9 @@ namespace Datadog.Trace.Debugger.Configurations
             DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths);
         }
 
-        private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)
+        private void HandleRateLimitChanged(ProbeConfiguration configuration)
         {
-            // todo handle rate limited changes
+            _globalRateLimiter.SetRate(configuration.ServiceConfiguration?.Sampling?.SnapshotsPerSecond);
         }
 
         internal sealed record UpdateResult(string Id, string? Error);

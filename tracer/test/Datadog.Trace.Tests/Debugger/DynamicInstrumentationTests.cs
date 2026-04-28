@@ -13,8 +13,10 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -29,6 +31,57 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DynamicInstrumentationTests
 {
     [Fact]
+    public void DynamicInstrumentation_ResetsGlobalRateLimiterOnConstruction()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+
+        _ = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            new RcmSubscriptionManagerMock(),
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            NoOpStatsd.Instance,
+            globalRateLimiter);
+
+        globalRateLimiter.ResetRateCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void DynamicInstrumentation_DisposesGlobalRateLimiterOnDispose()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            new RcmSubscriptionManagerMock(),
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            NoOpStatsd.Instance,
+            globalRateLimiter);
+
+        debugger.Dispose();
+
+        globalRateLimiter.DisposeCallCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task DynamicInstrumentationEnabled_ServicesCalled()
     {
         var settings = DebuggerSettings.FromSource(
@@ -42,9 +95,10 @@ public class DynamicInstrumentationTests
         var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0);
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
 
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
         debugger.Initialize();
 
         // Wait for async initialization to complete
@@ -79,9 +133,10 @@ public class DynamicInstrumentationTests
         var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0);
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
 
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
         debugger.Initialize();
         lineProbeResolver.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
@@ -255,6 +310,29 @@ public class DynamicInstrumentationTests
 
         public void Dispose()
         {
+        }
+    }
+
+    private class GlobalRateLimiterMock : IDebuggerGlobalRateLimiter
+    {
+        internal int DisposeCallCount { get; private set; }
+
+        internal int ResetRateCallCount { get; private set; }
+
+        public bool ShouldSample(ProbeType probeType, string probeId) => true;
+
+        public void SetRate(double? samplesPerSecond)
+        {
+        }
+
+        public void ResetRate()
+        {
+            ResetRateCallCount++;
+        }
+
+        public void Dispose()
+        {
+            DisposeCallCount++;
         }
     }
 }

@@ -10,6 +10,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ProbeStatuses;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Symbols;
@@ -29,6 +30,7 @@ internal sealed class DebuggerFactory
 
     internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, Func<string> serviceNameProvider, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
+        var globalRateLimiter = DebuggerGlobalRateLimiter.Instance;
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
         var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
@@ -39,7 +41,7 @@ internal sealed class DebuggerFactory
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
 
         var statsd = GetDogStatsd(tracerSettings);
 
@@ -53,7 +55,8 @@ internal sealed class DebuggerFactory
             diagnosticsUploader: diagnosticsUploader,
             probeStatusPoller: probeStatusPoller,
             configurationUpdater: configurationUpdater,
-            dogStats: statsd);
+            dogStats: statsd,
+            globalRateLimiter: globalRateLimiter);
     }
 
     private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings)
