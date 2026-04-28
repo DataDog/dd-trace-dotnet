@@ -594,7 +594,10 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (manager.DebuggerSettings.IsSnapshotExplorationTestEnabled)
                 {
-                    if (Process.GetCurrentProcess().ProcessName.Contains("testhost"))
+                    var processName = Process.GetCurrentProcess().ProcessName;
+                    var appDomainName = AppDomain.CurrentDomain.FriendlyName;
+                    if (processName.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        appDomainName.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         manager.InitForSnapshotExploration();
                     }
