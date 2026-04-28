@@ -92,6 +92,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                     ApplyStatusFallback(activity6, span);
                 }
 
+                // If the span is in Error state, look in Activity.Events for an OTel "exception" event
+                // (created by RecordException()) and copy its attributes into error.type/error.msg/error.stack.
+                // The managed listener path does this via AgentStatus2ErrorActivity{5,6}; in the interception
+                // path SetStatus runs before the user calls RecordException, so we redo the extraction here.
+                if (span.Error)
+                {
+                    OtlpHelpers.ExtractExceptionAttributes(activity5, span);
+                }
+
                 // Resource name fallback: if set_DisplayName was not intercepted
                 if (span.ResourceName is null && activity5.DisplayName is { Length: > 0 } displayName)
                 {
