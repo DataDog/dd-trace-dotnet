@@ -55,8 +55,6 @@ struct CursorSnapshot
     std::uintptr_t locFp;
     std::uintptr_t locLr;
     std::uintptr_t locSp;
-    std::uint32_t  nextToSignalFrame;
-    std::uint32_t  cfaIsUnreliable;
 
     std::int64_t frameType;
     std::int64_t cfaRegSp;
@@ -92,8 +90,6 @@ inline CursorSnapshot SnapshotCursor(const unw_cursor_snapshot_t& snapshot)
     s.locFp             = snapshot.loc_fp;
     s.locLr             = snapshot.loc_ip;
     s.locSp             = snapshot.loc_sp;
-    s.nextToSignalFrame = snapshot.next_to_signal_frame;
-    s.cfaIsUnreliable   = snapshot.cfa_is_unreliable;
     s.frameType         = snapshot.frame_type;
     s.cfaRegSp          = snapshot.cfa_reg_sp;
     s.cfaRegOffset      = snapshot.cfa_reg_offset;
