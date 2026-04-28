@@ -790,14 +790,14 @@ public class DynamicInstrumentationTests
 
     private class SnapshotUploaderMock : UploaderMock, ISnapshotUploader
     {
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string? snapshot)
         {
         }
     }
 
     private class LogUploaderMock : UploaderMock, ISnapshotUploader
     {
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string? snapshot)
         {
         }
     }

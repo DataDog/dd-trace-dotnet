@@ -193,8 +193,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool IsSafeToCallToString(Type type)
         {
-            return TypeExtensions.IsSimple(type) ||
-                   AllowedTypesSafeToCallToString.Contains(type) ||
+            var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+
+            return TypeExtensions.IsSimple(effectiveType) ||
+                   AllowedTypesSafeToCallToString.Contains(effectiveType) ||
                    IsSupportedCollection(type);
         }
 
