@@ -59,6 +59,24 @@ public class ProbeProcessorTests
         Assert.Equal(1, sampler.SampleCalls);
     }
 
+    [Fact]
+    public void ConditionEvaluationExceptionsAreDroppedWhenSamplerRejects()
+    {
+        var processor = CreateConditionalProbeProcessor();
+        var snapshotCreator = CreateSnapshotCreator();
+        var sampler = new TestAdaptiveSampler(false);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        Assert.True(processor.ShouldProcess(in probeData));
+        Assert.Equal(0, sampler.SampleCalls);
+
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        ClearMethodScopeMembers(snapshotCreator);
+        Assert.False(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+        Assert.Equal(1, sampler.SampleCalls);
+    }
+
     private static ProbeProcessor CreateConditionalProbeProcessor()
     {
         return new ProbeProcessor(
@@ -123,6 +141,13 @@ public class ProbeProcessorTests
             hasLocalOrArgument: true);
 
         return processor.Process(ref captureInfo, snapshotCreator, in probeData);
+    }
+
+    private static void ClearMethodScopeMembers(DebuggerSnapshotCreator snapshotCreator)
+    {
+        typeof(DebuggerSnapshotCreator)
+           .GetProperty(nameof(DebuggerSnapshotCreator.MethodScopeMembers), BindingFlags.Instance | BindingFlags.NonPublic)!
+           .SetValue(snapshotCreator, null);
     }
 
     private sealed class SampleTarget

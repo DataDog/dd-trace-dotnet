@@ -345,7 +345,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 evaluationResult.Errors ??= new List<EvaluationError>();
                 evaluationResult.Errors.Add(new EvaluationError { Message = $"Failed to evaluate expression for probe ID: {ProbeInfo.ProbeId}. Error: {e.Message}" });
-                return evaluationResult;
             }
 
             if (evaluationResult.IsNull())
@@ -354,7 +353,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 Log.Error("Evaluation result should not be null. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {ProbeInfo.ProbeId}" } };
-                return evaluationResult;
             }
 
             if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.HasError)
