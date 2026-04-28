@@ -23,6 +23,12 @@ partial class Build
             // Snapshot exploration runs don't need hands-off config, and disabling it
             // avoids libdatadog startup crashes in isolated third-party test hosts.
             envVars.Add("DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED", "0");
+            // Exploration tests run without an agent, so disable discovery polling to
+            // keep managed logs focused on snapshot/debugger issues.
+            envVars.Add("DD_AGENT_FEATURE_POLLING_ENABLED", "false");
+            // Telemetry retries also target the agent and can be misattributed as probe failures
+            // by the exploration log parser, so disable them for these offline runs.
+            envVars.Add("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false");
             envVars.Add(SnapshotExplorationEnabledKey, "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             envVars.Add(SnapshotExplorationRootPathKey, GetSnapshotExplorationRootPath(testRootPath, framework));
