@@ -70,7 +70,6 @@ internal static class VarEncodingHelper
     public static int WriteVarLong(BinaryWriter writer, ulong value)
         => WriteVarLong(value, new BinaryWriterByteWriter(writer));
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Serializes 64-bit unsigned integers 7 bits at a time,
     /// starting with the least significant bits. The most significant bit in each
@@ -95,7 +94,6 @@ internal static class VarEncodingHelper
         bytes[length - 1] = (byte)(value);
         return length;
     }
-#endif
 
     /// <summary>
     /// Serializes 64-bit signed integers using zig-zag encoding,
@@ -122,7 +120,6 @@ internal static class VarEncodingHelper
     public static int WriteVarLongZigZag(BinaryWriter writer, long value)
         => WriteVarLong(writer, ZigZag(value));
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Serializes 64-bit signed integers using zig-zag encoding,
     /// which ensures small-scale integers are turned into unsigned integers
@@ -134,7 +131,6 @@ internal static class VarEncodingHelper
     /// <returns>The number of bytes written</returns>
     public static int WriteVarLongZigZag(Span<byte> bytes, long value)
         => WriteVarLong(bytes, ZigZag(value));
-#endif
 
     /// <summary>
     /// Serializes 32-bit unsigned integers 7 bits at a time,
@@ -165,7 +161,6 @@ internal static class VarEncodingHelper
     public static int WriteVarInt(BinaryWriter writer, uint value)
         => WriteVarLong(value, new BinaryWriterByteWriter(writer));
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Serializes 32-bit unsigned integers 7 bits at a time,
     /// starting with the least significant bits. The most significant bit in each
@@ -179,7 +174,6 @@ internal static class VarEncodingHelper
     /// <returns>The number of bytes written</returns>
     public static int WriteVarInt(Span<byte> bytes, uint value)
         => WriteVarLong(bytes, value);
-#endif
 
     /// <summary>
     /// Serializes 32-bit signed integers using zig-zag encoding,
@@ -206,7 +200,6 @@ internal static class VarEncodingHelper
     public static int WriteVarIntZigZag(BinaryWriter writer, int value)
         => WriteVarLongZigZag(writer, value);
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Serializes 32-bit signed integers using zig-zag encoding,
     /// which ensures small-scale integers are turned into unsigned integers
@@ -218,7 +211,6 @@ internal static class VarEncodingHelper
     /// <returns>The number of bytes written</returns>
     public static int WriteVarIntZigZag(Span<byte> bytes, int value)
         => WriteVarLongZigZag(bytes, value);
-#endif
 
     /// <summary>
     /// Deserializes 64-bit unsigned integers that have been encoded using
@@ -252,7 +244,6 @@ internal static class VarEncodingHelper
         return null;
     }
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Deserializes 64-bit unsigned integers that have been encoded using
     /// <see cref="WriteVarLong(byte[],int,ulong)"/>
@@ -284,7 +275,6 @@ internal static class VarEncodingHelper
         bytesRead = default;
         return null;
     }
-#endif
 
     /// <summary>
     /// Deserializes 64-bit unsigned integers that have been encoded using
@@ -297,7 +287,6 @@ internal static class VarEncodingHelper
     public static long? ReadVarLongZigZag(byte[] bytes, int offset, out int bytesRead)
         => ReadVarLong(bytes, offset, out bytesRead) is { } decoded ? UnZigZag(decoded) : null;
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Deserializes 64-bit unsigned integers that have been encoded using
     /// <see cref="WriteVarLongZigZag(byte[],int,long)"/>
@@ -307,7 +296,6 @@ internal static class VarEncodingHelper
     /// <returns>The decoded value, or null if decoding failed</returns>
     public static long? ReadVarLongZigZag(Span<byte> bytes, out int bytesRead)
         => ReadVarLong(bytes, out bytesRead) is { } decoded ? UnZigZag(decoded) : null;
-#endif
 
     /// <summary>
     /// Deserializes 32-bit unsigned integers that have been encoded using
@@ -322,7 +310,6 @@ internal static class VarEncodingHelper
             ? (uint)decoded
             : null;
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Deserializes 64-bit unsigned integers that have been encoded using
     /// <see cref="WriteVarInt(byte[],int,uint)" />
@@ -334,7 +321,6 @@ internal static class VarEncodingHelper
         => ReadVarLong(bytes, out bytesRead) is { } decoded and <= int.MaxValue
             ? (uint)decoded
             : null;
-#endif
 
     /// <summary>
     /// Deserializes 64-bit unsigned integers that have been encoded using
@@ -349,7 +335,6 @@ internal static class VarEncodingHelper
             ? (int)decoded
             : null;
 
-#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Deserializes 64-bit unsigned integers that have been encoded using
     /// <see cref="WriteVarIntZigZag(byte[],int,int)" />
@@ -361,7 +346,6 @@ internal static class VarEncodingHelper
         => ReadVarLongZigZag(bytes, out bytesRead) is { } decoded and >= int.MinValue and <= int.MaxValue
             ? (int)decoded
             : null;
-#endif
 
     /// <summary>
     /// Returns the number of bytes that <see cref="WriteVarIntZigZag(byte[],int,int)"/> encodes a value into.

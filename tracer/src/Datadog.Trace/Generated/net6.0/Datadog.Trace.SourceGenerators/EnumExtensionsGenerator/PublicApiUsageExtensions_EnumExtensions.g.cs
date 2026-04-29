@@ -17,7 +17,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 105;
+    public const int Length = 106;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -49,6 +49,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser => "name:spanextensions_setuser",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag => "name:spanextensions_settag",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority => "name:spanextensions_settracesamplingpriority",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.DataStreams_TrackTransaction => "name:datastreams_tracktransaction",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Configure => "name:tracer_configure",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync => "name:tracer_forceflushasync",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive => "name:tracer_startactive",
@@ -167,6 +168,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.DataStreams_TrackTransaction,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Configure,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive,
@@ -285,6 +287,7 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.DataStreams_TrackTransaction),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Configure),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive),
@@ -403,6 +406,7 @@ internal static partial class PublicApiUsageExtensions
             "name:spanextensions_setuser",
             "name:spanextensions_settag",
             "name:spanextensions_settracesamplingpriority",
+            "name:datastreams_tracktransaction",
             "name:tracer_configure",
             "name:tracer_forceflushasync",
             "name:tracer_startactive",

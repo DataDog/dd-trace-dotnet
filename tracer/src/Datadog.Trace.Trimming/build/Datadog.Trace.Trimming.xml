@@ -126,6 +126,7 @@
    <assembly fullname="NLog" />
    <assembly fullname="Npgsql" />
    <assembly fullname="nunit.framework" />
+   <assembly fullname="Ocelot" />
    <assembly fullname="OpenTelemetry" />
    <assembly fullname="OpenTelemetry.Api" />
    <assembly fullname="Oracle.DataAccess" />

@@ -46,7 +46,9 @@ namespace Datadog.Trace
                 osArchitecture: osArchitecture,
                 processArchitecture: processArchitecture,
                 osDescription: osDescription,
+#pragma warning disable RS0030 // FrameworkDescription is the cache for Environment.Version
                 runtimeVersion ?? Environment.Version);
+#pragma warning restore RS0030
         }
 
         public bool IsCoreClr()
@@ -94,14 +96,18 @@ namespace Datadog.Trace
                 }
                 else
                 {
+#pragma warning disable RS0030 // FrameworkDescription is the cache for Environment.Version
                     version = Environment.Version;
+#pragma warning restore RS0030
                 }
 
                 return;
             }
 
             // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
+#pragma warning disable RS0030 // FrameworkDescription is the cache for Environment.Version
             version = Environment.Version;
+#pragma warning restore RS0030
             frameworkVersion = version.ToString();
         }
     }

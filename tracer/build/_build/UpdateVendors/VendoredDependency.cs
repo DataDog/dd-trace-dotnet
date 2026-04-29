@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using Nuke.Common.IO;
 
 namespace UpdateVendors
 {
@@ -163,85 +164,178 @@ namespace UpdateVendors
                 });
 
             Add(
-                libraryName: "System.Memory",
-                version: "4.5.5",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Memory" },
+                libraryName: "System.Buffers",
+                version: "4.6.1",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Buffers", "src" },
                 transform: filePath =>
                 {
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    if (filePath.EndsWith(Path.Join("Buffers", "Utilities.cs")))
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Buffers", AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Fix cases where we're relying on this behaviour:
-                        // private static ReadOnlySpan<byte> Property => new byte[32]
-                        // it "works" in .NET Core, but is very allocaty in .NET FX
-                        RewriteFileWithTransform(
-                            filePath,
-                            content => content.Replace(
-                                "        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]",
-                                """
-                                #if NETCOREAPP
-                                        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]
-                                #else
-                                        private static ReadOnlySpan<byte> Log2DeBruijn => _log2DeBruijn.AsSpan();
-                                        private static readonly byte[] _log2DeBruijn = new byte[32]
-                                #endif
-                                """
-                            ));
+                        RewriteFileWithTransform(filePath, contents => FixSystemBuffers(filePath, contents));
                     }
                 },
-                relativePathsToExclude: new[] { "Buffers/ArrayPoolEventSource.cs" });
-
-            Add(
-                libraryName: "System.Private.CoreLib",
-                version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Private.CoreLib" },
-                transform: filePath =>
+                relativePathsToExclude: new[]
                 {
-                    
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Diagnostics", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "FxResources", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+                    "Resources/Strings.resx",
+                    "System/Buffers/ArrayPoolEventSource.cs"
                 });
 
             Add(
+                libraryName: "System.Numerics.Vectors",
+                version: "4.6.1",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Numerics.Vectors", "src" },
+                transform: filePath =>
+                {
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Numerics", AddIgnoreNullabilityWarningDisablePragma);
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents => FixSystemBuffers(filePath, contents));
+                    }
+                },
+                onlyIncludePaths: new[]
+                {
+                    "System/Numerics/ConstantHelper.cs",
+                    "System/Numerics/ConstantHelper.cs",
+                    "System/Numerics/Vector.cs",
+                    "System/Numerics/Vector_Operations.cs",
+                    "System/Numerics/Register.cs",
+                    "System/Numerics/Hashing/HashHelpers.cs",
+                });
+
+            Add(
+                libraryName: "System.Memory",
+                version: "4.6.3",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Memory", "src" },
+                transform: filePath =>
+                {
+                    // This source code _doesn't_ use nullability, so don't add the nullability attribute
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents => FixSystemMemory(filePath, contents));
+                    }
+                },
+                relativePathsToExclude: new [] { "Resources/Strings.resx" });
+
+            // "Common" shared components required by System.Reflection.Metadata (among others)
+            // Not a "real" package
+            Add(
+                libraryName: "System.Reflection.Metadata.Interop",
+                version: "7.0.20",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.20.zip",
+                pathToSrc: new[] { "runtime-7.0.20", "src", "libraries", "Common", "src" },
+                transform: filePath =>
+                {
+                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
+
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(filePath, contents =>
+                        {
+                            return contents
+                                  .Replace(
+                                       "internal static partial class Interop",
+                                       "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;" + Environment.NewLine + Environment.NewLine + "internal static partial class Interop")
+                                  .Replace(
+                                       "[LibraryImport(Libraries.Kernel32, SetLastError = true)]",
+                                       """[DllImport("kernel32.dll", SetLastError = true)]""")
+                                  .Replace(
+                                       "internal static unsafe partial int ReadFile(",
+                                       "internal static extern unsafe int ReadFile(");
+                        });
+                    }
+                },
+                onlyIncludePaths: new[] { "Interop/Windows/kernel32/Interop.ReadFile_SafeHandle_IntPtr.cs", });
+            Add(
                 libraryName: "System.Reflection.Metadata",
-                version: "7.0.2",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Reflection.Metadata" },
+                version: "7.0.20",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.20.zip",
+                pathToSrc: new[] { "runtime-7.0.20", "src", "libraries", "System.Reflection.Metadata", "src" , "System", "Reflection" },
                 transform: filePath =>
                 {
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Reflection.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Collections.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                    RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
 
-                    if (filePath.EndsWith(Path.Join("Reflection", "PortableExecutable", "PEBuilder.cs")))
+                    // we run these _after_ the standard transform otherwise we get issues
+                    if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Fix cases where we're relying on this behaviour:
-                        // private static ReadOnlySpan<byte> Property => new byte[32]
-                        // it "works" in .NET Core, but is very allocaty in .NET FX
-                        RewriteFileWithTransform(
-                            filePath,
-                            content => content.Replace(
-                                "      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]",
-                                """
-                                #if NETCOREAPP
-                                      private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]
-                                #else
-                                      private static readonly byte[] DosHeader = new byte[DosHeaderSize]
-                                #endif
-                                """
-                            ));
+                        RewriteFileWithTransform(filePath, contents => FixSystemReflectionMetadata(filePath, contents));
                     }
+                },
+                relativePathsToExclude: new[]
+                {
+                    // .NET Core-only files
+                    "Internal/Utilities/EncodingHelper.netcoreapp.cs",
+                    "Internal/Utilities/StreamExtensions.netcoreapp.cs",
+
+                    // Builder/writer code - the tracer only reads metadata, never writes it
+                    "Metadata/Ecma335/Encoding/",
+                    "Metadata/BlobBuilder.cs",
+                    "Metadata/BlobBuilder.Enumerators.cs",
+                    "Metadata/BlobWriter.cs",
+                    "Metadata/BlobWriterImpl.cs",
+                    "Metadata/PooledBlobBuilder.cs",
+                    "Metadata/ReservedBlob.cs",
+                    "Metadata/Ecma335/MetadataBuilder.cs",
+                    "Metadata/Ecma335/MetadataBuilder.Heaps.cs",
+                    "Metadata/Ecma335/MetadataBuilder.Tables.cs",
+                    "Metadata/Ecma335/MetadataRootBuilder.cs",
+                    "Metadata/Ecma335/PortablePdbBuilder.cs",
+                    "Metadata/Ecma335/MetadataSizes.cs",
+                    "Metadata/Ecma335/SerializedMetadataHeaps.cs",
+                    "Metadata/Ecma335/MetadataAggregator.cs",
+                    "Metadata/Internal/MetadataWriterUtilities.cs",
+                    "PortableExecutable/PEBuilder.cs",
+                    "PortableExecutable/ManagedPEBuilder.cs",
+                    "PortableExecutable/ManagedTextSection.cs",
+                    "PortableExecutable/PEDirectoriesBuilder.cs",
+                    "PortableExecutable/PEHeaderBuilder.cs",
+                    "PortableExecutable/ResourceSectionBuilder.cs",
+                    "PortableExecutable/DebugDirectory/DebugDirectoryBuilder.cs",
+                    "PortableExecutable/DebugDirectory/DebugDirectoryBuilder.EmbeddedPortablePdb.cs",
                 });
 
             Add(
                 libraryName: "System.Runtime.CompilerServices.Unsafe",
-                version: "1.0.0",
-                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
-                pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Runtime.CompilerServices.Unsafe" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
+                version: "6.1.2",
+                // Download link for commit 14e29655e53aec37342e933bfd7ba574167453ff from https://github.com/dotnet/maintenance-packages
+                downloadUrl: "https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff",
+                pathToSrc: new[] { "maintenance-packages-14e29655e53aec37342e933bfd7ba574167453ff", "src", "System.Runtime.CompilerServices.Unsafe", "src" },
+                transform: filePath =>
+                {
+                    // Convert .il file to InlineIL-based .cs file
+                    if (string.Equals(Path.GetFileName(filePath), "System.Runtime.CompilerServices.Unsafe.il", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var ilContent = File.ReadAllText(filePath);
+                        var csContent = ILToInlineILConverter.Convert(ilContent);
+
+                        // Remove IL file, and replace with c# file instead
+                        File.Delete(filePath);
+                        filePath = Path.Combine(Path.GetDirectoryName(filePath)!, "Unsafe.cs");
+                        File.WriteAllText(
+                            filePath,
+                            csContent,
+                            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+                        // Use the full namespace to avoid rewriting BCL usings
+                        RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime.CompilerServices.Unsafe");
+                    }
+                },
+                onlyIncludePaths: new[] { "System.Runtime.CompilerServices.Unsafe.il", });
 
             Add(
                 libraryName: "ICSharpCode.SharpZipLib",
@@ -303,6 +397,15 @@ namespace UpdateVendors
                     "OtlpTraceExporter.cs",
                     "OtlpTraceExporterHelperExtensions.cs"
                 });
+
+            Add(
+                libraryName: "spdlog",
+                version: "1.11.0",
+                downloadUrl: "https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.zip",
+                pathToSrc: new[] {"spdlog-1.11.0", "include", "spdlog"},
+                transform: filePath => { },
+                relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/spdlog/include",
+                isNuGetPackage: false);
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -321,6 +424,10 @@ namespace UpdateVendors
 
         public string[] OnlyIncludeRelativePaths { get; set; }
 
+        public RelativePath RelativePathToVendorDirectoryOverride { get; set; }
+
+        public bool IsNuGetPackage { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
@@ -328,7 +435,9 @@ namespace UpdateVendors
             string[] pathToSrc,
             Action<string> transform,
             string[] relativePathsToExclude = null,
-            string[] onlyIncludePaths = null)
+            string[] onlyIncludePaths = null,
+            RelativePath relativePathToVendorDirectoryOverride = null,
+            bool isNuGetPackage = true)
         {
             All.Add(new VendoredDependency()
             {
@@ -339,6 +448,8 @@ namespace UpdateVendors
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
                 OnlyIncludeRelativePaths = onlyIncludePaths,
+                RelativePathToVendorDirectoryOverride = relativePathToVendorDirectoryOverride,
+                IsNuGetPackage = isNuGetPackage,
             });
         }
 
@@ -439,6 +550,353 @@ namespace UpdateVendors
             contents = Regex.Replace(contents, @"SR\.(\w+)(?=\W)", "@\"$1\"");
 
             return contents;
+        }
+
+        private static string FixSystemReflectionMetadata(string filePath, string contents)
+        {
+            if (filePath.EndsWith(Path.Join("Reflection", "PortableExecutable", "PEBuilder.cs")))
+            {
+                // Fix cases where we're relying on this behaviour:
+                // private static ReadOnlySpan<byte> Property => new byte[32]
+                // it "works" in .NET Core, but is very allocaty in .NET FX
+                RewriteFileWithTransform(
+                    filePath,
+                    content => content.Replace(
+                        "private static ReadOnlySpan<byte> DosHeader => new byte[DosHeaderSize]",
+                        "private static readonly byte[] DosHeader = new byte[DosHeaderSize]"
+                    ));
+            }
+
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "#nullable enable\n" +
+                                  "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            contents = contents
+                      .Replace("using System.Collections.Immutable;", "using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;")
+                      .Replace("namespace System.Reflection", "namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection")
+                      .Replace("Configuration.Assemblies.AssemblyHashAlgorithm", "global::System.Configuration.Assemblies.AssemblyHashAlgorithm");
+
+            if (string.Equals(Path.GetFileName(filePath), "Throw.cs"))
+            {
+                contents = contents
+                   .Replace("throw new ObjectDisposedException(nameof(PortableExecutable.PEReader));", "throw new ObjectDisposedException(\"PEReader\");");
+            }
+            else if (string.Equals(Path.GetFileName(filePath), "MetadataReader.WinMD.cs"))
+            {
+                contents = contents
+                   .Replace(
+                        """internal static readonly byte[] WinRTPrefix = "<WinRT>"u8.ToArray();""",
+                        """internal static readonly byte[] WinRTPrefix = global::System.Text.Encoding.UTF8.GetBytes("<WinRT>");""");
+            }
+
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("BlobTooLarge", "Blob is to large."),
+                new("BuilderAlreadyLinked", "The operation is not valid on this builder as it has been linked with another one."),
+                new("CantGetOffsetForVirtualHeapHandle", "Can't get a heap offset for a virtual heap handle"),
+                new("ControlFlowBuilderNotAvailable", "Can't emit a branch or exception region, the current encoder not created with a control flow builder."),
+                new("DataTooBig", "Data too big to fit in memory."),
+                new("ExpectedNonEmptyArray", "Expected non-empty array."),
+                new("ExpectedNonEmptyString", "Expected non-empty string."),
+                new("HashTooShort", "Hash must be at least {0}B long."),
+                new("HeapSizeLimitExceeded", "The limit on the size of {0} heap has been exceeded."),
+                new("IllegalTablesInCompressedMetadataStream", "Illegal tables in compressed metadata stream."),
+                new("ImageTooSmallOrContainsInvalidOffsetOrCount", "Image is either too small or contains an invalid byte offset or count."),
+                new("ImageTooSmall", "Image is too small."),
+                new("InvalidCodedIndex", "Invalid coded index."),
+                new("InvalidCompressedInteger", "Invalid compressed integer."),
+                new("InvalidConstantValue", "Invalid constant value."),
+                new("InvalidCorHeaderSize", "Invalid COR header size."),
+                new("InvalidDebugDirectoryEntryCharacteristics", "The value of field Characteristics in debug directory entry must be zero."),
+                new("InvalidDirectoryRVA", "Invalid directory relative virtual address."),
+                new("InvalidDirectorySize", "Invalid directory size."),
+                new("InvalidDocumentName", "Invalid document name."),
+                new("InvalidEntryPointToken", "Invalid entry point token: 0x{0:8X}"),
+                new("InvalidHandle", "Invalid handle."),
+                new("InvalidImportDefinitionKind", "Invalid import definition kind: {0}."),
+                new("InvalidLocalSignatureToken", "Invalid local signature token: 0x{0:X8}"),
+                new("InvalidMetadataSectionSpan", "Invalid metadata section span."),
+                new("InvalidMetadataStreamFormat", "Invalid Metadata stream format."),
+                new("InvalidMethodHeader1", "Invalid method header: 0x{0:X2}"),
+                new("InvalidMethodHeader2", "Invalid method header: 0x{0:X2} 0x{1:X2}"),
+                new("InvalidMethodRva", "Invalid relative virtual address (RVA): 0x{0:X8}"),
+                new("InvalidNumberOfSections", "Invalid number of sections declared in PE header."),
+                new("InvalidPdbChecksumDataFormat", "Invalid PDB Checksum data format."),
+                new("InvalidPESignature", "Invalid PE signature."),
+                new("InvalidRowCount", "Invalid row count: {0}"),
+                new("InvalidSehHeader", "Invalid SEH header: 0x{0:X2}"),
+                new("InvalidSerializedString", "Invalid serialized string."),
+                new("InvalidToken", "Invalid token."),
+                new("InvalidTypeSize", "Invalid type size."),
+                new("LabelDoesntBelongToBuilder", "Specified label doesn't belong to the current builder."),
+                new("LabelNotMarked", "Label {0} has not been marked."),
+                new("MetadataHeaderTooSmall", "Metadata header too small."),
+                new("MetadataImageDoesNotRepresentAnAssembly", "Metadata image doesn't represent an assembly."),
+                new("MetadataSignature", "Invalid COR20 header signature."),
+                new("MetadataStringDecoderEncodingMustBeUtf8", "The MetadataStringDecoder instance used to instantiate the Metadata reader must have a UTF8 encoding."),
+                new("MetadataTableHeaderTooSmall", "Metadata table header too small."),
+                new("MetadataTableNotSorted", "Metadata table {0} not sorted."),
+                new("MetadataTablesTooSmall", "Metadata tables too small."),
+                new("MissingDataDirectory", "Missing data directory."),
+                new("ModuleTableInvalidNumberOfRows", "Invalid number of rows of Module table: {0}."),
+                new("NotEnoughSpaceForBlobStream", "Not enough space for Blob stream."),
+                new("NotEnoughSpaceForGUIDStream", "Not enough space for GUID stream."),
+                new("NotEnoughSpaceForMetadataStream", "Not enough space for Metadata stream."),
+                new("NotEnoughSpaceForStreamHeaderName", "Not enough space for stream header name."),
+                new("NotEnoughSpaceForStringStream", "Not enough space for String stream."),
+                new("NotEnoughSpaceForVersionString", "Not enough space for version string."),
+                new("NotMetadataHeapHandle", "Specified handle is not a valid metadata heap handle."),
+                new("NotMetadataTableOrUserStringHandle", "Specified handle is not a valid metadata table or UserString heap handle."),
+                new("NotTypeDefOrRefHandle", "Specified handle is not a TypeDefinitionHandle or TypeReferenceHandle."),
+                new("NotTypeDefOrRefOrSpecHandle", "Specified handle is not a TypeDefinitionHandle, TypeReferenceHandle, or TypeSpecificationHandle."),
+                new("OutOfBoundsRead", "Read out of bounds."),
+                new("OutOfBoundsWrite", "Write out of bounds."),
+                new("PEImageDoesNotHaveMetadata", "PE image does not have metadata."),
+                new("PEImageNotAvailable", "PE image not available."),
+                new("RowIdOrHeapOffsetTooLarge", "Row ID or heap offset is too large."),
+                new("SectionTooSmall", "Section too small."),
+                new("SequencePointValueOutOfRange", "Sequence point value is out of range."),
+                new("SignatureNotVarArg", "Can't add vararg parameters to non-vararg signature."),
+                new("SignatureTypeSequenceMustHaveAtLeastOneElement", "Signature type sequence must have at least one element."),
+                new("SizeMismatch", "Declared size doesn't correspond to the actual size."),
+                new("StandaloneDebugMetadataImageDoesNotContainModuleTable", "Standalone debug metadata image doesn't contain Module table."),
+                new("StreamHeaderTooSmall", "Stream header too small."),
+                new("StreamMustSupportReadAndSeek", "Stream must support read and seek operations."),
+                new("StreamTooLarge", "Stream length minus starting position is too large to hold a PEImage."),
+                new("TableRowCountSpaceTooSmall", "Table row count space to small."),
+                new("TooManySubnamespaces", "There are too many subnamespaces."),
+                new("UnexpectedArrayLength", "Expected array of length {0}."),
+                new("UnexpectedCodeViewDataSignature", "Unexpected CodeView data signature value."),
+                new("UnexpectedDebugDirectoryType", "The Debug directory was not of type {0}."),
+                new("UnexpectedEmbeddedPortablePdbDataSignature", "Unexpected Embedded Portable PDB data signature value."),
+                new("UnexpectedHandleKind", "Unexpected handle kind: {0}."),
+                new("UnexpectedOpCode", "Unexpected op-code: {0}."),
+                new("UnexpectedSignatureHeader2", "Expected signature header for '{0}' or '{1}', but found '{2}' (0x{3:x2})."),
+                new("UnexpectedSignatureHeader", "Expected signature header for '{0}', but found '{1}' (0x{2:x2})."),
+                new("UnexpectedSignatureTypeCode", "Unexpected SignatureTypeCode: (0x{0:x})."),
+                new("UnexpectedStreamEnd", "Unexpected stream end."),
+                new("UnexpectedValueUnknownType", "Unexpected value '{0}' of unknown type."),
+                new("UnexpectedValue", "Unexpected value '{0}' of type '{1}'"),
+                new("UnknownFileFormat", "Unknown file format."),
+                new("UnknownPEMagicValue", "Unknown PE Magic value."),
+                new("UnknownTables", "Unknown tables: 0x{0:x16}."),
+                new("UnsupportedFormatVersion", "Unsupported format version: {0}"),
+                new("ValueTooLarge", "Value is too large."),
+                new("WinMDMissingMscorlibRef", "Missing mscorlib reference in AssemblyRef table."),
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
+            }
+
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
+        }
+
+        private static string FixSystemMemory(string filePath, string contents)
+        {
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
+                                  "using System.Runtime.InteropServices;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            // Leave these in the vendored namespace to avoid naming conflicts with various _other_ ThrowHelper files,
+            // and MemoryExtensions causes conflicts in the test projects - it's extension methods, so doesn't matter too much where it is
+            if (string.Equals(Path.GetFileName(filePath), "ThrowHelper.cs")
+             || string.Equals(Path.GetFileName(filePath), "MemoryExtensions.cs")
+             || string.Equals(Path.GetFileName(filePath), "MemoryExtensions.Portable.cs"))
+            {
+                contents = contents.Replace(
+                    "namespace System",
+                    "namespace Datadog.Trace.VendoredMicrosoftCode.System");
+            }
+
+            // Note that we leave everything in the System namespace where it is,
+            // so that the compiler can light up for things like Span<T>. It does raise the question
+            // of whether we should bother renaming _any_ of these APIs, but leaving as-is for now
+            // to avoid confusion
+            contents = contents.Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..omponentModel.",
+                                    "System.ComponentModel.")
+                               .Replace(
+                                    "Datadog.Trace.VendoredMicrosoftCode.System..UInt",
+                                    "System.NUInt")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel",
+                                    "using System.ComponentModel")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics",
+                                    "using System.Diagnostics")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Globalization",
+                                    "using System.Globalization")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices",
+                                    "using System.Runtime.CompilerServices")
+                               .Replace(
+                                    "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
+                                    "using System.Text")
+                               .Replace(
+                                    "ThrowHelper.",
+                                    "global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.");
+
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("Argument_BadFormatSpecifier", "Format specifier was invalid."),
+                new("Argument_CannotParsePrecision", "Characters following the format symbol must be a number of {0} or less."),
+                new("Argument_DestinationTooShort", "Destination is too short."),
+                new("Argument_InvalidTypeWithPointersNotSupported", "Cannot use type '{0}'. Only value types without pointers or references are supported."),
+                new("Argument_OverlapAlignmentMismatch", "Overlapping spans have mismatching alignment."),
+                new("Argument_PrecisionTooLarge", "Precision cannot be larger than {0}."),
+                new("EndPositionNotReached", "End position was not reached during enumeration."),
+                new("NotSupported_CannotCallEqualsOnSpan", "Equals() on Span and ReadOnlySpan is not supported. Use operator== instead."),
+                new("NotSupported_CannotCallGetHashCodeOnSpan", "GetHashCode() on Span and ReadOnlySpan is not supported."),
+                new("OutstandingReferences", "Release all references before disposing this instance."),
+                new("UnexpectedSegmentType", "Unexpected segment type."),
+                new("Argument_GWithPrecisionNotSupported", "The 'G' format combined with a precision is not supported.")
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
+            }
+
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
+        }
+
+        private static string FixSystemBuffers(string filePath, string contents)
+        {
+            // Add additional usings which are assumed available
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all common using directives assumed to be available
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            // Also add nullable here tp make sure it's definitely added
+            const string usings = "using System;\n" +
+                                  "using System.Collections;\n" +
+                                  "using System.Collections.Generic;\n" +
+                                  "using System.IO;\n" +
+                                  "using System.Linq;\n" +
+                                  "using System.Reflection;\n" +
+                                  "using System.Runtime.InteropServices;\n" +
+                                  "using System.Threading;\n" +
+                                  "using System.Threading.Tasks;\n\n";
+
+            contents = contents.Insert(namespaceIndex, usings);
+
+            if (string.Equals(Path.GetFileName(filePath), "DefaultArrayPool.cs"))
+            {
+                contents = contents
+                          .Replace("var log = ArrayPoolEventSource.Log;", "")
+                          .ReplaceLineEndings()
+                          .Replace(
+                               """
+                                           if (log.IsEnabled())
+                                           {
+                                               int bufferId = buffer.GetHashCode(), bucketId = -1; // no bucket for an on-demand allocated buffer
+                                               log.BufferRented(bufferId, buffer.Length, Id, bucketId);
+                                               log.BufferAllocated(bufferId, buffer.Length, Id, bucketId, index >= _buckets.Length ?
+                                                   ArrayPoolEventSource.BufferAllocatedReason.OverMaximumSize : ArrayPoolEventSource.BufferAllocatedReason.PoolExhausted);
+                                           }
+                               """, "")
+                          .Replace(
+                               """
+                                                       if (log.IsEnabled())
+                                                       {
+                                                           log.BufferRented(buffer.GetHashCode(), buffer.Length, Id, _buckets[i].Id);
+                                                       }
+                               """, "")
+                          .Replace(
+                               """
+                                           if (log.IsEnabled())
+                                           {
+                                               log.BufferReturned(array.GetHashCode(), array.Length, Id);
+                                           }
+                               """, "");
+            }
+            else if (string.Equals(Path.GetFileName(filePath), "DefaultArrayPoolBucket.cs"))
+            {
+                contents = contents
+                          .Replace("Debugger.IsAttached", "global::System.Diagnostics.Debugger.IsAttached")
+                          .ReplaceLineEndings()
+                          .Replace(
+                               """
+                                                   var log = ArrayPoolEventSource.Log;
+                                                   if (log.IsEnabled())
+                                                   {
+                                                       log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,
+                                                           ArrayPoolEventSource.BufferAllocatedReason.Pooled);
+                                                   }
+                               """, "");
+            }
+
+            var resourceReplacements = new List<KeyValuePair<string, string>>
+            {
+                new("Arg_ArgumentOutOfRangeException", "Index was out of bounds:"),
+                new("Arg_ElementsInSourceIsGreaterThanDestination", "Number of elements in source vector is greater than the destination array"),
+                new("Arg_InsufficientNumberOfElements", """At least {0} element(s) are expected in the parameter "{1}"."""),
+                new("Arg_NullArgumentNullRef", "The method was called with a null array argument."),
+                new("Arg_TypeNotSupported", "Specified type is not supported"),
+                new("ArgumentException_BufferNotFromPool", "The buffer is not associated with this pool and may not be returned to it."),
+            };
+
+            foreach (var kvp in resourceReplacements)
+            {
+                contents = ReplaceResourceUsage(contents, kvp.Key, kvp.Value);
+            }
+
+            return contents.Replace("SR.Format(", "string.Format(global::System.Globalization.CultureInfo.InvariantCulture, ");
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, params Func<string, string, string>[] extraTransform)
@@ -558,26 +1016,32 @@ namespace UpdateVendors
 
                         string datadogVendoredNamespace = originalNamespace.StartsWith("System") ? "Datadog.Trace.VendoredMicrosoftCode." : "Datadog.Trace.Vendors.";
 
-                        // Prevent namespace conflicts
-                        builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
-                        builder.Replace($"namespace {originalNamespace}", $"namespace {datadogVendoredNamespace}{originalNamespace}");
+                        if (!string.IsNullOrEmpty(originalNamespace))
+                        {
+                            // Prevent namespace conflicts
+                            builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
+                            builder.Replace($"namespace {originalNamespace}", $"namespace {datadogVendoredNamespace}{originalNamespace}");
+                        }
+
                         builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
 
-                        // Fix namespace conflicts in `using alias` directives. For example, transform:
-                        //      using Foo = dnlib.A.B.C;
-                        // To:
-                        //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
-                        string result =
-                            Regex.Replace(
-                                builder.ToString(),
+                        content = builder.ToString();
+                        if (!string.IsNullOrEmpty(originalNamespace))
+                        {
+                            // Fix namespace conflicts in `using alias` directives. For example, transform:
+                            //      using Foo = dnlib.A.B.C;
+                            // To:
+                            //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
+                            content = Regex.Replace(
+                                content,
                                 @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
                                 match => $"using {match.Groups[1].Value} = {datadogVendoredNamespace}{originalNamespace}.{match.Groups[2].Value};");
-
+                        }
 
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
-                            result,
+                            content,
                             @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(readonly\s+)?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
@@ -657,6 +1121,13 @@ namespace UpdateVendors
                 "using System.Threading.Tasks;\n\n";
 
             return contents.Insert(namespaceIndex, usings);
+        }
+
+        private static string ReplaceResourceUsage(string contents, string key, string value)
+        {
+            return value.Contains("{0}")
+                       ? contents.Replace($"SR.Format(SR.{key}", $"string.Format(global::System.Globalization.CultureInfo.InvariantCulture, \"\"\"{value}\"\"\"")
+                       : contents.Replace($"SR.{key}", $"\"{value}\"");
         }
     }
 }

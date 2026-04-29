@@ -10,6 +10,7 @@
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
 #include "Generated/generated_definitions.h"
+#include <cassert>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -175,7 +176,10 @@ EXTERN_C int STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLeng
         return 0;
     }
 
-    return trace::profiler->RegisterIastAspects(aspects, aspectsLength);
+    // Managed callers always pass an array length, so this should never trip; assert captures
+    // the assumption before promoting to the size_t parameter.
+    assert(aspectsLength >= 0);
+    return trace::profiler->RegisterIastAspects(aspects, static_cast<size_t>(aspectsLength));
 }
 
 EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions3(WCHAR* id, CallTargetDefinition3* items, int size,
@@ -187,7 +191,10 @@ EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions3(WCHAR* id, CallTarge
         return 0;
     }
 
-    return trace::profiler->RegisterCallTargetDefinitions(id, items, size, enabledCategories, 0xFFFFFFFF);
+    // Managed callers always pass an array length, so this should never trip; assert captures
+    // the assumption before promoting to the size_t parameter.
+    assert(size >= 0);
+    return trace::profiler->RegisterCallTargetDefinitions(id, items, static_cast<size_t>(size), enabledCategories, 0xFFFFFFFF);
 }
 
 EXTERN_C long STDAPICALLTYPE EnableCallTargetDefinitions(UINT32 enabledCategories)

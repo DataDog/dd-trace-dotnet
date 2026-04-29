@@ -24,14 +24,19 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 {
     private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 
+    // Drain the queues when this many items accumulate OR after DrainTimeoutMs — whichever comes first.
+    private const int DrainThreshold = 1_000;
+    private const int DrainTimeoutMs = 500;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
     private readonly object _initLock = new();
     private readonly long _bucketDurationMs;
+
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<DataStreamsTransactionInfo> _transactionBuffer = new(queueLimit: 10_000);
-    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
+    private readonly ManualResetEventSlim _drainSignal = new(false);
     private readonly TimeSpan _flushSemaphoreWaitTime = TimeSpan.FromSeconds(1);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
@@ -125,6 +130,11 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
             if (_buffer.TryEnqueue(point))
             {
+                if (!_drainSignal.IsSet && _buffer.Count >= DrainThreshold)
+                {
+                    _drainSignal.Set();
+                }
+
                 return;
             }
         }
@@ -143,6 +153,11 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
         {
             if (_transactionBuffer.TryEnqueue(transaction))
             {
+                if (!_drainSignal.IsSet && _transactionBuffer.Count >= DrainThreshold)
+                {
+                    _drainSignal.Set();
+                }
+
                 return;
             }
         }
@@ -181,6 +196,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
         _flushSemaphore.Dispose();
+        _drainSignal.Dispose();
     }
 
     private async Task FlushAndCloseAsync()
@@ -189,6 +205,9 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
         {
             return;
         }
+
+        // Wake ProcessQueueLoop immediately so it can observe _processExit and return.
+        _drainSignal.Set();
 
         // nothing else to do, since the writer was not fully initialized
         if (!Volatile.Read(ref _isInitialized) || _processTask == null || _flushTask == null)
@@ -347,7 +366,8 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     {
         while (true)
         {
-            Thread.Sleep(_waitTimeSpan);
+            _drainSignal.Wait(DrainTimeoutMs);
+            _drainSignal.Reset();
 
             if (!_flushSemaphore.Wait(_flushSemaphoreWaitTime))
             {
