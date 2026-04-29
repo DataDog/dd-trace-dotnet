@@ -99,7 +99,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             var span = scope.Span;
 
             span.Type = SpanTypes.Sql;
-            span.ResourceName = $"{operationTypeString} {resourceUriString}";
+            span.ResourceName = $"{operationTypeString} {NormalizeResourceUri(resourceUriString)}";
 
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.CosmosDb);
 
@@ -143,5 +143,28 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
 
         scope?.DisposeWithException(exception);
         return returnValue;
+    }
+
+    // Redacts ids keeping db/container names
+    internal static string NormalizeResourceUri(string resourceUriString)
+    {
+        if (StringUtil.IsNullOrEmpty(resourceUriString))
+        {
+            return resourceUriString;
+        }
+
+        var segments = resourceUriString.Split('/');
+        var modified = false;
+
+        for (var i = 1; i < segments.Length; i += 2)
+        {
+            if (segments[i].Length > 0 && segments[i - 1] != "dbs" && segments[i - 1] != "colls")
+            {
+                segments[i] = "?";
+                modified = true;
+            }
+        }
+
+        return modified ? string.Join("/", segments) : resourceUriString;
     }
 }
