@@ -8,8 +8,6 @@
 using System;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.Activity;
-using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
 
@@ -383,34 +381,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Extracts the trace ID from an Activity for exception tracking.
-        /// Uses the standard pattern from the tracer: duck typing to IW3CActivity for W3C format,
-        /// fallback to IActivity.RootId for hierarchical format.
-        /// </summary>
-        internal static string? ExtractTraceIdFromActivity(object? activity)
-        {
-            if (activity is null)
-            {
-                return null;
-            }
-
-            // Use duck typing to access W3C Activity TraceId (standard pattern used across the tracer)
-            if (activity.TryDuckCast<Datadog.Trace.Activity.DuckTypes.IW3CActivity>(out var w3cActivity)
-                && w3cActivity.TraceId is { } traceId)
-            {
-                return traceId;
-            }
-
-            // Fallback to RootId for hierarchical format
-            if (activity.TryDuckCast<Datadog.Trace.Activity.DuckTypes.IActivity>(out var baseActivity))
-            {
-                return baseActivity.RootId;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Gets the message type from a MassTransit context object.
         /// Uses generic type arguments since MassTransit contexts are generic (e.g., ConsumeContext&lt;TMessage&gt;).
         /// </summary>
@@ -581,86 +551,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Gets the ActivityKind for MassTransit operations based on the operation name.
-        /// </summary>
-        internal static ActivityKind GetActivityKind(IActivity5 activity)
-        {
-            var operationName = activity.OperationName;
-
-            // Check messaging.operation tag which MassTransit sets
-            string? messagingOperation = null;
-            foreach (var tag in activity.Tags)
-            {
-                if (tag.Key == "messaging.operation")
-                {
-                    messagingOperation = tag.Value;
-                    break;
-                }
-            }
-
-            if (!StringUtil.IsNullOrWhiteSpace(messagingOperation))
-            {
-                return messagingOperation switch
-                {
-                    "send" => ActivityKind.Producer,
-                    "receive" => ActivityKind.Consumer,
-                    "process" => ActivityKind.Consumer,
-                    _ => activity.Kind
-                };
-            }
-
-            // Fallback to operation name analysis (case-insensitive using ToLowerInvariant for .NET Framework compatibility)
-            if (operationName is not null)
-            {
-                var lowerOperationName = operationName.ToLowerInvariant();
-
-                if (lowerOperationName.Contains("send"))
-                {
-                    return ActivityKind.Producer;
-                }
-
-                if (lowerOperationName.Contains("receive") ||
-                    lowerOperationName.Contains("consume") ||
-                    lowerOperationName.Contains("handle") ||
-                    lowerOperationName.Contains("process") ||
-                    lowerOperationName.Contains("saga") ||
-                    lowerOperationName.Contains("activity"))
-                {
-                    return ActivityKind.Consumer;
-                }
-            }
-
-            return activity.Kind;
-        }
-
-        /// <summary>
-        /// Sets the ActivityKind for MassTransit operations.
-        /// </summary>
-        internal static void SetActivityKind(IActivity5 activity)
-        {
-            ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
-        }
-
-        /// <summary>
-        /// Creates a resource name for MassTransit operations based on destination and operation.
-        /// </summary>
-        internal static string CreateResourceName(string? destination, string? operation)
-        {
-            var cleanDestination = ExtractDestinationName(destination);
-            if (StringUtil.IsNullOrWhiteSpace(cleanDestination))
-            {
-                cleanDestination = "unknown";
-            }
-
-            if (StringUtil.IsNullOrWhiteSpace(operation))
-            {
-                return cleanDestination;
-            }
-
-            return $"{cleanDestination} {operation}";
-        }
-
-        /// <summary>
         /// Extracts a clean destination name from a MassTransit address URI.
         /// For URN format destinations, keeps the full URN.
         /// For queue/endpoint destinations, extracts just the name.
@@ -717,55 +607,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             return entityName;
         }
 
-        internal static void EnhanceActivityMetadata(IActivity5 activity)
-        {
-            // Add component tag to identify this as a MassTransit span
-            activity.AddTag(Tags.InstrumentationName, MassTransitConstants.ComponentTagName);
-
-            // Preserve the original MT8 activity operation name (e.g. "MassTransit.Transport.Send")
-            var originalOperationName = activity.OperationName ?? string.Empty;
-            if (!StringUtil.IsNullOrWhiteSpace(originalOperationName))
-            {
-                activity.AddTag("operation.name", originalOperationName);
-            }
-
-            // Read destination from messaging.destination.name, fallback to peer.address for process/consume spans.
-            string? destination = null;
-            string? peerAddress = null;
-            string? operation = null;
-
-            foreach (var tag in activity.Tags)
-            {
-                switch (tag.Key)
-                {
-                    case "messaging.destination.name":
-                        destination = tag.Value;
-                        break;
-                    case "peer.address":
-                        peerAddress = tag.Value;
-                        break;
-                    case "messaging.operation":
-                        operation = tag.Value;
-                        break;
-                }
-
-                // Early exit if we found all tags
-                if (destination != null && peerAddress != null && operation != null)
-                {
-                    break;
-                }
-            }
-
-            if (StringUtil.IsNullOrWhiteSpace(destination))
-            {
-                destination = peerAddress?.TrimStart('/');
-            }
-
-            // Update DisplayName (resource name) from destination + operation
-            if (!StringUtil.IsNullOrWhiteSpace(destination))
-            {
-                activity.DisplayName = CreateResourceName(destination, operation);
-            }
-        }
     }
 }
