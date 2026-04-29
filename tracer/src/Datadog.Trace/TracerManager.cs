@@ -16,7 +16,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -555,9 +554,6 @@ namespace Datadog.Trace
 
                     writer.WriteEndArray();
 
-                    writer.WritePropertyName("trace_data_pipeline_enabled");
-                    writer.WriteValue(instanceSettings.DataPipelineEnabled);
-
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
@@ -613,9 +609,6 @@ namespace Datadog.Trace
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
-
-            // Record the service discovery metadata
-            ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);

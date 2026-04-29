@@ -6,9 +6,23 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources;
+
+internal enum Result
+{
+    /// <summary>Success</summary>
+    Success,
+
+    /// <summary>Application monitoring config file is disabled</summary>
+    ApplicationMonitoringConfigFileDisabled,
+
+    /// <summary>LibDatadog is not available</summary>
+    LibDatadogNotAvailable,
+
+    /// <summary>An error occurred</summary>
+    Error,
+}
 
 internal readonly struct GlobalConfigurationSourceResult(CompositeConfigurationSource configurationSource, Result result, string? errorMessage = null, Exception? exception = null)
 {

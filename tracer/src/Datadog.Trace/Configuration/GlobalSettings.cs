@@ -8,7 +8,6 @@
 using System;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -91,8 +90,6 @@ namespace Datadog.Trace.Configuration
             {
                 DatadogLogging.UseDefaultLevel();
             }
-
-            LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: enabled);
 
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }

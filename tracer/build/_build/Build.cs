@@ -219,8 +219,6 @@ partial class Build : NukeBuild
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracer)
-        .DependsOn(DownloadLibDatadog)
-        .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile)
         .DependsOn(RegenerateSolutions);
@@ -233,8 +231,6 @@ partial class Build : NukeBuild
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracerR2R)
-        .DependsOn(DownloadLibDatadog)
-        .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile);
 

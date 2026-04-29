@@ -10,7 +10,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;

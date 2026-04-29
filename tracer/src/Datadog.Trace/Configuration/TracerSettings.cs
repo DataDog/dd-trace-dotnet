@@ -13,7 +13,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
@@ -56,19 +55,6 @@ namespace Datadog.Trace.Configuration
         /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
         /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
-            : this(source, telemetry, errorLog, LibDatadogAvailabilityHelper.IsLibDatadogAvailable)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class.
-        /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
-        /// </summary>
-        /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
-        /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
-        /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
-        /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
-        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, LibDatadogAvailableResult isLibDatadogAvailable)
         {
             var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
@@ -705,70 +691,7 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            // There's a circular dependency here because DataPipeline depends on ExporterSettings,
-            // but the settings manager depends on TracerSettings. Basically this is all fine as long
-            // as nothing in the MutableSettings or ExporterSettings depends on the value of DataPipelineEnabled!
             Manager = new(source, this, telemetry, errorLog);
-
-            DataPipelineEnabled = config
-                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: false);
-
-            if (DataPipelineEnabled)
-            {
-                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
-                // as it may lead to different stats results than the managed one.
-                if (StatsComputationEnabled)
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
-                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
-                // There's an issue here, in that technically a user can initially be configured to send over TCP/named pipes,
-                // and so we allow and enable the datapipeline. Later, they could configure the app in code to send over UDS.
-                // This is a problem, as we currently don't support toggling the data pipeline at runtime, so we explicitly block
-                // this scenario in the public API.
-                if (Manager.InitialExporterSettings.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                if (!isLibDatadogAvailable.IsAvailable)
-                {
-                    DataPipelineEnabled = false;
-                    if (isLibDatadogAvailable.Exception is not null)
-                    {
-                        Log.Warning(
-                            isLibDatadogAvailable.Exception,
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-                    else
-                    {
-                        Log.Warning(
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                // SSI already utilizes libdatadog. To prevent unexpected behavior,
-                // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
-                // but as a precaution, we are taking a conservative approach during the initial rollout phase.
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)))
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-            }
         }
 
         internal HashSet<string> ExperimentalFeaturesEnabled { get; }
@@ -1097,12 +1020,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
         internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether libdatadog data pipeline
-        /// is enabled.
-        /// </summary>
-        internal bool DataPipelineEnabled { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
