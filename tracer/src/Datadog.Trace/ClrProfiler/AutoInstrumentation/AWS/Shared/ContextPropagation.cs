@@ -88,64 +88,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         }
 
         /// <summary>
-        /// Extracts trace context from message attributes.
+        /// Extracts trace context from individual message attributes.
+        /// MassTransit injects trace headers as separate SNS message attributes
+        /// (e.g., x-datadog-trace-id, x-datadog-parent-id).
         /// </summary>
         public static PropagationContext ExtractHeadersFromMessage(Tracer tracer, IContainsMessageAttributes? carrier)
         {
-            if (carrier?.MessageAttributes == null)
+            if (carrier?.MessageAttributes is null)
             {
                 return default;
             }
 
             try
             {
-                // First try extracting from the _datadog attribute (standard AWS SDK format)
-                var datadogAttribute = carrier.MessageAttributes[InjectionKey];
-                if (datadogAttribute != null)
-                {
-                    var messageAttributeValue = datadogAttribute.DuckCast<IMessageAttributeValue>();
-                    if (messageAttributeValue != null)
-                    {
-                        string? jsonString = messageAttributeValue.StringValue;
-                        if (!StringUtil.IsNullOrEmpty(jsonString))
-                        {
-                            var headers = JsonHelper.DeserializeObject<Dictionary<string, string>>(jsonString);
-                            if (headers != null)
-                            {
-                                return tracer.TracerManager.SpanContextPropagator
-                                             .Extract(headers, default(DictionaryCarrierGetter))
-                                             .MergeBaggageInto(Baggage.Current);
-                            }
-                        }
-                    }
-                }
-
-                // Fall back to checking individual message attributes for trace headers
-                // (e.g., MassTransit may inject headers as separate attributes)
                 var headerDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var key in carrier.MessageAttributes.Keys)
                 {
                     if (key is string keyString)
                     {
                         var attributeValue = carrier.MessageAttributes[keyString]?.DuckCast<IMessageAttributeValue>();
-                        if (attributeValue?.StringValue != null)
+                        if (attributeValue?.StringValue is not null)
                         {
                             headerDict[keyString] = attributeValue.StringValue;
                         }
                     }
                 }
 
-                if (headerDict.Count > 0)
-                {
-                    var extracted = tracer.TracerManager.SpanContextPropagator
-                                          .Extract(headerDict, default(DictionaryCarrierGetter));
-                    if (extracted.SpanContext != null)
-                    {
-                        return extracted.MergeBaggageInto(Baggage.Current);
-                    }
-                }
-
-                return default;
+                var extracted = tracer.TracerManager.SpanContextPropagator
+                                      .Extract(headerDict, default(DictionaryCarrierGetter));
+                return extracted.SpanContext is not null
+                    ? extracted.MergeBaggageInto(Baggage.Current)
+                    : default;
             }
             catch
             {
