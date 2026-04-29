@@ -36,10 +36,8 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
     private static readonly string[] GenNames = ["gen0", "gen1", "gen2", "loh", "poh"];
     private static readonly int MaxGenerations = Math.Min(GC.GetGCMemoryInfo().GenerationInfo.Length, GenNames.Length);
 
-#pragma warning disable SA1308
     [ThreadStatic]
-    private static bool t_handlingFirstChanceException;
-#pragma warning restore SA1308
+    private static bool _handlingFirstChanceException;
 
     private readonly Meter _meter;
     private readonly Process _process;
@@ -64,13 +62,13 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         _meter.CreateObservableGauge(
             "dotnet.process.memory.working_set",
-            () => Environment.WorkingSet,
+            static () => Environment.WorkingSet,
             unit: "By",
             description: "The number of bytes of physical memory mapped to the process context.");
 
         _meter.CreateObservableCounter(
             "dotnet.gc.heap.total_allocated",
-            () => GC.GetTotalAllocatedBytes(),
+            static () => GC.GetTotalAllocatedBytes(),
             unit: "By",
             description: "The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations.");
 
@@ -107,19 +105,19 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         _meter.CreateObservableCounter(
             "dotnet.jit.compiled_il.size",
-            () => JitInfo.GetCompiledILBytes(),
+            static () => JitInfo.GetCompiledILBytes(),
             unit: "By",
             description: "Count of bytes of intermediate language that have been compiled since the process has started.");
 
         _meter.CreateObservableCounter(
             "dotnet.jit.compiled_methods",
-            () => JitInfo.GetCompiledMethodCount(),
+            static () => JitInfo.GetCompiledMethodCount(),
             unit: "{method}",
             description: "The number of times the JIT compiler (re)compiled methods since the process has started.");
 
         _meter.CreateObservableCounter(
             "dotnet.jit.compilation.time",
-            () => JitInfo.GetCompilationTime().TotalSeconds,
+            static () => JitInfo.GetCompilationTime().TotalSeconds,
             unit: "s",
             description: "The amount of time the JIT compiler has spent compiling methods since the process has started.");
 
@@ -127,31 +125,31 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         _meter.CreateObservableCounter(
             "dotnet.monitor.lock_contentions",
-            () => Monitor.LockContentionCount,
+            static () => Monitor.LockContentionCount,
             unit: "{contention}",
             description: "The number of times there was contention when trying to acquire a monitor lock since the process has started.");
 
         _meter.CreateObservableCounter(
             "dotnet.thread_pool.thread.count",
-            () => (long)ThreadPool.ThreadCount,
+            static () => (long)ThreadPool.ThreadCount,
             unit: "{thread}",
             description: "The number of thread pool threads that currently exist.");
 
         _meter.CreateObservableCounter(
             "dotnet.thread_pool.work_item.count",
-            () => ThreadPool.CompletedWorkItemCount,
+            static () => ThreadPool.CompletedWorkItemCount,
             unit: "{work_item}",
             description: "The number of work items that the thread pool has completed since the process has started.");
 
         _meter.CreateObservableCounter(
             "dotnet.thread_pool.queue.length",
-            () => ThreadPool.PendingWorkItemCount,
+            static () => ThreadPool.PendingWorkItemCount,
             unit: "{work_item}",
             description: "The number of work items that are currently queued to be processed by the thread pool.");
 
         _meter.CreateObservableGauge(
             "dotnet.timer.count",
-            () => Timer.ActiveCount,
+            static () => Timer.ActiveCount,
             unit: "{timer}",
             description: "The number of timer instances that are currently active.");
 
@@ -159,7 +157,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         _meter.CreateObservableGauge(
             "dotnet.assembly.count",
-            () => (long)AppDomain.CurrentDomain.GetAssemblies().Length,
+            static () => (long)AppDomain.CurrentDomain.GetAssemblies().Length,
             unit: "{assembly}",
             description: "The number of .NET assemblies that are currently loaded.");
 
@@ -176,7 +174,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         _meter.CreateObservableGauge(
             "dotnet.process.cpu.count",
-            () => (long)Environment.ProcessorCount,
+            static () => (long)Environment.ProcessorCount,
             unit: "{cpu}",
             description: "The number of processors available to the process.");
 
@@ -196,7 +194,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
     private static Func<double>? CreateGetTotalPauseSecondsDelegate()
     {
-        var version = Environment.Version;
+        var version = FrameworkDescription.Instance.RuntimeVersion;
         if (version.Major > 6 || version is { Major: 6, Build: >= 21 })
         {
             var methodInfo = typeof(GC).GetMethod("GetTotalPauseDuration", BindingFlags.Public | BindingFlags.Static);
@@ -277,16 +275,16 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
     private void OnFirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
     {
-        if (t_handlingFirstChanceException)
+        if (_handlingFirstChanceException)
         {
             return;
         }
 
-        t_handlingFirstChanceException = true;
+        _handlingFirstChanceException = true;
         var typeName = e.Exception.GetType().Name;
         var tag = _exceptionTagCache.GetOrAdd(typeName, static name => new KeyValuePair<string, object?>("error.type", name));
         _exceptions?.Add(1, tag);
-        t_handlingFirstChanceException = false;
+        _handlingFirstChanceException = false;
     }
 }
 #endif

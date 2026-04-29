@@ -621,6 +621,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
 
+                // Deduplicate metrics across multiple export intervals, keeping one per metric name
                 var dedupedMetrics = new JArray(
                     metricsData
                         .SelectTokens("$..scope_metrics[*].metrics[*]")
@@ -628,12 +629,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         .Select(g => g.First())
                         .OrderBy(m => m["name"]?.ToString()));
 
+                // Collapse all exports into a single resource_metrics structure for snapshot comparison
                 var collapsed = metricsData[0]!.DeepClone();
                 ((JArray)collapsed.SelectToken("$.resource_metrics")!).RemoveAll();
                 var firstExport = metricsData.SelectToken("$[0].resource_metrics[0]")!.DeepClone();
                 firstExport.SelectToken("$.scope_metrics[0].metrics")!.Replace(dedupedMetrics);
                 ((JArray)collapsed["resource_metrics"]!).Add(firstExport);
 
+                // Clear data_points for each metric to ensure consistency between runs
                 foreach (var section in collapsed.SelectTokens("$..metrics[*].*"))
                 {
                     if (section is JObject obj && obj["data_points"] is JArray)
@@ -642,6 +645,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
+                // Replace resource attribute values with placeholders to avoid volatile data
                 foreach (var attribute in collapsed.SelectTokens("$..resource.attributes[*]"))
                 {
                     var key = attribute["key"]?.ToString();

@@ -703,7 +703,7 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
-            OtlpRuntimeMetricsEnabled = (OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled) && RuntimeMetricsEnabled;
+            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
@@ -1156,7 +1156,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics should be collected in OTEL format and exported via OTLP.
-        /// True when runtime metrics are enabled AND (DD_METRICS_OTEL_ENABLED=true OR OTEL_METRICS_EXPORTER=otlp).
+        /// True when runtime metrics are enabled AND (DD_METRICS_OTEL_ENABLED=true AND OTEL_METRICS_EXPORTER=otlp).
         /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
         /// </summary>
         internal bool OtlpRuntimeMetricsEnabled { get; }

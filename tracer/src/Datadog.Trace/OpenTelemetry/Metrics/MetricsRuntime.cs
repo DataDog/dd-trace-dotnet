@@ -41,22 +41,22 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     return;
                 }
 
-                var exporter = new OtlpExporter(settings, settings.Manager.InitialExporterSettings);
-                _instance = new OtelMetricsPipeline(settings, exporter);
-                _instance.Start();
-
-                if (settings.OtlpRuntimeMetricsEnabled && Environment.Version.Major < 9)
+                if (settings.OtlpRuntimeMetricsEnabled && FrameworkDescription.Instance.RuntimeVersion.Major < 9)
                 {
                     try
                     {
                         _runtimeMetricsPolyfill = new RuntimeMetricsPolyfill();
-                        Log.Debug("Started RuntimeMetricsPolyfill for .NET {Version} (System.Runtime meter instruments not natively available until .NET 9)", Environment.Version);
+                        Log.Debug("Started RuntimeMetricsPolyfill for .NET {Version} (System.Runtime meter instruments not natively available until .NET 9)", FrameworkDescription.Instance.RuntimeVersion);
                     }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Failed to initialize RuntimeMetricsPolyfill for OTLP export");
                     }
                 }
+
+                var exporter = new OtlpExporter(settings, settings.Manager.InitialExporterSettings);
+                _instance = new OtelMetricsPipeline(settings, exporter);
+                _instance.Start();
 
                 LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());
             }
