@@ -400,9 +400,9 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "spdlog",
-                version: "1.11.0",
-                downloadUrl: "https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.zip",
-                pathToSrc: new[] {"spdlog-1.11.0", "include", "spdlog"},
+                version: "1.17.0",
+                downloadUrl: "https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.zip",
+                pathToSrc: new[] {"spdlog-1.17.0", "include", "spdlog"},
                 transform: filePath => { },
                 relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/spdlog/include",
                 isNuGetPackage: false);

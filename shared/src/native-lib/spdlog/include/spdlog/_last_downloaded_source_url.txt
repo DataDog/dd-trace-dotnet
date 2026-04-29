@@ -1,1 +1,1 @@
-https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.zip
+https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.zip
