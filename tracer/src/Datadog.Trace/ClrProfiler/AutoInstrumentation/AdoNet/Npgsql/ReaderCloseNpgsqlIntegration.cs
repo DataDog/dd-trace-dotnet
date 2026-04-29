@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
         TypeName = "Npgsql.NpgsqlDataReader",
         MethodName = "Close",
         ReturnTypeName = ClrNames.Task,
-        ParameterTypeNames = new[] { ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, },
+        ParameterTypeNames = [ClrNames.Bool, ClrNames.Bool, ClrNames.Bool],
         MinimumVersion = "4.0.0",
         MaximumVersion = "8.*.*",
         IntegrationName = nameof(IntegrationId.Npgsql),
