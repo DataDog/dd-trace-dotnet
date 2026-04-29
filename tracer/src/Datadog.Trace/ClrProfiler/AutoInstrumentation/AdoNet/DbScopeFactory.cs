@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
-            sqlTags.BatchSize = batch.BatchCommands.Count.ToString();
+            sqlTags.BatchSize = batch.BatchCommands.Count.ToString(CultureInfo.InvariantCulture);
 
             try
             {
