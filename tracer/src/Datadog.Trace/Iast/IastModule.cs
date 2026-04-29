@@ -574,6 +574,7 @@ internal static partial class IastModule
 
         if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
+            VulnerabilityReporter.Report(vulnerability);
             traceContext.IastRequestContext?.AddVulnerability(vulnerability);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             traceContext.Tags.EnableTraceSources(TraceSources.Asm);
@@ -704,6 +705,8 @@ internal static partial class IastModule
 
         if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
+            VulnerabilityReporter.Report(vulnerability);
+
             if (isRequest)
             {
                 traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);

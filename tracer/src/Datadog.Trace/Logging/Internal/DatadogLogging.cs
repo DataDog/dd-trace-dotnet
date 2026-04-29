@@ -21,12 +21,14 @@ namespace Datadog.Trace.Logging
         internal const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new(DefaultLogLevel);
         private static readonly IDatadogLogger SharedLogger;
+        private static readonly string ResolvedLogDirectory;
 
         static DatadogLogging()
         {
             // Initialize the fallback logger right away
             // because some part of the code might produce logs while we initialize the actual logger
             SharedLogger = DatadogSerilogLogger.NullLogger;
+            ResolvedLogDirectory = Path.GetTempPath();
 
             try
             {
@@ -37,9 +39,14 @@ namespace Datadog.Trace.Logging
 
                 var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
 
-                if (config.File is { LogFileRetentionDays: > 0 } fileConfig)
+                if (config.File is { } fileConfig)
                 {
-                    Task.Run(() => CleanLogFiles(fileConfig.LogFileRetentionDays, fileConfig.LogDirectory));
+                    ResolvedLogDirectory = fileConfig.LogDirectory;
+
+                    if (fileConfig.LogFileRetentionDays > 0)
+                    {
+                        Task.Run(() => CleanLogFiles(fileConfig.LogFileRetentionDays, fileConfig.LogDirectory));
+                    }
                 }
 
                 var domainMetadata = DomainMetadata.Instance;
@@ -50,6 +57,12 @@ namespace Datadog.Trace.Logging
                 // Don't let this exception bubble up as this logger is for debugging and is non-critical
             }
         }
+
+        /// <summary>
+        /// Gets the resolved log directory used by the file sink.
+        /// Falls back to the system temp path if no file sink is configured.
+        /// </summary>
+        internal static string LogDirectory => ResolvedLogDirectory;
 
         public static IDatadogLogger GetLoggerFor(Type classType)
         {
