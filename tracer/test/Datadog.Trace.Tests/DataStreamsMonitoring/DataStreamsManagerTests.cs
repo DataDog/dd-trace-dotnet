@@ -9,10 +9,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
@@ -124,6 +132,15 @@ public class DataStreamsManagerTests
         var point = writer.BacklogPoints.Should().ContainSingle().Subject;
         point.Value.Should().Be(value);
         point.Tags.Should().Be(tags);
+    }
+
+    [Fact]
+    public void WhenEnabled_TracksTransactions()
+    {
+        var dsm = GetDataStreamManager(true, out var writer);
+        dsm.TrackTransaction("transaction-id", "checkpoint");
+
+        writer.DataStreamsTransactions.Size().Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -250,6 +267,64 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public void WhenEnabled_TrackTransaction_AddsTransactionAndTagsSpan()
+    {
+        var dsm = GetDataStreamManager(true, out var writer);
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        writer.DataStreamsTransactions.GetDataAndReset().Should().NotBeEmpty();
+        span.Tags.GetTag("dsm.transaction.id").Should().Be("tx-abc");
+    }
+
+    [Fact]
+    public void WhenDisabled_TrackTransaction_DoesNothing()
+    {
+        var dsm = GetDataStreamManager(false, out var writer);
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        span.Tags.GetTag("dsm.transaction.id").Should().BeNull();
+        // writer is null when DSM is disabled, so nothing could have been enqueued
+        writer.Should().BeNull();
+    }
+
+    [Fact]
+    public void WhenInDefaultState_TrackTransaction_DoesNotSetTag()
+    {
+        // DSM is "in default state" when DD_DATA_STREAMS_MONITORING_ENABLED is absent from config.
+        // IsTransactionTrackingEnabled = !IsInDefaultState && IsEnabled, so even with a live writer
+        // the tag must not be set and nothing should be enqueued.
+        var writer = new DataStreamsWriterMock();
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.Environment, "foo" },
+            { ConfigurationKeys.ServiceName, "bar" },
+            // DD_DATA_STREAMS_MONITORING_ENABLED intentionally absent → IsInDefaultState = true
+        });
+        var dsm = new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
+        dsm.IsInDefaultState.Should().BeTrue("precondition: DSM must be in default state");
+
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        span.Tags.GetTag("dsm.transaction.id").Should().BeNull();
+        writer.DataStreamsTransactions.Size().Should().Be(0);
+    }
+
+    [Fact]
+    public void WhenManagerIsNull_TrackTransaction_DoesNothing()
+    {
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        var act = () => span.TrackTransaction(null, "tx-abc", "some-checkpoint");
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public async Task WhenEnabled_OneConsumeTwoProduceUsesTwiceConsumePathway()
     {
         var dsm = GetDataStreamManager(enabled: true, out var writer);
@@ -337,6 +412,160 @@ public class DataStreamsManagerTests
         writer.DisposeCount.Should().Be(1);
     }
 
+    [Fact]
+    public void GetOrCreateEdgeTags_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new ProduceEdgeTagCacheKey("cluster1", "topic1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"kafka_cluster_id:{k.ClusterId}", $"topic:{k.Topic}", "type:kafka"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"kafka_cluster_id:{k.ClusterId}", $"topic:{k.Topic}", "type:kafka"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_ReturnsDifferentArrayReferences_ForDifferentKeys()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+
+        var forTopic1 = dsm.GetOrCreateEdgeTags(new ProduceEdgeTagCacheKey(string.Empty, "topic1"), static k => [$"topic:{k.Topic}", "type:kafka"]);
+        var forTopic2 = dsm.GetOrCreateEdgeTags(new ProduceEdgeTagCacheKey(string.Empty, "topic2"), static k => [$"topic:{k.Topic}", "type:kafka"]);
+
+        forTopic2.Should().NotBeSameAs(forTopic1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_KafkaConsume_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new ConsumeEdgeTagCacheKey("group1", "topic1", "cluster1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"group:{k.GroupId}", $"topic:{k.Topic}", $"kafka_cluster_id:{k.ClusterId}"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"group:{k.GroupId}", $"topic:{k.Topic}", $"kafka_cluster_id:{k.ClusterId}"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_RabbitMQProduce_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new RabbitMQProduceEdgeTagCacheKey("exchange1", string.Empty, HasRoutingKey: true);
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"exchange:{k.Exchange}", "has_routing_key:true", "type:rabbitmq"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"exchange:{k.Exchange}", "has_routing_key:true", "type:rabbitmq"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_RabbitMQConsume_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new RabbitMQConsumeEdgeTagCacheKey("queue1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => [$"topic:{k.TopicOrRoutingKey}", "type:rabbitmq"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => [$"topic:{k.TopicOrRoutingKey}", "type:rabbitmq"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_IbmMq_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var produceKey = new IbmMqEdgeTagCacheKey("queue1", IsConsume: false);
+        var consumeKey = new IbmMqEdgeTagCacheKey("queue1", IsConsume: true);
+
+        var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:ibmmq"]);
+        var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:ibmmq"]);
+        var consume1 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]);
+        var consume2 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:ibmmq"]);
+
+        produce2.Should().BeSameAs(produce1);
+        consume2.Should().BeSameAs(consume1);
+        consume1.Should().NotBeSameAs(produce1); // same queue but different direction → different entry
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_Kinesis_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var produceKey = new KinesisEdgeTagCacheKey("stream1", IsConsume: false);
+        var consumeKey = new KinesisEdgeTagCacheKey("stream1", IsConsume: true);
+
+        var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.StreamName}", "type:kinesis"]);
+        var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.StreamName}", "type:kinesis"]);
+        var consume1 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.StreamName}", "type:kinesis"]);
+        var consume2 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.StreamName}", "type:kinesis"]);
+
+        produce2.Should().BeSameAs(produce1);
+        consume2.Should().BeSameAs(consume1);
+        consume1.Should().NotBeSameAs(produce1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_Sns_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new SnsEdgeTagCacheKey("arn:topic1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.TopicName}", "type:sns"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_Sqs_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var produceKey = new SqsEdgeTagCacheKey("queue1", IsConsume: false);
+        var consumeKey = new SqsEdgeTagCacheKey("queue1", IsConsume: true);
+
+        var produce1 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
+        var produce2 = dsm.GetOrCreateEdgeTags(produceKey, static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
+        var consume1 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:sqs"]);
+        var consume2 = dsm.GetOrCreateEdgeTags(consumeKey, static k => ["direction:in", $"topic:{k.QueueName}", "type:sqs"]);
+
+        produce2.Should().BeSameAs(produce1);
+        consume2.Should().BeSameAs(consume1);
+        consume1.Should().NotBeSameAs(produce1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_ServiceBus_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new ServiceBusEdgeTagCacheKey("my-entity");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacity()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+
+        // Fill the per-type cache to the cap using a key type private to this test
+        // (OverflowTestKey has its own static dictionary, isolated from ProduceEdgeTagCacheKey)
+        for (var i = 0; i < DataStreamsManager.MaxEdgeTagCacheSize; i++)
+        {
+            dsm.GetOrCreateEdgeTags(new OverflowTestKey(i), static k => [$"tag:{k.Value}"]);
+        }
+
+        // The cache is now full; a new key should bypass caching and return a fresh array each call
+        var overflowKey = new OverflowTestKey(DataStreamsManager.MaxEdgeTagCacheSize);
+        var first = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
+        var second = dsm.GetOrCreateEdgeTags(overflowKey, static k => [$"tag:{k.Value}"]);
+
+        second.Should().NotBeSameAs(first);
+    }
+
     private static DataStreamsManager GetDataStreamManager(bool enabled, out DataStreamsWriterMock writer)
     {
         writer = enabled ? new DataStreamsWriterMock() : null;
@@ -354,6 +583,23 @@ public class DataStreamsManagerTests
         return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
     }
 
+    /// <summary>
+    /// Private key type used exclusively by <see cref="GetOrCreateEdgeTags_BypassesCache_WhenAtMaxCapacity"/>.
+    /// Having a unique type gives an isolated <c>EdgeTagCache&lt;OverflowTestKey&gt;</c> dictionary.
+    /// </summary>
+    private readonly struct OverflowTestKey : IEquatable<OverflowTestKey>
+    {
+        public readonly int Value;
+
+        public OverflowTestKey(int value) => Value = value;
+
+        public bool Equals(OverflowTestKey other) => Value == other.Value;
+
+        public override bool Equals(object obj) => obj is OverflowTestKey other && Equals(other);
+
+        public override int GetHashCode() => Value;
+    }
+
     internal class DataStreamsWriterMock : IDataStreamsWriter
     {
         private int _disposeCount;
@@ -362,11 +608,18 @@ public class DataStreamsManagerTests
 
         public ConcurrentQueue<BacklogPoint> BacklogPoints { get; } = new();
 
+        public DataStreamsTransactionContainer DataStreamsTransactions { get; } = new(1024);
+
         public int DisposeCount => Volatile.Read(ref _disposeCount);
 
         public void Add(in StatsPoint point)
         {
             Points.Enqueue(point);
+        }
+
+        public void AddTransaction(in DataStreamsTransactionInfo transaction)
+        {
+            DataStreamsTransactions.Add(transaction);
         }
 
         public void AddBacklog(in BacklogPoint point)

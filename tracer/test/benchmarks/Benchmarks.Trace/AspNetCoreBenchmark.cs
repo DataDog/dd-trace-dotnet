@@ -51,7 +51,7 @@ namespace Benchmarks.Trace
             var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
 
             _tracer = TracerHelper.CreateTracer(settings);
-            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), null, new RcmSubscriptionManager());
+            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), rcmSubscriptionManager: new RcmSubscriptionManager());
             _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
 
             var builder = new WebHostBuilder()
@@ -125,7 +125,7 @@ namespace Benchmarks.Trace
             var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
 
             _tracer = TracerHelper.CreateTracer(settings);
-            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), null, new RcmSubscriptionManager());
+            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), rcmSubscriptionManager: new RcmSubscriptionManager());
             _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
 
             var builder = new WebHostBuilder()

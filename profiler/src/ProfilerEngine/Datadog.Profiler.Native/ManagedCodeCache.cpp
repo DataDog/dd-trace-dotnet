@@ -181,18 +181,15 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
         // Level 1: Find the page (shared lock on map structure)
         std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
         auto pageIt = _pagesMap.find(page);
-        if (pageIt == _pagesMap.end())
-        {
-            return false;  // No code on this page
-        }
-        
-        // Level 2: Binary search within the page's ranges (shared lock on page)
-   
-        std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
-        auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
-        if (range.has_value())
-        {
-            return true;
+        if (pageIt != _pagesMap.end())
+        {   
+            // Level 2: Binary search within the page's ranges (shared lock on page)
+            std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
+            auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
+            if (range.has_value())
+            {
+                return true;
+            }
         }
     }
 

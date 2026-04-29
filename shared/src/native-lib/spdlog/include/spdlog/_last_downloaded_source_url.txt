@@ -1,0 +1,1 @@
+https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.zip

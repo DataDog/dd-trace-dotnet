@@ -231,7 +231,7 @@ namespace Benchmarks.Trace
                     return Task.FromResult(true);
                 }
 
-                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
                 {
                     return Task.FromResult(true);
                 }

@@ -175,6 +175,7 @@ namespace Datadog.Trace.Debugger
                     var spanProbes = new List<NativeSpanProbeDefinition>();
 
                     var fetchProbeStatus = new List<FetchProbeStatus>();
+                    var lineProbeDiagnosticLevel = Log.IsEnabled(LogEventLevel.Debug) ? LineProbeDiagnosticLevel.Full : LineProbeDiagnosticLevel.Minimal;
 
                     foreach (var addedProbe in addedProbes)
                     {
@@ -184,7 +185,7 @@ namespace Datadog.Trace.Debugger
                             {
                                 case ProbeLocationType.Line:
                                     {
-                                        var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location);
+                                        var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location, lineProbeDiagnosticLevel);
                                         var status = lineProbeResult.Status;
 
                                         LogLineProbeResolution(addedProbe.Id, lineProbeResult, "initial resolution");
@@ -379,7 +380,7 @@ namespace Datadog.Trace.Debugger
             }
 
             Log.Debug(
-                "Finished resolving line probe for ProbeID {ProbeID} during {Phase}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} AssemblyName={AssemblyName} AssemblyLocation={AssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
+                "Finished resolving line probe for ProbeID {ProbeID} during {Phase}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} PathMatchType={PathMatchType} MatchingTrailingSegments={MatchingTrailingSegments} FallbackFailureReason={FallbackFailureReason} QualifiedFallbackMatches={QualifiedFallbackMatches} AssemblyName={AssemblyName} AssemblyLocation={AssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
                 [
                     probeId,
                     phase,
@@ -390,6 +391,10 @@ namespace Datadog.Trace.Debugger
                     diagnostics.ProbeLine,
                     diagnostics.RawLines,
                     diagnostics.ResolvedSourceFile,
+                    diagnostics.PathMatchType,
+                    diagnostics.MatchingTrailingSegments,
+                    diagnostics.FallbackFailureReason,
+                    diagnostics.QualifiedFallbackMatchCount,
                     diagnostics.AssemblyName,
                     diagnostics.AssemblyLocation,
                     diagnostics.ModuleVersionId,
@@ -414,10 +419,11 @@ namespace Datadog.Trace.Debugger
                 // Initialize these lists only when there is at least one unbound probe that becomes bound, to reduce unnecessary allocations.
                 List<NativeLineProbeDefinition>? lineProbes = null;
                 List<ProbeDefinition>? noLongerUnboundProbes = null;
+                var diagnosticLevel = Log.IsEnabled(LogEventLevel.Debug) ? LineProbeDiagnosticLevel.Full : LineProbeDiagnosticLevel.Minimal;
 
                 foreach (var unboundProbe in _unboundProbes)
                 {
-                    var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var location);
+                    var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var location, diagnosticLevel);
                     if (result.Status == LiveProbeResolveStatus.Bound)
                     {
                         lineProbes ??= new List<NativeLineProbeDefinition>();
@@ -430,7 +436,7 @@ namespace Datadog.Trace.Debugger
                     {
                         var diagnostics = result.Diagnostics;
                         Log.Debug(
-                            "Rechecked unbound line probe for ProbeID {ProbeId} after assembly load {AssemblyName}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} AssemblyName={ResolvedAssemblyName} AssemblyLocation={ResolvedAssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
+                            "Rechecked unbound line probe for ProbeID {ProbeId} after assembly load {AssemblyName}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} PathMatchType={PathMatchType} MatchingTrailingSegments={MatchingTrailingSegments} FallbackFailureReason={FallbackFailureReason} QualifiedFallbackMatches={QualifiedFallbackMatches} AssemblyName={ResolvedAssemblyName} AssemblyLocation={ResolvedAssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
                             [
                                 unboundProbe.Id,
                                 args.LoadedAssembly.GetName().Name,
@@ -441,6 +447,10 @@ namespace Datadog.Trace.Debugger
                                 diagnostics?.ProbeLine,
                                 diagnostics?.RawLines,
                                 diagnostics?.ResolvedSourceFile,
+                                diagnostics?.PathMatchType,
+                                diagnostics?.MatchingTrailingSegments,
+                                diagnostics?.FallbackFailureReason,
+                                diagnostics?.QualifiedFallbackMatchCount,
                                 diagnostics?.AssemblyName,
                                 diagnostics?.AssemblyLocation,
                                 diagnostics?.ModuleVersionId,

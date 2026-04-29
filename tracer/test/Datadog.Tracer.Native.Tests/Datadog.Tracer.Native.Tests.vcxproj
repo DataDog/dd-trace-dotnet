@@ -88,6 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="iast_util_test.cpp" />
+    <ClCompile Include="il_rewriter_eh_sort_test.cpp" />
     <ClCompile Include="integration_test.cpp" />
     <ClCompile Include="clr_helper_test.cpp" />
     <ClCompile Include="metadata_builder_test.cpp" />

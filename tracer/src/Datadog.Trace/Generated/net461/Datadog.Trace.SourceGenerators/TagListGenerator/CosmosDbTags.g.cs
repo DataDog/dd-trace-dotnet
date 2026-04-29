@@ -15,65 +15,34 @@ namespace Datadog.Trace.Tagging
     partial class CosmosDbTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
+
         // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
+
         // DbTypeBytes = MessagePack.Serialize("db.type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> DbTypeBytes => new byte[] { 167, 100, 98, 46, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] DbTypeBytes = new byte[] { 167, 100, 98, 46, 116, 121, 112, 101 };
-#endif
+        private static ReadOnlySpan<byte> DbTypeBytes => [167, 100, 98, 46, 116, 121, 112, 101];
+
         // ContainerIdBytes = MessagePack.Serialize("cosmosdb.container");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ContainerIdBytes => new byte[] { 178, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
-#else
-        private static readonly byte[] ContainerIdBytes = new byte[] { 178, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
-#endif
+        private static ReadOnlySpan<byte> ContainerIdBytes => [178, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114];
+
         // DatabaseIdBytes = MessagePack.Serialize("db.name");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> DatabaseIdBytes => new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] DatabaseIdBytes = new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
-#endif
+        private static ReadOnlySpan<byte> DatabaseIdBytes => [167, 100, 98, 46, 110, 97, 109, 101];
+
         // HostBytes = MessagePack.Serialize("out.host");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
-#else
-        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
-#endif
+        private static ReadOnlySpan<byte> HostBytes => [168, 111, 117, 116, 46, 104, 111, 115, 116];
+
         // ResponseStatusCodeBytes = MessagePack.Serialize("db.response.status_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ResponseStatusCodeBytes => new byte[] { 183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] ResponseStatusCodeBytes = new byte[] { 183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#endif
+        private static ReadOnlySpan<byte> ResponseStatusCodeBytes => [183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
         // ResponseSubStatusCodeBytes = MessagePack.Serialize("cosmosdb.response.sub_status_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ResponseSubStatusCodeBytes => new byte[] { 217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] ResponseSubStatusCodeBytes = new byte[] { 217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#endif
+        private static ReadOnlySpan<byte> ResponseSubStatusCodeBytes => [217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
         // UserAgentBytes = MessagePack.Serialize("http.useragent");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> UserAgentBytes => new byte[] { 174, 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
-#else
-        private static readonly byte[] UserAgentBytes = new byte[] { 174, 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> UserAgentBytes => [174, 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116];
+
         // ConnectionModeBytes = MessagePack.Serialize("cosmosdb.connection.mode");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ConnectionModeBytes => new byte[] { 184, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 110, 101, 99, 116, 105, 111, 110, 46, 109, 111, 100, 101 };
-#else
-        private static readonly byte[] ConnectionModeBytes = new byte[] { 184, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 110, 101, 99, 116, 105, 111, 110, 46, 109, 111, 100, 101 };
-#endif
+        private static ReadOnlySpan<byte> ConnectionModeBytes => [184, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 110, 101, 99, 116, 105, 111, 110, 46, 109, 111, 100, 101];
 
         public override string? GetTag(string key)
         {

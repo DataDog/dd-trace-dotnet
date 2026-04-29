@@ -74,8 +74,8 @@ namespace Datadog.Trace.Util
                 // Extract the tags
                 return new TagsCacheItem(
                     dbName: GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
-                    dbUser: GetConnectionStringValue(builder, "User ID", "UserID"),
-                    outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
+                    dbUser: GetConnectionStringValue(builder, "User ID", "UserID", "User", "Uid", "Username", "User Name"),
+                    outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host", "Hostname", "Host Name"));
             }
             catch (Exception)
             {
@@ -89,6 +89,7 @@ namespace Datadog.Trace.Util
         {
             foreach (string name in names)
             {
+                // case-insensitive to the name/keyword
                 if (builder.TryGetValue(name, out var valueObj) &&
                     valueObj is string value)
                 {

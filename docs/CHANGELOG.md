@@ -44,6 +44,67 @@
 
 
 
+
+## [Release 3.42.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.42.0)
+
+## Summary
+
+* [CI Visibility] Add support for MSTest.Framework 4.2.1
+* [DSM] Add support for transaction tracking
+* [AAP] Add downstream request RASP analysis
+
+## Changes
+
+### CI Visibility
+* [SDTEST-2993] Switch to paginated endpoint for retrieving known tests (#8380)
+* fix(mstest): add 4.2.1 adapter signatures (#8475)
+
+### ASM
+* [AAP] API10 downstream request analysis (#8232)
+
+### Continuous Profiler
+* [Profiler]  Bump to libunwind 1.8.3 (#8387)
+* [Profiler] Prevent profiler from interrupted thread while executing  handler `SIGSEGV` handler (#8465)
+* [Profiler] Fix bug in ManagedCodeCache (#8467)
+* [Profiler] Fix UB in DebugInfoStore::Get(): re-acquire iterator after map insertion (#8468)
+
+### Debugger
+* [Dynamic Instrumentation] clarify unbound line probe diagnostics (#8415)
+* [Dynamic Instrumentation] Improve line probe source path resolution (#8422)
+
+### Fixes
+* fix user & host parsing in SQL connection string (#8431)
+* Set resource name after exception in OnEndRequest method (#8439)
+* Fix excessive allocation in vendored `SharedArrayPool` (#8442)
+* Fix ServiceStack not calling EndRequest method (#8466)
+
+### Data Streams Monitoring
+* [DSM] Initial transaction tracking implementation (#7949)
+
+### Build / Test
+* Update microbenchmark design to reduce flakiness (#8300)
+* Harden Linux Docker retries in CI (#8358)
+* [Test Package Versions Bump] Updating package versions (#8414)
+* Add managed-by:bp-infra tag and skip PR comments on master on benchmarking jobs (#8416)
+* Enable performance quality gates on microbenchmarks and macrobenchmarks (#8424)
+* Parametrize gitlab org (#8426)
+* Update base image used in download stages (#8437)
+* [Test Package Versions Bump] Updating package versions (#8441)
+* [Coding Agents] Add HTTP REST API fallbacks for AzDO build analysis (#8448)
+* Make microbenchmark post-processing steps non-fatal (#8452)
+* Fix benchmark reporting (#8453)
+* Move microbench AMI provision file into this repo, stop cloning benchmarking-platform (#8458)
+* add new set of benchmarks (#8464)
+
+### Miscellaneous
+* Add static `char` helpers like `IsAsciiHexDigit` (#8417)
+* Fix EH clause sort to handle try-in-handler nesting (#8428)
+* Add srv_src field to client stats payload (#8339)
+* Add `IpAddressObfuscationUtil` for use with client-side-stats (#8418)
+
+
+[Changes since 3.41.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.41.0...v3.42.0)
+
 ## [Release 3.41.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.41.0)
 
 ## Summary

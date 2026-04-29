@@ -24,7 +24,6 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricReader));
         private readonly int _exportIntervalMs;
-        private readonly int _timeoutMs;
         private readonly MetricReaderHandler _handler;
         private readonly MetricExporter _exporter;
         private MeterListener? _listener;
@@ -33,7 +32,6 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         public MetricReader(TracerSettings settings, MetricReaderHandler handler, MetricExporter exporter)
         {
             _exportIntervalMs = settings.OtelMetricExportIntervalMs;
-            _timeoutMs = settings.OtlpMetricsTimeoutMs;
             _handler = handler;
             _exporter = exporter;
         }
@@ -95,7 +93,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
             finally
             {
-                _exporter.Shutdown(_timeoutMs);
+                _exporter.Shutdown();
                 _listener?.Dispose();
                 _listener = null;
                 Log.Debug("MetricReader stopped");

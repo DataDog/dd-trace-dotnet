@@ -66,7 +66,9 @@ internal sealed class AwsSqsHandlerCommon
         var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
         if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
         {
-            var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
+            var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
+                new SqsEdgeTagCacheKey(queueName, IsConsume: false),
+                static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"]);
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
         }
 
@@ -81,14 +83,18 @@ internal sealed class AwsSqsHandlerCommon
             return;
         }
 
-        var edgeTags = new[] { "direction:out", $"topic:{queueName}", "type:sqs" };
+        var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+        var edgeTags = dataStreamsManager is { IsEnabled: true }
+                           ? dataStreamsManager.GetOrCreateEdgeTags(
+                               new SqsEdgeTagCacheKey(queueName, IsConsume: false),
+                               static k => ["direction:out", $"topic:{k.QueueName}", "type:sqs"])
+                           : [];
         foreach (var e in requestProxy.Entries)
         {
             var entry = e.DuckCast<IContainsMessageAttributes>();
             if (entry != null)
             {
                 // this has no effect if DSM is disabled
-                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
                 scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                 // this needs to be done for context propagation even when DSM is disabled
                 // (when DSM is enabled, it injects the pathway context on top of the trace context)
@@ -148,7 +154,9 @@ internal sealed class AwsSqsHandlerCommon
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
             if (dataStreamsManager is { IsEnabled: true })
             {
-                var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:sqs" };
+                var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
+                    new SqsEdgeTagCacheKey((string)state.State, IsConsume: true),
+                    static k => ["direction:in", $"topic:{k.QueueName}", "type:sqs"]);
                 foreach (var o in response.Messages)
                 {
                     var message = o.DuckCast<IMessage>();

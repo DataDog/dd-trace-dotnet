@@ -8,7 +8,7 @@ ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 env_file="$ARTIFACTS_DIR/baseline_env_vars.txt"
 
 if [ ! -f "$env_file" ]; then
-    echo "Warning: Baseline env vars file not found at $env_file"
+    echo "WARNING: Baseline env vars file not found at $env_file"
     return 0 2>/dev/null || exit 0
 fi
 

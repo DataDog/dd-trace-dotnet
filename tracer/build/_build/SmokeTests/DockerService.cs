@@ -123,9 +123,9 @@ public class DockerService
             Logger.Information("Image {Image} not found locally, pulling...", image);
         }
 
-        var parts = image.Split(':');
-        var repo = parts[0];
-        var tag = parts.Length > 1 ? parts[1] : "latest";
+        var firstColon = image.IndexOf(':');
+        var repo = firstColon >= 0 ? image[..firstColon] : image;
+        var tag = firstColon >= 0 ? image[(firstColon + 1)..] : "latest";
 
         await RetryAsync(
             $"Pull image {image}",

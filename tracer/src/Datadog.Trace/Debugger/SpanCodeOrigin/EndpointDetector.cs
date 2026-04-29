@@ -11,8 +11,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Pdb;
+
+#if NETCOREAPP
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+#endif
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin;
 

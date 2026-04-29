@@ -49,6 +49,24 @@ public class MockClientGroupedStats
     [Key("TopLevelHits")]
     public long TopLevelHits { get; set; }
 
+    [Key("SpanKind")]
+    public string SpanKind { get; set; }
+
+    [Key("IsTraceRoot")]
+    public int IsTraceRoot { get; set; }
+
+    [Key("HTTPMethod")]
+    public string HttpMethod { get; set; }
+
+    [Key("HTTPEndpoint")]
+    public string HttpEndpoint { get; set; }
+
+    [Key("GRPCStatusCode")]
+    public string GrpcStatusCode { get; set; }
+
     [Key("srv_src")]
     public string ServiceSource { get; set; }
+
+    [Key("PeerTags")]
+    public string[] PeerTags { get; set; }
 }

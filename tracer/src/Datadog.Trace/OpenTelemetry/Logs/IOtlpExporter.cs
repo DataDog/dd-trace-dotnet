@@ -26,10 +26,11 @@ internal interface IOtlpExporter
     Task<ExportResult> ExportAsync(IReadOnlyList<LogPoint> logs);
 
     /// <summary>
-    /// Shuts down the exporter and ensures all pending exports complete.
+    /// Releases the exporter's HTTP resources. Does not wait on pending exports:
+    /// the final flush runs synchronously in the sink's DisposeAsync before this is
+    /// called, bounded by the HTTP client timeout (OTEL_EXPORTER_OTLP_TIMEOUT).
     /// </summary>
-    /// <param name="timeoutMilliseconds">Maximum time to wait for shutdown</param>
     /// <returns>True if shutdown completed successfully</returns>
-    bool Shutdown(int timeoutMilliseconds);
+    bool Shutdown();
 }
 #endif

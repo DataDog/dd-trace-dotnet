@@ -167,6 +167,53 @@ internal readonly struct SpanCollection : IEnumerable<Span>
         return null;
     }
 
+    /// <summary>
+    /// Returns true if the <see cref="SpanCollection"/> contains a span with the provided <paramref name="spanId"/>.
+    /// Starts searching from startIndex, and then loops around back to the start
+    /// </summary>
+    public bool ContainsSpanId(ulong spanId, int startIndex)
+    {
+        // Take local copy of _values so type checks remain valid even if the SpanCollection is overwritten in memory
+        var value = _values;
+        if (value is Span span)
+        {
+            return span.SpanId == spanId;
+        }
+
+        if (value is null)
+        {
+            return false;
+        }
+
+        // Not Span, not null, can only be SpanArray
+        var spans = Unsafe.As<Span[]>(value);
+
+        if (startIndex >= Count || startIndex < 0)
+        {
+            startIndex = 0;
+        }
+
+        // iterate over the span array starting at the specified index
+        for (var i = startIndex; i < Count; i++)
+        {
+            if (spans[i].SpanId == spanId)
+            {
+                return true;
+            }
+        }
+
+        // if not found above, wrap around to the beginning to search the rest of the array
+        for (var i = 0; i < startIndex; i++)
+        {
+            if (spans[i].SpanId == spanId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static Span[] GrowIfNeeded(Span[] array, int currentCount)
     {
         if (currentCount < array.Length)

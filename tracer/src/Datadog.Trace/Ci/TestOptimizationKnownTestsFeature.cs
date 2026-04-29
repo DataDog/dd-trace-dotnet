@@ -16,9 +16,11 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationKnownTestsFeature));
     private readonly bool _enabled;
     private readonly Task<TestOptimizationClient.KnownTestsResponse>? _knownTestsTask;
+    private readonly TestOptimizationSettings _settings;
 
     private TestOptimizationKnownTestsFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
+        _settings = settings;
         if (settings.KnownTestsEnabled == true || clientSettingsResponse.KnownTestsEnabled == true)
         {
             Log.Information("TestOptimizationKnownTestsFeature: Known tests is enabled.");
@@ -46,7 +48,30 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
         }
     }
 
-    public bool Enabled => _enabled && _knownTestsTask is not null && KnownTests.Tests is not null; // Ensure that the known tests response was not empty
+    public bool Enabled
+    {
+        get
+        {
+            if (!_enabled || _knownTestsTask is null)
+            {
+                return false;
+            }
+
+            if (KnownTests.Tests is not null)
+            {
+                return true;
+            }
+
+            if (_settings.KnownTestsEnabled != false || _settings.EarlyFlakeDetectionEnabled != false)
+            {
+                Log.Information("TestOptimizationKnownTestsFeature: Known tests response was invalid. Known tests and early flake detection are being disabled for this run.");
+                _settings.SetKnownTestsEnabled(false);
+                _settings.SetEarlyFlakeDetectionEnabled(false);
+            }
+
+            return false;
+        }
+    }
 
     public TestOptimizationClient.KnownTestsResponse KnownTests
         => _knownTestsTask?.SafeGetResult() ?? default;
