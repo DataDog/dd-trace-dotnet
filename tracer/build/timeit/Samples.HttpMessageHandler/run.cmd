@@ -34,41 +34,41 @@ echo *********************
 echo .NET Framework 4.8
 echo *********************
 dotnet timeit Samples.HttpMessageHandler.windows.net48.json
-call :CopyLogs net48
 IF ERRORLEVEL 1 (
     echo ❌ .NET Framework 4.8 benchmark FAILED
     set FAILED=1
 )
+call :CopyLogs net48
 
 echo *********************
 echo .NET Core 3.1
 echo *********************
 dotnet timeit Samples.HttpMessageHandler.windows.netcoreapp31.json
-call :CopyLogs netcoreapp3.1
 IF ERRORLEVEL 1 (
     echo ❌ .NET Core 3.1 benchmark FAILED
     set FAILED=1
 )
+call :CopyLogs netcoreapp3.1
 
 echo *********************
 echo .NET Core 6.0
 echo *********************
 dotnet timeit Samples.HttpMessageHandler.windows.net60.json
-call :CopyLogs net6.0
 IF ERRORLEVEL 1 (
     echo ❌ .NET Core 6.0 benchmark FAILED
     set FAILED=1
 )
+call :CopyLogs net6.0
 
 echo *********************
 echo .NET Core 8.0
 echo *********************
 dotnet timeit Samples.HttpMessageHandler.windows.net80.json
-call :CopyLogs net8.0
 IF ERRORLEVEL 1 (
     echo ❌ .NET Core 8.0 benchmark FAILED
     set FAILED=1
 )
+call :CopyLogs net8.0
 
 IF "!FAILED!"=="1" (
     echo =====================

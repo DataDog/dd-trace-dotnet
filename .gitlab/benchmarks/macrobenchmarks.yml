@@ -41,7 +41,7 @@ check-azure-pipeline:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
     - interruptible: true
-  timeout: 1h
+  timeout: 2h
   artifacts:
     name: "artifacts"
     when: always
@@ -59,7 +59,7 @@ check-azure-pipeline:
         echo "export buildId=$HARDCODED_BUILD_ID" > build-id.txt
         exit 0
       fi
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./wait-for-pipeline.sh
 
 
@@ -71,6 +71,10 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
   when: manual
   timeout: 3h
   variables:
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
     AWS_REGION: "us-east-1"
 
     # Branch containing a provision for building the macrobenchmarks AMI
@@ -80,7 +84,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
     # based on an instance that is created in this job
     CLEANUP: "true"
   script:
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
       bp-infra launch --region "${AWS_REGION}" --os "windows" \
@@ -121,7 +125,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   after_script:
@@ -153,6 +157,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
 baseline-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: baseline-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 0
@@ -162,6 +167,7 @@ baseline-x86:
 calltarget_ngen-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: calltarget-ngen-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -173,6 +179,7 @@ calltarget_ngen-x86:
 single_span-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: single-span-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -185,6 +192,7 @@ single_span-x86:
 trace_stats-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: trace-stats-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -197,6 +205,7 @@ trace_stats-x86:
 manual_only-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: manual-only-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 0
@@ -207,6 +216,7 @@ manual_only-x86:
 manual_and_automatic-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: manual-and-automatic-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -217,6 +227,7 @@ manual_and_automatic-x86:
 ddtraceenabled_false-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: ddtraceenabled-false-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -227,6 +238,7 @@ ddtraceenabled_false-x86:
 profiler_exceptions_baseline-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: profiler-exceptions-baseline-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 0
@@ -236,6 +248,7 @@ profiler_exceptions_baseline-x86:
 profiler-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: profiler-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -247,6 +260,7 @@ profiler-x86:
 profiler_walltime-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: profiler-walltime-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -260,6 +274,7 @@ profiler_walltime-x86:
 profiler_exceptions-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: profiler-exceptions-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -272,6 +287,7 @@ profiler_exceptions-x86:
 profiler_cpu-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: profiler-cpu-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -285,6 +301,7 @@ profiler_cpu-x86:
 profiler_cpu_timer_create-x86:
   extends: .benchmarks-x86
   variables:
+    DD_SERVICE: profiler-cpu-timer-create-x86
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux"
     COR_ENABLE_PROFILING: 1
@@ -317,7 +334,7 @@ profiler_cpu_timer_create-x86:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
   after_script:
@@ -350,6 +367,7 @@ baseline-arm64:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
+    DD_SERVICE: baseline-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 0
@@ -360,6 +378,7 @@ calltarget_ngen-arm64:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
+    DD_SERVICE: calltarget-ngen-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -372,6 +391,7 @@ single_span-arm64:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
+    DD_SERVICE: single-span-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -385,6 +405,7 @@ trace_stats-arm64:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
+    DD_SERVICE: trace-stats-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -398,6 +419,7 @@ manual_only-arm64:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
+    DD_SERVICE: manual-only-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 0
@@ -409,6 +431,7 @@ manual_and_automatic-arm64:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
+    DD_SERVICE: manual-and-automatic-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -420,6 +443,7 @@ ddtraceenabled_false-arm64:
   extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
+    DD_SERVICE: ddtraceenabled-false-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -431,6 +455,7 @@ profiler_exceptions_baseline-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
   extends: .benchmarks-arm64
   variables:
+    DD_SERVICE: profiler-exceptions-baseline-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 0
@@ -441,6 +466,7 @@ profiler-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
   extends: .benchmarks-arm64
   variables:
+    DD_SERVICE: profiler-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -453,6 +479,7 @@ profiler_walltime-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
   extends: .benchmarks-arm64
   variables:
+    DD_SERVICE: profiler-walltime-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -467,6 +494,7 @@ profiler_exceptions-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
   extends: .benchmarks-arm64
   variables:
+    DD_SERVICE: profiler-exceptions-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -480,6 +508,7 @@ profiler_cpu-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
   extends: .benchmarks-arm64
   variables:
+    DD_SERVICE: profiler-cpu-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -494,6 +523,7 @@ profiler_cpu_timer_create-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
   extends: .benchmarks-arm64
   variables:
+    DD_SERVICE: profiler-cpu-timer-create-arm64
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
     COR_ENABLE_PROFILING: 1
@@ -533,6 +563,10 @@ profiler_cpu_timer_create-arm64:
       - reports/
     expire_in: 3 months
   variables:
+    # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
+    # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
+    DD_METRICS_TAGS: "managed-by:bp-infra"
+
     RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
 
     # Allows ephemeral instances to read content from benchmarking-platform
@@ -579,7 +613,7 @@ profiler_cpu_timer_create-arm64:
     - source build-id.txt
     - echo "Running Windows benchmarks for build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
   after_script:
     - |
@@ -596,11 +630,13 @@ profiler_cpu_timer_create-arm64:
 baseline-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: baseline-win
     ENDPOINT: "hello"
 
 calltarget_ngen-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: calltarget-ngen-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
@@ -610,6 +646,7 @@ calltarget_ngen-win:
 single_span-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: single-span-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
@@ -620,6 +657,7 @@ single_span-win:
 trace_stats-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: trace-stats-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_CLR_ENABLE_INLINING: 1
@@ -630,6 +668,7 @@ trace_stats-win:
 manual_only-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: manual-only-win
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
@@ -638,6 +677,7 @@ manual_only-win:
 manual_and_automatic-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: manual-and-automatic-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
@@ -646,6 +686,7 @@ manual_and_automatic-win:
 ddtraceenabled_false-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: ddtraceenabled-false-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_TRACE_ENABLED: 0
@@ -654,6 +695,7 @@ ddtraceenabled_false-win:
 profiler_exceptions_baseline-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: profiler-exceptions-baseline-win
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
@@ -661,6 +703,7 @@ profiler_exceptions_baseline-win:
 profiler-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: profiler-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_PROFILING_ENABLED: 1
@@ -670,6 +713,7 @@ profiler-win:
 profiler_walltime-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: profiler-walltime-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_PROFILING_ENABLED: 1
@@ -681,6 +725,7 @@ profiler_walltime-win:
 profiler_exceptions-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: profiler-exceptions-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_PROFILING_ENABLED: 1
@@ -691,6 +736,7 @@ profiler_exceptions-win:
 profiler_cpu-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: profiler-cpu-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_PROFILING_ENABLED: 1
@@ -702,6 +748,7 @@ profiler_cpu-win:
 profiler_cpu_timer_create-win:
   extends: .benchmarks-win
   variables:
+    DD_SERVICE: profiler-cpu-timer-create-win
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
     DD_PROFILING_ENABLED: 1
@@ -738,7 +785,6 @@ check-slo-breaches:
     - profiler_cpu-win
     - profiler_cpu_timer_create-win
   when: always
-  allow_failure: true # Allowed to fail since we don't want it to block releases yet
   variables:
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
     ARTIFACTS_DIR: "reports"

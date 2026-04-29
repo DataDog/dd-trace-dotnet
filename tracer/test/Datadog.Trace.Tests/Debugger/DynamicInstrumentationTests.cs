@@ -22,6 +22,8 @@ using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
 
+#nullable enable
+
 namespace Datadog.Trace.Tests.Debugger;
 
 public class DynamicInstrumentationTests
@@ -171,7 +173,7 @@ public class DynamicInstrumentationTests
             throw new NotImplementedException();
         }
 
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback)
+        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
         {
             throw new NotImplementedException();
         }
@@ -181,7 +183,7 @@ public class DynamicInstrumentationTests
     {
         internal bool Called { get; private set; }
 
-        public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation location)
+        public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation? location, LineProbeDiagnosticLevel diagnosticLevel = LineProbeDiagnosticLevel.Full)
         {
             throw new NotImplementedException();
         }

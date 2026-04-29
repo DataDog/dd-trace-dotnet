@@ -680,6 +680,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
+                .IsOptional("db.user")
                 .IsPresent("out.host")
                 .Matches("db.type", "postgres")
                 .IsOptional("db.operation.batch.size")
@@ -948,6 +949,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsOptional("db.name")
+                .IsOptional("db.user")
                 .IsPresent("out.host")
                 .Matches("db.type", "sql-server")
                 .IsPresent("peer.service")

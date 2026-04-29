@@ -1,1 +1,1 @@
-https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip
+https://github.com/dotnet/runtime/archive/refs/tags/v7.0.20.zip

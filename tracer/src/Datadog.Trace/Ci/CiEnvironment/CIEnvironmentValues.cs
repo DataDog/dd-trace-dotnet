@@ -191,11 +191,7 @@ internal abstract class CIEnvironmentValues
     {
         foreach (var c in chars)
         {
-            var isHex = (c is >= '0' and <= '9' ||
-                         c is >= 'a' and <= 'f' ||
-                         c is >= 'A' and <= 'F');
-
-            if (!isHex)
+            if (!char.IsAsciiHexDigit(c))
             {
                 return false;
             }

@@ -61,6 +61,7 @@ public class LineProbeResolverTest
     [Theory]
     [InlineData(@"D:\build_agent\yada\yada\src\MyProject\MyFile.cs")]
     [InlineData(@"/usr/opt/build_agent/yada/yada/src/MyProject/MyFile.cs")]
+    [InlineData(@"\\build-agent\share\yada\yada\src\MyProject\MyFile.cs")]
     public void TestSlashDirectionIsPreserved(string originalPath)
     {
         // The FilePathLookup is used look up file paths that were originally extracted from the PDB, and we
@@ -75,6 +76,150 @@ public class LineProbeResolverTest
         Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src\MyProject\MyFile.cs"));
         Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src/MyProject/MyFile.cs"));
         Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src/MyProject\MyFile.cs"));
+    }
+
+    [Theory]
+    [InlineData(@"D:\build_agent\yada\yada\src\MyProject\MyFile.cs", @"src\MyProject\MyFile.cs\")]
+    [InlineData(@"/usr/opt/build_agent/yada/yada/src/MyProject/MyFile.cs", @"src/MyProject/MyFile.cs/")]
+    [InlineData(@"\\build-agent\share\yada\yada\src\MyProject\MyFile.cs", @"src\MyProject\MyFile.cs\")]
+    public void FindPathThatEndsWithIgnoresTrailingSeparatorsInQuery(string originalPath, string queryPath)
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(originalPath);
+
+        lookup.FindPathThatEndsWith(queryPath).Should().Be(originalPath);
+    }
+
+    [Fact]
+    public void FallbackMatchBindsWhenOnlyLeadingSegmentsDiffer()
+    {
+        _probeDefinition.Where.SourceFile = @"Source\" + _probeDefinition.Where.SourceFile.Replace('/', '\\');
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Bound);
+        result.Diagnostics.PathMatchType.Should().Be(LineProbePathMatchType.FallbackTrailingSuffixMatch);
+        result.Diagnostics.MatchingTrailingSegments.Should().BeGreaterThanOrEqualTo(4);
+        loc.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void FilePathLookupFindsClosestUniqueSuffixMatchForLinuxPaths()
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+        const string documentPath = @"/_/src/MyProject/Feature/MyFile.cs";
+
+        lookup.InsertPath(documentPath);
+
+        lookup.TryFindClosestPathBySuffix(@"Source/src/MyProject/Feature/MyFile.cs", minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeTrue();
+        match.Should().Be(documentPath);
+        matchingTrailingSegments.Should().Be(4);
+    }
+
+    [Fact]
+    public void FilePathLookupFindsClosestUniqueSuffixMatchForWindowsPaths()
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+        const string documentPath = @"D:\agent\src\MyProject\Feature\MyFile.cs";
+
+        lookup.InsertPath(documentPath);
+
+        lookup.TryFindClosestPathBySuffix(@"Source\src\MyProject\Feature\MyFile.cs", minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeTrue();
+        match.Should().Be(documentPath);
+        matchingTrailingSegments.Should().Be(4);
+    }
+
+    [Theory]
+    [InlineData(@"/_/src/MyProject/Feature/MyFile.cs", @"Source/src/MyProject/Feature/MyFile.cs/")]
+    [InlineData(@"D:\agent\src\MyProject\Feature\MyFile.cs", @"Source\src\MyProject\Feature\MyFile.cs\")]
+    public void FilePathLookupFallbackIgnoresTrailingSeparators(string documentPath, string queryPath)
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(documentPath);
+
+        lookup.TryFindClosestPathBySuffix(queryPath, minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeTrue();
+        match.Should().Be(documentPath);
+        matchingTrailingSegments.Should().Be(4);
+    }
+
+    [Fact]
+    public void FilePathLookupDoesNotFallbackOnCaseOnlyDifference()
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+        const string documentPath = @"/_/src/MyProject/Feature/MyFile.cs";
+
+        lookup.InsertPath(documentPath);
+
+        lookup.TryFindClosestPathBySuffix(@"Source/src/MyProject/Feature/myfile.cs", minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeFalse();
+        match.Should().BeNull();
+        matchingTrailingSegments.Should().Be(0);
+    }
+
+    [Fact]
+    public void FilePathLookupDoesNotFallbackOnFileNameOnlyMatch()
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(@"/_/src/Other/MyFile.cs");
+
+        lookup.TryFindClosestPathBySuffix(@"Source/src/MyProject/Feature/MyFile.cs", minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeFalse();
+        match.Should().BeNull();
+        matchingTrailingSegments.Should().Be(0);
+    }
+
+    [Fact]
+    public void FilePathLookupPrefersLongestUniqueSuffixMatch()
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+        const string bestPath = @"/_/src/One/Feature/MyFile.cs";
+
+        lookup.InsertPath(bestPath);
+        lookup.InsertPath(@"/_/src/Feature/MyFile.cs");
+
+        lookup.TryFindClosestPathBySuffix(@"Source/src/One/Feature/MyFile.cs", minimumMatchingTrailingSegments: 2, out var match, out var matchingTrailingSegments).Should().BeTrue();
+        match.Should().Be(bestPath);
+        matchingTrailingSegments.Should().Be(4);
+    }
+
+    [Fact]
+    public void FilePathLookupRejectsAmbiguousSuffixMatches()
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(@"/a/src/Shared/Feature/MyFile.cs");
+        lookup.InsertPath(@"/b/src/Shared/Feature/MyFile.cs");
+
+        lookup.TryFindClosestPathBySuffix(@"Source/src/Shared/Feature/MyFile.cs", minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeFalse();
+        match.Should().BeNull();
+        matchingTrailingSegments.Should().Be(0);
+    }
+
+    [Fact]
+    public void BestFallbackMatchSelectionRejectsTieWhenHighestScoreIsAlreadyAmbiguous()
+    {
+        var selection = new LineProbeResolver.BestFallbackMatchSelection();
+
+        selection.Track(typeof(string).Assembly, CreateClosestPathBySuffixResult(@"/a/src/Shared/Feature/MyFile.cs", matchingTrailingSegments: 4, isAmbiguous: true));
+        selection.Track(typeof(LineProbeResolverTest).Assembly, CreateClosestPathBySuffixResult(@"/b/src/Shared/Feature/MyFile.cs", matchingTrailingSegments: 4, isAmbiguous: false));
+
+        selection.HasAmbiguousBestMatch.Should().BeTrue();
+        selection.BestMatch.Should().BeNull();
+    }
+
+    [Fact]
+    public void BestFallbackMatchSelectionAllowsHigherUniqueScoreToOverrideEarlierAmbiguity()
+    {
+        var selection = new LineProbeResolver.BestFallbackMatchSelection();
+
+        selection.Track(typeof(string).Assembly, CreateClosestPathBySuffixResult(@"/a/src/Shared/Feature/MyFile.cs", matchingTrailingSegments: 4, isAmbiguous: true));
+        selection.Track(typeof(LineProbeResolverTest).Assembly, CreateClosestPathBySuffixResult(@"/b/src/One/Shared/Feature/MyFile.cs", matchingTrailingSegments: 5, isAmbiguous: false));
+
+        selection.HasAmbiguousBestMatch.Should().BeFalse();
+        selection.BestMatch.Should().NotBeNull();
+        selection.BestMatch!.Value.Path.Should().Be(@"/b/src/One/Shared/Feature/MyFile.cs");
+        selection.BestMatch!.Value.MatchingTrailingSegments.Should().Be(5);
     }
 
     [Fact]
@@ -104,18 +249,89 @@ public class LineProbeResolverTest
     }
 
     [Fact]
-    public void MismatchedPathReturnsUnboundWithFileNameDiagnostics()
+    public void MinimalDiagnosticsOnInvalidLineNumberOmitRawLines()
+    {
+        _probeDefinition.Where.Lines[0] = "not-a-number";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc, LineProbeDiagnosticLevel.Minimal);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Error);
+        result.Reason.Should().Be(LineProbeResolveReason.InvalidLineNumber);
+        result.Diagnostics.ProbeFile.Should().Be(_probeDefinition.Where.SourceFile);
+        result.Diagnostics.ProbeLine.Should().BeNull();
+        result.Diagnostics.RawLines.Should().BeNull();
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void MinimalDiagnosticsOnMissingSequencePointOmitResolvedAssemblyFields()
+    {
+        _probeDefinition.Where.Lines[0] = "999999";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc, LineProbeDiagnosticLevel.Minimal);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Error);
+        result.Reason.Should().Be(LineProbeResolveReason.MissingSequencePoint);
+        result.Diagnostics.ProbeFile.Should().Be(_probeDefinition.Where.SourceFile);
+        result.Diagnostics.ProbeLine.Should().Be(999999);
+        result.Diagnostics.PathMatchType.Should().BeNull();
+        result.Diagnostics.ResolvedSourceFile.Should().BeNull();
+        result.Diagnostics.AssemblyName.Should().BeNull();
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void SameFileNamePathMismatchReturnsSpecificUnboundReason()
     {
         _probeDefinition.Where.SourceFile = @"some\other\folder\LambdaSingleLine.cs";
 
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
 
         result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
-        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch);
+        result.Reason.Should().Be(LineProbeResolveReason.LoadedAssemblySourceFileMismatch);
         result.Diagnostics.LoadedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SymbolicatedAssemblyCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameMatchCount.Should().BeGreaterThan(0);
         result.Diagnostics.SameFileNameExamples.Should().NotBeNullOrEmpty();
+        result.Diagnostics.FallbackFailureReason.Should().Be(LineProbeFallbackFailureReason.NoQualifiedSuffixMatch);
+        result.Diagnostics.MatchingTrailingSegments.Should().Be(1);
+        result.Diagnostics.QualifiedFallbackMatchCount.Should().Be(0);
+        result.Message.Should().Contain("did not match the PDB document path");
+        result.Message.Should().Contain("loaded, symbolicated assembly with the same file name");
+        result.Message.Should().NotContain("assembly is not loaded yet");
+        result.Message.Should().NotContain("symbols are unavailable");
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void UnknownFileReturnsUnboundWithGenericMessage()
+    {
+        _probeDefinition.Where.SourceFile = @"some\other\folder\FileThatDoesNotExistAnywhere.cs";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
+        result.Diagnostics.SameFileNameMatchCount.Should().Be(0);
+        result.Message.Should().Contain("assembly is not loaded yet");
+        result.Message.Should().Contain("symbols are unavailable");
+        result.Message.Should().NotContain("configured source path may differ from the PDB document path");
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void UnknownFileReturnsUnboundWithGenericReason()
+    {
+        _probeDefinition.Where.SourceFile = @"some\other\folder\FileThatDoesNotExistAnywhere.cs";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable);
+        result.Diagnostics.FallbackFailureReason.Should().Be(LineProbeFallbackFailureReason.NoSameFileNameCandidates);
+        result.Diagnostics.SameFileNameMatchCount.Should().Be(0);
+        result.Diagnostics.QualifiedFallbackMatchCount.Should().Be(0);
+        result.Message.Should().Contain("assembly is not loaded yet or if symbols are unavailable");
         loc.Should().BeNull();
     }
 
@@ -125,7 +341,52 @@ public class LineProbeResolverTest
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
 
         result.Status.Should().Be(LiveProbeResolveStatus.Bound);
+        result.Diagnostics.PathMatchType.Should().Be(LineProbePathMatchType.ExactSuffixMatch);
+        result.Diagnostics.MatchingTrailingSegments.Should().BeNull();
         var method = typeof(LambdaSingleLine).Assembly.ManifestModule.ResolveMethod(loc.MethodToken);
         method.Name.Should().Be("Run");
+    }
+
+    [Fact]
+    public void MinimalDiagnosticsOnBoundResolutionOmitDetailedFields()
+    {
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc, LineProbeDiagnosticLevel.Minimal);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Bound);
+        result.Diagnostics.ProbeFile.Should().Be(_probeDefinition.Where.SourceFile);
+        result.Diagnostics.ProbeLine.Should().Be(int.Parse(_probeDefinition.Where.Lines[0]));
+        result.Diagnostics.PathMatchType.Should().BeNull();
+        result.Diagnostics.ResolvedSourceFile.Should().BeNull();
+        result.Diagnostics.AssemblyName.Should().BeNull();
+        result.Diagnostics.SameFileNameExamples.Should().BeNull();
+        loc.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void MinimalDiagnosticsOnUnboundResolutionKeepReasonButSkipDetailedFields()
+    {
+        _probeDefinition.Where.SourceFile = @"some\other\folder\LambdaSingleLine.cs";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc, LineProbeDiagnosticLevel.Minimal);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.Reason.Should().Be(LineProbeResolveReason.LoadedAssemblySourceFileMismatch);
+        result.Diagnostics.ProbeFile.Should().Be(_probeDefinition.Where.SourceFile);
+        result.Diagnostics.ProbeLine.Should().Be(int.Parse(_probeDefinition.Where.Lines[0]));
+        result.Diagnostics.MatchingTrailingSegments.Should().BeNull();
+        result.Diagnostics.FallbackFailureReason.Should().BeNull();
+        result.Diagnostics.SameFileNameExamples.Should().BeNull();
+        loc.Should().BeNull();
+    }
+
+    private static LineProbeResolver.ClosestPathBySuffixResult CreateClosestPathBySuffixResult(string path, int matchingTrailingSegments, bool isAmbiguous)
+    {
+        return new LineProbeResolver.ClosestPathBySuffixResult(
+            exampleSameFileNamePath: path,
+            bestMatchingTrailingSegments: matchingTrailingSegments,
+            qualifiedMatchCount: isAmbiguous ? 2 : 1,
+            bestQualifiedMatchingTrailingSegments: matchingTrailingSegments,
+            bestQualifiedPath: path,
+            hasAmbiguousBestQualifiedMatch: isAmbiguous);
     }
 }

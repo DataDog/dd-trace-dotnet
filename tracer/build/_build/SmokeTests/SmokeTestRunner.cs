@@ -36,7 +36,9 @@ public static partial class SmokeTestRunner
     {
         var scenario = SmokeTestScenarios.GetScenario(category, scenarioName);
 
-        var imageTags = await Builder.BuildImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
+        var imageDigests = new SmokeTestImageDigests(tracerDir);
+        var builder = new Builder(imageDigests);
+        var imageTags = await builder.BuildImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
 
         // Ensure output directories exist
         // debugSnapshotsDir: mounted as /debug_snapshots in the test-agent container,

@@ -3573,13 +3573,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Create a string representing "An error occured in the managed loader: "
+    // Create a string representing "An error occurred in the managed loader: "
 
 #ifdef _WIN32
-    LPCWSTR error_str = L"An error occured in the managed loader: ";
+    LPCWSTR error_str = L"An error occurred in the managed loader: ";
     auto error_str_size = wcslen(error_str);
 #else
-    char16_t error_str[] = u"An error occured in the managed loader: ";
+    char16_t error_str[] = u"An error occurred in the managed loader: ";
     auto error_str_size = std::char_traits<char16_t>::length(error_str);
 #endif
 
@@ -3777,7 +3777,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // Catch block
         // catch (Exception ex)
         // {
-        //      var message = "An error occured in the managed loader: " + ex.ToString();
+        //      var message = "An error occurred in the managed loader: " + ex.ToString();
         //      var chars = message.ToCharArray();
         //
         //      fixed (char* p = chars)

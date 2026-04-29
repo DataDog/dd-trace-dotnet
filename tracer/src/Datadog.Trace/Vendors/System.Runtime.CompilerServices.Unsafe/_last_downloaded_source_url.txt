@@ -1,1 +1,1 @@
-https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip
+https://codeload.github.com/dotnet/maintenance-packages/zip/14e29655e53aec37342e933bfd7ba574167453ff

@@ -1,4 +1,4 @@
-﻿// <copyright file="RcmClientTracer.cs" company="Datadog">
+// <copyright file="RcmClientTracer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -73,7 +73,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
             string? appVersion,
             ReadOnlyDictionary<string, string> globalTags,
             IReadOnlyCollection<string>? processTags)
-            => new(runtimeId, tracerVersion, service, env, appVersion, GetTags(env, service, globalTags), processTags);
+            => new(runtimeId, tracerVersion, service, env, appVersion, GetTags(env, appVersion, globalTags), processTags);
 
         private static List<string> GetTags(string? environment, string? serviceVersion, ReadOnlyDictionary<string, string>? globalTags)
         {

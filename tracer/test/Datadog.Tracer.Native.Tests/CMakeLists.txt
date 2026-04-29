@@ -43,6 +43,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     integration_test.cpp
     version_struct_test.cpp
     iast_util_test.cpp
+    il_rewriter_eh_sort_test.cpp
     string_test.cpp
 	util_test.cpp
 )

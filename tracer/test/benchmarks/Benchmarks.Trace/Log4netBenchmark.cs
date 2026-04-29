@@ -14,6 +14,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+    [IterationTime(500)]
     public class Log4netBenchmark
     {
         private log4net.ILog _logger;

@@ -7,6 +7,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Metrics;
 #endif
 #if OTEL_1_9
+using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Logs;
 #endif
 using System.Collections.Generic;
@@ -44,14 +45,21 @@ public static class Program
             .Build();
 
 #if OTEL_1_2
-        using var meterProvider = Sdk.CreateMeterProviderBuilder()
+        // Not `using var`: we call Shutdown explicitly below, and OTel SDK <= 1.3.2 re-collects
+        // on a second Shutdown/Dispose which produces a duplicate cumulative batch the test
+        // snapshot doesn't expect. Process exit handles cleanup.
+        var meterProvider = Sdk.CreateMeterProviderBuilder()
             .AddOtlpExporterIfEnvironmentVariablePresent()
             .Build();
 #endif
 
 #if OTEL_1_9
-        using var loggerFactory = CustomLoggerFactoryBuilderExtensions
-            .AddOtlpExporterIfEnvironmentVariablePresent();
+        // Not `using var`: we call Shutdown on the LoggerProvider below with a generous
+        // timeout. Letting the ServiceProvider dispose here would trigger a second shutdown
+        // via LoggerProviderSdk.Dispose, which caps at 5s and can guillotine in-flight OTLP
+        // exports. Process exit handles cleanup, matching the meterProvider pattern above.
+        var loggerServices = CustomLoggerFactoryBuilderExtensions.CreateLoggerServices();
+        var loggerFactory = loggerServices.GetRequiredService<ILoggerFactory>();
 #endif
 
         _tracer = tracerProvider.GetTracer(serviceName); // The version is omitted so the ActivitySource.Version / otel.library.version is not set
@@ -144,11 +152,22 @@ public static class Program
         }
 
 #if OTEL_1_2
-        meterProvider?.Dispose();
+        // Shutdown with a generous timeout so the single final Collect+Export can complete even
+        // when the first gRPC export has to negotiate TCP+HTTP/2+TLS. We avoid ForceFlush-then-
+        // Dispose because two Collects on cumulative-temporality observable instruments re-emit
+        // the same cumulative values and produce duplicate resource_metrics batches. Shutdown
+        // performs exactly one Collect; `meterProvider` is deliberately not `using var` so the
+        // runtime doesn't re-invoke Dispose->Shutdown after this (older OTel SDKs like 1.3.2
+        // re-collect in that second call).
+        meterProvider?.Shutdown(timeoutMilliseconds: 30_000);
 #endif
 #if OTEL_1_9
-
-        loggerFactory?.Dispose();
+        // Shutdown rather than ForceFlush: ForceFlush drains the processor queue but does not
+        // tear down the exporter's HttpClient, so a subsequent ServiceProvider dispose would
+        // still run LoggerProviderSdk.Dispose with its hard 5s shutdown cap and could guillotine
+        // in-flight exports. Shutdown drains and stops the processor with our timeout; we then
+        // let process exit clean up the ServiceProvider rather than risking the 5s Dispose race.
+        loggerServices.GetService<LoggerProvider>()?.Shutdown(timeoutMilliseconds: 30_000);
 #endif
     }
 

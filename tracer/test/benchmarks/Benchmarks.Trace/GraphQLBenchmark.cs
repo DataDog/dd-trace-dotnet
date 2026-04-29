@@ -10,6 +10,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+    [IterationTime(500)]
     public class GraphQLBenchmark
     {
         private readonly static Task<ExecutionResult> _result = Task.FromResult(new ExecutionResult { Value = 42 });

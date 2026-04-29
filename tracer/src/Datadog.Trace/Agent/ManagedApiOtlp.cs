@@ -47,8 +47,8 @@ internal sealed class ManagedApiOtlp : IApi
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
         => Volatile.Read(ref _api).SendTracesAsync(traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans, apmTracingEnabled);
 
-    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
-        => Volatile.Read(ref _api).SendStatsAsync(stats, bucketDuration);
+    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
+        => Volatile.Read(ref _api).SendStatsAsync(stats, bucketDuration, tracerObfuscationVersion);
 }
 
 #endif

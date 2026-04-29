@@ -1,6 +1,7 @@
+extern alias DatadogTrace;
 using System;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using DatadogTrace::Datadog.Trace.ClrProfiler.CallTarget;
+using DatadogTrace::Datadog.Trace.DuckTyping;
 
 namespace CallTargetNativeTest.NoOp
 {

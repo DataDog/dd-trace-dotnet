@@ -18,6 +18,7 @@ namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
 [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+[IterationTime(500)]
 public class AppSecEncoderBenchmark
 {
     private Encoder _encoder;

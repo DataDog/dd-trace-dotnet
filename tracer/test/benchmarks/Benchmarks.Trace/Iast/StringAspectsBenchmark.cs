@@ -22,6 +22,7 @@ namespace Benchmarks.Trace.Iast;
 [MemoryDiagnoser]
 [BenchmarkCategory(Constants.AppSecCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
 [IgnoreProfile]
+[IterationTime(500)]
 public class StringAspectsBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;

@@ -6,7 +6,12 @@
 #nullable enable
 
 using System.Runtime.CompilerServices;
+
+#if NETCOREAPP
+using System.Reflection.Metadata;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+#endif
 
 namespace Datadog.Trace.Debugger.Symbols;
 

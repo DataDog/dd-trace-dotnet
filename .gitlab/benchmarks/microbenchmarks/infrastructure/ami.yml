@@ -1,0 +1,301 @@
+name: &provision_name "dd-trace-dotnet-microbenchmarks-ami"
+
+init_environment:
+  # Defines the .NET SDK versions to install on the AMI
+
+  # These versions are chosen to align with the dd-trace-dotnet repository's supported SDK versions: https://github.com/DataDog/dd-trace-dotnet/blob/a4a4ce0822735b3c8cf6862bcabce81fc0959753/tracer/build/_build/Build.cs#L598-L602
+
+  # It includes the final End-of-Life (EOL) versions for .NET Core 3.1 and .NET 6.0 along with the latest .NET version.
+  DOTNET_SDK_VERSIONS: "6.0.428,3.1.426,10.0.100"
+
+source_ami:
+  # From https://github.com/DataDog/benchmarking-platform-tools/tree/main/bp-infra/src/provisions/windows/apm-windows-tweaked-metal.yaml
+  ami_id_ssm_parameter: "/windows-benchmarking/apm-windows-tweaked-metal-ami-id"
+
+create_ami:
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id"
+
+tags:
+  Name: *provision_name
+
+provision_steps:
+  - install_dotnet
+  - install_vs
+  - test_setup
+
+install_dotnet:
+  populate_env: true
+  remote_command: |
+    if (-not $env:DOTNET_SDK_VERSIONS) {
+      Write-Error "DOTNET_SDK_VERSIONS is not set."
+      exit 1
+    }
+
+    $installDir = "C:\dotnet"
+    $scriptUrl = "https://dot.net/v1/dotnet-install.ps1"
+
+    $versions = $env:DOTNET_SDK_VERSIONS.Split(',')
+    foreach ($version in $versions) {
+        try {
+          Write-Output "Installing .NET SDK $version..."
+          &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1'))) -Version $version -InstallDir $installDir;
+        } catch {
+          Write-Output "Failed to install .NET SDK $version. Continuing with other installations..."
+        }
+    }
+
+    [Environment]::SetEnvironmentVariable("PATH", "$installDir;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Machine), [EnvironmentVariableTarget]::Machine)
+
+    Write-Output "Installation completed for $env:DOTNET_SDK_VERSIONS."
+
+install_vs:
+  populate_env: true
+  remote_command: |
+    $version="17.14.36310.24"
+    $exeUrl="https://download.visualstudio.microsoft.com/download/pr/ae7ac791-9759-4076-bba7-47ff510c57af/a783199025439d65f310bff041e278b966a6dbed8dbcd7fc96b55389f574ef41/vs_BuildTools.exe"
+    $installDir="c:\devtools\vstudio"
+
+    # Enabled TLS12
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    Write-Output -ForegroundColor Green "Installing Visual Studio $($version) from $($exeUrl)"
+
+    # Script directory is $PSScriptRoot
+    $exeOut = "$($PSScriptRoot)\vs_buildtools.exe"
+
+    Write-Output -ForegroundColor Green Downloading $exeUrl to $exeOut
+    (New-Object System.Net.WebClient).DownloadFile($exeUrl, $exeOut)
+
+    # Write file size to make sure it worked
+    Write-Output -ForegroundColor Green "File size is $((get-item $exeOut).length)"
+
+    $VSPackages = @(
+        "Microsoft.VisualStudio.Component.Roslyn.Compiler",
+        "Microsoft.Component.MSBuild",
+        "Microsoft.VisualStudio.Component.CoreBuildTools",
+        "Microsoft.VisualStudio.Workload.MSBuildTools",
+        "Microsoft.VisualStudio.Component.Windows10SDK",
+        "Microsoft.VisualStudio.Component.VC.CoreBuildTools",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "Microsoft.VisualStudio.Component.VC.Redist.14.Latest",
+        "Microsoft.VisualStudio.Component.VC.CMake.Project",
+        "Microsoft.VisualStudio.Component.TestTools.BuildTools",
+        "Microsoft.VisualStudio.Component.VC.ATL",
+        "Microsoft.Net.Component.4.8.SDK",
+        "Microsoft.Net.Component.4.7.2.TargetingPack",
+        "Microsoft.VisualStudio.Component.VC.ASAN",
+        "Microsoft.VisualStudio.Component.TextTemplating",
+        "Microsoft.VisualStudio.Component.VC.CoreIde",
+        "Microsoft.VisualStudio.ComponentGroup.NativeDesktop.Core",
+        "Microsoft.VisualStudio.Component.Windows10SDK.20348",
+        "Microsoft.VisualStudio.Component.Windows10SDK.19041",
+        "Microsoft.VisualStudio.Component.Windows10SDK.18362",
+        "Microsoft.VisualStudio.Workload.VCTools",
+        "Microsoft.VisualStudio.Component.NuGet.BuildTools",
+        "Microsoft.VisualStudio.Web.BuildTools.ComponentGroup",
+        "Microsoft.Net.ComponentGroup.DevelopmentPrerequisites",
+        "Microsoft.VisualStudio.Component.TypeScript.TSServer",
+        "Microsoft.Net.Component.4.8.TargetingPack",
+        "Microsoft.Net.ComponentGroup.4.8.DeveloperTools",
+        "Microsoft.NetCore.Component.Runtime.9.0",
+        "Microsoft.NetCore.Component.Runtime.8.0",
+        "Microsoft.NetCore.Component.SDK",
+        "Microsoft.Component.ClickOnce.MSBuild",
+        "Microsoft.VisualStudio.Wcf.BuildTools.ComponentGroup",
+        "Microsoft.VisualStudio.Component.WebDeploy",
+        "Microsoft.Net.Component.4.6.2.TargetingPack",
+        "Microsoft.Net.Component.4.7.TargetingPack",
+        "Microsoft.VisualStudio.Workload.WebBuildTools",
+        "Microsoft.Net.Component.4.6.1.TargetingPack",
+        "Microsoft.VisualStudio.Workload.ManagedDesktopBuildTools",
+        "Microsoft.Net.Component.4.6.TargetingPack",
+        "Microsoft.VisualStudio.Component.NuGet",
+        "Microsoft.VisualStudio.Component.VC.Tools.ARM64EC",
+        "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
+        "Microsoft.VisualStudio.Component.Roslyn.LanguageServices",
+        "Component.LinuxBuildTools",
+        "Microsoft.VisualStudio.Workload.LinuxBuildTools",
+        "Microsoft.VisualStudio.Component.VC.ATL.ARM64",
+        "Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre",
+        "Microsoft.NetCore.Component.Runtime.6.0",
+        "Microsoft.NetCore.Component.Runtime.7.0",
+        "Microsoft.VisualStudio.Component.VC.v141.ATL",
+        "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64",
+        "Microsoft.VisualStudio.Component.VC.14.29.16.11.ATL",
+        "Microsoft.VisualStudio.Component.VC.14.35.17.5.ARM64",
+        "Microsoft.VisualStudio.Component.VC.14.35.17.5.x86.x64",
+        "Microsoft.VisualStudio.Component.VC.14.35.17.5.ATL.ARM64",
+        "Microsoft.VisualStudio.Component.VC.14.35.17.5.ATL",
+        "Microsoft.VisualStudio.Component.VC.14.35.17.5.CLI.Support"
+    )
+
+    $VSPackageListParam = $VSPackages -join " --add "
+    $ArgList = "--wait --norestart --nocache --installPath `"$($installDir)`" --add $VSPackageListParam"
+    if(-not $NoQuiet){
+        $ArgList = "--quiet $ArgList"
+    }
+    $processparams = @{
+        FilePath = $exeOut
+        NoNewWindow = $true
+        Wait = $true
+        ArgumentList = $ArgList
+    }
+    Start-Process @processparams
+
+    setx VSTUDIO_ROOT "$installDir"
+    [Environment]::SetEnvironmentVariable("VSTUDIO_ROOT", "$installDir", [System.EnvironmentVariableTarget]::Machine)
+
+    # Add SDK added above to path for signtool
+    [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::Machine) + ";${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.18362.0\x64", [System.EnvironmentVariableTarget]::Machine)
+
+    Remove-Item $exeOut
+    Write-Output -ForegroundColor Green "Visual Studio $($version) installed successfully."
+
+test_setup:
+  remote_command: |
+    # Future improvements: Write this inside a bp-pwsh-utils module, and import it.
+    function Test-Setup {
+        $checks = @(
+            {
+                $dotnetPath = "C:\dotnet\dotnet.exe"
+                if (Test-Path $dotnetPath) {
+                    $version = (& $dotnetPath --version)
+                    "[PASS] .NET is installed (Version at $dotnetPath is $version. Multiple versions might be installed)"
+                }
+                else {
+                    "[FAIL] .NET is not installed"
+                }
+            },
+            {
+                $vsPath = "C:\devtools\vstudio\Common7\Tools\VsDevCmd.bat"
+                if (Test-Path $vsPath) {
+                    $output = (& $vsPath)
+                    $version = $output | Select-String -Pattern "Visual Studio (.*)" | Select-Object -First 1 | ForEach-Object { $_.Matches.Groups[1].Value }
+                    "[PASS] Visual Studio is installed (Version: $version)"
+                }
+                else {
+                    "[FAIL] Visual Studio is not installed"
+                }
+            },
+            {
+                $currentSize = (Get-Partition -DriveLetter C).Size
+                $maxSize = (Get-PartitionSupportedSize -DriveLetter C).SizeMax
+                if (($maxSize - $currentSize) -lt 1MB) {
+                    "[PASS] C: drive is at maximum size ($([math]::Round($currentSize/1GB, 2)) GB)"
+                }
+                else {
+                    "[FAIL] C: drive is not at maximum size (Current: $([math]::Round($currentSize/1GB, 2)) GB, Max: $([math]::Round($maxSize/1GB, 2)) GB)"
+                }
+            },
+            {
+                $sshService = Get-Service -Name sshd -ErrorAction SilentlyContinue
+                if ($null -ne $sshService -and $sshService.Status -eq 'Running') {
+                    "[PASS] SSH Server is installed and running"
+                }
+                else {
+                    "[FAIL] SSH Server is not installed or not running"
+                }
+            },
+            {
+                $gitPath = "C:\Program Files\Git\cmd\git.exe"
+                if (Test-Path $gitPath) {
+                    try {
+                        $version = (& $gitPath --version).Replace('git version ', '')
+                        "[PASS] Git is installed (Version: $version)"
+                    }
+                    catch {
+                        "[FAIL] Git exists but version check failed"
+                    }
+                }
+                else {
+                    "[FAIL] Git is not installed"
+                }
+            },
+            {
+                $bpRunner = Get-Command bp-runner -ErrorAction SilentlyContinue
+                if ($bpRunner) {
+                    try {
+                        $version = (bp-runner --version 2>&1)
+                        "[PASS] bp-runner is installed (Version: $version)"
+                    }
+                    catch {
+                        "[FAIL] bp-runner exists but version check failed"
+                    }
+                }
+                else {
+                    "[FAIL] bp-runner is not installed"
+                }
+            }
+        )
+        $checks | ForEach-Object { & $_ }
+    }
+
+    function Test-PowercfgSetting {
+        param(
+            [string]$subGroup,
+            [string]$setting,
+            [int]$expectedAC,
+            [int]$expectedDC
+        )
+        $expectedACHex = "0x{0:X8}" -f $expectedAC
+        $expectedDCHex = "0x{0:X8}" -f $expectedDC
+        $currentAC = powercfg /query SCHEME_CURRENT $subGroup $setting | Select-String -Pattern "Power Setting Index" | Select-Object -First 1
+        $currentDC = powercfg /query SCHEME_CURRENT $subGroup $setting | Select-String -Pattern "Power Setting Index" | Select-Object -Last 1
+        $currentACValue = $currentAC -replace '.*: ', ''
+        $currentDCValue = $currentDC -replace '.*: ', ''
+        
+        if ($currentACValue -eq $expectedACHex -and $currentDCValue -eq $expectedDCHex) {
+            Write-Output "[PASS] $setting is correctly set to $expectedACHex (AC) and $expectedDCHex (DC)"
+        }
+        else {
+            Write-Output "[FAIL] $setting is not set correctly! Expected $expectedACHex (AC), $expectedDCHex (DC), but got $currentACValue (AC), $currentDCValue (DC)"
+        }
+    }
+
+    function Test-HyperThreading {
+        $physicalCores = (Get-CimInstance -Class Win32_Processor | Measure-Object -Property NumberOfCores -Sum).Sum
+        $logicalCores = (Get-CimInstance -Class Win32_Processor | Measure-Object -Property NumberOfLogicalProcessors -Sum).Sum
+        
+        $htEnabled = $logicalCores -gt $physicalCores
+        if ($htEnabled -eq $false) {
+            Write-Output "[PASS] Hyper-threading is correctly disabled. Physical Cores: $physicalCores, Logical Cores: $logicalCores"
+        }
+        else {
+            Write-Output "[FAIL] Hyper-threading is enabled but should be disabled! Physical Cores: $physicalCores, Logical Cores: $logicalCores"
+        }
+    }
+
+    function Test-Tweaks {
+        $checks = @(
+            { Test-PowercfgSetting SUB_PROCESSOR PERFBOOSTMODE 0 0 },
+            { powercfg /getactivescheme },
+            { Test-PowercfgSetting SUB_PROCESSOR PROCFREQMAX 2500 2500 },
+            { Test-PowercfgSetting SUB_PROCESSOR IDLESTATEMAX 1 1 },
+            { Test-PowercfgSetting SUB_PROCESSOR IDLEDISABLE 1 1 },
+            { Test-PowercfgSetting SUB_PROCESSOR PROCTHROTTLEMIN 100 100 },
+            { Test-PowercfgSetting SUB_PROCESSOR PROCTHROTTLEMAX 100 100 },
+            { Test-PowercfgSetting SUB_PROCESSOR PROCTHROTTLEMIN1 100 100 },
+            { Test-PowercfgSetting SUB_PROCESSOR PROCTHROTTLEMAX1 100 100 },
+            { Test-PowercfgSetting SUB_PROCESSOR PERFBOOSTMODE 0 0 },
+            { Test-HyperThreading }
+        )
+        $checks | ForEach-Object { & $_ } 
+    }
+
+    $artifactsDir = "C:\ProvisionStepsArtifacts"
+    New-Item -Path $artifactsDir -ItemType Directory -Force
+
+    Write-Output "Verifying tweaks for benchmark repeatability..."
+    $tweaksOutput = Test-Tweaks
+    $tweaksOutput | Out-File "$artifactsDir\TestTweaksResults.log"
+    $tweaksOutput
+
+    Write-Output "Verifying setup..."
+    $setupOutput = Test-Setup
+    $setupOutput | Out-File "$artifactsDir\TestSetupResults.log"
+    $setupOutput
+
+    if (($tweaksOutput -like "*FAIL*") -or ($setupOutput -like "*FAIL*")) {
+      Write-Output "Setup test failed"
+      exit 1
+    }

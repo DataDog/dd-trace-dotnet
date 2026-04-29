@@ -17,6 +17,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [IterationTime(500)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
@@ -230,7 +231,7 @@ namespace Benchmarks.Trace
                     return Task.FromResult(true);
                 }
 
-                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
                 {
                     return Task.FromResult(true);
                 }

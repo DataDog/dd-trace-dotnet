@@ -150,6 +150,8 @@ public:
     static uint32_t GetLocalIndexFromOpcode(const ILInstr* pInstr);
 
     static bool IsLoadConstantInstruction(unsigned opcode);
+
+    static void SortEHClauses(EHClause* pEH, unsigned nEH);
 };
 
 #endif // DD_CLR_PROFILER_IL_REWRITER_H_

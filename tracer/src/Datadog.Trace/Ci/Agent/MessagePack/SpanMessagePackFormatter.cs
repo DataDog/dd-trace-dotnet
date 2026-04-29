@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -22,43 +21,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
 {
     public static readonly IMessagePackFormatter<Span> Instance = new SpanMessagePackFormatter();
 
-    private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
-    private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
-    private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
-    private readonly byte[] _resourceBytes = StringEncoding.UTF8.GetBytes("resource");
-    private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("service");
-    private readonly byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
-    private readonly byte[] _startBytes = StringEncoding.UTF8.GetBytes("start");
-    private readonly byte[] _durationBytes = StringEncoding.UTF8.GetBytes("duration");
-    private readonly byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
-    private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
-    private readonly byte[] _itrCorrelationId = StringEncoding.UTF8.GetBytes("itr_correlation_id");
-
-    // SuiteId, ModuleId, SessionId tags
-    private readonly byte[] _testSuiteIdBytes = StringEncoding.UTF8.GetBytes(TestSuiteVisibilityTags.TestSuiteId);
-    private readonly byte[] _testModuleIdBytes = StringEncoding.UTF8.GetBytes(TestSuiteVisibilityTags.TestModuleId);
-    private readonly byte[] _testSessionIdBytes = StringEncoding.UTF8.GetBytes(TestSuiteVisibilityTags.TestSessionId);
-
-    // string tags
-    private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
-
-    private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
-    private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
-
-    private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
-
-    private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
-
-    private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
-    private readonly byte[] _originValueBytes = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
-
-    // numeric tags
-    private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
-
-    private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
     private readonly byte[][] _samplingPriorityValueBytes;
-
-    private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
     private readonly byte[]? _processIdValueBytes;
 
     private SpanMessagePackFormatter()
@@ -76,6 +39,33 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep)
         ];
     }
+
+#pragma warning disable SA1516 // Elements should be separated by blank line
+    private static ReadOnlySpan<byte> TraceIdBytes => "trace_id"u8;
+    private static ReadOnlySpan<byte> SpanIdBytes => "span_id"u8;
+    private static ReadOnlySpan<byte> NameBytes => "name"u8;
+    private static ReadOnlySpan<byte> ResourceBytes => "resource"u8;
+    private static ReadOnlySpan<byte> ServiceBytes => "service"u8;
+    private static ReadOnlySpan<byte> TypeBytes => "type"u8;
+    private static ReadOnlySpan<byte> StartBytes => "start"u8;
+    private static ReadOnlySpan<byte> DurationBytes => "duration"u8;
+    private static ReadOnlySpan<byte> ParentIdBytes => "parent_id"u8;
+    private static ReadOnlySpan<byte> ErrorBytes => "error"u8;
+    private static ReadOnlySpan<byte> ItrCorrelationIdBytes => "itr_correlation_id"u8;
+    private static ReadOnlySpan<byte> TestSuiteIdBytes => "test_suite_id"u8; // TestSuiteVisibilityTags.TestSuiteId
+    private static ReadOnlySpan<byte> TestModuleIdBytes => "test_module_id"u8; // TestSuiteVisibilityTags.TestModuleId
+    private static ReadOnlySpan<byte> TestSessionIdBytes => "test_session_id"u8; // TestSuiteVisibilityTags.TestSessionId
+    private static ReadOnlySpan<byte> MetaBytes => "meta"u8;
+    private static ReadOnlySpan<byte> LanguageNameBytes => "language"u8; // Tags.Language
+    private static ReadOnlySpan<byte> LanguageValueBytes => "dotnet"u8; // TracerConstants.Language
+    private static ReadOnlySpan<byte> EnvironmentNameBytes => "env"u8; // Tags.Env
+    private static ReadOnlySpan<byte> VersionNameBytes => "version"u8; // Tags.Version
+    private static ReadOnlySpan<byte> OriginNameBytes => "_dd.origin"u8; // Tags.Origin
+    private static ReadOnlySpan<byte> OriginValueBytes => "ciapp-test"u8; // TestTags.CIAppTestOriginName
+    private static ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
+    private static ReadOnlySpan<byte> SamplingPriorityNameBytes => "_sampling_priority_v1"u8; // Metrics.SamplingPriority
+    private static ReadOnlySpan<byte> ProcessIdNameBytes => "process_id"u8; // Metrics.ProcessId
+#pragma warning restore SA1516
 
     public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
     {
@@ -133,62 +123,62 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         if (isSpan)
         {
             // trace_id field is 64-bits, truncate by using TraceId128.Lower
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Lower);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
         }
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, NameBytes);
         offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _resourceBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ResourceBytes);
         offset += MessagePackBinary.WriteString(ref bytes, offset, value.ResourceName);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ServiceBytes);
         offset += MessagePackBinary.WriteString(ref bytes, offset, value.ServiceName);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeBytes);
         offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _startBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StartBytes);
         offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.StartTime.ToUnixTimeNanoseconds());
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, DurationBytes);
         offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
 
         if (context.ParentId is not null)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ParentIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
         }
 
         if (testSuiteTags is not null)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSuiteIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSuiteIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, testSuiteTags.SuiteId);
         }
 
         if (testModuleTags is not null)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testModuleIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestModuleIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, testModuleTags.ModuleId);
         }
 
         if (testSessionTags is not null && testSessionTags.SessionId != 0)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, testSessionTags.SessionId);
         }
 
         if (correlationId is not null)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _itrCorrelationId);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ItrCorrelationIdBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, correlationId);
         }
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ErrorBytes);
         offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
         ITagProcessor[]? tagProcessors = null;
@@ -220,7 +210,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         var traceContext = span.Context.TraceContext;
 
         // Start of "meta" dictionary. Do not add any string tags before this line.
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetaBytes);
 
         int count = 0;
 
@@ -249,8 +239,8 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
 
         // add "_dd.origin" tag to all spans
         count++;
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originValueBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, OriginNameBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, OriginValueBytes);
 
         // add "env" to all spans
         var env = traceContext?.Environment;
@@ -258,7 +248,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         if (!string.IsNullOrWhiteSpace(env))
         {
             count++;
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentNameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, env);
         }
 
@@ -267,8 +257,8 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
         {
             count++;
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
         }
 
         // add "version" tags to all spans whose service name is the default service name
@@ -279,7 +269,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             if (!string.IsNullOrWhiteSpace(version))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionNameBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, version);
             }
         }
@@ -332,7 +322,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         int originalOffset = offset;
 
         // Start of "metrics" dictionary. Do not add any numeric tags before this line.
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metricsBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetricsBytes);
 
         int count = 0;
 
@@ -353,7 +343,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             {
                 // add "process_id" tag
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessIdNameBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
             }
 
@@ -361,7 +351,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             if (span.Context.TraceContext.SamplingPriority is { } samplingPriority)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SamplingPriorityNameBytes);
 
                 if (samplingPriority is >= -1 and <= 2)
                 {

@@ -263,7 +263,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                 return await _exportFunc(logs).ConfigureAwait(false);
             }
 
-            public bool Shutdown(int timeoutMilliseconds)
+            public bool Shutdown()
             {
                 return true;
             }

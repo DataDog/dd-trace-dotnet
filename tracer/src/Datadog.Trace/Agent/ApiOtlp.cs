@@ -74,13 +74,14 @@ namespace Datadog.Trace.Agent
         // return true.
         public Task<bool> Ping() => Task.FromResult(true);
 
-        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         {
             _log.Debug("Sending trace stats to the OTLP Metrics endpoint.");
 
-            var state = new SendStatsState(stats, bucketDuration);
+            var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
-            return SendWithRetry(_statsEndpoint, _sendStats, state);
+            // We are supposed to be fire and forget for these stats, with no retries
+            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0);
         }
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
@@ -92,10 +93,9 @@ namespace Datadog.Trace.Agent
             return SendWithRetry(_tracesEndpoint, _sendTraces, state);
         }
 
-        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state)
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5)
         {
             // retry up to 5 times with exponential back-off
-            var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
@@ -293,11 +293,13 @@ namespace Datadog.Trace.Agent
         {
             public readonly StatsBuffer Stats;
             public readonly long BucketDuration;
+            public readonly int TracerObfuscationVersion;
 
-            public SendStatsState(StatsBuffer stats, long bucketDuration)
+            public SendStatsState(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
             {
                 Stats = stats;
                 BucketDuration = bucketDuration;
+                TracerObfuscationVersion = tracerObfuscationVersion;
             }
         }
     }

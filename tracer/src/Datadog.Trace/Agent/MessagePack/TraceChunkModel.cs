@@ -148,7 +148,7 @@ internal readonly struct TraceChunkModel
 
             // the local root span is almost always at the end of the chunk, so start searching at the last index.
             // skip the HashSet to avoid initializing it yet, always iterate the array of spans.
-            ContainsLocalRootSpan = IndexOf(localRootSpanId, spans.Count - 1) >= 0;
+            ContainsLocalRootSpan = _spans.ContainsSpanId(localRootSpanId, spans.Count - 1);
 
             HasUpstreamService = localRootSpan.Context.ParentId is not (null or 0);
         }
@@ -239,55 +239,6 @@ internal readonly struct TraceChunkModel
             return hashSet.Contains(spanId);
         }
 
-        return IndexOf(spanId, startIndex) >= 0;
-    }
-
-    /// <summary>
-    /// Searches for the specified spanId by iterating the array of spans.
-    /// </summary>
-    private int IndexOf(ulong spanId, int startIndex)
-    {
-        // wrap around the end of the array
-        var count = _spans.Count;
-        if (count == 0)
-        {
-            return -1;
-        }
-
-        if (startIndex >= count)
-        {
-            startIndex = 0;
-        }
-
-        if (count == 1)
-        {
-            return _spans[0].SpanId == spanId ? 0 : -1;
-        }
-
-        if (_spans.TryGetArray() is not { } array)
-        {
-            // Shouldn't be possible, because we handle 0 and 1 spans above
-            return -1;
-        }
-
-        // iterate over the span array starting at the specified index + 1
-        for (var i = startIndex; i < count; i++)
-        {
-            if (spanId == array.Array![array.Offset + i].SpanId)
-            {
-                return i;
-            }
-        }
-
-        // if not found above, wrap around to the beginning to search the rest of the array
-        for (var i = 0; i < startIndex; i++)
-        {
-            if (spanId == array.Array![array.Offset + i].SpanId)
-            {
-                return i;
-            }
-        }
-
-        return -1;
+        return _spans.ContainsSpanId(spanId, startIndex);
     }
 }
