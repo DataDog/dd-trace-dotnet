@@ -26,5 +26,5 @@ private:
     size_t _length;
     size_t _offset;
 
-    void EnsureBufferSpace(int size);
+    void EnsureBufferSpace(size_t size);
 };
