@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger
 {
     internal sealed class LineProbeResolver : ILineProbeResolver
     {
-        private const int MinTrailingSegmentsForFallbackMatch = 4;
+        private const int MinTrailingSegmentsForFallbackMatch = 2;
         private const int MaxSameFileNameExamples = 3;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
         private readonly ImmutableHashSet<string> _thirdPartyDetectionExcludes;
@@ -101,7 +101,6 @@ namespace Datadog.Trace.Debugger
             bool includeExamplePaths,
             ref int sameFileNameMatchCount,
             ref int bestMatchingTrailingSegments,
-            ref int qualifiedFallbackMatchCount,
             ref List<string>? sameFileNameMatches)
         {
             if (result.ExampleSameFileNamePath is null)
@@ -120,8 +119,6 @@ namespace Datadog.Trace.Debugger
             {
                 bestMatchingTrailingSegments = result.BestMatchingTrailingSegments;
             }
-
-            qualifiedFallbackMatchCount += result.QualifiedMatchCount;
         }
 
         private static LineProbeResolutionDiagnostics BuildMinimalDiagnostics(string probeFile, int? probeLine, string probeId)
@@ -210,7 +207,6 @@ namespace Datadog.Trace.Debugger
                 var symbolicatedAssemblyCount = 0;
                 var sameFileNameMatchCount = 0;
                 var bestMatchingTrailingSegments = 0;
-                var qualifiedFallbackMatchCount = 0;
 
                 foreach (var candidateAssembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
@@ -237,11 +233,11 @@ namespace Datadog.Trace.Debugger
                         includeDetailedDiagnostics,
                         ref sameFileNameMatchCount,
                         ref bestMatchingTrailingSegments,
-                        ref qualifiedFallbackMatchCount,
                         ref sameFileNameMatches);
 
-                    // Only bind when a single global fallback candidate has the best score.
-                    // Assemblies with internally ambiguous fallback matches must still participate in that global tie.
+                    // Only bind when exactly one fallback candidate qualifies across the currently loaded,
+                    // symbolicated assemblies. Assemblies with internally ambiguous fallback matches must
+                    // still participate in that global ambiguity check.
                     bestFallbackMatchSelection.Track(candidateAssembly, closestPathMatch);
                 }
 
@@ -257,7 +253,7 @@ namespace Datadog.Trace.Debugger
                     symbolicatedAssemblyCount,
                     sameFileNameMatchCount,
                     bestMatchingTrailingSegments,
-                    qualifiedFallbackMatchCount,
+                    bestFallbackMatchSelection.QualifiedMatchCount,
                     bestFallbackMatchSelection.HasAmbiguousBestMatch,
                     includeDetailedDiagnostics ? sameFileNameMatches?.ToArray() ?? [] : []);
                 return false;
@@ -376,10 +372,13 @@ namespace Datadog.Trace.Debugger
         {
             private BestFallbackMatch? _bestMatch;
             private int _bestMatchingTrailingSegments;
+            private int _qualifiedMatchCount;
 
-            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch ? null : _bestMatch;
+            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch || _qualifiedMatchCount != 1 ? null : _bestMatch;
 
             public bool HasAmbiguousBestMatch { get; private set; }
+
+            public int QualifiedMatchCount => _qualifiedMatchCount;
 
             public void Track(Assembly assembly, ClosestPathBySuffixResult result)
             {
@@ -388,6 +387,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                _qualifiedMatchCount += result.QualifiedMatchCount;
                 var candidateScore = result.BestQualifiedMatchingTrailingSegments;
                 if (candidateScore > _bestMatchingTrailingSegments)
                 {
