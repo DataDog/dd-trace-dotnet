@@ -282,50 +282,62 @@ partial class Build
            foreach (var tested in testedVersions)
            {
                var packageName = tested.NugetPackageSearchName;
-               var previousMax = versionGenerator
-                   .GetPreviouslyTestedVersions(tested.IntegrationName)
-                   .Where(v => v >= tested.MinVersion && v <= tested.MaxVersion)
-                   .OrderByDescending(v => v)
-                   .FirstOrDefault();
+               var previouslyTested = versionGenerator.GetPreviouslyTestedVersions(tested.IntegrationName);
 
-               if (previousMax is null || tested.MaxVersion > previousMax)
+               foreach (var selected in tested.SelectedVersions)
                {
-                   bumped++;
-                   var publishedDate = "(unknown)";
-                   if (queriedVersions.TryGetValue(packageName, out var versionsForPackage))
+                   // Compare per-slot: entries can have multiple selected versions (one per glob or
+                   // per major), e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.*. Bound the predecessor search
+                   // to same-major and <= selected so each slot's previous max is found independently
+                   // -- a 3.x backport is visible even when the 4.x slot is unchanged.
+                   var previousMax = previouslyTested
+                       .Where(v => v.Major == selected.Major && v <= selected)
+                       .OrderByDescending(v => v)
+                       .FirstOrDefault();
+
+                   if (previousMax is null || selected > previousMax)
                    {
-                       var match = versionsForPackage.FirstOrDefault(v => v.Version == tested.MaxVersion.ToString());
-                       if (match?.Published is not null)
+                       bumped++;
+                       DateTimeOffset? publishedDate = null;
+                       if (queriedVersions.TryGetValue(packageName, out var versionsForPackage))
                        {
-                           publishedDate = match.Published.Value.UtcDateTime.ToString("yyyy-MM-dd");
+                           var match = versionsForPackage.FirstOrDefault(v => v.Version == selected.ToString());
+                           publishedDate = match?.Published;
                        }
-                   }
 
-                   Logger.Information(
-                       "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
-                       packageName,
-                       previousMax?.ToString() ?? "(new)",
-                       tested.MaxVersion,
-                       publishedDate,
-                       packageName,
-                       tested.MaxVersion);
-               }
-               else
-               {
-                   unchanged++;
+                       versionGenerator.BumpReport.AddBump(new PackageBumpReport.BumpEntry(
+                           packageName,
+                           tested.IntegrationName,
+                           previousMax,
+                           selected,
+                           publishedDate));
+
+                       Logger.Information(
+                           "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
+                           packageName,
+                           previousMax?.ToString() ?? "(new)",
+                           selected,
+                           publishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "(unknown)",
+                           packageName,
+                           selected);
+                   }
+                   else
+                   {
+                       unchanged++;
+                   }
                }
            }
 
            Logger.Information("{Bumped} package(s) bumped, {Unchanged} unchanged", bumped, unchanged);
 
-           if (versionGenerator.CooldownReport.HasEntries)
+           if (versionGenerator.BumpReport.CooldownEntries.Count > 0)
            {
                Logger.Warning(
                    "{Count} package version(s) were excluded due to the {Days}-day cooldown period",
-                   versionGenerator.CooldownReport.Entries.Count,
+                   versionGenerator.BumpReport.CooldownEntries.Count,
                    effectiveCooldownDays);
 
-               foreach (var entry in versionGenerator.CooldownReport.Entries)
+               foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
                {
                    Logger.Warning(
                        "  {Package} {Version} overridden (published {Date})",
@@ -333,10 +345,13 @@ partial class Build
                        entry.OverriddenVersion,
                        entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
                }
+           }
 
-               var reportPath = TemporaryDirectory / "cooldown_report.md";
-               await versionGenerator.CooldownReport.SaveToFile(reportPath);
-               Logger.Information("Cooldown report saved to {Path}", reportPath);
+           if (versionGenerator.BumpReport.HasEntries)
+           {
+               var reportPath = TemporaryDirectory / "bump_report.md";
+               await versionGenerator.BumpReport.SaveToFile(reportPath);
+               Logger.Information("Bump report saved to {Path}", reportPath);
            }
 
            var assemblies = MonitoringHomeDirectory

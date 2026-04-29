@@ -33,9 +33,9 @@ namespace GeneratePackageVersions
         public Dictionary<string, List<VersionWithDate>> QueriedVersions { get; } = new();
 
         /// <summary>
-        /// Report of package versions that were excluded by the cooldown filter.
+        /// Report of package versions bumped in this run and versions skipped by the cooldown filter.
         /// </summary>
-        public CooldownReport CooldownReport { get; }
+        public PackageBumpReport BumpReport { get; }
 
 
         public PackageVersionGenerator(
@@ -46,7 +46,7 @@ namespace GeneratePackageVersions
         {
             _getCooldownMode = getCooldownMode;
             _cutoffDate = DateTimeOffset.UtcNow.AddDays(-cooldownDays);
-            CooldownReport = new CooldownReport(cooldownDays);
+            BumpReport = new PackageBumpReport(cooldownDays);
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
@@ -165,7 +165,16 @@ namespace GeneratePackageVersions
                 {
                     var earliestVersion = allVersions.First();
                     var lastVersion = allVersions.Last();
-                    testedVersions.Add(new(entry.NugetPackageSearchName, entry.IntegrationName, earliestVersion, lastVersion));
+
+                    // One row per distinct selected version preserves split-range / per-glob slots
+                    // (e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.* each produce their own entry), so a
+                    // backport to 3.x is reported even when the overall max 4.x is unchanged.
+                    var selectedVersions = allVersions
+                        .Distinct()
+                        .OrderBy(v => v)
+                        .ToList();
+
+                    testedVersions.Add(new(entry.NugetPackageSearchName, entry.IntegrationName, earliestVersion, lastVersion, selectedVersions));
                 }
             }
 
@@ -200,7 +209,7 @@ namespace GeneratePackageVersions
 
                 if (publishedTooRecently && !atOrBelowPreviousMax)
                 {
-                    CooldownReport.Add(new CooldownReport.CooldownEntry(
+                    BumpReport.AddCooldown(new PackageBumpReport.CooldownEntry(
                         entry.NugetPackageSearchName,
                         entry.IntegrationName,
                         v.Version,
@@ -433,6 +442,11 @@ namespace GeneratePackageVersions
             }
         }
 
-        public record TestedPackage(string NugetPackageSearchName, string IntegrationName, Version MinVersion, Version MaxVersion);
+        public record TestedPackage(
+            string NugetPackageSearchName,
+            string IntegrationName,
+            Version MinVersion,
+            Version MaxVersion,
+            IReadOnlyList<Version> SelectedVersions);
     }
 }
