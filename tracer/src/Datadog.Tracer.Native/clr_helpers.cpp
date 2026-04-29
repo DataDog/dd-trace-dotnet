@@ -1067,6 +1067,7 @@ HRESULT FunctionMethodSignature::TryParse()
     unsigned param_count;
     IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &param_count));
     parsedNumberOfArguments = param_count;
+    parsedParams.reserve(param_count);
 
     const PCCOR_SIGNATURE pbRet = pbCur;
 
