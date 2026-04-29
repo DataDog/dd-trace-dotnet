@@ -17,7 +17,7 @@
 #include <mutex>
 #include <set>
 #include <algorithm>
-#include <forward_list>
+#include <deque>
 #include <functional>
 
 
@@ -180,7 +180,7 @@ private:
     std::thread _worker;
     std::atomic<bool> _requestStop;
     
-    std::forward_list<std::function<void()>> _workerQueue;
+    std::deque<std::function<void()>> _workerQueue;
     std::mutex _queueMutex;
 
     template<typename WorkType>

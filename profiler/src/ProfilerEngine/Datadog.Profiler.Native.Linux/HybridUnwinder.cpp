@@ -239,7 +239,10 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
                                     uintptr_t stackBase, uintptr_t stackEnd,
                                     UnwindingRecorder* recorder) const
 {
-    if (recorder) recorder->RecordStart(reinterpret_cast<ucontext_t*>(ctx));
+    if (recorder)
+    {
+        recorder->RecordStart(reinterpret_cast<ucontext_t*>(ctx));
+    }
 
     if (stackBase == 0 || stackEnd == 0)
     {
@@ -257,7 +260,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
     if (ctx == nullptr)
     {
         flag = static_cast<unw_init_local2_flags_t>(0);
-        if (auto getResult = unw_getcontext(&localContext) != 0)
+        if (auto getResult = unw_getcontext(&localContext); getResult  != 0)
         {
             if (recorder)
             {
@@ -268,7 +271,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
         context = &localContext;
     }
 
-    UnwindCursor unwindCursor{0};
+    UnwindCursor unwindCursor{};
     auto initResult = unw_init_local2(&unwindCursor.cursor, context, flag);
     if (recorder)
     {

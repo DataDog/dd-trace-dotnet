@@ -217,7 +217,6 @@ std::optional<bool> ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcep
         {
             return result;
         }
-        std::this_thread::yield();
     }
     return std::nullopt;
 }
@@ -487,7 +486,7 @@ void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
             break;
         }
 
-        std::forward_list<std::function<void()>> workItems;
+        std::deque<std::function<void()>> workItems;
         {
             std::unique_lock<std::mutex> lock(_queueMutex);
             std::swap(_workerQueue, workItems);
@@ -517,7 +516,7 @@ void ManagedCodeCache::EnqueueWork(WorkType work)
 
     {
         std::unique_lock<std::mutex> lock(_queueMutex);
-        _workerQueue.push_front(std::move(workFunction));
+        _workerQueue.push_back(std::move(workFunction));
     }
     
     _workerQueueEvent.Set();

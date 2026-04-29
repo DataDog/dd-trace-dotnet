@@ -261,10 +261,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
 
     std::uintptr_t stackBase = 0;
     std::uintptr_t stackEnd = 0;
-    if (threadInfo)
-    {
-        std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
-    }
+    std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
 
     UnwindingRecorder* recorder = nullptr;
 #ifdef ARM64
