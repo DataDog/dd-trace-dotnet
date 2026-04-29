@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -47,8 +46,7 @@ public class MassTransit7Tests : TracingIntegrationTest
 
         // InMemory transport + saga + 3 exception scenarios
         const int expectedMassTransitSpanCount = 30;
-        var snapshotSuffix = IsWindows() ? "InMemoryWindows" : "InMemory";
-        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, snapshotSuffix);
+        await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "InMemory");
     }
 
     [SkippableTheory]
@@ -88,9 +86,6 @@ public class MassTransit7Tests : TracingIntegrationTest
         const int expectedMassTransitSpanCount = 6;
         await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "Sqs");
     }
-
-    private static bool IsWindows() =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
     private static VerifySettings BuildSpanVerifierSettings()
     {
