@@ -79,7 +79,9 @@ namespace Datadog.Trace
                 osArchitecture: osArchitecture,
                 processArchitecture: processArchitecture,
                 osDescription: osDescription,
+#pragma warning disable RS0030 // FrameworkDescription is the cache for Environment.Version
                 runtimeVersion ?? Environment.Version);
+#pragma warning restore RS0030
         }
 
         public bool IsCoreClr()
@@ -89,7 +91,9 @@ namespace Datadog.Trace
 
         private static void GetNetCoreOrNetFrameworkVersion(out Version version, out string productVersion)
         {
+#pragma warning disable RS0030 // FrameworkDescription is the cache for Environment.Version
             version = Environment.Version;
+#pragma warning restore RS0030
             if (version.Major == 3 || version.Major >= 5)
             {
                 // Environment.Version returns "4.x" in .NET Core 2.x,
