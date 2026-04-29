@@ -2287,7 +2287,6 @@ partial class Build
        .Description("Copies monitoring-home into the serverless artifacts directory")
        .Unlisted()
        .After(CompileSamples, CompileTrimmingSamples)
-       .OnlyWhenStatic(() => IsLinux || IsOsx)
        .Executes(() =>
         {
             // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too
