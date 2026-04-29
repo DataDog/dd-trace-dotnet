@@ -309,6 +309,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
 
     UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd);
 
+    callstack.Add(FrameStore::SentinelFrameIP);
     // Already recorded state in recorder
     return callstack.Size();
 }
