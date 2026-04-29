@@ -3,10 +3,17 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">5.11.5</ApiVersion>
     <RequiresDockerDependency>All</RequiresDockerDependency>
+
+    <!-- NU1510: System.Diagnostics.DiagnosticSource below is flagged as framework-provided, but it's retained
+         to deploy the 8.0.0.0 assembly that Azure.Core (transitive of Azure.Messaging.EventHubs) hard-binds
+         against. Without it, runtimes whose shared framework ships a different version (e.g. 10.0.0.0 on
+         net10.0) fail with FileNotFoundException at load time. -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Messaging.EventHubs" Version="$(ApiVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
   </ItemGroup>
 
 </Project>
