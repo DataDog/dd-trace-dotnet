@@ -12,10 +12,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Reflection;
 using System.Runtime;
 using System.Threading;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.RuntimeMetrics;
 
@@ -32,7 +30,6 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 {
     internal const string MeterName = "System.Runtime";
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsPolyfill>();
     private static readonly string[] GenNames = ["gen0", "gen1", "gen2", "loh", "poh"];
     private static readonly int MaxGenerations = Math.Min(GC.GetGCMemoryInfo().GenerationInfo.Length, GenNames.Length);
 
@@ -91,12 +88,12 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             description: "The heap fragmentation, as observed during the latest garbage collection.");
 
         // GC pause time: GC.GetTotalPauseDuration() was added in .NET 6.0.21
-        var getTotalPauseSeconds = CreateGetTotalPauseSecondsDelegate();
-        if (getTotalPauseSeconds is not null)
+        var gcPauseDelegate = GcPauseTimeReflection.TryCreateDelegate();
+        if (gcPauseDelegate is not null)
         {
             _meter.CreateObservableCounter(
                 "dotnet.gc.pause.time",
-                getTotalPauseSeconds,
+                () => gcPauseDelegate().TotalSeconds,
                 unit: "s",
                 description: "The total amount of time paused in GC since the process has started.");
         }
@@ -190,23 +187,6 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         AppDomain.CurrentDomain.FirstChanceException -= OnFirstChanceException;
         _meter.Dispose();
         _process.Dispose();
-    }
-
-    private static Func<double>? CreateGetTotalPauseSecondsDelegate()
-    {
-        var version = FrameworkDescription.Instance.RuntimeVersion;
-        if (version.Major > 6 || version is { Major: 6, Build: >= 21 })
-        {
-            var methodInfo = typeof(GC).GetMethod("GetTotalPauseDuration", BindingFlags.Public | BindingFlags.Static);
-            if (methodInfo is not null)
-            {
-                var getTotalPauseDuration = methodInfo.CreateDelegate<Func<TimeSpan>>();
-                return () => getTotalPauseDuration().TotalSeconds;
-            }
-        }
-
-        Log.Debug("GC.GetTotalPauseDuration() is not available on this runtime version; dotnet.gc.pause.time will not be reported.");
-        return null;
     }
 
     private static Measurement<long>[] GetGarbageCollectionCounts()
