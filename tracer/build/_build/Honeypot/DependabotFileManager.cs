@@ -21,7 +21,7 @@ namespace Honeypot
         {
             var fakeRefs = string.Empty;
 
-            foreach (var dependency in VendoredDependency.All)
+            foreach (var dependency in VendoredDependency.All.Where(x => x.IsNuGetPackage))
             {
                 fakeRefs += $@"{Environment.NewLine}    <!-- https://www.nuget.org/packages/{dependency.LibraryName}/{dependency.Version} -->";
                 fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{dependency.LibraryName}"" Version=""{dependency.Version}"" />{Environment.NewLine}";
