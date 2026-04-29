@@ -16,6 +16,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "Aerospike";
     }
+
+    [CollectionDefinition(Name)]
+    public class ServiceStackRedisCollection : ICollectionFixture<ServiceStackRedisFixture>
+    {
+        public const string Name = "ServiceStackRedis";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name

@@ -51,11 +51,9 @@ services:
       - "5672"
       - "15672"
 
+  # keep synchronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\ServiceStackRedisFixture.cs
   servicestackredis_arm64:
     image: redis:4-alpine
-    command: redis-server --bind 0.0.0.0
-    ports:
-    - "6379"
 
   sqledge_arm64:
     image: mcr.microsoft.com/azure-sql-edge:latest
@@ -112,12 +110,9 @@ services:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
 
+  # keep synchronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\ServiceStackRedisFixture.cs
   servicestackredis:
     image: redis:4-alpine
-    profiles: ["group1"]
-    command: redis-server --bind 0.0.0.0
-    ports:
-    - "127.0.0.1:6379:6379"
 
   stackexchangeredis:
     image: redis:4-alpine
@@ -479,7 +474,6 @@ services:
       - DiffEngine_Disabled=true
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo
-      - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379,stackexchangeredis-replica:6379
       - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis-single:6379
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
@@ -696,7 +690,6 @@ services:
     image: andrewlock/wait-for-dependencies
     profiles: ["group1"]
     depends_on:
-      - servicestackredis
       - stackexchangeredis
       - stackexchangeredis-replica
       - stackexchangeredis-single
@@ -711,7 +704,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies
@@ -742,6 +735,7 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -761,7 +755,6 @@ services:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
-      - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379,stackexchangeredis_arm64-replica:6379
       - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis_arm64-single:6379
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
@@ -803,7 +796,6 @@ services:
       - RANDOM_SEED
       - TEST_AGENT_HOST=test-agent
     depends_on:
-      - servicestackredis_arm64
       - stackexchangeredis_arm64
       - stackexchangeredis_arm64-replica
       - stackexchangeredis_arm64-single
@@ -820,7 +812,6 @@ services:
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      - servicestackredis_arm64
       - stackexchangeredis_arm64
       - stackexchangeredis_arm64-replica
       - stackexchangeredis_arm64-single
@@ -835,7 +826,7 @@ services:
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
+    command: stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -906,7 +897,6 @@ services:
   StartDependencies.OSXARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      - servicestackredis_osx_arm64
       - stackexchangeredis_osx_arm64
       - stackexchangeredis_osx_arm64-replica
       - stackexchangeredis_osx_arm64-single
@@ -919,7 +909,7 @@ services:
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -976,11 +966,9 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  # keep synchronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\ServiceStackRedisFixture.cs
   servicestackredis_osx_arm64:
     image: redis:4-alpine
-    command: redis-server --bind 0.0.0.0
-    ports:
-      - "6379:6379"
 
   stackexchangeredis_osx_arm64:
     image: redis:4-alpine
