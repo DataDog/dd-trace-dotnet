@@ -20,7 +20,7 @@ namespace Datadog.Trace.Debugger.Configurations
         private readonly string? _env;
         private readonly string? _version;
         private readonly int _maxProbesPerType;
-        private readonly HashSet<string> _removedRcmProbeIds = new(StringComparer.Ordinal);
+        private readonly HashSet<string> _removedRcmProbeIds = new();
         private Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>>? _handleAddedProbesChanges;
         private Action<string[]>? _handleRemovedProbesChanges;
 

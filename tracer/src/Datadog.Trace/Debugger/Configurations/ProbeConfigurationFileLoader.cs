@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Debugger.Configurations;
@@ -37,23 +38,26 @@ internal static class ProbeConfigurationFileLoader
 
             Log.Information("Loading probes from file: {ProbeFile}", probeFile);
 
-            string fileContent;
-            using (var reader = new StreamReader(probeFile))
-            {
-                fileContent = await reader.ReadToEndAsync().ConfigureAwait(false);
-            }
-
-            if (string.IsNullOrWhiteSpace(fileContent))
+            using var reader = new StreamReader(probeFile);
+            using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
+            if (!await jsonReader.ReadAsync().ConfigureAwait(false))
             {
                 Log.Debug("Probe file is empty: {ProbeFile}", probeFile);
                 return null;
             }
 
-            var jArray = JsonHelper.ParseJArray(fileContent);
-            var logs = new List<LogProbe>();
-            var metrics = new List<MetricProbe>();
-            var spans = new List<SpanProbe>();
-            var spanDecorations = new List<SpanDecorationProbe>();
+            var jArray = await JArray.LoadAsync(jsonReader).ConfigureAwait(false);
+            while (await jsonReader.ReadAsync().ConfigureAwait(false))
+            {
+                // Validate no trailing content after the array.
+            }
+
+            List<LogProbe>? logs = null;
+            List<MetricProbe>? metrics = null;
+            List<SpanProbe>? spans = null;
+            List<SpanDecorationProbe>? spanDecorations = null;
+            var serializer = JsonSerializer.CreateDefault();
+            var duplicateProbes = 0;
 
             foreach (var jToken in jArray)
             {
@@ -77,34 +81,46 @@ internal static class ProbeConfigurationFileLoader
                     switch (type)
                     {
                         case "LOG_PROBE":
-                            var logProbe = jObject.ToObject<LogProbe>();
+                            var logProbe = jObject.ToObject<LogProbe>(serializer);
                             if (logProbe is not null && IsValidProbe(logProbe))
                             {
-                                logs.Add(logProbe);
+                                if (!AddProbe(ref logs, logProbe))
+                                {
+                                    duplicateProbes++;
+                                }
                             }
 
                             break;
                         case "METRIC_PROBE":
-                            var metricProbe = jObject.ToObject<MetricProbe>();
+                            var metricProbe = jObject.ToObject<MetricProbe>(serializer);
                             if (metricProbe is not null && IsValidProbe(metricProbe))
                             {
-                                metrics.Add(metricProbe);
+                                if (!AddProbe(ref metrics, metricProbe))
+                                {
+                                    duplicateProbes++;
+                                }
                             }
 
                             break;
                         case "SPAN_PROBE":
-                            var spanProbe = jObject.ToObject<SpanProbe>();
+                            var spanProbe = jObject.ToObject<SpanProbe>(serializer);
                             if (spanProbe is not null && IsValidProbe(spanProbe))
                             {
-                                spans.Add(spanProbe);
+                                if (!AddProbe(ref spans, spanProbe))
+                                {
+                                    duplicateProbes++;
+                                }
                             }
 
                             break;
                         case "SPAN_DECORATION_PROBE":
-                            var spanDecorationProbe = jObject.ToObject<SpanDecorationProbe>();
+                            var spanDecorationProbe = jObject.ToObject<SpanDecorationProbe>(serializer);
                             if (spanDecorationProbe is not null && IsValidProbe(spanDecorationProbe))
                             {
-                                spanDecorations.Add(spanDecorationProbe);
+                                if (!AddProbe(ref spanDecorations, spanDecorationProbe))
+                                {
+                                    duplicateProbes++;
+                                }
                             }
 
                             break;
@@ -119,32 +135,26 @@ internal static class ProbeConfigurationFileLoader
                 }
             }
 
-            var totalProbes = logs.Count + metrics.Count + spans.Count + spanDecorations.Count;
-            if (totalProbes == 0)
+            var uniqueCount = (logs?.Count ?? 0) + (metrics?.Count ?? 0) + (spans?.Count ?? 0) + (spanDecorations?.Count ?? 0);
+            if (uniqueCount == 0)
             {
                 Log.Warning("No valid probes found in file: {ProbeFile}", probeFile);
                 return null;
             }
 
-            var uniqueLogs = DeduplicateProbes(logs);
-            var uniqueMetrics = DeduplicateProbes(metrics);
-            var uniqueSpans = DeduplicateProbes(spans);
-            var uniqueSpanDecorations = DeduplicateProbes(spanDecorations);
-
-            var uniqueCount = uniqueLogs.Length + uniqueMetrics.Length + uniqueSpans.Length + uniqueSpanDecorations.Length;
-            if (uniqueCount < totalProbes)
+            if (duplicateProbes != 0)
             {
-                Log.Debug("Removed {Count} duplicate probe(s) from file", property: totalProbes - uniqueCount);
+                Log.Debug("Removed {Count} duplicate probe(s) from file", property: duplicateProbes);
             }
 
             Log.Information("Successfully loaded {Count} probes from file.", property: uniqueCount);
 
             return new ProbeConfiguration
             {
-                LogProbes = uniqueLogs,
-                MetricProbes = uniqueMetrics,
-                SpanProbes = uniqueSpans,
-                SpanDecorationProbes = uniqueSpanDecorations
+                LogProbes = ToArrayOrEmpty(logs),
+                MetricProbes = ToArrayOrEmpty(metrics),
+                SpanProbes = ToArrayOrEmpty(spans),
+                SpanDecorationProbes = ToArrayOrEmpty(spanDecorations)
             };
         }
         catch (Exception ex)
@@ -165,27 +175,27 @@ internal static class ProbeConfigurationFileLoader
         return true;
     }
 
-    private static T[] DeduplicateProbes<T>(List<T> probes)
+    private static bool AddProbe<T>(ref List<T>? probes, T probe)
         where T : ProbeDefinition
     {
-        if (probes.Count == 0)
+        if (probes is not null)
         {
-            return [];
-        }
-
-        var uniqueProbes = new List<T>(probes.Count);
-        var seenIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var probe in probes)
-        {
-            if (!seenIds.Add(probe.Id))
+            for (var i = 0; i < probes.Count; i++)
             {
-                Log.Warning("Duplicate probe ID '{Id}' found in file, using first occurrence", probe.Id);
-                continue;
+                if (probes[i].Id == probe.Id)
+                {
+                    Log.Warning("Duplicate probe ID '{Id}' found in file, using first occurrence", probe.Id);
+                    return false;
+                }
             }
-
-            uniqueProbes.Add(probe);
         }
 
-        return uniqueProbes.ToArray();
+        (probes ??= new()).Add(probe);
+        return true;
+    }
+
+    private static T[] ToArrayOrEmpty<T>(List<T>? probes)
+    {
+        return probes?.ToArray() ?? [];
     }
 }

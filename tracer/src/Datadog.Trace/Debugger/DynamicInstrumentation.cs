@@ -604,7 +604,7 @@ namespace Datadog.Trace.Debugger
                 var updateResults = _configurationUpdater.AcceptAdded(rcmUpdate);
                 foreach (var updateResult in updateResults)
                 {
-                    var config = configs.FirstOrDefault(c => ProbeConfigurationUtils.GetProbeIdFromPath(c.Path) == updateResult.Id);
+                    var config = configs.FirstOrDefault(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
                     if (config != null)
                     {
                         result.Add(

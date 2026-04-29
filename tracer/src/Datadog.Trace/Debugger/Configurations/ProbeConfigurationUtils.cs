@@ -36,46 +36,36 @@ internal static class ProbeConfigurationUtils
         return new ProbeConfiguration
         {
             ServiceConfiguration = removeServiceConfiguration ? null : configuration.ServiceConfiguration,
-            LogProbes = configuration.LogProbes.Where(probe => !removedProbeIds.Contains(probe.Id)).ToArray(),
-            MetricProbes = configuration.MetricProbes.Where(probe => !removedProbeIds.Contains(probe.Id)).ToArray(),
-            SpanProbes = configuration.SpanProbes.Where(probe => !removedProbeIds.Contains(probe.Id)).ToArray(),
-            SpanDecorationProbes = configuration.SpanDecorationProbes.Where(probe => !removedProbeIds.Contains(probe.Id)).ToArray()
+            LogProbes = RemoveProbes(configuration.LogProbes, removedProbeIds),
+            MetricProbes = RemoveProbes(configuration.MetricProbes, removedProbeIds),
+            SpanProbes = RemoveProbes(configuration.SpanProbes, removedProbeIds),
+            SpanDecorationProbes = RemoveProbes(configuration.SpanDecorationProbes, removedProbeIds)
         };
     }
 
     public static string GetProbeIdFromPath(RemoteConfigurationPath path)
     {
         var id = path.Id;
-        if (id.StartsWith(DefinitionPaths.LogProbe, StringComparison.Ordinal))
+        var prefixLength = GetProbeIdPrefixLength(id);
+        return prefixLength == 0 ? id : id.Substring(prefixLength);
+    }
+
+    public static bool IsProbeId(RemoteConfigurationPath path, string probeId)
+    {
+        var id = path.Id;
+        var prefixLength = GetProbeIdPrefixLength(id);
+        if (prefixLength == 0)
         {
-            return id.Substring(DefinitionPaths.LogProbe.Length);
+            return id == probeId;
         }
 
-        if (id.StartsWith(DefinitionPaths.MetricProbe, StringComparison.Ordinal))
-        {
-            return id.Substring(DefinitionPaths.MetricProbe.Length);
-        }
-
-        if (id.StartsWith(DefinitionPaths.SpanProbe, StringComparison.Ordinal))
-        {
-            return id.Substring(DefinitionPaths.SpanProbe.Length);
-        }
-
-        if (id.StartsWith(DefinitionPaths.SpanDecorationProbe, StringComparison.Ordinal))
-        {
-            return id.Substring(DefinitionPaths.SpanDecorationProbe.Length);
-        }
-
-        return id;
+        return id.Length == prefixLength + probeId.Length
+            && string.Compare(id, prefixLength, probeId, 0, probeId.Length, StringComparison.Ordinal) == 0;
     }
 
     public static bool IsProbePath(RemoteConfigurationPath path)
     {
-        var id = path.Id;
-        return id.StartsWith(DefinitionPaths.LogProbe, StringComparison.Ordinal)
-            || id.StartsWith(DefinitionPaths.MetricProbe, StringComparison.Ordinal)
-            || id.StartsWith(DefinitionPaths.SpanProbe, StringComparison.Ordinal)
-            || id.StartsWith(DefinitionPaths.SpanDecorationProbe, StringComparison.Ordinal);
+        return GetProbeIdPrefixLength(path.Id) != 0;
     }
 
     public static IEnumerable<string> GetProbeIds(ProbeConfiguration configuration)
@@ -114,7 +104,7 @@ internal static class ProbeConfigurationUtils
             return lowerPriority;
         }
 
-        var mergedProbes = new Dictionary<string, T>(StringComparer.Ordinal);
+        var mergedProbes = new Dictionary<string, T>();
         foreach (var probe in lowerPriority)
         {
             mergedProbes[probe.Id] = probe;
@@ -126,5 +116,71 @@ internal static class ProbeConfigurationUtils
         }
 
         return mergedProbes.Values.ToArray();
+    }
+
+    private static T[] RemoveProbes<T>(T[] probes, ICollection<string> removedProbeIds)
+        where T : ProbeDefinition
+    {
+        if (removedProbeIds.Count == 0 || probes.Length == 0)
+        {
+            return probes;
+        }
+
+        var removedCount = 0;
+        for (var i = 0; i < probes.Length; i++)
+        {
+            if (removedProbeIds.Contains(probes[i].Id))
+            {
+                removedCount++;
+            }
+        }
+
+        if (removedCount == 0)
+        {
+            return probes;
+        }
+
+        if (removedCount == probes.Length)
+        {
+            return [];
+        }
+
+        var filteredProbes = new T[probes.Length - removedCount];
+        var index = 0;
+        for (var i = 0; i < probes.Length; i++)
+        {
+            var probe = probes[i];
+            if (!removedProbeIds.Contains(probe.Id))
+            {
+                filteredProbes[index++] = probe;
+            }
+        }
+
+        return filteredProbes;
+    }
+
+    private static int GetProbeIdPrefixLength(string id)
+    {
+        if (id.StartsWith(DefinitionPaths.LogProbe, StringComparison.Ordinal))
+        {
+            return DefinitionPaths.LogProbe.Length;
+        }
+
+        if (id.StartsWith(DefinitionPaths.MetricProbe, StringComparison.Ordinal))
+        {
+            return DefinitionPaths.MetricProbe.Length;
+        }
+
+        if (id.StartsWith(DefinitionPaths.SpanProbe, StringComparison.Ordinal))
+        {
+            return DefinitionPaths.SpanProbe.Length;
+        }
+
+        if (id.StartsWith(DefinitionPaths.SpanDecorationProbe, StringComparison.Ordinal))
+        {
+            return DefinitionPaths.SpanDecorationProbe.Length;
+        }
+
+        return 0;
     }
 }
