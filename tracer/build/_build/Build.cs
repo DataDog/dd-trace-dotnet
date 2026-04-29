@@ -297,8 +297,7 @@ partial class Build : NukeBuild
         .Unlisted()
         .Description("Builds the integration tests")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileWindowsIntegrationTests)
-        .DependsOn(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(CompileIntegrationTests)
         .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(CopyNativeFilesForTests)
         .DependsOn(BuildRunnerTool)
@@ -310,14 +309,14 @@ partial class Build : NukeBuild
         .Description("Builds the ASP.NET integration tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(PublishIisSamples)
-        .DependsOn(CompileWindowsIntegrationTests);
+        .DependsOn(CompileIntegrationTests);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileWindowsIntegrationTests);
+        .DependsOn(CompileIntegrationTests);
 
     Target BuildAndRunIntegrationTests => _ => _
         .Description("Builds and runs the integration tests")
@@ -340,7 +339,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileAzureFunctionsSamplesWindows)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileWindowsIntegrationTests)
+        .DependsOn(CompileIntegrationTests)
         .DependsOn(RunWindowsAzureFunctionsTests);
 
     Target BuildAndRunToolArtifactTests => _ => _

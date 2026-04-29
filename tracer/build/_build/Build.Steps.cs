@@ -1535,30 +1535,37 @@ partial class Build
         .DependsOn(RunProfilerNativeUnitTestsLinux)
         .After(CompileProfilerNativeTests);
 
-    Target CompileWindowsIntegrationTests => _ => _
+    Target CompileIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
         .After(PublishIisSamples)
         .After(BuildRunnerTool)
-        .OnlyWhenStatic(() => IsWin)
         .Requires(() => Framework)
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
             // Compile the dependent samples.
-            if (!Framework.ToString().StartsWith("net4"))
+            if (IsWin && !Framework.ToString().StartsWith("net4"))
             {
                 DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
             }
 
             var projects = TracerDirectory
-                    .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
-                    .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
-                ;
+                    .GlobFiles("test/*.IntegrationTests/*.csproj")
+                    .Where(path => !path.Contains(Projects.DebuggerIntegrationTests))
+                    .Where(project => Solution.GetProject(project).TryGetTargetFrameworks()?.Contains(Framework) ?? true);
 
-            DotnetBuild(projects, framework: Framework);
+            if (!IsWin)
+            {
+                projects = projects.Where(path => !path.Contains(Projects.FleetInstallerTests))
+                                   .Where(path => !path.Contains(Projects.DdDotnetIntegrationTests));
+            }
+
+            DotnetBuild(projects, framework: Framework, noRestore: IsWin);
+
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
     Target CompileSamples => _ => _
@@ -1803,11 +1810,10 @@ partial class Build
     Target RunIntegrationTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileWindowsIntegrationTests)
+        .After(CompileIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
         .After(BuildIntegrationTests)
-        .After(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
@@ -1943,7 +1949,7 @@ partial class Build
     Target RunWindowsAzureFunctionsTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileWindowsIntegrationTests)
+        .After(CompileIntegrationTests)
         .After(CompileAzureFunctionsSamplesWindows)
         .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
@@ -1985,7 +1991,7 @@ partial class Build
     Target RunWindowsRegressionTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileWindowsIntegrationTests)
+        .After(CompileIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
         .After(BuildNativeLoader)
@@ -2027,7 +2033,7 @@ partial class Build
 
     Target RunWindowsTracerIisIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileWindowsIntegrationTests)
+        .After(CompileIntegrationTests)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -2070,7 +2076,7 @@ partial class Build
 
     Target RunWindowsMsiIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileWindowsIntegrationTests)
+        .After(CompileIntegrationTests)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -2114,30 +2120,6 @@ partial class Build
             ProjectModelTasks.Initialize();
         });
 
-    Target CompileLinuxOrOsxIntegrationTests => _ => _
-        .Unlisted()
-        .After(CompileManagedSrc)
-        .After(CompileManagedTestHelpers)
-        .After(BuildRunnerTool)
-        .OnlyWhenStatic(() => IsLinux || IsOsx)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            // Build the actual integration test projects for Any CPU
-            var integrationTestProjects =
-                TracerDirectory
-                   .GlobFiles("test/*.IntegrationTests/*.csproj")
-                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                   .Where(path => !((string)path).Contains(Projects.FleetInstallerTests))
-                   .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
-
-            DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
-
-            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
-            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
-        });
-
     Target CompileLinuxDdDotnetIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
@@ -2150,7 +2132,7 @@ partial class Build
         });
 
     Target RunLinuxDdDotnetIntegrationTests => _ => _
-        .After(CompileLinuxOrOsxIntegrationTests)
+        .After(CompileIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Description("Runs the linux dd-dotnet integration tests")
         .OnlyWhenStatic(() => IsLinux)
@@ -2694,6 +2676,11 @@ partial class Build
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxOrOsxProfilerDirFudge(string project)
     {
+        if (!IsLinux && !IsOsx)
+        {
+            return;
+        }
+
         // Not sure if/why this is necessary, and we can't just point to the correct output location
         var src = MonitoringHomeDirectory;
         var testProject = Solution.GetProject(project).Directory;
