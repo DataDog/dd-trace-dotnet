@@ -87,6 +87,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     static const std::string SentinelFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Sentinel-Frame |fg: |sg:(?)");
 
     static bool previousFrameStatus = false;
+    static std::uint8_t sentinelFrameCount = 0;
 
     // check for fake IPs used in tests
     if (instructionPointer <= MaxFakeIP)
@@ -99,7 +100,12 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         }
         else if (instructionPointer == FrameStore::SentinelFrameIP)
         {
-            previousFrameStatus = true;
+            sentinelFrameCount++;
+            if (sentinelFrameCount > 1)
+            {
+                previousFrameStatus = false;
+                sentinelFrameCount = 0;
+            }
             return { previousFrameStatus, {FakeModuleName, SentinelFrame, "", 0} };
         }
         else

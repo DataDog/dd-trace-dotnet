@@ -274,9 +274,7 @@ private :
     std::unique_ptr<IUnwinder> _pUnwinder = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
     std::unique_ptr<RingBuffer> _pCpuProfilerRb = nullptr;
-#ifdef ARM64
     std::unique_ptr<UnwindingRecorderFactory> _pUnwindingRecorderFactory = nullptr;
-#endif // ARM64
 #endif // LINUX
 
     std::vector<std::unique_ptr<IService>> _services;
