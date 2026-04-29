@@ -54,8 +54,8 @@ private:
 
     std::atomic<Counts*> _countsRef;
 
-    volatile double _probability = 1;
-    volatile int64_t _samplesBudget;
+    std::atomic<double> _probability{1.0};
+    std::atomic<int64_t> _samplesBudget{0};
 
     double _totalCountRunningAverage;
     double _avgSamples;
