@@ -665,7 +665,7 @@ supportedConfigurations:
       Configuration key for enabling or disabling Dynamic Instrumentation.
       Default value is false (disabled).
   DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE:
-  - implementation: A
+  - implementation: B
     type: string
     default: null
     product: Debugger
