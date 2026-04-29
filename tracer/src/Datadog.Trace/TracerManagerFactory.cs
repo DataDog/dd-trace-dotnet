@@ -10,7 +10,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -35,14 +34,12 @@ namespace Datadog.Trace
         /// </summary>
         internal TracerManager CreateTracerManager(TracerSettings settings, TracerManager previous)
         {
-            // TODO: If relevant settings have not changed, continue using existing statsd/agent writer etc
-            // If reusing statsd, need to propagate the new value of DD_TAGS from dynamic config
+            // TODO: If relevant settings have not changed, continue using existing agent writer etc
             var tracer = CreateTracerManager(
                 settings,
                 agentWriter: null,
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
-                statsd: null, // For now, let's continue to always create a new StatsD instance
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
@@ -55,14 +52,13 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService, ServiceRemappingHash)"/>
+        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, ITelemetryController, IDiscoveryService, ServiceRemappingHash)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             TracerSettings settings,
             IAgentWriter agentWriter,
             ITraceSampler sampler,
             IScopeManager scopeManager,
-            IStatsdManager statsd,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
@@ -82,12 +78,9 @@ namespace Datadog.Trace
             discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
             telemetry ??= CreateTelemetryController();
 
-            statsd ??= new StatsdManager(settings);
-
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(
                 settings,
-                statsd,
                 rates => sampler.SetDefaultSampleRates(rates),
                 discoveryService is NullDiscoveryService ? null : discoveryService.SetCurrentConfigStateHash,
                 discoveryService);
@@ -108,7 +101,6 @@ namespace Datadog.Trace
                 settings,
                 agentWriter,
                 scopeManager,
-                statsd,
                 logSubmissionManager,
                 telemetry,
                 discoveryService,
@@ -133,7 +125,6 @@ namespace Datadog.Trace
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IStatsdManager statsd,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
@@ -145,7 +136,7 @@ namespace Datadog.Trace
             ISpanEventsManager spanEventsManager,
             ServiceRemappingHash serviceRemappingHash)
         {
-            return new TracerManager(settings, agentWriter, scopeManager, statsd, logSubmissionManager, telemetry, discoveryService, gitMetadataTagsProvider, traceSampler, spanSampler, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
+            return new TracerManager(settings, agentWriter, scopeManager, logSubmissionManager, telemetry, discoveryService, gitMetadataTagsProvider, traceSampler, spanSampler, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
         }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
@@ -170,11 +161,11 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService)
+        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService)
         {
-            IApi api = new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
+            IApi api = new ManagedApi(settings.Manager, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, isOtlp: false);
-            return new AgentWriter(api, statsAggregator, statsd, settings);
+            return new AgentWriter(api, statsAggregator, settings);
         }
 
         internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings, ServiceRemappingHash serviceRemappingHash)

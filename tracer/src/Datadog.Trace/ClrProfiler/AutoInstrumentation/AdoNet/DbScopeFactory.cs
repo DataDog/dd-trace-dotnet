@@ -13,7 +13,6 @@ using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -23,9 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     internal static class DbScopeFactory
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
-        private static bool _dbCommandCachingLogged;
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, string? baseHash, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
@@ -44,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
+                    parent.ResourceName == commandText)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -76,59 +74,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return scope;
             }
 
-            try
-            {
-                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
-                {
-                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
-                                          // if we appended the comment, we need to look for a potential DBM comment in the whole string.
-                                          (DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText) && commandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
-                    if (alreadyInjected)
-                    {
-                        // The command text is already injected, so they're probably caching the SqlCommand
-                        // that's not a problem if they're using 'service' mode, but it _is_ a problem for 'full' mode
-                        // There's not a lot we can do about it (we don't want to start parsing commandText), so just
-                        // report it for now
-                        if (!Volatile.Read(ref _dbCommandCachingLogged)
-                            && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
-                        {
-                            _dbCommandCachingLogged = true;
-                            var spanContext = scope.Span.Context;
-                            Log.Warning(
-                                "The {CommandType} IDbCommand instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
-                                command.CommandType,
-                                spanContext.RawSpanId,
-                                spanContext.RawTraceId);
-                        }
-                    }
-                    else
-                    {
-                        if (baseHash != null)
-                        {
-                            // note: it's ok that we don't write the basehash in the span if "alreadyInjected" because we only need one span to get the tag values
-                            tags.BaseHash = baseHash;
-                        }
-
-                        // PropagateDataViaComment (service) - this injects various trace information as a comment in the query
-                        // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
-                        // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
-
-                        if (traceParentInjectedInComment || traceParentInjectedInContext)
-                        {
-                            tags.DbmTraceInjected = "true";
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error propagating span data for DBM");
-            }
-
-            // we have to start the span before doing the DBM propagation work (to have the span ID)
-            // but ultimately, we don't want to measure the time spent instrumenting.
             scope.Span.ResetStartTime();
 
             return scope;
@@ -265,9 +210,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
-                var baseHash = tracer.Settings.PropagateProcessTags && tracer.Settings.DbmInjectSqlBasehash
-                                   ? tracer.TracerManager.ServiceRemappingHash?.Base64Value
-                                   : null; // null if disabled
 
                 if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {
@@ -283,7 +225,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         operationName: OperationName,
                         serviceName: cachedServiceName,
                         serviceNameSource: cachedServiceNameSource,
-                        baseHash: baseHash,
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
@@ -302,7 +243,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         operationName: operationName,
                         serviceName: resolvedServiceName,
                         serviceNameSource: resolvedServiceNameSource,
-                        baseHash: baseHash,
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 

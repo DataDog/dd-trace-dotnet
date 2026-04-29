@@ -68,16 +68,11 @@ src/Datadog.Trace/Configuration/DeprecationMessages.cs
 src/Datadog.Trace/Configuration/IDynamicConfigurationManager.cs
 src/Datadog.Trace/Configuration/IntegrationRegistry.cs
 src/Datadog.Trace/Configuration/TracerSettingsConstants.cs
-src/Datadog.Trace/DatabaseMonitoring/MultiPartIdentifier.cs
-src/Datadog.Trace/DatabaseMonitoring/VendoredSqlHelpers.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/EndpointFeatureProxy.cs
 src/Datadog.Trace/DiagnosticListeners/IDiagnosticManager.cs
 src/Datadog.Trace/DiagnosticListeners/RouteEndpoint.cs
-src/Datadog.Trace/DogStatsd/NoOpStatsd.cs
-src/Datadog.Trace/DogStatsd/StatsdExtensions.cs
-src/Datadog.Trace/DogStatsd/TracerMetricNames.cs
 src/Datadog.Trace/ExtensionMethods/DictionaryExtensions.cs
 src/Datadog.Trace/ExtensionMethods/DoubleExtensions.cs
 src/Datadog.Trace/ExtensionMethods/MessagePackBinaryExtensions.cs

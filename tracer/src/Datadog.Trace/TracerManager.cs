@@ -15,7 +15,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -57,7 +56,6 @@ namespace Datadog.Trace
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            IStatsdManager statsd,
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
@@ -73,7 +71,6 @@ namespace Datadog.Trace
             Settings = settings;
             AgentWriter = agentWriter;
             ScopeManager = scopeManager;
-            Statsd = statsd;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
@@ -147,8 +144,6 @@ namespace Datadog.Trace
 
         /// Gets the global <see cref="QueryStringManager"/> instance.
         public QueryStringManager QueryStringManager { get; }
-
-        public IStatsdManager Statsd { get; }
 
         public ITraceProcessor[] TraceProcessors { get; }
 
@@ -243,16 +238,6 @@ namespace Datadog.Trace
                     await oldManager.AgentWriter.FlushAndCloseAsync().ConfigureAwait(false);
                 }
 
-                var statsdReplaced = false;
-                if (oldManager.Statsd != newManager.Statsd)
-                {
-                    statsdReplaced = true;
-                    if (oldManager.Statsd is not null)
-                    {
-                        await oldManager.Statsd.DisposeAsync().ConfigureAwait(false);
-                    }
-                }
-
                 var discoveryReplaced = false;
                 if (oldManager.DiscoveryService != newManager.DiscoveryService && oldManager.DiscoveryService is not null)
                 {
@@ -276,8 +261,8 @@ namespace Datadog.Trace
 
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, Discovery: {DiscoveryReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, discoveryReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, Discovery: {DiscoveryReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
+                    new object[] { agentWriterReplaced, discoveryReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -653,12 +638,6 @@ namespace Datadog.Trace
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
 
-                    if (instance.Statsd is { } statsd)
-                    {
-                        Log.Debug("Disposing StatsdManager");
-                        await statsd.DisposeAsync().ConfigureAwait(false);
-                    }
-
                     Log.Debug("Finished waiting for disposals.");
                 }
             }
@@ -670,14 +649,6 @@ namespace Datadog.Trace
 
         private static void HeartbeatCallback(object state)
         {
-            // use the count of Tracer instances as the heartbeat value
-            // to estimate the number of "live" Tracers than can potentially
-            // send traces to the Agent
-            if (_instance?.PerTraceSettings.Settings.TracerMetricsEnabled == true)
-            {
-                using var lease = _instance.Statsd.TryGetClientLease();
-                lease.Client?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
