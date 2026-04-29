@@ -5,6 +5,9 @@
 
 #include "gtest/gtest.h"
 
+#include <thread>
+#include <vector>
+
 using namespace std::chrono_literals;
 
 constexpr std::chrono::seconds WindowDuration = 1s;
@@ -119,4 +122,53 @@ TEST(AdaptiveSamplerTest, TestStop)
     sampler.Stop();
 
     ASSERT_FALSE(callbackCalled);
+}
+
+// Regression test: _probability and _samplesBudget were declared `volatile`
+// instead of `std::atomic<>`, making concurrent Sample() / RollWindow() calls
+// a C++ data race (formal UB; TSAN-detectable; torn reads on ARM64).
+//
+// This test runs Sample() from many threads simultaneously while RollWindow()
+// fires repeatedly on a separate thread.  With the volatile code this reliably
+// triggers a TSAN report.  After fixing to std::atomic<> the test is clean.
+TEST(AdaptiveSamplerTest, ConcurrentSampleAndRollWindow_NoDataRace)
+{
+    // Use a manual-roll sampler (windowDuration=0) so we control RollWindow timing.
+    AdaptiveSampler sampler(0ms, 100, 3, 3, nullptr);
+
+    std::atomic<bool> stop{false};
+
+    // Writer thread: continuously rolls the window (updates _probability / _samplesBudget).
+    std::thread writer([&]() {
+        while (!stop.load(std::memory_order_relaxed))
+        {
+            sampler.RollWindow();
+        }
+    });
+
+    // Reader threads: continuously call Sample() (reads _probability / _samplesBudget).
+    const int numReaders = 4;
+    const int callsPerReader = 10000;
+    std::vector<std::thread> readers;
+    readers.reserve(numReaders);
+    for (int i = 0; i < numReaders; ++i)
+    {
+        readers.emplace_back([&]() {
+            for (int j = 0; j < callsPerReader; ++j)
+            {
+                sampler.Sample();
+            }
+        });
+    }
+
+    for (auto& t : readers)
+    {
+        t.join();
+    }
+    stop.store(true);
+    writer.join();
+
+    // The test passes if it completes without crashing or triggering TSAN.
+    // No specific count assertion: sampling is probabilistic.
+    SUCCEED();
 }

@@ -36,13 +36,13 @@ jobs:
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 GeneratePackageVersions --PackageVersionCooldownDays 2
 
-      - name: Read cooldown report
-        id: cooldown
+      - name: Read bump report
+        id: bump
         if: always()
         shell: pwsh
         run: |
           $report = ""
-          $reportPath = ".nuke/temp/cooldown_report.md"
+          $reportPath = ".nuke/temp/bump_report.md"
           if (Test-Path $reportPath) {
             $report = Get-Content $reportPath -Raw
           }
@@ -63,9 +63,9 @@ jobs:
           milestone: "${{steps.rename.outputs.milestone}}"
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
-            Updates the package versions for integration tests.
+            Updates the package versions for integration tests. See below for a summary of the changes.
 
-            ${{ steps.cooldown.outputs.report }}
+            ${{ steps.bump.outputs.report }}
 
       - name: Send Slack notification about generating failure
         if: failure()
