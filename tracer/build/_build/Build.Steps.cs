@@ -1553,13 +1553,13 @@ partial class Build
 
             var projects = TracerDirectory
                     .GlobFiles("test/*.IntegrationTests/*.csproj")
-                    .Where(path => !path.Contains(Projects.DebuggerIntegrationTests))
+                    .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
                     .Where(project => Solution.GetProject(project).TryGetTargetFrameworks()?.Contains(Framework) ?? true);
 
             if (!IsWin)
             {
-                projects = projects.Where(path => !path.Contains(Projects.FleetInstallerTests))
-                                   .Where(path => !path.Contains(Projects.DdDotnetIntegrationTests));
+                projects = projects.Where(path => !((string)path).Contains(Projects.FleetInstallerTests))
+                                   .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
             }
 
             DotnetBuild(projects, framework: Framework, noRestore: IsWin);
