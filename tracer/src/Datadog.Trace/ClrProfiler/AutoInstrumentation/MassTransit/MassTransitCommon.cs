@@ -606,6 +606,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             return entityName;
         }
-
     }
 }
