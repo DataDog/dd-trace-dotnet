@@ -383,34 +383,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Extracts the trace ID from an Activity for exception tracking.
-        /// Uses the standard pattern from the tracer: duck typing to IW3CActivity for W3C format,
-        /// fallback to IActivity.RootId for hierarchical format.
-        /// </summary>
-        internal static string? ExtractTraceIdFromActivity(object? activity)
-        {
-            if (activity is null)
-            {
-                return null;
-            }
-
-            // Use duck typing to access W3C Activity TraceId (standard pattern used across the tracer)
-            if (activity.TryDuckCast<Datadog.Trace.Activity.DuckTypes.IW3CActivity>(out var w3cActivity)
-                && w3cActivity.TraceId is { } traceId)
-            {
-                return traceId;
-            }
-
-            // Fallback to RootId for hierarchical format
-            if (activity.TryDuckCast<Datadog.Trace.Activity.DuckTypes.IActivity>(out var baseActivity))
-            {
-                return baseActivity.RootId;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Gets the message type from a MassTransit context object.
         /// Uses generic type arguments since MassTransit contexts are generic (e.g., ConsumeContext&lt;TMessage&gt;).
         /// </summary>
@@ -581,6 +553,63 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
+        /// Extracts a clean destination name from a MassTransit address URI.
+        /// For URN format destinations, keeps the full URN.
+        /// For queue/endpoint destinations, extracts just the name.
+        /// Special endpoints are normalized: "_bus_xxx" -> "bus", "_endpoint_xxx" -> "endpoint"
+        /// </summary>
+        internal static string ExtractDestinationName(string? fullAddress)
+        {
+            if (StringUtil.IsNullOrWhiteSpace(fullAddress))
+            {
+                return "unknown";
+            }
+
+            // Handle direct URN format (urn:message:Namespace:MessageType)
+            if (fullAddress!.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+            {
+                return fullAddress;
+            }
+
+            string entityName = fullAddress;
+            try
+            {
+                if (Uri.TryCreate(fullAddress, UriKind.Absolute, out var uri))
+                {
+                    var path = uri.AbsolutePath.TrimStart('/');
+                    if (!StringUtil.IsNullOrWhiteSpace(path))
+                    {
+                        if (path.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return path;
+                        }
+
+                        var lastSlash = path.LastIndexOf('/');
+                        entityName = lastSlash >= 0 && lastSlash < path.Length - 1
+                            ? path.Substring(lastSlash + 1)
+                            : path;
+                    }
+                }
+            }
+            catch
+            {
+                // Continue with fullAddress as entityName
+            }
+
+            if (entityName.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+            {
+                return entityName;
+            }
+
+            if (entityName.IndexOf("_bus_", StringComparison.Ordinal) >= 0) { return "bus"; }
+            if (entityName.IndexOf("_endpoint_", StringComparison.Ordinal) >= 0) { return "endpoint"; }
+            if (entityName.IndexOf("_signalr_", StringComparison.Ordinal) >= 0) { return "signalr"; }
+            if (entityName.StartsWith("Instance_", StringComparison.Ordinal)) { return "instance"; }
+
+            return entityName;
+        }
+
+        /// <summary>
         /// Gets the ActivityKind for MassTransit operations based on the operation name.
         /// </summary>
         internal static ActivityKind GetActivityKind(IActivity5 activity)
@@ -658,63 +687,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             return $"{cleanDestination} {operation}";
-        }
-
-        /// <summary>
-        /// Extracts a clean destination name from a MassTransit address URI.
-        /// For URN format destinations, keeps the full URN.
-        /// For queue/endpoint destinations, extracts just the name.
-        /// Special endpoints are normalized: "_bus_xxx" -> "bus", "_endpoint_xxx" -> "endpoint"
-        /// </summary>
-        internal static string ExtractDestinationName(string? fullAddress)
-        {
-            if (StringUtil.IsNullOrWhiteSpace(fullAddress))
-            {
-                return "unknown";
-            }
-
-            // Handle direct URN format (urn:message:Namespace:MessageType)
-            if (fullAddress!.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
-            {
-                return fullAddress;
-            }
-
-            string entityName = fullAddress;
-            try
-            {
-                if (Uri.TryCreate(fullAddress, UriKind.Absolute, out var uri))
-                {
-                    var path = uri.AbsolutePath.TrimStart('/');
-                    if (!StringUtil.IsNullOrWhiteSpace(path))
-                    {
-                        if (path.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return path;
-                        }
-
-                        var lastSlash = path.LastIndexOf('/');
-                        entityName = lastSlash >= 0 && lastSlash < path.Length - 1
-                            ? path.Substring(lastSlash + 1)
-                            : path;
-                    }
-                }
-            }
-            catch
-            {
-                // Continue with fullAddress as entityName
-            }
-
-            if (entityName.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
-            {
-                return entityName;
-            }
-
-            if (entityName.IndexOf("_bus_", StringComparison.Ordinal) >= 0) { return "bus"; }
-            if (entityName.IndexOf("_endpoint_", StringComparison.Ordinal) >= 0) { return "endpoint"; }
-            if (entityName.IndexOf("_signalr_", StringComparison.Ordinal) >= 0) { return "signalr"; }
-            if (entityName.StartsWith("Instance_", StringComparison.Ordinal)) { return "instance"; }
-
-            return entityName;
         }
 
         internal static void EnhanceActivityMetadata(IActivity5 activity)
