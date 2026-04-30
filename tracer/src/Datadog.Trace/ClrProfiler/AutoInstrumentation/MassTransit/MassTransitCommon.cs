@@ -651,7 +651,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 };
             }
 
-            // Fallback to operation name analysis (case-insensitive using ToLowerInvariant for .NET Framework compatibility)
+            // Fallback to operation name analysis (case-insensitive using ToLowerInvariant for .NET Framework compatibility).
+            // Broad substring match here is intentional: MassTransit's actual ActivitySource names are well-defined
+            // (e.g. "MassTransit.Transport.Send", "MassTransit.Consumer.Consume"), so this rarely fires, but a forward-
+            // compatible substring check absorbs any new operation name MT may introduce without needing a code change.
             if (operationName is not null)
             {
                 var lowerOperationName = operationName.ToLowerInvariant();

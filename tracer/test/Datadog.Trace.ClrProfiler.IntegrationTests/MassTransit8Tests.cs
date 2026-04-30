@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -173,7 +172,6 @@ public class MassTransit8Tests : TracingIntegrationTest
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         SetEnvironmentVariable("DD_SERVICE", "Samples.MassTransit8");
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
     }
 
     private async Task RunTransportTest(
@@ -213,31 +211,6 @@ public class MassTransit8Tests : TracingIntegrationTest
                 .UseFileName(fileName);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
-        }
-
-        PrintMassTransitLogs("/tmp/dd-logs");
-    }
-
-    private void PrintMassTransitLogs(string logDir)
-    {
-        Output.WriteLine($"Log directory: {logDir}");
-        if (!Directory.Exists(logDir))
-        {
-            Output.WriteLine("Log directory does not exist");
-            return;
-        }
-
-        foreach (var logFile in Directory.GetFiles(logDir, "*.log"))
-        {
-            Output.WriteLine($"=== {Path.GetFileName(logFile)} ===");
-            var content = File.ReadAllText(logFile);
-            foreach (var line in content.Split('\n'))
-            {
-                if (line.Contains("MassTransit") || line.Contains("Diagnostic"))
-                {
-                    Output.WriteLine(line);
-                }
-            }
         }
     }
 }
