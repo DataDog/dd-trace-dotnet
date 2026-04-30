@@ -7,12 +7,12 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
-
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
@@ -374,15 +374,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             // Class-level lookup wins over interface lookup so explicit-interface implementations
             // resolve to the concrete declared property when one exists.
-            var property = key.Type.GetProperty(key.Name);
+            var property = key.OwnerType.GetProperty(key.PropertyName);
             if (property != null)
             {
                 return property;
             }
 
-            foreach (var iface in key.Type.GetInterfaces())
+            foreach (var iface in key.OwnerType.GetInterfaces())
             {
-                property = iface.GetProperty(key.Name);
+                property = iface.GetProperty(key.PropertyName);
                 if (property != null)
                 {
                     return property;
@@ -451,7 +451,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var internalHeaders = headersObj?.DuckCast<DictionarySendHeadersInnerCopy>().Headers;
                 if (internalHeaders != null)
                 {
-                    var adapter = new Datadog.Trace.Headers.CarrierWithDelegate<System.Collections.Generic.IDictionary<string, object>>(
+                    var adapter = new CarrierWithDelegate<IDictionary<string, object>>(
                         internalHeaders,
                         setter: (d, k, v) => d[k] = v);
                     tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, adapter);
@@ -621,17 +621,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         private readonly struct PropertyCacheKey : IEquatable<PropertyCacheKey>
         {
-            public PropertyCacheKey(Type type, string name)
+            public PropertyCacheKey(Type ownerType, string propertyName)
             {
-                Type = type;
-                Name = name;
+                OwnerType = ownerType;
+                PropertyName = propertyName;
             }
 
-            public Type Type { get; }
+            public Type OwnerType { get; }
 
-            public string Name { get; }
+            public string PropertyName { get; }
 
-            public bool Equals(PropertyCacheKey other) => Type == other.Type && Name == other.Name;
+            public bool Equals(PropertyCacheKey other) => OwnerType == other.OwnerType && PropertyName == other.PropertyName;
 
             public override bool Equals(object? obj) => obj is PropertyCacheKey other && Equals(other);
 
@@ -639,7 +639,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 unchecked
                 {
-                    return (Type.GetHashCode() * 397) ^ Name.GetHashCode();
+                    return (OwnerType.GetHashCode() * 397) ^ PropertyName.GetHashCode();
                 }
             }
         }

@@ -17,8 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     /// <summary>
     /// Adapter for INJECTING (writing) trace context headers into outgoing MassTransit messages (producer side).
     /// Scenario: When a producer sends a message, inject distributed tracing headers to propagate the trace.
-    /// Uses reflection to invoke SendHeaders.Set() methods because MassTransit uses explicit interface implementation.
-    /// Duck typing cannot be used here - see WHY_DUCK_TYPING_FAILED.md for details.
+    /// Uses reflection rather than duck typing: MassTransit's DictionarySendHeaders implements SendHeaders.Set
+    /// as an explicit interface method, which the duck-typing public-member binder cannot see.
     /// Used by: MassTransitCommon.InjectTraceContext() for distributed tracing propagation.
     /// </summary>
     internal readonly struct ContextPropagationInjectAdapter : IHeadersCollection

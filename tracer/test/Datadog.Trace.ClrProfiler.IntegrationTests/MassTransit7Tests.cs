@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -162,31 +161,6 @@ public class MassTransit7Tests : TracingIntegrationTest
                 .UseFileName(nameof(MassTransit7Tests) + snapshotSuffix);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
-        }
-
-        PrintMassTransitLogs("/tmp/dd-logs");
-    }
-
-    private void PrintMassTransitLogs(string logDir)
-    {
-        Output.WriteLine($"Log directory: {logDir}");
-        if (!Directory.Exists(logDir))
-        {
-            Output.WriteLine("Log directory does not exist");
-            return;
-        }
-
-        foreach (var logFile in Directory.GetFiles(logDir, "*.log"))
-        {
-            Output.WriteLine($"=== {Path.GetFileName(logFile)} ===");
-            var content = File.ReadAllText(logFile);
-            foreach (var line in content.Split('\n'))
-            {
-                if (line.Contains("MassTransit") || line.Contains("Diagnostic"))
-                {
-                    Output.WriteLine(line);
-                }
-            }
         }
     }
 }
