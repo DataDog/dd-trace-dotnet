@@ -58,10 +58,10 @@
 #ifdef LINUX
 #ifdef ARM64
 #include "HybridUnwinder.h"
-#include "UnwindingRecorderFactory.h"
 #else
 #include "Backtrace2Unwinder.h"
 #endif
+#include "UnwindingRecorderFactory.h"
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
