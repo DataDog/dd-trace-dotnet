@@ -161,7 +161,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
-                "MassTransitDiagnosticObserver.OnProduceStart: Destination={Destination}, MessageType={MessageType}",
+                "MassTransitDiagnosticObserver.OnSendStart: Destination={Destination}, MessageType={MessageType}",
                 destinationAddress,
                 messageType);
 
@@ -184,7 +184,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 Log.Debug(
-                    "MassTransitDiagnosticObserver.OnProduceStart: Created span TraceId={TraceId}, SpanId={SpanId}",
+                    "MassTransitDiagnosticObserver.OnSendStart: Created span TraceId={TraceId}, SpanId={SpanId}",
                     scope.Span.TraceId,
                     scope.Span.SpanId);
             }
@@ -205,7 +205,10 @@ namespace Datadog.Trace.DiagnosticListeners
             // Duck cast arg to IReceiveContext — BaseReceiveContext.TransportHeaders is public and
             // returns Headers (JsonTransportHeaders). IReceiveContext.TransportHeaders is duck typed
             // to IHeaders which exposes GetAll() returning KeyValuePair<string, object> items.
-            var receiveCtx = arg.DuckCast<IReceiveContext>();
+            // Use TryDuckCast: a shape divergence in MassTransit shouldn't blow up the receive event
+            // — we still create a receive span (without inputAddress) and fall back to reflection
+            // for header extraction below.
+            arg.TryDuckCast<IReceiveContext>(out var receiveCtx);
             var inputAddress = receiveCtx?.InputAddress?.ToString();
             var transportHeaders = receiveCtx?.TransportHeaders;
 
@@ -302,7 +305,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var activeScope = Tracer.Instance.ActiveScope;
             if (activeScope?.Span != null &&
                 activeScope.Span.OperationName == MassTransitConstants.ReceiveOperationName &&
-                activeScope.Span.GetTag("component") == MassTransitConstants.ComponentTagName)
+                activeScope.Span.GetTag(Tags.InstrumentationName) == MassTransitConstants.ComponentTagName)
             {
                 parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
 
@@ -336,12 +339,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // Guard: verify this is a MassTransit span before closing, to avoid silently closing
             // an unrelated span if MT event ordering is unexpected.
-            if (scope.Span.GetTag("component") != MassTransitConstants.ComponentTagName)
+            if (scope.Span.GetTag(Tags.InstrumentationName) != MassTransitConstants.ComponentTagName)
             {
                 Log.Warning(
                     "MassTransitDiagnosticObserver.OnStop: Active scope is not a MassTransit span " +
                     "(component={Component}, operation={Operation}) — skipping close for {OperationType}",
-                    scope.Span.GetTag("component"),
+                    scope.Span.GetTag(Tags.InstrumentationName),
                     scope.Span.OperationName,
                     operationType);
                 return;

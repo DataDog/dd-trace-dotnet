@@ -35,12 +35,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
         /// <summary>
         /// OnMethodBegin callback.
         /// </summary>
+        /// <remarks>
+        /// The signature here mirrors <c>BaseReceiveContext.NotifyFaulted(ConsumeContext&lt;T&gt;, TimeSpan, string, Exception)</c>
+        /// because CallTarget binds by exact parameter shape. Only <paramref name="exception"/> is read;
+        /// <paramref name="context"/>, <paramref name="duration"/>, and <paramref name="consumerType"/> are
+        /// retained solely to match the instrumented signature.
+        /// </remarks>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TContext">Type of the ConsumeContext</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="context">ConsumeContext instance</param>
-        /// <param name="duration">Duration of the operation</param>
-        /// <param name="consumerType">Consumer type name</param>
+        /// <param name="context">ConsumeContext instance (unused; required by signature).</param>
+        /// <param name="duration">Duration of the operation (unused; required by signature).</param>
+        /// <param name="consumerType">Consumer type name (unused; required by signature).</param>
         /// <param name="exception">The exception that occurred</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context, TimeSpan duration, string consumerType, Exception exception)

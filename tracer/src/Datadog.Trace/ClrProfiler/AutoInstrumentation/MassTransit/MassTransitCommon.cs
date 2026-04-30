@@ -321,8 +321,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             out Guid? conversationId,
             out Guid? correlationId)
         {
-            if (sendContext is null)
+            if (sendContext is null || !sendContext.TryDuckCast<IMessageSendContext>(out var context))
             {
+                // Either no SendContext or its shape diverges from IMessageSendContext. Returning
+                // null lets the caller create a producer span without metadata rather than throwing.
                 destinationAddress = null;
                 messageId = null;
                 conversationId = null;
@@ -330,7 +332,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 return null;
             }
 
-            var context = sendContext.DuckCast<IMessageSendContext>();
             destinationAddress = context.DestinationAddress?.ToString();
             messageId = context.MessageId;
             conversationId = context.ConversationId;
