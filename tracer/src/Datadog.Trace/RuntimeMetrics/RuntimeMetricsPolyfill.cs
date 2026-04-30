@@ -112,11 +112,14 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{method}",
             description: "The number of times the JIT compiler (re)compiled methods since the process has started.");
 
+        // Description intentionally matches the .NET 9 native meter, which appears to have a copy-paste bug
+        // (the description here is identical to the one for `dotnet.jit.compiled_methods` above):
+        // https://github.com/dotnet/runtime/blob/v9.0.0/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/Metrics/RuntimeMetrics.cs#L96
         _meter.CreateObservableCounter(
             "dotnet.jit.compilation.time",
             static () => JitInfo.GetCompilationTime().TotalSeconds,
             unit: "s",
-            description: "The amount of time the JIT compiler has spent compiling methods since the process has started.");
+            description: "The number of times the JIT compiler (re)compiled methods since the process has started.");
 
         // --- Threading ---
 
@@ -148,7 +151,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             "dotnet.timer.count",
             static () => Timer.ActiveCount,
             unit: "{timer}",
-            description: "The number of timer instances that are currently active.");
+            description: "The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled.");
 
         // --- Assemblies ---
 
