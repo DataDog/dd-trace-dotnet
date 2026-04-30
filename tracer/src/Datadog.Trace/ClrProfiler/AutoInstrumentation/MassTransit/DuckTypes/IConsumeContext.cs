@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
@@ -24,4 +26,9 @@ internal interface IConsumeContext
     /// Works for some context types; TryDuckCast handles types where it fails.
     /// </summary>
     IHeaders? Headers { get; }
+
+    /// <summary>
+    /// Gets the MassTransit-supported message type names/URNs for the current context.
+    /// </summary>
+    IEnumerable<string>? SupportedMessageTypes { get; }
 }

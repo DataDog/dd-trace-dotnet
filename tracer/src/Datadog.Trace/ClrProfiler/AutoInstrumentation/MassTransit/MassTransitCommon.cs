@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
@@ -398,14 +399,53 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Uses generic type arguments since MassTransit contexts are generic (e.g., ConsumeContext&lt;TMessage&gt;).
         /// </summary>
         internal static string? GetMessageType(object? context)
+            => GetMessageType(context, depth: 0);
+
+        private static string? GetMessageType(object? context, int depth)
         {
-            if (context is null)
+            if (context is null || depth > 2)
             {
                 return null;
             }
 
             try
             {
+                var supportedMessageTypes = TryGetSupportedMessageTypes(context);
+                if (!string.IsNullOrEmpty(supportedMessageTypes))
+                {
+                    return supportedMessageTypes;
+                }
+
+                if (context.TryDuckCast<IContextContainer>(out var contextContainer) &&
+                    contextContainer.Context is { } nestedContext &&
+                    !ReferenceEquals(nestedContext, context))
+                {
+                    var nestedMessageType = GetMessageType(nestedContext, depth + 1);
+                    if (!string.IsNullOrEmpty(nestedMessageType))
+                    {
+                        return nestedMessageType;
+                    }
+                }
+
+                if (context.TryDuckCast<IConsumeContextContainer>(out var consumeContextContainer) &&
+                    consumeContextContainer.ConsumeContext is { } consumeContext &&
+                    !ReferenceEquals(consumeContext, context))
+                {
+                    var consumeMessageType = GetMessageType(consumeContext, depth + 1);
+                    if (!string.IsNullOrEmpty(consumeMessageType))
+                    {
+                        return consumeMessageType;
+                    }
+                }
+
+                // Prefer the concrete Message instance when available. This works for saga
+                // contexts too, where the first generic argument is often the saga state type.
+                var message = TryGetProperty<object>(context, "Message");
+                if (message is not null)
+                {
+                    return GetCanonicalMessageTypes(message.GetType());
+                }
+
                 // MassTransit contexts are typically generic (e.g., ConsumeContext<TMessage>)
                 var contextType = context.GetType();
                 if (contextType.IsGenericType)
@@ -413,7 +453,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     var genericArgs = contextType.GetGenericArguments();
                     if (genericArgs.Length > 0)
                     {
-                        return genericArgs[0].Name;
+                        return GetCanonicalMessageTypes(genericArgs[genericArgs.Length - 1]);
                     }
                 }
             }
@@ -423,6 +463,72 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             return null;
+        }
+
+        private static string? TryGetSupportedMessageTypes(object context)
+        {
+            if (context.TryDuckCast<IConsumeContext>(out var consumeContext) &&
+                consumeContext.SupportedMessageTypes is { } duckTypedSupportedMessageTypes)
+            {
+                return JoinMessageTypes(duckTypedSupportedMessageTypes);
+            }
+
+            var value = TryGetProperty<object>(context, "SupportedMessageTypes");
+            return value is IEnumerable enumerable
+                       ? JoinMessageTypes(enumerable)
+                       : null;
+        }
+
+        private static string? JoinMessageTypes(IEnumerable enumerable)
+        {
+            List<string>? messageTypes = null;
+
+            foreach (var item in enumerable)
+            {
+                if (item is string messageType && !StringUtil.IsNullOrWhiteSpace(messageType))
+                {
+                    messageTypes ??= [];
+                    messageTypes.Add(messageType);
+                }
+            }
+
+            return messageTypes is { Count: > 0 }
+                       ? string.Join(",", messageTypes)
+                       : null;
+        }
+
+        private static string GetCanonicalMessageTypes(Type messageType)
+        {
+            if (messageType.IsGenericType)
+            {
+                var genericDefinition = messageType.GetGenericTypeDefinition();
+                var genericDefinitionName = genericDefinition.Name;
+                if (string.Equals(genericDefinition.Namespace, "MassTransit", StringComparison.Ordinal) &&
+                    (genericDefinitionName.StartsWith("FaultEvent`1", StringComparison.Ordinal) ||
+                     genericDefinitionName.StartsWith("Fault`1", StringComparison.Ordinal)))
+                {
+                    var innerType = messageType.GetGenericArguments()[0];
+                    var faultUrn = $"urn:message:MassTransit:Fault[[{GetMessageToken(innerType)}]]";
+                    return $"{faultUrn},urn:message:MassTransit:Fault";
+                }
+            }
+
+            return $"urn:message:{GetMessageToken(messageType)}";
+        }
+
+        private static string GetMessageToken(Type messageType)
+        {
+            var typeName = messageType.Name;
+            var tickIndex = typeName.IndexOf('`');
+            if (tickIndex >= 0)
+            {
+                typeName = typeName.Substring(0, tickIndex);
+            }
+
+            var typeNamespace = messageType.Namespace;
+            return !StringUtil.IsNullOrWhiteSpace(typeNamespace)
+                       ? $"{typeNamespace}:{typeName}"
+                       : typeName;
         }
 
         /// <summary>
