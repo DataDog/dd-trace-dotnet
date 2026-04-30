@@ -43,19 +43,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Creates a produce (send) span for an outbound message.
         /// </summary>
         internal static Scope? CreateProduceSpan(Tracer tracer, string? destinationAddress, string? messageType)
-            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, destinationAddress, messageType);
+            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, MassTransitConstants.SendOperationName, destinationAddress, messageType);
 
         /// <summary>
         /// Creates a receive span for an inbound message at the transport level.
         /// </summary>
         internal static Scope? CreateReceiveSpan(Tracer tracer, string? inputAddress, PropagationContext parentContext)
-            => CreateConsumerScope(tracer, MassTransitConstants.OperationReceive, inputAddress, messageType: null, parentContext);
+            => CreateConsumerScope(tracer, MassTransitConstants.OperationReceive, MassTransitConstants.ReceiveOperationName, inputAddress, messageType: null, parentContext);
 
         /// <summary>
         /// Creates a process span for message processing by a consumer, handler, or saga.
         /// </summary>
         internal static Scope? CreateProcessSpan(Tracer tracer, string? inputAddress, string? messageType, PropagationContext parentContext)
-            => CreateConsumerScope(tracer, MassTransitConstants.OperationProcess, inputAddress, messageType, parentContext);
+            => CreateConsumerScope(tracer, MassTransitConstants.OperationProcess, MassTransitConstants.ProcessOperationName, inputAddress, messageType, parentContext);
 
         /// <summary>
         /// Creates a producer/send scope for outbound messages.
@@ -63,6 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal static Scope? CreateProducerScope(
             Tracer tracer,
             string operation,
+            string operationName,
             string? destinationAddress,
             string? messageType)
         {
@@ -91,9 +92,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Determine messaging system from destination
                 var messagingSystem = DetermineMessagingSystem(destinationAddress);
                 tags.MessagingSystem = messagingSystem;
-
-                // Use the actual operation for the span name (e.g., "masstransit.send")
-                var operationName = MassTransitConstants.GetOperationName(operation);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -144,6 +142,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal static Scope? CreateConsumerScope(
             Tracer tracer,
             string operation,
+            string operationName,
             string? inputAddress,
             string? messageType,
             PropagationContext parentContext = default)
@@ -174,9 +173,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Determine messaging system from input address
                 var messagingSystem = DetermineMessagingSystem(inputAddress);
                 tags.MessagingSystem = messagingSystem;
-
-                // Use the actual operation for the span name (e.g., "masstransit.receive", "masstransit.process")
-                var operationName = $"masstransit.{operation}";
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -395,8 +391,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Gets the message type from a MassTransit context object.
-        /// Uses generic type arguments since MassTransit contexts are generic (e.g., ConsumeContext&lt;TMessage&gt;).
+        /// Resolves the canonical message type(s) for a MassTransit context object as a comma-separated
+        /// list of <c>urn:message:&lt;Namespace&gt;:&lt;Type&gt;</c> values matching MassTransit's own naming.
+        /// Strategies, in order:
+        ///   1. Read <c>SupportedMessageTypes</c> if MassTransit already produced the canonical URN list.
+        ///   2. Recursively unwrap nested <c>IContextContainer</c> / <c>IConsumeContextContainer</c> wrappers.
+        ///   3. Take the runtime type of the <c>Message</c> instance — <see cref="TryGetProperty{T}"/>
+        ///      walks the interface hierarchy so this resolves <c>ConsumeContext&lt;TMessage&gt;.Message</c>
+        ///      even on saga contexts where the first generic argument is the saga state type.
+        /// Returns <c>null</c> if no Message instance is reachable; the caller leaves the tag unset.
         /// </summary>
         internal static string? GetMessageType(object? context)
             => GetMessageType(context, depth: 0);

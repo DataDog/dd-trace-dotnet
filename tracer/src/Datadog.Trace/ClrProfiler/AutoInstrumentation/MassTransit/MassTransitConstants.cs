@@ -29,13 +29,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal const string SendOperationName = "masstransit." + OperationSend;
         internal const string ReceiveOperationName = "masstransit." + OperationReceive;
         internal const string ProcessOperationName = "masstransit." + OperationProcess;
-
-        internal static string GetOperationName(string operation) => operation switch
-        {
-            OperationSend => SendOperationName,
-            OperationReceive => ReceiveOperationName,
-            OperationProcess => ProcessOperationName,
-            _ => "masstransit." + operation,
-        };
     }
 }
