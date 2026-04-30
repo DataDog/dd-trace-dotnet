@@ -1,0 +1,6 @@
+---
+description: dd-trace-dotnet project guidelines
+alwaysApply: true
+---
+
+See `AGENTS.md` (repository root) for all project guidelines.
