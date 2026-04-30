@@ -6,8 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.Snapshots;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -117,6 +122,51 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Message_UsesFirstEvaluationError()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: true,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult
+            {
+                Template = "template message",
+                Errors =
+                [
+                    new EvaluationError { Expression = "badCondition", Message = "first evaluation error" },
+                    new EvaluationError { Expression = "other", Message = "second evaluation error" }
+                ]
+            };
+
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+
+            Assert.Equal("first evaluation error", snapshot["message"]?.Value<string>());
+            Assert.Equal("first evaluation error", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+        }
+
+        [Fact]
         public async Task SpecialType_StringBuilder()
         {
             await ValidateSingleValue(new StringBuilder("hi from stringbuilder"));
@@ -148,6 +198,10 @@ namespace Datadog.Trace.Tests.Debugger
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
             await Verifier.Verify(localVariableAsJson, verifierSettings);
+        }
+
+        private static void DummyMethod()
+        {
         }
 
         private class InfiniteRecursion

@@ -20,43 +20,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 {
     internal sealed class DataStreamsMessagePackFormatter
     {
-        private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("Env");
-        private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");
         private readonly long _productMask;
         private readonly bool _isInDefaultState;
         private readonly bool _writeProcessTags;
-
-        // private readonly byte[] _primaryTagBytes = StringEncoding.UTF8.GetBytes("PrimaryTag");
-        // private readonly byte[] _primaryTagValueBytes;
-        private readonly byte[] _statsBytes = StringEncoding.UTF8.GetBytes("Stats");
-        private readonly byte[] _backlogsBytes = StringEncoding.UTF8.GetBytes("Backlogs");
-        private readonly byte[] _tracerVersionBytes = StringEncoding.UTF8.GetBytes("TracerVersion");
-        private readonly byte[] _tracerVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
-        private readonly byte[] _langBytes = StringEncoding.UTF8.GetBytes("Lang");
-        private readonly byte[] _langValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
-
-        private readonly byte[] _startBytes = StringEncoding.UTF8.GetBytes("Start");
-        private readonly byte[] _durationBytes = StringEncoding.UTF8.GetBytes("Duration");
-
-        private readonly byte[] _edgeTagsBytes = StringEncoding.UTF8.GetBytes("EdgeTags");
-        private readonly byte[] _hashBytes = StringEncoding.UTF8.GetBytes("Hash");
-        private readonly byte[] _parentHashBytes = StringEncoding.UTF8.GetBytes("ParentHash");
-        private readonly byte[] _pathwayLatencyBytes = StringEncoding.UTF8.GetBytes("PathwayLatency");
-        private readonly byte[] _edgeLatencyBytes = StringEncoding.UTF8.GetBytes("EdgeLatency");
-        private readonly byte[] _payloadSizeBytes = StringEncoding.UTF8.GetBytes("PayloadSize");
-        private readonly byte[] _timestampTypeBytes = StringEncoding.UTF8.GetBytes("TimestampType");
-        private readonly byte[] _currentTimestampTypeBytes = StringEncoding.UTF8.GetBytes("current");
-        private readonly byte[] _originTimestampTypeBytes = StringEncoding.UTF8.GetBytes("origin");
-
-        private readonly byte[] _backlogTagsBytes = StringEncoding.UTF8.GetBytes("Tags");
-        private readonly byte[] _backlogValueBytes = StringEncoding.UTF8.GetBytes("Value");
-        private readonly byte[] _productMaskBytes = StringEncoding.UTF8.GetBytes("ProductMask");
-        private readonly byte[] _processTagsBytes = StringEncoding.UTF8.GetBytes("ProcessTags");
-        private readonly byte[] _isInDefaultStateBytes = StringEncoding.UTF8.GetBytes("IsInDefaultState");
-
-        private readonly byte[] _transactions = StringEncoding.UTF8.GetBytes("Transactions");
-        private readonly byte[] _transactionCheckpointIds = StringEncoding.UTF8.GetBytes("TransactionCheckpointIds");
-
         private byte[] _environmentValueBytes;
         private byte[] _serviceValueBytes;
         private ProcessTags? _processTags;
@@ -104,6 +70,35 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             Profiling = 1 << 3, // 00001000
         }
 
+#pragma warning disable SA1516 // Elements should be separated by a blank line
+        private static ReadOnlySpan<byte> EnvironmentBytes => "Env"u8;
+        private static ReadOnlySpan<byte> ServiceBytes => "Service"u8;
+        private static ReadOnlySpan<byte> StatsBytes => "Stats"u8;
+        private static ReadOnlySpan<byte> BacklogsBytes => "Backlogs"u8;
+        private static ReadOnlySpan<byte> TracerVersionBytes => "TracerVersion"u8;
+        private static ReadOnlySpan<byte> TracerVersionValueBytes => TracerConstants.AssemblyVersionBytes;
+        private static ReadOnlySpan<byte> LangBytes => "Lang"u8;
+        private static ReadOnlySpan<byte> LangValueBytes => "dotnet"u8;
+        private static ReadOnlySpan<byte> StartBytes => "Start"u8;
+        private static ReadOnlySpan<byte> DurationBytes => "Duration"u8;
+        private static ReadOnlySpan<byte> EdgeTagsBytes => "EdgeTags"u8;
+        private static ReadOnlySpan<byte> HashBytes => "Hash"u8;
+        private static ReadOnlySpan<byte> ParentHashBytes => "ParentHash"u8;
+        private static ReadOnlySpan<byte> PathwayLatencyBytes => "PathwayLatency"u8;
+        private static ReadOnlySpan<byte> EdgeLatencyBytes => "EdgeLatency"u8;
+        private static ReadOnlySpan<byte> PayloadSizeBytes => "PayloadSize"u8;
+        private static ReadOnlySpan<byte> TimestampTypeBytes => "TimestampType"u8;
+        private static ReadOnlySpan<byte> CurrentTimestampTypeBytes => "current"u8;
+        private static ReadOnlySpan<byte> OriginTimestampTypeBytes => "origin"u8;
+        private static ReadOnlySpan<byte> BacklogTagsBytes => "Tags"u8;
+        private static ReadOnlySpan<byte> BacklogValueBytes => "Value"u8;
+        private static ReadOnlySpan<byte> ProductMaskBytes => "ProductMask"u8;
+        private static ReadOnlySpan<byte> ProcessTagsBytes => "ProcessTags"u8;
+        private static ReadOnlySpan<byte> IsInDefaultStateBytes => "IsInDefaultState"u8;
+        private static ReadOnlySpan<byte> TransactionsBytes => "Transactions"u8;
+        private static ReadOnlySpan<byte> TransactionCheckpointIdsBytes => "TransactionCheckpointIds"u8;
+#pragma warning restore SA1516
+
         private static long GetProductsMask(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
         {
             var productsMask = (long)Products.Apm;
@@ -138,23 +133,23 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             // -1 because service name override is not supported
             bytesWritten += MessagePackBinary.WriteMapHeader(stream, 7 + (withProcessTags ? 1 : 0));
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, EnvironmentBytes);
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentValueBytes);
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _serviceBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, ServiceBytes);
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _serviceValueBytes);
 
             // We never have a primary tag currently, make sure to increase header size if/when we add it
             // offset += MessagePackBinary.WriteStringBytes(stream, _primaryTagBytes);
             // offset += MessagePackBinary.WriteStringBytes(stream, _primaryTagValueBytes);
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _langBytes);
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _langValueBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, LangBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, LangValueBytes);
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionBytes);
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionValueBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, TracerVersionBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, TracerVersionValueBytes);
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, StatsBytes);
             bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBuckets.Count + backlogsBuckets.Count + (hasTransactions ? 1 : 0));
 
             if (hasTransactions)
@@ -163,10 +158,10 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 var bucketStartTime = currentTs - (currentTs % bucketDurationNs);
                 bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 0, 0, true);
 
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactions);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, TransactionsBytes);
                 bytesWritten += MessagePackBinary.WriteBytes(stream, transactionData);
 
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactionCheckpointIds);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, TransactionCheckpointIdsBytes);
                 bytesWritten += MessagePackBinary.WriteBytes(stream, DataStreamsTransactionInfo.GetCacheBytes());
             }
 
@@ -178,11 +173,11 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 {
                     bytesWritten += MessagePackBinary.WriteMapHeader(stream, 2);
 
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _backlogValueBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, BacklogValueBytes);
                     bytesWritten += MessagePackBinary.WriteInt64(stream, point.Value);
 
                     var tags = point.Tags.Split(',');
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _backlogTagsBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, BacklogTagsBytes);
                     bytesWritten += MessagePackBinary.WriteArrayHeader(stream, tags.Length);
                     foreach (var tag in tags)
                     {
@@ -195,9 +190,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             {
                 bytesWritten += WriteBucketsHeader(stream, statsBucket.BucketStartTimeNs, bucketDurationNs, statsBucket.Bucket.Values.Count, 0, false);
 
-                var timestampTypeBytes = statsBucket.TimestampType == TimestampType.Current
-                                             ? _currentTimestampTypeBytes
-                                             : _originTimestampTypeBytes;
+                ReadOnlySpan<byte> timestampTypeBytes = statsBucket.TimestampType == TimestampType.Current
+                                             ? CurrentTimestampTypeBytes
+                                             : OriginTimestampTypeBytes;
 
                 foreach (var point in statsBucket.Bucket.Values)
                 {
@@ -209,27 +204,27 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                     var itemCount = hasEdges ? 7 : 6;
                     bytesWritten += MessagePackBinary.WriteMapHeader(stream, itemCount);
 
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _hashBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, HashBytes);
                     bytesWritten += MessagePackBinary.WriteUInt64(stream, point.Hash.Value);
 
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _parentHashBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, ParentHashBytes);
                     bytesWritten += MessagePackBinary.WriteUInt64(stream, point.ParentHash.Value);
 
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _timestampTypeBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, TimestampTypeBytes);
                     bytesWritten += MessagePackBinary.WriteStringBytes(stream, timestampTypeBytes);
 
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _pathwayLatencyBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, PathwayLatencyBytes);
                     bytesWritten += SerializeSketch(stream, point.PathwayLatency);
 
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _edgeLatencyBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, EdgeLatencyBytes);
                     bytesWritten += SerializeSketch(stream, point.EdgeLatency);
 
-                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _payloadSizeBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, PayloadSizeBytes);
                     bytesWritten += SerializeSketch(stream, point.PayloadSize);
 
                     if (hasEdges)
                     {
-                        bytesWritten += MessagePackBinary.WriteStringBytes(stream, _edgeTagsBytes);
+                        bytesWritten += MessagePackBinary.WriteStringBytes(stream, EdgeTagsBytes);
                         bytesWritten += MessagePackBinary.WriteArrayHeader(stream, point.EdgeTags.Length);
 
                         foreach (var edgeTag in point.EdgeTags)
@@ -240,12 +235,12 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 }
             }
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _productMaskBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, ProductMaskBytes);
             bytesWritten += MessagePackBinary.WriteInt64(stream, _productMask);
 
             if (processTags is not null)
             {
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _processTagsBytes);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, ProcessTagsBytes);
                 bytesWritten += MessagePackBinary.WriteArrayHeader(stream, processTags.Count);
                 foreach (var tag in processTags)
                 {
@@ -253,7 +248,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 }
             }
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _isInDefaultStateBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, IsInDefaultStateBytes);
             bytesWritten += MessagePackBinary.WriteBoolean(stream, _isInDefaultState);
 
             return bytesWritten;
@@ -284,21 +279,21 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             // https://github.com/DataDog/data-streams-go/blob/60ba06aec619850aef8ed0b9b1f0f5e310438362/datastreams/payload.go#L48
             bytesWritten += MessagePackBinary.WriteMapHeader(stream, count);
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _startBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, StartBytes);
             bytesWritten += MessagePackBinary.WriteInt64(stream, bucketStartTimeNs);
 
-            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _durationBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, DurationBytes);
             bytesWritten += MessagePackBinary.WriteInt64(stream, bucketDurationNs);
 
             if (statsBucketCount > 0)
             {
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, StatsBytes);
                 bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBucketCount);
             }
 
             if (backlogBucketCount > 0)
             {
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _backlogsBytes);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, BacklogsBytes);
                 bytesWritten += MessagePackBinary.WriteArrayHeader(stream, backlogBucketCount);
             }
 

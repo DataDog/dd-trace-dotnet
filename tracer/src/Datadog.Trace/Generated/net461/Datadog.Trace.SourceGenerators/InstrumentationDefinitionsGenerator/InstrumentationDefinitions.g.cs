@@ -305,6 +305,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.TracerMetricsEnabledGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.PopulateDictionaryIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.DiagnosticSourceEnabledSetIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.DataStreams.DataStreamsTrackTransactionIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions.SpanExtensionsSetTraceSamplingPriorityIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkEvaluateIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkIsAvailableIntegration"

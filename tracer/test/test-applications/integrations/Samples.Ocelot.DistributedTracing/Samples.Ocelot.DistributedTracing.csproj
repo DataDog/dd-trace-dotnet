@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- Ocelot 23.x supports net6.0-8.0, 24.x supports net8.0+. -->
+    <ApiVersion Condition="'$(ApiVersion)' == '' And ('$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'net7.0')">23.4.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">24.1.0</ApiVersion>
+    <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ocelot" Version="$(ApiVersion)" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.11.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.11.1" />
+  </ItemGroup>
+
+</Project>
