@@ -1874,15 +1874,6 @@ supportedConfigurations:
       Configuration key for the path to the configuration file.
       Can only be set with an environment variable
       or in the <c>app.config</c>/<c>web.config</c> file.
-  DD_TRACE_COSMOSDB_RESOURCE_URI_NORMALIZATION_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'true'
-    product: FeatureFlags
-    const_name: CosmosDbResourceUriNormalizationEnabled
-    documentation: |-
-      Enable normalizing CosmosDB resource URI ids in the <c>resourceName</c> of a span
-      <seealso cref="Datadog.Trace.Configuration.TracerSettings.CosmosDbResourceUriNormalizationEnabled"/>
   DD_TRACE_DATA_PIPELINE_ENABLED:
   - implementation: A
     type: boolean

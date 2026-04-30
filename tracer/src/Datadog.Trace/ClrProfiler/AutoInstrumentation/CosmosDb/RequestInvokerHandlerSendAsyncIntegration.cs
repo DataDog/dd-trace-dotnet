@@ -100,10 +100,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             var span = scope.Span;
 
             span.Type = SpanTypes.Sql;
-            var resourceUri = tracer.Settings.CosmosDbResourceUriNormalizationEnabled
-                                  ? NormalizeResourceUri(resourceUriString)
-                                  : resourceUriString;
-            span.ResourceName = $"{operationTypeString} {resourceUri}";
+            span.ResourceName = $"{operationTypeString} {NormalizeResourceUri(resourceUriString)}";
 
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.CosmosDb);
 

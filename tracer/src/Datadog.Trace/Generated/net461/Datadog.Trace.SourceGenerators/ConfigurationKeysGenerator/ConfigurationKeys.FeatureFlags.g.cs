@@ -73,12 +73,6 @@ internal static partial class ConfigurationKeys
         public const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
 
         /// <summary>
-        /// Enable normalizing CosmosDB resource URI ids in the <c>resourceName</c> of a span
-        /// </summary>
-        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.CosmosDbResourceUriNormalizationEnabled"/>
-        public const string CosmosDbResourceUriNormalizationEnabled = "DD_TRACE_COSMOSDB_RESOURCE_URI_NORMALIZATION_ENABLED";
-
-        /// <summary>
         /// Configuration key to enable or disable the updated WCF instrumentation that delays execution
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
