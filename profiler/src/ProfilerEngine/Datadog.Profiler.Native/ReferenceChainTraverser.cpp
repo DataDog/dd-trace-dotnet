@@ -48,6 +48,11 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
     // Pass the pre-resolved classID/size so the first frame skips redundant profiler calls.
     TraverseObjectGraph(root.address, rootNode, 1, root.classID, root.objectSize);
 
+    if (_traversalStack.capacity() > _traversalStackHighWatermark)
+    {
+        _traversalStackHighWatermark = _traversalStack.capacity();
+    }
+
     _rootsProcessed++;
     _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
 }
@@ -58,7 +63,8 @@ void ReferenceChainTraverser::LogStats() const
 
     Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",
               _rootsProcessed, " roots, ",
-              _objectsTraversed, " objects traversed");
+              _objectsTraversed, " objects traversed, ",
+              "stack high watermark: ", _traversalStackHighWatermark);
 
     for (int i = 0; i < static_cast<int>(RootCategoryCount); i++)
     {
@@ -78,13 +84,13 @@ void ReferenceChainTraverser::TraverseObjectGraph(
     SIZE_T rootObjectSize)
 {
     _traversalStack.clear();
+    _traversalStack.reserve(_traversalStackHighWatermark);
 
     // Mark-on-push: objects are marked when discovered (before pushing),
-    // not when processed (after popping). This reduces hash table probes
-    // from 3 per new object (IsVisited miss + IsVisited miss + MarkVisited)
-    // to 1 (MarkIfAbsent), and prevents duplicate stack entries.
-    _visited.MarkVisited(objectAddress);
-    _visited.StoreInfo(objectAddress, rootClassID, rootObjectSize);
+    // not when processed (after popping). Single-probe MarkVisitedAndStore
+    // inserts + writes classID/size in one hash walk; child edges use
+    // TryInsert to combine MarkIfAbsent + StoreInfo/GetInfo into one probe.
+    _visited.MarkVisitedAndStore(objectAddress, rootClassID, rootObjectSize);
     _traversalStack.push_back({objectAddress, currentNode, depth, rootClassID, rootObjectSize});
 
     while (!_traversalStack.empty())
@@ -117,60 +123,55 @@ void ReferenceChainTraverser::TraverseObjectGraph(
             continue;
         }
 
-        for (const auto& field : layout->fields)
+        for (ULONG off : layout->refFieldOffsets)
         {
-            if (field.isReferenceType)
+            uintptr_t fieldValue = ReadFieldReference(frame.objectAddress, off, objectSize);
+            if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
             {
-                uintptr_t fieldValue = ReadFieldReference(frame.objectAddress, field.offset, objectSize);
-                if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
+                continue;
+            }
+
+            VisitedObjectSet::VisitedEntry* slot = nullptr;
+            if (_visited.TryInsert(fieldValue, slot) == VisitedObjectSet::InsertResult::Inserted)
+            {
+                ClassID targetClassID = 0;
+                HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
+                if (FAILED(hr) || targetClassID == 0)
                 {
                     continue;
                 }
 
-                if (_visited.MarkIfAbsent(fieldValue))
+                SIZE_T targetSize = 0;
+                hr = _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
+                if (FAILED(hr) || targetSize == 0)
                 {
-                    ClassID targetClassID = 0;
-                    HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
-                    if (FAILED(hr) || targetClassID == 0)
-                    {
-                        continue;
-                    }
-
-                    SIZE_T targetSize = 0;
-                    hr = _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
-                    if (FAILED(hr) || targetSize == 0)
-                    {
-                        continue;
-                    }
-
-                    _visited.StoreInfo(fieldValue, targetClassID, targetSize);
-
-                    TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(targetClassID);
-                    childNode->AddInstance(targetSize);
-                    _traversalStack.push_back({fieldValue, childNode, frame.depth + 1, targetClassID, targetSize});
+                    continue;
                 }
-                else
-                {
-                    ClassID cachedClassID = 0;
-                    SIZE_T cachedSize = 0;
-                    if (_visited.GetInfo(fieldValue, cachedClassID, cachedSize) && cachedClassID != 0)
-                    {
-                        TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(cachedClassID);
-                        childNode->AddInstance(cachedSize);
-                    }
-                }
+
+                slot->classID = targetClassID;
+                slot->size = targetSize;
+
+                TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(targetClassID);
+                childNode->AddInstance(targetSize);
+                _traversalStack.push_back({fieldValue, childNode, frame.depth + 1, targetClassID, targetSize});
             }
-            else if (field.isValueType && field.valueTypeClassID != 0)
+            else if (slot->classID != 0)
             {
-                const ClassLayoutCache::ClassLayoutData* vtLayout = _layoutCache.GetLayout(field.valueTypeClassID);
-                if (vtLayout != nullptr)
-                {
-                    TypeTreeNode* vtNode = frame.treeNode->GetOrCreateChild(field.valueTypeClassID);
-                    vtNode->AddInstance(0);
-                    EnqueueInlineValueTypeReferences(
-                        frame.objectAddress, field.offset, *vtLayout,
-                        objectSize, vtNode, frame.depth + 1);
-                }
+                TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(slot->classID);
+                childNode->AddInstance(slot->size);
+            }
+        }
+
+        for (const auto& [vtOffset, vtClassID] : layout->inlineVtFields)
+        {
+            const ClassLayoutCache::ClassLayoutData* vtLayout = _layoutCache.GetLayout(vtClassID);
+            if (vtLayout != nullptr)
+            {
+                TypeTreeNode* vtNode = frame.treeNode->GetOrCreateChild(vtClassID);
+                vtNode->AddInstance(0);
+                EnqueueInlineValueTypeReferences(
+                    frame.objectAddress, vtOffset, *vtLayout,
+                    objectSize, vtNode, frame.depth + 1);
             }
         }
     }
@@ -206,17 +207,7 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
             return;
         }
 
-        bool hasReferenceFields = false;
-        for (const auto& field : elementLayout->fields)
-        {
-            if (field.isReferenceType)
-            {
-                hasReferenceFields = true;
-                break;
-            }
-        }
-
-        if (!hasReferenceFields)
+        if (!elementLayout->elementHasReferenceFields)
         {
             return;
         }
@@ -291,7 +282,8 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
             continue;
         }
 
-        if (_visited.MarkIfAbsent(elementAddress))
+        VisitedObjectSet::VisitedEntry* slot = nullptr;
+        if (_visited.TryInsert(elementAddress, slot) == VisitedObjectSet::InsertResult::Inserted)
         {
             ClassID elementClassID = 0;
             hr = _pCorProfilerInfo->GetClassFromObject(elementAddress, &elementClassID);
@@ -307,21 +299,17 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
                 continue;
             }
 
-            _visited.StoreInfo(elementAddress, elementClassID, elementSizeBytes);
+            slot->classID = elementClassID;
+            slot->size = elementSizeBytes;
 
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(elementClassID);
             childNode->AddInstance(elementSizeBytes);
             _traversalStack.push_back({elementAddress, childNode, depth + 1, elementClassID, elementSizeBytes});
         }
-        else
+        else if (slot->classID != 0)
         {
-            ClassID cachedClassID = 0;
-            SIZE_T cachedSize = 0;
-            if (_visited.GetInfo(elementAddress, cachedClassID, cachedSize) && cachedClassID != 0)
-            {
-                TypeTreeNode* childNode = currentNode->GetOrCreateChild(cachedClassID);
-                childNode->AddInstance(cachedSize);
-            }
+            TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
+            childNode->AddInstance(slot->size);
         }
     }
 }
@@ -339,19 +327,14 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
     {
         uintptr_t elementBase = reinterpret_cast<uintptr_t>(pData) + i * elementSize;
 
-        for (const auto& field : elementLayout.fields)
+        for (ULONG fieldOffset : elementLayout.refFieldOffsets)
         {
-            if (!field.isReferenceType)
+            if (static_cast<SIZE_T>(fieldOffset) + sizeof(uintptr_t) > elementSize)
             {
                 continue;
             }
 
-            if (static_cast<SIZE_T>(field.offset) + sizeof(uintptr_t) > elementSize)
-            {
-                continue;
-            }
-
-            uintptr_t* pField = reinterpret_cast<uintptr_t*>(elementBase + field.offset);
+            uintptr_t* pField = reinterpret_cast<uintptr_t*>(elementBase + fieldOffset);
             uintptr_t fieldValue = *pField;
 
             if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
@@ -359,7 +342,8 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
                 continue;
             }
 
-            if (_visited.MarkIfAbsent(fieldValue))
+            VisitedObjectSet::VisitedEntry* slot = nullptr;
+            if (_visited.TryInsert(fieldValue, slot) == VisitedObjectSet::InsertResult::Inserted)
             {
                 ClassID targetClassID = 0;
                 HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
@@ -375,21 +359,17 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
                     continue;
                 }
 
-                _visited.StoreInfo(fieldValue, targetClassID, targetSize);
+                slot->classID = targetClassID;
+                slot->size = targetSize;
 
                 TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
                 childNode->AddInstance(targetSize);
                 _traversalStack.push_back({fieldValue, childNode, depth + 1, targetClassID, targetSize});
             }
-            else
+            else if (slot->classID != 0)
             {
-                ClassID cachedClassID = 0;
-                SIZE_T cachedSize = 0;
-                if (_visited.GetInfo(fieldValue, cachedClassID, cachedSize) && cachedClassID != 0)
-                {
-                    TypeTreeNode* childNode = currentNode->GetOrCreateChild(cachedClassID);
-                    childNode->AddInstance(cachedSize);
-                }
+                TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
+                childNode->AddInstance(slot->size);
             }
         }
     }
@@ -403,67 +383,64 @@ void ReferenceChainTraverser::EnqueueInlineValueTypeReferences(
     TypeTreeNode* currentNode,
     uint32_t depth)
 {
-    for (const auto& subField : vtLayout.fields)
+    for (ULONG off : vtLayout.refFieldOffsets)
     {
-        ULONG absoluteOffset = baseOffset + subField.offset;
+        ULONG absoluteOffset = baseOffset + off;
 
-        if (subField.isReferenceType)
+        if (static_cast<SIZE_T>(absoluteOffset) + sizeof(uintptr_t) > objectSize)
         {
-            if (static_cast<SIZE_T>(absoluteOffset) + sizeof(uintptr_t) > objectSize)
-            {
-                continue;
-            }
-
-            uintptr_t fieldValue = ReadFieldReference(objectAddress, absoluteOffset, objectSize);
-            if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
-            {
-                continue;
-            }
-
-            if (_visited.MarkIfAbsent(fieldValue))
-            {
-                ClassID targetClassID = 0;
-                HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
-                if (FAILED(hr) || targetClassID == 0)
-                {
-                    continue;
-                }
-
-                SIZE_T targetSize = 0;
-                hr = _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
-                if (FAILED(hr) || targetSize == 0)
-                {
-                    continue;
-                }
-
-                _visited.StoreInfo(fieldValue, targetClassID, targetSize);
-
-                TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
-                childNode->AddInstance(targetSize);
-                _traversalStack.push_back({fieldValue, childNode, depth + 1, targetClassID, targetSize});
-            }
-            else
-            {
-                ClassID cachedClassID = 0;
-                SIZE_T cachedSize = 0;
-                if (_visited.GetInfo(fieldValue, cachedClassID, cachedSize) && cachedClassID != 0)
-                {
-                    TypeTreeNode* childNode = currentNode->GetOrCreateChild(cachedClassID);
-                    childNode->AddInstance(cachedSize);
-                }
-            }
+            continue;
         }
-        else if (subField.isValueType && subField.valueTypeClassID != 0)
+
+        uintptr_t fieldValue = ReadFieldReference(objectAddress, absoluteOffset, objectSize);
+        if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
         {
-            const ClassLayoutCache::ClassLayoutData* nestedLayout = _layoutCache.GetLayout(subField.valueTypeClassID);
-            if (nestedLayout != nullptr)
+            continue;
+        }
+
+        VisitedObjectSet::VisitedEntry* slot = nullptr;
+        if (_visited.TryInsert(fieldValue, slot) == VisitedObjectSet::InsertResult::Inserted)
+        {
+            ClassID targetClassID = 0;
+            HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
+            if (FAILED(hr) || targetClassID == 0)
             {
-                TypeTreeNode* nestedVtNode = currentNode->GetOrCreateChild(subField.valueTypeClassID);
-                nestedVtNode->AddInstance(0);
-                EnqueueInlineValueTypeReferences(
-                    objectAddress, absoluteOffset, *nestedLayout,
-                    objectSize, nestedVtNode, depth + 1);
+                continue;
             }
+
+            SIZE_T targetSize = 0;
+            hr = _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
+            if (FAILED(hr) || targetSize == 0)
+            {
+                continue;
+            }
+
+            slot->classID = targetClassID;
+            slot->size = targetSize;
+
+            TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
+            childNode->AddInstance(targetSize);
+            _traversalStack.push_back({fieldValue, childNode, depth + 1, targetClassID, targetSize});
+        }
+        else if (slot->classID != 0)
+        {
+            TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
+            childNode->AddInstance(slot->size);
+        }
+    }
+
+    for (const auto& [vtOff, nestedVtClassID] : vtLayout.inlineVtFields)
+    {
+        ULONG absoluteOffset = baseOffset + vtOff;
+
+        const ClassLayoutCache::ClassLayoutData* nestedLayout = _layoutCache.GetLayout(nestedVtClassID);
+        if (nestedLayout != nullptr)
+        {
+            TypeTreeNode* nestedVtNode = currentNode->GetOrCreateChild(nestedVtClassID);
+            nestedVtNode->AddInstance(0);
+            EnqueueInlineValueTypeReferences(
+                objectAddress, absoluteOffset, *nestedLayout,
+                objectSize, nestedVtNode, depth + 1);
         }
     }
 }

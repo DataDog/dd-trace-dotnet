@@ -237,6 +237,116 @@ TEST(VisitedObjectSetTest, StoreInfoAfterMarkVisited)
     ASSERT_EQ(size, 512);
 }
 
+TEST(VisitedObjectSetTest, TryInsertNewAddress)
+{
+    VisitedObjectSet visited;
+
+    VisitedObjectSet::VisitedEntry* slot = nullptr;
+    auto result = visited.TryInsert(0x1000, slot);
+
+    ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
+    ASSERT_NE(slot, nullptr);
+    ASSERT_EQ(slot->address, 0x1000);
+    ASSERT_EQ(slot->classID, 0);
+    ASSERT_EQ(slot->size, 0);
+    ASSERT_EQ(visited.Size(), 1);
+}
+
+TEST(VisitedObjectSetTest, TryInsertExistingAddress)
+{
+    VisitedObjectSet visited;
+
+    VisitedObjectSet::VisitedEntry* slot1 = nullptr;
+    visited.TryInsert(0x1000, slot1);
+    slot1->classID = 42;
+    slot1->size = 256;
+
+    VisitedObjectSet::VisitedEntry* slot2 = nullptr;
+    auto result = visited.TryInsert(0x1000, slot2);
+
+    ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
+    ASSERT_EQ(slot1, slot2);
+    ASSERT_EQ(slot2->classID, 42);
+    ASSERT_EQ(slot2->size, 256);
+    ASSERT_EQ(visited.Size(), 1);
+}
+
+TEST(VisitedObjectSetTest, TryInsertWriteSlotThenRevisit)
+{
+    VisitedObjectSet visited;
+
+    VisitedObjectSet::VisitedEntry* slot = nullptr;
+    visited.TryInsert(0x2000, slot);
+    slot->classID = 99;
+    slot->size = 512;
+
+    ClassID classID = 0;
+    SIZE_T size = 0;
+    ASSERT_TRUE(visited.GetInfo(0x2000, classID, size));
+    ASSERT_EQ(classID, 99);
+    ASSERT_EQ(size, 512);
+}
+
+TEST(VisitedObjectSetTest, MarkVisitedAndStoreNewAddress)
+{
+    VisitedObjectSet visited;
+
+    visited.MarkVisitedAndStore(0x1000, 42, 256);
+
+    ASSERT_TRUE(visited.IsVisited(0x1000));
+    ASSERT_EQ(visited.Size(), 1);
+
+    ClassID classID = 0;
+    SIZE_T size = 0;
+    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_EQ(classID, 42);
+    ASSERT_EQ(size, 256);
+}
+
+TEST(VisitedObjectSetTest, MarkVisitedAndStoreOverwritesExisting)
+{
+    VisitedObjectSet visited;
+
+    visited.MarkVisitedAndStore(0x1000, 10, 100);
+    visited.MarkVisitedAndStore(0x1000, 20, 200);
+
+    ASSERT_EQ(visited.Size(), 1);
+
+    ClassID classID = 0;
+    SIZE_T size = 0;
+    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_EQ(classID, 20);
+    ASSERT_EQ(size, 200);
+}
+
+TEST(VisitedObjectSetTest, TryInsertSurvivesGrow)
+{
+    VisitedObjectSet visited(16);
+
+    const size_t count = 200;
+    for (size_t i = 1; i <= count; i++)
+    {
+        uintptr_t addr = i * 0x100;
+        VisitedObjectSet::VisitedEntry* slot = nullptr;
+        auto result = visited.TryInsert(addr, slot);
+        ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
+        slot->classID = static_cast<ClassID>(i);
+        slot->size = static_cast<SIZE_T>(i * 8);
+    }
+
+    ASSERT_EQ(visited.Size(), count);
+
+    for (size_t i = 1; i <= count; i++)
+    {
+        uintptr_t addr = i * 0x100;
+        VisitedObjectSet::VisitedEntry* slot = nullptr;
+        auto result = visited.TryInsert(addr, slot);
+        ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
+        ASSERT_EQ(slot->classID, static_cast<ClassID>(i));
+        ASSERT_EQ(slot->size, static_cast<SIZE_T>(i * 8));
+    }
+}
+
 // ============================================================================
 // TypeTreeNode Tests
 // ============================================================================

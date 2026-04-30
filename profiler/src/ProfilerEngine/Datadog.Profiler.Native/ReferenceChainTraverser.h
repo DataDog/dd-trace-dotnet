@@ -42,15 +42,13 @@ public:
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
     // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
-    // This allows the same object to be reached from different roots, capturing all type-level paths.
     void TraverseFromSingleRoot(const RootInfo& root);
 
-    // Log traversal statistics
     void LogStats() const;
 
 private:
     // Iterative object graph traversal using an explicit stack.
-    // Seeds the stack with the initial frame and processes until empty.
+    // Look at reference type fields, add them to the stack and iterate until empty.
     void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth,
                              ClassID rootClassID, SIZE_T rootObjectSize);
 
@@ -86,7 +84,7 @@ private:
     bool IsValidObjectAddress(uintptr_t address) const;
     std::string GetClassName(ClassID classID) const;
 
-    // Read a reference field from an object.
+    // Read a reference from an object's field.
     // objectAddress: ObjectID (points to the MethodTable pointer at offset 0)
     // fieldOffset: byte offset from GetClassLayout (relative to objectAddress, includes MethodTable*)
     // objectSize: total object size from GetObjectSize2 (for bounds checking)
@@ -97,12 +95,15 @@ private:
     IFrameStore* _pFrameStore;
     TypeReferenceTree& _tree;
 
-    // Persisted across heap dumps by HeapSnapshotManager (class layouts don't change).
+    // Persisted across heap traversal.
+    // class layouts don't change over time and no dynamic types are expected.
     ClassLayoutCache& _layoutCache;
 
-    // Per-root cycle detection: cleared between roots to avoid reallocating the bucket array.
+    // Per-root cycle detection.
+    // Cleared between roots to avoid reallocating the bucket array.
     VisitedObjectSet _visited;
 
+    // Used to keep track of all objects to visit when starting from a root.
     // Reused across roots to avoid repeated heap allocations.
     std::vector<TraversalFrame> _traversalStack;
 
@@ -111,4 +112,7 @@ private:
     uint64_t _rootsProcessed;
     uint64_t _rootCategoryCounts[RootCategoryCount] = {};
     std::chrono::nanoseconds _totalTraversalDuration{0};
+
+    static constexpr size_t MinStackReserve = 64;
+    size_t _traversalStackHighWatermark = MinStackReserve;
 };

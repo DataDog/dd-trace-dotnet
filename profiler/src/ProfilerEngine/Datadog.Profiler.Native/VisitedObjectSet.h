@@ -114,61 +114,85 @@ public:
         }
     }
 
+    enum class InsertResult : uint8_t { Inserted, AlreadyPresent };
+
+    // Single-probe insert: finds or creates the bucket for `address`.
+    // On return, `outEntry` points to the bucket (valid until next mutation).
+    // Callers write classID/size directly into the returned entry.
+    InsertResult TryInsert(uintptr_t address, VisitedEntry*& outEntry)
+    {
+        if (NeedsGrow())
+        {
+            Grow();
+        }
+
+        size_t idx = HashAddress(address) & _mask;
+        while (true)
+        {
+            auto& entry = _buckets[idx];
+            if (entry.address == address)
+            {
+                outEntry = &entry;
+                return InsertResult::AlreadyPresent;
+            }
+            if (entry.address == 0)
+            {
+                entry.address = address;
+                _dirtyIndices.push_back(idx);
+                _count++;
+                outEntry = &entry;
+                return InsertResult::Inserted;
+            }
+            idx = (idx + 1) & _mask;
+        }
+    }
+
+    // Single-probe insert-and-store: inserts `address` if absent and writes
+    // classID + size in the same probe. Used for root seeding where the
+    // caller already knows both values.
+    void MarkVisitedAndStore(uintptr_t address, ClassID classID, SIZE_T size)
+    {
+        if (NeedsGrow())
+        {
+            Grow();
+        }
+
+        size_t idx = HashAddress(address) & _mask;
+        while (true)
+        {
+            auto& entry = _buckets[idx];
+            if (entry.address == 0)
+            {
+                entry.address = address;
+                entry.classID = classID;
+                entry.size = size;
+                _dirtyIndices.push_back(idx);
+                _count++;
+                return;
+            }
+            if (entry.address == address)
+            {
+                entry.classID = classID;
+                entry.size = size;
+                return;
+            }
+            idx = (idx + 1) & _mask;
+        }
+    }
+
+    // Legacy wrappers kept for tests / callers that don't need the slot pointer.
     void MarkVisited(uintptr_t address)
     {
-        if (NeedsGrow())
-        {
-            Grow();
-        }
-
-        size_t idx = HashAddress(address) & _mask;
-        while (true)
-        {
-            auto& entry = _buckets[idx];
-            if (entry.address == address)
-            {
-                return;
-            }
-            if (entry.address == 0)
-            {
-                entry.address = address;
-                _dirtyIndices.push_back(idx);
-                _count++;
-                return;
-            }
-            idx = (idx + 1) & _mask;
-        }
+        VisitedEntry* unused = nullptr;
+        TryInsert(address, unused);
     }
 
-    // Combined check-and-insert in a single probe.
-    // Returns true if the address was newly inserted, false if already present.
     bool MarkIfAbsent(uintptr_t address)
     {
-        if (NeedsGrow())
-        {
-            Grow();
-        }
-
-        size_t idx = HashAddress(address) & _mask;
-        while (true)
-        {
-            auto& entry = _buckets[idx];
-            if (entry.address == address)
-            {
-                return false;
-            }
-            if (entry.address == 0)
-            {
-                entry.address = address;
-                _dirtyIndices.push_back(idx);
-                _count++;
-                return true;
-            }
-            idx = (idx + 1) & _mask;
-        }
+        VisitedEntry* unused = nullptr;
+        return TryInsert(address, unused) == InsertResult::Inserted;
     }
 
-    // Store ClassID and size for an already-inserted address.
     void StoreInfo(uintptr_t address, ClassID classID, SIZE_T size)
     {
         size_t idx = HashAddress(address) & _mask;
@@ -189,7 +213,6 @@ public:
         }
     }
 
-    // Retrieve cached ClassID and size for a visited address.
     bool GetInfo(uintptr_t address, ClassID& outClassID, SIZE_T& outSize) const
     {
         size_t idx = HashAddress(address) & _mask;

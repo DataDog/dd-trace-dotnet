@@ -8,29 +8,22 @@
 #include "IFrameStore.h"
 #include <unordered_map>
 #include <vector>
-#include <memory>
 
 // Forward declarations
 struct COR_FIELD_OFFSET;
 
-// Field information
+// Build-time field information — used only inside BuildLayout, never stored in the cache.
 struct FieldInfo
 {
-    ULONG offset;           // Field offset in object
-    ClassID fieldTypeID;    // Type of the field (0 if not a reference type)
-    bool isReferenceType;   // True if field contains a reference
-    mdFieldDef fieldToken;  // Metadata token for the field
+    ULONG offset = 0;
+    bool isReferenceType = false;
+    mdFieldDef fieldToken = 0;
 
     // For inline value type fields that contain reference sub-fields (e.g., the state machine
     // struct inside AsyncStateMachineBox<TStateMachine>). When true, use valueTypeClassID
     // with ClassLayoutCache::GetLayout() to enumerate the value type's sub-fields.
-    bool isValueType;
-    ClassID valueTypeClassID;
-
-    FieldInfo() : offset(0), fieldTypeID(0), isReferenceType(false), fieldToken(0),
-                  isValueType(false), valueTypeClassID(0)
-    {
-    }
+    bool isValueType = false;
+    ClassID valueTypeClassID = 0;
 };
 
 // Cached class layout information
@@ -39,17 +32,23 @@ class ClassLayoutCache
 public:
     struct ClassLayoutData
     {
-        ULONG classSize;
-        std::vector<FieldInfo> fields;
-        bool isArray;
-        CorElementType arrayElementType;
-        ClassID arrayElementClassID;
-        ULONG arrayRank;
+        ULONG classSize = 0;
+        bool isArray = false;
+        CorElementType arrayElementType = ELEMENT_TYPE_END;
+        ClassID arrayElementClassID = 0;
+        ULONG arrayRank = 0;
 
-        ClassLayoutData() : classSize(0), isArray(false), arrayElementType(ELEMENT_TYPE_END),
-                           arrayElementClassID(0), arrayRank(0)
-        {
-        }
+        // Compact traversal-only field lists (empty for array entries).
+        // Replaces the former std::vector<FieldInfo> fields.
+        std::vector<ULONG> refFieldOffsets;
+        std::vector<std::pair<ULONG, ClassID>> inlineVtFields;
+
+        // True when this layout has direct reference fields (non-empty refFieldOffsets).
+        // Used by EnqueueArrayChildren to skip VT arrays whose elements have no GC refs.
+        // Does NOT include nested inline VTs — EnqueueValueTypeArrayChildren only
+        // iterates refFieldOffsets today, so including inlineVtFields here would cause
+        // wasteful iteration of large arrays with no useful work.
+        bool elementHasReferenceFields = false;
     };
 
     ClassLayoutCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameStore* pFrameStore);
@@ -69,7 +68,9 @@ private:
     ClassLayoutData BuildLayout(ClassID classID);
     bool IsReferenceType(mdTypeDef typeDef, IMetaDataImport* pMetadataImport);
     bool IsClassIDReferenceType(ClassID classID);
-    void GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields);
+    void MergeParentLayout(ClassID parentClassID,
+                           std::vector<ULONG>& refFieldOffsets,
+                           std::vector<std::pair<ULONG, ClassID>>& inlineVtFields);
     bool IsFieldReferenceType(
         mdFieldDef fieldToken,
         ModuleID moduleID,

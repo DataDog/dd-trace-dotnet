@@ -5,8 +5,6 @@
 #include "Log.h"
 #include "shared/src/native-src/com_ptr.h"
 
-#include <algorithm>
-
 ClassLayoutCache::ClassLayoutCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameStore* pFrameStore)
     : _pCorProfilerInfo(pCorProfilerInfo), _pFrameStore(pFrameStore)
 {
@@ -38,7 +36,6 @@ const ClassLayoutCache::ClassLayoutData* ClassLayoutCache::GetLayout(ClassID cla
 ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
 {
     ClassLayoutData layout;
-    layout.isArray = false;
 
     // Check if it's an array
     CorElementType elementType;
@@ -50,27 +47,10 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
 
     if (hr == S_OK)
     {
-        // It's an array
         layout.isArray = true;
         layout.arrayElementType = elementType;
         layout.arrayElementClassID = elementClassID;
         layout.arrayRank = rank;
-
-        // Arrays have a special layout - elements start after the array header
-        // For reference type arrays, each element is a pointer
-        if (elementType == ELEMENT_TYPE_CLASS ||
-            elementType == ELEMENT_TYPE_STRING ||
-            elementType == ELEMENT_TYPE_OBJECT ||
-            elementType == ELEMENT_TYPE_SZARRAY ||
-            elementType == ELEMENT_TYPE_ARRAY)
-        {
-            // Array of reference types - we'll handle this specially
-            FieldInfo fieldInfo;
-            fieldInfo.isReferenceType = true;
-            fieldInfo.fieldTypeID = elementClassID;
-            layout.fields.push_back(fieldInfo);
-        }
-
         return layout;
     }
 
@@ -111,8 +91,9 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     {
         if (parentClassID != 0)
         {
-            GetParentClassFields(parentClassID, layout.fields);
+            MergeParentLayout(parentClassID, layout.refFieldOffsets, layout.inlineVtFields);
         }
+        layout.elementHasReferenceFields = !layout.refFieldOffsets.empty();
         return layout;
     }
 
@@ -137,7 +118,8 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
         return layout;
     }
 
-    // Process each field
+    // Process each field using local FieldInfo (not stored in the cache).
+    // Classify into compact ref-offset and inline-VT lists.
     for (ULONG i = 0; i < fieldCount; i++)
     {
         FieldInfo fieldInfo;
@@ -147,20 +129,27 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
         fieldInfo.isReferenceType = IsFieldReferenceType(
             fieldInfo.fieldToken, moduleID, pMetadataImport.Get(), typeArgs);
 
-        if (!fieldInfo.isReferenceType)
+        if (fieldInfo.isReferenceType)
+        {
+            layout.refFieldOffsets.push_back(fieldInfo.offset);
+        }
+        else
         {
             ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
+            if (fieldInfo.isValueType && fieldInfo.valueTypeClassID != 0)
+            {
+                layout.inlineVtFields.emplace_back(fieldInfo.offset, fieldInfo.valueTypeClassID);
+            }
         }
-
-        layout.fields.push_back(fieldInfo);
     }
 
-    // Get parent class fields
+    // Merge parent class's compact lists (parent fields at lower offsets).
     if (parentClassID != 0)
     {
-        GetParentClassFields(parentClassID, layout.fields);
+        MergeParentLayout(parentClassID, layout.refFieldOffsets, layout.inlineVtFields);
     }
 
+    layout.elementHasReferenceFields = !layout.refFieldOffsets.empty();
     return layout;
 }
 
@@ -318,17 +307,23 @@ bool ClassLayoutCache::IsClassIDReferenceType(ClassID classID)
     return result;
 }
 
-void ClassLayoutCache::GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields)
+void ClassLayoutCache::MergeParentLayout(
+    ClassID parentClassID,
+    std::vector<ULONG>& refFieldOffsets,
+    std::vector<std::pair<ULONG, ClassID>>& inlineVtFields)
 {
     const ClassLayoutData* parentLayout = GetLayout(parentClassID);
-    if (parentLayout != nullptr && !parentLayout->fields.empty())
+    if (parentLayout == nullptr)
     {
-        // Parent fields logically precede child fields (lower offsets in memory).
-        // Append then rotate to front: O(N) instead of O(N*D) insert-at-begin.
-        size_t childCount = fields.size();
-        fields.insert(fields.end(), parentLayout->fields.begin(), parentLayout->fields.end());
-        std::rotate(fields.begin(), fields.begin() + childCount, fields.end());
+        return;
     }
+
+    refFieldOffsets.insert(refFieldOffsets.end(),
+                           parentLayout->refFieldOffsets.begin(),
+                           parentLayout->refFieldOffsets.end());
+    inlineVtFields.insert(inlineVtFields.end(),
+                          parentLayout->inlineVtFields.begin(),
+                          parentLayout->inlineVtFields.end());
 }
 
 std::string ClassLayoutCache::GetClassName(ClassID classID) const
@@ -490,21 +485,20 @@ void ClassLayoutCache::ResolveValueTypeField(
         return;
     }
 
-    // Check if the value type's layout contains any reference fields (direct or nested)
+    // Check if the value type's layout contains any reference fields (direct or nested).
+    // The cached layout's compact lists already encode this: non-empty refFieldOffsets
+    // means direct reference sub-fields; non-empty inlineVtFields means nested VTs
+    // that themselves carry references.
     const ClassLayoutData* vtLayout = GetLayout(valueTypeClassID);
     if (vtLayout == nullptr)
     {
         return;
     }
 
-    for (const auto& subField : vtLayout->fields)
+    if (!vtLayout->refFieldOffsets.empty() || !vtLayout->inlineVtFields.empty())
     {
-        if (subField.isReferenceType || (subField.isValueType && subField.valueTypeClassID != 0))
-        {
-            fieldInfo.isValueType = true;
-            fieldInfo.valueTypeClassID = valueTypeClassID;
-            return;
-        }
+        fieldInfo.isValueType = true;
+        fieldInfo.valueTypeClassID = valueTypeClassID;
     }
 }
 
@@ -513,10 +507,11 @@ size_t ClassLayoutCache::GetMemorySize() const
     size_t total = sizeof(ClassLayoutCache);
 
     total += _cache.bucket_count() * sizeof(void*);
-    for (const auto& [classID, layout] : _cache)
+    for (const auto& [id, layout] : _cache)
     {
         total += sizeof(ClassID) + sizeof(ClassLayoutData);
-        total += layout.fields.capacity() * sizeof(FieldInfo);
+        total += layout.refFieldOffsets.capacity() * sizeof(ULONG);
+        total += layout.inlineVtFields.capacity() * sizeof(std::pair<ULONG, ClassID>);
     }
 
     total += _referenceTypeCache.bucket_count() * sizeof(void*);
