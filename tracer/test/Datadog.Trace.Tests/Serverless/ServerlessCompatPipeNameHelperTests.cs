@@ -59,6 +59,8 @@ namespace Datadog.Trace.Tests.Serverless
         }
 
         [Theory]
+        [InlineData(1, 4, 0)]  // last unsupported minor before pipe support
+        [InlineData(1, 4, 99)] // entire 1.4.x range is rejected
         [InlineData(1, 3, 0)]
         [InlineData(1, 0, 0)]
         [InlineData(0, 1, 0)]
@@ -74,8 +76,8 @@ namespace Datadog.Trace.Tests.Serverless
 
         [Theory]
         [InlineData(0, 0, 0)]  // dev build
-        [InlineData(1, 4, 0)]  // minimum supported
-        [InlineData(1, 5, 0)]  // above minimum
+        [InlineData(1, 5, 0)]  // minimum supported
+        [InlineData(1, 6, 0)]  // above minimum
         [InlineData(2, 0, 0)]  // major version bump
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsTrue_WhenVersionSupported(int major, int minor, int build)
         {
