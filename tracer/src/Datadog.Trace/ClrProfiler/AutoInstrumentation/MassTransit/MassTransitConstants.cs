@@ -17,23 +17,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         // ComponentTagName is the lowercase value for the component tag
         internal const string ComponentTagName = "masstransit";
-        internal const string MessagingType = "masstransit";
 
         // Operation types for resource naming and tags
-        internal const string OperationPublish = "publish";
         internal const string OperationSend = "send";
         internal const string OperationReceive = "receive";
         internal const string OperationProcess = "process";
 
-        // Span operation names - fixed to make MassTransit spans easy to identify in metrics
-        // The actual transport is captured in the messaging.system tag
-        internal const string ProduceOperationName = "masstransit.produce";
-        internal const string ConsumeOperationName = "masstransit.consume";
-
         // Assembly and type names
         internal const string MassTransitAssembly = "MassTransit";
-        internal const string ISendEndpointTypeName = "MassTransit.ISendEndpoint";
-        internal const string IConsumeContextTypeName = "MassTransit.ConsumeContext`1";
-        internal const string IConsumerTypeName = "MassTransit.IConsumer`1";
     }
 }
