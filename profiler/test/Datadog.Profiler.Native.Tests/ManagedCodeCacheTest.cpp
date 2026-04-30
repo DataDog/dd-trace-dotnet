@@ -280,11 +280,17 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_DoesNotPolluteCacheNonZer
     WaitForWorkerThread();
 
     // A zero-size range has no valid code; no IP should be reported as managed.
-    EXPECT_FALSE(cache->IsManaged(codeStart))
+    auto codeStartIp = cache->IsManaged(codeStart);
+    EXPECT_TRUE(codeStartIp.has_value());
+    EXPECT_FALSE(codeStartIp.value())
         << "IP at startAddress of a size-0 range must not be managed";
-    EXPECT_FALSE(cache->IsManaged(codeStart - 1))
+    auto codeStartMinusOne = cache->IsManaged(codeStart - 1);
+    EXPECT_TRUE(codeStartMinusOne.has_value());
+    EXPECT_FALSE(codeStartMinusOne.value())
         << "IP just before startAddress must not be managed";
-    EXPECT_FALSE(cache->IsManaged(codeStart + 0x1000))
+    auto codeStartPlusOneThousand = cache->IsManaged(codeStart + 0x1000);
+    EXPECT_TRUE(codeStartPlusOneThousand.has_value());
+    EXPECT_FALSE(codeStartPlusOneThousand.value())
         << "Unrelated IP above a size-0 range must not be managed";
 }
 
@@ -301,7 +307,10 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRangeAtAddressZero_WorkerDoesNo
 
     // If the worker is stuck this call blocks until the test times out.
     WaitForWorkerThread(200);
-    EXPECT_FALSE(cache->IsManaged(0x1000));
+    auto codeStartPlusOneThousand = cache->IsManaged(0x1000);
+    EXPECT_TRUE(codeStartPlusOneThousand.has_value());
+    EXPECT_FALSE(codeStartPlusOneThousand.value())
+        << "Unrelated IP above a size-0 range must not be managed";
 }
 
 // Test: Very large code range
