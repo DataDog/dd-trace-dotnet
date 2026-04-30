@@ -27,6 +27,16 @@ internal static class StackReporter
         return MetaStructHelper.StackTraceInfoToDictionary(null, _language, id, null, frames);
     }
 
+    /// <summary>
+    /// Returns the formatted user-code frames (Datadog.Trace frames excluded) for the
+    /// provided stack, trimmed according to <paramref name="maxStackTraceDepth"/> and
+    /// <paramref name="topPercent"/>. Each frame is a dictionary suitable for JSON
+    /// serialization and contains keys like <c>id</c>, <c>file</c>, <c>line</c>,
+    /// <c>namespace</c>, <c>class_name</c>, <c>function</c>.
+    /// </summary>
+    public static List<Dictionary<string, object>> GetUserFrames(int maxStackTraceDepth, int topPercent, StackFrame?[] frames)
+        => GetFrames(maxStackTraceDepth, topPercent, frames);
+
     private static List<Dictionary<string, object>> GetFrames(int maxStackTraceDepth, int topPercent, StackFrame?[] frames)
     {
         var allValidFrames = new List<Dictionary<string, object>>(frames.Length);
