@@ -14,5 +14,10 @@
     
     <Import Project="$(MSBuildThisFileDirectory)\RepoAndBuild-DirectoryStructure.props" />
     <Import Project="$(MSBuildThisFileDirectory)\CodeAnalysis.props" Condition=" '$(SkipCodeAnalysis)' != 'True' " />
-    
+
+    <PropertyGroup>
+        <!-- NU1503: native .vcxproj projects can't be restored by NuGet (no PackageReference), so the solution-level restore emits this for every native project; harmless. -->
+        <NoWarn>$(NoWarn);NU1503</NoWarn>
+    </PropertyGroup>
+
 </Project>

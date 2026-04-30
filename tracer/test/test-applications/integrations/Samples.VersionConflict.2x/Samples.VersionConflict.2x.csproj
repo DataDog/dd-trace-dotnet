@@ -1,5 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <!-- NU1510: System.Net.Http is flagged as framework-provided, but this sample is named "VersionConflict"
+         and intentionally pins legacy versions of Datadog.Trace and System.Net.Http for the regression scenario. -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Datadog.Trace" Version="2.60.0" />
@@ -10,5 +15,5 @@
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
   </PropertyGroup>
-  
+
 </Project>
