@@ -87,7 +87,6 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     static const std::string SentinelFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Sentinel-Frame |fg: |sg:(?)");
 
     static bool previousFrameStatus = false;
-    static std::uint8_t sentinelFrameCount = 0;
 
     // check for fake IPs used in tests
     if (instructionPointer <= MaxFakeIP)
@@ -98,14 +97,13 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
             previousFrameStatus = true;
             return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
         }
-        else if (instructionPointer == FrameStore::SentinelFrameIP)
+        else if (instructionPointer == FrameStore::SentinelStartFrameIP)
         {
-            sentinelFrameCount++;
-            if (sentinelFrameCount > 1)
-            {
-                previousFrameStatus = false;
-                sentinelFrameCount = 0;
-            }
+            previousFrameStatus = false;
+            return { false, {FakeModuleName, SentinelFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::SentinelPhase1EndFrameIP)
+        {
             return { previousFrameStatus, {FakeModuleName, SentinelFrame, "", 0} };
         }
         else
@@ -119,7 +117,6 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
             // We log it only when it debug to identify truncated callstack
             // Example: during tests
             const auto recordFrame = Log::IsDebugEnabled();
-            previousFrameStatus = recordFrame;
             return { recordFrame, {FakeModuleName, UnknownFrameType, "", 0} };
         }
         else
@@ -148,7 +145,6 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         {
             // IP is not in managed ranges (native frame). Return isResolved=false so
             // RawSampleTransformer drops it from the final callstack.
-            previousFrameStatus = false;
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
@@ -170,7 +166,6 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         {
             // IP is not in managed ranges (native frame). Return isResolved=false so
             // RawSampleTransformer drops it from the final callstack.
-            previousFrameStatus = false;
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }

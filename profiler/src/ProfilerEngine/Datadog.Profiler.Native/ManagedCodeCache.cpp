@@ -209,7 +209,7 @@ std::optional<bool> ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcep
     // Best effort to get the managed code address range
     // If IsManaged returns nullopt (which means that we failed at acquiring the lock),
     // we try MaxRetries times.
-    auto constexpr MaxRetries = 3;
+    auto constexpr MaxRetries = 5;
     for (auto i = 0; i < MaxRetries; i++)
     {
         auto result = IsManagedImpl(ip);
