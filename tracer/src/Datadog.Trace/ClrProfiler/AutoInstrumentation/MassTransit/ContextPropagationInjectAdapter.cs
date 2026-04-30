@@ -1,105 +1,35 @@
-// <copyright file="ContextPropagation.cs" company="Datadog">
+// <copyright file="ContextPropagationInjectAdapter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-// SA1649: File name should match first type name
-// Justification: This file contains both ContextPropagationExtractAdapter and ContextPropagationInjectAdapter.
-// Both types share the ContextPropagation prefix matching the file name.
-#pragma warning disable SA1649
-
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     /// <summary>
-    /// Adapter for EXTRACTING (reading) trace context headers from incoming MassTransit messages (consumer side).
-    /// Scenario: When a consumer receives a message, extract distributed tracing headers to continue the trace.
-    /// Uses duck typing to read headers via IHeaders.GetAll() which returns IEnumerable[HeaderValue].
-    /// Used by: MassTransitCommon.ExtractTraceContext() for distributed tracing propagation.
-    /// </summary>
-    internal readonly struct ContextPropagationExtractAdapter : IHeadersCollection
-    {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagationExtractAdapter));
-
-        private readonly IHeaders? _headersProxy;
-
-        public ContextPropagationExtractAdapter(object? headers)
-        {
-            _headersProxy = headers?.DuckCast<IHeaders>();
-        }
-
-        public IEnumerable<string> GetValues(string name)
-        {
-            string? result = null;
-
-            if (_headersProxy != null)
-            {
-                try
-                {
-                    var allHeaders = _headersProxy.GetAll();
-                    if (allHeaders != null)
-                    {
-                        foreach (var item in allHeaders)
-                        {
-                            // Items are KeyValuePair<string, object> — cast directly, no duck typing needed
-                            if (item is System.Collections.Generic.KeyValuePair<string, object> kvp
-                                && string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase)
-                                && kvp.Value != null)
-                            {
-                                result = kvp.Value.ToString();
-                                break;
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "ContextPropagationExtractAdapter.GetValues: Error reading headers for '{Name}'", name);
-                }
-            }
-
-            if (result != null)
-            {
-                yield return result;
-            }
-        }
-
-        public void Set(string name, string value)
-        {
-            // Not used - this adapter only extracts (reads) headers via GetValues(), never injects (writes) them.
-            // Incoming message headers are read-only.
-        }
-
-        public void Add(string name, string value)
-        {
-            // Not used - incoming message headers are read-only.
-        }
-
-        public void Remove(string name)
-        {
-            // Not used - incoming message headers are read-only.
-        }
-    }
-
-    /// <summary>
     /// Adapter for INJECTING (writing) trace context headers into outgoing MassTransit messages (producer side).
     /// Scenario: When a producer sends a message, inject distributed tracing headers to propagate the trace.
-    /// Uses reflection to invoke SendHeaders.Set() methods because MassTransit uses explicit interface implementation.
-    /// Duck typing cannot be used here - see WHY_DUCK_TYPING_FAILED.md for details.
+    /// Uses reflection rather than duck typing: MassTransit's DictionarySendHeaders implements SendHeaders.Set
+    /// as an explicit interface method, which the duck-typing public-member binder cannot see.
     /// Used by: MassTransitCommon.InjectTraceContext() for distributed tracing propagation.
     /// </summary>
     internal readonly struct ContextPropagationInjectAdapter : IHeadersCollection
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagationInjectAdapter));
+
+        // Cache of resolved Set methods per concrete headers type. The MassTransit headers type space
+        // is small (DictionarySendHeaders and a handful of transport-specific subclasses), so unbounded
+        // growth is not a concern.
+        private static readonly ConcurrentDictionary<Type, SetMethods> SetMethodCache = new();
+        private static readonly Func<Type, SetMethods> ResolveSetMethodsDelegate = ResolveSetMethods;
 
         private readonly object? _headers;
         private readonly MethodInfo? _setStringMethod;
@@ -113,36 +43,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             if (headers != null)
             {
-                var headersType = headers.GetType();
-
-                // MassTransit's DictionarySendHeaders implements the SendHeaders interface
-                // The Set methods may be implemented via the interface, so we need to search
-                // both the concrete type and its interfaces
-
-                // Try Set(string, string) first - most efficient
-                _setStringMethod = FindSetMethod(headersType, typeof(string), typeof(string));
-
-                // Fall back to Set(string, object) or Set(string, object, bool)
-                if (_setStringMethod == null)
-                {
-                    _setObjectMethod = FindSetMethod(headersType, typeof(string), typeof(object));
-                }
-
-                if (_setStringMethod == null && _setObjectMethod == null)
-                {
-                    Log.Debug(
-                        "SendContextHeadersAdapter: Could not find suitable Set method on {HeadersType}",
-                        headersType.FullName);
-                }
-                else
-                {
-                    Log.Debug(
-                        "SendContextHeadersAdapter: Found Set method on {HeadersType}: StringMethod={HasString}, ObjectMethod={HasObject}",
-                        headersType.FullName,
-                        _setStringMethod != null,
-                        _setObjectMethod != null);
-                }
+                var resolved = SetMethodCache.GetOrAdd(headers.GetType(), ResolveSetMethodsDelegate);
+                _setStringMethod = resolved.SetString;
+                _setObjectMethod = resolved.SetObject;
             }
+        }
+
+        private static SetMethods ResolveSetMethods(Type headersType)
+        {
+            // MassTransit's DictionarySendHeaders implements the SendHeaders interface
+            // The Set methods may be implemented via the interface, so we need to search
+            // both the concrete type and its interfaces
+
+            // Try Set(string, string) first - most efficient
+            var setStringMethod = FindSetMethod(headersType, typeof(string), typeof(string));
+            MethodInfo? setObjectMethod = null;
+
+            // Fall back to Set(string, object) or Set(string, object, bool)
+            if (setStringMethod == null)
+            {
+                setObjectMethod = FindSetMethod(headersType, typeof(string), typeof(object));
+            }
+
+            if (setStringMethod == null && setObjectMethod == null)
+            {
+                Log.Debug(
+                    "ContextPropagationInjectAdapter: Could not find suitable Set method on {HeadersType}",
+                    headersType.FullName);
+            }
+            else
+            {
+                Log.Debug<string?, bool, bool>(
+                    "ContextPropagationInjectAdapter: Found Set method on {HeadersType}: StringMethod={HasString}, ObjectMethod={HasObject}",
+                    headersType.FullName,
+                    setStringMethod != null,
+                    setObjectMethod != null);
+            }
+
+            return new SetMethods(setStringMethod, setObjectMethod);
         }
 
         private static MethodInfo? FindSetMethod(Type type, Type param1Type, Type param2Type)
@@ -297,6 +235,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             // Not used - header removal is not needed for trace context injection.
             // We only add/set headers, never remove them.
+        }
+
+        private readonly struct SetMethods
+        {
+            public SetMethods(MethodInfo? setString, MethodInfo? setObject)
+            {
+                SetString = setString;
+                SetObject = setObject;
+            }
+
+            public MethodInfo? SetString { get; }
+
+            public MethodInfo? SetObject { get; }
         }
     }
 }

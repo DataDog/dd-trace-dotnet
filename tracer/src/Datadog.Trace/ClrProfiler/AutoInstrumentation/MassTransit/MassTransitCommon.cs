@@ -6,13 +6,15 @@
 #nullable enable
 
 using System;
-using System.Linq;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
-
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
@@ -30,6 +32,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         // AsyncLocal is safe here because the constructor fires synchronously within the
         // same async context as the DiagnosticObserver Send.Start event.
         internal static readonly AsyncLocal<SpanContext?> PendingInMemorySpanContext = new();
+
+        // Cache of resolved PropertyInfo lookups for TryGetProperty. Keyed by (concrete type, property name).
+        // The MassTransit context type space is small and bounded, so unbounded growth is not a concern.
+        // Using a struct key instead of a value tuple because tuple syntax requires System.ValueTuple,
+        // which isn't available on .NET Framework 4.6.1.
+        private static readonly ConcurrentDictionary<PropertyCacheKey, PropertyInfo?> PropertyCache = new();
+        private static readonly Func<PropertyCacheKey, PropertyInfo?> ResolvePropertyDelegate = ResolveProperty;
 
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
@@ -231,8 +240,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             // this scenario is untested
-            if (address.StartsWith("sb://", StringComparison.OrdinalIgnoreCase) ||
-                address.IndexOf("servicebus", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (address.StartsWith("sb://", StringComparison.OrdinalIgnoreCase))
             {
                 return "azureservicebus";
             }
@@ -281,6 +289,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             if (scope?.Span?.Tags is not MassTransitTags tags)
             {
+                // All MassTransit scopes are created via Create{Producer,Consumer}Scope with MassTransitTags,
+                // so reaching this branch means the scope was created somewhere unexpected.
+                Log.Debug("MassTransitCommon.SetContextTags: Active scope's tags are not MassTransitTags; skipping.");
                 return;
             }
 
@@ -312,8 +323,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             out Guid? conversationId,
             out Guid? correlationId)
         {
-            if (sendContext is null)
+            if (sendContext is null || !sendContext.TryDuckCast<IMessageSendContext>(out var context))
             {
+                // Either no SendContext or its shape diverges from IMessageSendContext. Returning
+                // null lets the caller create a producer span without metadata rather than throwing.
                 destinationAddress = null;
                 messageId = null;
                 conversationId = null;
@@ -321,7 +334,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 return null;
             }
 
-            var context = sendContext.DuckCast<IMessageSendContext>();
             destinationAddress = context.DestinationAddress?.ToString();
             messageId = context.MessageId;
             conversationId = context.ConversationId;
@@ -347,31 +359,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                var type = obj.GetType();
-
-                // First try direct property lookup
-                var property = type.GetProperty(propertyName);
-                if (property != null)
+                var property = PropertyCache.GetOrAdd(new PropertyCacheKey(obj.GetType(), propertyName), ResolvePropertyDelegate);
+                if (property != null && property.GetValue(obj) is T typedValue)
                 {
-                    var value = property.GetValue(obj);
-                    if (value is T typedValue)
-                    {
-                        return typedValue;
-                    }
-                }
-
-                // If not found, search interface properties
-                foreach (var iface in type.GetInterfaces())
-                {
-                    property = iface.GetProperty(propertyName);
-                    if (property != null)
-                    {
-                        var value = property.GetValue(obj);
-                        if (value is T typedValue)
-                        {
-                            return typedValue;
-                        }
-                    }
+                    return typedValue;
                 }
             }
             catch (Exception ex)
@@ -380,6 +371,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             return default;
+        }
+
+        private static PropertyInfo? ResolveProperty(PropertyCacheKey key)
+        {
+            // Class-level lookup wins over interface lookup so explicit-interface implementations
+            // resolve to the concrete declared property when one exists.
+            var property = key.OwnerType.GetProperty(key.PropertyName);
+            if (property != null)
+            {
+                return property;
+            }
+
+            foreach (var iface in key.OwnerType.GetInterfaces())
+            {
+                property = iface.GetProperty(key.PropertyName);
+                if (property != null)
+                {
+                    return property;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -441,7 +454,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var internalHeaders = headersObj?.DuckCast<DictionarySendHeadersInnerCopy>().Headers;
                 if (internalHeaders != null)
                 {
-                    var adapter = new Datadog.Trace.Headers.CarrierWithDelegate<System.Collections.Generic.IDictionary<string, object>>(
+                    var adapter = new CarrierWithDelegate<IDictionary<string, object>>(
                         internalHeaders,
                         setter: (d, k, v) => d[k] = v);
                     tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, adapter);
@@ -607,6 +620,167 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             if (entityName.StartsWith("Instance_", StringComparison.Ordinal)) { return "instance"; }
 
             return entityName;
+        }
+
+        /// <summary>
+        /// Gets the ActivityKind for MassTransit operations based on the operation name.
+        /// </summary>
+        internal static ActivityKind GetActivityKind(IActivity5 activity)
+        {
+            var operationName = activity.OperationName;
+
+            // Check messaging.operation tag which MassTransit sets
+            string? messagingOperation = null;
+            foreach (var tag in activity.Tags)
+            {
+                if (tag.Key == "messaging.operation")
+                {
+                    messagingOperation = tag.Value;
+                    break;
+                }
+            }
+
+            if (!StringUtil.IsNullOrWhiteSpace(messagingOperation))
+            {
+                return messagingOperation switch
+                {
+                    "send" => ActivityKind.Producer,
+                    "receive" => ActivityKind.Consumer,
+                    "process" => ActivityKind.Consumer,
+                    _ => activity.Kind
+                };
+            }
+
+            // Fallback to operation name analysis (case-insensitive using ToLowerInvariant for .NET Framework compatibility)
+            if (operationName is not null)
+            {
+                var lowerOperationName = operationName.ToLowerInvariant();
+
+                if (lowerOperationName.Contains("send"))
+                {
+                    return ActivityKind.Producer;
+                }
+
+                if (lowerOperationName.Contains("receive") ||
+                    lowerOperationName.Contains("consume") ||
+                    lowerOperationName.Contains("handle") ||
+                    lowerOperationName.Contains("process") ||
+                    lowerOperationName.Contains("saga") ||
+                    lowerOperationName.Contains("activity"))
+                {
+                    return ActivityKind.Consumer;
+                }
+            }
+
+            return activity.Kind;
+        }
+
+        /// <summary>
+        /// Sets the ActivityKind for MassTransit operations.
+        /// </summary>
+        internal static void SetActivityKind(IActivity5 activity)
+        {
+            ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
+        }
+
+        /// <summary>
+        /// Creates a resource name for MassTransit operations based on destination and operation.
+        /// </summary>
+        internal static string CreateResourceName(string? destination, string? operation)
+        {
+            var cleanDestination = ExtractDestinationName(destination);
+            if (StringUtil.IsNullOrWhiteSpace(cleanDestination))
+            {
+                cleanDestination = "unknown";
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(operation))
+            {
+                return cleanDestination;
+            }
+
+            return $"{cleanDestination} {operation}";
+        }
+
+        /// <summary>
+        /// Enriches a MassTransit Activity with component tag, preserved operation name, and a
+        /// destination-derived display name. Called from MassTransitActivityHandler when an MT8
+        /// ActivitySource activity is mapped to a Datadog span.
+        /// </summary>
+        internal static void EnhanceActivityMetadata(IActivity5 activity)
+        {
+            // Add component tag to identify this as a MassTransit span
+            activity.AddTag(Tags.InstrumentationName, MassTransitConstants.ComponentTagName);
+
+            // Preserve the original MT8 activity operation name (e.g. "MassTransit.Transport.Send")
+            var originalOperationName = activity.OperationName ?? string.Empty;
+            if (!StringUtil.IsNullOrWhiteSpace(originalOperationName))
+            {
+                activity.AddTag("operation.name", originalOperationName);
+            }
+
+            // Read destination from messaging.destination.name, fallback to peer.address for process/consume spans.
+            string? destination = null;
+            string? peerAddress = null;
+            string? operation = null;
+
+            foreach (var tag in activity.Tags)
+            {
+                switch (tag.Key)
+                {
+                    case "messaging.destination.name":
+                        destination = tag.Value;
+                        break;
+                    case "peer.address":
+                        peerAddress = tag.Value;
+                        break;
+                    case "messaging.operation":
+                        operation = tag.Value;
+                        break;
+                }
+
+                // Early exit if we found all tags
+                if (destination != null && peerAddress != null && operation != null)
+                {
+                    break;
+                }
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(destination))
+            {
+                destination = peerAddress?.TrimStart('/');
+            }
+
+            // Update DisplayName (resource name) from destination + operation
+            if (!StringUtil.IsNullOrWhiteSpace(destination))
+            {
+                activity.DisplayName = CreateResourceName(destination, operation);
+            }
+        }
+
+        private readonly struct PropertyCacheKey : IEquatable<PropertyCacheKey>
+        {
+            public PropertyCacheKey(Type ownerType, string propertyName)
+            {
+                OwnerType = ownerType;
+                PropertyName = propertyName;
+            }
+
+            public Type OwnerType { get; }
+
+            public string PropertyName { get; }
+
+            public bool Equals(PropertyCacheKey other) => OwnerType == other.OwnerType && PropertyName == other.PropertyName;
+
+            public override bool Equals(object? obj) => obj is PropertyCacheKey other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (OwnerType.GetHashCode() * 397) ^ PropertyName.GetHashCode();
+                }
+            }
         }
     }
 }

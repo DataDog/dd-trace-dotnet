@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger
             DynamicInstrumentationEnabled = diEnabledResult.WithDefault(false);
             DynamicInstrumentationCanBeEnabled = diEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
 
-            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(DynamicInstrumentationCanBeEnabled);
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
@@ -152,6 +152,8 @@ namespace Datadog.Trace.Debugger
                                          .Value;
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
+
+            ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -197,6 +199,8 @@ namespace Datadog.Trace.Debugger
         public bool CodeOriginForSpansCanBeEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
+
+        public string ProbeFile { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

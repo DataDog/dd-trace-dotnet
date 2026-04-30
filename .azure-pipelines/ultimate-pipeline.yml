@@ -1703,7 +1703,7 @@ stages:
 #      displayName: Start test agent
 #      retryCountOnTaskFailure: 3
 
-    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd CompileTrimmingSamples BuildIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Build integration tests
       retryCountOnTaskFailure: 3
       env:
@@ -2140,7 +2140,7 @@ stages:
         patterns: '**/*-$(targetPlatform).msi'
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
-      displayName: BuildWindowsIntegrationTests
+      displayName: BuildAspNetIntegrationTests
       retryCountOnTaskFailure: 3
 
     - template: steps/ensure-docker-ready.yml
@@ -2215,8 +2215,8 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildWindowsIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: BuildWindowsIntegrationTests
+    - script: tracer\build.cmd BuildIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: BuildIntegrationTests
       retryCountOnTaskFailure: 3
 
     - script: tracer\build.cmd RunIntegrationTests -filter FleetInstaller=True -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
@@ -2287,7 +2287,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+        command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apikey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2390,7 +2390,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+        command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2512,7 +2512,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
+        command: "BuildIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2520,7 +2520,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
+        command: "BuildIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -3140,7 +3140,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+            command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
 
@@ -3210,7 +3210,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+            command: "BuildIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
 

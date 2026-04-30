@@ -81,6 +81,23 @@ namespace Datadog.Trace.Tests.Debugger
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
         }
 
+        [Theory]
+        [InlineData("false")]
+        [InlineData("0")]
+        public void SymbolsEnabled_WhenDynamicInstrumentationExplicitlyDisabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled },
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeFalse();
+            settings.DynamicInstrumentationCanBeEnabled.Should().BeFalse();
+            settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
+        }
+
         [Fact]
         public void DebuggerSettings_UseSettings()
         {
@@ -192,6 +209,37 @@ namespace Datadog.Trace.Tests.Debugger
                 NullConfigurationTelemetry.Instance);
 
             settings.MaxProbesPerType.Should().Be(0);
+        }
+
+        [Theory]
+        [InlineData("/path/to/probes.json")]
+        [InlineData("C:\\probes\\config.json")]
+        [InlineData("probes.json")]
+        public void ProbeFile_ParsesCorrectly(string probeFilePath)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, probeFilePath }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.ProbeFile.Should().Be(probeFilePath);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(null)]
+        public void ProbeFile_EmptyOrNull(string probeFilePath)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, probeFilePath }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.ProbeFile.Should().BeEmpty();
         }
 
         public class DebuggerSettingsCodeOriginTests
