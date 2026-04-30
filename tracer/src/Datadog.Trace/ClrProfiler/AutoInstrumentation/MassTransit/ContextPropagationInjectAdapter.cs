@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Headers;
@@ -24,6 +25,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagationInjectAdapter));
 
+        // Cache of resolved Set methods per concrete headers type. The MassTransit headers type space
+        // is small (DictionarySendHeaders and a handful of transport-specific subclasses), so unbounded
+        // growth is not a concern.
+        private static readonly ConcurrentDictionary<Type, SetMethods> SetMethodCache = new();
+        private static readonly Func<Type, SetMethods> ResolveSetMethodsDelegate = ResolveSetMethods;
+
         private readonly object? _headers;
         private readonly MethodInfo? _setStringMethod;
         private readonly MethodInfo? _setObjectMethod;
@@ -36,36 +43,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             if (headers != null)
             {
-                var headersType = headers.GetType();
-
-                // MassTransit's DictionarySendHeaders implements the SendHeaders interface
-                // The Set methods may be implemented via the interface, so we need to search
-                // both the concrete type and its interfaces
-
-                // Try Set(string, string) first - most efficient
-                _setStringMethod = FindSetMethod(headersType, typeof(string), typeof(string));
-
-                // Fall back to Set(string, object) or Set(string, object, bool)
-                if (_setStringMethod == null)
-                {
-                    _setObjectMethod = FindSetMethod(headersType, typeof(string), typeof(object));
-                }
-
-                if (_setStringMethod == null && _setObjectMethod == null)
-                {
-                    Log.Debug(
-                        "ContextPropagationInjectAdapter: Could not find suitable Set method on {HeadersType}",
-                        headersType.FullName);
-                }
-                else
-                {
-                    Log.Debug(
-                        "ContextPropagationInjectAdapter: Found Set method on {HeadersType}: StringMethod={HasString}, ObjectMethod={HasObject}",
-                        headersType.FullName,
-                        _setStringMethod != null,
-                        _setObjectMethod != null);
-                }
+                var resolved = SetMethodCache.GetOrAdd(headers.GetType(), ResolveSetMethodsDelegate);
+                _setStringMethod = resolved.SetString;
+                _setObjectMethod = resolved.SetObject;
             }
+        }
+
+        private static SetMethods ResolveSetMethods(Type headersType)
+        {
+            // MassTransit's DictionarySendHeaders implements the SendHeaders interface
+            // The Set methods may be implemented via the interface, so we need to search
+            // both the concrete type and its interfaces
+
+            // Try Set(string, string) first - most efficient
+            var setStringMethod = FindSetMethod(headersType, typeof(string), typeof(string));
+            MethodInfo? setObjectMethod = null;
+
+            // Fall back to Set(string, object) or Set(string, object, bool)
+            if (setStringMethod == null)
+            {
+                setObjectMethod = FindSetMethod(headersType, typeof(string), typeof(object));
+            }
+
+            if (setStringMethod == null && setObjectMethod == null)
+            {
+                Log.Debug(
+                    "ContextPropagationInjectAdapter: Could not find suitable Set method on {HeadersType}",
+                    headersType.FullName);
+            }
+            else
+            {
+                Log.Debug<string?, bool, bool>(
+                    "ContextPropagationInjectAdapter: Found Set method on {HeadersType}: StringMethod={HasString}, ObjectMethod={HasObject}",
+                    headersType.FullName,
+                    setStringMethod != null,
+                    setObjectMethod != null);
+            }
+
+            return new SetMethods(setStringMethod, setObjectMethod);
         }
 
         private static MethodInfo? FindSetMethod(Type type, Type param1Type, Type param2Type)
@@ -220,6 +235,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             // Not used - header removal is not needed for trace context injection.
             // We only add/set headers, never remove them.
+        }
+
+        private readonly struct SetMethods
+        {
+            public SetMethods(MethodInfo? setString, MethodInfo? setObject)
+            {
+                SetString = setString;
+                SetObject = setObject;
+            }
+
+            public MethodInfo? SetString { get; }
+
+            public MethodInfo? SetObject { get; }
         }
     }
 }

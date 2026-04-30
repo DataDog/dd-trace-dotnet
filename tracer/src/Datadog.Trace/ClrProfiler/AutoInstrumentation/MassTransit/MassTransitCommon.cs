@@ -6,7 +6,9 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
@@ -28,6 +30,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         // AsyncLocal is safe here because the constructor fires synchronously within the
         // same async context as the DiagnosticObserver Send.Start event.
         internal static readonly AsyncLocal<SpanContext?> PendingInMemorySpanContext = new();
+
+        // Cache of resolved PropertyInfo lookups for TryGetProperty. Keyed by (concrete type, property name).
+        // The MassTransit context type space is small and bounded, so unbounded growth is not a concern.
+        private static readonly ConcurrentDictionary<(Type Type, string Name), PropertyInfo?> PropertyCache = new();
+        private static readonly Func<(Type Type, string Name), PropertyInfo?> ResolvePropertyDelegate = ResolveProperty;
 
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
@@ -347,31 +354,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                var type = obj.GetType();
-
-                // First try direct property lookup
-                var property = type.GetProperty(propertyName);
-                if (property != null)
+                var property = PropertyCache.GetOrAdd((obj.GetType(), propertyName), ResolvePropertyDelegate);
+                if (property != null && property.GetValue(obj) is T typedValue)
                 {
-                    var value = property.GetValue(obj);
-                    if (value is T typedValue)
-                    {
-                        return typedValue;
-                    }
-                }
-
-                // If not found, search interface properties
-                foreach (var iface in type.GetInterfaces())
-                {
-                    property = iface.GetProperty(propertyName);
-                    if (property != null)
-                    {
-                        var value = property.GetValue(obj);
-                        if (value is T typedValue)
-                        {
-                            return typedValue;
-                        }
-                    }
+                    return typedValue;
                 }
             }
             catch (Exception ex)
@@ -380,6 +366,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             return default;
+        }
+
+        private static PropertyInfo? ResolveProperty((Type Type, string Name) key)
+        {
+            // Class-level lookup wins over interface lookup so explicit-interface implementations
+            // resolve to the concrete declared property when one exists.
+            var property = key.Type.GetProperty(key.Name);
+            if (property != null)
+            {
+                return property;
+            }
+
+            foreach (var iface in key.Type.GetInterfaces())
+            {
+                property = iface.GetProperty(key.Name);
+                if (property != null)
+                {
+                    return property;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
