@@ -7,11 +7,13 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -33,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class SendServiceBusMessageBatchIntegration
     {
+        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:servicebus"];
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -53,6 +57,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             if (tracer.Settings.AzureServiceBusBatchLinksEnabled)
             {
                 messageScope = CreateAddMessageSpan(instance, message);
+            }
+
+            // DSM only for batch-with-links (messageScope is the per-message TryAdd span).
+            // Batch-without-links is handled by InstrumentMessageIntegration during SendMessagesAsync(batch).
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (messageScope != null
+                && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+                && dataStreamsManager.IsEnabled
+                && message.ApplicationProperties is IDictionary<string, object> applicationProperties
+                && messageScope.Span is Span span)
+            {
+                var entityPath = instance.ClientDiagnostics.EntityPath;
+                var edgeTags = string.IsNullOrEmpty(entityPath)
+                    ? DefaultProduceEdgeTags
+                    : dataStreamsManager.GetOrCreateEdgeTags(
+                        new ServiceBusEdgeTagCacheKey(entityPath!, IsConsume: false),
+                        static k => ["direction:out", $"topic:{k.EntityPath}", "type:servicebus"]);
+                var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
+                dataStreamsManager.InjectPathwayContextAsBase64String(
+                    span.Context.PathwayContext,
+                    new AzureHeadersCollectionAdapter(applicationProperties));
             }
 
             return new CallTargetState(messageScope);

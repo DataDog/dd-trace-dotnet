@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 var edgeTags = string.IsNullOrEmpty(namespaceString)
                                     ? DefaultConsumeEdgeTags
                                     : dataStreamsManager.GetOrCreateEdgeTags(
-                                        new ServiceBusEdgeTagCacheKey(namespaceString),
+                                        new ServiceBusEdgeTagCacheKey(namespaceString, IsConsume: true),
                                         static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
                 var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
                 span.SetDataStreamsCheckpoint(

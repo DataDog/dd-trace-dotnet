@@ -10,9 +10,6 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Activity.Handlers
 {
-    /// <summary>
-    /// Handles Activities emitted by the Azure.Messaging.ServiceBus ActivitySource.
-    /// </summary>
     internal sealed class AzureServiceBusActivityHandler : IActivityHandler
     {
         public bool ShouldListenTo(string sourceName, string? version)
