@@ -14,7 +14,7 @@ namespace Datadog.Trace.Serverless
 {
     /// <summary>
     /// Checks whether the Datadog Serverless Compat layer is available and supports named-pipe
-    /// transport. Pipe-name generation itself lives in <see cref="ServerlessCompatPipeNames"/>.
+    /// transport. Pipe-name generation itself lives in SettingsManager.CreatePipeNames.
     /// </summary>
     internal static class ServerlessCompatPipeNameHelper
     {
@@ -46,10 +46,10 @@ namespace Datadog.Trace.Serverless
                 // DD_SERVERLESS_COMPAT_PATH overrides the default binary location
                 // (matches CompatibilityLayer.cs in datadog-serverless-compat-dotnet).
                 const string defaultCompatBinaryPath = @"C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe";
-                var compatBinaryPath = !string.IsNullOrEmpty(compatPathOverride) ? compatPathOverride! : defaultCompatBinaryPath;
+                var compatBinaryPath = !StringUtil.IsNullOrEmpty(compatPathOverride) ? compatPathOverride : defaultCompatBinaryPath;
 
                 // Check that the compat DLL exists and has a version that supports named pipes.
-                // Named pipe support was added in compat version 1.4.0 (dev builds use 0.0.0).
+                // Named pipe support was added in compat version 1.5.0 (dev builds use 0.0.0).
                 var compatDllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "Datadog.Serverless.Compat.dll");
                 if (!fileExists(compatBinaryPath) || !fileExists(compatDllPath))
                 {
@@ -65,9 +65,9 @@ namespace Datadog.Trace.Serverless
                     return false;
                 }
 
-                // Allow 0.0.0 (dev builds) or >= 1.4.0 (first release with pipe support)
+                // Allow 0.0.0 (dev builds) or >= 1.5.0 (first release with pipe support)
                 var isDevBuild = version.Major == 0 && version.Minor == 0 && version.Build == 0;
-                var isSupported = version.Major > 1 || (version.Major == 1 && version.Minor >= 4);
+                var isSupported = version.Major > 1 || (version.Major == 1 && version.Minor >= 5);
 
                 if (isDevBuild || isSupported)
                 {
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Serverless
                     return true;
                 }
 
-                Log.Debug("Compat layer version {Version} does not support named pipes (requires v1.4.0 or greater. Using fallback communication methods.)", version);
+                Log.Debug("Compat layer version {Version} does not support named pipes (requires v1.5.0 or greater. Using fallback communication methods.)", version);
                 return false;
             }
             catch (Exception ex)

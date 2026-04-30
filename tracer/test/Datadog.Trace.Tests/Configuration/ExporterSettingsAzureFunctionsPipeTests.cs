@@ -6,9 +6,11 @@
 #nullable enable
 
 using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Serverless;
 using FluentAssertions;
 using Xunit;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
@@ -76,6 +78,77 @@ namespace Datadog.Trace.Tests.Configuration
                 // is covered by integration tests.
                 settings.MetricsPipeName.Should().BeNull();
             }
+        }
+
+        // Cases below exercise the SettingsManager-injected pipe-name path. The 3-arg test ctor used
+        // above defaults pipeNames to None, so it can't reach the auto-generated branch.
+
+        [Theory]
+        [InlineData(null, "dd_trace_auto", "dd_trace_auto")]                   // raw unset → auto-gen wins
+        [InlineData("", "dd_trace_auto", "dd_trace_auto")]                     // empty raw → auto-gen wins
+        [InlineData("customer_pipe", "dd_trace_auto", "customer_pipe")]        // customer raw beats auto-gen
+        public void Constructor_TracesPipeName_AutoGenAndOverride(string? explicitPipeName, string autoGen, string expected)
+        {
+            var config = new NameValueCollection();
+            if (explicitPipeName is not null)
+            {
+                config.Add(ConfigurationKeys.TracesPipeName, explicitPipeName);
+            }
+
+            var source = new NameValueConfigurationSource(config);
+            var telemetry = new ConfigurationTelemetry();
+            var raw = new ExporterSettings.Raw(source, telemetry);
+            var pipeNames = new ServerlessCompatPipeNames(TracesPipeName: autoGen, MetricsPipeName: "dd_dogstatsd_auto");
+            var settings = new ExporterSettings(raw, _ => false, telemetry, pipeNames);
+
+            settings.TracesPipeName.Should().Be(expected);
+            settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
+        }
+
+        [Theory]
+        [InlineData(null, "dd_dogstatsd_auto", "dd_dogstatsd_auto")]
+        [InlineData("", "dd_dogstatsd_auto", "dd_dogstatsd_auto")]
+        [InlineData("customer_metrics_pipe", "dd_dogstatsd_auto", "customer_metrics_pipe")]
+        public void Constructor_MetricsPipeName_AutoGenAndOverride(string? explicitPipeName, string autoGen, string expected)
+        {
+            var config = new NameValueCollection();
+            if (explicitPipeName is not null)
+            {
+                config.Add(ConfigurationKeys.MetricsPipeName, explicitPipeName);
+            }
+
+            var source = new NameValueConfigurationSource(config);
+            var telemetry = new ConfigurationTelemetry();
+            var raw = new ExporterSettings.Raw(source, telemetry);
+            var pipeNames = new ServerlessCompatPipeNames(TracesPipeName: "dd_trace_auto", MetricsPipeName: autoGen);
+            var settings = new ExporterSettings(raw, _ => false, telemetry, pipeNames);
+
+            settings.MetricsPipeName.Should().Be(expected);
+            settings.MetricsTransport.Should().Be(MetricsTransportType.NamedPipe);
+        }
+
+        [Fact]
+        public void Constructor_RecordsCalculatedTelemetryOrigin_OnlyForAutoGenPipeNames()
+        {
+            // Customer set traces pipe explicitly; metrics pipe falls through to auto-gen.
+            // Only the metrics record should be tagged ConfigurationOrigins.Calculated by ExporterSettings —
+            // the customer-set traces value is recorded by the Raw ctor with its real origin.
+            var config = new NameValueCollection();
+            config.Add(ConfigurationKeys.TracesPipeName, "customer_traces_pipe");
+
+            var source = new NameValueConfigurationSource(config);
+            var telemetry = new ConfigurationTelemetry();
+            var raw = new ExporterSettings.Raw(source, telemetry);
+            var pipeNames = new ServerlessCompatPipeNames(TracesPipeName: "dd_trace_auto", MetricsPipeName: "dd_dogstatsd_auto");
+            _ = new ExporterSettings(raw, _ => false, telemetry, pipeNames);
+
+            var calculatedEntries = telemetry.GetQueueForTesting()
+                                             .Where(e => e.Origin == ConfigurationOrigins.Calculated)
+                                             .ToList();
+
+            calculatedEntries.Should().ContainSingle(e => e.Key == ConfigurationKeys.MetricsPipeName)
+                             .Which.StringValue.Should().Be("dd_dogstatsd_auto");
+            calculatedEntries.Should().NotContain(e => e.Key == ConfigurationKeys.TracesPipeName);
         }
     }
 }

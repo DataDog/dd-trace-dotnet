@@ -84,18 +84,8 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
-            // Customer-configured pipe names always take precedence; otherwise use whatever the
-            // SettingsManager pre-computed for the Serverless Compat layer (may be null on
-            // non-Windows / non-Azure-Function / missing-compat-layer runs).
-            var tracesPipeName = !StringUtil.IsNullOrEmpty(rawSettings.TracesPipeName)
-                ? rawSettings.TracesPipeName
-                : pipeNames.TracesPipeName;
-            var metricsPipeName = !StringUtil.IsNullOrEmpty(rawSettings.MetricsPipeName)
-                ? rawSettings.MetricsPipeName
-                : pipeNames.MetricsPipeName;
-
-            RecordCalculatedPipeName(ConfigurationKeys.TracesPipeName, tracesPipeName, rawSettings.TracesPipeName);
-            RecordCalculatedPipeName(ConfigurationKeys.MetricsPipeName, metricsPipeName, rawSettings.MetricsPipeName);
+            var tracesPipeName = ResolveAndRecordPipeName(ConfigurationKeys.TracesPipeName, pipeNames.TracesPipeName, rawSettings.TracesPipeName);
+            var metricsPipeName = ResolveAndRecordPipeName(ConfigurationKeys.MetricsPipeName, pipeNames.MetricsPipeName, rawSettings.MetricsPipeName);
 
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
@@ -334,17 +324,22 @@ namespace Datadog.Trace.Configuration
             return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
         }
 
-        private void RecordCalculatedPipeName(string configKey, string? resolved, string? rawValue)
+        private string? ResolveAndRecordPipeName(string configKey, string? pipeValue, string? rawValue)
         {
+            // Customer-configured pipe names always take precedence; otherwise use whatever the
+            // SettingsManager pre-computed for the Serverless Compat layer (may be null on
+            // non-Windows / non-Azure-Function / missing-compat-layer runs).
+            var resolved = !StringUtil.IsNullOrEmpty(rawValue) ? rawValue : pipeValue;
+
             // Only record a Calculated telemetry entry when the final value came from the generator
             // (holder) rather than from customer config — the customer-set path is already recorded
             // by the ConfigurationBuilder read in Raw with its real origin.
-            if (resolved is null || resolved == rawValue)
+            if (resolved is not null && resolved != rawValue)
             {
-                return;
+                _telemetry.Record(configKey, resolved, recordValue: true, ConfigurationOrigins.Calculated);
             }
 
-            _telemetry.Record(configKey, resolved, recordValue: true, ConfigurationOrigins.Calculated);
+            return resolved;
         }
 
         private MetricsTransportSettings ConfigureMetricsTransport(string? metricsUrl, string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
