@@ -229,6 +229,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
             }
 
+            // Merge extracted baggage into ambient context. CreateReceiveSpan only forwards
+            // parentContext.SpanContext to StartActiveInternal, so without this baggage from the
+            // incoming message would be dropped instead of flowing to the consume span.
+            parentContext.MergeBaggageInto(Baggage.Current);
+
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnReceiveStart: ExtractedParentContext, HasSpanContext={HasContext}",
                 parentContext.SpanContext != null);
@@ -278,6 +283,12 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
             }
+
+            // Merge extracted baggage into ambient context. CreateProcessSpan only forwards
+            // parentContext.SpanContext to StartActiveInternal, and the parent override below
+            // also rebuilds the context from Baggage.Current, so without this the baggage from
+            // the incoming message would be dropped.
+            parentContext.MergeBaggageInto(Baggage.Current);
 
             // Get InputAddress from ReceiveContext — via duck typing if available, reflection otherwise.
             var inputAddress = consumeCtx?.ReceiveContext?.InputAddress?.ToString();
