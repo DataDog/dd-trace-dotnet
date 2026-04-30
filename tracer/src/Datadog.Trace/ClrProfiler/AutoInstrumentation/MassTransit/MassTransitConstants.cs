@@ -23,9 +23,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal const string OperationReceive = "receive";
         internal const string OperationProcess = "process";
 
-        // Span operation names. The DiagnosticObserver matches on ReceiveOperationName when deciding
-        // whether to adopt an active scope as the parent of consume/handle/saga spans, so keeping the
-        // string in one place avoids drift.
+        // Span operation names — full "masstransit.{operation}" form. Defined as constants so
+        // construction sites and string-equality comparison sites (e.g. the parent-override branch
+        // in MassTransitDiagnosticObserver.OnConsumeStart) share one source of truth.
+        internal const string SendOperationName = "masstransit." + OperationSend;
         internal const string ReceiveOperationName = "masstransit." + OperationReceive;
+        internal const string ProcessOperationName = "masstransit." + OperationProcess;
     }
 }

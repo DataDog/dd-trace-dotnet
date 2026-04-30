@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
@@ -44,19 +45,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Creates a produce (send) span for an outbound message.
         /// </summary>
         internal static Scope? CreateProduceSpan(Tracer tracer, string? destinationAddress, string? messageType)
-            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, destinationAddress, messageType);
+            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, MassTransitConstants.SendOperationName, destinationAddress, messageType);
 
         /// <summary>
         /// Creates a receive span for an inbound message at the transport level.
         /// </summary>
         internal static Scope? CreateReceiveSpan(Tracer tracer, string? inputAddress, PropagationContext parentContext)
-            => CreateConsumerScope(tracer, MassTransitConstants.OperationReceive, inputAddress, messageType: null, parentContext);
+            => CreateConsumerScope(tracer, MassTransitConstants.OperationReceive, MassTransitConstants.ReceiveOperationName, inputAddress, messageType: null, parentContext);
 
         /// <summary>
         /// Creates a process span for message processing by a consumer, handler, or saga.
         /// </summary>
         internal static Scope? CreateProcessSpan(Tracer tracer, string? inputAddress, string? messageType, PropagationContext parentContext)
-            => CreateConsumerScope(tracer, MassTransitConstants.OperationProcess, inputAddress, messageType, parentContext);
+            => CreateConsumerScope(tracer, MassTransitConstants.OperationProcess, MassTransitConstants.ProcessOperationName, inputAddress, messageType, parentContext);
 
         /// <summary>
         /// Creates a producer/send scope for outbound messages.
@@ -64,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal static Scope? CreateProducerScope(
             Tracer tracer,
             string operation,
+            string operationName,
             string? destinationAddress,
             string? messageType)
         {
@@ -92,9 +94,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Determine messaging system from destination
                 var messagingSystem = DetermineMessagingSystem(destinationAddress);
                 tags.MessagingSystem = messagingSystem;
-
-                // Use the actual operation for the span name (e.g., "masstransit.send")
-                var operationName = $"masstransit.{operation}";
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -145,6 +144,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal static Scope? CreateConsumerScope(
             Tracer tracer,
             string operation,
+            string operationName,
             string? inputAddress,
             string? messageType,
             PropagationContext parentContext = default)
@@ -175,9 +175,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Determine messaging system from input address
                 var messagingSystem = DetermineMessagingSystem(inputAddress);
                 tags.MessagingSystem = messagingSystem;
-
-                // Use the actual operation for the span name (e.g., "masstransit.receive", "masstransit.process")
-                var operationName = $"masstransit.{operation}";
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -396,27 +393,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Gets the message type from a MassTransit context object.
-        /// Uses generic type arguments since MassTransit contexts are generic (e.g., ConsumeContext&lt;TMessage&gt;).
+        /// Resolves the canonical message type(s) for a MassTransit context object as a comma-separated
+        /// list of <c>urn:message:&lt;Namespace&gt;:&lt;Type&gt;</c> values matching MassTransit's own naming.
+        /// Strategies, in order:
+        ///   1. Read <c>SupportedMessageTypes</c> if MassTransit already produced the canonical URN list.
+        ///   2. Recursively unwrap nested <c>IContextContainer</c> / <c>IConsumeContextContainer</c> wrappers.
+        ///   3. Take the runtime type of the <c>Message</c> instance — <see cref="TryGetProperty{T}"/>
+        ///      walks the interface hierarchy so this resolves <c>ConsumeContext&lt;TMessage&gt;.Message</c>
+        ///      even on saga contexts where the first generic argument is the saga state type.
+        /// Returns <c>null</c> if no Message instance is reachable; the caller leaves the tag unset.
         /// </summary>
         internal static string? GetMessageType(object? context)
+            => GetMessageType(context, depth: 0);
+
+        private static string? GetMessageType(object? context, int depth)
         {
-            if (context is null)
+            if (context is null || depth > 2)
             {
                 return null;
             }
 
             try
             {
-                // MassTransit contexts are typically generic (e.g., ConsumeContext<TMessage>)
-                var contextType = context.GetType();
-                if (contextType.IsGenericType)
+                var supportedMessageTypes = TryGetSupportedMessageTypes(context);
+                if (!string.IsNullOrEmpty(supportedMessageTypes))
                 {
-                    var genericArgs = contextType.GetGenericArguments();
-                    if (genericArgs.Length > 0)
+                    return supportedMessageTypes;
+                }
+
+                if (context.TryDuckCast<IContextContainer>(out var contextContainer) &&
+                    contextContainer.Context is { } nestedContext &&
+                    !ReferenceEquals(nestedContext, context))
+                {
+                    var nestedMessageType = GetMessageType(nestedContext, depth + 1);
+                    if (!string.IsNullOrEmpty(nestedMessageType))
                     {
-                        return genericArgs[0].Name;
+                        return nestedMessageType;
                     }
+                }
+
+                if (context.TryDuckCast<IConsumeContextContainer>(out var consumeContextContainer) &&
+                    consumeContextContainer.ConsumeContext is { } consumeContext &&
+                    !ReferenceEquals(consumeContext, context))
+                {
+                    var consumeMessageType = GetMessageType(consumeContext, depth + 1);
+                    if (!string.IsNullOrEmpty(consumeMessageType))
+                    {
+                        return consumeMessageType;
+                    }
+                }
+
+                // Prefer the concrete Message instance when available. TryGetProperty walks
+                // the interface hierarchy, so this resolves ConsumeContext<TMessage>.Message
+                // even on saga contexts whose first generic argument is the saga state type.
+                // If no Message instance is reachable, the message type is genuinely unknown
+                // and we leave the tag unset rather than guess from positional generic args.
+                var message = TryGetProperty<object>(context, "Message");
+                if (message is not null)
+                {
+                    return GetCanonicalMessageTypes(message.GetType());
                 }
             }
             catch (Exception ex)
@@ -425,6 +460,71 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             return null;
+        }
+
+        private static string? TryGetSupportedMessageTypes(object context)
+        {
+            if (context.TryDuckCast<IConsumeContext>(out var consumeContext) &&
+                consumeContext.SupportedMessageTypes is { } duckTypedSupportedMessageTypes)
+            {
+                return JoinMessageTypes(duckTypedSupportedMessageTypes);
+            }
+
+            var value = TryGetProperty<object>(context, "SupportedMessageTypes");
+            return value is IEnumerable enumerable
+                       ? JoinMessageTypes(enumerable)
+                       : null;
+        }
+
+        private static string? JoinMessageTypes(IEnumerable enumerable)
+        {
+            List<string>? messageTypes = null;
+
+            foreach (var item in enumerable)
+            {
+                if (item is string messageType && !StringUtil.IsNullOrWhiteSpace(messageType))
+                {
+                    messageTypes ??= [];
+                    messageTypes.Add(messageType);
+                }
+            }
+
+            return messageTypes is { Count: > 0 }
+                       ? string.Join(",", messageTypes)
+                       : null;
+        }
+
+        private static string GetCanonicalMessageTypes(Type messageType)
+        {
+            if (messageType.IsGenericType)
+            {
+                var genericDefinition = messageType.GetGenericTypeDefinition();
+                var genericDefinitionName = genericDefinition.Name;
+                if (string.Equals(genericDefinition.Namespace, "MassTransit", StringComparison.Ordinal) &&
+                    (genericDefinitionName == "Fault`1" || genericDefinitionName == "FaultEvent`1"))
+                {
+                    var innerType = messageType.GetGenericArguments()[0];
+                    var faultUrn = $"urn:message:MassTransit:Fault[[{GetMessageToken(innerType)}]]";
+                    return $"{faultUrn},urn:message:MassTransit:Fault";
+                }
+            }
+
+            return $"urn:message:{GetMessageToken(messageType)}";
+        }
+
+        private static string GetMessageToken(Type messageType)
+        {
+            var typeName = messageType.Name;
+            var tickIndex = typeName.IndexOf('`');
+            if (tickIndex >= 0)
+            {
+                typeName = typeName.Substring(0, tickIndex);
+            }
+
+            var typeNamespace = messageType.Namespace;
+            return !StringUtil.IsNullOrWhiteSpace(typeNamespace)
+                       ? $"{typeNamespace}:{typeName}"
+                       : typeName;
         }
 
         /// <summary>
