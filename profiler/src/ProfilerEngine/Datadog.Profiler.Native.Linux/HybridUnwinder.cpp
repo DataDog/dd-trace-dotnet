@@ -288,6 +288,11 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
         return -1;
     }
 
+    // DEBUG: inject a sentinel between Phase 1 (native) and Phase 2 (managed).
+    // If the test output shows a managed frame ABOVE this sentinel, it means
+    // Phase 1 misclassified it as native (code cache race).
+    callstack.Add(FrameStore::SentinelStartFrameIP);
+
     // === Phase 1: Walk native frames with libunwind until managed code is reached ===
     auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, callstack, recorder);
     if (!keepOnUnwinding)
@@ -296,15 +301,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
         return callstack.Size();
     }
 
-    // DEBUG: inject a sentinel between Phase 1 (native) and Phase 2 (managed).
-    // If the test output shows a managed frame ABOVE this sentinel, it means
-    // Phase 1 misclassified it as native (code cache race).
-    callstack.Add(FrameStore::SentinelFrameIP);
-    // buffer[i++] = FrameStore::SentinelFrameIP;
-    // if (i >= bufferSize)
-    // {
-    //     return i;
-    // }
+    callstack.Add(FrameStore::SentinelPhase1EndFrameIP);
 
     // === Phase 2: Walk managed frames using the FP chain ===
     // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
@@ -312,7 +309,6 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
 
     UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd);
 
-    callstack.Add(FrameStore::SentinelFrameIP);
     // Already recorded state in recorder
     return callstack.Size();
 }
