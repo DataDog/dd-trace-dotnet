@@ -438,23 +438,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     }
                 }
 
-                // Prefer the concrete Message instance when available. This works for saga
-                // contexts too, where the first generic argument is often the saga state type.
+                // Prefer the concrete Message instance when available. TryGetProperty walks
+                // the interface hierarchy, so this resolves ConsumeContext<TMessage>.Message
+                // even on saga contexts whose first generic argument is the saga state type.
+                // If no Message instance is reachable, the message type is genuinely unknown
+                // and we leave the tag unset rather than guess from positional generic args.
                 var message = TryGetProperty<object>(context, "Message");
                 if (message is not null)
                 {
                     return GetCanonicalMessageTypes(message.GetType());
-                }
-
-                // MassTransit contexts are typically generic (e.g., ConsumeContext<TMessage>)
-                var contextType = context.GetType();
-                if (contextType.IsGenericType)
-                {
-                    var genericArgs = contextType.GetGenericArguments();
-                    if (genericArgs.Length > 0)
-                    {
-                        return GetCanonicalMessageTypes(genericArgs[genericArgs.Length - 1]);
-                    }
                 }
             }
             catch (Exception ex)
@@ -504,8 +496,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var genericDefinition = messageType.GetGenericTypeDefinition();
                 var genericDefinitionName = genericDefinition.Name;
                 if (string.Equals(genericDefinition.Namespace, "MassTransit", StringComparison.Ordinal) &&
-                    (genericDefinitionName.StartsWith("FaultEvent`1", StringComparison.Ordinal) ||
-                     genericDefinitionName.StartsWith("Fault`1", StringComparison.Ordinal)))
+                    (genericDefinitionName == "Fault`1" || genericDefinitionName == "FaultEvent`1"))
                 {
                     var innerType = messageType.GetGenericArguments()[0];
                     var faultUrn = $"urn:message:MassTransit:Fault[[{GetMessageToken(innerType)}]]";
