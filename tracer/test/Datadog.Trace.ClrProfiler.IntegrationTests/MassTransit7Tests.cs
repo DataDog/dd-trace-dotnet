@@ -125,7 +125,6 @@ public class MassTransit7Tests : TracingIntegrationTest
     private void SetCommonEnvironmentVariables()
     {
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
     }
 
     private async Task RunTransportTest(

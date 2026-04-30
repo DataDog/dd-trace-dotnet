@@ -229,8 +229,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             // this scenario is untested
-            if (address.StartsWith("sb://", StringComparison.OrdinalIgnoreCase) ||
-                address.IndexOf("servicebus", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (address.StartsWith("sb://", StringComparison.OrdinalIgnoreCase))
             {
                 return "azureservicebus";
             }
@@ -279,6 +278,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             if (scope?.Span?.Tags is not MassTransitTags tags)
             {
+                // All MassTransit scopes are created via Create{Producer,Consumer}Scope with MassTransitTags,
+                // so reaching this branch means the scope was created somewhere unexpected.
+                Log.Debug("MassTransitCommon.SetContextTags: Active scope's tags are not MassTransitTags; skipping.");
                 return;
             }
 
