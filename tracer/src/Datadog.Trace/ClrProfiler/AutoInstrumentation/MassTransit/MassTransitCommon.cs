@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 tags.MessagingSystem = messagingSystem;
 
                 // Use the actual operation for the span name (e.g., "masstransit.send")
-                var operationName = $"masstransit.{operation}";
+                var operationName = MassTransitConstants.GetOperationName(operation);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
