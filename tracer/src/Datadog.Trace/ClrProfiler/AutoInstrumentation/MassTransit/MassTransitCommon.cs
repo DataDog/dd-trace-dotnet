@@ -33,8 +33,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         // Cache of resolved PropertyInfo lookups for TryGetProperty. Keyed by (concrete type, property name).
         // The MassTransit context type space is small and bounded, so unbounded growth is not a concern.
-        private static readonly ConcurrentDictionary<(Type Type, string Name), PropertyInfo?> PropertyCache = new();
-        private static readonly Func<(Type Type, string Name), PropertyInfo?> ResolvePropertyDelegate = ResolveProperty;
+        // Using a struct key instead of a value tuple because tuple syntax requires System.ValueTuple,
+        // which isn't available on .NET Framework 4.6.1.
+        private static readonly ConcurrentDictionary<PropertyCacheKey, PropertyInfo?> PropertyCache = new();
+        private static readonly Func<PropertyCacheKey, PropertyInfo?> ResolvePropertyDelegate = ResolveProperty;
 
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
@@ -354,7 +356,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                var property = PropertyCache.GetOrAdd((obj.GetType(), propertyName), ResolvePropertyDelegate);
+                var property = PropertyCache.GetOrAdd(new PropertyCacheKey(obj.GetType(), propertyName), ResolvePropertyDelegate);
                 if (property != null && property.GetValue(obj) is T typedValue)
                 {
                     return typedValue;
@@ -368,7 +370,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             return default;
         }
 
-        private static PropertyInfo? ResolveProperty((Type Type, string Name) key)
+        private static PropertyInfo? ResolveProperty(PropertyCacheKey key)
         {
             // Class-level lookup wins over interface lookup so explicit-interface implementations
             // resolve to the concrete declared property when one exists.
@@ -615,6 +617,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             if (entityName.StartsWith("Instance_", StringComparison.Ordinal)) { return "instance"; }
 
             return entityName;
+        }
+
+        private readonly struct PropertyCacheKey : IEquatable<PropertyCacheKey>
+        {
+            public PropertyCacheKey(Type type, string name)
+            {
+                Type = type;
+                Name = name;
+            }
+
+            public Type Type { get; }
+
+            public string Name { get; }
+
+            public bool Equals(PropertyCacheKey other) => Type == other.Type && Name == other.Name;
+
+            public override bool Equals(object? obj) => obj is PropertyCacheKey other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (Type.GetHashCode() * 397) ^ Name.GetHashCode();
+                }
+            }
         }
     }
 }
