@@ -7,6 +7,10 @@
 #error "This header requires thread local storage support, but SPDLOG_NO_TLS is defined."
 #endif
 
+#if defined(DD_SPDLOG_NO_MDC)
+#error "mdc.h was included but DD_SPDLOG_NO_MDC is defined. An include site for spdlog/mdc.h is not gated by DD_SPDLOG_NO_MDC; patch pattern_formatter-inl.h (or the new include site) and update PatchSpdlogFile in tracer/build/_build/UpdateVendors/VendoredDependency.cs."
+#endif
+
 #include <map>
 #include <string>
 

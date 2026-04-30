@@ -403,7 +403,46 @@ namespace UpdateVendors
                 version: "1.17.0",
                 downloadUrl: "https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.zip",
                 pathToSrc: new[] {"spdlog-1.17.0", "include", "spdlog"},
-                transform: filePath => { },
+                transform: filePath =>
+                {
+                    // We don't use spdlog's MDC (Mapped Diagnostic Context) feature, added in spdlog 1.13.
+                    // Including its header instantiates `thread_local std::map<std::string, std::string>`,
+                    // whose non-trivial destructor forces libc++abi's __cxa_thread_atexit_impl machinery
+                    // to be linked. In our "universal" Linux build (build/cmake/Universal.cmake.*) we
+                    // statically link libc++abi, whose TLS variables (__cxxabiv1::dtors / dtors_alive)
+                    // were compiled with the Local Exec model — incompatible with shared libraries
+                    // (R_X86_64_TPOFF32 / R_AARCH64_TLSLE_* against ... cannot be used with -shared).
+                    // SPDLOG_NO_TLS would fix it but also disables spdlog's TLS thread-id cache in
+                    // os-inl.h, costing a gettid() syscall per log call. Instead, gate just the MDC
+                    // sites of pattern_formatter-inl.h on a project-local macro DD_SPDLOG_NO_MDC,
+                    // defined wherever we use spdlog (build/cmake/FindSpdlog.cmake on the CMake side,
+                    // and the vcxproj/Directory.Build.props ItemDefinitionGroups on the MSBuild side).
+                    if (string.Equals(Path.GetFileName(filePath), "pattern_formatter-inl.h", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(
+                            filePath,
+                            content => content.Replace(
+                                "#ifndef SPDLOG_NO_TLS",
+                                "#if !defined(SPDLOG_NO_TLS) && !defined(DD_SPDLOG_NO_MDC)"));
+                    }
+                    else if (string.Equals(Path.GetFileName(filePath), "mdc.h", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Defensive: fail loudly if mdc.h is ever included while DD_SPDLOG_NO_MDC is
+                        // defined. Today the only include site is pattern_formatter-inl.h, which we
+                        // gate above; if a future spdlog bump introduces a new include site we miss,
+                        // this #error catches it at compile time instead of silently re-introducing
+                        // the libc++abi static-link failure on the universal Linux build.
+                        RewriteFileWithTransform(
+                            filePath,
+                            content => content.Replace(
+                                "#include <map>",
+                                "#if defined(DD_SPDLOG_NO_MDC)\n"
+                                + "#error \"mdc.h was included but DD_SPDLOG_NO_MDC is defined. An include site for spdlog/mdc.h is not gated by DD_SPDLOG_NO_MDC; patch pattern_formatter-inl.h (or the new include site) and update PatchSpdlogFile in tracer/build/_build/UpdateVendors/VendoredDependency.cs.\"\n"
+                                + "#endif\n"
+                                + "\n"
+                                + "#include <map>"));
+                    }
+                },
                 relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/spdlog/include",
                 isNuGetPackage: false);
         }
