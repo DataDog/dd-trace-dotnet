@@ -97,7 +97,7 @@ namespace Datadog.Trace.Debugger
 
         private static void TrackClosestPathMatch(
             Assembly assembly,
-            ClosestPathBySuffixResult result,
+            in ClosestPathBySuffixResult result,
             bool includeExamplePaths,
             ref int sameFileNameMatchCount,
             ref int bestMatchingTrailingSegments,
@@ -233,7 +233,7 @@ namespace Datadog.Trace.Debugger
                     var closestPathMatch = lookup.GetClosestPathBySuffix(probePathQuery, MinTrailingSegmentsForFallbackMatch);
                     TrackClosestPathMatch(
                         candidateAssembly,
-                        closestPathMatch,
+                        in closestPathMatch,
                         includeDetailedDiagnostics,
                         ref sameFileNameMatchCount,
                         ref bestMatchingTrailingSegments,
@@ -242,7 +242,7 @@ namespace Datadog.Trace.Debugger
 
                     // Only bind when a single global fallback candidate has the best score.
                     // Assemblies with internally ambiguous fallback matches must still participate in that global tie.
-                    bestFallbackMatchSelection.Track(candidateAssembly, closestPathMatch);
+                    bestFallbackMatchSelection.Track(candidateAssembly, in closestPathMatch);
                 }
 
                 if (bestFallbackMatchSelection.BestMatch is { } bestMatch)
@@ -381,7 +381,7 @@ namespace Datadog.Trace.Debugger
 
             public bool HasAmbiguousBestMatch { get; private set; }
 
-            public void Track(Assembly assembly, ClosestPathBySuffixResult result)
+            public void Track(Assembly assembly, in ClosestPathBySuffixResult result)
             {
                 if (result.QualifiedMatchCount == 0)
                 {
