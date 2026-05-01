@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
@@ -189,6 +190,77 @@ public class SymbolExtractorTest
 #endif
     }
 
+    [Fact]
+    private void BuildInjectibleLineRanges_MergesAndNormalizesSequencePointSpans()
+    {
+        var sequencePoints = new[]
+        {
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 24, EndLine = 25 },
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 20, EndLine = 20 },
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 21, EndLine = 23 },
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 30, EndLine = 30 },
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 32, EndLine = 34 },
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 31, EndLine = 31 },
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 40, EndLine = 39 },
+            new DatadogMetadataReader.DatadogSequencePoint { StartLine = 0, EndLine = 0 },
+        };
+
+        var ranges = SymbolPdbExtractor.BuildInjectibleLineRanges(sequencePoints);
+
+        Assert.Equal(
+            [
+                new LineRange { Start = 20, End = 25 },
+                new LineRange { Start = 30, End = 34 },
+                new LineRange { Start = 40, End = 40 }
+            ],
+            ranges);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "LinuxUnsupported")]
+    private void PdbBackedMethodScopesIncludeInjectibleLines()
+    {
+#if DEBUG
+        throw new SkipException("This test requires RELEASE mode and will always fail in DEBUG mode");
+#elif NETFRAMEWORK
+        throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
+#else
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("PDB test only on windows");
+        }
+
+        var type = typeof(TestSamples.AsyncMethod);
+        var assembly = Assembly.GetAssembly(type);
+        Assert.NotNull(assembly);
+
+        var root = GetSymbols(assembly, type.FullName);
+        var classScope = root.Scopes.Single().Scopes.Single();
+        var getTimeMethod = classScope.Scopes.Single(s => s.ScopeType == ScopeType.Method && s.Name == "GetTime");
+
+        Assert.Equal(15, getTimeMethod.StartLine);
+        Assert.Equal(25, getTimeMethod.EndLine);
+        Assert.True(getTimeMethod.HasInjectibleLines);
+        Assert.Equal(
+            [
+                new LineRange { Start = 15, End = 15 },
+                new LineRange { Start = 17, End = 22 },
+                new LineRange { Start = 24, End = 25 }
+            ],
+            getTimeMethod.InjectibleLines);
+        Assert.NotNull(getTimeMethod.Scopes);
+        Assert.Contains(getTimeMethod.Scopes, s => s.ScopeType == ScopeType.Closure);
+
+        var json = JsonConvert.SerializeObject(
+            getTimeMethod,
+            Formatting.None,
+            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+        Assert.Contains("\"has_injectible_lines\":true", json);
+        Assert.Contains("\"injectible_lines\":[", json);
+#endif
+    }
+
     private string GetStringToVerify(Root root)
     {
         var assembly = root.Scopes[0];
@@ -231,6 +303,8 @@ public class SymbolExtractorTest
 
             // depends on build optimization
             scope.EndLine = scope.EndLine > 0 ? 999 : 0;
+            scope.HasInjectibleLines = null;
+            scope.InjectibleLines = null;
 
             if (scope.Scopes == null)
             {
