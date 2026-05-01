@@ -24,11 +24,7 @@ namespace Datadog.Trace.Tests.Activity
             await using var tracer = TracerHelper.CreateWithFakeAgent(new TracerSettings());
 
             var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
-            var (key, span) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
-
-            // Drop the strong reference (held inside AddAbandonedMapping's local frame, now gone)
-            // and force GC until the WeakReference clears.
-            ForceGcUntilCollected(mappings[key].Activity);
+            var (_, span) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
 
             var result = ActivityHandlerCommon.ReconcileSweepCore(mappings);
 
@@ -48,9 +44,7 @@ namespace Datadog.Trace.Tests.Activity
             await using var tracer = TracerHelper.CreateWithFakeAgent(new TracerSettings());
 
             var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
-            var (key, span) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
-
-            ForceGcUntilCollected(mappings[key].Activity);
+            var (_, span) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
 
             ActivityHandlerCommon.ReconcileSweepCore(mappings);
 
@@ -77,9 +71,7 @@ namespace Datadog.Trace.Tests.Activity
             await using var tracer = TracerHelper.CreateWithFakeAgent(new TracerSettings());
 
             var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
-            var (key, span) = AddAbandonedMapping(mappings, tracer, "gcd-with-peer-service", presetTags: s => s.SetTag("peer.service", "downstream-api"));
-
-            ForceGcUntilCollected(mappings[key].Activity);
+            var (_, span) = AddAbandonedMapping(mappings, tracer, "gcd-with-peer-service", presetTags: s => s.SetTag("peer.service", "downstream-api"));
 
             ActivityHandlerCommon.ReconcileSweepCore(mappings);
 
@@ -97,7 +89,7 @@ namespace Datadog.Trace.Tests.Activity
             var activity = new SD.Activity("missed-stop").Start();
             try
             {
-                var (key, span) = AddMapping(mappings, tracer, activity);
+                var (_, span) = AddMapping(mappings, tracer, activity);
 
                 // Stop sets Duration > 0 — but we never invoke ActivityHandlerCommon.ActivityStopped,
                 // mimicking the case where the listener callback didn't make it through.
@@ -159,11 +151,10 @@ namespace Datadog.Trace.Tests.Activity
 
             var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
 
-            var (gcKey, gcSpan) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
-            ForceGcUntilCollected(mappings[gcKey].Activity);
+            var (_, gcSpan) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
 
             var stoppedActivity = new SD.Activity("missed-stop").Start();
-            var (stoppedKey, stoppedSpan) = AddMapping(mappings, tracer, stoppedActivity);
+            var (_, stoppedSpan) = AddMapping(mappings, tracer, stoppedActivity);
             stoppedActivity.Stop();
 
             var liveActivity = new SD.Activity("live-activity").Start();
@@ -197,33 +188,41 @@ namespace Datadog.Trace.Tests.Activity
             }
         }
 
-        // Constructs a mapping whose Activity has no other live references — the caller never sees
-        // the Activity instance, so the only path keeping it alive is the WeakReference inside the
-        // mapping (which doesn't, by definition).
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        // Constructs a mapping in the "abandoned" state — its Activity reference is already dead,
+        // matching the production scenario where the Activity has been GC'd before the sweep runs.
+        // Uses a deliberately-dead WeakReference rather than relying on real GC timing, which is
+        // flaky in Debug builds where JIT keeps locals alive across method boundaries.
         private static (ActivityKey Key, Span Span) AddAbandonedMapping(
             ConcurrentDictionary<ActivityKey, ActivityMapping> mappings,
             Tracer tracer,
-            string operationName,
+            string keyId,
             Action<Span> presetTags = null)
         {
-            var activity = new SD.Activity(operationName);
-            activity.SetIdFormat(SD.ActivityIdFormat.W3C);
-            activity.Start();
-            try
-            {
-                return AddMapping(mappings, tracer, activity, presetTags);
-            }
-            finally
-            {
-                activity.Stop();
-                // Activity.Start() sets Activity.Current (AsyncLocal). Activity.Stop() restores
-                // the previous value, but xunit's async state machine can keep the AsyncLocal
-                // value pinned across the test, preventing GC. Explicitly null it out so the
-                // WeakReference inside the mapping is the only remaining reference.
-                SD.Activity.Current = null;
-                // intentionally do not GC.KeepAlive — we want this collectible
-            }
+            var span = tracer.StartSpan(keyId);
+
+            // Mirror the production behaviour: spans created from Activities use OpenTelemetryTags
+            // so the sweep's fallback logic (which depends on `span.Tags is OpenTelemetryTags`) fires.
+            span.Tags = new OpenTelemetryTags();
+
+            // Null the fields StartSpan populates with tracer defaults so the sweep's `is null/empty`
+            // fallbacks actually fire. In production the GC'd-path fallbacks fire when these fields
+            // haven't been populated by AgentConvertSpan; here we recreate that state explicitly.
+            span.OperationName = null;
+            span.ResourceName = null;
+            span.Type = null;
+#pragma warning disable CS0618
+            span.ServiceName = null;
+#pragma warning restore CS0618
+
+            presetTags?.Invoke(span);
+
+            var scope = tracer.ActivateSpan(span, finishOnClose: false);
+            var key = new ActivityKey(keyId);
+
+            // WeakReference<T>(null) constructs a reference whose TryGetTarget always returns false,
+            // exactly matching the runtime state of a WeakReference whose target has been GC'd.
+            mappings[key] = new ActivityMapping(new WeakReference<object>(null!), scope);
+            return (key, span);
         }
 
         private static (ActivityKey Key, Span Span) AddMapping(
@@ -232,7 +231,7 @@ namespace Datadog.Trace.Tests.Activity
             SD.Activity activity,
             Action<Span> presetTags = null)
         {
-            var span = (Span)tracer.StartSpan(activity.OperationName);
+            var span = tracer.StartSpan(activity.OperationName);
 
             // Mirror the production behaviour: spans created from Activities use OpenTelemetryTags
             // so the sweep's fallback logic (which depends on `span.Tags is OpenTelemetryTags`) fires.
@@ -252,7 +251,7 @@ namespace Datadog.Trace.Tests.Activity
 
             presetTags?.Invoke(span);
 
-            var scope = (Scope)tracer.ActivateSpan(span, finishOnClose: false);
+            var scope = tracer.ActivateSpan(span, finishOnClose: false);
 
             var key = activity.IdFormat == SD.ActivityIdFormat.W3C
                 ? new ActivityKey(activity.TraceId.ToString(), activity.SpanId.ToString())
@@ -260,26 +259,6 @@ namespace Datadog.Trace.Tests.Activity
 
             mappings[key] = new ActivityMapping(new WeakReference<object>(activity), scope);
             return (key, span);
-        }
-
-        private static void ForceGcUntilCollected(WeakReference<object> reference)
-        {
-            for (var attempt = 0; attempt < 10; attempt++)
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-
-                if (!reference.TryGetTarget(out _))
-                {
-                    return;
-                }
-            }
-
-            // If the runtime stubbornly keeps the Activity alive (e.g. AsyncLocal residue) the test
-            // becomes meaningless rather than failing in a confusing way. Surface that explicitly.
-            throw new InvalidOperationException(
-                "Activity could not be collected after repeated GC attempts; the test environment is keeping it alive.");
         }
     }
 }
