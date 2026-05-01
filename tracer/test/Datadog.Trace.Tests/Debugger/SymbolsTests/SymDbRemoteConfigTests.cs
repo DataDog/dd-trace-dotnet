@@ -61,6 +61,27 @@ public class SymDbRemoteConfigTests
     }
 
     [Fact]
+    public void TryGetUploadSymbolsReturnsFalseForEmptyConfigs()
+    {
+        var configsByProduct = new Dictionary<string, List<RemoteConfiguration>>();
+
+        SymDbRemoteConfig.TryGetUploadSymbols(configsByProduct, out var result).Should().BeFalse();
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void TryGetUploadSymbolsReturnsFalseForEmptyLiveDebuggingSymbolDbList()
+    {
+        var configsByProduct = new Dictionary<string, List<RemoteConfiguration>>
+        {
+            { RcmProducts.LiveDebuggingSymbolDb, [] },
+        };
+
+        SymDbRemoteConfig.TryGetUploadSymbols(configsByProduct, out var result).Should().BeFalse();
+        result.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task SubscribeForwardsRepeatedEnablementTransitions()
     {
         var values = new List<bool>();
@@ -74,6 +95,18 @@ public class SymDbRemoteConfigTests
         await subscriptionManager.Update(CreateConfigsByProduct(uploadSymbols: true));
 
         values.Should().Equal(true, false, true);
+    }
+
+    [Fact]
+    public void DisposeDuringSubscribeDoesNotLeaveSubscriptionRegistered()
+    {
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        using var symDbRemoteConfig = new SymDbRemoteConfig(subscriptionManager, _ => { });
+        subscriptionManager.OnSubscribe = symDbRemoteConfig.Dispose;
+
+        symDbRemoteConfig.Subscribe();
+
+        subscriptionManager.HasAnySubscription.Should().BeFalse();
     }
 
     private static RemoteConfiguration CreateRemoteConfiguration(string id, object payload)
@@ -96,11 +129,14 @@ public class SymDbRemoteConfigTests
     {
         private ISubscription? _subscription;
 
+        public Action? OnSubscribe { get; set; }
+
         public bool HasAnySubscription => _subscription is not null;
 
         public void SubscribeToChanges(ISubscription subscription)
         {
             _subscription = subscription;
+            OnSubscribe?.Invoke();
         }
 
         public void Replace(ISubscription oldSubscription, ISubscription newSubscription)
