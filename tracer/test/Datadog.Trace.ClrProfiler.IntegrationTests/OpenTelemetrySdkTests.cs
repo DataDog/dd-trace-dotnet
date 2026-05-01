@@ -194,15 +194,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         /// <summary>
-        /// Validates that CallTarget-based Activity interception produces spans nearly identical
-        /// to the managed ActivityListener approach. Uses a dedicated <c>.Interception</c> snapshot
-        /// because of one outstanding gap: when an in-process child is started via an explicit
-        /// <c>ActivityContext</c> parent (e.g. <c>StartActiveSpan(name, kind, parentTelemetrySpan)</c>),
-        /// the OTel SDK does not set <c>Activity.Parent</c> on the child, so the interception path
-        /// can't find the parent <see cref="Scope"/> and treats it as a remote parent. The child
-        /// span ends up as a local trace root (extra <c>runtime-id</c> tag and Metrics block) instead
-        /// of being attached to the parent's <c>TraceContext</c>. This is the same parentage class
-        /// as the W3C-only-parent gap and is tracked alongside it.
+        /// Validates that CallTarget-based Activity interception produces spans identical to the
+        /// managed ActivityListener approach. Shares the snapshot with <see cref="SubmitsTraces"/>
+        /// — interception is functionally equivalent for this sample.
         /// </summary>
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -231,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
                 ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: CustomServiceName, isExternalSpan: false);
 
-                var filename = nameof(OpenTelemetrySdkTests) + ".Interception" + GetSuffix(packageVersion);
+                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
