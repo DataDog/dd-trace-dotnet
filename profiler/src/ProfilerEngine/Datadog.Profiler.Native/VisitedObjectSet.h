@@ -12,26 +12,32 @@
 // Uses linear probing with a power-of-2 table and 0 as the empty sentinel
 // (valid because no real object lives at address 0).
 //
+// Storage is split into two parallel arrays:
+//  - _addresses: address-only (8 bytes/entry, 8 per 64-byte cache line)
+//  - _entries:   metadata (ClassID + size), accessed only after the probe resolves
+// This layout keeps the hot probe loop compact in cache while metadata is
+// touched only on insert or when reading cached info from a revisited object.
+//
 // Each entry caches the ClassID and object size resolved during the first visit,
 // so that revisits (shared objects referenced by multiple parents) can record
 // type-level edges without redundant ICorProfilerInfo calls.
 //
 // Clear() is O(entries) not O(capacity): a side vector tracks which bucket
-// indices were written, so only those are zeroed. This avoids expensive
-// memset of the full table between roots while still retaining capacity
-// to prevent re-growing.
+// indices were written, so only those addresses are zeroed. Metadata is not
+// cleared — TryInsert zero-initialises the metadata slot on each insertion,
+// ensuring no stale data leaks across roots.
 class VisitedObjectSet
 {
 public:
     struct VisitedEntry
     {
-        uintptr_t address = 0;
         ClassID classID = 0;
         SIZE_T size = 0;
     };
 
 private:
-    std::vector<VisitedEntry> _buckets;
+    std::vector<uintptr_t> _addresses;
+    std::vector<VisitedEntry> _entries;
     std::vector<size_t> _dirtyIndices;
     size_t _count = 0;
     size_t _mask = 0;
@@ -43,35 +49,38 @@ private:
     // stay within the same cache line.
     bool NeedsGrow() const
     {
-        return _count * 10 >= _buckets.size() * 7;
+        return _count * 10 >= _addresses.size() * 7;
     }
 
     void Grow()
     {
-        size_t newCapacity = _buckets.size() * 2;
-        std::vector<VisitedEntry> newBuckets(newCapacity);
+        size_t newCapacity = _addresses.size() * 2;
+        std::vector<uintptr_t> newAddresses(newCapacity, 0);
+        std::vector<VisitedEntry> newEntries(newCapacity);
         size_t newMask = newCapacity - 1;
 
         _dirtyIndices.clear();
         _dirtyIndices.reserve(_count);
 
-        for (auto& entry : _buckets)
+        for (size_t i = 0; i < _addresses.size(); i++)
         {
-            if (entry.address == 0)
+            if (_addresses[i] == 0)
             {
                 continue;
             }
 
-            size_t idx = HashAddress(entry.address) & newMask;
-            while (newBuckets[idx].address != 0)
+            size_t idx = HashAddress(_addresses[i]) & newMask;
+            while (newAddresses[idx] != 0)
             {
                 idx = (idx + 1) & newMask;
             }
-            newBuckets[idx] = entry;
+            newAddresses[idx] = _addresses[i];
+            newEntries[idx] = _entries[i];
             _dirtyIndices.push_back(idx);
         }
 
-        _buckets = std::move(newBuckets);
+        _addresses = std::move(newAddresses);
+        _entries = std::move(newEntries);
         _mask = newMask;
     }
 
@@ -92,7 +101,8 @@ public:
         {
             cap *= 2;
         }
-        _buckets.resize(cap);
+        _addresses.resize(cap, 0);
+        _entries.resize(cap);
         _mask = cap - 1;
     }
 
@@ -101,12 +111,11 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            auto& entry = _buckets[idx];
-            if (entry.address == address)
+            if (_addresses[idx] == address)
             {
                 return true;
             }
-            if (entry.address == 0)
+            if (_addresses[idx] == 0)
             {
                 return false;
             }
@@ -117,7 +126,7 @@ public:
     enum class InsertResult : uint8_t { Inserted, AlreadyPresent };
 
     // Single-probe insert: finds or creates the bucket for `address`.
-    // On return, `outEntry` points to the bucket (valid until next mutation).
+    // On return, `outEntry` points to the metadata slot (valid until next mutation).
     // Callers write classID/size directly into the returned entry.
     InsertResult TryInsert(uintptr_t address, VisitedEntry*& outEntry)
     {
@@ -129,18 +138,18 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            auto& entry = _buckets[idx];
-            if (entry.address == address)
+            if (_addresses[idx] == address)
             {
-                outEntry = &entry;
+                outEntry = &_entries[idx];
                 return InsertResult::AlreadyPresent;
             }
-            if (entry.address == 0)
+            if (_addresses[idx] == 0)
             {
-                entry.address = address;
+                _addresses[idx] = address;
+                _entries[idx] = {};
                 _dirtyIndices.push_back(idx);
                 _count++;
-                outEntry = &entry;
+                outEntry = &_entries[idx];
                 return InsertResult::Inserted;
             }
             idx = (idx + 1) & _mask;
@@ -160,20 +169,19 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            auto& entry = _buckets[idx];
-            if (entry.address == 0)
+            if (_addresses[idx] == 0)
             {
-                entry.address = address;
-                entry.classID = classID;
-                entry.size = size;
+                _addresses[idx] = address;
+                _entries[idx].classID = classID;
+                _entries[idx].size = size;
                 _dirtyIndices.push_back(idx);
                 _count++;
                 return;
             }
-            if (entry.address == address)
+            if (_addresses[idx] == address)
             {
-                entry.classID = classID;
-                entry.size = size;
+                _entries[idx].classID = classID;
+                _entries[idx].size = size;
                 return;
             }
             idx = (idx + 1) & _mask;
@@ -198,14 +206,13 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            auto& entry = _buckets[idx];
-            if (entry.address == address)
+            if (_addresses[idx] == address)
             {
-                entry.classID = classID;
-                entry.size = size;
+                _entries[idx].classID = classID;
+                _entries[idx].size = size;
                 return;
             }
-            if (entry.address == 0)
+            if (_addresses[idx] == 0)
             {
                 return;
             }
@@ -218,14 +225,13 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            auto& entry = _buckets[idx];
-            if (entry.address == address)
+            if (_addresses[idx] == address)
             {
-                outClassID = entry.classID;
-                outSize = entry.size;
+                outClassID = _entries[idx].classID;
+                outSize = _entries[idx].size;
                 return true;
             }
-            if (entry.address == 0)
+            if (_addresses[idx] == 0)
             {
                 return false;
             }
@@ -233,11 +239,13 @@ public:
         }
     }
 
+    // O(dirty-count) clear: only zero the address slots that were written.
+    // Metadata is not cleared — TryInsert zero-initialises it on insertion.
     void Clear()
     {
         for (size_t idx : _dirtyIndices)
         {
-            _buckets[idx] = VisitedEntry{};
+            _addresses[idx] = 0;
         }
         _dirtyIndices.clear();
         _count = 0;
@@ -251,12 +259,13 @@ public:
     size_t GetMemorySize() const
     {
         return sizeof(VisitedObjectSet)
-             + _buckets.capacity() * sizeof(VisitedEntry)
+             + _addresses.capacity() * sizeof(uintptr_t)
+             + _entries.capacity() * sizeof(VisitedEntry)
              + _dirtyIndices.capacity() * sizeof(size_t);
     }
 
     size_t GetBucketCount() const
     {
-        return _buckets.size();
+        return _addresses.size();
     }
 };

@@ -246,7 +246,6 @@ TEST(VisitedObjectSetTest, TryInsertNewAddress)
 
     ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
     ASSERT_NE(slot, nullptr);
-    ASSERT_EQ(slot->address, 0x1000);
     ASSERT_EQ(slot->classID, 0);
     ASSERT_EQ(slot->size, 0);
     ASSERT_EQ(visited.Size(), 1);

@@ -63,6 +63,10 @@ public:
         MetricsRegistry& metricsRegistry,
         INativeThreadList* pNativeThreadList);
 
+    // Called from CorProfilerCallback::ModuleLoadFinished to detect mscorlib
+    // and eagerly resolve well-known ClassIDs (e.g. System.String).
+    void OnModuleLoaded(ModuleID moduleId);
+
     // Inherited via IHeapSnapshotManager
     void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) override;
     std::string GetAndClearHeapSnapshotText() override;
@@ -216,6 +220,9 @@ private:
 
     // Persisted across heap dumps to avoid rebuilding class layouts via COM calls.
     std::unique_ptr<ClassLayoutCache> _pClassLayoutCache;
+
+    // Resolved once via OnModuleLoaded when mscorlib is detected.
+    ClassID _stringClassID = 0;
 
     std::chrono::nanoseconds _startTimestamp;
 

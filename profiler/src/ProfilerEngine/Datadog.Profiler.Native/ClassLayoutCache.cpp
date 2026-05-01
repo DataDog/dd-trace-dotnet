@@ -10,6 +10,19 @@ ClassLayoutCache::ClassLayoutCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameS
 {
 }
 
+void ClassLayoutCache::SetStringClassID(ClassID classID)
+{
+    if (classID == 0)
+    {
+        return;
+    }
+    _stringClassID = classID;
+    if (_stringLayout == nullptr)
+    {
+        _stringLayout = GetLayout(classID);
+    }
+}
+
 const ClassLayoutCache::ClassLayoutData* ClassLayoutCache::GetLayout(ClassID classID)
 {
     if (classID == 0)
@@ -17,20 +30,38 @@ const ClassLayoutCache::ClassLayoutData* ClassLayoutCache::GetLayout(ClassID cla
         return nullptr;
     }
 
+    if (classID == _lastClassID)
+    {
+        return _lastLayout;
+    }
+
+    if (classID == _stringClassID)
+    {
+        return _stringLayout;
+    }
+
+    const ClassLayoutData* result = nullptr;
+
     auto it = _cache.find(classID);
     if (it != _cache.end())
     {
-        return &it->second;
+        result = &it->second;
     }
-
-    ClassLayoutData layout = BuildLayout(classID);
-    if (layout.classSize == 0 && !layout.isArray)
+    else
     {
-        return nullptr;  // Failed to build layout
+        ClassLayoutData layout = BuildLayout(classID);
+        if (layout.classSize == 0 && !layout.isArray)
+        {
+            return nullptr;
+        }
+
+        auto [insertedIt, wasInserted] = _cache.emplace(classID, std::move(layout));
+        result = &insertedIt->second;
     }
 
-    auto [insertedIt, wasInserted] = _cache.emplace(classID, std::move(layout));
-    return &insertedIt->second;
+    _lastClassID = classID;
+    _lastLayout = result;
+    return result;
 }
 
 ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)

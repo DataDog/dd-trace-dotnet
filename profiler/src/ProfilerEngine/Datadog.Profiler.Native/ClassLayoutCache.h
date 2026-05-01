@@ -55,10 +55,18 @@ public:
 
     const ClassLayoutData* GetLayout(ClassID classID);
 
+    // Eagerly pin System.String so that GetLayout skips the hash map for it.
+    // Must be called before traversal (e.g. from HeapSnapshotManager::StartGCDump).
+    void SetStringClassID(ClassID classID);
+
     void Clear()
     {
         _cache.clear();
         _referenceTypeCache.clear();
+        _lastClassID = 0;
+        _lastLayout = nullptr;
+        _stringClassID = 0;
+        _stringLayout = nullptr;
     }
 
     size_t GetMemorySize() const;
@@ -92,4 +100,14 @@ private:
     IFrameStore* _pFrameStore;
     std::unordered_map<ClassID, ClassLayoutData> _cache;
     std::unordered_map<ClassID, bool> _referenceTypeCache;
+
+    // Single-entry last-lookup cache: captures runs of same-type objects
+    // (e.g., array-derived Order objects popped consecutively from the stack).
+    ClassID _lastClassID = 0;
+    const ClassLayoutData* _lastLayout = nullptr;
+
+    // Pinned System.String slot: String is the most common field type.
+    // Detected lazily during BuildLayout, never evicted.
+    ClassID _stringClassID = 0;
+    const ClassLayoutData* _stringLayout = nullptr;
 };

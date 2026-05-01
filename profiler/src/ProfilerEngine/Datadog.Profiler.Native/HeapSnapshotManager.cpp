@@ -9,6 +9,8 @@
 #include "ReferenceChainTraverser.h"
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "ReferenceChainTypes.h"
+#include "FrameStore.h"
+#include "shared/src/native-src/com_ptr.h"
 
 #include "Log.h"
 
@@ -550,6 +552,45 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
     }
 }
 
+void HeapSnapshotManager::OnModuleLoaded(ModuleID moduleId)
+{
+    if (_stringClassID != 0)
+    {
+        return;
+    }
+
+    std::string assemblyName;
+    if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
+    {
+        return;
+    }
+    if (assemblyName != "System.Private.CoreLib" && assemblyName != "mscorlib")
+    {
+        return;
+    }
+
+    ComPtr<IMetaDataImport> metadataImport;
+    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport,
+                     reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf()));
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    mdTypeDef stringTypeDef;
+    hr = metadataImport->FindTypeDefByName(WStr("System.String"), mdTokenNil, &stringTypeDef);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(moduleId, stringTypeDef, 0, nullptr, &_stringClassID);
+    if (FAILED(hr))
+    {
+        _stringClassID = 0;
+    }
+}
+
 void HeapSnapshotManager::StartGCDump()
 {
     if (_session != 0)
@@ -566,6 +607,9 @@ void HeapSnapshotManager::StartGCDump()
         {
             _typeReferenceTree->Clear();
         }
+
+        // Pin System.String in the layout cache (resolved via OnModuleLoaded).
+        _pClassLayoutCache->SetStringClassID(_stringClassID);
 
         // Create/reset the traverser so it is ready to process roots during GC callbacks.
         // ClassLayoutCache is persisted across dumps to avoid rebuilding class layouts.
