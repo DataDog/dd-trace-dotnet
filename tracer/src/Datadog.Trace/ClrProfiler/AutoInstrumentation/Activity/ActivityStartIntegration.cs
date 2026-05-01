@@ -132,6 +132,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
 
                         if (parent is null)
                         {
+                            // Cold path: Activity.Parent didn't yield a Datadog scope (the OTel SDK
+                            // strips TelemetrySpan parents down to an ActivityContext before reaching
+                            // Activity.Start). Check whether StartActiveSpanWithParentSpanIntegration
+                            // / StartSpanWithParentSpanIntegration captured the parent at the API
+                            // boundary and stashed it on the thread-local stack. Peek (don't pop) —
+                            // the OTel-API integration's OnMethodEnd is responsible for popping, so
+                            // the stack stays consistent if Activity.Start throws.
+                            if (OpenTelemetry.OpenTelemetryInterceptionState.PeekExplicitParent() is { } explicitParent)
+                            {
+                                parent = explicitParent.Span.Context;
+                            }
+                        }
+
+                        if (parent is null)
+                        {
                             // Remote parent — construct SpanContext from TraceId + ParentSpanId
                             _ = HexString.TryParseTraceId(activityTraceId, out var remoteTraceId);
                             _ = HexString.TryParseUInt64(parentSpanId, out var remoteSpanId);
