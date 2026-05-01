@@ -29,6 +29,7 @@ variables:
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
   OCI_PACKAGE_MAX_SIZE_BYTES: 43000000
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
+  SLS_CI_BRANCH: v1.3.0
 
 build:
   except:
@@ -226,6 +227,7 @@ benchmark-serverless-trigger:
   needs: []
   trigger:
     project: ${GITLAB_GROUP}/serverless-tools
+    branch: $SLS_CI_BRANCH
     strategy: depend
   allow_failure: true
   variables:
@@ -238,6 +240,7 @@ benchmark-serverless-trigger:
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     UPSTREAM_GITLAB_USER_LOGIN: $GITLAB_USER_LOGIN
     UPSTREAM_GITLAB_USER_EMAIL: $GITLAB_USER_EMAIL
+    DD_TAGS: "SLS_CI_BRANCH:$SLS_CI_BRANCH"
 
 macrobenchmarks:
   stage: benchmarks
