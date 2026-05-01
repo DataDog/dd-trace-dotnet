@@ -13921,6 +13921,35 @@
     "IntegrationName": "OpenTelemetry",
     "AssemblyName": "OpenTelemetry.Api",
     "TargetTypeName": "OpenTelemetry.Trace.Tracer",
+    "TargetMethodName": "StartActiveSpan",
+    "TargetReturnType": "OpenTelemetry.Trace.TelemetrySpan",
+    "TargetParameterTypes": [
+      "System.String",
+      "OpenTelemetry.Trace.SpanKind",
+      "OpenTelemetry.Trace.TelemetrySpan&",
+      "OpenTelemetry.Trace.SpanAttributes",
+      "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]",
+      "System.DateTimeOffset"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartActiveSpanWithParentSpanIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Trace.Tracer",
     "TargetMethodName": "StartRootSpan",
     "TargetReturnType": "OpenTelemetry.Trace.TelemetrySpan",
     "TargetParameterTypes": [
@@ -13970,6 +13999,35 @@
       "Item3": 0
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "OpenTelemetry.Api",
+    "TargetTypeName": "OpenTelemetry.Trace.Tracer",
+    "TargetMethodName": "StartSpan",
+    "TargetReturnType": "OpenTelemetry.Trace.TelemetrySpan",
+    "TargetParameterTypes": [
+      "System.String",
+      "OpenTelemetry.Trace.SpanKind",
+      "OpenTelemetry.Trace.TelemetrySpan&",
+      "OpenTelemetry.Trace.SpanAttributes",
+      "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]",
+      "System.DateTimeOffset"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanWithParentSpanIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
