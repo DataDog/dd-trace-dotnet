@@ -8,7 +8,6 @@ using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
