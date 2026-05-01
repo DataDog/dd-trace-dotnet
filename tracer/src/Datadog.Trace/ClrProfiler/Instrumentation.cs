@@ -584,10 +584,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             }
 
-            if (!debuggerSettings.DynamicInstrumentationEnabled
-             && !debuggerSettings.CodeOriginForSpansEnabled
-             && !manager.ExceptionReplaySettings.Enabled
-             && !debuggerSettings.SymbolDatabaseUploadEnabled)
+            if (!ShouldInitializeDebugger(tracerSettings, debuggerSettings, manager.ExceptionReplaySettings.Enabled))
             {
                 Log.Debug("Debugger products are not enabled");
             }
@@ -600,6 +597,14 @@ namespace Datadog.Trace.ClrProfiler
                                 TaskContinuationOptions.OnlyOnFaulted,
                                 TaskScheduler.Default);
             }
+        }
+
+        internal static bool ShouldInitializeDebugger(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool exceptionReplayEnabled)
+        {
+            return debuggerSettings.DynamicInstrumentationEnabled
+                || debuggerSettings.CodeOriginForSpansEnabled
+                || exceptionReplayEnabled
+                || (debuggerSettings.SymbolDatabaseUploadEnabled && tracerSettings.IsRemoteConfigurationAvailable);
         }
 
         // /!\ This method is called by reflection in the SampleHelpers
