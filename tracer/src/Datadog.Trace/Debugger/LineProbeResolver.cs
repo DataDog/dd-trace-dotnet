@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger
 {
     internal sealed class LineProbeResolver : ILineProbeResolver
     {
-        private const int MinTrailingSegmentsForFallbackMatch = 4;
+        private const int MinTrailingSegmentsForFallbackMatch = 2;
         private const int MaxSameFileNameExamples = 3;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
         private readonly ImmutableHashSet<string> _thirdPartyDetectionExcludes;
@@ -101,7 +101,6 @@ namespace Datadog.Trace.Debugger
             bool includeExamplePaths,
             ref int sameFileNameMatchCount,
             ref int bestMatchingTrailingSegments,
-            ref int qualifiedFallbackMatchCount,
             ref List<string>? sameFileNameMatches)
         {
             if (result.ExampleSameFileNamePath is null)
@@ -120,8 +119,6 @@ namespace Datadog.Trace.Debugger
             {
                 bestMatchingTrailingSegments = result.BestMatchingTrailingSegments;
             }
-
-            qualifiedFallbackMatchCount += result.QualifiedMatchCount;
         }
 
         private static LineProbeResolutionDiagnostics BuildMinimalDiagnostics(string probeFile, int? probeLine, string probeId)
@@ -210,7 +207,6 @@ namespace Datadog.Trace.Debugger
                 var symbolicatedAssemblyCount = 0;
                 var sameFileNameMatchCount = 0;
                 var bestMatchingTrailingSegments = 0;
-                var qualifiedFallbackMatchCount = 0;
 
                 foreach (var candidateAssembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
@@ -237,11 +233,11 @@ namespace Datadog.Trace.Debugger
                         includeDetailedDiagnostics,
                         ref sameFileNameMatchCount,
                         ref bestMatchingTrailingSegments,
-                        ref qualifiedFallbackMatchCount,
                         ref sameFileNameMatches);
 
-                    // Only bind when a single global fallback candidate has the best score.
-                    // Assemblies with internally ambiguous fallback matches must still participate in that global tie.
+                    // Only bind when exactly one fallback candidate qualifies across the currently loaded,
+                    // symbolicated assemblies. Assemblies with internally ambiguous fallback matches must
+                    // still participate in that global ambiguity check.
                     bestFallbackMatchSelection.Track(candidateAssembly, closestPathMatch);
                 }
 
@@ -257,7 +253,7 @@ namespace Datadog.Trace.Debugger
                     symbolicatedAssemblyCount,
                     sameFileNameMatchCount,
                     bestMatchingTrailingSegments,
-                    qualifiedFallbackMatchCount,
+                    bestFallbackMatchSelection.QualifiedMatchCount,
                     bestFallbackMatchSelection.HasAmbiguousBestMatch,
                     includeDetailedDiagnostics ? sameFileNameMatches?.ToArray() ?? [] : []);
                 return false;
@@ -376,10 +372,13 @@ namespace Datadog.Trace.Debugger
         {
             private BestFallbackMatch? _bestMatch;
             private int _bestMatchingTrailingSegments;
+            private int _qualifiedMatchCount;
 
-            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch ? null : _bestMatch;
+            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch || _qualifiedMatchCount != 1 ? null : _bestMatch;
 
             public bool HasAmbiguousBestMatch { get; private set; }
+
+            public int QualifiedMatchCount => _qualifiedMatchCount;
 
             public void Track(Assembly assembly, ClosestPathBySuffixResult result)
             {
@@ -388,6 +387,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                _qualifiedMatchCount += result.QualifiedMatchCount;
                 var candidateScore = result.BestQualifiedMatchingTrailingSegments;
                 if (candidateScore > _bestMatchingTrailingSegments)
                 {
@@ -415,6 +415,47 @@ namespace Datadog.Trace.Debugger
             public int MatchingTrailingSegments { get; } = matchingTrailingSegments;
         }
 
+        internal readonly struct ClosestPathBySuffixResult
+        {
+            public ClosestPathBySuffixResult(
+                string? exampleSameFileNamePath,
+                int bestMatchingTrailingSegments,
+                int qualifiedMatchCount,
+                int bestQualifiedMatchingTrailingSegments,
+                string? bestQualifiedPath,
+                bool hasAmbiguousBestQualifiedMatch)
+            {
+                ExampleSameFileNamePath = exampleSameFileNamePath;
+                BestMatchingTrailingSegments = bestMatchingTrailingSegments;
+                QualifiedMatchCount = qualifiedMatchCount;
+                BestQualifiedMatchingTrailingSegments = bestQualifiedMatchingTrailingSegments;
+                BestQualifiedPath = bestQualifiedPath;
+                HasAmbiguousBestQualifiedMatch = hasAmbiguousBestQualifiedMatch;
+            }
+
+            public string? ExampleSameFileNamePath { get; }
+
+            public int BestMatchingTrailingSegments { get; }
+
+            public int QualifiedMatchCount { get; }
+
+            public int BestQualifiedMatchingTrailingSegments { get; }
+
+            public string? BestQualifiedPath { get; }
+
+            public bool HasAmbiguousBestQualifiedMatch { get; }
+
+            public bool IsSuccessful => QualifiedMatchCount > 0 && !HasAmbiguousBestQualifiedMatch && BestQualifiedPath is not null;
+
+            public static ClosestPathBySuffixResult NoCandidates() => new(
+                exampleSameFileNamePath: null,
+                bestMatchingTrailingSegments: 0,
+                qualifiedMatchCount: 0,
+                bestQualifiedMatchingTrailingSegments: 0,
+                bestQualifiedPath: null,
+                hasAmbiguousBestQualifiedMatch: false);
+        }
+
         internal sealed class FilePathLookup
         {
             private readonly Trie _trie = new();
@@ -432,6 +473,33 @@ namespace Datadog.Trace.Debugger
                 }
 
                 return Path.DirectorySeparatorChar;
+            }
+
+            private static int CountPathSegments(string path)
+            {
+                if (string.IsNullOrEmpty(path))
+                {
+                    return 0;
+                }
+
+                var pathSpan = path.AsSpan();
+                TrimTrailingSeparators(ref pathSpan);
+                var segmentCount = 0;
+
+                while (!pathSpan.IsEmpty)
+                {
+                    segmentCount++;
+                    var separatorIndex = FindLastSeparatorIndex(pathSpan);
+                    if (separatorIndex < 0)
+                    {
+                        break;
+                    }
+
+                    pathSpan = pathSpan.Slice(0, separatorIndex);
+                    TrimTrailingSeparators(ref pathSpan);
+                }
+
+                return segmentCount;
             }
 
             public void InsertPath(string path)
@@ -469,7 +537,19 @@ namespace Datadog.Trace.Debugger
                 var directoryPathSeparator = _directoryPathSeparator ?? Path.DirectorySeparatorChar;
                 var reversePath = directoryPathSeparator == '\\' ? pathQuery.ReversedBackslashPath : pathQuery.ReversedForwardSlashPath;
                 var match = _trie.GetStringStartingWith(reversePath);
-                return match != null ? GetReversePath(match, directoryPathSeparator, trimTrailingSeparators: false) : null;
+                if (match != null)
+                {
+                    return GetReversePath(match, directoryPathSeparator, trimTrailingSeparators: false);
+                }
+
+                var querySegmentCount = CountPathSegments(pathQuery.Path);
+                if (querySegmentCount == 0)
+                {
+                    return null;
+                }
+
+                var suffixMatch = GetClosestPathBySuffix(pathQuery, querySegmentCount);
+                return suffixMatch.IsSuccessful ? suffixMatch.BestQualifiedPath : null;
             }
 
             public bool TryGetDocumentPathByFileName(string fileName, [NotNullWhen(true)] out string? documentPath)
@@ -558,7 +638,7 @@ namespace Datadog.Trace.Debugger
                     var path1Segment = path1SeparatorIndex >= 0 ? path1Span.Slice(path1SeparatorIndex + 1) : path1Span;
                     var path2Segment = path2SeparatorIndex >= 0 ? path2Span.Slice(path2SeparatorIndex + 1) : path2Span;
 
-                    if (!path1Segment.SequenceEqual(path2Segment))
+                    if (!path1Segment.Equals(path2Segment, StringComparison.OrdinalIgnoreCase))
                     {
                         break;
                     }
@@ -691,37 +771,6 @@ namespace Datadog.Trace.Debugger
                     SameFileNameMatchCount: SameFileNameMatchCount,
                     SameFileNameExamples: SameFileNameExamples);
             }
-        }
-
-        internal sealed class ClosestPathBySuffixResult(
-            string? exampleSameFileNamePath,
-            int bestMatchingTrailingSegments,
-            int qualifiedMatchCount,
-            int bestQualifiedMatchingTrailingSegments,
-            string? bestQualifiedPath,
-            bool hasAmbiguousBestQualifiedMatch)
-        {
-            public string? ExampleSameFileNamePath { get; } = exampleSameFileNamePath;
-
-            public int BestMatchingTrailingSegments { get; } = bestMatchingTrailingSegments;
-
-            public int QualifiedMatchCount { get; } = qualifiedMatchCount;
-
-            public int BestQualifiedMatchingTrailingSegments { get; } = bestQualifiedMatchingTrailingSegments;
-
-            public string? BestQualifiedPath { get; } = bestQualifiedPath;
-
-            public bool HasAmbiguousBestQualifiedMatch { get; } = hasAmbiguousBestQualifiedMatch;
-
-            public bool IsSuccessful => QualifiedMatchCount > 0 && !HasAmbiguousBestQualifiedMatch && BestQualifiedPath is not null;
-
-            public static ClosestPathBySuffixResult NoCandidates() => new(
-                exampleSameFileNamePath: null,
-                bestMatchingTrailingSegments: 0,
-                qualifiedMatchCount: 0,
-                bestQualifiedMatchingTrailingSegments: 0,
-                bestQualifiedPath: null,
-                hasAmbiguousBestQualifiedMatch: false);
         }
 
         private sealed class AssemblyPathMatch(Assembly assembly, string path, LineProbePathMatchType pathMatchType, int? matchingTrailingSegments)
