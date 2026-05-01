@@ -412,7 +412,7 @@ namespace Datadog.Trace.Activity.Handlers
                             }
                         }
 
-                        span.SetTag("is_incomplete", "true");
+                        span.SetTag("closed_reason", "garbage_collected");
 
                         span.Finish();
                         scope.Close();

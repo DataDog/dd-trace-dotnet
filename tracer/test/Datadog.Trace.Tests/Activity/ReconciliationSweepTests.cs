@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.Activity
             result.Iterated.Should().Be(1);
             mappings.Should().BeEmpty();
             span.IsFinished.Should().BeTrue();
-            span.GetTag("is_incomplete").Should().Be("true");
+            span.GetTag("closed_reason").Should().Be("garbage_collected");
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Activity
             ActivityHandlerCommon.ReconcileSweepCore(mappings);
 
             span.IsFinished.Should().BeTrue();
-            span.GetTag("is_incomplete").Should().Be("true");
+            span.GetTag("closed_reason").Should().Be("garbage_collected");
 
             // Span-level fallbacks
             span.OperationName.Should().Be(SpanKinds.Internal); // GetOperationName falls back to lowercased SpanKind
@@ -179,7 +179,7 @@ namespace Datadog.Trace.Tests.Activity
                 mappings.Should().HaveCount(1).And.ContainKey(liveKey);
 
                 gcSpan.IsFinished.Should().BeTrue();
-                gcSpan.GetTag("is_incomplete").Should().Be("true");
+                gcSpan.GetTag("closed_reason").Should().Be("garbage_collected");
                 stoppedSpan.IsFinished.Should().BeTrue();
                 liveSpan.IsFinished.Should().BeFalse();
             }
