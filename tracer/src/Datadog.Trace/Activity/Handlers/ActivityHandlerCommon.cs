@@ -369,7 +369,51 @@ namespace Datadog.Trace.Activity.Handlers
                     // another thread already removed this entry, bail without closing.
                     if (mappings.TryRemove(kvp.Key, out var owned) && owned.Scope is { Span: { } span } scope)
                     {
-                        span.SetTag("dd.activity.forced_close", "abandoned");
+                        // Do some "clean up" of the span, to make sure it has sensible defaults
+                        // Roughly analogous to OtlpHelpers.AgentConvertSpan, but much more basic with extra assumption
+                        if (span.Tags is OpenTelemetryTags tags)
+                        {
+                            if (string.IsNullOrEmpty(tags.SpanKind))
+                            {
+                                tags.SpanKind = SpanKinds.Internal;
+                            }
+
+                            if (string.IsNullOrEmpty(span.OperationName))
+                            {
+                                span.OperationName = OperationNameMapper.GetOperationName(tags);
+                            }
+
+                            if (string.IsNullOrEmpty(tags.OtelStatusCode))
+                            {
+                                tags.OtelStatusCode = "STATUS_CODE_UNSET";
+                            }
+
+                            if (span.ServiceName is null)
+                            {
+                                // this is _Very_ unlikely to be set, as we won't have copied the tags
+                                // across before the Activity was "lost" to GC, but check it just in case
+                                span.SetService(
+                                    span.GetTag("peer.service") switch
+                                    {
+                                        { } peerService when !string.IsNullOrEmpty(peerService) => peerService,
+                                        _ => "OTLPResourceNoServiceName",
+                                    },
+                                    source: null);
+                            }
+
+                            if (string.IsNullOrEmpty(span.ResourceName))
+                            {
+                                span.ResourceName = "ONGOING_ACTIVITY";
+                            }
+
+                            if (string.IsNullOrWhiteSpace(span.Type))
+                            {
+                                span.Type = SpanTypes.Custom;
+                            }
+                        }
+
+                        span.SetTag("is_incomplete", "true");
+
                         span.Finish();
                         scope.Close();
                         gcCollected++;
