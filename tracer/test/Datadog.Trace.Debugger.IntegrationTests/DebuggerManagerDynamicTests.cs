@@ -8,6 +8,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.IntegrationTests.Assertions;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Sink;
@@ -364,7 +365,7 @@ public class DebuggerManagerDynamicTests : TestHelper
 
             initialMemorySnapshot.NoObjectsExist<Symbols.SymbolsUploader>();
 
-            var fileId = Guid.NewGuid().ToString();
+            var fileId = $"{DefinitionPaths.SymDB}_{Guid.NewGuid()}";
             var configurations = new[] { ((object)new { upload_symbols = true }, RcmProducts.LiveDebuggingSymbolDb, fileId) };
 
             Output.WriteLine("Sending SymDB remote config: upload_symbols=true");
