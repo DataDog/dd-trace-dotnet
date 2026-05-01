@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
@@ -96,6 +97,20 @@ namespace Datadog.Trace.Tests.Debugger
             settings.DynamicInstrumentationEnabled.Should().BeFalse();
             settings.DynamicInstrumentationCanBeEnabled.Should().BeFalse();
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("false", false)]
+        [InlineData("true", true)]
+        public void SymbolDatabaseUploadOnlyOpensDebuggerGateWhenRemoteConfigurationIsAvailable(string remoteConfigurationEnabled, bool expected)
+        {
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, remoteConfigurationEnabled },
+            });
+            var debuggerSettings = new DebuggerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+
+            Instrumentation.ShouldInitializeDebugger(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().Be(expected);
         }
 
         [Fact]
