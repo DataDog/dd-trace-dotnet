@@ -303,6 +303,12 @@ namespace Datadog.Trace.Debugger
                     RcmSubscriptionManager.Instance,
                     uploadSymbols => OnSymbolDatabaseRemoteConfiguration(tracerSettings, newDebuggerSettings, uploadSymbols));
                 Volatile.Write(ref _symDbRemoteConfig, symDbRemoteConfig);
+                if (_processExit.Task.IsCompleted)
+                {
+                    symDbRemoteConfig.Dispose();
+                    return;
+                }
+
                 symDbRemoteConfig.Subscribe();
             }
             catch (Exception ex)
