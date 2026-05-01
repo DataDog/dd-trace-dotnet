@@ -569,6 +569,11 @@ namespace Datadog.Trace.TestHelpers
                 HandleTracerFlarePayload(request);
                 responseType = MockTracerResponseType.TracerFlare;
             }
+            else if (request.PathAndQuery.StartsWith("/symdb/v1/input"))
+            {
+                HandlePotentialSymbolDbData(request);
+                responseType = MockTracerResponseType.SymbolDb;
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -876,6 +881,27 @@ namespace Datadog.Trace.TestHelpers
 
                     throw;
                 }
+            }
+        }
+
+        private void HandlePotentialSymbolDbData(MockHttpRequest request)
+        {
+            try
+            {
+                _ = request.ReadStreamBody();
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message.ToLowerInvariant();
+
+                if (message.Contains("beyond the end of the stream"))
+                {
+                    // Accept call is likely interrupted by a dispose
+                    // Swallow the exception and let the test finish
+                    return;
+                }
+
+                throw;
             }
         }
 
