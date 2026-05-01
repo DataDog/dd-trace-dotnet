@@ -6,11 +6,13 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
@@ -32,11 +34,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 public sealed class ServiceBusSenderScheduleMessagesAsyncIntegration
 {
     private const string OperationName = "send";
+    private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:servicebus"];
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable messages, ref DateTimeOffset scheduledEnqueueTime, ref CancellationToken cancellationToken)
         where TTarget : IServiceBusSender, IDuckType
     {
-        return AzureServiceBusCommon.CreateSenderSpan(instance, OperationName, messages);
+        var state = AzureServiceBusCommon.CreateSenderSpan(instance, OperationName, messages);
+
+        var tracer = Tracer.Instance;
+        var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+
+        if (dataStreamsManager.IsEnabled
+            && state.Scope?.Span is Span span
+            && messages is ICollection materializedMessages)
+        {
+            var entityPath = instance.EntityPath;
+            var edgeTags = string.IsNullOrEmpty(entityPath)
+                ? DefaultProduceEdgeTags
+                : dataStreamsManager.GetOrCreateEdgeTags(
+                    new ServiceBusEdgeTagCacheKey(entityPath!, IsConsume: false),
+                    static k => ["direction:out", $"topic:{k.EntityPath}", "type:servicebus"]);
+            span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, 0, 0);
+            foreach (var msgObj in materializedMessages)
+            {
+                if (msgObj?.DuckCast<IServiceBusMessage>() is { ApplicationProperties: IDictionary<string, object> props }
+                    && !props.ContainsKey(DataStreamsPropagationHeaders.PropagationKeyBase64))
+                {
+                    dataStreamsManager.InjectPathwayContextAsBase64String(
+                        span.Context.PathwayContext,
+                        new AzureHeadersCollectionAdapter(props));
+                }
+            }
+        }
+
+        return state;
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
