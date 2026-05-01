@@ -13,6 +13,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -330,85 +331,14 @@ namespace Datadog.Trace.Activity.Handlers
 
             try
             {
-                var gcCollected = 0;
-                var missedStop = 0;
-                var count = 0;
-                List<ActivityKey>? toRemove = null;
-
-                foreach (var kvp in ActivityMappingById)
-                {
-                    count++;
-                    var activityRef = kvp.Value.Activity;
-                    var scope = kvp.Value.Scope;
-
-                    if (!activityRef.TryGetTarget(out var activityObject))
-                    {
-                        // Activity was GC'd before Stop was called. Close the scope at "now"
-                        // so the span finishes and gets flushed; we don't have a real end time,
-                        // so the duration becomes (now - StartTime) — bounded but possibly inflated.
-                        if (scope?.Span is { } span)
-                        {
-                            span.SetTag("dd.activity.forced_close", "abandoned");
-                            span.Finish();
-                            scope.Close();
-                        }
-
-                        toRemove ??= new List<ActivityKey>();
-                        toRemove.Add(kvp.Key);
-                        gcCollected++;
-                        continue;
-                    }
-
-                    // Activity is still alive. A non-zero Duration on an entry that's still in
-                    // the dictionary means Stop() was called but our listener callback didn't
-                    // handle it - close it using the real end time.
-                    if (activityObject.TryDuckCast<IActivity6>(out var activity6))
-                    {
-                        if (activity6.Duration != TimeSpan.Zero)
-                        {
-                            CloseActivityScope(activity6, scope);
-                            toRemove ??= new List<ActivityKey>();
-                            toRemove.Add(kvp.Key);
-                            missedStop++;
-                        }
-                    }
-                    else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
-                    {
-                        if (activity5.Duration != TimeSpan.Zero)
-                        {
-                            CloseActivityScope(activity5, scope);
-                            toRemove ??= new List<ActivityKey>();
-                            toRemove.Add(kvp.Key);
-                            missedStop++;
-                        }
-                    }
-                    else if (activityObject.TryDuckCast<IActivity>(out var activity4))
-                    {
-                        if (activity4.Duration != TimeSpan.Zero)
-                        {
-                            CloseActivityScope(activity4, scope);
-                            toRemove ??= new List<ActivityKey>();
-                            toRemove.Add(kvp.Key);
-                            missedStop++;
-                        }
-                    }
-                }
-
-                if (toRemove is not null)
-                {
-                    foreach (var key in toRemove)
-                    {
-                        ActivityMappingById.TryRemove(key, out _);
-                    }
-                }
-
-                if (Log.IsEnabled(LogEventLevel.Debug) && (gcCollected > 0 || missedStop > 0))
+                var result = ReconcileSweepCore(ActivityMappingById);
+                if ((result.GcCollected > 0 || result.MissedStop > 0) && Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug<int, int, int>(
-                        "ActivityHandlerCommon: reconciliation swept {GcCollected} GC'd activities and {MissedStop} missed-Stop activities; initial dictionary size {Initial}",
-                        gcCollected,
-                        missedStop,
-                        count);
+                        "ActivityHandlerCommon: reconciliation swept {GcCollected} GC'd activities and {MissedStop} missed-Stop activities (iterated {Iterated})",
+                        result.GcCollected,
+                        result.MissedStop,
+                        result.Iterated);
                 }
             }
             catch (Exception ex)
@@ -419,6 +349,71 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 Interlocked.Exchange(ref _sweepInProgress, 0);
             }
+        }
+
+        [TestingAndPrivateOnly]
+        internal static ReconciliationSweepResult ReconcileSweepCore(ConcurrentDictionary<ActivityKey, ActivityMapping> mappings)
+        {
+            var gcCollected = 0;
+            var missedStop = 0;
+            var iterated = 0;
+
+            foreach (var kvp in mappings)
+            {
+                iterated++;
+                var activityRef = kvp.Value.Activity;
+
+                if (!activityRef.TryGetTarget(out var activityObject))
+                {
+                    // Activity was GC'd before Stop was called. Take ownership atomically; if
+                    // another thread already removed this entry, bail without closing.
+                    if (mappings.TryRemove(kvp.Key, out var owned) && owned.Scope is { Span: { } span } scope)
+                    {
+                        span.SetTag("dd.activity.forced_close", "abandoned");
+                        span.Finish();
+                        scope.Close();
+                        gcCollected++;
+                    }
+
+                    continue;
+                }
+
+                // Activity is still alive. A non-zero Duration on an entry that's still in
+                // the dictionary means Stop() was called but our listener callback didn't
+                // handle it — close it using the real end time.
+                if (activityObject.TryDuckCast<IActivity6>(out var activity6))
+                {
+                    if (activity6.Duration != TimeSpan.Zero
+                     && mappings.TryRemove(kvp.Key, out var owned)
+                     && owned.Scope is { } scope)
+                    {
+                        CloseActivityScope(activity6, scope);
+                        missedStop++;
+                    }
+                }
+                else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
+                {
+                    if (activity5.Duration != TimeSpan.Zero
+                     && mappings.TryRemove(kvp.Key, out var owned)
+                     && owned.Scope is { } scope)
+                    {
+                        CloseActivityScope(activity5, scope);
+                        missedStop++;
+                    }
+                }
+                else if (activityObject.TryDuckCast<IActivity>(out var activity4))
+                {
+                    if (activity4.Duration != TimeSpan.Zero
+                     && mappings.TryRemove(kvp.Key, out var owned)
+                     && owned.Scope is { } scope)
+                    {
+                        CloseActivityScope(activity4, scope);
+                        missedStop++;
+                    }
+                }
+            }
+
+            return new ReconciliationSweepResult(gcCollected, missedStop, iterated);
         }
 
         private static void CloseActivityScope<TInner>(TInner activity, Scope scope)
@@ -440,6 +435,20 @@ namespace Datadog.Trace.Activity.Handlers
             span.Finish(activity.StartTimeUtc.Add(activity.Duration));
 
             scope.Close();
+        }
+
+        internal readonly struct ReconciliationSweepResult
+        {
+            public readonly int GcCollected;
+            public readonly int MissedStop;
+            public readonly int Iterated;
+
+            public ReconciliationSweepResult(int gcCollected, int missedStop, int iterated)
+            {
+                GcCollected = gcCollected;
+                MissedStop = missedStop;
+                Iterated = iterated;
+            }
         }
     }
 }
