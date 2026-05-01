@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.IntegrationTests.Assertions;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using Samples.Probes.TestRuns.SmokeTests;
 using VerifyXunit;
@@ -62,17 +63,28 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, no DI objects should exist
                 memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
-                // The uploader starts early so it can subscribe to SymDB remote config
-                // even while Dynamic Instrumentation is still disabled.
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                // SymDB uploader waits for SymDB remote config before it starts.
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new { dynamic_instrumentation_enabled = true },
             DynamicInstrumentationEnabledLogEntry,
             finalMemoryAssertions: memoryAssertions =>
             {
-                // After enabling DI via remote config, symbol uploader should be created
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             });
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_SymbolDatabaseUpload_StartsOnlyAfterSymDbRemoteConfig()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
+
+        await RunSymbolDatabaseRemoteConfigurationTest();
     }
 
     [SkippableFact]
@@ -134,9 +146,8 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
                 memoryAssertions.NoObjectsExist<SnapshotSink>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
-                // The uploader starts early so it can subscribe to SymDB remote config
-                // even while the other debugger products remain disabled.
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                // SymDB uploader waits for SymDB remote config before it starts.
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new
             {
@@ -153,7 +164,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
                 memoryAssertions.ObjectsExist<SnapshotSink>();
                 memoryAssertions.ObjectsExist<LineProbeResolver>();
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             });
     }
 
@@ -176,15 +187,13 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.ObjectsExist<SnapshotSink>();
                 memoryAssertions.ObjectsExist<LineProbeResolver>();
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new { dynamic_instrumentation_enabled = false },
             $"Dynamic Instrumentation {DisabledByRemoteConfiguration}",
             finalMemoryAssertions: memoryAssertions =>
             {
-                // After disabling DI, symbol uploader should still exist (it's not disposed when DI is disabled)
-                // This is because symbol uploader initialization is one-time only
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             });
     }
 
@@ -309,6 +318,70 @@ public class DebuggerManagerDynamicTests : TestHelper
             }
 
             await logEntryWatcher.WaitForLogEntry(logToWaitAfterRc);
+        }
+        finally
+        {
+            if (!sample.HasExited)
+            {
+                sample.Kill();
+            }
+        }
+    }
+
+    private async Task RunSymbolDatabaseRemoteConfigurationTest([CallerMemberName] string? testName = null)
+    {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
+
+        var logPath = Path.Combine(LogDirectory, $"{testName}");
+        Directory.CreateDirectory(logPath);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logPath);
+
+        var testType = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncVoid));
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath, Output);
+        using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
+
+        await logEntryWatcher.WaitForLogEntry(TracerInitialized);
+
+        try
+        {
+            var memoryAssertionTimeout = TimeSpan.FromSeconds(10);
+            var initialMemorySnapshot = await MemoryAssertions.TryCaptureSnapshotToAssertOn(
+                                            sample,
+                                            Output,
+                                            memoryAssertionTimeout);
+
+            if (initialMemorySnapshot == null)
+            {
+                var skipReason = $"Initial memory assertion timed out after {memoryAssertionTimeout.TotalSeconds}s in {testName}. This may be due to ClrMD/runtime issues mostly on .NET 8 or .NET Core 2.1.";
+                throw new SkipException(skipReason);
+            }
+
+            initialMemorySnapshot.NoObjectsExist<Symbols.SymbolsUploader>();
+
+            var fileId = Guid.NewGuid().ToString();
+            var configurations = new[] { ((object)new { upload_symbols = true }, RcmProducts.LiveDebuggingSymbolDb, fileId) };
+
+            Output.WriteLine("Sending SymDB remote config: upload_symbols=true");
+            await agent.SetupRcmAndWait(Output, configurations);
+
+            var finalMemorySnapshot = await MemoryAssertions.TryCaptureSnapshotToAssertOn(
+                                          sample,
+                                          Output,
+                                          memoryAssertionTimeout);
+
+            if (finalMemorySnapshot == null)
+            {
+                var skipReason = $"Final memory assertion timed out after {memoryAssertionTimeout.TotalSeconds}s in {testName}. This may be due to ClrMD/runtime issues mostly on .NET 8 or .NET Core 2.1.";
+                throw new SkipException(skipReason);
+            }
+
+            finalMemorySnapshot.ObjectsExist<Symbols.SymbolsUploader>();
         }
         finally
         {
