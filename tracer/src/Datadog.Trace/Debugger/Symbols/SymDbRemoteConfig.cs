@@ -16,7 +16,9 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly Action<bool> _onUploadSymbolsChanged;
+        private readonly object _lock = new();
         private ISubscription? _subscription;
+        private bool _disposed;
 
         public SymDbRemoteConfig(IRcmSubscriptionManager subscriptionManager, Action<bool> onUploadSymbolsChanged)
         {
@@ -26,20 +28,28 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public void Subscribe()
         {
-            if (_subscription is not null)
+            lock (_lock)
             {
-                return;
-            }
+                if (_disposed || _subscription is not null)
+                {
+                    return;
+                }
 
-            _subscription = new Subscription(OnRemoteConfigurationChanged, RcmProducts.LiveDebuggingSymbolDb);
-            _subscriptionManager.SubscribeToChanges(_subscription);
+                _subscription = new Subscription(OnRemoteConfigurationChanged, RcmProducts.LiveDebuggingSymbolDb);
+                _subscriptionManager.SubscribeToChanges(_subscription);
+            }
         }
 
         public void Dispose()
         {
-            if (_subscription is { } subscription)
+            lock (_lock)
             {
-                _subscriptionManager.Unsubscribe(subscription);
+                _disposed = true;
+                if (_subscription is { } subscription)
+                {
+                    _subscriptionManager.Unsubscribe(subscription);
+                }
+
                 _subscription = null;
             }
         }

@@ -299,10 +299,11 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                _symDbRemoteConfig = new SymDbRemoteConfig(
+                var symDbRemoteConfig = new SymDbRemoteConfig(
                     RcmSubscriptionManager.Instance,
                     uploadSymbols => OnSymbolDatabaseRemoteConfiguration(tracerSettings, newDebuggerSettings, uploadSymbols));
-                _symDbRemoteConfig.Subscribe();
+                Volatile.Write(ref _symDbRemoteConfig, symDbRemoteConfig);
+                symDbRemoteConfig.Subscribe();
             }
             catch (Exception ex)
             {
@@ -338,8 +339,8 @@ namespace Datadog.Trace.Debugger
                 }
 
                 var tracerManager = TracerManager.Instance;
-                this.SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, () => ServiceName, tracerSettings, debuggerSettings, tracerManager.GitMetadataTagsProvider);
-                _ = this.SymbolsUploader.StartFlushingAsync()
+                SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, () => ServiceName, tracerSettings, debuggerSettings, tracerManager.GitMetadataTagsProvider);
+                _ = SymbolsUploader.StartFlushingAsync()
                         .ContinueWith(
                              t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),
                              CancellationToken.None,
@@ -736,7 +737,7 @@ namespace Datadog.Trace.Debugger
 
             SafeDisposal.New()
                         .Add(_tracerSettingsSubscription)
-                        .Add(_symDbRemoteConfig)
+                        .Add(Volatile.Read(ref _symDbRemoteConfig))
                         .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
                         .Add(SymbolsUploader)
