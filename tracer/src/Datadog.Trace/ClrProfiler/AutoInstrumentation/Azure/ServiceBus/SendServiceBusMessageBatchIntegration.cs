@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             }
 
             // DSM only for batch-with-links (messageScope is the per-message TryAdd span).
-            // Batch-without-links is handled by InstrumentMessageIntegration during SendMessagesAsync(batch).
+            // Batch-without-links goes through SendServiceBusMessagesIntegration (CreateDiagnosticScope).
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (messageScope != null
                 && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)

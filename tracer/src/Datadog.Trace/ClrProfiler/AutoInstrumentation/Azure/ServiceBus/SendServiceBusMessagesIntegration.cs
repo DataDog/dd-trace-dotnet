@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:servicebus"];
 
         internal static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, IEnumerable messages, string activityName, TOperation operation)
-            where TTarget : IServiceBusSender, IDuckType
+            where TTarget : ITransportSender, IDuckType
         {
             var tracer = Tracer.Instance;
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
