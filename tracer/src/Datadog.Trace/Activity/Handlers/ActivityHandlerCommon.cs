@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -23,6 +24,13 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityHandlerCommon));
         internal static readonly ConcurrentDictionary<ActivityKey, ActivityMapping> ActivityMappingById = new();
         private static readonly IntegrationId IntegrationId = IntegrationId.OpenTelemetry;
+
+        // Periodic sweep that handles two reliability cases that the hot-path Stop callback
+        // cannot: 1. Activities the customer abandoned without calling Stop (their WeakReference
+        // target is GC'd); 2. Activities whose Stop fired but our listener callback missed.
+        private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromSeconds(10);
+        private static int _sweepInProgress;
+        private static Timer? _reconciliationTimer;
 
         /// <summary>
         /// Handles when a new Activity is started to map it to a new <see cref="Span"/>/<see cref="Scope"/>.
@@ -200,10 +208,10 @@ namespace Datadog.Trace.Activity.Handlers
                 // Avoid closure allocation if we can
                 activityMapping = ActivityMappingById.GetOrAdd(
                     activityKey.Value,
-                    static (_, details) => new(details.activity.Instance!, CreateScopeFromActivity(details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
+                    static (_, details) => new(new(details.activity.Instance!), CreateScopeFromActivity(details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
                     (activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId));
 #else
-                activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(new(activity.Instance!), CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
 #endif
             }
             catch (Exception ex)
@@ -234,142 +242,204 @@ namespace Datadog.Trace.Activity.Handlers
         {
             try
             {
-                if (activity.Instance is not null)
+                if (activity.Instance is null)
                 {
-                    if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
-                    {
-                        return;
-                    }
-
-                    // Non-w3c activities will have null trace/span IDs, even though they implement IW3CActivity
-                    ActivityKey key;
-                    if (activity is IW3CActivity w3cActivity
-                     && w3cActivity.TraceId != null!
-                     && w3cActivity.SpanId != null!)
-                    {
-                        key = new(w3cActivity.TraceId, w3cActivity.SpanId);
-                    }
-                    else
-                    {
-                        key = new(activity.Id);
-                    }
-
-                    if (!key.IsValid())
-                    {
-                        // Adding this as a protective measure as Error Tracking identified
-                        // instances where StartActivity had an Activity with null Id, SpanId, TraceId
-                        // In that case we just skip the Activity, so doing the same thing here.
-                        return;
-                    }
-
-                    if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
-                    {
-                        // We have the exact scope associated with the Activity
-                        if (Log.IsEnabled(LogEventLevel.Debug))
-                        {
-                            Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
-                        }
-
-                        CloseActivityScope(sourceName, activity, someValue.Scope);
-                        return;
-                    }
+                    Log.Information("DefaultActivityHandler.ActivityStopped: [Missing Activity]");
+                    return;
                 }
 
-                StopActivitySlow(sourceName, activity);
+                if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity.OperationName))
+                {
+                    return;
+                }
+
+                // Non-w3c activities will have null trace/span IDs, even though they implement IW3CActivity
+                ActivityKey key;
+                if (activity is IW3CActivity w3cActivity
+                 && w3cActivity.TraceId != null!
+                 && w3cActivity.SpanId != null!)
+                {
+                    key = new(w3cActivity.TraceId, w3cActivity.SpanId);
+                }
+                else
+                {
+                    key = new(activity.Id);
+                }
+
+                if (!key.IsValid())
+                {
+                    // Adding this as a protective measure as Error Tracking identified
+                    // instances where StartActivity had an Activity with null Id, SpanId, TraceId
+                    // In that case we just skip the Activity, so doing the same thing here.
+                    return;
+                }
+
+                if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
+                {
+                    // We have the exact scope associated with the Activity
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("DefaultActivityHandler.ActivityStopped: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                    }
+
+                    CloseActivityScope(activity, someValue.Scope);
+                    return;
+                }
+
+                // No matching entry — either Start was never observed, or the periodic
+                // reconciliation sweep already cleaned this one up. Nothing to do here.
+                if (Log.IsEnabled(LogEventLevel.Information))
+                {
+                    Log.Information("DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error processing the DefaultActivityHandler.ActivityStopped callback");
             }
+        }
 
-            static void StopActivitySlow<TInner>(string sourceName, TInner activity)
-                where TInner : IActivity
+        internal static void StartReconciliationLoop()
+        {
+            if (Volatile.Read(ref _reconciliationTimer) is not null)
             {
-                // The listener didn't send us the Activity or the scope instance was not found
-                // In this case we are going go through the dictionary to check if we have an activity that
-                // has been closed and then close the associated scope.
-                if (activity.Instance is not null)
-                {
-                    if (Log.IsEnabled(LogEventLevel.Information))
-                    {
-                        Log.Information("DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity!.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
-                    }
-                }
-                else
-                {
-                    Log.Information($"DefaultActivityHandler.ActivityStopped: [Missing Activity]");
-                }
+                return;
+            }
 
-                List<ActivityKey>? toDelete = null;
+            var timer = new Timer(static _ => RunReconciliationSweep(), state: null, dueTime: ReconciliationInterval, period: ReconciliationInterval);
+            if (Interlocked.CompareExchange(ref _reconciliationTimer, timer, null) is not null)
+            {
+                // Another thread won the race and already started the loop
+                timer.Dispose();
+            }
+        }
+
+        internal static void StopReconciliationLoop()
+        {
+            var timer = Interlocked.Exchange(ref _reconciliationTimer, null);
+            timer?.Dispose();
+        }
+
+        internal static void RunReconciliationSweep()
+        {
+            // Skip if a sweep is already in flight (Timer callbacks can overlap on the threadpool).
+            if (Interlocked.CompareExchange(ref _sweepInProgress, 1, 0) == 1)
+            {
+                return;
+            }
+
+            try
+            {
+                var gcCollected = 0;
+                var missedStop = 0;
+                var count = 0;
+                List<ActivityKey>? toRemove = null;
+
                 foreach (var kvp in ActivityMappingById)
                 {
-                    var activityId = kvp.Key;
-                    var item = kvp.Value;
-                    var activityObject = item.Activity;
-                    var scope = item.Scope;
-                    var hasClosed = false;
+                    count++;
+                    var activityRef = kvp.Value.Activity;
+                    var scope = kvp.Value.Scope;
 
+                    if (!activityRef.TryGetTarget(out var activityObject))
+                    {
+                        // Activity was GC'd before Stop was called. Close the scope at "now"
+                        // so the span finishes and gets flushed; we don't have a real end time,
+                        // so the duration becomes (now - StartTime) — bounded but possibly inflated.
+                        if (scope?.Span is { } span)
+                        {
+                            span.SetTag("dd.activity.forced_close", "abandoned");
+                            span.Finish();
+                            scope.Close();
+                        }
+
+                        toRemove ??= new List<ActivityKey>();
+                        toRemove.Add(kvp.Key);
+                        gcCollected++;
+                        continue;
+                    }
+
+                    // Activity is still alive. A non-zero Duration on an entry that's still in
+                    // the dictionary means Stop() was called but our listener callback didn't
+                    // handle it - close it using the real end time.
                     if (activityObject.TryDuckCast<IActivity6>(out var activity6))
                     {
                         if (activity6.Duration != TimeSpan.Zero)
                         {
-                            CloseActivityScope(sourceName, activity6, scope);
-                            hasClosed = true;
+                            CloseActivityScope(activity6, scope);
+                            toRemove ??= new List<ActivityKey>();
+                            toRemove.Add(kvp.Key);
+                            missedStop++;
                         }
                     }
                     else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
                     {
                         if (activity5.Duration != TimeSpan.Zero)
                         {
-                            CloseActivityScope(sourceName, activity5, scope);
-                            hasClosed = true;
+                            CloseActivityScope(activity5, scope);
+                            toRemove ??= new List<ActivityKey>();
+                            toRemove.Add(kvp.Key);
+                            missedStop++;
                         }
                     }
                     else if (activityObject.TryDuckCast<IActivity>(out var activity4))
                     {
                         if (activity4.Duration != TimeSpan.Zero)
                         {
-                            CloseActivityScope(sourceName, activity4, scope);
-                            hasClosed = true;
+                            CloseActivityScope(activity4, scope);
+                            toRemove ??= new List<ActivityKey>();
+                            toRemove.Add(kvp.Key);
+                            missedStop++;
                         }
                     }
-
-                    if (hasClosed)
-                    {
-                        toDelete ??= new List<ActivityKey>();
-                        toDelete.Add(activityId);
-                    }
                 }
 
-                if (toDelete is not null)
+                if (toRemove is not null)
                 {
-                    foreach (var item in toDelete)
+                    foreach (var key in toRemove)
                     {
-                        ActivityMappingById.TryRemove(item, out _);
+                        ActivityMappingById.TryRemove(key, out _);
                     }
                 }
-            }
 
-            static void CloseActivityScope<TInner>(string sourceName, TInner activity, Scope scope)
-                where TInner : IActivity
+                if (Log.IsEnabled(LogEventLevel.Debug) && (gcCollected > 0 || missedStop > 0))
+                {
+                    Log.Debug<int, int, int>(
+                        "ActivityHandlerCommon: reconciliation swept {GcCollected} GC'd activities and {MissedStop} missed-Stop activities; initial dictionary size {Initial}",
+                        gcCollected,
+                        missedStop,
+                        count);
+                }
+            }
+            catch (Exception ex)
             {
-                var span = scope.Span;
-                OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
-
-                // OpenTelemtry SDK / OTLP Fixups
-                // TODO
-                // 3) Add resources to spans
-                // OpenTelemetry SDK resources are added to the span attributes by the configured exporter when OpenTelemetry.BaseExporter<T>.Export is called (e.g. OpenTelemetry.Exporter.ConsoleActivityExporter.Export)
-                // **** Note: The exporter has a ParentProvider field that is populated with the TracerProviderSdk when everything is initially built, so this is technically per instance
-                // **** To reliably get this, we might consider addding a Processor to the TracerProviderBuilder, though not sure where to invoke it
-                // - service.instance.id
-                // - service.name
-                // - service.namespace
-                // - service.version
-                span.Finish(activity.StartTimeUtc.Add(activity.Duration));
-
-                scope.Close();
+                Log.Error(ex, "Error during Activity reconciliation sweep");
             }
+            finally
+            {
+                Interlocked.Exchange(ref _sweepInProgress, 0);
+            }
+        }
+
+        private static void CloseActivityScope<TInner>(TInner activity, Scope scope)
+            where TInner : IActivity
+        {
+            var span = scope.Span;
+            OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
+
+            // OpenTelemtry SDK / OTLP Fixups
+            // TODO
+            // 3) Add resources to spans
+            // OpenTelemetry SDK resources are added to the span attributes by the configured exporter when OpenTelemetry.BaseExporter<T>.Export is called (e.g. OpenTelemetry.Exporter.ConsoleActivityExporter.Export)
+            // **** Note: The exporter has a ParentProvider field that is populated with the TracerProviderSdk when everything is initially built, so this is technically per instance
+            // **** To reliably get this, we might consider addding a Processor to the TracerProviderBuilder, though not sure where to invoke it
+            // - service.instance.id
+            // - service.name
+            // - service.namespace
+            // - service.version
+            span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+
+            scope.Close();
         }
     }
 }
