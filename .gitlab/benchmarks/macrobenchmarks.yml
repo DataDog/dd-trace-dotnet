@@ -796,13 +796,13 @@ check-slo-breaches:
       - reports/
     expire_in: 3 months
 
-notify-slo-breaches:
-  extends: .notify-slo-breaches
-  stage: notify
-  needs: ["check-slo-breaches"]
-  when: always
-  allow_failure: true
-  variables:
-    CHANNEL: "apm-dotnet-bots"
-    ARTIFACTS_DIR: "reports"
+# notify-slo-breaches:
+#   extends: .notify-slo-breaches
+#   stage: notify
+#   needs: ["check-slo-breaches"]
+#   when: always
+#   allow_failure: true
+#   variables:
+#     CHANNEL: "apm-dotnet-bots"
+#     ARTIFACTS_DIR: "reports"
 
