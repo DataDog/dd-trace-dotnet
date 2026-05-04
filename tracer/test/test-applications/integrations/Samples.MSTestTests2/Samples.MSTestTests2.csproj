@@ -15,7 +15,8 @@
 
     <!-- MSTEST0044: this sample intentionally exercises the legacy DataTestMethod attribute -->
     <!-- MSTEST0057: custom TestMethodAttribute subclasses here predate the CallerFilePath/CallerLineNumber guidance -->
-    <NoWarn>$(NoWarn);MSTEST0044;MSTEST0057</NoWarn>
+    <!-- NU1701: MSTest 4.x packages ship only .NETFramework assets; netcoreapp2.1 / netcoreapp3.1 (EOL) in this matrix fall back at restore -->
+    <NoWarn>$(NoWarn);MSTEST0044;MSTEST0057;NU1701</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(ApiVersion.StartsWith('4.'))">
