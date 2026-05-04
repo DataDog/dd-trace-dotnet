@@ -93,13 +93,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
             }
 
-            StackTrace alternateExpectedStack = null;
-            if (EnvironmentHelper.GetPlatform() == "ARM64")
-            {
-                alternateExpectedStack = new StackTrace(
-                        new StackFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)"));
-            }
-
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
@@ -120,26 +113,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                bool matchesAlternateExpectedStack = true;
-
-                // On ARM64, the stacktrace is truncated and we have an unknown frame type
-                if (alternateExpectedStack != null)
-                {
-                    for (int i = 0; i < alternateExpectedStack.FramesCount; i++)
-                    {
-                        if (sample.Stacktrace[i].ToString() != alternateExpectedStack[i].ToString())
-                        {
-                            matchesAlternateExpectedStack = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (!matchesAlternateExpectedStack)
-                {
-                    Assert.True(sample.Stacktrace.EndWith(expectedStack),
-                        $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({sample.Stacktrace.FramesCount} frames):\n{sample.Stacktrace}");
-                }
+                AssertExpectedStack(sample.Stacktrace, expectedStack);
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -169,7 +143,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total.Should().Be(expectedExceptionCount);
             }
         }
-
+    
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
         {
@@ -255,9 +229,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                Assert.True(
-                    sample.Stacktrace.EndWith(expectedStack),
-                    $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({sample.Stacktrace.FramesCount} frames):\n{sample.Stacktrace}");
+                AssertExpectedStack(sample.Stacktrace, expectedStack);
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -339,9 +311,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             {
                 labels.Should().ContainSingle(x => x.Name == "exception type" && x.Value == "System.Exception");
                 labels.Should().ContainSingle(x => x.Name == "exception message" && string.IsNullOrWhiteSpace(x.Value));
-                Assert.True(
-                    stackTrace.EndWith(expectedStack),
-                    $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({stackTrace.FramesCount} frames):\n{stackTrace}");
+                AssertExpectedStack(stackTrace, expectedStack);
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -674,6 +644,37 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
 
             return profiledExceptions;
+        }
+
+        private static void AssertExpectedStack(StackTrace actualStack, StackTrace expectedStack)
+        {
+            StackTrace alternateExpectedStack = null;
+            if (EnvironmentHelper.GetPlatform() == "ARM64")
+            {
+                alternateExpectedStack = new StackTrace(
+                        new StackFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)"));
+            }
+
+            bool matchesAlternateExpectedStack = true;
+
+            // On ARM64, the stacktrace is truncated and we have an unknown frame type
+            if (alternateExpectedStack != null)
+            {
+                for (int i = 0; i < alternateExpectedStack.FramesCount; i++)
+                {
+                    if (actualStack[i].ToString() != alternateExpectedStack[i].ToString())
+                    {
+                        matchesAlternateExpectedStack = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!matchesAlternateExpectedStack)
+            {
+                Assert.True(actualStack.EndWith(expectedStack),
+                    $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({actualStack.FramesCount} frames):\n{actualStack}");
+            }
         }
 
         private void CheckExceptionProfiles(TestApplicationRunner runner, bool withTimestamps)
