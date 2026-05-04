@@ -307,6 +307,7 @@ Common acronyms used in this repository:
 - **AAP** — App and API Protection (formerly ASM, previously AppSec)
 - **AOT** — Ahead-of-Time (compilation)
 - **APM** — Application Performance Monitoring
+- **ASM** — see AAP
 - **CI** — Continuous Integration / CI Visibility
 - **CP** — Continuous Profiler
 - **DBM** — Database Monitoring
