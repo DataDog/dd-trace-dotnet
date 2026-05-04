@@ -12,8 +12,7 @@
 
     <!-- WebClient is obsolete -->
     <!-- NU1901-1904 are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <!-- NU1503: native .vcxproj projects can't be restored by NuGet (no PackageReference), so the solution-level restore emits this for every native project; harmless. -->
-    <NoWarn>$(NoWarn);SYSLIB0014;NU1503;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <NoWarn>$(NoWarn);SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
   </PropertyGroup>
 
   <!-- StyleCop -->

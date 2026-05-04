@@ -325,7 +325,7 @@ namespace Samples
             SetResourceNameProperty.Invoke(span, new object[] { resourceName });
         }
 
-        public static void TrySetServiceName(object scope, string serviceName)
+        public static void TrySetServiceName(object scope, string? serviceName)
         {
             if (SpanProperty is null || SetServiceNameProperty is null)
             {
