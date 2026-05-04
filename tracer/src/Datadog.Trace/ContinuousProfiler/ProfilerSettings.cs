@@ -67,6 +67,21 @@ internal sealed class ProfilerSettings
             "true" => ProfilerState.Enabled,
             _ => ProfilerState.Disabled,
         };
+
+        // Linux ARM64: native profiler requires DD_INTERNAL_PROFILING_ENABLED_ARM64; align managed enablement.
+        var fd = FrameworkDescription.Instance;
+        if (fd.OSPlatform == OSPlatformName.Linux &&
+            fd.ProcessArchitecture == ProcessArchitecture.Arm64 &&
+            ProfilerState != ProfilerState.Disabled)
+        {
+            var arm64ProfilingEnabled = profilingConfig
+                                        .WithKeys(ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64)
+                                        .AsBool(false);
+            if (!arm64ProfilingEnabled)
+            {
+                ProfilerState = ProfilerState.Disabled;
+            }
+        }
     }
 
     [TestingOnly]

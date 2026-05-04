@@ -192,6 +192,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 environmentVariables["DD_PROFILING_ENABLED"] = "1";
             }
 
+            // Linux ARM64: native profiler requires DD_INTERNAL_PROFILING_ENABLED_ARM64; align managed enablement.
+            environmentVariables["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
+
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();

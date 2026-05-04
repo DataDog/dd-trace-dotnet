@@ -595,6 +595,7 @@
   "DD_PROFILING_ENABLED": "profiling_enabled",
   "DD_PROFILING_CODEHOTSPOTS_ENABLED": "profiling_codehotspots_enabled",
   "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED": "profiling_endpoint_collection_enabled",
+  "DD_INTERNAL_PROFILING_ENABLED_ARM64": "profiling_enabled_arm64",	
   "DD_LOG_LEVEL": "agent_log_level",
   "DD_TAGS": "agent_tags",
   "DD_TRACE_GLOBAL_TAGS": "trace_tags",
