@@ -30,7 +30,7 @@ internal sealed class FlagEvalMetrics : IDisposable
     internal const string TagErrorType = "error.type";
     internal const string TagAllocationKey = "feature_flag.result.allocation_key";
 
-    internal const string MetadataAllocationKey = "dd_allocationKey";
+    internal const string MetadataAllocationKey = "__dd_allocation_key";
 
     private readonly Meter _meter;
     private readonly Counter<long> _counter;

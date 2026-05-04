@@ -24,7 +24,7 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsEvaluator
     {
-        internal const string MetadataAllocationKey = "dd_allocationKey";
+        internal const string MetadataAllocationKey = "__dd_allocation_key";
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
