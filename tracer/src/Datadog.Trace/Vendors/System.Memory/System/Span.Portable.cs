@@ -24,7 +24,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     /// <summary>
     /// Span represents a contiguous region of arbitrary memory. Unlike arrays, it can point to either managed
@@ -49,7 +49,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
                 return; // returns default
             }
             if (default(T) == null && array.GetType() != typeof(T[]))
-                ThrowHelper.ThrowArrayTypeMismatchException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArrayTypeMismatchException();
 
             _length = array.Length;
             _pinnable = Unsafe.As<Pinnable<T>>(array);
@@ -65,13 +65,13 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (array == null)
             {
                 if (start != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
                 return default;
             }
             if (default(T) == null && array.GetType() != typeof(T[]))
-                ThrowHelper.ThrowArrayTypeMismatchException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArrayTypeMismatchException();
             if ((uint)start > (uint)array.Length)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             IntPtr byteOffset = SpanHelpers.PerTypeValues<T>.ArrayAdjustment.Add<T>(start);
             int length = array.Length - start;
@@ -96,14 +96,14 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (array == null)
             {
                 if (start != 0 || length != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
                 this = default;
                 return; // returns default
             }
             if (default(T) == null && array.GetType() != typeof(T[]))
-                ThrowHelper.ThrowArrayTypeMismatchException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArrayTypeMismatchException();
             if ((uint)start > (uint)array.Length || (uint)length > (uint)(array.Length - start))
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             _length = length;
             _pinnable = Unsafe.As<Pinnable<T>>(array);
@@ -129,9 +129,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public unsafe Span(void* pointer, int length)
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<T>())
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
             if (length < 0)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             _length = length;
             _pinnable = null;
@@ -163,7 +163,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             get
             {
                 if ((uint)index >= ((uint)_length))
-                    ThrowHelper.ThrowIndexOutOfRangeException();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowIndexOutOfRangeException();
 
                 if (_pinnable == null)
                     unsafe { return ref Unsafe.Add<T>(ref Unsafe.AsRef<T>(_byteOffset.ToPointer()), index); }
@@ -306,7 +306,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public void CopyTo(Span<T> destination)
         {
             if (!TryCopyTo(destination))
-                ThrowHelper.ThrowArgumentException_DestinationTooShort();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_DestinationTooShort();
         }
 
         /// <summary>
@@ -377,7 +377,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public Span<T> Slice(int start)
         {
             if ((uint)start > (uint)_length)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             IntPtr newOffset = _byteOffset.Add<T>(start);
             int length = _length - start;
@@ -396,7 +396,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public Span<T> Slice(int start, int length)
         {
             if ((uint)start > (uint)_length || (uint)length > (uint)(_length - start))
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             IntPtr newOffset = _byteOffset.Add<T>(start);
             return new Span<T>(_pinnable, newOffset, length);

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using Nuke.Common.IO;
 
 namespace UpdateVendors
 {
@@ -396,6 +397,54 @@ namespace UpdateVendors
                     "OtlpTraceExporter.cs",
                     "OtlpTraceExporterHelperExtensions.cs"
                 });
+
+            Add(
+                libraryName: "spdlog",
+                version: "1.17.0",
+                downloadUrl: "https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.zip",
+                pathToSrc: new[] {"spdlog-1.17.0", "include", "spdlog"},
+                transform: filePath =>
+                {
+                    // We don't use spdlog's MDC (Mapped Diagnostic Context) feature, added in spdlog 1.13.
+                    // Including its header instantiates `thread_local std::map<std::string, std::string>`,
+                    // whose non-trivial destructor forces libc++abi's __cxa_thread_atexit_impl machinery
+                    // to be linked. In our "universal" Linux build (build/cmake/Universal.cmake.*) we
+                    // statically link libc++abi, whose TLS variables (__cxxabiv1::dtors / dtors_alive)
+                    // were compiled with the Local Exec model — incompatible with shared libraries
+                    // (R_X86_64_TPOFF32 / R_AARCH64_TLSLE_* against ... cannot be used with -shared).
+                    // SPDLOG_NO_TLS would fix it but also disables spdlog's TLS thread-id cache in
+                    // os-inl.h, costing a gettid() syscall per log call. Instead, gate just the MDC
+                    // sites of pattern_formatter-inl.h on a project-local macro DD_SPDLOG_NO_MDC,
+                    // defined wherever we use spdlog (build/cmake/FindSpdlog.cmake on the CMake side,
+                    // and the vcxproj/Directory.Build.props ItemDefinitionGroups on the MSBuild side).
+                    if (string.Equals(Path.GetFileName(filePath), "pattern_formatter-inl.h", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RewriteFileWithTransform(
+                            filePath,
+                            content => content.Replace(
+                                "#ifndef SPDLOG_NO_TLS",
+                                "#if !defined(SPDLOG_NO_TLS) && !defined(DD_SPDLOG_NO_MDC)"));
+                    }
+                    else if (string.Equals(Path.GetFileName(filePath), "mdc.h", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Defensive: fail loudly if mdc.h is ever included while DD_SPDLOG_NO_MDC is
+                        // defined. Today the only include site is pattern_formatter-inl.h, which we
+                        // gate above; if a future spdlog bump introduces a new include site we miss,
+                        // this #error catches it at compile time instead of silently re-introducing
+                        // the libc++abi static-link failure on the universal Linux build.
+                        RewriteFileWithTransform(
+                            filePath,
+                            content => content.Replace(
+                                "#include <map>",
+                                "#if defined(DD_SPDLOG_NO_MDC)\n"
+                                + "#error \"mdc.h was included but DD_SPDLOG_NO_MDC is defined. An include site for spdlog/mdc.h is not gated by DD_SPDLOG_NO_MDC; patch pattern_formatter-inl.h (or the new include site) and update PatchSpdlogFile in tracer/build/_build/UpdateVendors/VendoredDependency.cs.\"\n"
+                                + "#endif\n"
+                                + "\n"
+                                + "#include <map>"));
+                    }
+                },
+                relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/spdlog/include",
+                isNuGetPackage: false);
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -414,6 +463,10 @@ namespace UpdateVendors
 
         public string[] OnlyIncludeRelativePaths { get; set; }
 
+        public RelativePath RelativePathToVendorDirectoryOverride { get; set; }
+
+        public bool IsNuGetPackage { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
@@ -421,7 +474,9 @@ namespace UpdateVendors
             string[] pathToSrc,
             Action<string> transform,
             string[] relativePathsToExclude = null,
-            string[] onlyIncludePaths = null)
+            string[] onlyIncludePaths = null,
+            RelativePath relativePathToVendorDirectoryOverride = null,
+            bool isNuGetPackage = true)
         {
             All.Add(new VendoredDependency()
             {
@@ -432,6 +487,8 @@ namespace UpdateVendors
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
                 OnlyIncludeRelativePaths = onlyIncludePaths,
+                RelativePathToVendorDirectoryOverride = relativePathToVendorDirectoryOverride,
+                IsNuGetPackage = isNuGetPackage,
             });
         }
 
@@ -725,12 +782,27 @@ namespace UpdateVendors
 
             contents = contents.Insert(namespaceIndex, usings);
 
+            // Leave these in the vendored namespace to avoid naming conflicts with various _other_ ThrowHelper files,
+            // and MemoryExtensions causes conflicts in the test projects - it's extension methods, so doesn't matter too much where it is
+            if (string.Equals(Path.GetFileName(filePath), "ThrowHelper.cs")
+             || string.Equals(Path.GetFileName(filePath), "MemoryExtensions.cs")
+             || string.Equals(Path.GetFileName(filePath), "MemoryExtensions.Portable.cs"))
+            {
+                contents = contents.Replace(
+                    "namespace System",
+                    "namespace Datadog.Trace.VendoredMicrosoftCode.System");
+            }
+
+            // Note that we leave everything in the System namespace where it is,
+            // so that the compiler can light up for things like Span<T>. It does raise the question
+            // of whether we should bother renaming _any_ of these APIs, but leaving as-is for now
+            // to avoid confusion
             contents = contents.Replace(
                                     "Datadog.Trace.VendoredMicrosoftCode.System..omponentModel.",
                                     "System.ComponentModel.")
                                .Replace(
                                     "Datadog.Trace.VendoredMicrosoftCode.System..UInt",
-                                    "Datadog.Trace.VendoredMicrosoftCode.System.NUInt")
+                                    "System.NUInt")
                                .Replace(
                                     "using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel",
                                     "using System.ComponentModel")
@@ -747,12 +819,8 @@ namespace UpdateVendors
                                     "using Datadog.Trace.VendoredMicrosoftCode.System.Text",
                                     "using System.Text")
                                .Replace(
-                                    "namespace System\r\n",
-                                    "namespace System\n")
-                                // TODO: We should consider _not_ making this change in the future
-                               .Replace(
-                                    "namespace System\n",
-                                    "namespace Datadog.Trace.VendoredMicrosoftCode.System\n");
+                                    "ThrowHelper.",
+                                    "global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.");
 
             var resourceReplacements = new List<KeyValuePair<string, string>>
             {

@@ -84,7 +84,8 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
             return false;
         }
 
-        var baggage = ParseHeader(header!);
+        var settings = Tracer.Instance.Settings;
+        var baggage = ParseHeader(header!, settings.BaggageMaximumItems, settings.BaggageMaximumBytes);
 
         if (baggage is { Count: > 0 })
         {
@@ -151,13 +152,7 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
     private static void EncodeBytesAndAppend(StringBuilder sb, ReadOnlySpan<byte> bytes, bool isKey)
     {
-        // allocate a buffer on the stack (or rent one) for hexadecimal strings
-#if NETCOREAPP3_1_OR_GREATER
         Span<char> hexStringBuffer = stackalloc char[2];
-#else
-        var buffer = ArrayPool<char>.Shared.Rent(minimumLength: 2);
-        var hexStringBuffer = buffer.AsSpan(start: 0, length: 2);
-#endif
 
         for (var index = 0; index < bytes.Length; index++)
         {
@@ -177,10 +172,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 sb.Append(c);
             }
         }
-
-#if !NETCOREAPP3_1_OR_GREATER
-        ArrayPool<char>.Shared.Return(buffer);
-#endif
     }
 
     private static bool CharRequiresEncoding(char c, bool isKey)
@@ -249,7 +240,10 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         }
     }
 
-    internal static Baggage? ParseHeader(string header)
+    internal static Baggage? ParseHeader(
+        string header,
+        int maxBaggageItems = DefaultMaximumBaggageItems,
+        int maxBaggageLength = DefaultMaximumBaggageBytes)
     {
         if (string.IsNullOrWhiteSpace(header))
         {
@@ -257,9 +251,22 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         }
 
         Baggage? baggage = null;
+        var itemCount = 0;
 
         foreach (var pair in header.SplitIntoSpans(PairSeparator))
         {
+            if (itemCount >= maxBaggageItems)
+            {
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageItemCountExceeded);
+                break;
+            }
+
+            if (pair.StartIndex + pair.Length > maxBaggageLength)
+            {
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageByteCountExceeded);
+                break;
+            }
+
             var span = pair.AsSpan();
 
             // only the first `=` character is considered the separator.
@@ -313,6 +320,7 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             baggage ??= new Baggage();
             baggage[key] = value;
+            itemCount++;
         }
 
         return baggage;

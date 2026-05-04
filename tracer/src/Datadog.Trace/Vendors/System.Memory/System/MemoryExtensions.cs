@@ -11,7 +11,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
-using nuint = Datadog.Trace.VendoredMicrosoftCode.System.NUInt;
+using nuint = System.NUInt;
 
 using System;
 using System.Collections;
@@ -838,7 +838,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public static Span<T> AsSpan<T>(this ArraySegment<T> segment, int start)
         {
             if (((uint)start) > segment.Count)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             return new Span<T>(segment.Array, segment.Offset + start, segment.Count - start);
         }
@@ -859,9 +859,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public static Span<T> AsSpan<T>(this ArraySegment<T> segment, int start, int length)
         {
             if (((uint)start) > segment.Count)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
             if (((uint)length) > segment.Count - start)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
 
             return new Span<T>(segment.Array, segment.Offset + start, length);
         }
@@ -917,7 +917,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public static Memory<T> AsMemory<T>(this ArraySegment<T> segment, int start)
         {
             if (((uint)start) > segment.Count)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
 
             return new Memory<T>(segment.Array, segment.Offset + start, segment.Count - start);
         }
@@ -937,9 +937,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         public static Memory<T> AsMemory<T>(this ArraySegment<T> segment, int start, int length)
         {
             if (((uint)start) > segment.Count)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
             if (((uint)length) > segment.Count - start)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
 
             return new Memory<T>(segment.Array, segment.Offset + start, length);
         }
@@ -1171,7 +1171,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
                     (uint)byteOffset > (uint)-(other.Length * Unsafe.SizeOf<T>()))
                 {
                     if ((int)byteOffset % Unsafe.SizeOf<T>() != 0)
-                        ThrowHelper.ThrowArgumentException_OverlapAlignmentMismatch();
+                        global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_OverlapAlignmentMismatch();
 
                     elementOffset = (int)byteOffset / Unsafe.SizeOf<T>();
                     return true;
@@ -1188,7 +1188,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
                     (ulong)byteOffset > (ulong)-((long)other.Length * Unsafe.SizeOf<T>()))
                 {
                     if ((long)byteOffset % Unsafe.SizeOf<T>() != 0)
-                        ThrowHelper.ThrowArgumentException_OverlapAlignmentMismatch();
+                        global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_OverlapAlignmentMismatch();
 
                     elementOffset = (int)((long)byteOffset / Unsafe.SizeOf<T>());
                     return true;
@@ -1347,7 +1347,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             where TComparer : IComparer<T>
         {
             if (comparer == null)
-                ThrowHelper.ThrowArgumentNullException(ExceptionArgument.comparer);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentNullException(ExceptionArgument.comparer);
 
             var comparable = new SpanHelpers.ComparerComparable<T, TComparer>(
                 value, comparer);

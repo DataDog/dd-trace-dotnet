@@ -96,7 +96,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     break;
 
                 default:
-                    return ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
             }
 
             // At this point, the low byte of flags contains the minimum required length

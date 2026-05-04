@@ -31,7 +31,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             if (minimumBufferSize == -1)
                 minimumBufferSize = 1 + (4095 / Unsafe.SizeOf<T>());
             else if (((uint)minimumBufferSize) > s_maxBufferSize)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.minimumBufferSize);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.minimumBufferSize);
 
             return new ArrayMemoryPoolBuffer(minimumBufferSize);
         }

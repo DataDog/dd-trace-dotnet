@@ -43,7 +43,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
         public static bool TryParse(ReadOnlySpan<byte> source, out bool value, out int bytesConsumed, char standardFormat = default)
         {
             if (!(standardFormat == default(char) || standardFormat == 'G' || standardFormat == 'l'))
-                return ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
+                return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryParseThrowFormatException(out value, out bytesConsumed);
 
             if (source.Length >= 4)
             {

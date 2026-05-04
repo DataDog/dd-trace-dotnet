@@ -79,7 +79,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         public static void CopyTo<T>(in this ReadOnlySequence<T> source, Span<T> destination)
         {
             if (source.Length > destination.Length)
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.destination);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.destination);
 
             if (source.IsSingleSegment)
             {

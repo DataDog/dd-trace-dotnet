@@ -135,7 +135,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     return TryFormatDateTimeG(value.DateTime, offset, destination, out bytesWritten);
 
                 default:
-                    return ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
             }
         }
 
@@ -179,7 +179,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
                     return TryFormatDateTimeG(value, Utf8Constants.s_nullUtcOffset, destination, out bytesWritten);
 
                 default:
-                    return ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
+                    return global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.TryFormatThrowFormatException(out bytesWritten);
             }
         }
     }

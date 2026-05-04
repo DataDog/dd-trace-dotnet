@@ -24,7 +24,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     /// <summary>
     /// Memory represents a contiguous region of arbitrary memory similar to <see cref="Span{T}"/>.
@@ -66,7 +66,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
                 return; // returns default
             }
             if (default(T) == null && array.GetType() != typeof(T[]))
-                ThrowHelper.ThrowArrayTypeMismatchException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArrayTypeMismatchException();
 
             _object = array;
             _index = 0;
@@ -79,14 +79,14 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (array == null)
             {
                 if (start != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
                 this = default;
                 return; // returns default
             }
             if (default(T) == null && array.GetType() != typeof(T[]))
-                ThrowHelper.ThrowArrayTypeMismatchException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArrayTypeMismatchException();
             if ((uint)start > (uint)array.Length)
-                ThrowHelper.ThrowArgumentOutOfRangeException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
 
             _object = array;
             _index = start;
@@ -111,14 +111,14 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             if (array == null)
             {
                 if (start != 0 || length != 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
                 this = default;
                 return; // returns default
             }
             if (default(T) == null && array.GetType() != typeof(T[]))
-                ThrowHelper.ThrowArrayTypeMismatchException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArrayTypeMismatchException();
             if ((uint)start > (uint)array.Length || (uint)length > (uint)(array.Length - start))
-                ThrowHelper.ThrowArgumentOutOfRangeException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
 
             _object = array;
             _index = start;
@@ -141,7 +141,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             Debug.Assert(manager != null);
 
             if (length < 0)
-                ThrowHelper.ThrowArgumentOutOfRangeException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
 
             _object = manager;
             _index = (1 << 31); // Mark as MemoryManager type
@@ -166,7 +166,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             Debug.Assert(manager != null);
 
             if (length < 0 || start < 0)
-                ThrowHelper.ThrowArgumentOutOfRangeException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
 
             _object = manager;
             _index = start | (1 << 31); // Mark as MemoryManager type
@@ -242,7 +242,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             int actualLength = capturedLength & RemoveFlagsBitMask;
             if ((uint)start > (uint)actualLength)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
             }
 
             // It is expected for (capturedLength - start) to be negative if the memory is already pre-pinned.
@@ -265,7 +265,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             int actualLength = capturedLength & RemoveFlagsBitMask;
             if ((uint)start > (uint)actualLength || (uint)length > (uint)(actualLength - start))
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException();
             }
 
             // Set the high-bit to match the this._length high bit (1 for pre-pinned, 0 for unpinned).

@@ -97,7 +97,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 (uint)startSegment.Memory.Length < (uint)startIndex ||
                 (uint)endSegment.Memory.Length < (uint)endIndex ||
                 (startSegment == endSegment && endIndex < startIndex))
-                ThrowHelper.ThrowArgumentValidationException(startSegment, startIndex, endSegment);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentValidationException(startSegment, startIndex, endSegment);
 
             _sequenceStart = new SequencePosition(startSegment, ReadOnlySequence.SegmentToSequenceStart(startIndex));
             _sequenceEnd = new SequencePosition(endSegment, ReadOnlySequence.SegmentToSequenceEnd(endIndex));
@@ -109,7 +109,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         public ReadOnlySequence(T[] array)
         {
             if (array == null)
-                ThrowHelper.ThrowArgumentNullException(ExceptionArgument.array);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentNullException(ExceptionArgument.array);
 
             _sequenceStart = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceStart(0));
             _sequenceEnd = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceEnd(array.Length));
@@ -123,7 +123,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             if (array == null ||
                 (uint)start > (uint)array.Length ||
                 (uint)length > (uint)(array.Length - start))
-                ThrowHelper.ThrowArgumentValidationException(array, start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentValidationException(array, start);
 
             _sequenceStart = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceStart(start));
             _sequenceEnd = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceEnd(start + length));
@@ -150,7 +150,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             else if (typeof(T) == typeof(char))
             {
                 if (!MemoryMarshal.TryGetString(((ReadOnlyMemory<char>)(object)memory), out string text, out int start, out length))
-                    ThrowHelper.ThrowInvalidOperationException();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowInvalidOperationException();
 
                 _sequenceStart = new SequencePosition(text, ReadOnlySequence.StringToSequenceStart(start));
                 _sequenceEnd = new SequencePosition(text, ReadOnlySequence.StringToSequenceEnd(start + length));
@@ -158,7 +158,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             else
             {
                 // Should never be reached
-                ThrowHelper.ThrowInvalidOperationException();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowInvalidOperationException();
                 _sequenceStart = default;
                 _sequenceEnd = default;
             }
@@ -172,7 +172,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         public ReadOnlySequence<T> Slice(long start, long length)
         {
             if (start < 0 || length < 0)
-                ThrowHelper.ThrowStartOrEndArgumentValidationException(start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(start);
 
             SequencePosition begin;
             SequencePosition end;
@@ -201,7 +201,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 else
                 {
                     if (currentLength < 0)
-                        ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                        global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
 
                     begin = SeekMultiSegment(startSegment.Next, endObject, endIndex, start - currentLength, ExceptionArgument.start);
 
@@ -216,7 +216,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     else
                     {
                         if (endIndex - beginIndex < length)
-                            ThrowHelper.ThrowStartOrEndArgumentValidationException(0);  // Passing value >= 0 means throw exception on length argument
+                            global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(0);  // Passing value >= 0 means throw exception on length argument
 
                         end = new SequencePosition(beginObject, beginIndex + (int)length);
                     }
@@ -225,13 +225,13 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             else
             {
                 if (endIndex - startIndex < start)
-                    ThrowHelper.ThrowStartOrEndArgumentValidationException(-1); // Passing value < 0 means throw exception on start argument
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(-1); // Passing value < 0 means throw exception on start argument
 
                 startIndex += (int)start;
                 begin = new SequencePosition(startObject, startIndex);
 
                 if (endIndex - startIndex < length)
-                    ThrowHelper.ThrowStartOrEndArgumentValidationException(0);  // Passing value >= 0 means throw exception on length argument
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(0);  // Passing value >= 0 means throw exception on length argument
 
                 end = new SequencePosition(startObject, startIndex + (int)length);
             }
@@ -247,7 +247,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         public ReadOnlySequence<T> Slice(long start, SequencePosition end)
         {
             if (start < 0)
-                ThrowHelper.ThrowStartOrEndArgumentValidationException(start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(start);
 
             uint sliceEndIndex = (uint)GetIndex(end);
             object sliceEndObject = end.GetObject();
@@ -263,11 +263,11 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             {
                 if (!InRange(sliceEndIndex, startIndex, endIndex))
                 {
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
                 }
 
                 if (sliceEndIndex - startIndex < start)
-                    ThrowHelper.ThrowStartOrEndArgumentValidationException(-1); // Passing value < 0 means throw exception on start argument
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(-1); // Passing value < 0 means throw exception on start argument
 
                 goto FoundInFirstSegment;
             }
@@ -284,12 +284,12 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 startRange,
                 (ulong)(((ReadOnlySequenceSegment<T>)endObject).RunningIndex + endIndex)))
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
             }
 
             if (startRange + (ulong)start > sliceRange)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
             }
 
             int currentLength = startSegment.Memory.Length - (int)startIndex;
@@ -298,7 +298,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             if (currentLength <= start)
             {
                 if (currentLength < 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
 
                 // End of segment. Move to start of next.
                 SequencePosition begin = SeekMultiSegment(startSegment.Next, sliceEndObject, (int)sliceEndIndex, start - currentLength, ExceptionArgument.start);
@@ -333,15 +333,15 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             {
                 if (!InRange(sliceStartIndex, startIndex, endIndex))
                 {
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
                 }
 
                 if (length < 0)
                     // Passing value >= 0 means throw exception on length argument
-                    ThrowHelper.ThrowStartOrEndArgumentValidationException(0);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(0);
 
                 if (endIndex - sliceStartIndex < length)
-                    ThrowHelper.ThrowStartOrEndArgumentValidationException(0);
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(0);
 
                 goto FoundInFirstSegment;
             }
@@ -356,16 +356,16 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             Debug.Assert(sliceStartIndex >= 0 && startIndex >= 0 && endIndex >= 0);
             if (!InRange(sliceRange, startRange, endRange))
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
             }
 
             if (length < 0)
                 // Passing value >= 0 means throw exception on length argument
-                ThrowHelper.ThrowStartOrEndArgumentValidationException(0);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(0);
 
             if (sliceRange + (ulong)length > endRange)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.length);
             }
 
             int currentLength = sliceStartSegment.Memory.Length - (int)sliceStartIndex;
@@ -374,7 +374,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             if (currentLength < length)
             {
                 if (currentLength < 0)
-                    ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
+                    global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_PositionOutOfRange();
 
                 // End of segment. Move to start of next.
                 SequencePosition end = SeekMultiSegment(sliceStartSegment.Next, endObject, (int)endIndex, length - currentLength, ExceptionArgument.length);
@@ -438,7 +438,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         public ReadOnlySequence<T> Slice(long start)
         {
             if (start < 0)
-                ThrowHelper.ThrowStartOrEndArgumentValidationException(start);
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowStartOrEndArgumentValidationException(start);
 
             if (start == 0)
                 return this;
@@ -485,7 +485,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         public SequencePosition GetPosition(long offset, SequencePosition origin)
         {
             if (offset < 0)
-                ThrowHelper.ThrowArgumentOutOfRangeException_OffsetOutOfRange();
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentOutOfRangeException_OffsetOutOfRange();
 
             return Seek(origin, _sequenceEnd, offset, ExceptionArgument.offset);
         }

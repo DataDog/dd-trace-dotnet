@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     //
     // This is a port of the Number/NumberBuffer structure from CoreRT (which in turn was a C#-ized port of the NUMBER struct inside CoreCLR.)

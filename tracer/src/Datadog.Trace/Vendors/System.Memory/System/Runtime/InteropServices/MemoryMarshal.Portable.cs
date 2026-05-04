@@ -43,7 +43,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
             where T : struct
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<T>())
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
 
             int newLength = checked(span.Length * Unsafe.SizeOf<T>());
             return new Span<byte>(Unsafe.As<Pinnable<byte>>(span.Pinnable), span.ByteOffset, newLength);
@@ -65,7 +65,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
             where T : struct
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<T>())
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(T));
 
             int newLength = checked(span.Length * Unsafe.SizeOf<T>());
             return new ReadOnlySpan<byte>(Unsafe.As<Pinnable<byte>>(span.Pinnable), span.ByteOffset, newLength);
@@ -123,10 +123,10 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
             where TTo : struct
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<TFrom>())
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TFrom));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TFrom));
 
             if (SpanHelpers.IsReferenceOrContainsReferences<TTo>())
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TTo));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TTo));
 
             int newLength = checked((int)((long)span.Length * Unsafe.SizeOf<TFrom>() / Unsafe.SizeOf<TTo>()));
             return new Span<TTo>(Unsafe.As<Pinnable<TTo>>(span.Pinnable), span.ByteOffset, newLength);
@@ -148,10 +148,10 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
             where TTo : struct
         {
             if (SpanHelpers.IsReferenceOrContainsReferences<TFrom>())
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TFrom));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TFrom));
 
             if (SpanHelpers.IsReferenceOrContainsReferences<TTo>())
-                ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TTo));
+                global::Datadog.Trace.VendoredMicrosoftCode.System.ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof(TTo));
 
             int newLength = checked((int)((long)span.Length * Unsafe.SizeOf<TFrom>() / Unsafe.SizeOf<TTo>()));
             return new ReadOnlySpan<TTo>(Unsafe.As<Pinnable<TTo>>(span.Pinnable), span.ByteOffset, newLength);

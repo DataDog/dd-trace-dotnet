@@ -73,6 +73,7 @@ namespace Datadog.Trace.Debugger
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
+            _configurationUpdater.SetProbeInstrumentationHandlers(UpdateAddedProbeInstrumentations, UpdateRemovedProbeInstrumentations);
             _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
             _subscription = new Subscription(
@@ -103,17 +104,43 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var isRcmAvailable = await WaitForRcmAvailabilityAsync().ConfigureAwait(false);
-                if (!isRcmAvailable)
+                // Start loading probes from file and checking RCM availability in parallel
+                var fileProbesTask = ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile);
+                var rcmAvailabilityTask = WaitForRcmAvailabilityAsync();
+
+                var hasFileProbes = false;
+
+                // Always attempt to load probes from file, even if RCM is unavailable
+                var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
+                if (probeConfiguration != null)
                 {
-                    return;
+                    hasFileProbes = _configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration);
+                    if (hasFileProbes)
+                    {
+                        StartRuntimeIfNeeded();
+                    }
+
+                    _configurationUpdater.AcceptFile(probeConfiguration);
                 }
 
-                _subscriptionManager.SubscribeToChanges(_subscription);
-                AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
-                StartBackgroundProcess();
-                IsInitialized = true;
-                Log.Information("Dynamic Instrumentation initialization completed successfully");
+                var isRcmAvailable = await rcmAvailabilityTask.ConfigureAwait(false);
+                if (isRcmAvailable)
+                {
+                    StartRuntimeIfNeeded();
+                    _subscriptionManager.SubscribeToChanges(_subscription);
+                }
+
+                // Start background processing and register the assembly load callback if either:
+                // - RCM is available
+                // - There are probes from file
+                if (IsInitialized)
+                {
+                    Log.Information("Dynamic Instrumentation initialization completed successfully");
+                }
+                else
+                {
+                    Log.Information("Dynamic Instrumentation not initialized because RCM isn't available and no valid probes have loaded from file");
+                }
             }
             catch (OperationCanceledException e)
             {
@@ -123,6 +150,18 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Error(e, "Dynamic Instrumentation initialization failed");
             }
+        }
+
+        private void StartRuntimeIfNeeded()
+        {
+            if (IsInitialized)
+            {
+                return;
+            }
+
+            AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
+            StartBackgroundProcess();
+            IsInitialized = true;
         }
 
         private void StartBackgroundProcess()
@@ -248,7 +287,10 @@ namespace Datadog.Trace.Debugger
 
                     using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
                     using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
-                    DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                    if (methodProbes.Count != 0 || lineProbes.Count != 0 || spanProbes.Count != 0)
+                    {
+                        DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                    }
 
                     var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
                     _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
@@ -282,19 +324,11 @@ namespace Datadog.Trace.Debugger
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }
 
-        internal void UpdateRemovedProbeInstrumentations(List<RemoteConfigurationPath> paths)
+        internal void UpdateRemovedProbeInstrumentations(string[] removedProbesIds)
         {
             if (IsDisposed)
             {
                 return;
-            }
-
-            var removedProbesIds = paths
-                                  .Select(TrimProbeTypeFromPath)
-                                  .ToArray();
-            string TrimProbeTypeFromPath(RemoteConfigurationPath path)
-            {
-                return path.Id.Split('_').Last();
             }
 
             if (removedProbesIds.Length == 0)
@@ -556,21 +590,21 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            var probeConfiguration = new ProbeConfiguration()
+            var rcmUpdate = new ProbeConfiguration()
             {
                 ServiceConfiguration = serviceConfig,
-                MetricProbes = metrics.ToArray(),
-                SpanDecorationProbes = spanDecoration.ToArray(),
                 LogProbes = logs.ToArray(),
-                SpanProbes = spans.ToArray()
+                MetricProbes = metrics.ToArray(),
+                SpanProbes = spans.ToArray(),
+                SpanDecorationProbes = spanDecoration.ToArray()
             };
 
             try
             {
-                var updateResults = _configurationUpdater.AcceptAdded(probeConfiguration);
+                var updateResults = _configurationUpdater.AcceptAdded(rcmUpdate);
                 foreach (var updateResult in updateResults)
                 {
-                    var config = configs.FirstOrDefault(c => c.Path.Id == updateResult.Id);
+                    var config = configs.FirstOrDefault(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
                     if (config != null)
                     {
                         result.Add(

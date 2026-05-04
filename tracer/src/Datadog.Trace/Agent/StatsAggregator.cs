@@ -57,6 +57,7 @@ namespace Datadog.Trace.Agent
         private int _tracerObfuscationVersion;
         private TraceFilter _traceFilter;
         private List<PeerTagKey> _peerTagKeys = [];
+        private int _computeStatsState;
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
@@ -113,7 +114,12 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
-        public bool? CanComputeStats { get; private set; }
+        public bool? CanComputeStats
+        {
+            // convert between -1 = false, 0 = null, 1 = true because we can't use volatile with a bool?
+            get => Volatile.Read(ref _computeStatsState) switch { 1 => true, -1 => false, _ => null, };
+            private set => Volatile.Write(ref _computeStatsState, value switch { true => 1, false => -1, _ => 0, });
+        }
 
         public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
@@ -365,9 +371,7 @@ namespace Datadog.Trace.Agent
         /// The <paramref name="keyPrefix"/> is a pre-encoded UTF-8 byte array (e.g. "tagKey:") and is
         /// hashed directly. Only the <paramref name="tagValue"/> needs UTF-8 encoding at call time.
         /// </summary>
-#if NETCOREAPP
-        [System.Runtime.CompilerServices.SkipLocalsInit]
-#endif
+        [SkipLocalsInit]
         private static ulong HashTag(byte[] keyPrefix, string tagValue, FnvHash64.Version version, ulong? initialHash = null)
         {
             // Hash the pre-encoded key prefix (e.g. "peer.service:") directly — no encoding needed
@@ -377,22 +381,35 @@ namespace Datadog.Trace.Agent
 
             // Now encode and hash just the tag value
             var maxByteCount = EncodingHelpers.Utf8NoBom.GetMaxByteCount(tagValue.Length);
-#if NETCOREAPP
             const int maxStackLimit = 256;
 
             if (maxByteCount <= maxStackLimit)
             {
                 Span<byte> buffer = stackalloc byte[maxStackLimit];
-                var written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, buffer);
+                int written;
+#if NETCOREAPP
+                written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, buffer);
+#else
+                unsafe
+                {
+                    var tagValueSpan = tagValue.AsSpan();
+                    fixed (char* tagValuePointer = tagValueSpan)
+                    {
+                        fixed (byte* bufferPointer = buffer)
+                        {
+                            written = EncodingHelpers.Utf8NoBom.GetBytes(tagValuePointer, tagValueSpan.Length, bufferPointer, buffer.Length);
+                        }
+                    }
+                }
+#endif
                 return FnvHash64.GenerateHash(buffer.Slice(0, written), version, hash);
             }
-#endif
 
             var rented = ArrayPool<byte>.Shared.Rent(maxByteCount);
             try
             {
                 var written = EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, rented, byteIndex: 0);
-                return FnvHash64.GenerateHash(rented, 0, written, version, hash);
+                return FnvHash64.GenerateHash(rented.AsSpan().Slice(0, written), version, hash);
             }
             finally
             {
@@ -552,20 +569,22 @@ namespace Datadog.Trace.Agent
 
         private void HandleConfigUpdate(AgentConfiguration config)
         {
-            CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint)
-                           && config.ClientDropP0s;
+            var shouldCompute = !string.IsNullOrWhiteSpace(config.StatsEndpoint)
+                             && config.ClientDropP0s;
 
-            if (CanComputeStats.Value)
-            {
-                Log.Debug("Stats computation enabled.");
-            }
-            else
+            if (!shouldCompute)
             {
                 Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
-                // early return, because there's no point doing all the extra work if stats isn't enabled anyway
+                // No point setting up the rest of the config if stats isn't enabled anyway
+                CanComputeStats = false;
                 return;
             }
 
+            // Publish all config-derived state BEFORE CanComputeStats becomes true, so that any
+            // observer that sees CanComputeStats == true also sees the consistent config. Each of
+            // the writes below already uses release semantics (Interlocked / Volatile.Write); the
+            // final Volatile.Write to _tracerObfuscationVersion acts as a release fence for the
+            // plain store to CanComputeStats that follows.
             if (config.PeerTags is { Count: > 0 })
             {
                 // Sort, deduplicate, and pre-compute the UTF-8 key prefixes so that
@@ -584,19 +603,17 @@ namespace Datadog.Trace.Agent
             }
 
             // Update trace filter from agent configuration
-            if (config.TraceFilterConfig.HasFilters)
-            {
-                Volatile.Write(ref _traceFilter, new TraceFilter(config.TraceFilterConfig));
-            }
-            else
-            {
-                Volatile.Write(ref _traceFilter, null);
-            }
+            Volatile.Write(
+                ref _traceFilter,
+                config.TraceFilterConfig.HasFilters ? new TraceFilter(config.TraceFilterConfig) : null);
 
             // Tracer obfuscation version is 1. If the agent's version is > 0 and <= ours, the tracer obfuscates.
             const int tracerObfuscationVersion = 1;
             var agentVersion = config.ObfuscationVersion;
             Volatile.Write(ref _tracerObfuscationVersion, agentVersion > 0 && agentVersion <= tracerObfuscationVersion ? tracerObfuscationVersion : 0);
+
+            CanComputeStats = true;
+            Log.Debug("Stats computation enabled.");
         }
 
         internal readonly struct PeerTagKey(string name)

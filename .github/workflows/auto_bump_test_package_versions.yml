@@ -3,13 +3,11 @@ name: Auto bump test package versions
 on:
   schedule:
     - cron: "0 0 * * 0" # Every Sunday at midnight
-  pull_request_target:
-    branches: [master]
+    - cron: "0 0 * * 3" # Every Wednesday at midnight
   workflow_dispatch:
 
 jobs:
   bump_package_versions:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || startsWith(github.event.pull_request.head.ref, 'dependabot/nuget/tracer/dependabot/') == true
     runs-on: windows-latest
     permissions:
       actions: read # read secrets
@@ -30,8 +28,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
 
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
@@ -40,13 +36,13 @@ jobs:
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 GeneratePackageVersions --PackageVersionCooldownDays 2
 
-      - name: Read cooldown report
-        id: cooldown
+      - name: Read bump report
+        id: bump
         if: always()
         shell: pwsh
         run: |
           $report = ""
-          $reportPath = ".nuke/temp/cooldown_report.md"
+          $reportPath = ".nuke/temp/bump_report.md"
           if (Test-Path $reportPath) {
             $report = Get-Content $reportPath -Raw
           }
@@ -67,9 +63,9 @@ jobs:
           milestone: "${{steps.rename.outputs.milestone}}"
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
-            Updates the package versions for integration tests.
+            Updates the package versions for integration tests. See below for a summary of the changes.
 
-            ${{ steps.cooldown.outputs.report }}
+            ${{ steps.bump.outputs.report }}
 
       - name: Send Slack notification about generating failure
         if: failure()

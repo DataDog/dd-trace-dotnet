@@ -15,41 +15,22 @@ namespace Datadog.Trace.Tagging
     partial class ProcessCommandStartTags
     {
         // ComponentBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ComponentBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] ComponentBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> ComponentBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
+
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
+
         // EnvironmentVariablesBytes = MessagePack.Serialize("cmd.environment_variables");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> EnvironmentVariablesBytes => new byte[] { 185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
-#else
-        private static readonly byte[] EnvironmentVariablesBytes = new byte[] { 185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
-#endif
+        private static ReadOnlySpan<byte> EnvironmentVariablesBytes => [185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115];
+
         // CommandExecBytes = MessagePack.Serialize("cmd.exec");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CommandExecBytes => new byte[] { 168, 99, 109, 100, 46, 101, 120, 101, 99 };
-#else
-        private static readonly byte[] CommandExecBytes = new byte[] { 168, 99, 109, 100, 46, 101, 120, 101, 99 };
-#endif
+        private static ReadOnlySpan<byte> CommandExecBytes => [168, 99, 109, 100, 46, 101, 120, 101, 99];
+
         // CommandShellBytes = MessagePack.Serialize("cmd.shell");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CommandShellBytes => new byte[] { 169, 99, 109, 100, 46, 115, 104, 101, 108, 108 };
-#else
-        private static readonly byte[] CommandShellBytes = new byte[] { 169, 99, 109, 100, 46, 115, 104, 101, 108, 108 };
-#endif
+        private static ReadOnlySpan<byte> CommandShellBytes => [169, 99, 109, 100, 46, 115, 104, 101, 108, 108];
+
         // TruncatedBytes = MessagePack.Serialize("cmd.truncated");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> TruncatedBytes => new byte[] { 173, 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100 };
-#else
-        private static readonly byte[] TruncatedBytes = new byte[] { 173, 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100 };
-#endif
+        private static ReadOnlySpan<byte> TruncatedBytes => [173, 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100];
 
         public override string? GetTag(string key)
         {
