@@ -23,8 +23,10 @@ namespace Datadog.Trace.RuntimeMetrics;
 /// must NOT be instantiated on .NET 9+ to avoid duplicate instruments.
 /// The instrument names, units, and tag keys match the .NET 9 source:
 /// https://github.com/dotnet/runtime/blob/v9.0.0/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/Metrics/RuntimeMetrics.cs
-/// .NET 6 does not have ObservableUpDownCounter, so we use ObservableGauge as a fallback
-/// for point-in-time values. The OTLP pipeline handles both correctly.
+/// <c>ObservableUpDownCounter&lt;T&gt;</c> was added in <c>System.Diagnostics.DiagnosticSource</c> 7.0.
+/// <c>Datadog.Trace</c> compiles against the net6.0 ref assembly which doesn't expose it, so we resolve
+/// it via reflection (see <see cref="MeterObservableUpDownCounterReflection"/>) and fall back to
+/// <c>ObservableGauge</c> on .NET 6 hosts. The OTLP pipeline handles both correctly.
 /// </summary>
 internal sealed class RuntimeMetricsPolyfill : IDisposable
 {
@@ -147,7 +149,11 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{work_item}",
             description: "The number of work items that are currently queued to be processed by the thread pool.");
 
-        _meter.CreateObservableGauge(
+        // Native .NET 9 RuntimeMetrics emits these as ObservableUpDownCounter, not Gauge, since the
+        // values can decrease over time. We do the same on .NET 7+ via reflection, and fall back to
+        // ObservableGauge on .NET 6 where the API isn't exposed in the ref assembly.
+        RegisterObservableUpDownCounterOrGauge(
+            _meter,
             "dotnet.timer.count",
             static () => Timer.ActiveCount,
             unit: "{timer}",
@@ -155,7 +161,8 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         // --- Assemblies ---
 
-        _meter.CreateObservableGauge(
+        RegisterObservableUpDownCounterOrGauge(
+            _meter,
             "dotnet.assembly.count",
             static () => (long)AppDomain.CurrentDomain.GetAssemblies().Length,
             unit: "{assembly}",
@@ -190,6 +197,15 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         AppDomain.CurrentDomain.FirstChanceException -= OnFirstChanceException;
         _meter.Dispose();
         _process.Dispose();
+    }
+
+    private static void RegisterObservableUpDownCounterOrGauge<T>(Meter meter, string name, Func<T> observeValue, string unit, string description)
+        where T : struct
+    {
+        if (!MeterObservableUpDownCounterReflection.TryRegister(meter, name, observeValue, unit, description))
+        {
+            meter.CreateObservableGauge(name, observeValue, unit, description);
+        }
     }
 
     private static Measurement<long>[] GetGarbageCollectionCounts()
