@@ -477,10 +477,10 @@ public sealed class StringAspects
     [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)")]
     public static string Concat(IEnumerable<string> values)
     {
-        var result = string.Concat(values);
+        var result = ConcatAndMaterialize(values, out var materializedValues);
         try
         {
-            return StringModuleImpl.OnStringConcat(values, result);
+            return StringModuleImpl.OnStringConcat(materializedValues, result);
         }
         catch (Exception ex)
         {
@@ -499,10 +499,10 @@ public sealed class StringAspects
     [AspectMethodReplaceFromVersion("3.2.0", "System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static string Concat<T>(IEnumerable<T> values)
     {
-        var result = string.Concat(values);
+        var result = ConcatAndMaterialize(values, out var materializedValues);
         try
         {
-            return StringModuleImpl.OnStringConcat(values, result);
+            return StringModuleImpl.OnStringConcat(materializedValues, result);
         }
         catch (Exception ex)
         {
@@ -510,6 +510,12 @@ public sealed class StringAspects
         }
 
         return result;
+    }
+
+    private static string ConcatAndMaterialize<T>(IEnumerable<T> values, out T[] materializedValues)
+    {
+        materializedValues = Materialize(values);
+        return string.Concat((IEnumerable<T>)materializedValues);
     }
 
 #if NET6_0_OR_GREATER
@@ -733,10 +739,10 @@ public sealed class StringAspects
     [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static string Join<T>(char separator, IEnumerable<T> values)
     {
-        var result = string.Join(separator, values);
+        var result = JoinAndMaterialize(separator, values, out var materializedValues);
         try
         {
-            return OnStringJoin(result, separator, values);
+            return OnStringJoin(result, separator, materializedValues);
         }
         catch (Exception ex)
         {
@@ -757,10 +763,10 @@ public sealed class StringAspects
     [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static string Join<T>(string separator, IEnumerable<T> values)
     {
-        var result = string.Join(separator, values);
+        var result = JoinAndMaterialize(separator, values, out var materializedValues);
         try
         {
-            return OnStringJoin(result, separator, values);
+            return OnStringJoin(result, separator, materializedValues);
         }
         catch (Exception ex)
         {
@@ -823,10 +829,10 @@ public sealed class StringAspects
     [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)")]
     public static string JoinString(string separator, IEnumerable<string> values)
     {
-        var result = string.Join(separator, values);
+        var result = JoinAndMaterialize(separator, values, out var materializedValues);
         try
         {
-            return OnStringJoin(result, separator, values);
+            return OnStringJoin(result, separator, materializedValues);
         }
         catch (Exception ex)
         {
@@ -834,6 +840,28 @@ public sealed class StringAspects
         }
 
         return result;
+    }
+
+    private static string JoinAndMaterialize<T>(char separator, IEnumerable<T> values, out T[] materializedValues)
+    {
+        materializedValues = Materialize(values);
+        return string.Join(separator, materializedValues);
+    }
+
+    private static string JoinAndMaterialize<T>(string separator, IEnumerable<T> values, out T[] materializedValues)
+    {
+        materializedValues = Materialize(values);
+        return string.Join(separator, materializedValues);
+    }
+
+    private static T[] Materialize<T>(IEnumerable<T> values)
+    {
+        if (values is null)
+        {
+            throw new ArgumentNullException(nameof(values));
+        }
+
+        return values as T[] ?? values.ToArray();
     }
 
 #if NET6_0_OR_GREATER
