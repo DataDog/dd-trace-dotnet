@@ -9,6 +9,11 @@
     <DelaySign>false</DelaySign>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
+
+    <!-- NU1510: System.Memory / System.Threading.Tasks.Extensions below are flagged as framework-provided
+         on modern TFMs, but they're needed on net4x targets where Span<T>/ValueTask come from the package
+         rather than the BCL. -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

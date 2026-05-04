@@ -12,8 +12,9 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
 
+    <!-- MSTEST0001: parallelization configuration is intentionally not specified for this regression sample -->
     <!-- NU1701: MSTest 4.x packages ship only .NETFramework assets; netcoreapp2.1 (EOL) in this matrix falls back at restore -->
-    <NoWarn>$(NoWarn);NU1701</NoWarn>
+    <NoWarn>$(NoWarn);MSTEST0001;NU1701</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(ApiVersion.StartsWith('4.'))">

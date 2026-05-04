@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+
+    <!-- NU1510: System.Memory below is flagged as framework-provided on modern TFMs, but it's needed
+         on net4x targets where Span<T> comes from the package rather than the BCL. -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
