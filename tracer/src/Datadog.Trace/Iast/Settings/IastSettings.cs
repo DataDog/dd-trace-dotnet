@@ -100,6 +100,10 @@ internal sealed class IastSettings
             .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
             .AsInt32(MaxStackTraceDepthDefault, x => x >= 0)
             .Value;
+
+        VulnerabilityLogPath = config
+            .WithKeys(ConfigurationKeys.Iast.VulnerabilityLogPath)
+            .AsString();
     }
 
     public bool Enabled { get; set; }
@@ -139,6 +143,15 @@ internal sealed class IastSettings
     public bool StackTraceEnabled { get; }
 
     public int MaxStackTraceDepth { get; }
+
+    /// <summary>
+    /// Gets the optional override for the IAST vulnerability JSON-lines report file.
+    /// A bare filename (no directory component) is resolved relative to the tracer
+    /// log directory; a value containing a directory component is used as the full
+    /// output path. When unset, a PID-suffixed file under the tracer log directory
+    /// is used.
+    /// </summary>
+    public string? VulnerabilityLogPath { get; }
 
     public static IastSettings FromDefaultSources()
     {

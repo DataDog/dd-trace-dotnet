@@ -970,6 +970,19 @@ supportedConfigurations:
     documentation: |-
       Configuration key for the maximum number of IAST vulnerabilities to
       detect in a request. Defaults to 2.
+  DD_IAST_VULNERABILITY_LOG_PATH:
+  - implementation: A
+    type: string
+    default: ''
+    product: Iast
+    const_name: VulnerabilityLogPath
+    documentation: |-
+      Optional override for the IAST vulnerability JSON-lines report file.
+      A bare filename (e.g. "vulns.jsonl") is placed under the tracer log
+      directory; a value containing a directory component is used verbatim
+      as the full output path. Useful for tests that need a per-instance
+      report path. Default value is unset (a PID-suffixed file under the
+      tracer log directory is used).
   DD_IAST_WEAK_CIPHER_ALGORITHMS:
   - implementation: B
     type: string

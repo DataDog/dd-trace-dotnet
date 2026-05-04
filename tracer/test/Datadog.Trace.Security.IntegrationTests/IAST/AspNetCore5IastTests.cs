@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -18,6 +19,9 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -722,22 +726,22 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
     }
 
+    // Proof-of-concept: this test asserts on the IAST vulnerability JSON-lines
+    // report file written by the sample app instead of going through agent spans
+    // and snapshots. The output path is set per-fixture via DD_IAST_VULNERABILITY_LOG_PATH.
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastSSRFRequest()
     {
-        var filename = IastEnabled ? "Iast.SSRF.AspNetCore5.IastEnabled" : "Iast.SSRF.AspNetCore5.IastDisabled";
+        var filename = IastEnabled ? "Iast.SSRF.Vulns.AspNetCore5.IastEnabled" : "Iast.SSRF.Vulns.AspNetCore5.IastDisabled";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+
         var url = "/Iast/SSRF?host=localhost";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SSRF", filename, expectVulnerability: IastEnabled);
     }
 
     [SkippableFact]
@@ -1084,6 +1088,11 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SamplingRate = samplingRate;
         RedactionEnabled = redactionEnabled;
 
+        // Per-fixture path for the IAST vulnerability JSONL report. The sample app
+        // process started by the fixture writes vulnerabilities here as it detects
+        // them; tests can read this file instead of inspecting agent payloads.
+        VulnerabilityLogPath = Path.Combine(Path.GetTempPath(), $"iast-vulns-{Guid.NewGuid():N}.jsonl");
+
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
         UseNativeLibraryAlpineWorkaround();
@@ -1101,10 +1110,27 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
     protected int? SamplingRate { get; }
 
+    /// <summary>
+    /// Gets the path to the IAST vulnerability JSON-lines report file written by the sample app.
+    /// Unique per fixture instance so parallel test classes don't collide.
+    /// </summary>
+    protected string VulnerabilityLogPath { get; }
+
     public override void Dispose()
     {
         base.Dispose();
         Fixture.SetOutput(null);
+        try
+        {
+            if (File.Exists(VulnerabilityLogPath))
+            {
+                File.Delete(VulnerabilityLogPath);
+            }
+        }
+        catch
+        {
+            // best effort cleanup
+        }
     }
 
     public virtual async Task TryStartApp(MockTracerAgent.AgentConfiguration agentConfiguration = null)
@@ -1120,8 +1146,40 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
         await fixture.TryStartApp(this, enableSecurity: false, agentConfiguration: agentConfiguration);
         SetHttpPort(fixture.HttpPort);
+    }
+
+    protected static async Task<IReadOnlyList<JObject>> ReadVulnerabilityRecordsAsync(string path, string type, int expectedMinimumCount, int timeoutMs = 5_000)
+    {
+        // The reporter flushes synchronously per detection, but the request handler
+        // returns to us as soon as the response goes out — give the file a brief
+        // window to settle before asserting.
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            var matches = TryReadRecords(path, type);
+            if (matches.Count >= expectedMinimumCount)
+            {
+                return matches;
+            }
+
+            await Task.Delay(50);
+        }
+
+        return TryReadRecords(path, type);
+    }
+
+    protected static async Task VerifyVulnerabilityRecordsAsync(string path, string type, string fileName, bool expectVulnerability, bool includeStack = false, int timeoutMs = 5_000)
+    {
+        var records = await ReadVulnerabilityRecordsAsync(path, type, expectedMinimumCount: expectVulnerability ? 1 : 0, timeoutMs: timeoutMs);
+        var sanitized = records.Select(r => SanitizeForVerification(r, includeStack)).ToList();
+
+        var settings = new VerifySettings();
+        await Verifier.Verify(sanitized, settings)
+                      .UseFileName(fileName)
+                      .DisableRequireUniquePrefix();
     }
 
     protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
@@ -1132,6 +1190,80 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
         await VerifySpans(spans, settings, fileNameOverride: filename);
+    }
+
+    private static JObject SanitizeForVerification(JObject record, bool includeStack)
+    {
+        // Drop volatile fields so the snapshot stays stable across runs and code edits.
+        record.Remove("timestamp");
+
+        if (record["location"] is JObject location)
+        {
+            ReplaceIfPresent(location, "line", "XXX");
+
+            if (!includeStack)
+            {
+                // Stack frames vary by framework version and instrumentation depth,
+                // so most tests exclude them. Stack-specific tests can opt in.
+                location.Remove("stack");
+            }
+            else if (location["stack"] is JArray stack)
+            {
+                foreach (var frame in stack.OfType<JObject>())
+                {
+                    ReplaceIfPresent(frame, "line", "XXX");
+                    ReplaceIfPresent(frame, "column", "XXX");
+                }
+            }
+        }
+
+        return record;
+
+        static void ReplaceIfPresent(JObject obj, string property, string placeholder)
+        {
+            if (obj[property] != null)
+            {
+                obj[property] = placeholder;
+            }
+        }
+    }
+
+    private static List<JObject> TryReadRecords(string path, string type)
+    {
+        var matches = new List<JObject>();
+        if (!File.Exists(path))
+        {
+            return matches;
+        }
+
+        // Open shared with write so the sample app can keep appending while we read.
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var reader = new StreamReader(fs);
+        string line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            JObject record;
+            try
+            {
+                record = JObject.Parse(line);
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (string.Equals(record["type"]?.Value<string>(), type, StringComparison.Ordinal))
+            {
+                matches.Add(record);
+            }
+        }
+
+        return matches;
     }
 }
 
