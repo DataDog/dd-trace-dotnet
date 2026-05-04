@@ -4,6 +4,7 @@
 #include "ClassLayoutCache.h"
 #include "Log.h"
 #include "shared/src/native-src/com_ptr.h"
+#include "shared/src/native-src/string.h"
 
 ClassLayoutCache::ClassLayoutCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameStore* pFrameStore)
     : _pCorProfilerInfo(pCorProfilerInfo), _pFrameStore(pFrameStore)
@@ -410,8 +411,8 @@ bool ClassLayoutCache::IsReferenceType(mdTypeDef typeDef, IMetaDataImport* pMeta
         if (SUCCEEDED(hr))
         {
             // Check if it's System.ValueType or System.Enum
-            if (wcscmp(baseTypeName, L"System.ValueType") == 0 ||
-                wcscmp(baseTypeName, L"System.Enum") == 0)
+            if (WStrCmp(baseTypeName, WStr("System.ValueType")) == 0 ||
+                WStrCmp(baseTypeName, WStr("System.Enum")) == 0)
             {
                 return false;  // It's a value type
             }
