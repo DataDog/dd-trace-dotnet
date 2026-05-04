@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-> **For AI Agents**: This file provides a navigation hub and quick reference. Each section includes "📖 Load when..." guidance to help you decide which detailed documentation files to load based on your current task.
+> **For AI Agents**: This file provides a navigation hub and quick reference. Linked docs in each section can be loaded when their topic is relevant to your task.
 
 ## Project Structure & Module Organization
 
@@ -90,20 +90,6 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
   - `Datadog.AutoInstrumentation.Generator` — Instrumentation metadata generators.
 - `Datadog.Tracer.Native` — Native interop glue and packaging metadata.
 
-<details>
-<summary>Key Component Sub-structure</summary>
-
-- **ClrProfiler** — AutoInstrumentation (integrations grouped by tech: AWS, AdoNet, AspNet/AspNetCore, Azure, Couchbase, Elasticsearch, GraphQL, Grpc, Http, IbmMq, Kafka, Logging, MongoDb, Msmq, OpenTelemetry, Process, Protobuf, RabbitMQ, Redis, Remoting, RestSharp, Testing, TraceAnnotations, Wcf), CallTarget (invoker, handlers, state structs, async continuations), Helpers (IL/interop, native definitions), ServerlessInstrumentation.
-- **Agent** — DiscoveryService, MessagePack (trace payload encoding), StreamFactories (HTTP/Unix/Windows), TraceSamplers, Transports (HTTP/pipes).
-- **Configuration** — ConfigurationSources (env vars, JSON, args, RCM), Schema (span attribute schema), Core (`TracerSettings`, `ExporterSettings`, `IntegrationSettings`, git metadata).
-- **Propagators** — Datadog, W3C (tracecontext/baggage), B3 (single/multiple header), factories/utilities.
-- **Telemetry** — Collectors (feature/runtime), DTOs (payload models), Metrics (counters/series), Transports (HTTP).
-- **Debugger** — Instrumentation, Snapshots, Upload, Caching, Configurations, Expressions, PInvoke, Symbols, ExceptionAutoInstrumentation, RateLimiting, Sink, SpanCodeOrigin.
-- **Iast** — Aspects (sources/sinks), Dataflow (taint tracking), Propagation, SensitiveData, Settings, Telemetry, Analyzers, Helpers.
-- **DataStreamsMonitoring** — Aggregation, Transport, Hashes, Utils; manager/writer and context propagator.
-
-</details>
-
 ## Build & Development
 
 **Quick start:**
@@ -111,7 +97,6 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
 - Integration tests: `BuildAndRunIntegrationTests`
 
-📖 **Load when**: Setting up development environment, running builds, or troubleshooting build issues
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
 ## Creating Integrations
@@ -124,10 +109,8 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 - Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with samples in `tracer/test/test-applications/integrations`
 - Generate boilerplate: `./tracer/build.ps1 RunInstrumentationGenerator`
 
-📖 **Load when**: Creating a new integration or adding instrumentation to an existing library
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
 
-📖 **Load when**: Working with third-party types that can't be directly referenced or need version-agnostic access
 - **`docs/development/DuckTyping.md`** — Duck typing patterns, proxy types, binding attributes, best practices, and performance benchmarks
 
 ## Azure Functions & Serverless
@@ -137,19 +120,16 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 - **Tests**: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`
 - **External Repos**: [Azure Functions Host](https://github.com/Azure/azure-functions-host) and [.NET Worker](https://github.com/Azure/azure-functions-dotnet-worker)
 
-📖 **Load when**: Working on Azure Functions instrumentation or debugging serverless issues
 - **`docs/development/AzureFunctions.md`** — Setup, testing, instrumentation specifics, and debugging guide
 
-📖 **Load when**: Need detailed architectural understanding of Azure Functions internals
 - **`docs/development/for-ai/AzureFunctions-Architecture.md`** — Deep dive into Azure Functions Host and .NET Worker architecture, gRPC protocol, and instrumentation hook points
 
-📖 **Load when**: Working on AWS Lambda integration tests
 - **`docs/development/AwsLambdaIntegrationTests.md`** — AWS Lambda integration test setup, architecture, and test patterns
 
 ## Coding Standards
 
 **C# style:**
-- See `.editorconfig` (4-space indent, `System.*` first, prefer `var`). Types/methods PascalCase; locals camelCase
+- See `.editorconfig` (auto-enforced)
 - Add missing `using` directives instead of fully-qualified type names
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
@@ -179,18 +159,6 @@ any-command >nul
 2. **Use full device path**: `2>\\.\NUL` (works reliably but verbose)
 3. **Use PowerShell** for cross-platform compatibility where applicable
 4. **Prefer dedicated tools** over piped bash commands (use Grep, Glob, Read tools instead)
-
-**Examples of safe patterns:**
-```cmd
-# Bad: Creates nul file
-findstr /s /i "DD_TRACE" "*.cpp" 2>nul
-
-# Good: Let errors show
-findstr /s /i "DD_TRACE" "*.cpp"
-
-# Good: Use full device path if suppression is essential
-findstr /s /i "DD_TRACE" "*.cpp" 2>\\.\NUL
-```
 
 **Reference:** See https://github.com/anthropics/claude-code/issues/4928 for details on this Windows limitation.
 
@@ -279,7 +247,6 @@ The tracer runs in-process with customer applications and must have minimal perf
   - Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
 - Prefer using `[Theory]` with input data rather than duplicating tests
 
-📖 **Load when**: Debugging the tracer locally, setting up IDE debugging configurations, or troubleshooting tracer loading issues
 - **`docs/development/TracerDebugging.md`** — Local debugging techniques, launchSettings.json configuration, $(SolutionDir) path issues, IDE-specific tips, and troubleshooting common tracer loading problems
 
 ## Commit & Pull Request Guidelines
@@ -321,12 +288,10 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 ## Configuration
 
-📖 **Load when**: Need reference for tracer configuration settings and environment variables
 - **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, 
   product categorization, key aliases, deprecations and default values for all `DD_*` and `OTEL_*` environment 
   variables (consumed by source generators as well)
 
-📖 **Load when**: Adding a new `DD_*` configuration key or modifying the configuration system
 - **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
 
 ## Security & Configuration
@@ -342,7 +307,6 @@ Common acronyms used in this repository:
 - **AAP** — App and API Protection (formerly ASM, previously AppSec)
 - **AOT** — Ahead-of-Time (compilation)
 - **APM** — Application Performance Monitoring
-- **ASM** — Application Security Management (formerly AppSec; now AAP)
 - **CI** — Continuous Integration / CI Visibility
 - **CP** — Continuous Profiler
 - **DBM** — Database Monitoring
