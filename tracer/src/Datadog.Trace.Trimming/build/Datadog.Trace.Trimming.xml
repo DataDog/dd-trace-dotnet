@@ -270,6 +270,7 @@
       <type fullname="System.Diagnostics.Metrics.MeterListener" />
       <type fullname="System.Diagnostics.Metrics.ObservableCounter`1" />
       <type fullname="System.Diagnostics.Metrics.ObservableGauge`1" />
+      <type fullname="System.Diagnostics.Metrics.ObservableUpDownCounter`1" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.Process" />

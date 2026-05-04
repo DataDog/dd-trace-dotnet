@@ -59,7 +59,8 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{collection}",
             description: "The number of garbage collections that have occurred since the process has started.");
 
-        _meter.CreateObservableGauge(
+        RegisterObservableUpDownCounterOrGauge(
+            _meter,
             "dotnet.process.memory.working_set",
             static () => Environment.WorkingSet,
             unit: "By",
@@ -71,19 +72,22 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "By",
             description: "The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations.");
 
-        _meter.CreateObservableGauge(
+        RegisterObservableUpDownCounterOrGauge(
+            _meter,
             "dotnet.gc.last_collection.memory.committed_size",
             () => GetCachedGcInfo().TotalCommittedBytes,
             unit: "By",
             description: "The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection.");
 
-        _meter.CreateObservableGauge(
+        RegisterObservableUpDownCounterOrGaugeMulti(
+            _meter,
             "dotnet.gc.last_collection.heap.size",
             GetHeapSizes,
             unit: "By",
             description: "The managed GC heap size (including fragmentation), as observed during the latest garbage collection.");
 
-        _meter.CreateObservableGauge(
+        RegisterObservableUpDownCounterOrGaugeMulti(
+            _meter,
             "dotnet.gc.last_collection.heap.fragmentation.size",
             GetHeapFragmentation,
             unit: "By",
@@ -149,9 +153,6 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{work_item}",
             description: "The number of work items that are currently queued to be processed by the thread pool.");
 
-        // Native .NET 9 RuntimeMetrics emits these as ObservableUpDownCounter, not Gauge, since the
-        // values can decrease over time. We do the same on .NET 7+ via reflection, and fall back to
-        // ObservableGauge on .NET 6 where the API isn't exposed in the ref assembly.
         RegisterObservableUpDownCounterOrGauge(
             _meter,
             "dotnet.timer.count",
@@ -179,7 +180,8 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         // --- CPU ---
 
-        _meter.CreateObservableGauge(
+        RegisterObservableUpDownCounterOrGauge(
+            _meter,
             "dotnet.process.cpu.count",
             static () => (long)Environment.ProcessorCount,
             unit: "{cpu}",
@@ -205,6 +207,15 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         if (!MeterObservableUpDownCounterReflection.TryRegister(meter, name, observeValue, unit, description))
         {
             meter.CreateObservableGauge(name, observeValue, unit, description);
+        }
+    }
+
+    private static void RegisterObservableUpDownCounterOrGaugeMulti<T>(Meter meter, string name, Func<IEnumerable<Measurement<T>>> observeValues, string unit, string description)
+        where T : struct
+    {
+        if (!MeterObservableUpDownCounterReflection.TryRegisterMulti(meter, name, observeValues, unit, description))
+        {
+            meter.CreateObservableGauge(name, observeValues, unit, description);
         }
     }
 
