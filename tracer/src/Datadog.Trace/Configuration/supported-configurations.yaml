@@ -1179,6 +1179,15 @@ supportedConfigurations:
       This variable is set by the native loader after trying to load the profiler.
       It means the profiler is _there_ though it may not be _loaded_. This only works
       on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
+  DD_INTERNAL_PROFILING_ENABLED_ARM64:
+  - implementation: A
+    type: string
+    default: 'false'
+    product: ContinuousProfiler
+    const_name: InternalProfilingEnabledArm64
+    documentation: |-
+      Internal gate: on Linux ARM64, the continuous profiler is only considered enabled in managed settings
+      when this is set to <c>true</c>. Must match the native profiler <c>DD_INTERNAL_PROFILING_ENABLED_ARM64</c> check.
   DD_INTERNAL_TELEMETRY_DEBUG_ENABLED:
   - implementation: A
     type: boolean
