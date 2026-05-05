@@ -3,13 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -42,6 +44,8 @@ namespace BuggyBits
 
     public class Program
     {
+        private const int HostBindRetries = 5;
+
         private static bool _disableLogs = false;
 
         public static async Task Main(string[] args)
@@ -54,38 +58,14 @@ namespace BuggyBits
 
             ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
 
-            using (var host = CreateHostBuilder(args).Build())
+            using (var host = await StartHostWithPortResilience(args))
             {
-                // ASP.NET Core accepts listening url via what is set by Visual Studio
-                // (from the launchsettings.json). It could be overriden by --Urls
-                // on the command line
-                var configuration = host.Services.GetService(typeof(IConfiguration)) as IConfiguration;
-                var rootUrl = configuration["urls"];
-
-                // otherwise, use the default ASP.NET Core value
-                if (string.IsNullOrEmpty(rootUrl))
-                {
-                    rootUrl = "http://localhost:5000";
-                }
-
-                // avoid race condition in CI to find an available port
-                int port = -1;
-                if (int.TryParse(rootUrl.Substring(rootUrl.LastIndexOf(':') + 1), out port))
-                {
-                    port = GetValidPort(port, 3);
-                    if (port != -1)
-                    {
-                        rootUrl = rootUrl.Substring(0, rootUrl.LastIndexOf(':') + 1) + port;
-                    }
-                }
-
+                var rootUrl = GetBoundRootUrl(host);
                 WriteLine($"Listening to {rootUrl}");
 
                 var cts = new CancellationTokenSource();
                 using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, _disableLogs))
                 {
-                    await host.StartAsync();
-
                     WriteLine();
                     WriteLine($"Started at {DateTime.UtcNow}.");
 
@@ -147,8 +127,116 @@ namespace BuggyBits
             WriteLine($"The application exited after: {sw.Elapsed} at {DateTime.UtcNow}");
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+        private static async Task<IHost> StartHostWithPortResilience(string[] args)
+        {
+            var host = CreateHostBuilder(args).Build();
+            try
+            {
+                var rootUrl = GetConfiguredRootUrl(host);
+
+                for (var remainingRetries = HostBindRetries; ; remainingRetries--)
+                {
+                    try
+                    {
+                        WriteLine($"Starting web host at {rootUrl}");
+                        await host.StartAsync();
+                        return host;
+                    }
+                    catch (Exception ex) when (remainingRetries > 0 && IsAddressInUseException(ex))
+                    {
+                        var retryRootUrl = GetUrlWithNewPort(rootUrl);
+                        WriteLine($"Address already in use for {rootUrl}. Retrying on {retryRootUrl}.");
+
+                        host.Dispose();
+                        rootUrl = retryRootUrl;
+                        host = CreateHostBuilder(args, rootUrl).Build();
+                    }
+                }
+            }
+            catch
+            {
+                host.Dispose();
+                throw;
+            }
+        }
+
+        private static string GetConfiguredRootUrl(IHost host)
+        {
+            // ASP.NET Core accepts listening urls from launchSettings.json, ASPNETCORE_URLS,
+            // or --urls. If none are supplied, Kestrel uses this default.
+            var configuration = host.Services.GetService(typeof(IConfiguration)) as IConfiguration;
+            var rootUrl = configuration?["urls"];
+
+            if (string.IsNullOrEmpty(rootUrl))
+            {
+                rootUrl = "http://localhost:5000";
+            }
+
+            return GetFirstUrl(rootUrl);
+        }
+
+        private static string GetBoundRootUrl(IHost host)
+        {
+            var server = host.Services.GetService(typeof(IServer)) as IServer;
+            var addresses = server?.Features.Get<IServerAddressesFeature>()?.Addresses;
+
+            if (addresses != null)
+            {
+                foreach (var address in addresses)
+                {
+                    if (!string.IsNullOrEmpty(address))
+                    {
+                        return address.TrimEnd('/');
+                    }
+                }
+            }
+
+            return GetConfiguredRootUrl(host);
+        }
+
+        private static string GetFirstUrl(string urls)
+        {
+            var separatorIndex = urls.IndexOf(';');
+            if (separatorIndex >= 0)
+            {
+                urls = urls.Substring(0, separatorIndex);
+            }
+
+            return urls.TrimEnd('/');
+        }
+
+        private static string GetUrlWithNewPort(string rootUrl)
+        {
+            // Avoid UriBuilder here: ASP.NET Core wildcard hosts (http://*:5000, http://+:5000)
+            // are not valid Uri hosts and would throw UriFormatException. Since the retry always
+            // rebinds to 127.0.0.1 with an OS-assigned port, only the scheme needs to be preserved.
+            var schemeSeparator = rootUrl.IndexOf("://", StringComparison.Ordinal);
+            var scheme = schemeSeparator > 0 ? rootUrl.Substring(0, schemeSeparator) : "http";
+            return $"{scheme}://127.0.0.1:0";
+        }
+
+        private static bool IsAddressInUseException(Exception exception)
+        {
+            while (exception != null)
+            {
+                if (exception is SocketException socketException && socketException.SocketErrorCode == SocketError.AddressAlreadyInUse)
+                {
+                    return true;
+                }
+
+                if (exception.Message.IndexOf("address already in use", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+
+                exception = exception.InnerException;
+            }
+
+            return false;
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args, string rootUrl = null) =>
+            Host.CreateDefaultBuilder(GetArgsWithUrlsOverride(args, rootUrl))
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
@@ -161,62 +249,34 @@ namespace BuggyBits
                     }
                 });
 
-        public static int GetOpenPort()
+        private static string[] GetArgsWithUrlsOverride(string[] args, string rootUrl)
         {
-            TcpListener tcpListener = null;
-            try
+            if (string.IsNullOrEmpty(rootUrl))
             {
-                tcpListener = new TcpListener(IPAddress.Loopback, 0);
-                tcpListener.Start();
-                var port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
-                return port;
+                return args;
             }
-            finally
-            {
-                tcpListener?.Stop();
-            }
-        }
 
-        private static int GetValidPort(int initialPort, int retries)
-        {
-            var port = initialPort;
-            bool isPortValid = false;
-            while (true)
+            var effectiveArgs = new List<string>(args.Length + 2);
+            for (var i = 0; i < args.Length; i++)
             {
-                // seems like we can't reuse a listener if it fails to start,
-                // so create a new listener each time we retry
-                var listener = new HttpListener();
-                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                listener.Prefixes.Add($"http://localhost:{port}/");
-
-                try
+                var arg = args[i];
+                if (string.Equals(arg, "--urls", StringComparison.OrdinalIgnoreCase))
                 {
-                    listener.Start();
+                    i++;
+                    continue;
+                }
 
-                    // success
-                    isPortValid = true;
-                    break;
-                }
-                catch (HttpListenerException) when (retries > 0)
+                if (arg.StartsWith("--urls=", StringComparison.OrdinalIgnoreCase))
                 {
-                    // only catch the exception if there are retries left
-                    port = GetOpenPort();
-                    retries--;
+                    continue;
                 }
-                finally
-                {
-                    listener.Close();
-                }
+
+                effectiveArgs.Add(arg);
             }
 
-            if (isPortValid)
-            {
-                return port;
-            }
-            else
-            {
-                return -1; // no valid port found
-            }
+            effectiveArgs.Add("--urls");
+            effectiveArgs.Add(rootUrl);
+            return effectiveArgs.ToArray();
         }
 
         private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
