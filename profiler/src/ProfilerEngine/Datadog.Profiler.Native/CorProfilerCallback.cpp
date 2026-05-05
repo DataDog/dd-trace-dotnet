@@ -2347,7 +2347,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 #endif
     uintptr_t tab[1];
     Callstack callstack(shared::span<std::uintptr_t>(tab, 1));
-    warmup.Unwind(nullptr, callstack);
+    auto [stackBase, stackEnd] = threadInfo->GetStackBounds();
+    warmup.Unwind(nullptr, callstack, stackBase, stackEnd);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;
