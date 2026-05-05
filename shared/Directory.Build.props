@@ -14,5 +14,5 @@
     
     <Import Project="$(MSBuildThisFileDirectory)\RepoAndBuild-DirectoryStructure.props" />
     <Import Project="$(MSBuildThisFileDirectory)\CodeAnalysis.props" Condition=" '$(SkipCodeAnalysis)' != 'True' " />
-
+    
 </Project>

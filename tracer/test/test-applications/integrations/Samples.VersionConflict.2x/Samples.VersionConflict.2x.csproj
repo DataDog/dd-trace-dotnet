@@ -15,5 +15,5 @@
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
   </PropertyGroup>
-
+  
 </Project>
