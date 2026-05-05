@@ -9,8 +9,7 @@
     <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!-- NU190* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <!-- IL2104: roll-up trim warnings on third-party assemblies (dnlib, ICSharpCode.Decompiler, Microsoft.TestPlatform.*, Microsoft.Web.Administration) that we already root via <TrimmerRootAssembly> in the standalone build; not actionable from our side -->
-    <NoWarn>NU5100;NU1901;NU1902;NU1903;NU1904;IL2104</NoWarn>
+    <NoWarn>NU5100;NU1901;NU1902;NU1903;NU1904</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugSymbols>false</DebugSymbols>
