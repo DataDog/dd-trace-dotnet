@@ -613,8 +613,10 @@ void HeapSnapshotManager::StartGCDump()
 
         // Create/reset the traverser so it is ready to process roots during GC callbacks.
         // ClassLayoutCache is persisted across dumps to avoid rebuilding class layouts.
+        // Visited set is pre-sized from the previous dump's high-water-mark to avoid Grow() storms.
         _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
-            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pClassLayoutCache);
+            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pClassLayoutCache,
+            _visitedSetHighWatermark);
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
     }
@@ -658,11 +660,18 @@ void HeapSnapshotManager::OnEndGCDump()
               << std::endl;
 #endif
 
-    // Log traversal statistics.
+    // Log traversal statistics and persist high-water-mark for next dump's pre-sizing.
     // Traversal itself was done incrementally during OnBulkRoot* callbacks.
     if (_pReferenceChainTraverser)
     {
         _pReferenceChainTraverser->LogStats();
+
+        size_t hwm = _pReferenceChainTraverser->GetVisitedHighWatermark();
+        if (hwm > _visitedSetHighWatermark)
+        {
+            _visitedSetHighWatermark = hwm;
+        }
+        Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark, " buckets");
     }
 
     if (_pClassLayoutCache)

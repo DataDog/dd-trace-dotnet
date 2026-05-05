@@ -38,13 +38,16 @@ public:
         ICorProfilerInfo12* pCorProfilerInfo,
         IFrameStore* pFrameStore,
         TypeReferenceTree& tree,
-        ClassLayoutCache& layoutCache);
+        ClassLayoutCache& layoutCache,
+        size_t visitedSetInitialCapacity = 512);
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
     // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
     void TraverseFromSingleRoot(const RootInfo& root);
 
     void LogStats() const;
+
+    size_t GetVisitedHighWatermark() const { return _visited.GetBucketCount(); }
 
 private:
     // Iterative object graph traversal using an explicit stack.

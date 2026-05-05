@@ -19,11 +19,13 @@ ReferenceChainTraverser::ReferenceChainTraverser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
     TypeReferenceTree& tree,
-    ClassLayoutCache& layoutCache)
+    ClassLayoutCache& layoutCache,
+    size_t visitedSetInitialCapacity)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
       _layoutCache(layoutCache),
+      _visited(visitedSetInitialCapacity),
       _objectsTraversed(0),
       _rootsProcessed(0)
 {
@@ -64,7 +66,10 @@ void ReferenceChainTraverser::LogStats() const
     Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",
               _rootsProcessed, " roots, ",
               _objectsTraversed, " objects traversed, ",
-              "stack high watermark: ", _traversalStackHighWatermark);
+              "stack high watermark: ", _traversalStackHighWatermark, ", ",
+              "visited set: ", _visited.Size(), " entries / ",
+              _visited.GetBucketCount(), " buckets (",
+              _visited.GetMemorySize() / 1024, " KB)");
 
     for (int i = 0; i < static_cast<int>(RootCategoryCount); i++)
     {

@@ -224,6 +224,9 @@ private:
     // Resolved once via OnModuleLoaded when mscorlib is detected.
     ClassID _stringClassID = 0;
 
+    // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
+    size_t _visitedSetHighWatermark = 512;
+
     std::chrono::nanoseconds _startTimestamp;
 
     // timestamp of the last heap snapshot
