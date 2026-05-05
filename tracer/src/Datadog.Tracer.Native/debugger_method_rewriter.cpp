@@ -2135,7 +2135,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 {
     ModuleID module_id = moduleHandler->GetModuleId();
     ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
-    FunctionInfo* caller = methodHandler->GetFunctionInfo();
+    const auto callerHandle = methodHandler->GetFunctionInfo();
+    FunctionInfo* caller = callerHandle.get();
     DebuggerTokens* debuggerTokens = module_metadata.GetDebuggerTokens();
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();

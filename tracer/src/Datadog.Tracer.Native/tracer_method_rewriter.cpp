@@ -105,7 +105,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     ModuleID module_id = moduleHandler->GetModuleId();
     ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
-    FunctionInfo* caller = methodHandler->GetFunctionInfo();
+    // Pin the FunctionInfo snapshot for the lifetime of this call. SetFunctionInfo on the same
+    // handler can swap in a new instance concurrently; holding the shared_ptr keeps our snapshot
+    // alive even if that happens (or if module/method teardown races with us).
+    const auto callerHandle = methodHandler->GetFunctionInfo();
+    FunctionInfo* caller = callerHandle.get();
     TracerTokens* tracerTokens = module_metadata.GetTracerTokens();
     tracerTokens->SetCorProfilerInfo(m_corProfiler->info_);
     mdToken function_token = caller->id;

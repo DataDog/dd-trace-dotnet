@@ -19,7 +19,7 @@ RejitHandlerModuleMethod::RejitHandlerModuleMethod(mdMethodDef methodDef, RejitH
     m_methodDef(methodDef),
     m_module(module),
     m_pFunctionControl(nullptr),
-    m_functionInfo(std::make_unique<FunctionInfo>(functionInfo)),
+    m_functionInfo(std::make_shared<FunctionInfo>(functionInfo)),
     m_methodRewriter(std::move(methodRewriter))
 {
 }
@@ -34,14 +34,17 @@ RejitHandlerModule* RejitHandlerModuleMethod::GetModule()
     return m_module;
 }
 
-FunctionInfo* RejitHandlerModuleMethod::GetFunctionInfo()
+std::shared_ptr<FunctionInfo> RejitHandlerModuleMethod::GetFunctionInfo()
 {
-    return m_functionInfo.get();
+    std::lock_guard<std::mutex> guard(m_functionInfoLock);
+    return m_functionInfo;
 }
 
 void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
 {
-    m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
+    auto next = std::make_shared<FunctionInfo>(functionInfo);
+    std::lock_guard<std::mutex> guard(m_functionInfoLock);
+    m_functionInfo = std::move(next);
 }
 
 bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
