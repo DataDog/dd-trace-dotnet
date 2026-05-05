@@ -6,7 +6,9 @@
 #include "MemoryResourceManager.h"
 #include "LibrariesInfoCache.h"
 
+#ifndef ARM64
 #include "Backtrace2Unwinder.h"
+#endif
 
 struct ServiceWrapper
 {

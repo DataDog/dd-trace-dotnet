@@ -19,7 +19,7 @@ namespace Datadog.Trace
             get
             {
                 var fd = FrameworkDescription.Instance;
-                return fd.ProcessArchitecture != ProcessArchitecture.Arm && fd.ProcessArchitecture != ProcessArchitecture.Arm64;
+                return fd.ProcessArchitecture != ProcessArchitecture.Arm;
             }
         }
 

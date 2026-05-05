@@ -11,6 +11,9 @@
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "IConfiguration.h"
+#ifdef ARM64
+#include "UnwindTracersProvider.h"
+#endif
 
 #include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <sys/types.h>
@@ -32,7 +35,8 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pProvider{pProvider},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
     _nbThreadsInSignalHandler{0},
-    _pUnwinder{pUnwinder}
+    _pUnwinder{pUnwinder},
+    _useUnwinderTracer{Log::IsDebugEnabled()}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -254,8 +258,25 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
+    std::uintptr_t stackBase = 0;
+    std::uintptr_t stackEnd = 0;
+    if (threadInfo)
+    {
+        std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
+    }
+
+    UnwinderTracer* tracer = nullptr;
+#ifdef ARM64
+    auto scopedTracer = UnwindTracersProvider::ScopedTracer(nullptr);
+    if (_useUnwinderTracer)
+    {
+        scopedTracer = UnwindTracersProvider::GetInstance().GetTracer();
+        tracer = scopedTracer.get();
+    }
+#endif
     auto buffer = rawCpuSample->Stack.AsSpan();
-    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size());
+
+    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size(), stackBase, stackEnd, tracer);
     rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)

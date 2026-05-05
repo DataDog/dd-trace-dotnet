@@ -8,7 +8,9 @@
 
 Backtrace2Unwinder::Backtrace2Unwinder() = default;
 
-std::int32_t Backtrace2Unwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize) const
+std::int32_t Backtrace2Unwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize,
+                                        std::uintptr_t stackBase, std::uintptr_t stackEnd,
+                                        UnwinderTracer* tracer) const
 {
     // unw_backtrace2 handles the case ctx == nullptr
     auto* context = reinterpret_cast<unw_context_t*>(ctx);

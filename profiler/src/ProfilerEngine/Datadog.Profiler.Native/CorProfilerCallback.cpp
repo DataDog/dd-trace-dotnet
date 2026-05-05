@@ -56,12 +56,18 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
+#ifdef ARM64
+#include "HybridUnwinder.h"
+#include "UnwindTracersProvider.h"
+#else
 #include "Backtrace2Unwinder.h"
+#endif
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
 #include "CpuSampleProvider.h"
+#include <pthread.h>
 #endif
 
 #include "shared/src/native-src/pal.h"
@@ -620,7 +626,16 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
+#ifdef ARM64
+        // Initialize the UnwindTracersProvider
+        if (Log::IsDebugEnabled())
+        {
+            UnwindTracersProvider::GetInstance();
+        }
+        _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
+#else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
+#endif
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
@@ -1109,6 +1124,16 @@ ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount() const
     return refCount;
 }
 
+// Rationale for no_sanitize("vptr") on the three CorProfilerCallback entry
+// points below (InspectRuntimeCompatibility, InspectRuntimeVersion, Initialize):
+// on arm64 Linux the CLR exports typeinfo for ProfToEEInterfaceImpl, so UBSAN's
+// vptr check fires on calls through COM interface pointers (e.g. QueryInterface).
+// On x86_64 the CLR does not export that typeinfo, so the check is silently
+// skipped there. We deliberately scope the suppression to clang + arm64 so
+// that x86_64 builds still benefit from the full UBSAN coverage.
+#if defined(__clang__) && defined(ARM64)
+__attribute__((no_sanitize("vptr")))
+#endif
 void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor)
 {
     runtimeMajor = 0;
@@ -1293,6 +1318,9 @@ void CorProfilerCallback::InspectProcessorInfo()
 #endif
 }
 
+#if defined(__clang__) && defined(ARM64)
+__attribute__((no_sanitize("vptr")))
+#endif
 void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType)
 {
     USHORT clrInstanceId;
@@ -1387,6 +1415,9 @@ void CorProfilerCallback::PrintEnvironmentVariables()
 const uint32_t InformationalVerbosity = 4;
 const uint32_t VerboseVerbosity = 5;
 
+#if defined(__clang__) && defined(ARM64)
+__attribute__((no_sanitize("vptr")))
+#endif
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerInfoUnk)
 {
     Log::Info("CorProfilerCallback is initializing.");
@@ -1449,6 +1480,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     COR_PRF_RUNTIME_TYPE runtimeType;
     CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
 
+#if !defined(_WINDOWS) && defined(ARM64)
+    if (major < 5)
+    {
+        Log::Warn("The Continuous Profiler has been disabled on arm64 Linux: .NET 5.0 or greater is required.");
+        return E_FAIL;
+    }
+#endif
     // We only need to get the complete version for .NET Framework
     // For the other runtimes, no need to wait for mscorlib to be loaded
     if (runtimeType != COR_PRF_DESKTOP_CLR)
@@ -1545,6 +1583,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             return E_FAIL;
         }
     }
+
+    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get());
 
     // create services without starting them
     InitializeServices();
@@ -1790,6 +1830,18 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
+    
+#ifdef LINUX
+if (_pCpuProfiler != nullptr)
+{
+    // if we failed at stopping the time_create-based CPU profiler,
+    // it's safer to not release the memory.
+    // Otherwise, we might crash the application.
+    // Reason: one thread could be executing the signal handler and accessing some field
+    auto success = _pCpuProfiler->Stop();
+    LogServiceStop(success, _pCpuProfiler->GetName());
+}
+#endif
     // TODO: maybe move the following 2 lines AFTER stopping the providers
     // --> to ensure that the last samples are collected
     _pSamplesCollector->Stop();
@@ -2257,7 +2309,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
 #ifdef LINUX
-    // This call must be made *after* we assigne the SetThreadOsInfo function call.
+    {
+        pthread_attr_t attr;
+        if (pthread_getattr_np(pthread_self(), &attr) == 0)
+        {
+            void* stackAddr;
+            size_t stackSize;
+            if (pthread_attr_getstack(&attr, &stackAddr, &stackSize) == 0)
+            {
+                auto stackBase = reinterpret_cast<std::uintptr_t>(stackAddr);
+                auto stackEnd = stackBase + stackSize;
+                threadInfo->SetStackBounds(stackBase, stackEnd);
+            }
+            pthread_attr_destroy(&attr);
+        }
+    }
+
+    // This call must be made *after* we assign the SetThreadOsInfo function call.
     // Otherwise the threadInfo won't have it's OsThread field set and timer_create
     // will have random behavior.
     if (_pCpuProfiler != nullptr)
@@ -2277,16 +2345,20 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure
+    // The unwinder relies on libunwind. We need to call it to make sure
     // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
     // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc
     // occurs in our profiler signal handler, we end up deadlocking the application.
-    // To prevent that, we call unw_backtrace here for the current thread, to force libunwind
+    // To prevent that, we call the unwinder here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
-    Backtrace2Unwinder bt2;
+#ifdef ARM64
+    HybridUnwinder warmup(_managedCodeCache.get());
+#else
+    Backtrace2Unwinder warmup;
+#endif
     uintptr_t tab[1];
-    bt2.Unwind(nullptr, tab, 1);
+    warmup.Unwind(nullptr, tab, 1);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;

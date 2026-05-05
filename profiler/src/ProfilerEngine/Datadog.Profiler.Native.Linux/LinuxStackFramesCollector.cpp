@@ -27,7 +27,7 @@
 using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
-LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
+std::atomic<LinuxStackFramesCollector*> LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
@@ -100,10 +100,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                                                                                        bool selfCollect)
 {
     long errorCode;
-
-    // If there a timer associated to the managed thread, we have to disarm it.
-    // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
-    auto timerId = pThreadInfo->GetTimerId();
 
     if (selfCollect)
     {
@@ -221,7 +217,14 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 inline std::int32_t LinuxStackFramesCollector::CollectStack(void* ctx)
 {
     auto buffer = Data();
-    auto count = _pUnwinder->Unwind(ctx, reinterpret_cast<std::uintptr_t*>(buffer.data()), buffer.size());
+    std::uintptr_t stackBase = 0;
+    std::uintptr_t stackEnd = 0;
+    auto* threadInfo = _pCurrentCollectionThreadInfo;
+    if (threadInfo)
+    {
+        std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
+    }
+    auto count = _pUnwinder->Unwind(ctx, reinterpret_cast<std::uintptr_t*>(buffer.data()), buffer.size(), stackBase, stackEnd, _tracer);
 
     if (count == 0)
     {
