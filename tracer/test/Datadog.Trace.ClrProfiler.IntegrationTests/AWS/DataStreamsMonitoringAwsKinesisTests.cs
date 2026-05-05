@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
@@ -27,11 +28,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.AwsKinesis
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
             SpanKinds.Producer => span.IsAwsKinesisOutbound(),
@@ -39,9 +35,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         };
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsDsmMetrics(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsDsmMetrics(
+            [PackageVersionData(nameof(PackageVersions.AwsKinesis))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");

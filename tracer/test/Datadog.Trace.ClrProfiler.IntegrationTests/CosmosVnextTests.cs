@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -30,18 +31,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.CosmosDbVnext
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCosmosDb(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         // vnext emulator only supports queries on items
-        public async Task SubmitTracesQuery(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTracesQuery(
+            [PackageVersionData(nameof(PackageVersions.CosmosDbVnext))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             var expectedSpanCount = 4;
 
@@ -70,9 +68,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitTracesCRUD(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTracesCRUD(
+            [PackageVersionData(nameof(PackageVersions.CosmosDbVnext))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             var expectedSpanCount = 9;
 
