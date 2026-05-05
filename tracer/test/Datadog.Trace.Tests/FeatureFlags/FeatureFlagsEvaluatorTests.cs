@@ -130,7 +130,7 @@ public partial class FeatureFlagsEvaluatorTests
         var ctx = new EvaluationContext("user-123");
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
         Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("on", result.Variant);
 
         var noTargettingKeyCtx = new EvaluationContext(string.Empty); // no targetingKey
@@ -269,7 +269,7 @@ public partial class FeatureFlagsEvaluatorTests
     // ---------------------------------------------------------------------
 
     [Fact]
-    public void EvaluateSimpleStringFlagReturnsTargetingMatch()
+    public void EvaluateSimpleStringFlagReturnsSplit()
     {
         var flags = new Dictionary<string, Flag>
         {
@@ -282,7 +282,7 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("test-value", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("on", result.Variant);
     }
 
@@ -354,7 +354,7 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("tracked-value", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Static, result.Reason);
         Assert.Equal("tracked", result.Variant);
 
         // DoLog=true -> one exposure event
@@ -384,7 +384,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Static, result.Reason);
         Assert.Equal("time-limited", result.Variant);
     }
 
@@ -426,7 +426,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Static, result.Reason);
         Assert.Equal("time-limited", result.Variant);
     }
 

@@ -73,8 +73,8 @@
   <ItemGroup>
     <None Remove="Telemetry\config_norm_rules.json" />
     <None Remove="Telemetry\config_prefix_block_list.json" />
-    <EmbeddedResource Include="FeatureFlags\resources\config\flags-v1.json" />
-    <EmbeddedResource Include="FeatureFlags\resources\data\*.json" />
+    <None Include="FeatureFlags\ffe-system-test-data\ufc-config.json" CopyToOutputDirectory="PreserveNewest" Link="FeatureFlags\ffe-system-test-data\ufc-config.json" />
+    <None Include="FeatureFlags\ffe-system-test-data\evaluation-cases\*.json" CopyToOutputDirectory="PreserveNewest" LinkBase="FeatureFlags\ffe-system-test-data\evaluation-cases" />
     <EmbeddedResource Include="Telemetry\config_norm_rules.json" />
     <EmbeddedResource Include="Telemetry\config_prefix_block_list.json" />
     <None Remove="Telemetry\telemetry_*.json" />
