@@ -2,10 +2,10 @@
   <PropertyGroup>
     <IsOsxArm64 Condition="$([MSBuild]::IsOsPlatform('OSX')) And $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == Arm64">true</IsOsxArm64>
 
-    <!-- NETSDK1201: behavior-change warning that fires when a RuntimeIdentifier is supplied (from the
-         CI build invocation) without an explicit SelfContained value on net8+ TFMs. The CI matrix sets
-         SelfContained explicitly when it needs self-contained output, so the warning is cosmetic here. -->
-    <NoWarn>$(NoWarn);NETSDK1201</NoWarn>
+    <!-- Default to framework-dependent so net8+ doesn't emit NETSDK1201 when a RuntimeIdentifier is
+         supplied without an explicit SelfContained value. CI jobs that need self-contained output
+         override with -p:SelfContained=true. -->
+    <SelfContained>false</SelfContained>
   </PropertyGroup>
   
   <PropertyGroup>
