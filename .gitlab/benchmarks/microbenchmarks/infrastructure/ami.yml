@@ -10,10 +10,12 @@ init_environment:
 
 source_ami:
   # From https://github.com/DataDog/benchmarking-platform-tools/tree/main/bp-infra/src/provisions/windows/apm-windows-tweaked-metal.yaml
-  ami_id_ssm_parameter: "/windows-benchmarking/apm-windows-tweaked-metal-ami-id"
+  # TODO: revert to apm-windows-tweaked-metal-ami-id after testing race condition fix
+  ami_id_ssm_parameter: "/windows-benchmarking/apm-windows-tweaked-metal-ami-id-test"
 
 create_ami:
-  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id"
+  # TODO: revert to dd-trace-dotnet-microbenchmarks-ami-id after testing race condition fix
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id-test"
 
 tags:
   Name: *provision_name

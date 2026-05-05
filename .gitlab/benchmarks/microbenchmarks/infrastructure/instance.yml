@@ -17,7 +17,8 @@ init_environment:
   BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
 
 source_ami:
-  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id"
+  # TODO: revert to dd-trace-dotnet-microbenchmarks-ami-id after testing race condition fix
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id-test"
 
 tags:
   Name: *provision_name
