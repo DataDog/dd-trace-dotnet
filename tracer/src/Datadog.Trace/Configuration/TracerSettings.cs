@@ -225,7 +225,6 @@ namespace Datadog.Trace.Configuration
                 RuntimeMetricsDiagnosticsMetricsApiEnabled = false;
             }
 #endif
-
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -703,6 +702,21 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
+#if NET6_0_OR_GREATER
+            if (OpenTelemetryMeterNames.Count > 0)
+            {
+                OpenTelemetryMeterNames.Add("System.Runtime");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Hosting");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Server.Kestrel");
+            }
+
+            // OTLP runtime metrics: enabled when runtime metrics are on AND either
+            // DD_METRICS_OTEL_ENABLED=true or OTEL_METRICS_EXPORTER=otlp is explicitly set.
+            // When active, OTLP takes precedence over DogStatsD for runtime metrics.
+            var otelExporterSetToOtlp = otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true, Result: true };
+            OtlpRuntimeMetricsEnabled = RuntimeMetricsEnabled && (OpenTelemetryMetricsEnabled || otelExporterSetToOtlp);
+#endif
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -1151,6 +1165,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
         internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether runtime metrics should be exported via OTLP.
+        /// True when runtime metrics are enabled AND (DD_METRICS_OTEL_ENABLED=true OR OTEL_METRICS_EXPORTER=otlp).
+        /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
+        /// </summary>
+        internal bool OtlpRuntimeMetricsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline

@@ -23,7 +23,7 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
     private double _runningDoubleValue;
     private double _runningMin = double.PositiveInfinity;
     private double _runningMax = double.NegativeInfinity;
-    private bool _hasMeasurements;
+    private int _hasMeasurements;
     private double _lastObservedCumulative = double.NaN;
 
     public string InstrumentName { get; } = instrumentName;
@@ -81,34 +81,30 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
         lock (_histogramLock)
         {
             _runningDoubleValue += value;
-            _hasMeasurements = true;
         }
+
+        Volatile.Write(ref _hasMeasurements, 1);
     }
 
     internal void UpdateObservableCounter(double currentValue)
     {
         lock (_histogramLock)
         {
-            if (double.IsNaN(_lastObservedCumulative))
+            if (!double.IsNaN(_lastObservedCumulative) && currentValue == _lastObservedCumulative)
             {
-                _hasMeasurements = true;
-            }
-            else if (currentValue != _lastObservedCumulative)
-            {
-                _hasMeasurements = true;
+                return;
             }
 
             _runningDoubleValue = currentValue;
         }
+
+        Volatile.Write(ref _hasMeasurements, 1);
     }
 
     internal void UpdateGauge(double value)
     {
         Interlocked.Exchange(ref _runningDoubleValue, value);
-        lock (_histogramLock)
-        {
-            _hasMeasurements = true;
-        }
+        Volatile.Write(ref _hasMeasurements, 1);
     }
 
     internal void UpdateHistogram(double value)
@@ -126,11 +122,11 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
             _runningMin = Math.Min(_runningMin, value);
             _runningMax = Math.Max(_runningMax, value);
-            _hasMeasurements = true;
+            Volatile.Write(ref _hasMeasurements, 1);
         }
     }
 
-    public bool HasDataToExport() => _hasMeasurements;
+    public bool HasDataToExport() => Volatile.Read(ref _hasMeasurements) != 0;
 
     private int FindBucketIndex(double value)
     {
@@ -164,6 +160,15 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
             {
                 var previousCumulative = double.IsNaN(_lastObservedCumulative) ? 0 : _lastObservedCumulative;
                 var delta = _runningDoubleValue - previousCumulative;
+
+                // OTel spec: for monotonic counters (ObservableCounter), a negative delta
+                // indicates a counter reset (e.g. process restart). Report currentValue
+                // as the delta, as if the previous cumulative was 0.
+                // ObservableUpDownCounter is non-monotonic so negative deltas are expected.
+                if (delta < 0 && InstrumentType is InstrumentType.ObservableCounter)
+                {
+                    delta = _runningDoubleValue;
+                }
 
                 sumForSnapshot = AggregationTemporality == Metrics.AggregationTemporality.Delta
                     ? delta
@@ -209,7 +214,7 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 StartTime = endTime;
             }
 
-            _hasMeasurements = false;
+            Volatile.Write(ref _hasMeasurements, 0);
 
             return snapshot;
         }
