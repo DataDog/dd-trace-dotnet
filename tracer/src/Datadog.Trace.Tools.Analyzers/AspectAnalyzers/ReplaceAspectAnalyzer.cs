@@ -25,7 +25,6 @@ public class ReplaceAspectAnalyzer : DiagnosticAnalyzer
     /// </summary>
     public const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
 
-#pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
     private static readonly DiagnosticDescriptor MissingTryCatchRule = new(
         Diagnostics.ReplaceAspectDiagnosticId,
         title: "Aspect is in incorrect format",
@@ -34,7 +33,6 @@ public class ReplaceAspectAnalyzer : DiagnosticAnalyzer
         defaultSeverity: Severity,
         isEnabledByDefault: true,
         description: "[AspectCtorReplace] and [AspectMethodReplace] Aspects should guarantee safety if possible. Please execute the target method first, then wrap the remainder of the aspect in a try-catch block, and finally return the variable.");
-#pragma warning restore RS2008
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(MissingTryCatchRule);
