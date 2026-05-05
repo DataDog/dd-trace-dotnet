@@ -86,7 +86,7 @@ internal static class FeatureFlagsSdk
             evaluation.FlagKey,
             (T)value,
             ToErrorType(evaluation.Reason, evaluation.Error),
-            evaluation.Reason.ToString(),
+            ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata));
@@ -108,6 +108,21 @@ internal static class FeatureFlagsSdk
             _ => ErrorType.None,
         };
     }
+
+    // Converts EvaluationReason enum to lower_snake_case string for OpenFeature Reason field.
+    // Uses cached strings to avoid allocation.
+    private static string ReasonToLowerSnakeCase(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
+    {
+        Datadog.Trace.FeatureFlags.EvaluationReason.Static => "static",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Default => "default",
+        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "targeting_match",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Split => "split",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "disabled",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => "unknown",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
+        _ => "unknown"
+    };
 
     private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
     {

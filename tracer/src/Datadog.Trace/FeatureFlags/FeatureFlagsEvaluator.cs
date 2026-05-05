@@ -24,7 +24,7 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsEvaluator
     {
-        internal const string MetadataAllocationKey = "dd_allocationKey";
+        internal const string MetadataAllocationKey = "__dd_allocation_key";
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
@@ -117,9 +117,11 @@ namespace Datadog.Trace.FeatureFlags
                         continue;
                     }
 
-                    if (allocation.Rules is { Count: > 0 } allocationRules)
+                    // Track whether this allocation has targeting rules
+                    var hadRules = allocation.Rules is { Count: > 0 };
+                    if (hadRules)
                     {
-                        if (!EvaluateRules(allocationRules, context))
+                        if (!EvaluateRules(allocation.Rules!, context))
                         {
                             continue;
                         }
@@ -135,9 +137,10 @@ namespace Datadog.Trace.FeatureFlags
                             }
 
                             var allShardsMatch = true;
-                            if (split.Shards is { Count: > 0 } splitShards)
+                            var hadShards = split.Shards is { Count: > 0 };
+                            if (hadShards)
                             {
-                                foreach (var shard in splitShards)
+                                foreach (var shard in split.Shards!)
                                 {
                                     if (!MatchesShard(shard, targetingKey))
                                     {
@@ -149,7 +152,15 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, now, context);
+                                // Determine reason based on how the flag was resolved:
+                                // - TargetingMatch: Allocation had targeting rules that matched
+                                // - Split: No rules, but resolved via percentage split (shards)
+                                // - Static: No rules, no shards - simple static value
+                                var reason = hadRules ? EvaluationReason.TargetingMatch
+                                           : hadShards ? EvaluationReason.Split
+                                           : EvaluationReason.Static;
+
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, reason, now, context);
                             }
                         }
                     }
@@ -616,6 +627,7 @@ namespace Datadog.Trace.FeatureFlags
             Flag flag,
             string variationKey,
             Allocation allocation,
+            EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context)
         {
@@ -643,7 +655,7 @@ namespace Datadog.Trace.FeatureFlags
             var evaluation = new Evaluation(
                 flagKey,
                 mappedValue,
-                EvaluationReason.TargetingMatch,
+                reason,
                 variant: variant.Key,
                 metadata: metadata);
 

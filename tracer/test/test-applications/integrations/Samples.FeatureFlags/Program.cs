@@ -25,7 +25,7 @@ class Program
             return;
         }
 
-        if (ev is { Error: "No config loaded" })
+        if (ev is { Error: "PROVIDER_NOT_READY" })
         {
             int attempts = 180;
             while (configUpdates == 0)
