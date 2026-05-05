@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
 using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
@@ -514,7 +515,7 @@ public sealed class StringAspects
 
     private static string ConcatAndMaterialize<T>(IEnumerable<T> values, out IReadOnlyCollection<T> materializedValues)
     {
-        materializedValues = Materialize(values);
+        materializedValues = values.Materialize();
         return string.Concat(materializedValues);
     }
 
@@ -845,7 +846,7 @@ public sealed class StringAspects
 #if NETCOREAPP
     private static string JoinAndMaterialize<T>(char separator, IEnumerable<T> values, out IReadOnlyCollection<T> materializedValues)
     {
-        materializedValues = Materialize(values);
+        materializedValues = values.Materialize();
         return string.Join(separator, materializedValues);
     }
 
@@ -853,18 +854,8 @@ public sealed class StringAspects
 
     private static string JoinAndMaterialize<T>(string separator, IEnumerable<T> values, out IReadOnlyCollection<T> materializedValues)
     {
-        materializedValues = Materialize(values);
+        materializedValues = values.Materialize();
         return string.Join(separator, materializedValues);
-    }
-
-    private static IReadOnlyCollection<T> Materialize<T>(IEnumerable<T> values)
-    {
-        if (values is null)
-        {
-            return null;
-        }
-
-        return values as IReadOnlyCollection<T> ?? values.ToList();
     }
 
 #if NET6_0_OR_GREATER

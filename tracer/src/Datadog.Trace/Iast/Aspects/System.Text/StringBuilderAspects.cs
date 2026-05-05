@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
 
@@ -1269,26 +1270,16 @@ public sealed class StringBuilderAspects
 
     private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, char separator, IEnumerable<T>? values, out IReadOnlyCollection<T>? materializedValues)
     {
-        materializedValues = Materialize(values);
-        // Intentionally throw null ref exception if customer passes in null
+        materializedValues = values.Materialize();
+        // Intentionally throw null ref / argument null exception if customer passes in null
         return target!.AppendJoin(separator, materializedValues!);
     }
 
     private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, string separator, IEnumerable<T>? values, out IReadOnlyCollection<T>? materializedValues)
     {
-        materializedValues = Materialize(values);
-        // Intentionally throw null ref exception if customer passes in null
+        materializedValues = values.Materialize();
+        // Intentionally throw null ref / argument null exception if customer passes in null
         return target!.AppendJoin(separator, materializedValues!);
-    }
-
-    private static IReadOnlyCollection<T>? Materialize<T>(IEnumerable<T>? values)
-    {
-        if (values is null)
-        {
-            return null;
-        }
-
-        return values as IReadOnlyCollection<T> ?? values.ToList();
     }
 
 #endif
