@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using System.Linq;
-using System.Threading.Tasks;
 using dnlib.DotNet;
 
 namespace Datadog.AutoInstrumentation.Generator.Core;
@@ -71,6 +69,21 @@ public class GenerationConfiguration
     public bool DucktypeAsyncReturnValueDuckChaining { get; set; }
 
     /// <summary>
+    /// Returns true if the given return type full name is an async return type
+    /// that CallTarget instruments via OnAsyncMethodEnd: Task, Task&lt;T&gt;, ValueTask,
+    /// or ValueTask&lt;T&gt;. Other types under System.Threading.Tasks (TaskScheduler,
+    /// TaskCompletionSource, TaskFactory, etc.) are not async return shapes.
+    /// dnlib formats generic full names as `System.Threading.Tasks.Task`1&lt;T&gt;`.
+    /// </summary>
+    public static bool IsAsyncReturnType(string returnTypeFullName)
+    {
+        return returnTypeFullName == "System.Threading.Tasks.Task"
+            || returnTypeFullName == "System.Threading.Tasks.ValueTask"
+            || returnTypeFullName.StartsWith("System.Threading.Tasks.Task`1<", StringComparison.Ordinal)
+            || returnTypeFullName.StartsWith("System.Threading.Tasks.ValueTask`1<", StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Creates a configuration with smart defaults based on the method being instrumented.
     /// Mirrors the GUI auto-detection logic from MainViewModel.Configuration.cs.
     /// </summary>
@@ -78,8 +91,7 @@ public class GenerationConfiguration
     {
         var config = new GenerationConfiguration();
 
-        var isAsync = methodDef.ReturnType.FullName.StartsWith(typeof(Task).FullName!, StringComparison.Ordinal) ||
-                      methodDef.ReturnType.FullName.StartsWith(typeof(ValueTask).FullName!, StringComparison.Ordinal);
+        var isAsync = IsAsyncReturnType(methodDef.ReturnType.FullName);
 
         if (isAsync)
         {

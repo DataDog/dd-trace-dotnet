@@ -89,6 +89,22 @@ public class AssemblyBrowser : IDisposable
     }
 
     /// <summary>
+    /// Returns true if the given fully-qualified type name resolves in the assembly.
+    /// </summary>
+    public bool TypeExists(string typeFullName)
+    {
+        foreach (var module in _assemblyDef.Modules)
+        {
+            if (FindType(module, typeFullName) is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Lists all available overloads for a method, useful for disambiguation.
     /// </summary>
     public IReadOnlyList<MethodDef> ListOverloads(string typeFullName, string methodName)
@@ -110,6 +126,55 @@ public class AssemblyBrowser : IDisposable
         }
 
         return typeDef.Methods.Where(m => m.Name == methodName).ToList();
+    }
+
+    /// <summary>
+    /// Lists all non-compiler-generated types in the assembly.
+    /// </summary>
+    public IReadOnlyList<TypeDef> ListTypes()
+    {
+        var result = new List<TypeDef>();
+        foreach (var module in _assemblyDef.Modules)
+        {
+            foreach (var type in module.GetTypes())
+            {
+                if (IsCompilerGenerated(type) || type.Name == "<Module>")
+                {
+                    continue;
+                }
+
+                result.Add(type);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Lists all instrumentable methods on a type (excludes only compiler-generated methods).
+    /// Special-name methods (.ctor, get_/set_ accessors, event accessors, operators) are kept
+    /// because CallTarget integrations target them.
+    /// </summary>
+    public IReadOnlyList<MethodDef> ListMethods(string typeFullName)
+    {
+        TypeDef? typeDef = null;
+        foreach (var module in _assemblyDef.Modules)
+        {
+            typeDef = FindType(module, typeFullName);
+            if (typeDef is not null)
+            {
+                break;
+            }
+        }
+
+        if (typeDef is null)
+        {
+            return Array.Empty<MethodDef>();
+        }
+
+        return typeDef.Methods
+            .Where(m => !IsCompilerGenerated(m))
+            .ToList();
     }
 
     public void Dispose()
@@ -146,6 +211,11 @@ public class AssemblyBrowser : IDisposable
         }
 
         return current;
+    }
+
+    private static bool IsCompilerGenerated(IHasCustomAttribute member)
+    {
+        return member.CustomAttributes.Any(a => a.TypeFullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
     }
 
     private static bool MatchesParameterTypes(MethodDef method, string[] parameterTypes)
