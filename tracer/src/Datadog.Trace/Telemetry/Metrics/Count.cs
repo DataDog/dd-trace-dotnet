@@ -102,7 +102,7 @@ internal enum Count
     [TelemetryMetric<MetricTags.ContextHeaderStyle>("context_header_style.extracted")] ContextHeaderStyleExtracted,
 
     /// <summary>
-    /// The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:baggage_item_count_exceeded`, `truncation_reason:baggage_byte_count_exceeded`)
+    /// The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:baggage_item_count_exceeded`, `truncation_reason:baggage_byte_count_exceeded`, `truncation_reason:baggage_extract_item_exceeded`, `truncation_reason:baggage_extract_byte_exceeded`)
     /// </summary>
     [TelemetryMetric<MetricTags.ContextHeaderTruncationReason>("context_header.truncated")] ContextHeaderTruncated,
 
