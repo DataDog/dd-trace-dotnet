@@ -1269,13 +1269,9 @@ public sealed class StringBuilderAspects
 
     private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, char separator, IEnumerable<T>? values, out T[] materializedValues)
     {
-        if (target is null)
-        {
-            throw new NullReferenceException();
-        }
-
         materializedValues = Materialize(values);
-        return target.AppendJoin(separator, materializedValues);
+        // Intentionally throw null ref exception if customer passes in null
+        return target!.AppendJoin(separator, materializedValues);
     }
 
     private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, string separator, IEnumerable<T>? values, out T[] materializedValues)
