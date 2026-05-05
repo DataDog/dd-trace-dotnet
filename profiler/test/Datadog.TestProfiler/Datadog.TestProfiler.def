@@ -1,0 +1,7 @@
+EXPORTS
+  DllMain PRIVATE
+  DllGetClassObject PRIVATE
+  DllCanUnloadNow PRIVATE
+
+  ValidateManagedCodeCache PRIVATE
+  PrepareForValidation PRIVATE

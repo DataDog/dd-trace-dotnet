@@ -7,6 +7,7 @@ using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -34,12 +35,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             string appAssembly,
             ITestOutputHelper output,
             string commandLine = null,
+            EnvironmentHelper environmentHelper = null,
             bool enableTracer = false,
-            bool enableProfiler = true)
+            bool enableProfiler = true,
+            bool enableTestProfiler = false)
         {
             _appName = appName;
             _framework = framework;
-            Environment = new EnvironmentHelper(framework, enableTracer, enableProfiler);
+            Environment = environmentHelper ?? new EnvironmentHelper(framework, enableTracer, enableProfiler, enableTestProfiler);
             _testBaseOutputDir = Environment.GetTestOutputPath();
             var logPath = Path.Combine(_testBaseOutputDir, "logs");
             // create the log folder now instead of waiting for the profiler to create it

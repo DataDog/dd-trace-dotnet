@@ -167,6 +167,9 @@
     <ClInclude Include="FrameStore.h">
       <Filter>SymbolResolution</Filter>
     </ClInclude>
+    <ClInclude Include="ManagedCodeCache.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
     <ClInclude Include="IAppDomainStore.h">
       <Filter>SymbolResolution</Filter>
     </ClInclude>
@@ -573,6 +576,9 @@
       <Filter>Walltime</Filter>
     </ClCompile>
     <ClCompile Include="FrameStore.cpp">
+      <Filter>SymbolResolution</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedCodeCache.cpp">
       <Filter>SymbolResolution</Filter>
     </ClCompile>
     <ClCompile Include="AppDomainStore.cpp">

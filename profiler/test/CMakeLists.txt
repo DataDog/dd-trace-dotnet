@@ -6,6 +6,7 @@ endif()
 
 add_subdirectory(Datadog.Profiler.Native.Tests)
 add_subdirectory(Datadog.Linux.ApiWrapper.Tests)
+add_subdirectory(Datadog.TestProfiler)
 
 add_custom_target(profiler-native-tests)
 add_dependencies(profiler-native-tests Datadog.Profiler.Native.Tests)
