@@ -788,11 +788,10 @@ partial class Build
 
     Target CompileProfilerWithTsanLinux => _ => _
         .Unlisted()
-        // TODO: re-enable on arm64 once we have CI hosts whose kernel/hardware
-        // exposes the 48-bit VMA that TSAN's shadow memory mapping requires.
-        // Many AWS Graviton / Ampere arm64 instances still default to 39- or
-        // 42-bit VMA, which trips TSAN's initializer.
-        // Tracking: https://github.com/DataDog/dd-trace-dotnet/issues/TBD (replace with real issue id).
+        // TODO: re-enable on arm64 once CI images/kernels expose enough user virtual
+        // address space for TSAN's aarch64 shadow-memory layout (often described as
+        // needing ~48-bit VMA; narrow 39- or 42-bit VA is common on arm64 cloud VMs
+        // regardless of CPU vendor—e.g. Graviton, Ampere, Azure Cobalt).
         .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Before(PublishProfiler)
         .Executes(() =>
@@ -808,8 +807,7 @@ partial class Build
 
     Target RunUnitTestsWithTsanLinux => _ => _
         .Unlisted()
-        // See CompileProfilerWithTsanLinux above for the arm64 VMA limitation
-        // and the tracking-issue link.
+        // Same arm64 VMA / TSAN limitation as CompileProfilerWithTsanLinux (see comment there).
         .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Executes(() =>
         {
