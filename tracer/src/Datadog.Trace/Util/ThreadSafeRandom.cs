@@ -7,6 +7,8 @@
 
 using System;
 
+#pragma warning disable CA5394 // Intentional: non-security randomness for sampling and ID generation
+
 namespace Datadog.Trace.Util;
 
 internal static class ThreadSafeRandom

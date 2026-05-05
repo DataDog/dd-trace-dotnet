@@ -8,6 +8,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CA5394 // Intentional: non-security randomness for trace/span ID generation
+
 namespace Datadog.Trace.Util;
 
 /// <summary>
