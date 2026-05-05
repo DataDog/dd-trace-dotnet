@@ -861,7 +861,7 @@ public sealed class StringAspects
     {
         if (values is null)
         {
-            throw new ArgumentNullException(nameof(values));
+            return null;
         }
 
         return values as T[] ?? values.ToArray();
