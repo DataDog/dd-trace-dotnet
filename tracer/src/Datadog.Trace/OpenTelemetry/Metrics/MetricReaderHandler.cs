@@ -54,6 +54,11 @@ internal sealed class MetricReaderHandler
             shouldEnable = !meterName.StartsWith("System.", StringComparison.Ordinal) && !meterName.StartsWith("Microsoft.", StringComparison.Ordinal);
         }
 
+        if (!shouldEnable && _settings.OtlpRuntimeMetricsEnabled)
+        {
+            shouldEnable = meterName is "System.Runtime";
+        }
+
         if (!shouldEnable)
         {
             return;
