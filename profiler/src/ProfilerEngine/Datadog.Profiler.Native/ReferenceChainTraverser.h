@@ -48,6 +48,7 @@ public:
     void LogStats() const;
 
     size_t GetVisitedHighWatermark() const { return _visited.GetBucketCount(); }
+    size_t GetVisitedPeakEntryCount() const { return _visited.GetPeakEntryCount(); }
 
 private:
     // Iterative object graph traversal using an explicit stack.

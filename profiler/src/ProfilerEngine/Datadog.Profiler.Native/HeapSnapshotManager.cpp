@@ -667,11 +667,13 @@ void HeapSnapshotManager::OnEndGCDump()
         _pReferenceChainTraverser->LogStats();
 
         size_t hwm = _pReferenceChainTraverser->GetVisitedHighWatermark();
+        size_t peakEntries = _pReferenceChainTraverser->GetVisitedPeakEntryCount();
         if (hwm > _visitedSetHighWatermark)
         {
             _visitedSetHighWatermark = hwm;
         }
-        Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark, " buckets");
+        Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark,
+                   " buckets (peak entries this dump: ", peakEntries, ")");
     }
 
     if (_pClassLayoutCache)

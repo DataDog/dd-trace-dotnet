@@ -126,57 +126,51 @@ TEST(VisitedObjectSetTest, ClearRemovesAll)
     ASSERT_FALSE(visited.IsVisited(0x2000));
 }
 
-TEST(VisitedObjectSetTest, StoreInfoAndGetInfoRoundTrip)
+TEST(VisitedObjectSetTest, StoreClassIDAndGetClassIDRoundTrip)
 {
     VisitedObjectSet visited;
 
     visited.MarkIfAbsent(0x1000);
-    visited.StoreInfo(0x1000, 42, 256);
+    visited.StoreClassID(0x1000, 42);
 
     ClassID classID = 0;
-    SIZE_T size = 0;
-    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
     ASSERT_EQ(classID, 42);
-    ASSERT_EQ(size, 256);
 }
 
-TEST(VisitedObjectSetTest, GetInfoReturnsDefaultBeforeStoreInfo)
+TEST(VisitedObjectSetTest, GetClassIDReturnsDefaultBeforeStore)
 {
     VisitedObjectSet visited;
 
     visited.MarkIfAbsent(0x1000);
 
     ClassID classID = 99;
-    SIZE_T size = 99;
-    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
     ASSERT_EQ(classID, 0);
-    ASSERT_EQ(size, 0);
 }
 
-TEST(VisitedObjectSetTest, GetInfoReturnsFalseForUnknownAddress)
+TEST(VisitedObjectSetTest, GetClassIDReturnsFalseForUnknownAddress)
 {
     VisitedObjectSet visited;
 
     ClassID classID = 99;
-    SIZE_T size = 99;
-    ASSERT_FALSE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_FALSE(visited.GetClassID(0x1000, classID));
 }
 
-TEST(VisitedObjectSetTest, StoreInfoOnUnknownAddressIsNoOp)
+TEST(VisitedObjectSetTest, StoreClassIDOnUnknownAddressIsNoOp)
 {
     VisitedObjectSet visited;
 
-    visited.StoreInfo(0x1000, 42, 256);
+    visited.StoreClassID(0x1000, 42);
 
     ASSERT_FALSE(visited.IsVisited(0x1000));
     ASSERT_EQ(visited.Size(), 0);
 
     ClassID classID = 0;
-    SIZE_T size = 0;
-    ASSERT_FALSE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_FALSE(visited.GetClassID(0x1000, classID));
 }
 
-TEST(VisitedObjectSetTest, GrowPreservesAllEntriesAndInfo)
+TEST(VisitedObjectSetTest, GrowPreservesAllEntriesAndClassID)
 {
     VisitedObjectSet visited(16);
 
@@ -185,7 +179,7 @@ TEST(VisitedObjectSetTest, GrowPreservesAllEntriesAndInfo)
     {
         uintptr_t addr = i * 0x100;
         visited.MarkIfAbsent(addr);
-        visited.StoreInfo(addr, static_cast<ClassID>(i), static_cast<SIZE_T>(i * 64));
+        visited.StoreClassID(addr, static_cast<ClassID>(i));
     }
 
     ASSERT_EQ(visited.Size(), count);
@@ -196,19 +190,17 @@ TEST(VisitedObjectSetTest, GrowPreservesAllEntriesAndInfo)
         ASSERT_TRUE(visited.IsVisited(addr));
 
         ClassID classID = 0;
-        SIZE_T size = 0;
-        ASSERT_TRUE(visited.GetInfo(addr, classID, size));
+        ASSERT_TRUE(visited.GetClassID(addr, classID));
         ASSERT_EQ(classID, static_cast<ClassID>(i));
-        ASSERT_EQ(size, static_cast<SIZE_T>(i * 64));
     }
 }
 
-TEST(VisitedObjectSetTest, ClearResetsStoredInfo)
+TEST(VisitedObjectSetTest, ClearResetsStoredClassID)
 {
     VisitedObjectSet visited;
 
     visited.MarkIfAbsent(0x1000);
-    visited.StoreInfo(0x1000, 42, 256);
+    visited.StoreClassID(0x1000, 42);
 
     visited.Clear();
 
@@ -217,24 +209,20 @@ TEST(VisitedObjectSetTest, ClearResetsStoredInfo)
     visited.MarkIfAbsent(0x1000);
 
     ClassID classID = 99;
-    SIZE_T size = 99;
-    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
     ASSERT_EQ(classID, 0);
-    ASSERT_EQ(size, 0);
 }
 
-TEST(VisitedObjectSetTest, StoreInfoAfterMarkVisited)
+TEST(VisitedObjectSetTest, StoreClassIDAfterMarkVisited)
 {
     VisitedObjectSet visited;
 
     visited.MarkVisited(0x1000);
-    visited.StoreInfo(0x1000, 77, 512);
+    visited.StoreClassID(0x1000, 77);
 
     ClassID classID = 0;
-    SIZE_T size = 0;
-    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
     ASSERT_EQ(classID, 77);
-    ASSERT_EQ(size, 512);
 }
 
 TEST(VisitedObjectSetTest, TryInsertNewAddress)
@@ -247,7 +235,6 @@ TEST(VisitedObjectSetTest, TryInsertNewAddress)
     ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
     ASSERT_NE(slot, nullptr);
     ASSERT_EQ(slot->classID, 0);
-    ASSERT_EQ(slot->size, 0);
     ASSERT_EQ(visited.Size(), 1);
 }
 
@@ -258,7 +245,6 @@ TEST(VisitedObjectSetTest, TryInsertExistingAddress)
     VisitedObjectSet::VisitedEntry* slot1 = nullptr;
     visited.TryInsert(0x1000, slot1);
     slot1->classID = 42;
-    slot1->size = 256;
 
     VisitedObjectSet::VisitedEntry* slot2 = nullptr;
     auto result = visited.TryInsert(0x1000, slot2);
@@ -266,7 +252,6 @@ TEST(VisitedObjectSetTest, TryInsertExistingAddress)
     ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
     ASSERT_EQ(slot1, slot2);
     ASSERT_EQ(slot2->classID, 42);
-    ASSERT_EQ(slot2->size, 256);
     ASSERT_EQ(visited.Size(), 1);
 }
 
@@ -277,45 +262,38 @@ TEST(VisitedObjectSetTest, TryInsertWriteSlotThenRevisit)
     VisitedObjectSet::VisitedEntry* slot = nullptr;
     visited.TryInsert(0x2000, slot);
     slot->classID = 99;
-    slot->size = 512;
 
     ClassID classID = 0;
-    SIZE_T size = 0;
-    ASSERT_TRUE(visited.GetInfo(0x2000, classID, size));
+    ASSERT_TRUE(visited.GetClassID(0x2000, classID));
     ASSERT_EQ(classID, 99);
-    ASSERT_EQ(size, 512);
 }
 
 TEST(VisitedObjectSetTest, MarkVisitedAndStoreNewAddress)
 {
     VisitedObjectSet visited;
 
-    visited.MarkVisitedAndStore(0x1000, 42, 256);
+    visited.MarkVisitedAndStore(0x1000, 42);
 
     ASSERT_TRUE(visited.IsVisited(0x1000));
     ASSERT_EQ(visited.Size(), 1);
 
     ClassID classID = 0;
-    SIZE_T size = 0;
-    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
     ASSERT_EQ(classID, 42);
-    ASSERT_EQ(size, 256);
 }
 
 TEST(VisitedObjectSetTest, MarkVisitedAndStoreOverwritesExisting)
 {
     VisitedObjectSet visited;
 
-    visited.MarkVisitedAndStore(0x1000, 10, 100);
-    visited.MarkVisitedAndStore(0x1000, 20, 200);
+    visited.MarkVisitedAndStore(0x1000, 10);
+    visited.MarkVisitedAndStore(0x1000, 20);
 
     ASSERT_EQ(visited.Size(), 1);
 
     ClassID classID = 0;
-    SIZE_T size = 0;
-    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
     ASSERT_EQ(classID, 20);
-    ASSERT_EQ(size, 200);
 }
 
 TEST(VisitedObjectSetTest, TryInsertSurvivesGrow)
@@ -330,7 +308,6 @@ TEST(VisitedObjectSetTest, TryInsertSurvivesGrow)
         auto result = visited.TryInsert(addr, slot);
         ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
         slot->classID = static_cast<ClassID>(i);
-        slot->size = static_cast<SIZE_T>(i * 8);
     }
 
     ASSERT_EQ(visited.Size(), count);
@@ -342,7 +319,6 @@ TEST(VisitedObjectSetTest, TryInsertSurvivesGrow)
         auto result = visited.TryInsert(addr, slot);
         ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
         ASSERT_EQ(slot->classID, static_cast<ClassID>(i));
-        ASSERT_EQ(slot->size, static_cast<SIZE_T>(i * 8));
     }
 }
 

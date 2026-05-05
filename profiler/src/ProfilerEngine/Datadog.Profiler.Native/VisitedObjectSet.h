@@ -14,13 +14,15 @@
 //
 // Storage is split into two parallel arrays:
 //  - _addresses: address-only (8 bytes/entry, 8 per 64-byte cache line)
-//  - _entries:   metadata (ClassID + size), accessed only after the probe resolves
+//  - _entries:   metadata (ClassID only), accessed only after the probe resolves
 // This layout keeps the hot probe loop compact in cache while metadata is
 // touched only on insert or when reading cached info from a revisited object.
 //
-// Each entry caches the ClassID and object size resolved during the first visit,
-// so that revisits (shared objects referenced by multiple parents) can record
-// type-level edges without redundant ICorProfilerInfo calls.
+// Each entry caches the ClassID resolved during the first visit so that
+// revisits (shared objects referenced by multiple parents) can record
+// type-level edges without redundant GetClassFromObject calls.
+// Object size is re-resolved via GetObjectSize2 on revisit to keep
+// entries compact (8 bytes instead of 16).
 //
 // Clear() is O(entries) not O(capacity): a side vector tracks which bucket
 // indices were written, so only those addresses are zeroed. Metadata is not
@@ -32,14 +34,15 @@ public:
     struct VisitedEntry
     {
         ClassID classID = 0;
-        SIZE_T size = 0;
     };
 
 private:
     std::vector<uintptr_t> _addresses;
     std::vector<VisitedEntry> _entries;
-    std::vector<size_t> _dirtyIndices;
+    std::vector<uint32_t> _dirtyIndices;
     size_t _count = 0;
+    size_t _peakCount = 0;
+    size_t _growCount = 0;
     size_t _mask = 0;
 
     static constexpr size_t DefaultCapacity = 512;
@@ -54,6 +57,7 @@ private:
 
     void Grow()
     {
+        _growCount++;
         size_t newCapacity = _addresses.size() * 2;
         std::vector<uintptr_t> newAddresses(newCapacity, 0);
         std::vector<VisitedEntry> newEntries(newCapacity);
@@ -76,7 +80,7 @@ private:
             }
             newAddresses[idx] = _addresses[i];
             newEntries[idx] = _entries[i];
-            _dirtyIndices.push_back(idx);
+            _dirtyIndices.push_back(static_cast<uint32_t>(idx));
         }
 
         _addresses = std::move(newAddresses);
@@ -127,7 +131,7 @@ public:
 
     // Single-probe insert: finds or creates the bucket for `address`.
     // On return, `outEntry` points to the metadata slot (valid until next mutation).
-    // Callers write classID/size directly into the returned entry.
+    // Callers write classID directly into the returned entry.
     InsertResult TryInsert(uintptr_t address, VisitedEntry*& outEntry)
     {
         if (NeedsGrow())
@@ -147,7 +151,7 @@ public:
             {
                 _addresses[idx] = address;
                 _entries[idx] = {};
-                _dirtyIndices.push_back(idx);
+                _dirtyIndices.push_back(static_cast<uint32_t>(idx));
                 _count++;
                 outEntry = &_entries[idx];
                 return InsertResult::Inserted;
@@ -157,9 +161,9 @@ public:
     }
 
     // Single-probe insert-and-store: inserts `address` if absent and writes
-    // classID + size in the same probe. Used for root seeding where the
-    // caller already knows both values.
-    void MarkVisitedAndStore(uintptr_t address, ClassID classID, SIZE_T size)
+    // classID in the same probe. Used for root seeding where the
+    // caller already knows the classID.
+    void MarkVisitedAndStore(uintptr_t address, ClassID classID)
     {
         if (NeedsGrow())
         {
@@ -173,15 +177,13 @@ public:
             {
                 _addresses[idx] = address;
                 _entries[idx].classID = classID;
-                _entries[idx].size = size;
-                _dirtyIndices.push_back(idx);
+                _dirtyIndices.push_back(static_cast<uint32_t>(idx));
                 _count++;
                 return;
             }
             if (_addresses[idx] == address)
             {
                 _entries[idx].classID = classID;
-                _entries[idx].size = size;
                 return;
             }
             idx = (idx + 1) & _mask;
@@ -201,7 +203,7 @@ public:
         return TryInsert(address, unused) == InsertResult::Inserted;
     }
 
-    void StoreInfo(uintptr_t address, ClassID classID, SIZE_T size)
+    void StoreClassID(uintptr_t address, ClassID classID)
     {
         size_t idx = HashAddress(address) & _mask;
         while (true)
@@ -209,7 +211,6 @@ public:
             if (_addresses[idx] == address)
             {
                 _entries[idx].classID = classID;
-                _entries[idx].size = size;
                 return;
             }
             if (_addresses[idx] == 0)
@@ -220,7 +221,7 @@ public:
         }
     }
 
-    bool GetInfo(uintptr_t address, ClassID& outClassID, SIZE_T& outSize) const
+    bool GetClassID(uintptr_t address, ClassID& outClassID) const
     {
         size_t idx = HashAddress(address) & _mask;
         while (true)
@@ -228,7 +229,6 @@ public:
             if (_addresses[idx] == address)
             {
                 outClassID = _entries[idx].classID;
-                outSize = _entries[idx].size;
                 return true;
             }
             if (_addresses[idx] == 0)
@@ -243,7 +243,11 @@ public:
     // Metadata is not cleared — TryInsert zero-initialises it on insertion.
     void Clear()
     {
-        for (size_t idx : _dirtyIndices)
+        if (_count > _peakCount)
+        {
+            _peakCount = _count;
+        }
+        for (uint32_t idx : _dirtyIndices)
         {
             _addresses[idx] = 0;
         }
@@ -261,11 +265,36 @@ public:
         return sizeof(VisitedObjectSet)
              + _addresses.capacity() * sizeof(uintptr_t)
              + _entries.capacity() * sizeof(VisitedEntry)
-             + _dirtyIndices.capacity() * sizeof(size_t);
+             + _dirtyIndices.capacity() * sizeof(uint32_t);
     }
 
     size_t GetBucketCount() const
     {
         return _addresses.size();
+    }
+
+    size_t GetPeakEntryCount() const
+    {
+        return std::max(_peakCount, _count);
+    }
+
+    size_t GetGrowCount() const
+    {
+        return _growCount;
+    }
+
+    size_t GetAddressesMemorySize() const
+    {
+        return _addresses.capacity() * sizeof(uintptr_t);
+    }
+
+    size_t GetEntriesMemorySize() const
+    {
+        return _entries.capacity() * sizeof(VisitedEntry);
+    }
+
+    size_t GetDirtyIndicesMemorySize() const
+    {
+        return _dirtyIndices.capacity() * sizeof(uint32_t);
     }
 };

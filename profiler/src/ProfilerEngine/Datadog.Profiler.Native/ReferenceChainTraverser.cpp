@@ -66,10 +66,17 @@ void ReferenceChainTraverser::LogStats() const
     Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",
               _rootsProcessed, " roots, ",
               _objectsTraversed, " objects traversed, ",
-              "stack high watermark: ", _traversalStackHighWatermark, ", ",
-              "visited set: ", _visited.Size(), " entries / ",
-              _visited.GetBucketCount(), " buckets (",
-              _visited.GetMemorySize() / 1024, " KB)");
+              "stack high watermark: ", _traversalStackHighWatermark);
+
+    Log::Debug("  VisitedObjectSet: ",
+              _visited.Size(), " current / ",
+              _visited.GetPeakEntryCount(), " peak entries, ",
+              _visited.GetBucketCount(), " buckets, ",
+              _visited.GetGrowCount(), " grows, ",
+              _visited.GetMemorySize() / 1024, " KB total (",
+              "addresses: ", _visited.GetAddressesMemorySize() / 1024, " KB, ",
+              "entries: ", _visited.GetEntriesMemorySize() / 1024, " KB, ",
+              "dirty: ", _visited.GetDirtyIndicesMemorySize() / 1024, " KB)");
 
     for (int i = 0; i < static_cast<int>(RootCategoryCount); i++)
     {
@@ -93,9 +100,9 @@ void ReferenceChainTraverser::TraverseObjectGraph(
 
     // Mark-on-push: objects are marked when discovered (before pushing),
     // not when processed (after popping). Single-probe MarkVisitedAndStore
-    // inserts + writes classID/size in one hash walk; child edges use
-    // TryInsert to combine MarkIfAbsent + StoreInfo/GetInfo into one probe.
-    _visited.MarkVisitedAndStore(objectAddress, rootClassID, rootObjectSize);
+    // inserts + writes classID in one hash walk; child edges use
+    // TryInsert to combine MarkIfAbsent + classID caching into one probe.
+    _visited.MarkVisitedAndStore(objectAddress, rootClassID);
     _traversalStack.push_back({objectAddress, currentNode, depth, rootClassID, rootObjectSize});
 
     while (!_traversalStack.empty())
@@ -154,7 +161,6 @@ void ReferenceChainTraverser::TraverseObjectGraph(
                 }
 
                 slot->classID = targetClassID;
-                slot->size = targetSize;
 
                 TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(targetClassID);
                 childNode->AddInstance(targetSize);
@@ -162,8 +168,10 @@ void ReferenceChainTraverser::TraverseObjectGraph(
             }
             else if (slot->classID != 0)
             {
+                SIZE_T revisitSize = 0;
+                _pCorProfilerInfo->GetObjectSize2(fieldValue, &revisitSize);
                 TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(slot->classID);
-                childNode->AddInstance(slot->size);
+                childNode->AddInstance(revisitSize);
             }
         }
 
@@ -305,7 +313,6 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
             }
 
             slot->classID = elementClassID;
-            slot->size = elementSizeBytes;
 
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(elementClassID);
             childNode->AddInstance(elementSizeBytes);
@@ -313,8 +320,10 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
         }
         else if (slot->classID != 0)
         {
+            SIZE_T revisitSize = 0;
+            _pCorProfilerInfo->GetObjectSize2(elementAddress, &revisitSize);
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
-            childNode->AddInstance(slot->size);
+            childNode->AddInstance(revisitSize);
         }
     }
 }
@@ -365,7 +374,6 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
                 }
 
                 slot->classID = targetClassID;
-                slot->size = targetSize;
 
                 TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
                 childNode->AddInstance(targetSize);
@@ -373,8 +381,10 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
             }
             else if (slot->classID != 0)
             {
+                SIZE_T revisitSize = 0;
+                _pCorProfilerInfo->GetObjectSize2(fieldValue, &revisitSize);
                 TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
-                childNode->AddInstance(slot->size);
+                childNode->AddInstance(revisitSize);
             }
         }
     }
@@ -421,7 +431,6 @@ void ReferenceChainTraverser::EnqueueInlineValueTypeReferences(
             }
 
             slot->classID = targetClassID;
-            slot->size = targetSize;
 
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
             childNode->AddInstance(targetSize);
@@ -429,8 +438,10 @@ void ReferenceChainTraverser::EnqueueInlineValueTypeReferences(
         }
         else if (slot->classID != 0)
         {
+            SIZE_T revisitSize = 0;
+            _pCorProfilerInfo->GetObjectSize2(fieldValue, &revisitSize);
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
-            childNode->AddInstance(slot->size);
+            childNode->AddInstance(revisitSize);
         }
     }
 
