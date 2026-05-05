@@ -376,7 +376,7 @@ namespace Datadog.Trace.FeatureFlags
         [TestingAndPrivateOnly]
         internal static int GetShard(string salt, string? targetingKey, int totalShards)
         {
-            if (StringUtil.IsNullOrEmpty(targetingKey))
+            if (targetingKey is null)
             {
                 throw new MissingTargetingKeyException();
             }
@@ -417,11 +417,6 @@ namespace Datadog.Trace.FeatureFlags
             // Special case "id": if not present, use targeting key
             if (name == "id" && !context.Attributes.ContainsKey(name))
             {
-                if (StringUtil.IsNullOrEmpty(context.TargetingKey))
-                {
-                    throw new MissingTargetingKeyException();
-                }
-
                 return context.TargetingKey;
             }
 
