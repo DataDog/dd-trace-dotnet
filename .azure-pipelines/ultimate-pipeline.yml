@@ -2976,7 +2976,6 @@ stages:
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        retryCountForRunCommand: 3
 
     - template: steps/run-in-docker.yml
       parameters:

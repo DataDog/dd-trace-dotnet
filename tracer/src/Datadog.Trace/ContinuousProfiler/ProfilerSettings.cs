@@ -80,6 +80,7 @@ internal sealed class ProfilerSettings
             if (!arm64ProfilingEnabled)
             {
                 ProfilerState = ProfilerState.Disabled;
+                telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, "false", recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
     }
