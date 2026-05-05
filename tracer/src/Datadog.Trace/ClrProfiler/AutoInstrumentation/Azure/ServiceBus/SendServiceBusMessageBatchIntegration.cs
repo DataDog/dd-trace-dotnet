@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
@@ -15,7 +16,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -35,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class SendServiceBusMessageBatchIntegration
     {
+        private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:servicebus"];
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -50,19 +52,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             Scope? messageScope = null;
 
             var tracer = Tracer.Instance;
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-             && tracer.TracerManager.DataStreamsManager.IsEnabled)
-            {
-                // Adding DSM to the send operation of ServiceBusMessageBatch - Step One:
-                // While we have access to the message object itself, create a mapping from the
-                // message application properties dictionary to the message object itself
-                AzureServiceBusCommon.SetMessage(message.ApplicationProperties, message.Instance);
-            }
 
             // Create TryAdd message spans for batch with links when enabled
             if (tracer.Settings.AzureServiceBusBatchLinksEnabled)
             {
                 messageScope = CreateAddMessageSpan(instance, message);
+            }
+
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (messageScope != null
+                && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+                && dataStreamsManager.IsEnabled
+                && message.ApplicationProperties is IDictionary<string, object> applicationProperties
+                && messageScope.Span is Span span)
+            {
+                var entityPath = instance.ClientDiagnostics.EntityPath;
+                var edgeTags = string.IsNullOrEmpty(entityPath)
+                    ? DefaultProduceEdgeTags
+                    : dataStreamsManager.GetOrCreateEdgeTags(
+                        new ServiceBusEdgeTagCacheKey(entityPath!, IsConsume: false),
+                        static k => ["direction:out", $"topic:{k.EntityPath}", "type:servicebus"]);
+                var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
+                dataStreamsManager.InjectPathwayContextAsBase64String(
+                    span.Context.PathwayContext,
+                    new AzureHeadersCollectionAdapter(applicationProperties));
             }
 
             return new CallTargetState(messageScope);
