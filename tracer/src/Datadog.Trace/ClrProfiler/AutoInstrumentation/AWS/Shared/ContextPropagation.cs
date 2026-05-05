@@ -9,7 +9,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 {
@@ -85,11 +87,64 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             }
         }
 
+        /// <summary>
+        /// Extracts trace context from individual message attributes.
+        /// MassTransit injects trace headers as separate SNS message attributes
+        /// (e.g., x-datadog-trace-id, x-datadog-parent-id).
+        /// </summary>
+        public static PropagationContext ExtractHeadersFromMessage(Tracer tracer, IContainsMessageAttributes? carrier)
+        {
+            if (carrier?.MessageAttributes is null)
+            {
+                return default;
+            }
+
+            try
+            {
+                var headerDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var key in carrier.MessageAttributes.Keys)
+                {
+                    if (key is string keyString)
+                    {
+                        var attributeValue = carrier.MessageAttributes[keyString]?.DuckCast<IMessageAttributeValue>();
+                        if (attributeValue?.StringValue is not null)
+                        {
+                            headerDict[keyString] = attributeValue.StringValue;
+                        }
+                    }
+                }
+
+                var extracted = tracer.TracerManager.SpanContextPropagator
+                                      .Extract(headerDict, default(DictionaryCarrierGetter));
+                return extracted.SpanContext is not null
+                    ? extracted.MergeBaggageInto(Baggage.Current)
+                    : default;
+            }
+            catch
+            {
+                // Ignore extraction errors, will create a new root span
+                return default;
+            }
+        }
+
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
         {
             public void Set(StringBuilder carrier, string key, string value)
             {
                 carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+            }
+        }
+
+        private readonly struct DictionaryCarrierGetter : ICarrierGetter<Dictionary<string, string>>
+        {
+            public IEnumerable<string> Get(Dictionary<string, string> carrier, string key)
+            {
+                if (carrier.TryGetValue(key, out var value))
+                {
+                    return new[] { value };
+                }
+
+                return Array.Empty<string>();
             }
         }
     }

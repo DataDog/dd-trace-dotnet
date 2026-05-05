@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,15 +14,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     internal readonly struct ContextPropagation : ICarrierGetter<IDictionary<string, object>>, ICarrierSetter<IDictionary<string, object>>
     {
+        // RabbitMQ native headers are byte[], but messaging frameworks like MassTransit
+        // may inject string values before they get converted to byte[].
         public IEnumerable<string> Get(IDictionary<string, object> carrier, string key)
-        {
-            if (carrier.TryGetValue(key, out var value) && value is byte[] bytes)
-            {
-                return new[] { Encoding.UTF8.GetString(bytes) };
-            }
-
-            return Enumerable.Empty<string>();
-        }
+            => carrier.TryGetValue(key, out var value)
+                ? value switch
+                {
+                    byte[] bytes => new[] { Encoding.UTF8.GetString(bytes) },
+                    string str => new[] { str },
+                    _ => Enumerable.Empty<string>(),
+                }
+                : Enumerable.Empty<string>();
 
         public void Set(IDictionary<string, object> carrier, string key, string value)
         {

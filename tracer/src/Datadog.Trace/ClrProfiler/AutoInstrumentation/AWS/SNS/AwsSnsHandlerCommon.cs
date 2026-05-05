@@ -25,7 +25,20 @@ internal sealed class AwsSnsHandlerCommon
         var requestProxy = request.DuckCast<IAmazonSNSRequestWithTopicArn>();
 
         var tracer = Tracer.Instance;
-        var scope = AwsSnsCommon.CreateScope(tracer, sendType.OperationName, SpanKinds.Producer, out var tags);
+
+        // If we already have an active scope, prefer that as the parent so we don't reparent
+        // under stale headers when callers reuse the same PublishRequest across publishes.
+        // Only fall back to extracting from message attributes when publish is decoupled from
+        // the original producer scope, e.g. injected by MassTransit before reaching us.
+        ISpanContext? parentContext = null;
+        if (sendType == SendType.SingleMessage && tracer.ActiveScope is null)
+        {
+            var messageAttributesProxy = request.DuckCast<IContainsMessageAttributes>();
+            var extractedContext = ContextPropagation.ExtractHeadersFromMessage(tracer, messageAttributesProxy);
+            parentContext = extractedContext.SpanContext;
+        }
+
+        var scope = AwsSnsCommon.CreateScope(tracer, sendType.OperationName, SpanKinds.Producer, out var tags, parentContext);
 
         var topicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
         if (tags is not null && requestProxy.TopicArn is not null)
