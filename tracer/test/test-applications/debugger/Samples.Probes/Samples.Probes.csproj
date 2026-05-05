@@ -4,7 +4,8 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!-- System.Memory is needed on net4x for Span<T>; on netcoreapp2.1+ it ships with the BCL. -->
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
