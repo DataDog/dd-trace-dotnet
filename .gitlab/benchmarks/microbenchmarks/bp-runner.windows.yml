@@ -88,7 +88,16 @@
 .how_to_run_benchmarks: &how_to_run_benchmarks |
   $ErrorActionPreference = "Stop"
 
-  $env:BENCHMARK_PROJECT = "Benchmarks.Trace"
+  # Skip if ONLY_ON_MASTER is set and not on master
+  if ($env:ONLY_ON_MASTER -eq "true" -and $env:CI_COMMIT_REF_NAME -ne "master") {
+    Write-Output "Skipping benchmarks: ONLY_ON_MASTER is set and branch is $env:CI_COMMIT_REF_NAME"
+    exit 0
+  }
+
+  # Use BENCHMARK_PROJECT from env if set, otherwise default to Benchmarks.Trace
+  if (-not $env:BENCHMARK_PROJECT) {
+    $env:BENCHMARK_PROJECT = "Benchmarks.Trace"
+  }
   $env:BENCHMARK_CATEGORY = "prs"
   if ($env:CI_COMMIT_REF_NAME -eq "master") {
     $env:BENCHMARK_CATEGORY = "master"
@@ -132,9 +141,9 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "0,0xFFFFF"
+        cpus: "0,0xFFC00"
         parallelize:
-          # Stable benchmarks
+          # Stable benchmarks (CPUs 10-19 on NUMA 0)
           items: >-
             *ActivityBenchmark*
             *AppSecBodyBenchmark*
@@ -146,7 +155,7 @@ experiments:
             *RedisBenchmark*
             *SpanBenchmark*
             *TraceAnnotationsBenchmark*
-          cpus_per_item: 2
+          cpus_per_item: 1
 
         env:
           BATCH_PREFIX: "b0"
@@ -160,9 +169,9 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0xFFFFF"
+        cpus: "1,0xFFC00"
         parallelize:
-          # Less stable benchmarks
+          # Less stable benchmarks (CPUs 10-19 on NUMA 1)
           items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
@@ -174,9 +183,58 @@ experiments:
             *Log4netBenchmark*
             *SerilogBenchmark*
             *StringAspectsBenchmark*
-          cpus_per_item: 2
+          cpus_per_item: 1
 
         env:
           BATCH_PREFIX: "b1"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+  - name: batch-2
+    steps:
+      - name: batch-2
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "0,0xE00000"
+        parallelize:
+          # OpenTelemetry InstrumentedApi benchmarks (CPUs 21-23 on NUMA 0)
+          items: >-
+            *ActivityBenchmark*
+            *TelemetrySpanBenchmark*
+            *TracerBenchmark*
+          cpus_per_item: 1
+
+        env:
+          BATCH_PREFIX: "b2"
+          BENCHMARK_PROJECT: "Benchmarks.OpenTelemetry.InstrumentedApi"
+          DD_TRACE_OTEL_ENABLED: "true"
+          DD_INSTRUMENTATION_TELEMETRY_ENABLED: "false"
+          DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED: "true"
+          DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY: "V4"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+  - name: batch-3
+    steps:
+      - name: batch-3
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "1,0xE00000"
+        parallelize:
+          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA 1, master only)
+          items: >-
+            *ActivityBenchmark*
+            *TelemetrySpanBenchmark*
+            *TracerBenchmark*
+          cpus_per_item: 1
+
+        env:
+          BATCH_PREFIX: "b3"
+          BENCHMARK_PROJECT: "Benchmarks.OpenTelemetry.Api"
+          ONLY_ON_MASTER: "true"
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
