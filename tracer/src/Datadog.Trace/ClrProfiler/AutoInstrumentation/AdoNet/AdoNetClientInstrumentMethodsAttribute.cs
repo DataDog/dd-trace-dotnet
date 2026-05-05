@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
             ReturnTypeName = AdoNetConstants.TypeNames.Int32TaskType,
-            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            ParameterTypeNames = [ClrNames.CancellationToken],
             CallTargetType = typeof(CommandExecuteNonQueryAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteNonQueryAsyncAttribute : Attribute
@@ -156,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery,
             ReturnTypeName = ClrNames.Int32,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
             CallTargetType = typeof(CommandExecuteNonQueryWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteNonQueryWithBehaviorAttribute : Attribute
@@ -175,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
-            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            ParameterTypeNames = [ClrNames.CancellationToken],
             CallTargetType = typeof(CommandExecuteReaderWithCancellationAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteReaderWithCancellationAsyncAttribute : Attribute
@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteReaderWithBehaviorAsyncAttribute : Attribute
@@ -195,7 +195,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken],
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
@@ -205,7 +205,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync,
             ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken],
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
@@ -224,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteReader,
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderType,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteReaderWithBehaviorAttribute : Attribute
@@ -234,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader,
             ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteDbDataReaderWithBehaviorAttribute : Attribute
@@ -244,7 +244,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader,
             ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
             CallTargetIntegrationKind = CallTargetKind.Derived,
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteScalarAsync,
             ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
-            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            ParameterTypeNames = [ClrNames.CancellationToken],
             CallTargetType = typeof(CommandExecuteScalarAsyncIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteScalarAsyncAttribute : Attribute
@@ -284,7 +284,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteScalar,
             ReturnTypeName = ClrNames.Object,
-            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
             CallTargetType = typeof(CommandExecuteScalarWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class CommandExecuteScalarWithBehaviorAttribute : Attribute
@@ -304,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ReadAsync,
             ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
-            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            ParameterTypeNames = [ClrNames.CancellationToken],
             CallTargetType = typeof(ReaderReadAsyncIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
@@ -325,7 +325,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.GetString,
             ReturnTypeName = ClrNames.String,
-            ParameterTypeNames = new[] { ClrNames.Int32 },
+            ParameterTypeNames = [ClrNames.Int32],
             CallTargetType = typeof(ReaderGetStringIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
@@ -336,11 +336,102 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.GetValue,
             ReturnTypeName = ClrNames.Object,
-            ParameterTypeNames = new[] { ClrNames.Int32 },
+            ParameterTypeNames = [ClrNames.Int32],
             CallTargetType = typeof(ReaderGetStringIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal sealed class IastReaderGetValueAttribute : Attribute
+        {
+        }
+
+        ///////////// BATCH COMMANDS BELOW /////////////
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.Int32TaskType,
+            ParameterTypeNames = [ClrNames.CancellationToken],
+            CallTargetType = typeof(BatchExecuteAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteNonQueryAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery,
+            ReturnTypeName = ClrNames.Int32,
+            CallTargetType = typeof(BatchExecuteIntegration),
+            CallTargetIntegrationKind = CallTargetKind.Default)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteNonQueryAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
+            ParameterTypeNames = [ClrNames.CancellationToken],
+            CallTargetType = typeof(BatchExecuteAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteReaderWithCancellationAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken],
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReader,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderType,
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteReaderWithBehaviorAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType,
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken],
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader,
+            ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
+            ParameterTypeNames = [AdoNetConstants.TypeNames.CommandBehavior],
+            CallTargetType = typeof(BatchExecuteWithCommandBehaviorIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteDbDataReaderWithBehaviorAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteScalarAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
+            ParameterTypeNames = [ClrNames.CancellationToken],
+            CallTargetType = typeof(BatchExecuteAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteScalarAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteScalar,
+            ReturnTypeName = ClrNames.Object,
+            CallTargetType = typeof(BatchExecuteIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal sealed class BatchExecuteScalarAttribute : Attribute
         {
         }
     }

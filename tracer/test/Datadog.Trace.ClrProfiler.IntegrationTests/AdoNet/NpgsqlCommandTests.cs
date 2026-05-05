@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -55,7 +54,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<NpgsqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-            const int expectedSpanCount = 147;
+            //
+            // BATCH (v6+): +6 spans
+            var expectedSpanCount = 153;
+            var hasBatchSupport = HasBatchSupport(packageVersion);
+            if (!hasBatchSupport)
+            {
+                expectedSpanCount -= 6;
+            }
+
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
 
@@ -82,17 +89,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             var fileName = nameof(NpgsqlCommandTests);
 #if NETFRAMEWORK
-            fileName = fileName + ".Net462";
+            fileName += ".Net462";
 #endif
-            fileName = fileName + (dbmPropagation switch
+            fileName += dbmPropagation switch
             {
                 "full" => ".tagged",
                 _ => ".untagged",
-            });
+            };
+            fileName += hasBatchSupport ? ".withbatch" : ".nobatch";
 
             await VerifyHelper.VerifySpans(filteredSpans, settings)
-                              .DisableRequireUniquePrefix()
-                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
+                .DisableRequireUniquePrefix()
+                .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
 
         [SkippableFact]
@@ -113,6 +121,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             Assert.NotEmpty(spans);
             spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Npgsql);
+        }
+
+        private static bool HasBatchSupport(string packageVersion)
+        {
+            // at least dotnet 6.0
+            if (Environment.Version.Major < 6)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(packageVersion))
+            {
+                return true;
+            }
+
+            var separatorIndex = packageVersion.IndexOf('.');
+            var majorVersionText = separatorIndex >= 0 ? packageVersion.Substring(0, separatorIndex) : packageVersion;
+
+            // at least npgsql version 6
+            return int.TryParse(majorVersionText, out var majorVersion) && majorVersion >= 6;
         }
     }
 }
