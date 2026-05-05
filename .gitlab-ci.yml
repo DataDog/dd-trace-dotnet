@@ -259,6 +259,10 @@ microbenchmarks:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
   allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - when: always
 
 dsm_throughput:
   stage: benchmarks
