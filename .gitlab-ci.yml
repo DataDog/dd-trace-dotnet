@@ -57,10 +57,6 @@ build-windows-ci-image:
       Write-Output "Image does not exist yet - building."
 
       docker pull "${base}:latest"
-      if ($LASTEXITCODE -ne 0) {
-        Write-Output "No :ci-identities tag available to warm the build cache (first build or tag expired). Continuing without cache."
-      }
-
       docker build --cache-from "${base}:latest" `
         -f tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile `
         --tag $image `
