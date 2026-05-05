@@ -7,6 +7,10 @@ The goal of the library is to have an unify code to access unknown types as fast
 > [!NOTE]  
 > Please ensure you check the [Best Practices](#best-practices) section for details on how to choose the type of proxy.
 
+## NativeAOT
+
+For build-time DuckTyping proxy generation and NativeAOT runtime usage, see [DuckTyping.NativeAOT.md](./DuckTyping.NativeAOT.md).
+
 ### Example
 Given the following scenario, where we want to access the data from an anonymous class instance in another method, a code example to do that would be:
 
