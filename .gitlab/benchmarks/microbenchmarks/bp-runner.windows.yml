@@ -141,7 +141,7 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "0,0x1FFC00"
+        cpus: "0,0xFFC00"
         parallelize:
           # Stable benchmarks (CPUs 10-19 on NUMA 0)
           items: >-
@@ -169,7 +169,7 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0x1FFC00"
+        cpus: "1,0xFFC00"
         parallelize:
           # Less stable benchmarks (CPUs 10-19 on NUMA 1)
           items: >-
