@@ -10,11 +10,11 @@ namespace Datadog.Trace.Debugger.Sink
 {
     internal sealed class SnapshotUploader : DebuggerUploaderBase, ISnapshotUploader
     {
-        private readonly SnapshotSink _snapshotSink;
+        private readonly ISnapshotSink _snapshotSink;
         private readonly IBatchUploader _snapshotBatchUploader;
 
         private SnapshotUploader(
-            SnapshotSink snapshotSink,
+            ISnapshotSink snapshotSink,
             IBatchUploader snapshotBatchUploader,
             DebuggerSettings settings)
             : base(settings)
@@ -23,7 +23,7 @@ namespace Datadog.Trace.Debugger.Sink
             _snapshotSink = snapshotSink;
         }
 
-        public static SnapshotUploader Create(SnapshotSink snapshotSink, IBatchUploader snapshotBatchUploader, DebuggerSettings settings)
+        public static SnapshotUploader Create(ISnapshotSink snapshotSink, IBatchUploader snapshotBatchUploader, DebuggerSettings settings)
         {
             return new SnapshotUploader(snapshotSink, snapshotBatchUploader, settings);
         }
@@ -42,9 +42,20 @@ namespace Datadog.Trace.Debugger.Sink
             return _snapshotSink.RemainingCapacity();
         }
 
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string? snapshot)
         {
+            if (snapshot == null)
+            {
+                return;
+            }
+
             _snapshotSink.Add(probeId, snapshot);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            _snapshotSink.Dispose();
         }
     }
 }

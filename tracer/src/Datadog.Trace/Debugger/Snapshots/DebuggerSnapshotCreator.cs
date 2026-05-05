@@ -38,14 +38,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly Func<string> _serviceNameProvider;
         private readonly Func<string?> _processTagsProvider;
 
-        private long _lastSampledTime;
-        private TimeSpan _accumulatedDuration;
-        private CaptureBehaviour _captureBehaviour;
-        private string? _message;
-        private List<EvaluationError>? _errors;
-        private string? _snapshotId;
-        private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
-
         // Track opened JSON containers explicitly to avoid using JsonWriter.Path (allocations + heuristic parsing).
         // This class is on the hot path, so these flags should stay extremely cheap.
         private bool _debuggerOpen;
@@ -56,6 +48,13 @@ namespace Datadog.Trace.Debugger.Snapshots
         private bool _linesOpen;
         private bool _lineNumberOpen;
         private LocalsOrArgsContainer _localsOrArgsOpen;
+        private long _lastSampledTime;
+        private TimeSpan _accumulatedDuration;
+        private CaptureBehaviour _captureBehaviour;
+        private string? _message;
+        private List<EvaluationError>? _errors;
+        private string? _snapshotId;
+        private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
         {
@@ -313,6 +312,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void EndEntry()
         {
+            // Do not rely on "hasArgumentsOrLocals" heuristics here.
             // Some instrumentations intentionally skip capturing args/locals (e.g. methods with byref-like args),
             // and closing a non-open container corrupts the JsonWriter state ("No token to close").
             CloseLocalsOrArgsIfOpen();

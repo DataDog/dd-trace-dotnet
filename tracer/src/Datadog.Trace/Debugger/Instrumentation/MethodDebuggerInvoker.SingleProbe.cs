@@ -5,11 +5,14 @@
 
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstants;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -155,6 +158,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            // Some methods legitimately create "null refs" (e.g., MemoryMarshal.GetReference(emptySpan)).
+            // Capturing such arguments would dereference a null byref when we read `arg` and can throw.
+            // If we get a null byref, skip capture.
             if (Unsafe.IsNullRef(ref arg))
             {
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))

@@ -1170,6 +1170,24 @@ supportedConfigurations:
     documentation: |-
       Internal configuration key to optionally limit the maximum number of probes of each type.
       Default value is <c>0</c>, no probe-count limit is enforced.
+  DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED:
+  - implementation: A
+    type: boolean
+    default: 'false'
+    product: Debugger
+    const_name: IsSnapshotExplorationTestEnabled
+    documentation: |-
+      Internal configuration key to enable snapshot exploration test mode.
+      Default value is false (disabled).
+  DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH:
+  - implementation: A
+    type: string
+    default: null
+    product: Debugger
+    const_name: SnapshotExplorationTestRootPath
+    documentation: |-
+      Internal configuration key for the snapshot exploration test root path.
+      The tracer derives the probes CSV path and report output folder from this root.
   DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH:
   - implementation: A
     type: string

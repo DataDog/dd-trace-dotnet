@@ -14,19 +14,39 @@ partial class Build
         }
 
         envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
-        envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+        envVars.Add("DD_CIVISIBILITY_ENABLED", "0");
+        // envVars.Add("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
 
-        if (description.LineProbesEnabled)
+        if (description.IsSnapshotScenario)
+        {
+            envVars.Add("VSTEST_CONNECTION_TIMEOUT", "1800");
+            // Snapshot exploration runs don't need hands-off config, and disabling it
+            // avoids libdatadog startup crashes in isolated third-party test hosts.
+            envVars.Add("DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED", "0");
+            // Exploration tests run without an agent, so disable discovery polling to
+            // keep managed logs focused on snapshot/debugger issues.
+            envVars.Add("DD_AGENT_FEATURE_POLLING_ENABLED", "false");
+            // Telemetry retries also target the agent and can be misattributed as probe failures
+            // by the exploration log parser, so disable them for these offline runs.
+            envVars.Add("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false");
+            envVars.Add(SnapshotExplorationEnabledKey, "1");
+            var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            envVars.Add(SnapshotExplorationRootPathKey, GetSnapshotExplorationRootPath(testRootPath, framework));
+        }
+        else if (description.LineProbesEnabled)
         {
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, LineProbesFileName));
         }
+        else
+        {
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+        }
 
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
         envVars.Add("COMPlus_EnableCrashReport", "1");
-        envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
 
         if (EnableFaultTolerantInstrumentation)
         {

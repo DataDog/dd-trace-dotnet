@@ -30,7 +30,7 @@ using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
-    internal sealed class DynamicInstrumentation : IDisposable
+    internal sealed partial class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
@@ -49,6 +49,7 @@ namespace Datadog.Trace.Debugger
         private readonly DebuggerSettings _settings;
         private readonly object _instanceLock = new();
         private int _disposeState;
+        private int _initializationState;
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -88,11 +89,16 @@ namespace Datadog.Trace.Debugger
 
         public bool IsDisposed => Volatile.Read(ref _disposeState) != 0;
 
-        public bool IsInitialized { get; private set; }
+        public bool IsInitialized => Volatile.Read(ref _initializationState) == 2;
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled)
+            if (!_settings.DynamicInstrumentationEnabled || IsInitialized)
+            {
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _initializationState, 1, 0) != 0)
             {
                 return;
             }
@@ -161,7 +167,7 @@ namespace Datadog.Trace.Debugger
 
             AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
             StartBackgroundProcess();
-            IsInitialized = true;
+            Volatile.Write(ref _initializationState, 2);
         }
 
         private void StartBackgroundProcess()
@@ -303,8 +309,14 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static void SetRateLimit(ProbeDefinition probe)
+        private void SetRateLimit(ProbeDefinition probe)
         {
+            if (_settings.IsSnapshotExplorationTestEnabled)
+            {
+                ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                return;
+            }
+
             switch (probe)
             {
                 case LogProbe { Sampling: { } sampling }:
@@ -319,7 +331,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static string? JoinLogValues(string[]? values)
+        private string? JoinLogValues(string[]? values)
         {
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }
@@ -632,8 +644,19 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater.AcceptRemoved(paths);
         }
 
-        internal void AddSnapshot(ProbeInfo probe, string snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string? snapshot)
         {
+            var snapshotFlowLogsEnabled = SnapshotFlowDebugLog.IsEnabled(Log);
+            if (snapshotFlowLogsEnabled)
+            {
+                Log.Debug(
+                    "DynamicInstrumentation.AddSnapshot received payload probeId={ProbeId}, IsFullSnapshot={IsFullSnapshot}, IsDisposed={IsDisposed}, PayloadNull={PayloadNull}",
+                    property0: probe.ProbeId,
+                    property1: probe.IsFullSnapshot,
+                    property2: IsDisposed,
+                    property3: snapshot is null);
+            }
+
             if (IsDisposed)
             {
                 return;
@@ -641,16 +664,36 @@ namespace Datadog.Trace.Debugger
 
             if (!probe.IsFullSnapshot)
             {
+                if (snapshotFlowLogsEnabled)
+                {
+                    Log.Debug("DynamicInstrumentation.AddSnapshot routing payload to log uploader probeId={ProbeId}", probe.ProbeId);
+                }
+
                 AddLog(probe, snapshot);
                 return;
+            }
+
+            if (snapshotFlowLogsEnabled)
+            {
+                Log.Debug("DynamicInstrumentation.AddSnapshot routing payload to snapshot uploader probeId={ProbeId}", probe.ProbeId);
             }
 
             _snapshotUploader.Add(probe.ProbeId, snapshot);
             SetProbeStatusToEmitting(probe);
         }
 
-        internal void AddLog(ProbeInfo probe, string log)
+        internal void AddLog(ProbeInfo probe, string? log)
         {
+            var snapshotFlowLogsEnabled = SnapshotFlowDebugLog.IsEnabled(Log);
+            if (snapshotFlowLogsEnabled)
+            {
+                Log.Debug(
+                    "DynamicInstrumentation.AddLog queueing payload probeId={ProbeId}, IsDisposed={IsDisposed}, PayloadNull={PayloadNull}",
+                    property0: probe.ProbeId,
+                    property1: IsDisposed,
+                    property2: log is null);
+            }
+
             if (IsDisposed)
             {
                 return;

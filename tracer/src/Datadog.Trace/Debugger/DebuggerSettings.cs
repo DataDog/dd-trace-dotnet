@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -151,9 +152,12 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
 
+			ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+										 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
-            ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+            IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
+            SnapshotExplorationTestRootPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestRootPath).AsString(string.Empty);
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -200,7 +204,21 @@ namespace Datadog.Trace.Debugger
 
         public int CodeOriginMaxUserFrames { get; }
 
-        public string ProbeFile { get; }
+		public string ProbeFile { get; }
+		
+        public bool IsSnapshotExplorationTestEnabled { get; }
+
+        public string SnapshotExplorationTestRootPath { get; }
+
+        public string SnapshotExplorationTestProbesFilePath =>
+            StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath)
+                ? string.Empty
+                : Path.Combine(SnapshotExplorationTestRootPath, "SnapshotExplorationTestProbes.csv");
+
+        public string SnapshotExplorationTestReportFolderPath =>
+            StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath)
+                ? string.Empty
+                : Path.Combine(SnapshotExplorationTestRootPath, "SnapshotExplorationTestReport");
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
