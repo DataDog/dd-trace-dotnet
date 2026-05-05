@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
@@ -58,6 +59,8 @@ public class ProfilerSettingsTests : SettingsTestsBase
             values.Add((Datadog.Trace.Configuration.ConfigurationKeys.SsiDeployed, ssiValue));
         }
 
+        AddLinuxArm64InternalProfilingGateWhenNeeded(values, (ProfilerState)expected);
+
         var source = CreateConfigurationSource(values.ToArray());
         var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
 
@@ -86,6 +89,9 @@ public class ProfilerSettingsTests : SettingsTestsBase
         {
             otherValues.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilingEnabled, configProfilingEnabled));
         }
+
+        AddLinuxArm64InternalProfilingGateWhenNeeded(envValues, (ProfilerState)expected);
+        AddLinuxArm64InternalProfilingGateWhenNeeded(otherValues, (ProfilerState)expected);
 
         var envConfig = CreateConfigurationSource(envValues.ToArray());
         var otherConfig = CreateConfigurationSource(otherValues.ToArray());
@@ -123,6 +129,8 @@ public class ProfilerSettingsTests : SettingsTestsBase
             otherValues.Add((Datadog.Trace.Configuration.ConfigurationKeys.Profiler.ProfilingEnabled, configProfilingEnabled));
         }
 
+        AddLinuxArm64InternalProfilingGateWhenNeeded(envValues, (ProfilerState)expected);
+
         var envConfig = CreateConfigurationSource(envValues.ToArray());
         var otherConfig = CreateConfigurationSource(otherValues.ToArray());
 
@@ -147,9 +155,56 @@ public class ProfilerSettingsTests : SettingsTestsBase
             (Architecture.X64, true, _) => true, // Windows x64
             (Architecture.X86, true, _) => true, // Windows x86
             (Architecture.X64, _, true) => true, // Linux x64
+            (Architecture.Arm64, _, true) => true, // Linux arm64
             _ => false // Unsupported platforms
         };
 
         ProfilerSettings.IsProfilingSupported.Should().Be(isSupported);
+    }
+
+    [SkippableFact]
+    public void ProfilerState_OnLinuxArm64_DisabledWithoutInternalArm64Toggle()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+
+        var source = CreateConfigurationSource((ConfigurationKeys.Profiler.ProfilingEnabled, "1"));
+        var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
+        settings.ProfilerState.Should().Be(ProfilerState.Disabled);
+    }
+
+    [SkippableFact]
+    public void ProfilerState_OnLinuxArm64_EnabledWhenInternalArm64ToggleSet()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+
+        var source = CreateConfigurationSource(
+            (ConfigurationKeys.Profiler.ProfilingEnabled, "1"),
+            (ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64, "true"));
+        var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
+        settings.ProfilerState.Should().Be(ProfilerState.Enabled);
+    }
+
+    /// <summary>
+    /// On Linux ARM64, <see cref="ProfilerSettings"/> requires <c>DD_INTERNAL_PROFILING_ENABLED_ARM64</c> for non-disabled states.
+    /// </summary>
+    private static void AddLinuxArm64InternalProfilingGateWhenNeeded(List<(string Key, string Value)> values, ProfilerState expectedWhenSupported)
+    {
+        if (!ProfilerSettings.IsProfilingSupported)
+        {
+            return;
+        }
+
+        var fd = FrameworkDescription.Instance;
+        if (fd.OSPlatform != OSPlatformName.Linux || fd.ProcessArchitecture != ProcessArchitecture.Arm64)
+        {
+            return;
+        }
+
+        if (expectedWhenSupported == ProfilerState.Disabled)
+        {
+            return;
+        }
+
+        values.Add((ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64, "1"));
     }
 }

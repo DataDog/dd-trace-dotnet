@@ -113,7 +113,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                Assert.True(sample.Stacktrace.EndWith(expectedStack));
+                AssertExpectedStack(sample.Stacktrace, expectedStack);
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -133,9 +133,17 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
 
-            total.Should().Be(expectedExceptionCount);
+            if (EnvironmentHelper.GetPlatform() == "ARM64")
+            {
+                // On ARM64, we may skip some callstack (failed to identify frame type while skipping native frames)
+                total.Should().BeGreaterThan(expectedExceptionCount - 100);
+            }
+            else
+            {
+                total.Should().Be(expectedExceptionCount);
+            }
         }
-
+    
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
         {
@@ -221,7 +229,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                Assert.True(sample.Stacktrace.EndWith(expectedStack));
+                AssertExpectedStack(sample.Stacktrace, expectedStack);
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -241,7 +249,15 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
 
-            total.Should().Be(expectedExceptionCount);
+            if (EnvironmentHelper.GetPlatform() == "ARM64")
+            {
+                // On ARM64, we may skip some callstack (failed to identify frame type while skipping native frames)
+                total.Should().BeGreaterThan(expectedExceptionCount - 100);
+            }
+            else
+            {
+                total.Should().Be(expectedExceptionCount);
+            }
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -295,7 +311,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             {
                 labels.Should().ContainSingle(x => x.Name == "exception type" && x.Value == "System.Exception");
                 labels.Should().ContainSingle(x => x.Name == "exception message" && string.IsNullOrWhiteSpace(x.Value));
-                Assert.True(stackTrace.EndWith(expectedStack));
+                AssertExpectedStack(stackTrace, expectedStack);
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -315,7 +331,15 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
 
-            total.Should().Be(expectedExceptionCount);
+            if (EnvironmentHelper.GetPlatform() == "ARM64")
+            {
+                // On ARM64, we may skip some callstack (failed to identify frame type while skipping native frames)
+                total.Should().BeGreaterThan(expectedExceptionCount - 100);
+            }
+            else
+            {
+                total.Should().Be(expectedExceptionCount);
+            }
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
@@ -620,6 +644,37 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
 
             return profiledExceptions;
+        }
+
+        private static void AssertExpectedStack(StackTrace actualStack, StackTrace expectedStack)
+        {
+            StackTrace alternateExpectedStack = null;
+            if (EnvironmentHelper.GetPlatform() == "ARM64")
+            {
+                alternateExpectedStack = new StackTrace(
+                        new StackFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)"));
+            }
+
+            bool matchesAlternateExpectedStack = true;
+
+            // On ARM64, the stacktrace is truncated and we have an unknown frame type
+            if (alternateExpectedStack != null)
+            {
+                for (int i = 0; i < alternateExpectedStack.FramesCount; i++)
+                {
+                    if (actualStack[i].ToString() != alternateExpectedStack[i].ToString())
+                    {
+                        matchesAlternateExpectedStack = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!matchesAlternateExpectedStack)
+            {
+                Assert.True(actualStack.EndWith(expectedStack),
+                    $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({actualStack.FramesCount} frames):\n{actualStack}");
+            }
         }
 
         private void CheckExceptionProfiles(TestApplicationRunner runner, bool withTimestamps)

@@ -17,7 +17,7 @@
 #include <mutex>
 #include <set>
 #include <algorithm>
-#include <forward_list>
+#include <deque>
 #include <functional>
 
 
@@ -84,7 +84,7 @@ public:
     ~ManagedCodeCache();
 
     // Signal-safe lookup methods (no allocation)
-    [[nodiscard]] bool IsManaged(std::uintptr_t ip) const noexcept;
+    [[nodiscard]] std::optional<bool> IsManaged(std::uintptr_t ip) const noexcept;
 
     // Not signal-safe
     [[nodiscard]] std::optional<FunctionID> GetFunctionId(std::uintptr_t ip) noexcept;
@@ -134,11 +134,25 @@ private:
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
     void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
+
+// Expose the helpers below to tests without duplicating the declarations.
 #ifdef DD_TEST
 public:
 #endif
     void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
 #ifdef DD_TEST
+    // Test-only hooks to simulate signal-handler contention. IsManaged uses
+    // try_to_lock semantics on these two mutexes and returns std::nullopt when
+    // ownership cannot be acquired. Holding an exclusive lock on either mutex
+    // from another thread deterministically reproduces that "contended" state.
+    std::unique_lock<std::shared_mutex> LockPagesMutexExclusiveForTest()
+    {
+        return std::unique_lock<std::shared_mutex>(_pagesMutex);
+    }
+    std::unique_lock<std::shared_mutex> LockModulesMutexExclusiveForTest()
+    {
+        return std::unique_lock<std::shared_mutex>(_modulesMutex);
+    }
 private:
 #endif
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
@@ -150,10 +164,9 @@ private:
     
     // Helper: Ensure a page exists in the map
     void EnsurePageExists(uint64_t page);
-    
+    std::optional<bool> IsManagedImpl(std::uintptr_t ip) const noexcept;
+
     // Map from page number -> page entry (with its own lock)
-
-
     PagesMap _pagesMap;
     std::vector<ModuleCodeRange> _modulesCodeRanges;
     mutable std::shared_mutex _modulesMutex;
@@ -167,13 +180,13 @@ private:
     std::thread _worker;
     std::atomic<bool> _requestStop;
     
-    std::forward_list<std::function<void()>> _workerQueue;
+    std::deque<std::function<void()>> _workerQueue;
     std::mutex _queueMutex;
 
     template<typename WorkType>
     void EnqueueWork(WorkType work);
     std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
-    bool IsCodeInR2RModule(std::uintptr_t ip) const noexcept;
+    std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
     std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;
     void AddFunctionImpl(FunctionID functionId, bool isAsync);
     

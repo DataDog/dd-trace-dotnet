@@ -77,13 +77,16 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
+    static const std::string NotResolvedFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:NotResolvedFrame |fg: |sg:(?)");
     static const std::string UnloadedModuleName("UnloadedModule");
     static const std::string FakeModuleName("FakeModule");
 
     static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
     static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
+    static const std::string UnknownFrameType("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)");
+    static const std::string SentinelFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Sentinel-Frame |fg: |sg:(?)");
 
+    static bool previousFrameStatus = false;
 
     // check for fake IPs used in tests
     if (instructionPointer <= MaxFakeIP)
@@ -91,15 +94,34 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
         {
+            previousFrameStatus = true;
             return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::SentinelStartFrameIP)
+        {
+            previousFrameStatus = false;
+            return { false, {FakeModuleName, SentinelFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::SentinelPhase1EndFrameIP)
+        {
+            return { previousFrameStatus, {FakeModuleName, SentinelFrame, "", 0} };
         }
         else
         if (instructionPointer == FrameStore::FakeAllocationIP)
         {
+            previousFrameStatus = true;
             return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::UnknownFrameTypeIP)
+        {
+            // We log it only when it debug to identify truncated callstack
+            // Example: during tests
+            const auto recordFrame = Log::IsDebugEnabled();
+            return { recordFrame, {FakeModuleName, UnknownFrameType, "", 0} };
         }
         else
         {
+            previousFrameStatus = true;
             return { true, {FakeModuleName, UnknownManagedFrame, "", 0} };
         }
     }
@@ -111,12 +133,18 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
         if (!result.has_value())
         {
+            // Windows-only: GetFunctionFromIP was wrapped in __try/__except and caught an
+            // SEH exception coming out of the CLR. Surface the frame as resolved
+            // (isResolved=true) so the existing Windows pipeline keeps its placeholder
+            // frame rather than silently dropping it.
+            previousFrameStatus = true;
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
         std::tie(hr, functionId) = result.value();
-        // if native frame
         if (FAILED(hr))
         {
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
@@ -126,20 +154,24 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 
         if (!functionId.has_value())
         {
-            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+            // Windows-only: the ICorProfilerInfo::GetFunctionFromIP call inside
+            // ManagedCodeCache was wrapped in __try/__except and caught an SEH
+            // exception from the CLR. Keep isResolved=true so the Windows pipeline
+            // preserves the placeholder frame (legacy semantic).
+            previousFrameStatus = true;
+            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
         if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
         {
-            // We have a value but not a valid one. This is fake function ID.
-            // This can occur when the calling into the CLR from managed code cache
-            // resulted in a crash(lucky us on windows, we can catch on linux ....:grimacing:)
-            // This is to preserve the current semantic
-            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
 
     auto frameInfo = GetManagedFrame(functionId.value());
+    previousFrameStatus = true;
     return {true, frameInfo};
 }
 

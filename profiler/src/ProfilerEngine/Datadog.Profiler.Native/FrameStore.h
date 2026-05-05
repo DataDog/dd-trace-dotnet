@@ -42,8 +42,11 @@ public:
     static const uintptr_t FakeUnknownIP = 0;
     static const uintptr_t FakeLockContentionIP = 1;
     static const uintptr_t FakeAllocationIP = 2;
+    static const uintptr_t UnknownFrameTypeIP = 3;
+    static const uintptr_t SentinelStartFrameIP = 4;
+    static const uintptr_t SentinelPhase1EndFrameIP = 5;
     // !!  If you add more fake IPs, update this and add new strings in FrameStore.cpp  !!
-    static const uintptr_t MaxFakeIP = 2;
+    static const uintptr_t MaxFakeIP = 5;
 
 public:
     FrameStore(

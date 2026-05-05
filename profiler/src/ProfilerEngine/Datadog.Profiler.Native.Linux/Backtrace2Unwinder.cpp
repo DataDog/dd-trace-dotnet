@@ -3,15 +3,22 @@
 
 #include "Backtrace2Unwinder.h"
 
+#include "Callstack.h"
+
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
 Backtrace2Unwinder::Backtrace2Unwinder() = default;
 
-std::int32_t Backtrace2Unwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize) const
+std::int32_t Backtrace2Unwinder::Unwind(void* ctx, Callstack& callstack,
+                                        std::uintptr_t stackBase, std::uintptr_t stackEnd,
+                                        UnwindingRecorder* recorder) const
 {
     // unw_backtrace2 handles the case ctx == nullptr
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
+    auto buffer = callstack.AsSpan();
 
-    return unw_backtrace2(reinterpret_cast<void**>(buffer), bufferSize, context, UNW_INIT_SIGNAL_FRAME);
+    auto nbFrames = unw_backtrace2(reinterpret_cast<void**>(buffer.data()), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
+    callstack.SetCount(nbFrames);
+    return nbFrames;
 }

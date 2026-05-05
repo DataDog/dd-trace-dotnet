@@ -81,7 +81,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetPlatform()
         {
-            return Environment.Is64BitProcess ? "x64" : "x86";
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.Arm64 => "ARM64",
+                Architecture.X86 => "x86",
+                _ => "x64",
+            };
         }
 
         public static bool IsRunningInCi() =>
@@ -186,6 +191,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 environmentVariables["DD_PROFILING_ENABLED"] = "1";
             }
+
+            // Linux ARM64: native profiler requires DD_INTERNAL_PROFILING_ENABLED_ARM64; align managed enablement.
+            environmentVariables["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
 
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
@@ -352,8 +360,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 ("win", "x86", _) => "win-x86",
                 ("linux", "x64", false) => "linux-x64",
                 ("linux", "x64", true) => "linux-musl-x64",
-                ("linux", "Arm64", false) => "linux-arm64",
-                ("linux", "Arm64", true) => "linux-musl-arm64",
+                ("linux", "ARM64", false) => "linux-arm64",
+                ("linux", "ARM64", true) => "linux-musl-arm64",
                 ("osx", _, _) => "osx-x64",
                 _ => throw new PlatformNotSupportedException()
             };
