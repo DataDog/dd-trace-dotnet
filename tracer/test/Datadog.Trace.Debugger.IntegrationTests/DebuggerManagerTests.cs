@@ -45,7 +45,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_AllFeaturesByDefault_CreatesOnlyNonDiDebuggerObjects()
+    public async Task DebuggerManager_AllFeaturesByDefault_NoDebuggerObjectsCreated()
     {
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
@@ -53,7 +53,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
             memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
         });
     }
@@ -63,7 +63,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_DoesNotCreateDynamicInstrumentationObjects()
+    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_NoDebuggerObjectsCreated()
     {
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
@@ -73,24 +73,6 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<SnapshotSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
-        });
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_SymbolDatabaseEnabledByDefault_CreatesSymbolUploader()
-    {
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false");
-
-        await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
-        {
-            memoryAssertions.NoObjectsExist<SnapshotSink>();
-            memoryAssertions.NoObjectsExist<LineProbeResolver>();
-            memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -141,23 +123,6 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<Pdb.DatadogMetadataReader>();
             memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             memoryAssertions.NoObjectsExist<Symbols.SymbolExtractor>();
-        });
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_SymbolDatabaseUploadEnabled_WithoutDynamicInstrumentation_CreatesSymbolUploader()
-    {
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
-
-        await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
-        {
-            memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 

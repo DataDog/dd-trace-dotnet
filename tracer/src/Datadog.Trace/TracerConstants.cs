@@ -11,9 +11,9 @@ namespace Datadog.Trace
     {
         public const string TelemetrySdkName = "datadog";
         public const string Language = "dotnet";
-        public const string AssemblyVersion = "3.43.0.0";
-        public const string ThreePartVersion = "3.43.0";
+        public const string AssemblyVersion = "3.44.0.0";
+        public const string ThreePartVersion = "3.44.0";
 
-        public static ReadOnlySpan<byte> AssemblyVersionBytes => "3.43.0.0"u8;
+        public static ReadOnlySpan<byte> AssemblyVersionBytes => "3.44.0.0"u8;
     }
 }

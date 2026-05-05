@@ -84,7 +84,8 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
             return false;
         }
 
-        var baggage = ParseHeader(header!);
+        var settings = Tracer.Instance.Settings;
+        var baggage = ParseHeader(header!, settings.BaggageMaximumItems, settings.BaggageMaximumBytes);
 
         if (baggage is { Count: > 0 })
         {
@@ -239,7 +240,10 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         }
     }
 
-    internal static Baggage? ParseHeader(string header)
+    internal static Baggage? ParseHeader(
+        string header,
+        int maxBaggageItems = DefaultMaximumBaggageItems,
+        int maxBaggageLength = DefaultMaximumBaggageBytes)
     {
         if (string.IsNullOrWhiteSpace(header))
         {
@@ -247,9 +251,22 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         }
 
         Baggage? baggage = null;
+        var itemCount = 0;
 
         foreach (var pair in header.SplitIntoSpans(PairSeparator))
         {
+            if (itemCount >= maxBaggageItems)
+            {
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageItemCountExceeded);
+                break;
+            }
+
+            if (pair.StartIndex + pair.Length > maxBaggageLength)
+            {
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageByteCountExceeded);
+                break;
+            }
+
             var span = pair.AsSpan();
 
             // only the first `=` character is considered the separator.
@@ -303,6 +320,7 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             baggage ??= new Baggage();
             baggage[key] = value;
+            itemCount++;
         }
 
         return baggage;
