@@ -14,6 +14,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -51,7 +52,7 @@ namespace Datadog.Trace.Configuration
 
         [TestingOnly]
         internal ExporterSettings()
-            : this(source: null, new ConfigurationTelemetry())
+            : this(source: null, File.Exists, new ConfigurationTelemetry())
         {
         }
 
@@ -61,13 +62,8 @@ namespace Datadog.Trace.Configuration
         {
         }
 
-        internal ExporterSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
-            : this(source, File.Exists, telemetry)
-        {
-        }
-
-        internal ExporterSettings(Raw rawSettings, IConfigurationTelemetry telemetry)
-            : this(rawSettings, File.Exists, telemetry)
+        internal ExporterSettings(Raw rawSettings, IConfigurationTelemetry telemetry, ServerlessCompatPipeNames pipeNames)
+            : this(rawSettings, File.Exists, telemetry, pipeNames)
         {
         }
 
@@ -76,11 +72,11 @@ namespace Datadog.Trace.Configuration
         /// Direct use in tests only.
         /// </summary>
         internal ExporterSettings(IConfigurationSource? source, Func<string, bool> fileExists, IConfigurationTelemetry telemetry)
-            : this(new Raw(source ?? NullConfigurationSource.Instance, telemetry), fileExists, telemetry)
+            : this(new Raw(source ?? NullConfigurationSource.Instance, telemetry), fileExists, telemetry, ServerlessCompatPipeNames.None)
         {
         }
 
-        internal ExporterSettings(Raw rawSettings, Func<string, bool> fileExists, IConfigurationTelemetry telemetry)
+        internal ExporterSettings(Raw rawSettings, Func<string, bool> fileExists, IConfigurationTelemetry telemetry, ServerlessCompatPipeNames pipeNames)
         {
             _fileExists = fileExists;
             _telemetry = telemetry;
@@ -88,12 +84,15 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
+            var tracesPipeName = ResolveAndRecordPipeName(ConfigurationKeys.TracesPipeName, pipeNames.TracesPipeName, rawSettings.TracesPipeName);
+            var metricsPipeName = ResolveAndRecordPipeName(ConfigurationKeys.MetricsPipeName, pipeNames.MetricsPipeName, rawSettings.MetricsPipeName);
+
             var traceSettings = GetTraceTransport(
-                        agentUri: rawSettings.TraceAgentUri,
-                        tracesPipeName: rawSettings.TracesPipeName,
-                        agentHost: rawSettings.TraceAgentHost,
-                        agentPort: rawSettings.TraceAgentPort,
-                        tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
+                agentUri: rawSettings.TraceAgentUri,
+                tracesPipeName: tracesPipeName,
+                agentHost: rawSettings.TraceAgentHost,
+                agentPort: rawSettings.TraceAgentPort,
+                tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
 
             TracesEncoding = TracesEncoding.DatadogV0_4;
             TracesTransport = traceSettings.Transport;
@@ -130,7 +129,7 @@ namespace Datadog.Trace.Configuration
                 traceAgentUrl: rawSettings.TraceAgentUri,
                 agentHost: rawSettings.TraceAgentHost,
                 dogStatsdPort: rawSettings.DogStatsdPort,
-                metricsPipeName: rawSettings.MetricsPipeName,
+                metricsPipeName: metricsPipeName,
                 metricsUnixDomainSocketPath: rawSettings.MetricsUnixDomainSocketPath);
 
             MetricsHostname = metricsSettings.Hostname;
@@ -315,7 +314,7 @@ namespace Datadog.Trace.Configuration
 
         [TestingOnly]
         internal static ExporterSettings Create(Dictionary<string, object?> settings)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), File.Exists, new ConfigurationTelemetry());
 
         private static string GetMetricsHostNameFromAgentUri(Uri agentUri)
         {
@@ -323,6 +322,24 @@ namespace Datadog.Trace.Configuration
             // the UDS path set for it, and the DnsSafeHost returns "".
             var traceHostname = agentUri.DnsSafeHost;
             return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
+        }
+
+        private string? ResolveAndRecordPipeName(string configKey, string? pipeValue, string? rawValue)
+        {
+            // Customer-configured pipe names always take precedence; otherwise use whatever the
+            // SettingsManager pre-computed for the Serverless Compat layer (may be null on
+            // non-Windows / non-Azure-Function / missing-compat-layer runs).
+            var resolved = !StringUtil.IsNullOrEmpty(rawValue) ? rawValue : pipeValue;
+
+            // Only record a Calculated telemetry entry when the final value came from the generator
+            // (holder) rather than from customer config — the customer-set path is already recorded
+            // by the ConfigurationBuilder read in Raw with its real origin.
+            if (resolved is not null && resolved != rawValue)
+            {
+                _telemetry.Record(configKey, resolved, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
+            return resolved;
         }
 
         private MetricsTransportSettings ConfigureMetricsTransport(string? metricsUrl, string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
@@ -556,6 +573,7 @@ namespace Datadog.Trace.Configuration
                 DogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
                 MetricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString()?.Trim();
                 MetricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString()?.Trim();
+                ServerlessCompatPath = config.WithKeys(ConfigurationKeys.ServerlessCompatPath).AsString()?.Trim();
 
                 TracesPipeTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
@@ -644,6 +662,12 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ConfigurationKeys.MetricsUnixDomainSocketPath"/>
             public string? MetricsUnixDomainSocketPath { get; }
+
+            /// <summary>
+            /// Gets the override path to the serverless compatibility layer binary.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.ServerlessCompatPath"/>
+            public string? ServerlessCompatPath { get; }
 
             /// <summary>
             /// Gets the port where the DogStatsd server is listening for connections.

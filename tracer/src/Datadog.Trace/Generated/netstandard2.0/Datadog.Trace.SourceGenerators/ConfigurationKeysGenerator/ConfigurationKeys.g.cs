@@ -250,6 +250,13 @@ internal static partial class ConfigurationKeys
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
     /// <summary>
+    /// Overrides the default path to the serverless compatibility layer binary.
+    /// Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
+    /// Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.
+    /// </summary>
+    public const string ServerlessCompatPath = "DD_SERVERLESS_COMPAT_PATH";
+
+    /// <summary>
     /// Configuration key for the application's default service name.
     /// Used as the service name for top-level spans,
     /// and used to determine service name of some child spans.
