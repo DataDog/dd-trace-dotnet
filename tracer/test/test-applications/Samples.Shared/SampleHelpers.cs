@@ -327,7 +327,7 @@ namespace Samples
 
         public static void TrySetServiceName(object scope, string? serviceName)
         {
-            if (SpanProperty is null || SetServiceNameProperty is null)
+            if (serviceName is null || SpanProperty is null || SetServiceNameProperty is null)
             {
                 return;
             }
