@@ -703,7 +703,12 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
+#if NET6_0_OR_GREATER
             OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
+#else
+            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
+            OtlpRuntimeMetricsEnabled = false;
+#endif
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
