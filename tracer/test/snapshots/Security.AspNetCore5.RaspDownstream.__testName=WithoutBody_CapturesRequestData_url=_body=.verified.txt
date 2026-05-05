@@ -22,6 +22,10 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: DownstreamToSelf,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.RaspController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -76,6 +80,10 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: EchoGet,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.RaspController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

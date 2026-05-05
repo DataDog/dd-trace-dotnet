@@ -39,6 +39,7 @@ internal static class EndpointDetector
 
     private static readonly HashSet<string> ActionAttributes =
     [
+        "Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute",
         "Microsoft.AspNetCore.Mvc.HttpGetAttribute",
         "Microsoft.AspNetCore.Mvc.HttpPostAttribute",
         "Microsoft.AspNetCore.Mvc.HttpPutAttribute",
@@ -46,6 +47,7 @@ internal static class EndpointDetector
         "Microsoft.AspNetCore.Mvc.HttpPatchAttribute",
         "Microsoft.AspNetCore.Mvc.HttpHeadAttribute",
         "Microsoft.AspNetCore.Mvc.HttpOptionsAttribute",
+        "Microsoft.AspNetCore.Mvc.RouteAttribute",
         "Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute"
     ];
 

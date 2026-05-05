@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -45,6 +45,10 @@
       _dd.appsec.s.req.params: [{"action":[8],"controller":[8]}],
       _dd.appsec.s.res.body: [{"PropertyResponse":[8],"PropertyResponse2":[4],"PropertyResponse3":[16],"PropertyResponse4":[4]}],
       _dd.appsec.s.res.headers: [{"content-type":[8]}],
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Model,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

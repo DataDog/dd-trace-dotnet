@@ -51,18 +51,18 @@ public class DebuggerManagerDynamicTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_DynamicInstrumentation_StartDisabled_EnabledViaRemoteConfig()
     {
-        // Set it true so we won't go through path of no debugger products at all
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
         await RunDynamicConfigurationTest(
-            false,
+            true,
             initialMemoryAssertions: memoryAssertions =>
             {
                 // Initially, no DI objects should exist
                 memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
                 memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
+                // Code Origin for spans is enabled by default
+                memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
             remoteConfig: new { dynamic_instrumentation_enabled = true },
             DynamicInstrumentationEnabledLogEntry,
@@ -83,34 +83,15 @@ public class DebuggerManagerDynamicTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
         await RunDynamicConfigurationTest(
-            false,
+            true,
             initialMemoryAssertions: memoryAssertions =>
             {
                 // Initially, no Exception Replay objects should exist
                 memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
+                memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
             remoteConfig: new { exception_replay_enabled = true },
             ExceptionReplayEnabledLogEntry);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_CodeOrigin_StartDisabled_EnabledViaRemoteConfig()
-    {
-        SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
-
-        await RunDynamicConfigurationTest(
-            false,
-            initialMemoryAssertions: memoryAssertions =>
-            {
-                // Initially, no Code Origin object should exist
-                memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
-            },
-            remoteConfig: new { code_origin_enabled = true },
-            CodeOriginForSpansEnabledLogEntry);
     }
 
     [SkippableFact]
@@ -123,13 +104,13 @@ public class DebuggerManagerDynamicTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
 
         await RunDynamicConfigurationTest(
-            false,
+            true,
             initialMemoryAssertions: memoryAssertions =>
             {
                 // Initially, no debugger objects should exist
                 memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
-                memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
+                memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
                 memoryAssertions.NoObjectsExist<SnapshotSink>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
                 memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
@@ -228,7 +209,7 @@ public class DebuggerManagerDynamicTests : TestHelper
     }
 
     private async Task RunDynamicConfigurationTest(
-        bool startEnabled,
+        bool debuggerStartEnabled,
         Action<MemoryAssertions> initialMemoryAssertions,
         object remoteConfig,
         string logToWaitAfterRc,
@@ -252,7 +233,7 @@ public class DebuggerManagerDynamicTests : TestHelper
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
 
         // Wait for initial setup and verify initial state (products should be enabled)
-        if (startEnabled)
+        if (debuggerStartEnabled)
         {
             await logEntryWatcher.WaitForLogEntry(DebuggerConfigurationInitialized);
         }

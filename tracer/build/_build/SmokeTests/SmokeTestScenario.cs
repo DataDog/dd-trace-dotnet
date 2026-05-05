@@ -13,7 +13,11 @@ public abstract record SmokeTestScenario
         + "meta._dd.p.tid" + ",meta._dd.parent_id" + ",meta._dd.tags.process" + ",meta._dd.appsec.s.req.params" + ","
         + "meta._dd.appsec.s.res.body" + ",meta._dd.appsec.s.req.headers" + ","
         + "meta._dd.appsec.s.res.headers" + ",meta._dd.appsec.fp.http.endpoint" + ","
-        + "meta._dd.appsec.fp.http.header" + ",meta._dd.appsec.fp.http.network";
+        + "meta._dd.appsec.fp.http.header" + ",meta._dd.appsec.fp.http.network" + ","
+        + "meta._dd.code_origin.type" + ",meta._dd.code_origin.frames.0.index" + ","
+        + "meta._dd.code_origin.frames.0.method" + ",meta._dd.code_origin.frames.0.type" + ","
+        + "meta._dd.code_origin.frames.0.file" + ",meta._dd.code_origin.frames.0.line" + ","
+        + "meta._dd.code_origin.frames.0.column";
 
     public required string ShortName { get; init; }
     public required string PublishFramework { get; init; }

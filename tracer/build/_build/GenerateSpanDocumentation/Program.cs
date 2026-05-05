@@ -241,6 +241,9 @@ The Integration Name (used for configuring individual integrations) of each span
                         case "IsPresent": // only for tags
                             requiredValue = "Yes";
                             break;
+                        case "IsAbsent": // only for tags - must NOT be present
+                            requiredValue = "Must be absent";
+                            break;
                         case "PassesThroughSource": // only for additional tags
                             operationName = "PassThru";
                             requiredValue = "No";
