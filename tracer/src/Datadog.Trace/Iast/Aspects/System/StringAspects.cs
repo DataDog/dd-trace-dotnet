@@ -512,10 +512,10 @@ public sealed class StringAspects
         return result;
     }
 
-    private static string ConcatAndMaterialize<T>(IEnumerable<T> values, out T[] materializedValues)
+    private static string ConcatAndMaterialize<T>(IEnumerable<T> values, out IReadOnlyCollection<T> materializedValues)
     {
         materializedValues = Materialize(values);
-        return string.Concat((IEnumerable<T>)materializedValues);
+        return string.Concat(materializedValues);
     }
 
 #if NET6_0_OR_GREATER
@@ -843,7 +843,7 @@ public sealed class StringAspects
     }
 
 #if NETCOREAPP
-    private static string JoinAndMaterialize<T>(char separator, IEnumerable<T> values, out T[] materializedValues)
+    private static string JoinAndMaterialize<T>(char separator, IEnumerable<T> values, out IReadOnlyCollection<T> materializedValues)
     {
         materializedValues = Materialize(values);
         return string.Join(separator, materializedValues);
@@ -851,20 +851,20 @@ public sealed class StringAspects
 
 #endif
 
-    private static string JoinAndMaterialize<T>(string separator, IEnumerable<T> values, out T[] materializedValues)
+    private static string JoinAndMaterialize<T>(string separator, IEnumerable<T> values, out IReadOnlyCollection<T> materializedValues)
     {
         materializedValues = Materialize(values);
         return string.Join(separator, materializedValues);
     }
 
-    private static T[] Materialize<T>(IEnumerable<T> values)
+    private static IReadOnlyCollection<T> Materialize<T>(IEnumerable<T> values)
     {
         if (values is null)
         {
             return null;
         }
 
-        return values as T[] ?? values.ToArray();
+        return values as IReadOnlyCollection<T> ?? values.ToList();
     }
 
 #if NET6_0_OR_GREATER

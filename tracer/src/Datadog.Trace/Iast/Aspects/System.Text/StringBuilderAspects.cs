@@ -1267,32 +1267,28 @@ public sealed class StringBuilderAspects
         return result;
     }
 
-    private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, char separator, IEnumerable<T>? values, out T[] materializedValues)
+    private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, char separator, IEnumerable<T>? values, out IReadOnlyCollection<T>? materializedValues)
     {
         materializedValues = Materialize(values);
         // Intentionally throw null ref exception if customer passes in null
-        return target!.AppendJoin(separator, materializedValues);
+        return target!.AppendJoin(separator, materializedValues!);
     }
 
-    private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, string separator, IEnumerable<T>? values, out T[] materializedValues)
+    private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, string separator, IEnumerable<T>? values, out IReadOnlyCollection<T>? materializedValues)
     {
-        if (target is null)
-        {
-            throw new NullReferenceException();
-        }
-
         materializedValues = Materialize(values);
-        return target.AppendJoin(separator, materializedValues);
+        // Intentionally throw null ref exception if customer passes in null
+        return target!.AppendJoin(separator, materializedValues!);
     }
 
-    private static T[] Materialize<T>(IEnumerable<T>? values)
+    private static IReadOnlyCollection<T>? Materialize<T>(IEnumerable<T>? values)
     {
         if (values is null)
         {
-            throw new ArgumentNullException(nameof(values));
+            return null;
         }
 
-        return values as T[] ?? values.ToArray();
+        return values as IReadOnlyCollection<T> ?? values.ToList();
     }
 
 #endif
