@@ -290,9 +290,6 @@ partial class Build
                     .SetProjectFile(Solution)
                     .SetVerbosity(DotNetVerbosity.Minimal)
                     .SetProperty("configuration", BuildConfiguration.ToString())
-                    // NU1503: native .vcxproj files don't participate in NuGet restore on non-Windows; the static-graph
-                    // emits this for every native project before evaluating per-project NoWarn — must be suppressed at the command level.
-                    .SetProperty("NoWarn", "NU1503")
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory)));
             }
