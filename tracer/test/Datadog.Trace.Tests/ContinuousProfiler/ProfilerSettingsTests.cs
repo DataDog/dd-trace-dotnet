@@ -162,7 +162,7 @@ public class ProfilerSettingsTests : SettingsTestsBase
         ProfilerSettings.IsProfilingSupported.Should().Be(isSupported);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ProfilerState_OnLinuxArm64_DisabledWithoutInternalArm64Toggle()
     {
         SkipOn.AllExcept(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
@@ -172,7 +172,7 @@ public class ProfilerSettingsTests : SettingsTestsBase
         settings.ProfilerState.Should().Be(ProfilerState.Disabled);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ProfilerState_OnLinuxArm64_EnabledWhenInternalArm64ToggleSet()
     {
         SkipOn.AllExcept(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
