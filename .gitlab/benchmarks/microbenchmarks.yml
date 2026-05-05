@@ -27,7 +27,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   timeout: 3h
   allow_failure: true
   when: manual
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
   variables:
     # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
     # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
