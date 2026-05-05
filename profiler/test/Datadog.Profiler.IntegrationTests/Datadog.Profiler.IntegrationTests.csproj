@@ -88,6 +88,9 @@
     </PackageReference>
      <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tools\ReferenceChainExplorer\ReferenceChainModel\ReferenceChainModel.csproj" />
+  </ItemGroup>
   <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
     <PackageReference Include="DatadogTestLogger" Version="0.0.53" ExcludeAssets="compile" />
   </ItemGroup>

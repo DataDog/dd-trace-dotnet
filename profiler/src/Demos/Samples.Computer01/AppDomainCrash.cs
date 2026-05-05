@@ -47,8 +47,9 @@ namespace Samples.Computer01
                 // Use the exception profiler to capture callstack
                 throw new CatException("Fluff");
             }
-            catch // just swallow
+            catch
             {
+                // just swallow
             }
         }
 

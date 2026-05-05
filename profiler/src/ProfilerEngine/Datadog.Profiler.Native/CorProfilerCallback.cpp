@@ -2021,6 +2021,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         _pExceptionsProvider->OnModuleLoaded(moduleId);
     }
 
+    if (_pHeapSnapshotManager != nullptr)
+    {
+        _pHeapSnapshotManager->OnModuleLoaded(moduleId);
+    }
+
     if (_managedCodeCache != nullptr)
     {
         _managedCodeCache->AddModule(moduleId);
