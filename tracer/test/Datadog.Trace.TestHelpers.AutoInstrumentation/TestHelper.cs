@@ -343,11 +343,6 @@ namespace Datadog.Trace.TestHelpers
             return (processHelper, newConfig);
         }
 
-        public void EnableIast(bool enable = true)
-        {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString().ToLower());
-        }
-
         public void EnableRasp(bool enable = true)
         {
             SetEnvironmentVariable(ConfigurationKeys.AppSec.RaspEnabled, enable.ToString().ToLower());

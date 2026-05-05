@@ -19,7 +19,7 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST;
 public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {
     public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, sampleName: "AspNetCore5")
+        : base(fixture, outputHelper, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, sampleName: "AspNetCore5")
     {
     }
 
@@ -38,7 +38,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
             throw new SkipException();
         }
 #endif
-        var filename = "Iast.StoredXss.AspNetCore5.IastEnabled";
+        var filename = "Iast.StoredXss.AspNetCore5";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = $"/Iast/StoredXss?param=<b>RawValue</b>&database={database}";
         IncludeAllHttpSpans = true;
@@ -77,7 +77,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         }
 #endif
 
-        var filename = "Iast.StoredXssEscaped.AspNetCore5.IastEnabled";
+        var filename = "Iast.StoredXssEscaped.AspNetCore5";
         var url = $"/Iast/StoredXssEscaped?database={database}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
@@ -110,7 +110,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         }
 #endif
 
-        var filename = "Iast.StoredSqli.AspNetCore5.IastEnabled";
+        var filename = "Iast.StoredSqli.AspNetCore5";
         var url = $"/Iast/StoredSqli?database={database}";
         IncludeAllHttpSpans = true;
         await TryStartApp();

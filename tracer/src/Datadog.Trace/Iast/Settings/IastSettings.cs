@@ -47,7 +47,7 @@ internal sealed class IastSettings
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
         WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
-        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(false);
+        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(true);
         DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(true);
         RequestSampling = config
                          .WithKeys(ConfigurationKeys.Iast.RequestSampling)

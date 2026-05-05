@@ -874,12 +874,13 @@ supportedConfigurations:
   DD_IAST_ENABLED:
   - implementation: B
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Iast
     const_name: Enabled
     documentation: |-
-      Configuration key for enabling or disabling the IAST.
-      Default value is false (disabled).
+      Configuration key for enabling or disabling IAST.
+      Default value is true (enabled) — this build is an IAST-only analyzer,
+      so the product is on by default.
   DD_IAST_MAX_CONCURRENT_REQUESTS:
   - implementation: A
     type: int

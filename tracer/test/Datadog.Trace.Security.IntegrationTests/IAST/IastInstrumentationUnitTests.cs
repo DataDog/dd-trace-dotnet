@@ -372,7 +372,6 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
-            EnableIast(true);
             var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
             SetDumpInfo(logDirectory);
             EnableEvidenceRedaction(false);

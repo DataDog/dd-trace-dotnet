@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create an independent, lightweight IAST analyzer that detects vulnerabilities at runtime without any dependency on the Datadog Agent, Tracer, Debugger, Profiler, RASP, or span pipelines. Findings are written to a local JSON file instead of being sent to a backend.
+Create an independent, lightweight IAST analyzer that detects vulnerabilities at runtime without any dependency on the Datadog Agent, Tracer, Debugger, Profiler, RASP, or span pipelines. Findings are written to a local JSONL file instead of being sent to a backend.
 
 ---
 
@@ -11,7 +11,7 @@ Create an independent, lightweight IAST analyzer that detects vulnerabilities at
 ### tracer/src/ — Kept (4 projects)
 
 ```
-Datadog.Trace                          — Core managed tracer (will gut internals in later phases)
+Datadog.Trace                          — Core managed tracer (IAST internals only)
 Datadog.Trace.ClrProfiler.Managed.Loader — Native profiler bootstrap
 Datadog.Trace.SourceGenerators         — Build dependency (source generators)
 Datadog.Tracer.Native                  — Native IL rewriting engine (C++)
@@ -128,8 +128,8 @@ shared/bin/monitoring-home/
   net6.0/                  — Managed tracer (.NET 6+)
   netcoreapp3.1/           — Managed tracer (.NET Core 3.1)
   netstandard2.0/          — Managed tracer (netstandard)
-  win-x64/                 — Native loader + tracer + ddwaf + libdatadog (x64)
-  win-x86/                 — Native loader + tracer + ddwaf + libdatadog (x86)
+  win-x64/                 — Native loader + tracer (x64)
+  win-x86/                 — Native loader + tracer (x86)
 ```
 
 **Build command:** `./tracer/build.cmd BuildTracerHome` (Windows, ~3-4 minutes)
@@ -157,6 +157,10 @@ shared/bin/monitoring-home/
 |---|---|---|
 | **IAST Unit Tests** | **527/527 pass** | All IAST unit tests pass after RASP removal |
 | **IAST Integration Tests** | **94 passed**, some skipped | DB tests require Docker; some flaky tests skipped via `SkipException` in constructors |
+
+---
+
+## Component Removals (chronological)
 
 ### Non-IAST test cleanup
 
@@ -371,12 +375,6 @@ Removed the WAF (Web Application Firewall) and most of AppSec. Only IAST-require
 - ASP.NET integration attributes: `InstrumentationCategory.AppSec | .Iast` → `.Iast`
 - Test file `VulnerabilityBatchTests.Bundle.cs` (removed unused `using Datadog.Trace.AppSec.Waf`)
 
-### Test results after WAF removal
-
-| Test Suite | Result |
-|---|---|
-| **IAST Unit Tests** | **523/523 pass** |
-
 ### WAF build infrastructure removal
 
 Removed WAF download and ruleset deployment from the Nuke build system:
@@ -411,8 +409,6 @@ Removed the entire DSM product (message pipeline monitoring for Kafka, RabbitMQ,
 | 25 messaging integrations | Removed DSM checkpoint/pathway calls (Kafka, RabbitMQ, AWS SQS/SNS/Kinesis/Lambda, Azure Service Bus, IBM MQ, Protobuf) |
 | `test/Datadog.Trace.TestHelpers/MockTracerAgent.cs` | Removed `DataStreams` property, `WaitForDataStreams*` methods, pipeline_stats handler |
 
-**Test results:** 560/560 IAST unit tests pass.
-
 ### APM integration removal
 
 Removed 25 APM-only `ClrProfiler/AutoInstrumentation` directories that have no IAST code:
@@ -426,13 +422,146 @@ Two small helpers were preserved from deleted directories because other parts of
 - `ManualInstrumentation/IntegrationSettingsSerializationHelper.cs` — used by legacy config source
 - `Logging/LogContext.cs` — used by `LogFormatter.cs` for trace/span ID injection
 
-**Test results:** 560/560 IAST unit tests pass.
+### Remote Configuration Management (RCM) removal
+
+Deleted the entire RCM subsystem. IAST as a standalone tool has no Datadog backend to receive configuration from.
+
+| Change | Details |
+|---|---|
+| Deleted `RemoteConfigurationManagement/` | All RCM polling, apply, and model files |
+| Cleaned `TracerManager.cs` | Removed RCM manager parameter, property, and disposal |
+| Cleaned `TracerManagerFactory.cs` | Removed RCM construction and wiring |
+| Cleaned `Instrumentation.cs` | Removed RCM initialization |
+| Cleaned `IastSettings.cs` | Removed RCM-driven live-update callback |
+| Cleaned `DynamicConfigurationManager.cs` | Removed RCM references throughout |
+
+### CI Visibility removal
+
+Deleted the entire CI Visibility product (`Ci/` directory).
+
+| Change | Details |
+|---|---|
+| Deleted `Ci/` | All CI test session/span/module tracking files |
+| Cleaned `TracerManager.cs` | Removed CI manager |
+| Cleaned `TracerManagerFactory.cs` | Removed CI construction |
+| Cleaned `Instrumentation.cs` | Removed CI initialization |
+
+### PDB / Symbol handling removal
+
+Deleted `PDBs/` directory and related symbol infrastructure not needed by IAST.
+
+### DogStatsd / metrics removal
+
+Removed StatsD metrics client integration (`DogStatsd/`). IAST has no metrics to emit to a StatsD endpoint.
+
+| Change | Details |
+|---|---|
+| Deleted `DogStatsd/` | `StatsdManager`, `IStatsdManager`, `NullStatsdManager`, StatsD metric call sites |
+| Cleaned `AgentWriter.cs` | Removed `IStatsdManager` parameter from all 3 constructors; removed all stats metric calls |
+| Cleaned `Agent/Api.cs` | Removed `IStatsdManager` parameter; simplified `ToggleTracerHealthMetrics` |
+| Cleaned `Agent/ManagedApi.cs` | Removed `IStatsdManager` parameter |
+| Cleaned `Tracer.cs` | Removed `IStatsdManager` parameter from constructor |
+| Cleaned `TracerManager.cs` | Removed `Statsd` property, constructor parameter, disposal block, heartbeat gauge |
+| Cleaned `TracerManagerFactory.cs` | Removed statsd from all 3 method signatures; removed `new StatsdManager(settings)` |
+
+### LibDatadog removal
+
+Removed the native LibDatadog interop layer. IAST does not use the Datadog data pipeline.
+
+| Change | Details |
+|---|---|
+| Deleted `LibDatadog/` | All files: `ByteSlice`, `CString`, `CharSlice`, `Error`, `ErrorHandle`, `DataPipeline/` (TraceExporter and all variants), `HandsOffConfiguration/` (ConfigurationResult, ConfiguratorHelper, interop structs) |
+| Cleaned `Configuration/TracerSettings.cs` | Removed `enableIast` constructor param (LibDatadog), removed `DataPipelineEnabled` property and calculation |
+| Cleaned `Configuration/GlobalSettings.cs` | Removed `LibDatadog.Logging.Logger` call |
+| Cleaned `Configuration/ConfigurationSources/GlobalConfigurationSource.cs` | Simplified to remove hands-off config; always succeeds |
+| Deleted `HandsOffConfigurationSource.cs` | Entire "hands-off" configuration source relying on LibDatadog |
+| Cleaned `TracerManagerFactory.cs` | Removed LibDatadog pipeline construction from `GetAgentWriter` |
+| Updated `Build.cs` | Removed `DownloadLibDatadog`/`CopyLibDatadog` dependencies from `BuildManagedTracerHome`/`BuildManagedTracerHomeR2R` |
+
+### DatabaseMonitoring removal
+
+Removed DBM (`DatabaseMonitoring/`) — comment propagation for SQL query tagging. IAST detects SQL injection directly; no DBM needed.
+
+---
+
+## JSONL Vulnerability Reporter
+
+Vulnerabilities are now written to a JSONL file (one JSON object per line) instead of span tags sent to the Datadog Agent.
+
+### New file: `Iast/VulnerabilityReporter.cs`
+
+Central reporter class:
+
+- `Report(Vulnerability vulnerability)` — called from `IastModule.cs` at both dedup check points
+- `ResolveReportPath()` — honors `DD_IAST_VULNERABILITY_LOG_PATH`:
+  - Bare filename → appended to the tracer log directory
+  - Path with directory component → used verbatim
+  - Not set → `iast-vulnerabilities-<pid>.jsonl` in the tracer log directory
+- `SerializeVulnerability(Vulnerability)` — full JSON schema:
+  - `timestamp` (ISO 8601 UTC)
+  - `type` (vulnerability type string)
+  - `hash` (dedup hash)
+  - `location` — `path`, `method`, `line`, `stack` (inline frames, optional)
+  - `evidence` — `valueParts` array with taint ranges
+  - `sources` — array of taint sources
+- Stack frames use `method` (not `function`) and `class` (not `class_name`); no `id` field
+
+### Configuration key: `DD_IAST_VULNERABILITY_LOG_PATH`
+
+Defined in `supported-configurations.yaml` (type: string, default: `''`), read by `IastSettings.VulnerabilityLogPath`.
+
+### `DatadogLogging.LogDirectory`
+
+Added `internal static string LogDirectory` property to `Logging/Internal/DatadogLogging.cs`. Resolved at static constructor time from the file sink path; falls back to `Path.GetTempPath()`. Used by `VulnerabilityReporter.ResolveReportPath()`.
+
+### `StackReporter.GetUserFrames()`
+
+Added `public static List<StackFrameInfo> GetUserFrames(int maxStackTraceDepth, int topPercent, StackFrame?[] frames)` to `AppSec/Rasp/StackReporter.cs`. Returns user frames without the agent wrapper; used by `VulnerabilityReporter` for inline stack serialization.
+
+---
+
+## IAST always-on
+
+IAST is now always enabled. There is no "IAST disabled" mode.
+
+| Change | Details |
+|---|---|
+| `IastSettings.Enabled` default | Changed from `false` to `true` |
+| `DD_IAST_ENABLED` in `supported-configurations.yaml` | Default changed from `'false'` to `'true'` |
+| Deleted `EnableIast(bool)` from `TestHelper.cs` | No longer exists; IAST is unconditionally on |
+| Removed all `EnableIast(...)` calls | From `AspNetCore5IastTests`, `AspNetCore2IastTests`, `AspNetMvc5IastTests`, `IastInstrumentationUnitTests`, `AspNetCore5IastDbTests` |
+| Removed `_enableIast` field | From `AspNetMvc5IastTests` |
+| Removed `IastEnabled` property | From `AspNetCore5IastTests` and `AspNetCore2IastTests` |
+| Deleted disabled test classes | `AspNetCore5IastTestsFullSamplingIastDisabled`, `AspNetCore2IastTestsFullSamplingDisabled`, `AspNetMvc5IntegratedWithoutIast`, `AspNetMvc5ClassicWithoutIast` |
+| Simplified all filename ternaries | `IastEnabled ? "X.IastEnabled" : "X.IastDisabled"` → `"X"` (30+ occurrences) |
+| `expectVulnerability: IastEnabled` → `expectVulnerability: true` | 17 occurrences across test files |
+| `_testName` no longer carries `.enableIast=true` | `AspNetMvc5IastTests` |
+| `GetFileName()` no longer appends `.IastEnabled`/`.IastDisabled` | `AspNetMvc5IastTests` |
+
+---
+
+## Integration Test JSONL Verification
+
+Integration tests now validate vulnerability output against snapshot files (`.verified.txt`) instead of asserting on agent span snapshots.
+
+### Test infrastructure additions (in `AspNetCore5IastTests` and subclasses)
+
+| Addition | Purpose |
+|---|---|
+| `VulnerabilityLogPath` property (Guid-based) | Unique JSONL file path per fixture; set as `DD_IAST_VULNERABILITY_LOG_PATH` env var in `TryStartApp` |
+| `ReadVulnerabilityRecordsAsync(DateTime since)` | Reads JSONL records emitted at or after `since`; prevents cross-test contamination in the shared per-fixture file |
+| `VerifyVulnerabilityRecordsAsync(records, settings, fileName)` | Runs `Verifier.Verify` against sanitized JSONL, writing snapshots to `test/snapshots/` |
+| `SanitizeForVerification(records)` | Strips volatile fields (timestamps, PIDs, absolute paths) |
+| `SanitizeLdap / SanitizeReflectedXss` | Per-test sanitizers for compiler-generated class names in stack frames |
+| `Dispose` override | Deletes the JSONL file after each test class |
+
+### Snapshot mechanism
+
+Uses [Verify](https://github.com/VerifyTests/Verify): `Verifier.Verify(sanitized, settings).UseFileName(fileName).DisableRequireUniquePrefix()`. First run creates `.received.txt`; accept it as `.verified.txt` to lock the snapshot.
 
 ---
 
 ## Current Architecture
-
-IAST lives inside `Datadog.Trace.dll` and is tightly integrated with the tracer's request lifecycle:
 
 ```
 Native CLR Profiler (IL rewriting)
@@ -440,23 +569,24 @@ Native CLR Profiler (IL rewriting)
     → Taint tracking (per-request TaintedObjects map)
       → Sink detection (SQL injection, XSS, path traversal, etc.)
         → Vulnerability stored in IastRequestContext
-          → Serialized as span tags (_iast / _iast_meta_struct)
-            → Sent to Datadog Agent via normal span pipeline
+          → IastModule.Report() → VulnerabilityReporter.Report()
+            → Appended as JSON line to DD_IAST_VULNERABILITY_LOG_PATH
 ```
+
+Span tags and agent transport are still used for request lifecycle (spans exist), but vulnerabilities are **additionally** written to the JSONL file in parallel. The long-term goal is to remove the span dependency entirely (see "Future Work" below).
 
 ### IAST Module Structure
 
-**135 C# files** under `tracer/src/Datadog.Trace/Iast/`:
+**134 C# files** under `tracer/src/Datadog.Trace/Iast/`:
 
 | Directory | Files | Purpose |
 |---|---|---|
-| Root | 37 | Core: `Iast.cs`, `IastModule.cs`, `IastRequestContext.cs`, `Vulnerability.cs`, `VulnerabilityBatch.cs`, `Evidence.cs`, `Source.cs`, `TaintedObjects.cs`, deduplication, overhead control |
+| Root | 40 | Core: `Iast.cs`, `IastModule.cs`, `IastRequestContext.cs`, `Vulnerability.cs`, `VulnerabilityBatch.cs`, `Evidence.cs`, `Source.cs`, `TaintedObjects.cs`, deduplication, overhead control, `VulnerabilityReporter.cs` |
 | `Aspects/` | 63 | Method interception hooks organized by target library (System, System.Data, System.IO, System.Net, EntityFramework, MongoDB, NHibernate, ASP.NET, etc.) |
 | `Dataflow/` | 13 | Aspect attributes (`AspectClassAttribute`, `AspectMethodReplace`, `AspectMethodInsertBefore/After`, `AspectFilter`) |
 | `Propagation/` | 4 | Taint propagation through string operations (`StringModuleImpl`, `StringBuilderModuleImpl`, `PropagationModuleImpl`) |
 | `SensitiveData/` | 9 | Evidence redaction (`EvidenceRedactor` + tokenizers for SQL, LDAP, JSON, URLs, headers, commands) |
 | `Settings/` | 1 | `IastSettings` — IAST-specific configuration |
-| `Telemetry/` | 2 | Execution metrics tracking (sources/sinks/propagations) |
 | `Helpers/` | 2 | MongoDB helper, string extensions |
 | `Analyzers/` | 2 | Hardcoded secrets detection, regex patterns |
 
@@ -467,14 +597,32 @@ Native CLR Profiler (IL rewriting)
 - Subdirectory `Tainted/` (12 files) for taint-specific tests
 
 **Integration tests** (11 files): `tracer/test/Datadog.Trace.Security.IntegrationTests/IAST/`
-- Full end-to-end tests with real ASP.NET/ASP.NET Core apps and `MockTracerAgent`
+- Full end-to-end tests with real ASP.NET/ASP.NET Core apps
+- JSONL output verified against Verify snapshots in `test/snapshots/`
 - Test applications under `tracer/test/test-applications/security/`
 
-**Benchmarks**: `Benchmarks.Trace/Iast/StringAspectsBenchmark.cs`
+---
+
+## Configuration Reference
+
+Current IAST-relevant environment variables:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `DD_IAST_ENABLED` | `true` | Master switch. Default flipped from `false` to `true`; runtime still honors the env var |
+| `DD_IAST_VULNERABILITY_LOG_PATH` | `''` | Output file. Bare filename → log dir. Full path → verbatim. Empty → `iast-vulnerabilities-<pid>.jsonl` in log dir |
+| `DD_IAST_DEDUPLICATION_ENABLED` | `true` | Hash-based dedup |
+| `DD_IAST_VULNERABILITIES_PER_REQUEST` | `2` | Max vulnerabilities per request |
+| `DD_IAST_MAX_CONCURRENT_REQUESTS` | `2` | Overhead control — max concurrent analyzed requests |
+| `DD_IAST_REQUEST_SAMPLING` | `30` | Percentage of requests analyzed |
+| `DD_IAST_REDACTION_ENABLED` | `true` | Evidence redaction (can disable for local use) |
+| `DD_IAST_STACK_TRACE_ENABLED` | `true` | Include inline stack frames in JSONL output |
 
 ---
 
 ## Current Dependencies on Tracer Core
+
+What IAST still relies on from the surrounding tracer. Drives the remaining work in "Future Work" below.
 
 ### Critical (must replace)
 
@@ -484,7 +632,7 @@ Native CLR Profiler (IL rewriting)
 | **`Span` / `Scope`** | `IastModule.cs`, `IastRequestContext.cs` | Vulnerabilities stored as span tags; standalone spans created for hardcoded secrets |
 | **`TraceContext`** | `TraceContext.cs:38,111,133` | Holds `IastRequestContext` as a field; `EnableIastInRequest()` initializes it |
 | **`SamplingPriority`** | `IastModule.cs` | Force-keeps traces with vulnerabilities |
-| **Agent transport** | Indirect via span pipeline | Vulnerabilities ride on spans to the agent |
+| **Agent transport** | Indirect via span pipeline | Vulnerabilities still ride on spans (in addition to JSONL) |
 
 ### Moderate (simplify or keep)
 
@@ -502,120 +650,12 @@ Native CLR Profiler (IL rewriting)
 | Dependency | Reason |
 |---|---|
 | **Evidence redaction** (`SensitiveData/`) | Local-only tool — no need to mask data |
-| **Telemetry to backend** (`Iast/Telemetry/`, `Datadog.Trace/Telemetry/`) | No backend |
-| **AppSec / WAF / RASP** | Out of scope |
-| **Agent discovery service** | No agent |
-| **Sampling infrastructure** | No traces to sample |
-| **Span tags / MetaStruct serialization** | Replaced by file output |
-| **`InstrumentationCategory.IastRasp`** aspects | Keep the IAST sink detection, remove RASP-only paths |
-
----
-
-## Proposed Architecture
-
-```
-Native CLR Profiler (IL rewriting, stripped to IAST aspects only)
-  → Aspect methods called on string/IO/DB/HTTP operations
-    → Taint tracking (per-request TaintedObjects map)
-      → Sink detection
-        → Vulnerability stored in IastRequestContext (via AsyncLocal)
-          → Serialized to JSON
-            → Written to local file in configurable output directory
-```
-
-### Key Changes
-
-#### 1. Per-Request Context — Replace Span Dependency
-
-**Current**: `Tracer.Instance.ActiveScope → Scope.Span → Span.Context.TraceContext → TraceContext.IastRequestContext`
-
-**Proposed**: `AsyncLocal<IastRequestContext>` managed by a new `IastLifecycle` class.
-
-```
-IastLifecycle.BeginRequest()   → sets AsyncLocal<IastRequestContext>
-  ... request processing, aspects fire, taint propagates, sinks detect ...
-IastLifecycle.EndRequest()     → flushes vulnerabilities to file, clears AsyncLocal
-```
-
-Request start/end detection options:
-- **Option A**: Keep minimal CallTarget integrations for ASP.NET Core middleware and ASP.NET pipeline (least change)
-- **Option B**: Use `DiagnosticSource` listeners for `Microsoft.AspNetCore.Hosting` events (no CallTarget needed for lifecycle)
-
-#### 2. Vulnerability Output — File-Based JSON
-
-Replace span-tag serialization with a `VulnerabilityFileWriter` that appends findings to a JSON file.
-
-**Output location**: Configurable via `DD_IAST_OUTPUT_DIR` (default: `./iast-output/`)
-
-**Format options** (to decide):
-- **SARIF** (Static Analysis Results Interchange Format) — industry standard, IDE-compatible
-- **Custom JSON** — simpler, full control over schema
-
-**Proposed JSON schema** (custom):
-```json
-{
-  "timestamp": "2026-04-08T12:00:00Z",
-  "request": {
-    "method": "POST",
-    "url": "/api/users",
-    "route": "/api/users"
-  },
-  "vulnerabilities": [
-    {
-      "type": "SQL_INJECTION",
-      "location": {
-        "file": "UserController.cs",
-        "method": "GetUser",
-        "line": 42
-      },
-      "evidence": {
-        "value": "SELECT * FROM users WHERE id = '1 OR 1=1'"
-      },
-      "sources": [
-        {
-          "origin": "http.request.parameter",
-          "name": "id",
-          "value": "1 OR 1=1"
-        }
-      ],
-      "dataflow": [
-        "http.request.parameter:id → String.Concat → SqlCommand.CommandText"
-      ],
-      "hash": 1234567890
-    }
-  ]
-}
-```
-
-#### 3. Remove Evidence Redaction
-
-Delete the entire `SensitiveData/` directory (9 files: `EvidenceRedactor.cs` + 7 tokenizers + `SensitiveHandler.cs`). Since the analyzer runs locally with no data leaving the machine, full evidence is desirable for debugging.
-
-Remove redaction calls from:
-- `VulnerabilityBatch.ToJson()` (lines ~122-142)
-- `VulnerabilityBatch.ToMessagePack()` (lines ~170-192)
-- `IastModule.GetVulnerabilityBatch()` — no longer needs `EvidenceRedactor` parameter
-
-#### 4. Remove Telemetry
-
-Delete `Iast/Telemetry/ExecutedTelemetryHelper.cs` and all telemetry metric emissions throughout IAST code. Remove dependency on `Datadog.Trace/Telemetry/`.
-
-#### 5. Simplify Configuration
-
-`IastSettings` currently reads from `TracerSettings` / `GlobalConfigurationSource`. Replace with standalone config:
-
-| Setting | Default | Notes |
-|---|---|---|
-| `DD_IAST_ENABLED` | `true` | Master switch |
-| `DD_IAST_OUTPUT_DIR` | `./iast-output` | Where to write findings |
-| `DD_IAST_OUTPUT_FORMAT` | `json` | `json` or `sarif` |
-| `DD_IAST_DEDUPLICATION_ENABLED` | `true` | Hash-based dedup |
-| `DD_IAST_VULNERABILITIES_PER_REQUEST` | `2` | Max vulns per request |
-| `DD_IAST_MAX_CONCURRENT_REQUESTS` | `2` | Overhead control |
-| `DD_IAST_REQUEST_SAMPLING` | `100` | Percentage (default 100% for standalone) |
-| `DD_IAST_LOG_LEVEL` | `Information` | Logging verbosity |
-
-Removed settings: `RedactionEnabled`, `RedactionKeysPattern`, `RedactionValuesPattern`, `RegexTimeout` (all redaction-related).
+| **AppSec / WAF / RASP** | ✅ Done |
+| **Telemetry to backend** (`Iast/Telemetry/`, `Datadog.Trace/Telemetry/`) | ✅ Iast/Telemetry/ deleted; outer `Telemetry/` neutralized |
+| **Agent discovery service** | Pending (no agent in standalone mode) |
+| **Sampling infrastructure** | Pending (no traces to sample) |
+| **Span tags / MetaStruct serialization** | Pending — JSONL writes in parallel today |
+| **`InstrumentationCategory.IastRasp`** aspects | ✅ Done |
 
 ---
 
@@ -631,167 +671,53 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 
 ---
 
-## Files to Delete (Managed Side)
-
-### Entire directories to remove
-
-```
-tracer/src/Datadog.Trace/Agent/                        — Agent transport, discovery, serialization
-tracer/src/Datadog.Trace/AppSec/                       — WAF, RASP, security rules
-tracer/src/Datadog.Trace/Ci/                           — CI Visibility
-tracer/src/Datadog.Trace/ContinuousProfiler/           — Profiler coordination
-tracer/src/Datadog.Trace/DataStreamsMonitoring/         — DSM
-tracer/src/Datadog.Trace/DatabaseMonitoring/           — DBM
-tracer/src/Datadog.Trace/Debugger/                     — Dynamic Instrumentation
-tracer/src/Datadog.Trace/DiagnosticListeners/          — DiagnosticSource integrations (unless used for request lifecycle)
-tracer/src/Datadog.Trace/DogStatsd/                    — StatsD metrics
-tracer/src/Datadog.Trace/HttpOverStreams/              — Agent HTTP transport
-tracer/src/Datadog.Trace/LibDatadog/                   — Native interop wrappers
-tracer/src/Datadog.Trace/OTelMetrics/                  — OpenTelemetry metrics
-tracer/src/Datadog.Trace/OpenTelemetry/                — OTEL interop
-tracer/src/Datadog.Trace/Processors/                   — Span processors
-tracer/src/Datadog.Trace/Propagators/                  — Context propagation (Datadog, W3C, B3)
-tracer/src/Datadog.Trace/RemoteConfigurationManagement/ — RCM
-tracer/src/Datadog.Trace/RuntimeMetrics/               — Runtime metrics
-tracer/src/Datadog.Trace/Sampling/                     — Sampling (keep OverheadController only)
-tracer/src/Datadog.Trace/ServiceFabric/                — Service Fabric
-tracer/src/Datadog.Trace/Telemetry/                    — Backend telemetry
-tracer/src/Datadog.Trace/Iast/SensitiveData/           — Evidence redaction
-tracer/src/Datadog.Trace/Iast/Telemetry/               — IAST telemetry metrics
-```
-
-### ClrProfiler: gut non-IAST integrations
-
-```
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/       — unless needed for IAST DB sinks
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Couchbase/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Elasticsearch/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Grpc/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Http/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/IbmMq/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/MongoDb/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Msmq/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Protobuf/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Redis/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Remoting/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RestSharp/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/
-tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/
-```
-
-**Keep from ClrProfiler**: `CallTarget/` (core engine), `Helpers/`, and ASP.NET request lifecycle integrations.
-
-### Other tracer/src projects to remove
-
-```
-tracer/src/Datadog.Trace.OpenTracing/
-tracer/src/Datadog.Trace.Manual/
-tracer/src/Datadog.Trace.MSBuild/
-tracer/src/Datadog.Trace.Tools.*/
-tracer/src/Datadog.Trace.Trimming/
-tracer/src/Datadog.AzureFunctions/
-tracer/src/Datadog.FleetInstaller/
-tracer/src/Datadog.InstrumentedAssembly*/
-tracer/src/Datadog.AutoInstrumentation.Generator/
-```
-
-### Core files to heavily modify
-
-| File | Change |
-|---|---|
-| `Tracer.cs` | Remove or replace with minimal `IastTracer` stub |
-| `Span.cs`, `Scope.cs`, `SpanContext.cs` | Remove (not needed) |
-| `TraceContext.cs` | Remove (replaced by `AsyncLocal<IastRequestContext>`) |
-| `Configuration/TracerSettings.cs` | Replace with standalone IAST config |
-| `IastModule.cs` | Replace all `Tracer.Instance` / span references with `AsyncLocal` context |
-| `IastRequestContext.cs` | Remove `AddIastVulnerabilitiesToSpan`, add `WriteToFile` |
-| `VulnerabilityBatch.cs` | Remove MessagePack serialization, simplify JSON (no redaction) |
-| `Iast.cs` | Remove `DiscoveryService` dependency, simplify initialization |
-
----
-
-## Files to Keep
-
-```
-tracer/src/Datadog.Trace/Iast/                         — Core IAST (minus SensitiveData/ and Telemetry/)
-tracer/src/Datadog.Trace/DuckTyping/                   — Used by aspects
-tracer/src/Datadog.Trace/Logging/                      — Logging facade
-tracer/src/Datadog.Trace/ClrProfiler/CallTarget/       — IL rewriting engine
-tracer/src/Datadog.Trace/ClrProfiler/Helpers/          — Native interop helpers
-tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet*/  — Request lifecycle hooks (minimal)
-tracer/src/Datadog.Trace/Util/                         — Common utilities (subset)
-tracer/src/Datadog.Trace/Vendors/                      — Vendored dependencies (subset)
-tracer/src/Datadog.Trace/ExtensionMethods/             — Internal helpers (subset)
-tracer/src/Datadog.Trace/Configuration/                — Subset for IAST-only config
-```
-
----
-
-## New Files to Create
-
-| File | Purpose |
-|---|---|
-| `Iast/IastLifecycle.cs` | Manages `AsyncLocal<IastRequestContext>`, `BeginRequest()` / `EndRequest()` |
-| `Iast/VulnerabilityFileWriter.cs` | Writes vulnerability JSON to output directory |
-| `Iast/StandaloneIastSettings.cs` | Standalone configuration (env vars only, no `TracerSettings`) |
-
----
-
 ## Implementation Phases
 
-### Phase 1 — Replace per-request context
+### Phase 1 — Replace per-request context (pending)
 - Introduce `AsyncLocal<IastRequestContext>` in new `IastLifecycle` class
 - Replace all `Tracer.Instance.ActiveScope` chains in `IastModule.cs` with `IastLifecycle.GetCurrentContext()`
 - Keep ASP.NET/Core request start/end CallTarget integrations, wire them to `IastLifecycle`
 
-### Phase 2 — File-based output
-- Create `VulnerabilityFileWriter` with JSON serialization
-- Replace `IastRequestContext.AddIastVulnerabilitiesToSpan()` with `IastRequestContext.FlushToFile()`
-- Remove MessagePack serialization from `VulnerabilityBatch`
+### Phase 2 — File-based output ✅ Done (parallel to spans)
+- ~~Create `VulnerabilityFileWriter` with JSON serialization~~ → `VulnerabilityReporter.cs` writes JSONL
+- Still pending: replace `IastRequestContext.AddIastVulnerabilitiesToSpan()` with `IastRequestContext.FlushToFile()` (currently both run)
+- Still pending: remove MessagePack serialization from `VulnerabilityBatch`
 
-### Phase 3 — Remove evidence redaction
+### Phase 3 — Remove evidence redaction (pending, optional)
 - Delete `Iast/SensitiveData/` (9 files)
 - Remove redaction calls from `VulnerabilityBatch` and `IastModule`
 
-### Phase 4 — Remove telemetry and agent dependencies
-- Delete `Iast/Telemetry/` (2 files)
-- Remove all `TelemetryFactory` / metric emissions from IAST code
-- Remove `Agent/`, `HttpOverStreams/`, `LibDatadog/` directories
+### Phase 4 — Remove telemetry and agent dependencies (partial)
+- ~~Delete `Iast/Telemetry/` (2 files)~~ ✅ Done
+- ~~Remove all `TelemetryFactory` / metric emissions from IAST code~~ ✅ Done (neutralized)
+- ~~Delete `LibDatadog/`~~ ✅ Done
+- Still pending: delete `Agent/`, `HttpOverStreams/` directories
 
-### Phase 5 — Gut non-IAST code
+### Phase 5 — Gut non-IAST code (mostly done)
 - ~~Delete DataStreamsMonitoring~~ ✅ Done
 - ~~Delete non-IAST ClrProfiler integrations (~25 directories)~~ ✅ Done
-- Delete non-IAST tracer/src projects (~10 projects)
-- Remove `Span.cs`, `Scope.cs`, `Tracer.cs`, `TraceContext.cs` or replace with stubs
+- ~~Delete RCM, CI, PDBs, DogStatsd, DBM, ContinuousProfiler, Debugger, OpenTelemetry, RuntimeMetrics, FeatureFlags, ApiSec, AttackerFingerprint, WAF~~ ✅ Done
+- ~~Delete non-IAST tracer/src projects (~10 projects)~~ ✅ Done (20 projects removed)
+- Still pending: remove `Span.cs`, `Scope.cs`, `Tracer.cs`, `TraceContext.cs` or replace with stubs
 
-### Phase 6 — Simplify configuration
+### Phase 6 — Simplify configuration (pending)
 - Create standalone `StandaloneIastSettings` reading only IAST env vars
 - Remove `TracerSettings`, `ExporterSettings`, `IntegrationSettings`
 
-### Phase 7 — Adapt tests
-- Fix unit tests to work without tracer mocks
-- Rework integration tests to validate JSON file output instead of span assertions
-- Remove non-IAST test projects
+### Phase 7 — Adapt tests (partial)
+- ~~Rework integration tests to validate JSON file output instead of span assertions~~ ✅ Done (JSONL + Verify snapshots)
+- ~~Remove non-IAST test projects~~ ✅ Done (16 projects removed)
+- Still pending: fix unit tests to work without tracer mocks
 
 ---
 
 ## Open Questions
 
-1. **Native profiler**: Strip it down too, or leave as-is and only gut managed code?
+1. **Native profiler**: Strip it down too, or leave as-is and only gut managed code? *(Leaning: leave native untouched.)*
 2. **Request lifecycle**: Keep minimal CallTarget integrations (Option A) or use DiagnosticSource listeners (Option B)?
-3. **Output format**: Custom JSON (simpler) or SARIF (industry standard, IDE integration)?
-4. **Output strategy**: One file per process, one per request, or rolling append?
-5. **Overhead controller**: Keep (performance safety) or remove (scan everything)?
+3. **Output format**: ✅ JSONL chosen (one JSON object per line, custom schema).
+4. **Output strategy**: ✅ One file per process (PID-suffixed default; configurable via `DD_IAST_VULNERABILITY_LOG_PATH`), append-only.
+5. **Overhead controller**: Keep (performance safety) or remove (scan everything)? *(Currently kept.)*
 6. **Hardcoded secrets**: Keep this analyzer with file output?
-7. **Project structure**: Gut `Datadog.Trace.csproj` in-place (A) or new project (B)?
-8. **Dataflow traces in output**: Include full taint propagation path (source → operations → sink) in findings?
+7. **Project structure**: Gut `Datadog.Trace.csproj` in-place (A) or new project (B)? *(Currently A — in-place gutting.)*
+8. **Dataflow traces in output**: Include full taint propagation path (source → operations → sink) in findings? *(Currently: sources + tainted value parts, no full dataflow chain.)*

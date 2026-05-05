@@ -26,7 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
 {
     public AspNetMvc5IntegratedWithIast(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, classicMode: false, enableIast: true)
+        : base(iisFixture, output, classicMode: false)
     {
     }
 
@@ -42,7 +42,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [InlineData("text/html", 500, "")]
     public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
     {
-        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.enableIast=true";
+        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated";
         await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
     }
 
@@ -65,7 +65,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [InlineData("text/html", 200, "invalid", "https")]
     public async Task TestStrictTransportSecurityHeaderMissing(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto)
     {
-        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.IastEnabled";
+        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated";
         await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
     }
 
@@ -111,27 +111,6 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
 }
 
 [Collection("IisTests")]
-public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
-{
-    public AspNetMvc5IntegratedWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, classicMode: false, enableIast: false)
-    {
-    }
-
-    [SkippableTheory]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [InlineData("text/html", 200, "dummyvalue")]
-
-    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
-    {
-        var testName = "Security." + nameof(AspNetMvc5) + ".Classic.enableIast=true";
-        await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
-    }
-}
-
-[Collection("IisTests")]
 public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
@@ -139,7 +118,6 @@ public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, 
     public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
-        EnableIast(true);
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
@@ -148,7 +126,7 @@ public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, 
         SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
 
         _iisFixture = iisFixture;
-        _testName = "Security." + nameof(AspNetMvc5) + ".Classic" + ".enableIast=true";
+        _testName = "Security." + nameof(AspNetMvc5) + ".Classic";
     }
 
     [Trait("Category", "EndToEnd")]
@@ -177,25 +155,14 @@ public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, 
     public Task DisposeAsync() => Task.CompletedTask;
 }
 
-[Collection("IisTests")]
-public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
-{
-    public AspNetMvc5ClassicWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, classicMode: true, enableIast: false)
-    {
-    }
-}
-
 public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly bool _enableIast;
     private readonly bool _classicMode;
 
-    public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableIast)
+    public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
-        EnableIast(enableIast);
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
@@ -206,10 +173,8 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
-        _enableIast = enableIast;
         _testName = "Security." + nameof(AspNetMvc5)
-                 + (classicMode ? ".Classic" : ".Integrated")
-                 + ".enableIast=" + enableIast;
+                 + (classicMode ? ".Classic" : ".Integrated");
     }
 
     public async Task InitializeAsync()
@@ -536,10 +501,9 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
 
     protected async Task TestIastHeaderInjectionRequestVulnerability(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
     {
-        var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase) || !_enableIast;
+        var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase);
         var filename = "Iast.HeaderInjection.AspNetMvc." + (notVulnerable ? "NotVuln" : testCase) +
             (useValueFromOriginHeader ? ".origin" : string.Empty);
-        if (!_enableIast) { filename += ".IastDisabled"; }
         var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
         IncludeAllHttpSpans = true;
 
@@ -602,7 +566,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
 
     private string GetFileName(string testName)
     {
-        return $"Iast.{testName}.AspNetMvc5" + (_enableIast ? ".IastEnabled" : ".IastDisabled");
+        return $"Iast.{testName}.AspNetMvc5";
     }
 }
 #endif

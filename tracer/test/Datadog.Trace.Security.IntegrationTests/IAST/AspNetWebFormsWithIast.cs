@@ -39,7 +39,6 @@ public abstract class AspNetWebFormsWithIast : AspNetBase, IClassFixture<IisFixt
     public AspNetWebFormsWithIast(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
         : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
-        EnableIast(true);
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");

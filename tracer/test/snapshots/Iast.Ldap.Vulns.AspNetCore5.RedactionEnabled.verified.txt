@@ -1,0 +1,25 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: LDAP://ldap.forumsys.com:389/dc=example,dc=com
+        }
+      ]
+    },
+    hash: 9515978,
+    location: {
+      method: <Ldap>g__PerformLdapQuery|0,
+      path: Samples.Security.AspNetCore5.Controllers.IastController+
+    },
+    sources: [
+      {
+        name: path,
+        origin: http.request.parameter,
+        value: LDAP://ldap.forumsys.com:389/dc=example,dc=com
+      }
+    ],
+    type: LDAP_INJECTION
+  }
+]
