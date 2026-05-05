@@ -1,13 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <!-- NU1510: System.Net.Http is flagged as framework-provided, but this sample is named "VersionConflict"
-         and intentionally pins legacy versions of Datadog.Trace and System.Net.Http for the regression scenario. -->
-    <NoWarn>$(NoWarn);NU1510</NoWarn>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Datadog.Trace" Version="1.29.0" />
+  </ItemGroup>
+
+  <!-- System.Net.Http is needed on net4x; on netcoreapp2.1+ it ships with the BCL. -->
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
