@@ -842,11 +842,14 @@ public sealed class StringAspects
         return result;
     }
 
+#if NETCOREAPP
     private static string JoinAndMaterialize<T>(char separator, IEnumerable<T> values, out T[] materializedValues)
     {
         materializedValues = Materialize(values);
         return string.Join(separator, materializedValues);
     }
+
+#endif
 
     private static string JoinAndMaterialize<T>(string separator, IEnumerable<T> values, out T[] materializedValues)
     {
