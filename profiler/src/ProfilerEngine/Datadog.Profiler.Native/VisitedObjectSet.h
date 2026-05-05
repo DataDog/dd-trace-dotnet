@@ -275,7 +275,7 @@ public:
 
     size_t GetPeakEntryCount() const
     {
-        return std::max(_peakCount, _count);
+        return (std::max)(_peakCount, _count);
     }
 
     size_t GetGrowCount() const
