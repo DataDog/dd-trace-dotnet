@@ -30,6 +30,8 @@ internal static class MeterObservableUpDownCounterReflection
     private static readonly MethodInfo? FuncOfTMethod = FindOverload(secondParam =>
         secondParam.IsGenericType
         && secondParam.GetGenericTypeDefinition() == typeof(Func<>)
+        // Func<T> where T is the method's own generic parameter -- excludes Func<Measurement<T>>
+        // and Func<IEnumerable<Measurement<T>>>, which FuncOfMeasurementsMethod handles.
         && secondParam.GetGenericArguments()[0].IsGenericMethodParameter);
 
     private static readonly MethodInfo? FuncOfMeasurementsMethod = FindOverload(secondParam =>

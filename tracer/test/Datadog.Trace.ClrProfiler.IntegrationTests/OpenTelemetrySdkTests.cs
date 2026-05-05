@@ -657,14 +657,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var formattedJson = new JArray(collapsed).ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                // .NET 6 emits ObservableGauge for the 7 metrics that should be UpDownCounter
-                // (UpDownCounter API isn't on the net6.0 ref assembly, see RuntimeMetricsPolyfill).
-                // .NET 7+ reflects-resolves UpDownCounter and matches the .NET 9 native wire shape,
-                // so a single snapshot file covers all .NET 7/8/9/10+ hosts.
-                var tfm = Environment.Version.Major >= 7 ? "net" : "net6";
-
+                // Single snapshot for all TFMs: the OTel SDK sample transitively references
+                // System.Diagnostics.DiagnosticSource 9.0+, which gets loaded into the host process
+                // even on .NET 6. Reflection in MeterObservableUpDownCounterReflection then resolves
+                // CreateObservableUpDownCounter on every TFM, so the polyfill produces identical wire
+                // output across .NET 6/7/8/9/10+.
                 await Verifier.Verify(formattedJson, settings)
-                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpRuntimeMetrics_{tfm}")
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.{nameof(SubmitsOtlpRuntimeMetrics)}")
                               .DisableRequireUniquePrefix();
 
                 agent.StatsdRequests.Should().BeEmpty(

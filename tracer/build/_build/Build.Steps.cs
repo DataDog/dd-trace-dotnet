@@ -2402,6 +2402,14 @@ partial class Build
             datadogTraceTypes.Add(new("System.Resources.Writer", "System.Resources.ResourceWriter"));
             datadogTraceTypes.Add(new("System.IO.IsolatedStorage", "System.IO.IsolatedStorage.IsolatedStorageScope"));
 
+            // ObservableUpDownCounter<T> is created via reflection in
+            // tracer/src/Datadog.Trace/RuntimeMetrics/MeterObservableUpDownCounterReflection.cs
+            // (the API isn't in the net6.0 ref assembly we compile against, so we resolve it from
+            // System.Diagnostics.DiagnosticSource 7.0+ at runtime). The type is never named in IL,
+            // so Mono.Cecil can't see it during TypeRef extraction -- we add it explicitly so
+            // trimmed/AOT customer apps that use OTLP runtime metrics don't strip it away.
+            datadogTraceTypes.Add(new("System.Diagnostics.DiagnosticSource", "System.Diagnostics.Metrics.ObservableUpDownCounter`1"));
+
             var types = loaderTypes
                        .Concat(datadogTraceTypes)
                        .Distinct()

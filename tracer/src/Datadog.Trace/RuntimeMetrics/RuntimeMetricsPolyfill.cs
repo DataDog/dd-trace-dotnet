@@ -59,7 +59,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{collection}",
             description: "The number of garbage collections that have occurred since the process has started.");
 
-        RegisterObservableUpDownCounterOrGauge(
+        RegisterObservableUpDownCounterOrSkip(
             _meter,
             "dotnet.process.memory.working_set",
             static () => Environment.WorkingSet,
@@ -72,21 +72,21 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "By",
             description: "The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations.");
 
-        RegisterObservableUpDownCounterOrGauge(
+        RegisterObservableUpDownCounterOrSkip(
             _meter,
             "dotnet.gc.last_collection.memory.committed_size",
             () => GetCachedGcInfo().TotalCommittedBytes,
             unit: "By",
             description: "The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection.");
 
-        RegisterObservableUpDownCounterOrGaugeMulti(
+        RegisterObservableUpDownCounterOrSkipMulti(
             _meter,
             "dotnet.gc.last_collection.heap.size",
             GetHeapSizes,
             unit: "By",
             description: "The managed GC heap size (including fragmentation), as observed during the latest garbage collection.");
 
-        RegisterObservableUpDownCounterOrGaugeMulti(
+        RegisterObservableUpDownCounterOrSkipMulti(
             _meter,
             "dotnet.gc.last_collection.heap.fragmentation.size",
             GetHeapFragmentation,
@@ -153,7 +153,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{work_item}",
             description: "The number of work items that are currently queued to be processed by the thread pool.");
 
-        RegisterObservableUpDownCounterOrGauge(
+        RegisterObservableUpDownCounterOrSkip(
             _meter,
             "dotnet.timer.count",
             static () => Timer.ActiveCount,
@@ -162,7 +162,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         // --- Assemblies ---
 
-        RegisterObservableUpDownCounterOrGauge(
+        RegisterObservableUpDownCounterOrSkip(
             _meter,
             "dotnet.assembly.count",
             static () => (long)AppDomain.CurrentDomain.GetAssemblies().Length,
@@ -180,7 +180,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         // --- CPU ---
 
-        RegisterObservableUpDownCounterOrGauge(
+        RegisterObservableUpDownCounterOrSkip(
             _meter,
             "dotnet.process.cpu.count",
             static () => (long)Environment.ProcessorCount,
@@ -201,23 +201,18 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         _process.Dispose();
     }
 
-    private static void RegisterObservableUpDownCounterOrGauge<T>(Meter meter, string name, Func<T> observeValue, string unit, string description)
+    // When CreateObservableUpDownCounter is unavailable (.NET 6 host with in-box DiagnosticSource 6.0
+    // and no OpenTelemetry package installed), we omit the metric instead of falling back to a Gauge.
+    // Gauge has different semantics from UpDownCounter (instantaneous observation vs cumulative sum that
+    // can go up or down), and emitting the wrong instrument type would publish misleading data to
+    // backends.
+    private static void RegisterObservableUpDownCounterOrSkip<T>(Meter meter, string name, Func<T> observeValue, string unit, string description)
         where T : struct
-    {
-        if (!MeterObservableUpDownCounterReflection.TryRegister(meter, name, observeValue, unit, description))
-        {
-            meter.CreateObservableGauge(name, observeValue, unit, description);
-        }
-    }
+        => MeterObservableUpDownCounterReflection.TryRegister(meter, name, observeValue, unit, description);
 
-    private static void RegisterObservableUpDownCounterOrGaugeMulti<T>(Meter meter, string name, Func<IEnumerable<Measurement<T>>> observeValues, string unit, string description)
+    private static void RegisterObservableUpDownCounterOrSkipMulti<T>(Meter meter, string name, Func<IEnumerable<Measurement<T>>> observeValues, string unit, string description)
         where T : struct
-    {
-        if (!MeterObservableUpDownCounterReflection.TryRegisterMulti(meter, name, observeValues, unit, description))
-        {
-            meter.CreateObservableGauge(name, observeValues, unit, description);
-        }
-    }
+        => MeterObservableUpDownCounterReflection.TryRegisterMulti(meter, name, observeValues, unit, description);
 
     private static Measurement<long>[] GetGarbageCollectionCounts()
     {
