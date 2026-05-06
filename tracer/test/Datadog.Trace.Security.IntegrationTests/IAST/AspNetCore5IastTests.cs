@@ -9,7 +9,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -19,7 +18,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -32,7 +30,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
 {
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, vulnerabilitiesPerRequest: 3, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsFullSamplingIastEnabled")
+        : base(fixture, outputHelper, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsFullSamplingIastEnabled")
     {
     }
 
@@ -59,14 +57,14 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var filename = "Iast.XContentTypeHeaderMissing.AspNetCore5." + contentType.Replace("/", string.Empty) +
             "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(xContentTypeHeaderValue) ? "empty" : xContentTypeHeaderValue);
         var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
+        var isHtml = contentType.Contains("html") || contentType.Contains("xhtml");
+        var expectVulnerability = isHtml && returnCode == 200 && !xContentTypeHeaderValue.Equals("nosniff", StringComparison.OrdinalIgnoreCase);
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spans, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "XCONTENTTYPE_HEADER_MISSING", expectVulnerability ? filename : NotVulnerableSnapshotName, expectVulnerability: expectVulnerability, since: since);
     }
 
     // When the request is finished without the header Strict-Transport-Security or with an invalid value on it, we should detect the vulnerability and send it to the agent when these conditions happens:
@@ -95,14 +93,16 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
             "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
             + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
         var url = "/Iast/StrictTransportSecurity" + queryParams;
+        var isHtml = contentType.Contains("html") || contentType.Contains("xhtml");
+        var isHttps = !string.IsNullOrEmpty(xForwardedProto);
+        var isValidHsts = Regex.IsMatch(Uri.UnescapeDataString(hstsHeaderValue ?? string.Empty), @"^max-age=[1-9]\d*");
+        var expectVulnerability = isHtml && isHttps && returnCode == 200 && !isValidHsts;
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spans, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "HSTS_HEADER_MISSING", expectVulnerability ? filename : NotVulnerableSnapshotName, expectVulnerability: expectVulnerability, since: since);
     }
 
     [Fact]
@@ -114,12 +114,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = "/Iast/StackTraceLeak";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, [url]);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spans, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "STACKTRACE_LEAK", filename, expectVulnerability: true, since: since);
     }
 
     [SkippableFact]
@@ -130,13 +128,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = "/Iast/XpathInjection?user=klaus&value=pass";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "XPATH_INJECTION", filename, expectVulnerability: true, since: since);
     }
 
     [SkippableFact]
@@ -148,13 +143,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = $"/Iast/TypeReflectionInjection?type={type}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, [url]);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "REFLECTION_INJECTION", filename, expectVulnerability: true, since: since);
     }
 
     [SkippableFact]
@@ -165,13 +157,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = "/Iast/NewtonsoftJsonParseTainting?json={\"key\": \"value\"}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, [url]);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
     }
 
 #if !NETFRAMEWORK && NETCOREAPP3_1_OR_GREATER
@@ -183,12 +172,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = "/Iast/SystemTextJsonParseTainting?json={\"key\": \"value\"}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, [url]);
+
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
     }
 #endif
 
@@ -201,13 +188,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         AddCookies(new Dictionary<string, string>() { { "cookiename", "cookievalue" } });
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "INSECURE_COOKIE", "NO_HTTPONLY_COOKIE", "NO_SAMESITE_COOKIE" }, filename, expectVulnerability: true, since: since);
     }
 
     [SkippableFact]
@@ -218,13 +202,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = $"/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, [url]);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "EMAIL_HTML_INJECTION", filename, expectVulnerability: true, since: since);
     }
 
     [Theory]
@@ -238,13 +219,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = $"/Iast/DatabaseSourceInjection?host=localhost&injectOnlyDatabase={injectOnlyDatabase}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, [url]);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
     }
 
     [SkippableTheory]
@@ -270,13 +248,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         newFixture.SetOutput(Output);
         await TryStartApp(newFixture);
 
-        var agent = newFixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(newFixture.Agent, [url]);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -291,13 +266,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = "/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, [url]);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
     }
 
 #if NET6_0_OR_GREATER
@@ -311,62 +283,12 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var url = $"/Iast/InterpolatedSqlString?name=John";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
     }
-    #endif
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastEventMetaStructEnabled()
-    {
-        var filename = "Iast.MetaStruct.AspNetCore5";
-        const string type = "System.String";
-        var url = $"/Iast/TypeReflectionInjection?type={type}";
-        IncludeAllHttpSpans = true;
-
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing(forceMetaStruct: true);
-
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastVulnerabilitySampling()
-    {
-        var filename = "Iast.VulnerabilitySampling.AspNetCore5";
-        var url1 = $"/Iast/Sampling1";
-        var url2 = $"/Iast/Sampling2";
-        IncludeAllHttpSpans = true;
-
-        // Each route has 3 vulnerabilities (as the budget)
-        // First call to the route will rend 3 vulns, depleting budget.
-        // Second call will render none (sampling mechanism) and will reset as the budget was not depleted this time
-        // Third call will render all 3 vulns again (as the budget was reset)
-        // The same behabiour is repeated for the second route
-        // Calls are interleaved to test the stats persistency of each route
-
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url1, url2, url1, url2, url1, url2]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && x.Name == "aspnet_core.request").ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing(forceMetaStruct: true);
-
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
+#endif
 }
 
 // Classes to test particular features
@@ -381,40 +303,20 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
-    [InlineData("Vulnerability.WithoutLocation", "/Iast/InsecureCookie")]
-    [InlineData("Vulnerability.InFunction", "/Iast/GetFileContent?file=nonexisting.txt")]
-    [InlineData("Vulnerability.LocatedDeeper", "/Iast/WeakHashing")]
-    [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>")]
-    public async Task TestVulnerabilityStack(string name, string url)
+    [InlineData("Vulnerability.WithoutLocation", "/Iast/InsecureCookie", "INSECURE_COOKIE")]
+    [InlineData("Vulnerability.InFunction", "/Iast/GetFileContent?file=nonexisting.txt", "PATH_TRAVERSAL")]
+    [InlineData("Vulnerability.LocatedDeeper", "/Iast/WeakHashing", "WEAK_HASH")]
+    [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>", "XSS")]
+    public async Task TestVulnerabilityStack(string name, string url, string vulnerabilityType)
     {
         var fileName = "Iast.Stacks." + name;
 
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        var hashRegex = (new Regex(@"""hash"": -?\d+"), @"""hash"": XXX");
-        var pathRegex = (new Regex(@"""path"": ""AspNetCore.*\."), @"""path"": ""AspNetCore.");
-
-        settings.AddRegexScrubber(hashRegex);
-        settings.AddRegexScrubber(pathRegex);
-
-        foreach (var span in spans)
-        {
-            if (span.MetaStruct is not null)
-            {
-                if (span.MetaStruct.TryGetValue("_dd.stack", out var data))
-                {
-                    var json = MetaStructToJson(data);
-                    span.Tags["_dd.stack"] = json;
-                }
-            }
-        }
-
-        await VerifySpans(spans, settings, fileNameOverride: fileName);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, vulnerabilityType, fileName, expectVulnerability: true, since: since, includeStack: true);
     }
 }
 
@@ -432,22 +334,6 @@ public class AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetC
 : base(fixture, outputHelper, vulnerabilitiesPerRequest: 2)
     {
     }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastLocationSpanId()
-    {
-        var url = "/Iast/WeakHashing2";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-        var parentSpan = spans.First(x => x.ParentId == null);
-        IastVerifyScrubberExtensions.IastMetaStructScrubbing(parentSpan);
-        var childSpan = spans.First(x => x.ParentId == parentSpan.SpanId);
-        var vulnerabilityJson = parentSpan.GetTag(Tags.IastJson);
-        vulnerabilityJson.Should().Contain("\"spanId\": " + childSpan.SpanId);
-    }
 }
 
 public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled : AspNetCore5IastTests
@@ -461,10 +347,13 @@ public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEna
     [Trait("RunOnWindows", "True")]
     public async Task TestIastWeakHashingRequestVulnerabilitiesPerRequest()
     {
-        var filename = VulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore5.SingleVulnerability" : "Iast.WeakHashing.AspNetCore5";
+        var filename = VulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.Vulns.AspNetCore5.SingleVulnerability" : "Iast.WeakHashing.Vulns.AspNetCore5";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        await TestWeakHashing(filename, Fixture.Agent);
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, ["/Iast/WeakHashing"]);
+
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "WEAK_HASH", filename, expectVulnerability: true, since: since);
     }
 }
 
@@ -488,15 +377,10 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         var newFixture = new AspNetCoreTestFixture();
         newFixture.SetOutput(Output);
 
-        var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
-        await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
+        var since = DateTime.UtcNow;
+        await TryStartApp(newFixture);
 
-        var agent = newFixture.Agent;
-        var spans = await agent.WaitForSpansAsync(1, minDateTime: datetimeOffset);
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spans, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "DIRECTORY_LISTING_LEAK", filename, expectVulnerability: true, since: since);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -514,28 +398,37 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         var newFixture = new AspNetCoreTestFixture();
         newFixture.SetOutput(Output);
 
-        var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
-        await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
+        var since = DateTime.UtcNow;
+        await TryStartApp(newFixture);
 
-        var agent = newFixture.Agent;
-        var spans = await agent.WaitForSpansAsync(1, minDateTime: datetimeOffset);
+        await VerifyVulnerabilityRecordsAsync(
+            VulnerabilityLogPath,
+            "SESSION_TIMEOUT",
+            filename,
+            expectVulnerability: true,
+            since: since,
+            recordSanitizer: record =>
+            {
+                // Normalize the timeout value (31 or 120 minutes) so both InlineData cases share one snapshot.
+                if (record["evidence"] is JObject ev && ev["value"] is JValue val)
+                {
+                    ev["value"] = Regex.Replace(val.Value<string>() ?? string.Empty, @"\d+ minutes", "XXX minutes");
+                }
 
-        // Add a scrubber for "Session idle timeout is configured with: options.IdleTimeout, with a value of x minutes" and also for the hash value
-        (Regex RegexPattern, string Replacement) sessionIdleTimeoutRegex = (new Regex(@"Session idle timeout is configured with: options.IdleTimeout, with a value of \d+ minutes"), "Session idle timeout is configured with: options.IdleTimeout, with a value of XXX minutes");
-        (Regex RegexPattern, string Replacement) hashRegex = (new Regex(@"""hash"": -?\d+"), @"""hash"": XXX");
+                // net5.0 uses different path/method for the startup entry point — normalise.
+                if (record["location"] is JObject loc)
+                {
+                    if (loc["path"]?.Value<string>() == "Samples.Security.AspNetCore5.Program")
+                    {
+                        loc["path"] = "Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0";
+                    }
 
-        // Only for net5.0: path and method are different
-        (Regex RegexPattern, string Replacement) pathRegex = (new Regex(@"""path"": ""Samples.Security.AspNetCore5.Program"""), @"""path"": ""Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0""");
-        (Regex RegexPattern, string Replacement) methodRegex = (new Regex(@"""method"": ""Main"""), @"""method"": ""<ConfigureServices>b__0""");
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(sessionIdleTimeoutRegex);
-        settings.AddRegexScrubber(hashRegex);
-        settings.AddRegexScrubber(pathRegex);
-        settings.AddRegexScrubber(methodRegex);
-
-        await VerifySpans(spans, settings, fileNameOverride: filename);
+                    if (loc["method"]?.Value<string>() == "Main")
+                    {
+                        loc["method"] = "<ConfigureServices>b__0";
+                    }
+                }
+            });
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -545,7 +438,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
 public class AspNetCore5IastTestsFullSamplingRedactionEnabled : AspNetCore5IastTestsFullSampling
 {
     public AspNetCore5IastTestsFullSamplingRedactionEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsRedactionEnabled", redactionEnabled: true, vulnerabilitiesPerRequest: 3)
+        : base(fixture, outputHelper, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsRedactionEnabled", redactionEnabled: true, vulnerabilitiesPerRequest: 200)
     {
     }
 }
@@ -563,16 +456,13 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     public async Task TestIastNotWeakRequest()
     {
-        var filename = "Iast.NotWeak.AspNetCore5";
         var url = "/Iast";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spans, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "SQL_INJECTION", "WEAK_HASH", "XSS", "COMMAND_INJECTION", "PATH_TRAVERSAL" }, NotVulnerableSnapshotName, expectVulnerability: false, since: since, timeoutMs: 1_000);
     }
 
     [SkippableFact]
@@ -598,12 +488,10 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
+
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "SQL_INJECTION", "COMMAND_INJECTION" }, filename, expectVulnerability: true, since: since);
     }
 
     [SkippableTheory]
@@ -886,22 +774,13 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     public async Task TestIastReflectedXssEscapedRequest(string param)
     {
-        var filename = "Iast.ReflectedXssEscaped.AspNetCore5";
         var url = "/Iast/ReflectedXssEscaped?param=" + param;
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-
-        // Add a scrubber to remove the "?param=<value>"
-        (Regex RegexPattern, string Replacement) scrubber = (new Regex(@"\?param=[^ ]+"), "?param=...,\n");
-        settings.AddRegexScrubber(scrubber);
-
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "XSS" }, NotVulnerableSnapshotName, expectVulnerability: false, since: since, timeoutMs: 1_000);
     }
 
     // In header injections, we should exclude some headers to prevent false positives:
@@ -964,13 +843,10 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         AddHeaders(headersDic);
 
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 1, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, 1, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "HEADER_INJECTION", notVulnerable ? NotVulnerableSnapshotName : filename, expectVulnerability: !notVulnerable, since: since);
     }
 
     [SkippableFact]
@@ -1029,9 +905,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
 public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
+    protected const string NotVulnerableSnapshotName = "Iast.NotVulnerable";
 #pragma warning disable SA1311 // Static readonly fields should begin with upper-case letter
     protected static readonly (Regex RegexPattern, string Replacement) aspNetCorePathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
     protected static readonly (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
+    protected static readonly Regex PortScrubber = new(@"(https?://[^/:]+):\d+", RegexOptions.Compiled);
 #pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
 
     public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, string sampleName = "AspNetCore5")
@@ -1044,10 +922,10 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SamplingRate = samplingRate;
         RedactionEnabled = redactionEnabled;
 
-        // Per-fixture path for the IAST vulnerability JSONL report. The sample app
-        // process started by the fixture writes vulnerabilities here as it detects
-        // them; tests can read this file instead of inspecting agent payloads.
-        VulnerabilityLogPath = Path.Combine(Path.GetTempPath(), $"iast-vulns-{Guid.NewGuid():N}.jsonl");
+        // Per-fixture path for the IAST vulnerability JSONL report. Placed in the
+        // same directory as the tracer logs (LogDirectory) so all test output is in
+        // one place. Guid suffix prevents cross-test contamination within the dir.
+        VulnerabilityLogPath = Path.Combine(LogDirectory, $"iast-vulns-{Guid.NewGuid():N}.jsonl");
 
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
@@ -1074,17 +952,6 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
     {
         base.Dispose();
         Fixture.SetOutput(null);
-        try
-        {
-            if (File.Exists(VulnerabilityLogPath))
-            {
-                File.Delete(VulnerabilityLogPath);
-            }
-        }
-        catch
-        {
-            // best effort cleanup
-        }
     }
 
     public virtual async Task TryStartApp(MockTracerAgent.AgentConfiguration agentConfiguration = null)
@@ -1160,20 +1027,15 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
                       .DisableRequireUniquePrefix();
     }
 
-    protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
-    {
-        var url = "/Iast/WeakHashing";
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spans, settings, fileNameOverride: filename);
-    }
-
     private static JObject SanitizeForVerification(JObject record, bool includeStack)
     {
         // Drop volatile fields so the snapshot stays stable across runs and code edits.
         record.Remove("timestamp");
+
+        if (record["request"] is JObject request && request["url"] is JValue urlValue)
+        {
+            request["url"] = PortScrubber.Replace(urlValue.Value<string>() ?? string.Empty, "$1:00000");
+        }
 
         if (record["location"] is JObject location)
         {

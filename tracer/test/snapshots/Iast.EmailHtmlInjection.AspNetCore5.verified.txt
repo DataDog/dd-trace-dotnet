@@ -1,0 +1,49 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: Hi 
+        },
+        {
+          source: 0,
+          value: Alice
+        },
+        {
+          value:  
+        },
+        {
+          source: 1,
+          value: Stevens
+        },
+        {
+          value: , <br />We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br /><a href="https://localhost/confirm?token=435345">Complete your subscription</a>
+        }
+      ]
+    },
+    hash: 799617955,
+    location: {
+      method: SendEmailSystemLib,
+      path: Samples.Security.AspNetCore5.Helpers.EmailHelper
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.SendEmail (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/sendemail,
+      url: http://localhost:00000/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.parameter,
+        value: Alice
+      },
+      {
+        name: lastname,
+        origin: http.request.parameter,
+        value: Stevens
+      }
+    ],
+    type: EMAIL_HTML_INJECTION
+  }
+]

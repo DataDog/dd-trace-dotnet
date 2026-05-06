@@ -19,6 +19,12 @@
       method: Ssrf,
       path: Samples.Security.AspNetCore5.Controllers.IastController
     },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.Ssrf (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/ssrf,
+      url: http://localhost:00000/Iast/SSRF?host=localhost
+    },
     sources: [
       {
         name: host,

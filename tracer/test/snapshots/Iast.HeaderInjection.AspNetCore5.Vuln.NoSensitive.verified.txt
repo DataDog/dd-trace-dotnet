@@ -1,0 +1,48 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: Name
+        },
+        {
+          value: : 
+        },
+        {
+          source: 1,
+          value: value
+        },
+        {
+          source: 2,
+          value: moreText
+        }
+      ]
+    },
+    hash: 541817338,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.HeaderInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/headerinjection,
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.header,
+        value: Name
+      },
+      {
+        name: value,
+        origin: http.request.header,
+        value: value
+      },
+      {
+        name: value,
+        origin: http.request.cookie.value,
+        value: moreText
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

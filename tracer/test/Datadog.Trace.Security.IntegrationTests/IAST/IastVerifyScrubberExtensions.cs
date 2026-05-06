@@ -25,9 +25,9 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
         private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
         private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
 
-        public static VerifySettings AddIastScrubbing(this VerifySettings settings, bool forceMetaStruct = false)
+        public static VerifySettings AddIastScrubbing(this VerifySettings settings)
         {
-            AddIastSerializationModification(settings, forceMetaStruct);
+            AddIastSerializationModification(settings);
             var scrubbers = new List<(Regex RegexPattern, string Replacement)>();
             return AddIastScrubbing(settings, scrubbers);
         }
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
             return settings;
         }
 
-        public static VerifySettings AddIastSerializationModification(this VerifySettings settings, bool forceMetaStruct = false)
+        public static VerifySettings AddIastSerializationModification(this VerifySettings settings)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -60,17 +60,6 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
                         sp => sp.Tags,
                         (target, value) =>
                         {
-                            if (target.MetaStruct != null)
-                            {
-                                IastMetaStructScrubbing(target, forceMetaStruct);
-
-                                // Remove all data from meta structs keys, no need to get the binary data for other keys
-                                foreach (var key in target.MetaStruct.Keys.ToList())
-                                {
-                                    target.MetaStruct[key] = [];
-                                }
-                            }
-
                             return VerifyHelper.ScrubStringTags(target, target.Tags);
                         });
                 });

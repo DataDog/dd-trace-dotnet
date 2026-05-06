@@ -1,0 +1,30 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: Access-Control-Allow-Origin: 
+        },
+        {
+          source: 0,
+          value: https://example.com
+        }
+      ]
+    },
+    hash: 1129315861,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.HeaderInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/headerinjection,
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: value,
+        origin: http.request.header,
+        value: https://example.com
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]
