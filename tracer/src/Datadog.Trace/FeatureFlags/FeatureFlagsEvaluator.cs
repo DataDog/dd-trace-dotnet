@@ -152,12 +152,13 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                // Determine reason based on how the flag was resolved:
-                                // - TargetingMatch: Allocation had targeting rules that matched
-                                // - Split: No rules, but resolved via percentage split (shards)
+                                // Determine reason based on how the flag was resolved.
+                                // Per the FFE spec, SPLIT takes precedence over TARGETING_MATCH:
+                                // - Split: Resolved via percentage split (shards present)
+                                // - TargetingMatch: Allocation had targeting rules that matched (no shards)
                                 // - Static: No rules, no shards - simple static value
-                                var reason = hadRules ? EvaluationReason.TargetingMatch
-                                           : hadShards ? EvaluationReason.Split
+                                var reason = hadShards ? EvaluationReason.Split
+                                           : hadRules ? EvaluationReason.TargetingMatch
                                            : EvaluationReason.Static;
 
                                 return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, reason, now, context);
