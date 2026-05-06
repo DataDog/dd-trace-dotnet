@@ -90,7 +90,7 @@ internal sealed partial class ProbeExpressionParser<T>
                     error = "A reference type cannot be compared to a not nullable value type.";
                     if (right is ConstantExpression { Value: null } || left is ConstantExpression { Value: null })
                     {
-                        error += " Did you mean to compare do 'default' instead of 'null'?";
+                        error += " Did you mean to compare to 'default' instead of 'null'?";
                     }
                 }
             }

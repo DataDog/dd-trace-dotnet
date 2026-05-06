@@ -522,6 +522,11 @@ internal partial class ProbeExpressionParser<T>
             // If declared type is Int32 but actual value is Int64, using declared type
             // would cause InvalidCastException when the lambda is executed.
             var runtimeType = argOrLocal.Value?.GetType() ?? argOrLocal.Type;
+            if (runtimeType.ContainsGenericParameters)
+            {
+                runtimeType = CloseOpenGenericType(runtimeType);
+            }
+
             var variable = Expression.Variable(runtimeType, argOrLocal.Name);
             scopeMembers.Add(variable);
 
@@ -616,31 +621,9 @@ internal partial class ProbeExpressionParser<T>
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
     {
         var parameterExpression = Expression.Parameter(scopeMember.GetType());
-        if (type.IsGenericTypeDefinition)
+        if (type.ContainsGenericParameters)
         {
-            var genericArguments = type.GetGenericArguments();
-            Type[] concreteTypes = new Type[genericArguments.Length];
-            bool succeeded = true;
-            for (int i = 0; i < genericArguments.Length; i++)
-            {
-                if (genericArguments[i].IsValueType)
-                {
-                    succeeded = false;
-                    break;
-                }
-                else
-                {
-                    // For reference types, we can use object
-                    concreteTypes[i] = typeof(object);
-                }
-            }
-
-            if (!succeeded)
-            {
-                throw new InvalidOperationException($"Could not evaluate expression for type {type.FullName ?? type.Name} because it is a generic type definition.");
-            }
-
-            type = type.MakeGenericType(concreteTypes);
+            type = CloseOpenGenericType(scopeMember.Value?.GetType() ?? type);
         }
 
         var variable = Expression.Variable(type, name);
