@@ -157,7 +157,8 @@ experiments:
           cpus_per_item: 1
 
         env:
-          BATCH_PREFIX: "b0"
+          BATCH_PREFIX: "trace"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
         how_to_fetch_release: *how_to_fetch_release_build
         how_to_run_benchmarks: *how_to_run_benchmarks
 
@@ -185,7 +186,8 @@ experiments:
           cpus_per_item: 1
 
         env:
-          BATCH_PREFIX: "b1"
+          BATCH_PREFIX: "trace-unstable"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
 
@@ -206,7 +208,7 @@ experiments:
           cpus_per_item: 1
 
         env:
-          BATCH_PREFIX: "b2"
+          BATCH_PREFIX: "otel-instr-api"
           BENCHMARK_PROJECT: "Benchmarks.OpenTelemetry.InstrumentedApi"
           DD_TRACE_OTEL_ENABLED: "true"
           DD_INSTRUMENTATION_TELEMETRY_ENABLED: "false"
@@ -232,7 +234,7 @@ experiments:
           cpus_per_item: 1
 
         env:
-          BATCH_PREFIX: "b3"
+          BATCH_PREFIX: "otel-api"
           BENCHMARK_PROJECT: "Benchmarks.OpenTelemetry.Api"
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
