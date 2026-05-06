@@ -100,23 +100,22 @@
     Write-Output "Skipping: $env:BENCHMARK_PROJECT not built (DLL not found matching $dllPattern)"
     exit 0
   }
-  # BENCHMARK_CATEGORY filters which benchmarks run via BenchmarkDotNet's --allCategories flag.
-  # Benchmarks are tagged with [BenchmarkCategory("prs")] or [BenchmarkCategory("master")] attributes.
-  # See run-benchmarks.ps1 for usage.
-  $env:BENCHMARK_CATEGORY = "prs"
-  if ($env:CI_COMMIT_REF_NAME -eq "master") {
-    $env:BENCHMARK_CATEGORY = "master"
-  }
-
   # BATCH_PREFIX set via env: in experiment step (e.g., "b0" or "b1")
   $artifactsIndex = "$env:BATCH_PREFIX-$env:PARALLEL_INDEX"
+
+  # Benchmark category filters which benchmarks run via BenchmarkDotNet's --allCategories flag.
+  # Benchmarks are tagged with [BenchmarkCategory("prs")] or [BenchmarkCategory("master")] attributes.
+  $category = "prs"
+  if ($env:CI_COMMIT_REF_NAME -eq "master") {
+    $category = "master"
+  }
 
   Write-Output "=== Running benchmarks ==="
   Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
   Write-Output "CODE_SRC: $env:CODE_SRC"
   Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
   Write-Output "BENCHMARK_PROJECT: $env:BENCHMARK_PROJECT"
-  Write-Output "BENCHMARK_CATEGORY: $env:BENCHMARK_CATEGORY"
+  Write-Output "BENCHMARK_CATEGORY: $category"
   Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
   Write-Output "ARTIFACTS_INDEX: $artifactsIndex"
   Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
@@ -127,7 +126,8 @@
   # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
   & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-benchmarks.ps1" `
     -Filter "$env:PARALLEL_ITEM" `
-    -ArtifactsIndex "$artifactsIndex"
+    -ArtifactsIndex "$artifactsIndex" `
+    -Category "$category"
 
   Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
 
