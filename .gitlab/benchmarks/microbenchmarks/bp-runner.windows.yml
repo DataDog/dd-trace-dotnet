@@ -88,16 +88,21 @@
 .how_to_run_benchmarks: &how_to_run_benchmarks |
   $ErrorActionPreference = "Stop"
 
-  # Skip if ONLY_ON_MASTER is set and not on master
-  if ($env:ONLY_ON_MASTER -eq "true" -and $env:CI_COMMIT_REF_NAME -ne "master") {
-    Write-Output "Skipping benchmarks: ONLY_ON_MASTER is set and branch is $env:CI_COMMIT_REF_NAME"
-    exit 0
-  }
-
   # Use BENCHMARK_PROJECT from env if set, otherwise default to Benchmarks.Trace
   if (-not $env:BENCHMARK_PROJECT) {
     $env:BENCHMARK_PROJECT = "Benchmarks.Trace"
   }
+
+  # Skip if benchmark project DLL not built.
+  # Some projects (e.g., Benchmarks.OpenTelemetry.Api) are not built on PRs. See Build.cs GetBenchmarkProjectsWithSettings().
+  $dllPattern = "$env:CODE_SRC\tracer\test\benchmarks\$env:BENCHMARK_PROJECT\bin\Release\*\$env:BENCHMARK_PROJECT.dll"
+  if (-not (Test-Path $dllPattern)) {
+    Write-Output "Skipping: $env:BENCHMARK_PROJECT not built (DLL not found matching $dllPattern)"
+    exit 0
+  }
+  # BENCHMARK_CATEGORY filters which benchmarks run via BenchmarkDotNet's --allCategories flag.
+  # Benchmarks are tagged with [BenchmarkCategory("prs")] or [BenchmarkCategory("master")] attributes.
+  # See run-benchmarks.ps1 for usage.
   $env:BENCHMARK_CATEGORY = "prs"
   if ($env:CI_COMMIT_REF_NAME -eq "master") {
     $env:BENCHMARK_CATEGORY = "master"
@@ -235,6 +240,5 @@ experiments:
         env:
           BATCH_PREFIX: "b3"
           BENCHMARK_PROJECT: "Benchmarks.OpenTelemetry.Api"
-          ONLY_ON_MASTER: "true"
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
