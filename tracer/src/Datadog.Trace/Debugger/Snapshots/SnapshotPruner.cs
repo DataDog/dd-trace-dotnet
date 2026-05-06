@@ -116,17 +116,6 @@ namespace DatadogDebugger.Util
                 return snapshot;
             }
 
-            // Defensive bounds checks - Node.Start/End are char indices, not byte indices
-            // If these are out of bounds for any reason, abort pruning and return original snapshot.
-            for (var i = 0; i < prunedNodes.Count; i++)
-            {
-                var n = prunedNodes[i];
-                if (n.Start < 0 || n.End < n.Start || n.End >= snapshot.Length)
-                {
-                    return snapshot;
-                }
-            }
-
             var sb = StringBuilderCache.Acquire();
             sb.Append(snapshot, 0, prunedNodes[0].Start);
             for (var i = 1; i < prunedNodes.Count; i++)
