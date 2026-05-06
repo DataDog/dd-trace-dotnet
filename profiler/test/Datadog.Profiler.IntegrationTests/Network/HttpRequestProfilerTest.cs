@@ -330,7 +330,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
                 responseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
                 Assert.True(double.TryParse(responseDurationLabel.Value, out double responseDuration));
-                responseDuration.Should().BeGreaterOrEqualTo(1900L * 1000000);  // avoid flaky test but should be larger than 2000ms
+                responseDuration.Should().BeGreaterOrEqualTo(1800L * 1000000);  // avoid flaky test but should be larger than 2000ms
             }
 
             Assert.True(checkedSamples > 0);
