@@ -11,7 +11,7 @@ namespace Datadog.Trace.Debugger.Symbols
 {
     internal sealed class NoOpSymbolUploader : IDebuggerUploader
     {
-        public static readonly NoOpSymbolUploader Instance = new();
+        internal static readonly NoOpSymbolUploader Instance = new();
 
         public Task StartFlushingAsync()
         {
