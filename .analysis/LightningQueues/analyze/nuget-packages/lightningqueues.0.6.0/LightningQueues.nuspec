@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>LightningQueues</id>
+    <version>0.6.0</version>
+    <authors>Corey Kaylor</authors>
+    <licenseUrl>https://github.com/LightningQueues/LightningQueues/blob/main/LICENSE</licenseUrl>
+    <readme>readme.md</readme>
+    <projectUrl>https://github.com/LightningQueues/LightningQueues</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/LightningQueues/LightningQueues/refs/heads/main/lighting-qqqs.png</iconUrl>
+    <description>LightningQueues</description>
+    <tags>queue lightning messaging store-and-forward</tags>
+    <repository type="git" commit="2acc3ea489f8c6fbfd345b0da70c4f6011fb87f6" />
+    <dependencies>
+      <group targetFramework="net10.0">
+        <dependency id="LightningDB" version="0.21.0" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.Logging" version="9.0.5" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

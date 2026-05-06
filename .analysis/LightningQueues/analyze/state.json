@@ -1,0 +1,27 @@
+{
+  "workflow": "analyze",
+  "namespace": "LightningQueues",
+  "status": "pending",
+  "run_id": "20260506-091548-17fb71",
+  "started_at": "2026-05-06T09:15:48.203778Z",
+  "updated_at": "2026-05-06T09:15:48.203779Z",
+  "completed_at": null,
+  "current_step": "install_package",
+  "steps": {},
+  "data": {
+    "integration_dir": "/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze",
+    "data_dir": "/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze/data",
+    "install_package_input": null
+  },
+  "artifacts": {},
+  "options": {},
+  "user_prompt": null,
+  "base_branch": null,
+  "total_cost_usd": 0.0,
+  "total_duration_seconds": 0.0,
+  "total_input_tokens": 0,
+  "total_output_tokens": 0,
+  "total_cache_read_input_tokens": 0,
+  "parent_workflow": "new_integration",
+  "workflow_start_commit": null
+}
