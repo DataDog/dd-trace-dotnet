@@ -6,7 +6,9 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Threading;
+using Datadog.Trace.Debugger;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -42,6 +44,11 @@ internal sealed class ProbeExpressionsCacheEntry
     {
         if (Volatile.Read(ref _compiledInitialized) == 1)
         {
+            if (ExplorationTestMetrics.IsEnabled)
+            {
+                ExplorationTestMetrics.RecordCacheHit();
+            }
+
             return _compiled;
         }
 
@@ -49,8 +56,23 @@ internal sealed class ProbeExpressionsCacheEntry
         {
             if (_compiledInitialized == 0)
             {
+                if (ExplorationTestMetrics.IsEnabled)
+                {
+                    ExplorationTestMetrics.RecordCacheMiss();
+                }
+
+                var compileStart = ExplorationTestMetrics.IsEnabled ? Stopwatch.GetTimestamp() : 0;
                 _compiled = evaluator.CompileAll(scopeMembers);
+                if (ExplorationTestMetrics.IsEnabled)
+                {
+                    ExplorationTestMetrics.RecordExpressionCompilation(Stopwatch.GetTimestamp() - compileStart);
+                }
+
                 Volatile.Write(ref _compiledInitialized, 1);
+            }
+            else if (ExplorationTestMetrics.IsEnabled)
+            {
+                ExplorationTestMetrics.RecordCacheHit();
             }
         }
 

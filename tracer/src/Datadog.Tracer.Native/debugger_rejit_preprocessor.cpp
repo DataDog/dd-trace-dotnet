@@ -270,6 +270,8 @@ bool DebuggerRejitPreprocessor::CheckExactSignatureMatch(ComPtr<IMetaDataImport2
     // instrumentation target
     if (numOfArgs != numOfArgsTargetMethod - thisArg)
     {
+        // NOTE: This log is parsed by Build.SnapshotExplorationTest.cs (ReadSkippedProbesFromNativeLogs).
+        // Do not change "* Skipping" or "doesn't have the right number of arguments" without updating the test analyzer.
         Logger::Info("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
                      ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
         return false;
@@ -293,6 +295,8 @@ bool DebuggerRejitPreprocessor::CheckExactSignatureMatch(ComPtr<IMetaDataImport2
     }
     if (argumentsMismatch)
     {
+        // NOTE: This log is parsed by Build.SnapshotExplorationTest.cs (ReadSkippedProbesFromNativeLogs).
+        // Do not change "* Skipping" or "doesn't have the right type of arguments" without updating the test analyzer.
         Logger::Info("    * Skipping ", targetMethod.method_name,
                      ": the methoddef doesn't have the right type of arguments.");
         return false;
