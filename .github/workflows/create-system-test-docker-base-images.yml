@@ -52,13 +52,15 @@ jobs:
     - name: "Sanitize branch name"
       id: image_tag
       run: |
-        BRANCH="${{github.event.inputs.branch_name}}"
+        BRANCH="$BRANCH_NAME_INPUT"
         if [[ -z "$BRANCH" ]]; then
           echo "ERROR: Missing required 'branch_name' input. Aborting docker image build."
           exit 1
         fi
         SAFE_TAG="${BRANCH//\//_}"
         echo "tag=$SAFE_TAG" >> $GITHUB_OUTPUT
+      env:
+        BRANCH_NAME_INPUT: "${{ github.event.inputs.branch_name }}"
 
     - uses: ./.github/actions/create-system-test-docker-base-images
       name: 'Create system test docker images'

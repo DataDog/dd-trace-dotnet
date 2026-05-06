@@ -20,7 +20,7 @@ void SignatureBuilder::Append(const void* elements, const size_t length)
     _offset += length;
 }
 
-void SignatureBuilder::EnsureBufferSpace(int size)
+void SignatureBuilder::EnsureBufferSpace(size_t size)
 {
     if (_offset + size >= _length)
     {

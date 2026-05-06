@@ -58,6 +58,18 @@ public class LineProbeResolverTest
         (loc1.MethodToken, loc1.BytecodeOffset).Should().Be((loc2.MethodToken, loc2.BytecodeOffset));
     }
 
+    [Fact]
+    public void ResolvesLineProbeWhenSourceFileCasingDiffers()
+    {
+        var originalSourceFile = _probeDefinition.Where.SourceFile;
+        _probeDefinition.Where.SourceFile = originalSourceFile.ToUpperInvariant();
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Bound);
+        loc.Should().NotBeNull();
+    }
+
     [Theory]
     [InlineData(@"D:\build_agent\yada\yada\src\MyProject\MyFile.cs")]
     [InlineData(@"/usr/opt/build_agent/yada/yada/src/MyProject/MyFile.cs")]
@@ -79,6 +91,19 @@ public class LineProbeResolverTest
     }
 
     [Theory]
+    [InlineData(@"D:\build_agent\yada\yada\src\MyProject\MyFile.cs", @"src\myproject\myfile.cs")]
+    [InlineData(@"/usr/opt/build_agent/yada/yada/controllers/debuggercontroller.cs", @"Controllers/DebuggerController.cs")]
+    [InlineData(@"\\build-agent\share\yada\yada\src\MyProject\MyFile.cs", @"SRC\MYPROJECT\MYFILE.CS")]
+    public void FindPathThatEndsWithIgnoresCaseAndPreservesOriginalPath(string originalPath, string queryPath)
+    {
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(originalPath);
+
+        lookup.FindPathThatEndsWith(queryPath).Should().Be(originalPath);
+    }
+
+    [Theory]
     [InlineData(@"D:\build_agent\yada\yada\src\MyProject\MyFile.cs", @"src\MyProject\MyFile.cs\")]
     [InlineData(@"/usr/opt/build_agent/yada/yada/src/MyProject/MyFile.cs", @"src/MyProject/MyFile.cs/")]
     [InlineData(@"\\build-agent\share\yada\yada\src\MyProject\MyFile.cs", @"src\MyProject\MyFile.cs\")]
@@ -89,6 +114,35 @@ public class LineProbeResolverTest
         lookup.InsertPath(originalPath);
 
         lookup.FindPathThatEndsWith(queryPath).Should().Be(originalPath);
+    }
+
+    [Fact]
+    public void FindPathThatEndsWithReturnsNullWhenCaseInsensitiveFallbackIsAmbiguous()
+    {
+        // When the trie misses (e.g., due to case differences) and the case-insensitive fallback
+        // finds multiple candidates with equally good trailing-segment matches, it must return null
+        // rather than arbitrarily binding to one path.
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(@"/a/src/Shared/Feature/MyFile.cs");
+        lookup.InsertPath(@"/b/src/Shared/Feature/MyFile.cs");
+
+        lookup.FindPathThatEndsWith(@"src/shared/feature/myfile.cs").Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(@"D:\MyFile.cs", @"Source\src\MyProject\MyFile.cs")]
+    [InlineData(@"/_/MyFile.cs", @"Source/src/MyProject/MyFile.cs")]
+    public void FindPathThatEndsWithReturnsNullWhenQueryHasMoreSegmentsThanDocument(string documentPath, string queryPath)
+    {
+        // The fallback inside FindPathThatEndsWith requires the full query (every segment) to match
+        // a trailing suffix of the document. A query with more segments than the document can never
+        // satisfy that and must return null, even when the file name (and other trailing segments) match.
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(documentPath);
+
+        lookup.FindPathThatEndsWith(queryPath).Should().BeNull();
     }
 
     [Fact]
@@ -145,16 +199,16 @@ public class LineProbeResolverTest
     }
 
     [Fact]
-    public void FilePathLookupDoesNotFallbackOnCaseOnlyDifference()
+    public void FilePathLookupFallbackMatchesCaseOnlyDifference()
     {
         var lookup = new LineProbeResolver.FilePathLookup();
         const string documentPath = @"/_/src/MyProject/Feature/MyFile.cs";
 
         lookup.InsertPath(documentPath);
 
-        lookup.TryFindClosestPathBySuffix(@"Source/src/MyProject/Feature/myfile.cs", minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeFalse();
-        match.Should().BeNull();
-        matchingTrailingSegments.Should().Be(0);
+        lookup.TryFindClosestPathBySuffix(@"Source/src/MyProject/Feature/myfile.cs", minimumMatchingTrailingSegments: 4, out var match, out var matchingTrailingSegments).Should().BeTrue();
+        match.Should().Be(documentPath);
+        matchingTrailingSegments.Should().Be(4);
     }
 
     [Fact]

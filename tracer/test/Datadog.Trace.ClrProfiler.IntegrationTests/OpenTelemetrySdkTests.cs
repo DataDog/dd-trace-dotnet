@@ -529,6 +529,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "false");
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
@@ -596,6 +597,79 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public async Task SubmitsOtlpRuntimeMetrics()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+
+            await ClearTestAgentSession(testAgentHost);
+
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "NoneExistingMeter");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "60000");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using (await RunSampleAndWaitForExit(agent))
+            {
+                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
+                metricsData.Should().NotBeNullOrEmpty();
+
+                // Deduplicate metrics across multiple export intervals, keeping one per metric name
+                var dedupedMetrics = new JArray(
+                    metricsData
+                        .SelectTokens("$..scope_metrics[*].metrics[*]")
+                        .GroupBy(m => m["name"]?.ToString())
+                        .Select(g => g.First())
+                        .OrderBy(m => m["name"]?.ToString()));
+
+                // Collapse all exports into a single resource_metrics structure for snapshot comparison
+                var collapsed = metricsData[0]!.DeepClone();
+                ((JArray)collapsed.SelectToken("$.resource_metrics")!).RemoveAll();
+                var firstExport = metricsData.SelectToken("$[0].resource_metrics[0]")!.DeepClone();
+                firstExport.SelectToken("$.scope_metrics[0].metrics")!.Replace(dedupedMetrics);
+                ((JArray)collapsed["resource_metrics"]!).Add(firstExport);
+
+                // Clear data_points for each metric to ensure consistency between runs
+                foreach (var section in collapsed.SelectTokens("$..metrics[*].*"))
+                {
+                    if (section is JObject obj && obj["data_points"] is JArray)
+                    {
+                        obj["data_points"] = new JArray();
+                    }
+                }
+
+                // Replace resource attribute values with placeholders to avoid volatile data
+                foreach (var attribute in collapsed.SelectTokens("$..resource.attributes[*]"))
+                {
+                    var key = attribute["key"]?.ToString();
+                    if (key is not null)
+                    {
+                        attribute["value"] = JToken.FromObject(new { string_value = $"<{key}>" });
+                    }
+                }
+
+                var formattedJson = new JArray(collapsed).ToString(Formatting.Indented);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                // Single snapshot for all TFMs: the OTel SDK sample transitively references
+                // System.Diagnostics.DiagnosticSource 9.0+, which gets loaded into the host process
+                // even on .NET 6. Reflection in MeterObservableUpDownCounterReflection then resolves
+                // CreateObservableUpDownCounter on every TFM, so the polyfill produces identical wire
+                // output across .NET 6/7/8/9/10+.
+                await Verifier.Verify(formattedJson, settings)
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.{nameof(SubmitsOtlpRuntimeMetrics)}")
+                              .DisableRequireUniquePrefix();
+
+                agent.StatsdRequests.Should().BeEmpty(
+                    "StatsD runtime metrics should be disabled when OTLP runtime metrics are active");
+            }
+        }
 #endif
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -628,7 +702,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
             // Short delay gives the OTel SDK multiple periodic exports before LoggerProviderSdk.Dispose() hits its 5s shutdown timeout.
             // This is especially important for gRPC, where the first export warms the HTTP/2 connection.
-            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "500");
+            SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "100");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
 
             if (useAgentHostBackup)
@@ -695,6 +769,58 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (logRecord is JObject jObj)
                     {
                         jObj.Remove("flags");
+                    }
+                }
+
+                // The OTel SDK can emit multiple OTLP batches during the sample run (periodic export(s) plus shutdown flush),
+                // and the test-agent can return them as separate top-level elements in any order. Collapse everything
+                // into a single batch, then sort scope_logs by scope.name and log_records by body.string_value so the
+                // snapshot is stable regardless of batch split, arrival order, or the exporter's internal scope grouping.
+                if (logsData is JArray logsArray && logsArray.Count > 1)
+                {
+                    // Add all the subsequent logs to the first array
+                    var mergedScopeLogs = (JArray)logsArray[0]["resource_logs"][0]["scope_logs"];
+                    for (var i = 1; i < logsArray.Count; i++)
+                    {
+                        foreach (var scopeLog in (JArray)logsArray[i]["resource_logs"][0]["scope_logs"])
+                        {
+                            var scopeName = scopeLog["scope"]?["name"]?.ToString();
+                            var existing = mergedScopeLogs.FirstOrDefault(s => s["scope"]?["name"]?.ToString() == scopeName);
+                            if (existing != null && scopeLog["log_records"] is JArray incoming)
+                            {
+                                var existingRecords = (JArray)existing["log_records"];
+                                foreach (var record in incoming)
+                                {
+                                    existingRecords.Add(record);
+                                }
+                            }
+                            else
+                            {
+                                mergedScopeLogs.Add(scopeLog);
+                            }
+                        }
+                    }
+
+                    while (logsArray.Count > 1)
+                    {
+                        logsArray.RemoveAt(1);
+                    }
+                }
+
+                // Fix the ordering to ensure it's deterministic
+                foreach (var resourceLog in logsData.SelectTokens("$[0].resource_logs[*]"))
+                {
+                    if (resourceLog["scope_logs"] is JArray scopeLogsArray)
+                    {
+                        foreach (var scopeLog in scopeLogsArray)
+                        {
+                            if (scopeLog["log_records"] is JArray recordsArray)
+                            {
+                                scopeLog["log_records"] = new JArray(recordsArray.OrderBy(r => r["body"]?["string_value"]?.ToString()));
+                            }
+                        }
+
+                        resourceLog["scope_logs"] = new JArray(scopeLogsArray.OrderBy(s => s["scope"]?["name"]?.ToString()));
                     }
                 }
 

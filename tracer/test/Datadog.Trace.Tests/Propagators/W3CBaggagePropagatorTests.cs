@@ -195,6 +195,111 @@ public class W3CBaggagePropagatorTests
         }
     }
 
+    [Theory]
+    [InlineData(0, 0)] // cap of 0 stops before any item is added
+    [InlineData(1, 1)]
+    [InlineData(2, 2)]
+    [InlineData(3, 2)] // cap higher than item count, all items kept
+    public void ParseHeader_MaxItems(int maxBaggageItems, int expectedCount)
+    {
+        const string header = "key1=value1,key2=value2";
+
+        var baggage = W3CBaggagePropagator.ParseHeader(header, maxBaggageItems, W3CBaggagePropagator.DefaultMaximumBaggageBytes);
+
+        if (expectedCount == 0)
+        {
+            baggage.Should().BeNull();
+            return;
+        }
+
+        baggage.Should().NotBeNull();
+        baggage.Should().HaveCount(expectedCount);
+
+        // truncation preserves the items at the front of the header
+        baggage!["key1"].Should().Be("value1");
+
+        if (expectedCount >= 2)
+        {
+            baggage["key2"].Should().Be("value2");
+        }
+    }
+
+    [Theory]
+    [InlineData(0, 0)]              // first item is longer than 0 byte cap, rejected
+    [InlineData(10, 0)]             // first item is 11 bytes, just over the cap, rejected
+    [InlineData(11, 1)]             // first item equals the cap, parsed
+    [InlineData(22, 1)]             // whole header is 23 bytes, so second item is truncated
+    [InlineData(23, 2)]             // whole header equals the cap, parsed
+    [InlineData(int.MaxValue, 2)]   // sanity: large cap, parsed
+    public void ParseHeader_MaxLength(int maxBaggageLength, int expectedCount)
+    {
+        const string header = "key1=value1,key2=value2"; // 23 bytes
+
+        var baggage = W3CBaggagePropagator.ParseHeader(header, W3CBaggagePropagator.DefaultMaximumBaggageItems, maxBaggageLength);
+
+        if (expectedCount == 0)
+        {
+            baggage.Should().BeNull();
+            return;
+        }
+
+        baggage.Should().NotBeNull();
+        baggage.Should().HaveCount(expectedCount);
+        baggage!["key1"].Should().Be("value1");
+
+        if (expectedCount >= 2)
+        {
+            baggage["key2"].Should().Be("value2");
+        }
+    }
+
+    [Theory]
+    [InlineData(4, false)]   // header is 5 chars, cap is 4 -> rejected
+    [InlineData(5, true)]    // header equals cap in chars -> parsed (note: actual UTF-8 bytes = 8)
+    public void ParseHeader_MaxLength_NonAscii(int maxBaggageLength, bool expectParsed)
+    {
+        const string header = "k=ééé";
+
+        var baggage = W3CBaggagePropagator.ParseHeader(header, W3CBaggagePropagator.DefaultMaximumBaggageItems, maxBaggageLength);
+
+        if (!expectParsed)
+        {
+            baggage.Should().BeNull();
+            return;
+        }
+
+        baggage.Should().NotBeNull();
+        baggage.Should().ContainSingle();
+        baggage["k"].Should().Be("ééé");
+    }
+
+    [Fact]
+    public void ParseHeader_LargeHeader_IsBoundedAndReturnsQuickly()
+    {
+        var sb = new StringBuilder(100_000 * 8);
+        for (var i = 0; i < 100_000; i++)
+        {
+            if (i > 0)
+            {
+                sb.Append(',');
+            }
+
+            sb.Append("k").Append(i).Append("=v").Append(i);
+        }
+
+        var header = sb.ToString();
+
+        var baggage = W3CBaggagePropagator.ParseHeader(
+            header,
+            maxBaggageItems: int.MaxValue,
+            maxBaggageLength: 11);
+
+        baggage.Should().NotBeNull();
+        baggage.Should().HaveCount(2);
+        baggage!["k0"].Should().Be("v0");
+        baggage["k1"].Should().Be("v1");
+    }
+
     [Fact]
     public void Inject_IHeadersCollection()
     {

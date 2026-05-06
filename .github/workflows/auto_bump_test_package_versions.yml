@@ -36,13 +36,13 @@ jobs:
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 GeneratePackageVersions --PackageVersionCooldownDays 2
 
-      - name: Read cooldown report
-        id: cooldown
+      - name: Read bump report
+        id: bump
         if: always()
         shell: pwsh
         run: |
           $report = ""
-          $reportPath = ".nuke/temp/cooldown_report.md"
+          $reportPath = ".nuke/temp/bump_report.md"
           if (Test-Path $reportPath) {
             $report = Get-Content $reportPath -Raw
           }
@@ -63,13 +63,13 @@ jobs:
           milestone: "${{steps.rename.outputs.milestone}}"
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
-            Updates the package versions for integration tests.
+            Updates the package versions for integration tests. See below for a summary of the changes.
 
-            ${{ steps.cooldown.outputs.report }}
+            ${{ steps.bump.outputs.report }}
 
       - name: Send Slack notification about generating failure
         if: failure()
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
+        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c # v3.0.2
         with:
           # This data can be any valid JSON from a previous step in the GitHub Action
           payload: |

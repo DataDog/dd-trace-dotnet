@@ -6,6 +6,9 @@
     <OutputType>Exe</OutputType>
     <RequiresDockerDependency>All</RequiresDockerDependency>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- CS0618: this sample intentionally exercises the deprecated Couchbase API surface (e.g. ClusterOptions.WithCredentials) -->
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

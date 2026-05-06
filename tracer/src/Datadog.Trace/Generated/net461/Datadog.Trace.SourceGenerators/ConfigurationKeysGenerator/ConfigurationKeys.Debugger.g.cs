@@ -54,6 +54,11 @@ internal static partial class ConfigurationKeys
         public const string MaxTimeToSerialize = "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE";
 
         /// <summary>
+        /// Configuration key for loading Dynamic Instrumentation probe definitions from a local JSON file.
+        /// </summary>
+        public const string DynamicInstrumentationProbeFile = "DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE";
+
+        /// <summary>
         /// Configuration key for set of identifiers that are excluded from redaction decisions.
         /// </summary>
         public const string RedactedExcludedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS";
