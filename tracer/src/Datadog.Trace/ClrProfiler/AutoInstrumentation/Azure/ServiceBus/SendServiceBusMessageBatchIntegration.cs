@@ -60,11 +60,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             }
 
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (messageScope != null
-                && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && dataStreamsManager.IsEnabled
-                && message.ApplicationProperties is IDictionary<string, object> applicationProperties
-                && messageScope.Span is Span span)
+                && message.ApplicationProperties is IDictionary<string, object> applicationProperties)
             {
                 var entityPath = instance.ClientDiagnostics.EntityPath;
                 var edgeTags = string.IsNullOrEmpty(entityPath)
@@ -73,10 +71,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                         new ServiceBusEdgeTagCacheKey(entityPath!, IsConsume: false),
                         static k => ["direction:out", $"topic:{k.EntityPath}", "type:servicebus"]);
                 var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
-                dataStreamsManager.InjectPathwayContextAsBase64String(
-                    span.Context.PathwayContext,
-                    new AzureHeadersCollectionAdapter(applicationProperties));
+
+                if (messageScope?.Span is Span span)
+                {
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
+                    dataStreamsManager.InjectPathwayContextAsBase64String(
+                        span.Context.PathwayContext,
+                        new AzureHeadersCollectionAdapter(applicationProperties));
+                }
+                else if (!applicationProperties.ContainsKey(DataStreamsPropagationHeaders.PropagationKeyBase64))
+                {
+                    var parentContext = tracer.InternalActiveScope?.Span?.Context.PathwayContext;
+                    var pathwayContext = dataStreamsManager.SetCheckpoint(parentContext, CheckpointKind.Produce, edgeTags, msgSize, 0);
+                    dataStreamsManager.InjectPathwayContextAsBase64String(
+                        pathwayContext,
+                        new AzureHeadersCollectionAdapter(applicationProperties));
+                }
             }
 
             return new CallTargetState(messageScope);
