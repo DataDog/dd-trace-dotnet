@@ -18,7 +18,7 @@
 using namespace std::chrono_literals;
 
 // set to true for debugging purpose
-constexpr bool LogGcEvents = true;
+constexpr bool LogGcEvents = false;
 
 template <typename... Args>
 void ClrEventsParser::LogGcEvent(
@@ -251,8 +251,6 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     if (id == EVENT_GC_BULK_NODE)
     {
         // get the list of objects in the GC heap dump
-        // commented out because noisy
-        //LogGcEvent("OnGCBulkNode");
 
         if (_pGCDumpListener != nullptr)
         {
@@ -273,8 +271,6 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     else if (id == EVENT_GC_BULK_EDGE)
     {
         // get the list of references between objects in the GC heap dump
-        // commented out because noisy
-        // LogGcEvent("OnGCBulkEdge");
 
         if (_pGCDumpListener != nullptr)
         {
