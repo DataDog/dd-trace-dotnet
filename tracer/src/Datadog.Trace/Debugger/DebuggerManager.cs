@@ -27,7 +27,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger
 {
-    internal sealed class DebuggerManager
+    internal sealed partial class DebuggerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
         private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(250);
@@ -216,7 +216,26 @@ namespace Datadog.Trace.Debugger
         //   - DynamicConfigurationManager.OnConfigurationChanged (gates with ShouldApplyDynamicDebuggerConfig)
         internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
         {
-            return UpdateProductsState(tracerSettings, newDebuggerSettings ?? DebuggerSettings);
+            var settings = newDebuggerSettings ?? DebuggerSettings;
+
+            // Snapshot exploration test runs take a different initialization path (mocked
+            // discovery service, no-op symbols/probe-status pollers, sink writes to CSV).
+            // Route here so that Instrumentation.cs stays free of debugger test plumbing.
+            if (settings.IsSnapshotExplorationTestEnabled && IsRunningInTestHost())
+            {
+                try
+                {
+                    InitForSnapshotExploration();
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error initializing Dynamic Instrumentation for snapshot exploration test");
+                }
+
+                return Task.CompletedTask;
+            }
+
+            return UpdateProductsState(tracerSettings, settings);
         }
 
         private Task UpdateProductsState(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)

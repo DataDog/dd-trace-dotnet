@@ -7,6 +7,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
@@ -27,18 +29,22 @@ internal sealed class ProbeExpressionEvaluator
     private readonly ConcurrentDictionary<ProbeExpressionsBucketKey, ProbeExpressionsBucket> _cache = new();
 
     internal ProbeExpressionEvaluator(
+        string probeId,
         DebuggerExpression?[]? templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
         KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations,
         CaptureExpressionDefinition[]? captureExpressions)
     {
+		ProbeId = probeId;
         Templates = templates;
         Condition = condition;
         Metric = metric;
         SpanDecorations = spanDecorations;
         CaptureExpressions = captureExpressions;
     }
+	
+	internal string ProbeId { get; }
 
     /// <summary>
     /// Gets CompiledTemplates for the first cached type, for use in "DebuggerExpressionLanguageTests"
@@ -281,6 +287,13 @@ internal sealed class ProbeExpressionEvaluator
             result.Condition = true;
             result.HasConditionError = true;
         }
+        finally
+        {
+            if (ExplorationTestMetrics.IsEnabled)
+            {
+                ExplorationTestMetrics.RecordExpressionEvaluation(Stopwatch.GetTimestamp() - evalStart);
+            }
+        }
     }
 
     private void EvaluateMetric(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<double>? cached)
@@ -496,7 +509,7 @@ internal sealed class ProbeExpressionEvaluator
         result.CaptureExpressionCount = capturedValuesCount;
     }
 
-    private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers)
+    private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (Templates == null)
         {
@@ -514,7 +527,7 @@ internal sealed class ProbeExpressionEvaluator
 
             if (current.Value.Json != null)
             {
-                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Value.Json, scopeMembers);
+                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Value.Json, scopeMembers, thisType);
             }
             else
             {
@@ -525,27 +538,27 @@ internal sealed class ProbeExpressionEvaluator
         return compiledExpressions;
     }
 
-    private CompiledExpression<bool>? CompileCondition(MethodScopeMembers scopeMembers)
+    private CompiledExpression<bool>? CompileCondition(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (!Condition.HasValue)
         {
             return null;
         }
 
-        return ProbeExpressionParser<bool>.ParseExpression(Condition.Value.Json, scopeMembers);
+        return ProbeExpressionParser<bool>.ParseExpression(Condition.Value.Json, scopeMembers, thisType);
     }
 
-    private CompiledExpression<double>? CompileMetric(MethodScopeMembers scopeMembers)
+    private CompiledExpression<double>? CompileMetric(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (!Metric.HasValue)
         {
             return null;
         }
 
-        return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, scopeMembers);
+        return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, scopeMembers, thisType);
     }
 
-    private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? CompileDecorations(MethodScopeMembers scopeMembers)
+    private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? CompileDecorations(MethodScopeMembers scopeMembers, Type thisType)
     {
         if (SpanDecorations == null)
         {
@@ -574,7 +587,7 @@ internal sealed class ProbeExpressionEvaluator
             {
                 when = current.Key == null // span decoration doesn't must have a condition
                            ? new CompiledExpression<bool>((_, _, _, _, _) => true, null, null, null)
-                           : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers);
+                           : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers, thisType);
             }
 
             var compiledTagsJ = new KeyValuePair<string?, CompiledExpression<string>[]>[current.Value.Length];
@@ -592,7 +605,7 @@ internal sealed class ProbeExpressionEvaluator
 
                     if (tag.Value.Json != null)
                     {
-                        compiledTagsK[k] = ProbeExpressionParser<string>.ParseExpression(tag.Value.Json, scopeMembers);
+                        compiledTagsK[k] = ProbeExpressionParser<string>.ParseExpression(tag.Value.Json, scopeMembers, thisType);
                     }
                     else
                     {
@@ -668,6 +681,14 @@ internal sealed class ProbeExpressionEvaluator
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
     {
+        if (DebuggerManager.Instance.DebuggerSettings.IsSnapshotExplorationTestEnabled)
+        {
+            // NOTE: This log is parsed by Build.SnapshotExplorationTest.cs (ReadErrorsFromManagedLogs).
+            // The "probeId=" pattern is used to associate errors with specific probes.
+            // Do not change "Failed to parse probe expression" without updating the test analyzer.
+            Log.Information(e, "Failed to parse probe expression probeId={ProbeId}: {Expression}", ProbeId, compiledExpression.RawExpression);
+        }
+
         result.Errors ??= new List<EvaluationError>();
         if (compiledExpression.Errors != null)
         {

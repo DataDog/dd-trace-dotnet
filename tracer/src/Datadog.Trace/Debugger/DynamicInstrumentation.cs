@@ -36,7 +36,7 @@ namespace Datadog.Trace.Debugger
         NativeSpanProbeDefinition[] spanProbes,
         NativeRemoveProbeRequest[] revertProbes);
 
-    internal sealed class DynamicInstrumentation : IDisposable
+    internal sealed partial class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
@@ -389,8 +389,14 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static void SetRateLimit(ProbeDefinition probe)
+        private void SetRateLimit(ProbeDefinition probe)
         {
+            if (_settings.IsSnapshotExplorationTestEnabled)
+            {
+                ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                return;
+            }
+
             switch (probe)
             {
                 case LogProbe { Sampling: { } sampling }:
@@ -851,7 +857,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void AddSnapshot(ProbeInfo probe, string snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string? snapshot)
         {
             if (IsDisposed)
             {
@@ -868,7 +874,7 @@ namespace Datadog.Trace.Debugger
             SetProbeStatusToEmitting(probe);
         }
 
-        internal void AddLog(ProbeInfo probe, string log)
+        internal void AddLog(ProbeInfo probe, string? log)
         {
             if (IsDisposed)
             {

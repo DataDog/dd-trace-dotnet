@@ -138,6 +138,18 @@ internal static partial class ConfigurationKeys
         public const string InternalDynamicInstrumentationMaxProbesPerType = "DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE";
 
         /// <summary>
+        /// Internal configuration key to enable snapshot exploration test mode.
+        /// Default value is false (disabled).
+        /// </summary>
+        public const string IsSnapshotExplorationTestEnabled = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
+
+        /// <summary>
+        /// Internal configuration key for the snapshot exploration test root path.
+        /// The tracer derives the probes CSV path and report output folder from this root.
+        /// </summary>
+        public const string SnapshotExplorationTestRootPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH";
+
+        /// <summary>
         /// Configuration key for the maximum symbol size to upload (in bytes).
         /// Default value is 1 mb.
         /// </summary>
