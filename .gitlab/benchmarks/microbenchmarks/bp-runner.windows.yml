@@ -88,8 +88,7 @@
 .how_to_run_benchmarks: &how_to_run_benchmarks |
   $ErrorActionPreference = "Stop"
 
-  # Use BENCHMARK_PROJECT from env if set, otherwise default to Benchmarks.Trace
-  $project = if ($env:BENCHMARK_PROJECT) { $env:BENCHMARK_PROJECT } else { "Benchmarks.Trace" }
+  $project = $env:BENCHMARK_PROJECT
 
   # Skip if benchmark project DLL not built.
   # Some projects (e.g., Benchmarks.OpenTelemetry.Api) are not built on PRs. See Build.cs GetBenchmarkProjectsWithSettings().
