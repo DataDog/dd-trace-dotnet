@@ -131,15 +131,16 @@ namespace DatadogDebugger.Util
             sb.Append(snapshot, 0, prunedNodes[0].Start);
             for (var i = 1; i < prunedNodes.Count; i++)
             {
-                sb.Append(Pruned);
                 var nextSegmentStart = prunedNodes[i - 1].End + 1;
                 var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
                 if (nextSegmentStart < 0 || nextSegmentStart > snapshot.Length || nextSegmentLength < 0 || (nextSegmentStart + nextSegmentLength) > snapshot.Length)
                 {
                     // Malformed segment boundaries - abort pruning
+                    StringBuilderCache.Release(sb);
                     return snapshot;
                 }
 
+                sb.Append(Pruned);
                 sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
             }
 

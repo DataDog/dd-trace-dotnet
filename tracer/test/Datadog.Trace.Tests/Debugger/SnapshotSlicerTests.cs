@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.TestHelpers;
+using DatadogDebugger.Util;
 using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
@@ -26,6 +27,33 @@ namespace Datadog.Trace.Tests.Debugger
             var slicer = GetSlicer(3, snapshot.Length + 1);
             var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
             Assert.Equal(snapshot, modifiedSnapshot);
+        }
+
+        [Fact]
+        public void NullSnapshot_ReturnsNull()
+        {
+            var modifiedSnapshot = SnapshotPruner.Prune(null, 0, 0);
+            Assert.Null(modifiedSnapshot);
+        }
+
+        [Fact]
+        public void InvalidJsonWithNoLeaves_ReturnsOriginalSnapshot()
+        {
+            var snapshot = "{\"debugger\":{\"snapshot\":{\"captures\":{";
+            var modifiedSnapshot = SnapshotPruner.Prune(snapshot, 1, 1);
+            Assert.Equal(snapshot, modifiedSnapshot);
+        }
+
+        [Fact]
+        public void SnapshotWithNonAsciiCharacters_PrunesUsingCharIndexes()
+        {
+            var snapshot = "{\"debugger\":{\"snapshot\":{\"captures\":{\"message\":\"é\",\"value\":{\"notCapturedReason\":\"depth\",\"type\":\"String\",\"value\":\"é\"}}}}}";
+
+            var modifiedSnapshot = SnapshotPruner.Prune(snapshot, 1, 4);
+
+            var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
+            Assert.Equal("é", captures["message"].Value<string>());
+            Assert.Contains("\"pruned\":true", modifiedSnapshot);
         }
 
         [Fact]
