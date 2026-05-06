@@ -51,29 +51,24 @@ internal static class ExplorationTestMetrics
 
     // Output path (set when enabled)
     private static string _metricsFilePath = string.Empty;
-    private static bool _isEnabled;
-    private static bool _isRegistered;
+    private static int _isInitialized;
 
-    public static bool IsEnabled => _isEnabled;
+    public static bool IsEnabled => ExplorationTestState.IsActive;
 
     /// <summary>
-    /// Enables metrics collection and registers process exit handler.
+    /// Initializes the metrics subsystem and registers process exit handler.
+    /// Callers must call <see cref="ExplorationTestState.Activate"/> after all
+    /// exploration-test subsystems are initialized.
     /// </summary>
     public static void Enable(string reportFolderPath)
     {
-        if (_isEnabled)
+        if (Interlocked.CompareExchange(ref _isInitialized, 1, 0) != 0)
         {
             return;
         }
 
-        _isEnabled = true;
         _metricsFilePath = Path.Combine(reportFolderPath, "exploration_test_metrics.csv");
-
-        if (!_isRegistered)
-        {
-            _isRegistered = true;
-            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-        }
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
 
         Log.Information("Exploration test metrics enabled. Output: {Path}", _metricsFilePath);
     }
@@ -83,7 +78,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordExpressionCompilation(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -97,7 +92,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordExpressionEvaluation(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -111,7 +106,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordSnapshotSerialization(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -126,7 +121,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordSnapshotRootEnumerable(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -141,7 +136,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordSnapshotRootObject(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -155,7 +150,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordSnapshotPruning(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -169,7 +164,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordSnapshotSinkWrite(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -183,7 +178,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordSnapshotTimeout()
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -196,7 +191,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordProbeProcessing(long elapsedTicks)
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -210,7 +205,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordCacheHit()
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -223,7 +218,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordCacheMiss()
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -236,7 +231,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordProbeRemoval()
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -249,7 +244,7 @@ internal static class ExplorationTestMetrics
     /// </summary>
     public static void RecordSnapshotSkipped()
     {
-        if (!_isEnabled)
+        if (!IsEnabled)
         {
             return;
         }
@@ -259,7 +254,7 @@ internal static class ExplorationTestMetrics
 
     private static void OnProcessExit(object? sender, EventArgs e)
     {
-        if (!_isEnabled || string.IsNullOrEmpty(_metricsFilePath))
+        if (!IsEnabled || string.IsNullOrEmpty(_metricsFilePath))
         {
             return;
         }

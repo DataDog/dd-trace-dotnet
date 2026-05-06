@@ -844,9 +844,15 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     rewriterWrapper.StLocal(callTargetReturnIndex);
 
-    // *** Emit LogArg call(s)
+    // *** Emit LogLocal call(s)
     hr = WriteCallsToLogLocal(module_metadata, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
                               stateLocalIndex, &endMethodCallInstr, probeType);
+
+    IfFailRet(hr);
+
+    // *** Emit LogArg call(s)
+    hr = WriteCallsToLogArg(module_metadata, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
+                            stateLocalIndex, &endMethodCallInstr, probeType);
 
     IfFailRet(hr);
 

@@ -152,8 +152,8 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
 
-			ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
-										 
+            ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
             IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
@@ -204,8 +204,8 @@ namespace Datadog.Trace.Debugger
 
         public int CodeOriginMaxUserFrames { get; }
 
-		public string ProbeFile { get; }
-		
+        public string ProbeFile { get; }
+
         public bool IsSnapshotExplorationTestEnabled { get; }
 
         public string SnapshotExplorationTestRootPath { get; }

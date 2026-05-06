@@ -5,7 +5,6 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -26,7 +25,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger
 {
-    internal sealed class DebuggerManager
+    internal sealed partial class DebuggerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
         private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(250);
@@ -166,7 +165,26 @@ namespace Datadog.Trace.Debugger
 
         internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
         {
-            return UpdateProductsState(tracerSettings, newDebuggerSettings ?? DebuggerSettings);
+            var settings = newDebuggerSettings ?? DebuggerSettings;
+
+            // Snapshot exploration test runs take a different initialization path (mocked
+            // discovery service, no-op symbols/probe-status pollers, sink writes to CSV).
+            // Route here so that Instrumentation.cs stays free of debugger test plumbing.
+            if (settings.IsSnapshotExplorationTestEnabled && IsRunningInTestHost())
+            {
+                try
+                {
+                    InitForSnapshotExploration();
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error initializing Dynamic Instrumentation for snapshot exploration test");
+                }
+
+                return Task.CompletedTask;
+            }
+
+            return UpdateProductsState(tracerSettings, settings);
         }
 
         private Task UpdateProductsState(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
@@ -702,104 +720,6 @@ namespace Datadog.Trace.Debugger
                         .Add(ExceptionReplay)
                         .Add(SymbolsUploader)
                         .DisposeAll();
-        }
-
-        public void InitForSnapshotExploration()
-        {
-            var tracerManager = TracerManager.Instance;
-            var di = DebuggerFactory.CreateDynamicInstrumentation(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, tracerManager.Settings, ServiceNameProvider, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-
-            // Enable metrics collection and probe tracking for performance optimization
-            if (!string.IsNullOrEmpty(DebuggerSettings.SnapshotExplorationTestReportFolderPath))
-            {
-                ExplorationTestMetrics.Enable(DebuggerSettings.SnapshotExplorationTestReportFolderPath);
-                ExplorationTestProbeTracker.Enable();
-            }
-
-            var probeCount = di.WithProbesFromFile();
-            Log.Information<int>("Initializing Dynamic Instrumentation for snapshot exploration test with {Count} probes.", probeCount);
-
-            WaitForProbeInstallation(probeCount, TimeSpan.FromSeconds(60));
-
-            di.Initialize();
-            _dynamicInstrumentation = di;
-
-            // Wait for async initialization to complete - critical for exploration tests!
-            // Without this, DynamicInstrumentation property returns null (IsInitialized check)
-            // and AddSnapshot calls become no-ops via null-conditional operator.
-            WaitForInitialization(di, TimeSpan.FromSeconds(30));
-            return;
-
-            static void WaitForProbeInstallation(int expectedCount, TimeSpan timeout)
-            {
-                var logDir = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogDirectory)
-                          ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Datadog .NET Tracer", "logs");
-
-                var deadline = DateTime.UtcNow + timeout;
-                var marker = "Dynamic Instrumentation: received";  // Native received probes
-
-                while (DateTime.UtcNow < deadline)
-                {
-                    try
-                    {
-                        var found = false;
-                        foreach (var logFile in Directory.GetFiles(logDir, "dotnet-tracer-native-*.log"))
-                        {
-                            // Use FileShare.ReadWrite to read while native profiler is writing
-                            using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                            using var reader = new StreamReader(fs);
-                            string? line;
-                            while ((line = reader.ReadLine()) != null)
-                            {
-                                if (line.Contains(marker) && line.Contains("method probes from managed side"))
-                                {
-                                    found = true;
-                                    break;
-                                }
-                            }
-
-                            if (found)
-                            {
-                                break;
-                            }
-                        }
-
-                        if (found)
-                        {
-                            // Small buffer for native to process and queue ReJIT requests
-                            Thread.Sleep(TimeSpan.FromMilliseconds(500));
-                            Log.Information<int>("Native profiler received {Count} probes, proceeding with tests.", expectedCount);
-                            return;
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        // File might be temporarily locked, retry
-                    }
-
-                    Thread.Sleep(100);
-                }
-
-                Log.Warning("Timeout waiting for native to receive probes. Proceeding anyway.");
-            }
-
-            static void WaitForInitialization(DynamicInstrumentation di, TimeSpan timeout)
-            {
-                var deadline = DateTime.UtcNow + timeout;
-
-                while (DateTime.UtcNow < deadline)
-                {
-                    if (di.IsInitialized)
-                    {
-                        Log.Information("DynamicInstrumentation initialized successfully.");
-                        return;
-                    }
-
-                    Thread.Sleep(100);
-                }
-
-                Log.Warning("Timeout waiting for DynamicInstrumentation to initialize. Snapshots may not be captured.");
-            }
         }
     }
 }

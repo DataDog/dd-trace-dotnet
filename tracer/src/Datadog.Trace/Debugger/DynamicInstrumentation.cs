@@ -50,6 +50,7 @@ namespace Datadog.Trace.Debugger
         private readonly object _instanceLock = new();
         private int _disposeState;
         private int _initializationState;
+        private Task? _initializationTask;
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -103,8 +104,16 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            _ = InitializeAsync();
+            _initializationTask = InitializeAsync();
         }
+
+        /// <summary>
+        /// Returns the task representing in-flight initialization (or a completed
+        /// task if <see cref="Initialize"/> has not been called yet). Callers can
+        /// await this to know when DI is fully initialized instead of polling
+        /// <see cref="IsInitialized"/>.
+        /// </summary>
+        internal Task GetInitializationTask() => _initializationTask ?? Task.CompletedTask;
 
         private async Task InitializeAsync()
         {
@@ -646,17 +655,6 @@ namespace Datadog.Trace.Debugger
 
         internal void AddSnapshot(ProbeInfo probe, string? snapshot)
         {
-            var snapshotFlowLogsEnabled = SnapshotFlowDebugLog.IsEnabled(Log);
-            if (snapshotFlowLogsEnabled)
-            {
-                Log.Debug(
-                    "DynamicInstrumentation.AddSnapshot received payload probeId={ProbeId}, IsFullSnapshot={IsFullSnapshot}, IsDisposed={IsDisposed}, PayloadNull={PayloadNull}",
-                    property0: probe.ProbeId,
-                    property1: probe.IsFullSnapshot,
-                    property2: IsDisposed,
-                    property3: snapshot is null);
-            }
-
             if (IsDisposed)
             {
                 return;
@@ -664,18 +662,8 @@ namespace Datadog.Trace.Debugger
 
             if (!probe.IsFullSnapshot)
             {
-                if (snapshotFlowLogsEnabled)
-                {
-                    Log.Debug("DynamicInstrumentation.AddSnapshot routing payload to log uploader probeId={ProbeId}", probe.ProbeId);
-                }
-
                 AddLog(probe, snapshot);
                 return;
-            }
-
-            if (snapshotFlowLogsEnabled)
-            {
-                Log.Debug("DynamicInstrumentation.AddSnapshot routing payload to snapshot uploader probeId={ProbeId}", probe.ProbeId);
             }
 
             _snapshotUploader.Add(probe.ProbeId, snapshot);
@@ -684,16 +672,6 @@ namespace Datadog.Trace.Debugger
 
         internal void AddLog(ProbeInfo probe, string? log)
         {
-            var snapshotFlowLogsEnabled = SnapshotFlowDebugLog.IsEnabled(Log);
-            if (snapshotFlowLogsEnabled)
-            {
-                Log.Debug(
-                    "DynamicInstrumentation.AddLog queueing payload probeId={ProbeId}, IsDisposed={IsDisposed}, PayloadNull={PayloadNull}",
-                    property0: probe.ProbeId,
-                    property1: IsDisposed,
-                    property2: log is null);
-            }
-
             if (IsDisposed)
             {
                 return;

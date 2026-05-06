@@ -912,16 +912,6 @@ partial class Build
         return result;
     }
 
-    void LogProbeCollection(string collectionName, List<KeyValuePair<string, string>> probes)
-    {
-        Logger.Error($"{collectionName} errors: {probes.Count}");
-        return;
-        foreach (var probe in probes)
-        {
-            Logger.Error($"{collectionName}: ID: {probe.Key}, Name: {probe.Value ?? string.Empty}");
-        }
-    }
-
     public static Dictionary<string, string> ReadDefinedProbes(string probesPath)
     {
         if (string.IsNullOrEmpty(probesPath))

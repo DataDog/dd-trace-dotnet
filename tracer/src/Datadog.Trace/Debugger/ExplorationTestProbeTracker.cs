@@ -48,19 +48,21 @@ namespace Datadog.Trace.Debugger
 
         private static int _maxSnapshotsPerProbe = DefaultMaxSnapshotsPerProbe;
 
-        private static int _isEnabled;
+        private static int _isInitialized;
 
         /// <summary>
         /// Gets a value indicating whether the tracker is enabled (only for exploration tests).
         /// </summary>
-        public static bool IsEnabled => Volatile.Read(ref _isEnabled) == 1;
+        public static bool IsEnabled => ExplorationTestState.IsActive;
 
         /// <summary>
-        /// Enables the tracker. Should only be called when snapshot exploration tests are active.
+        /// Initializes the probe tracker. Callers must call
+        /// <see cref="ExplorationTestState.Activate"/> after all exploration-test
+        /// subsystems are initialized.
         /// </summary>
         public static void Enable()
         {
-            if (Interlocked.CompareExchange(ref _isEnabled, 1, 0) == 0)
+            if (Interlocked.CompareExchange(ref _isInitialized, 1, 0) == 0)
             {
                 _maxSnapshotsPerProbe = ReadMaxSnapshotsPerProbe();
                 Log.Information<int>("ExplorationTestProbeTracker enabled with MaxSnapshotsPerProbe={Max}", _maxSnapshotsPerProbe);
@@ -155,7 +157,8 @@ namespace Datadog.Trace.Debugger
         {
             ProbeHitCounts.Clear();
             ProbesRequestedForRemoval.Clear();
-            Volatile.Write(ref _isEnabled, 0);
+            Volatile.Write(ref _isInitialized, 0);
+            ExplorationTestState.Reset();
         }
 
         private static int ReadMaxSnapshotsPerProbe()

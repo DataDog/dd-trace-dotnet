@@ -14,7 +14,6 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-// using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -583,10 +582,14 @@ internal sealed class ProbeExpressionEvaluator
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
     {
-        // NOTE: This log is parsed by Build.SnapshotExplorationTest.cs (ReadErrorsFromManagedLogs).
-        // The "probeId=" pattern is used to associate errors with specific probes.
-        // Do not change "Failed to parse probe expression" without updating the test analyzer.
-        Log.Information(e, "Failed to parse probe expression probeId={ProbeId}: {Expression}", ProbeId, compiledExpression.RawExpression);
+        if (DebuggerManager.Instance.DebuggerSettings.IsSnapshotExplorationTestEnabled)
+        {
+            // NOTE: This log is parsed by Build.SnapshotExplorationTest.cs (ReadErrorsFromManagedLogs).
+            // The "probeId=" pattern is used to associate errors with specific probes.
+            // Do not change "Failed to parse probe expression" without updating the test analyzer.
+            Log.Information(e, "Failed to parse probe expression probeId={ProbeId}: {Expression}", ProbeId, compiledExpression.RawExpression);
+        }
+
         result.Errors ??= new List<EvaluationError>();
         if (compiledExpression.Errors != null)
         {

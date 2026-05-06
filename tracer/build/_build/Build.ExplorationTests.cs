@@ -141,8 +141,6 @@ partial class Build
         );
     }
 
-
-
     Target RunExplorationTests
         => _ => _
                .Description("Run exploration tests.")
@@ -191,7 +189,6 @@ partial class Build
                         return;
                     }
 
-                    // FileSystemTasks.EnsureCleanDirectory(TestLogsDirectory);
                     try
                     {
                         RunSnapshotExplorationTestsInternal();
@@ -696,7 +693,7 @@ class ExplorationTestDescription
                     "Google.Protobuf.JsonParserTest.MaliciousRecursion",
                     "Google.Protobuf.Test.RefStructCompatibilityTest",
                     "Google.Protobuf.RefStructCompatibilityTest.GeneratedCodeCompilesWithOldCsharpCompiler",
-                    "Google.Protobuf.RefStructCompatibilityTest.RunOldCsharpCompilerAndCheckSuccess", 
+                    "Google.Protobuf.RefStructCompatibilityTest.RunOldCsharpCompilerAndCheckSuccess",
                     // exclude those "legacy" tests because they are on manually modified code
                     // that throws a NotImplementedException on the `Descriptor` property that we use.
                     "Google.Protobuf.LegacyGeneratedCodeTest.IntermixingOfNewAndLegacyGeneratedCodeWorksWithCodedInputStream",

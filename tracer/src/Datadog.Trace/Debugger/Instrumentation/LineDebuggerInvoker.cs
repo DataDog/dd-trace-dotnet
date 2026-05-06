@@ -6,11 +6,9 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -52,13 +50,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 // If we get a null byref, skip capture.
                 if (Unsafe.IsNullRef(ref arg))
                 {
-                    if (SnapshotFlowDebugLog.IsEnabled(Log))
+                    if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
                         Log.Debug(
-                            "LineDebuggerInvoker.LogArg skipped null byref argument probeId={ProbeId}, Index={Index}, TArg={TArg}",
-                            property0: state.ProbeData.ProbeId,
-                            property1: index,
-                            property2: typeof(TArg).FullName);
+                        "LogArg: Skipping null byref argument. probeId={ProbeId}, Index={Index}, TArg={TArg}",
+                        property0: state.ProbeData.ProbeId,
+                        property1: index,
+                        property2: typeof(TArg).FullName);
                     }
 
                     return;
@@ -71,15 +69,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
                 {
                     state.IsActive = false;
-                }
-
-                if (SnapshotFlowDebugLog.IsEnabled(Log))
-                {
-                    Log.Debug(
-                        "LineDebuggerInvoker.LogArg EXIT probeId={ProbeId}, Line={Line}, LocalOrArgName={Name}",
-                        property0: state.ProbeData.ProbeId,
-                        property1: state.LineNumber,
-                        property2: paramName);
                 }
 
                 state.HasLocalsOrReturnValue = false;
@@ -109,40 +98,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 if (Unsafe.IsNullRef(ref local))
                 {
-                    if (SnapshotFlowDebugLog.IsEnabled(Log))
+                    if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
                         Log.Debug(
-                            "LineDebuggerInvoker.LogLocal skipped null byref local probeId={ProbeId}, Index={Index}, TLocal={TLocal}",
-                            property0: state.ProbeData.ProbeId,
-                            property1: index,
-                            property2: typeof(TLocal).FullName);
+                        "LogLocal: Skipping null byref local. probeId={ProbeId}, Index={Index}, TLocal={TLocal}",
+                        property0: state.ProbeData.ProbeId,
+                        property1: index,
+                        property2: typeof(TLocal).FullName);
                     }
 
                     return;
                 }
 
-                if (SnapshotFlowDebugLog.IsEnabled(Log))
-                {
-                    Log.Debug(
-                        "LineDebuggerInvoker.LogLocal ENTER probeId={ProbeId}, Line={Line}, Index={Index}, TLocal={TLocal}",
-                        property0: state.ProbeData.ProbeId,
-                        property1: state.LineNumber,
-                        property2: index,
-                        property3: typeof(TLocal).FullName);
-                }
-
                 var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
                 if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
                 {
-                    if (SnapshotFlowDebugLog.IsEnabled(Log))
-                    {
-                        Log.Debug(
-                            "LineDebuggerInvoker.LogLocal skipped unresolved local name probeId={ProbeId}, Line={Line}, Index={Index}",
-                            property0: state.ProbeData.ProbeId,
-                            property1: state.LineNumber,
-                            property2: index);
-                    }
-
                     return;
                 }
 
@@ -152,15 +122,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
                 {
                     state.IsActive = false;
-                }
-
-                if (SnapshotFlowDebugLog.IsEnabled(Log))
-                {
-                    Log.Debug(
-                        "LineDebuggerInvoker.LogLocal EXIT probeId={ProbeId}, Line={Line}, LocalOrArgName={Name}",
-                        property0: state.ProbeData.ProbeId,
-                        property1: state.LineNumber,
-                        property2: localName);
                 }
 
                 state.HasLocalsOrReturnValue = true;
@@ -242,27 +203,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 if (!probeData.Processor.ShouldProcess(in probeData))
                 {
-                    if (SnapshotFlowDebugLog.IsEnabled(Log))
-                    {
-                        Log.Debug(
-                            "LineDebuggerInvoker.BeginLine skipped processing probeId={ProbeId}, Line={Line}",
-                            property0: probeId,
-                            property1: lineNumber);
-                    }
-
                     return CreateInvalidatedLineDebuggerState();
                 }
 
                 var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance);
-                if (SnapshotFlowDebugLog.IsEnabled(Log))
-                {
-                    Log.Debug(
-                        "LineDebuggerInvoker.BeginLine created state probeId={ProbeId}, Line={Line}, LocalsCount={LocalsCount}",
-                        property0: state.ProbeData.ProbeId,
-                        property1: lineNumber,
-                        property2: state.MethodMetadataInfo.LocalVariableNames.Length);
-                }
-
                 var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
 
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
@@ -301,16 +245,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var captureInfo = new CaptureInfo<object>(state.MethodMetadataIndex, value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.EndLine, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
                 var probeData = state.ProbeData;
                 state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData);
-
-                if (SnapshotFlowDebugLog.IsEnabled(Log))
-                {
-                    Log.Debug(
-                        "LineDebuggerInvoker.EndLine processed probeId={ProbeId}, Line={Line}, HasLocalOrArg={HasLocalOrArg}, HasLocalsOrReturn={HasLocalsOrReturn}",
-                        property0: state.ProbeData.ProbeId,
-                        property1: state.LineNumber,
-                        property2: hasArgumentsOrLocals,
-                        property3: state.HasLocalsOrReturnValue);
-                }
 
                 state.HasLocalsOrReturnValue = false;
             }

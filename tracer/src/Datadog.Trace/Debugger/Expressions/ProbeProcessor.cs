@@ -124,42 +124,8 @@ namespace Datadog.Trace.Debugger.Expressions
             }
 
             // Probe has reached its snapshot limit - skip serialization
-            if (SnapshotFlowDebugLog.IsEnabled(Log))
-            {
-                Log.Debug(
-                    "ProbeProcessor.ShouldCaptureSnapshotForExplorationTest skipped snapshot probeId={ProbeId}",
-                    ProbeInfo.ProbeId);
-            }
-
             ExplorationTestMetrics.RecordSnapshotSkipped();
             return false;
-        }
-
-        private void AddSnapshotWithFlowLog<TCapture>(in CaptureInfo<TCapture> info, string? snapshot)
-        {
-            var snapshotFlowLogsEnabled = SnapshotFlowDebugLog.IsEnabled(Log);
-            if (snapshotFlowLogsEnabled)
-            {
-                Log.Debug(
-                    "ProbeProcessor.DispatchSnapshot preparing snapshot probeId={ProbeId}, MethodState={MethodState}, ProbeLocation={ProbeLocation}, IsFullSnapshot={IsFullSnapshot}, SnapshotNull={SnapshotNull}",
-                    property0: ProbeInfo.ProbeId,
-                    property1: info.MethodState,
-                    property2: ProbeInfo.ProbeLocation,
-                    property3: ProbeInfo.IsFullSnapshot,
-                    property4: snapshot is null);
-            }
-
-            DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
-
-            if (snapshotFlowLogsEnabled)
-            {
-                Log.Debug(
-                    "ProbeProcessor.DispatchSnapshot completed probeId={ProbeId}, MethodState={MethodState}, ProbeLocation={ProbeLocation}, IsFullSnapshot={IsFullSnapshot}",
-                    property0: ProbeInfo.ProbeId,
-                    property1: info.MethodState,
-                    property2: ProbeInfo.ProbeLocation,
-                    property3: ProbeInfo.IsFullSnapshot);
-            }
         }
 
         private DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
@@ -229,13 +195,11 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
         {
-            Log.Debug("ProbeProcessor.Process CALLED: probeId={ProbeId}, MethodState={MethodState}", probeData.ProbeId, info.MethodState);
-
             var snapshotCreator = (DebuggerSnapshotCreator)inSnapshotCreator;
 
             if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
             {
-                Log.Debug("ProbeProcessor.Process: DI not initialized, stopping. probeId={ProbeId}", probeData.ProbeId);
+                Log.Debug("Stop processing probe {ID} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probeData.ProbeId);
                 snapshotCreator.Stop();
                 return false;
             }
@@ -670,7 +634,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        AddSnapshotWithFlowLog(in info, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -695,7 +659,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        AddSnapshotWithFlowLog(in info, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -728,7 +692,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        AddSnapshotWithFlowLog(in info, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         snapshotCreator.Stop();
                         break;
                     }
@@ -773,7 +737,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                    AddSnapshotWithFlowLog(in info, snapshot);
+                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
 
                     snapshotCreator.Stop();
                     break;

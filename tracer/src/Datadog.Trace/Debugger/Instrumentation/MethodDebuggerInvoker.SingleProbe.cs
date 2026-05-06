@@ -5,14 +5,11 @@
 
 using System;
 using System.ComponentModel;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstants;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {

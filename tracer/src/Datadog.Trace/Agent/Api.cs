@@ -146,11 +146,6 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            if (endpoint != null)
-            {
-                return true;
-            }
-
             while (true)
             {
                 IApiRequest request;

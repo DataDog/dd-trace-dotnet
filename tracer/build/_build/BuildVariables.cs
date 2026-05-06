@@ -15,10 +15,11 @@ partial class Build
 
         envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
         envVars.Add("DD_CIVISIBILITY_ENABLED", "0");
-        // envVars.Add("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
 
         if (description.IsSnapshotScenario)
         {
+            // Snapshot exploration tests can run for a long time when iterating over many probes,
+            // so extend the vstest connection timeout to avoid premature host disconnects.
             envVars.Add("VSTEST_CONNECTION_TIMEOUT", "1800");
             // Snapshot exploration runs don't need hands-off config, and disabling it
             // avoids libdatadog startup crashes in isolated third-party test hosts.
@@ -29,18 +30,24 @@ partial class Build
             // Telemetry retries also target the agent and can be misattributed as probe failures
             // by the exploration log parser, so disable them for these offline runs.
             envVars.Add("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false");
+            // Exploration tests run agent-less. Disable APM tracing entirely so spans
+            // never reach Api.cs / SendWithRetry and we don't accumulate retry storms
+            // / "failed to send" log noise in the test logs.
+            envVars.Add("DD_TRACE_ENABLED", "0");
             envVars.Add(SnapshotExplorationEnabledKey, "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             envVars.Add(SnapshotExplorationRootPathKey, GetSnapshotExplorationRootPath(testRootPath, framework));
         }
         else if (description.LineProbesEnabled)
         {
+            envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, LineProbesFileName));
         }
         else
         {
+            envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
         }
 
