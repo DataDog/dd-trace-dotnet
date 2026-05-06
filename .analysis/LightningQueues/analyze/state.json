@@ -4,9 +4,9 @@
   "status": "pending",
   "run_id": "20260506-091548-17fb71",
   "started_at": "2026-05-06T09:15:48.203778Z",
-  "updated_at": "2026-05-06T09:15:50.615831Z",
+  "updated_at": "2026-05-06T09:15:51.608758Z",
   "completed_at": null,
-  "current_step": "docs_collection",
+  "current_step": "agent_analysis",
   "steps": {
     "install_package": {
       "name": "install_package",
@@ -83,6 +83,39 @@
       "workflow": "analyze",
       "parent_step": null,
       "log_dir": null
+    },
+    "docs_collection": {
+      "name": "docs_collection",
+      "status": "completed",
+      "attempt": 1,
+      "started_at": null,
+      "completed_at": "2026-05-06T09:15:51.608737Z",
+      "input": null,
+      "output": {
+        "success": true,
+        "error": null
+      },
+      "error": null,
+      "metrics": {
+        "cost_usd": 0.0,
+        "duration_seconds": 0.0,
+        "num_turns": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "agent_runs": []
+      },
+      "git_commit": "150a55411000914f38a2f0ce3b0710686bc256cd",
+      "git_tag": "None/docs_collection",
+      "files_changed": [
+        ".analysis/LightningQueues/analyze/state.json",
+        ".analysis/LightningQueues/analyze/steps/docs_collection-1/input.json",
+        ".analysis/LightningQueues/analyze/steps/docs_collection-1/output.json",
+        ".analysis/LightningQueues/analyze/steps/docs_collection-1/validation_1.json"
+      ],
+      "workflow": "analyze",
+      "parent_step": null,
+      "log_dir": null
     }
   },
   "data": {
@@ -101,7 +134,11 @@
     "methods_path": "/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze/data/all-methods.json",
     "method_count": 0
   },
-  "artifacts": {},
+  "artifacts": {
+    "docs": ".analysis/LightningQueues/analyze/artifacts/docs.json",
+    "code-examples": ".analysis/LightningQueues/analyze/artifacts/code-examples.json",
+    "apm-semantics": ".analysis/LightningQueues/analyze/artifacts/apm-semantics.json"
+  },
   "options": {},
   "user_prompt": null,
   "base_branch": null,

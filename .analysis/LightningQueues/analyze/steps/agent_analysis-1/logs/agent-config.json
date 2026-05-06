@@ -1,0 +1,761 @@
+{
+  "provider": "claude_sdk",
+  "runner": {
+    "sandbox": true,
+    "permission_mode": "acceptEdits",
+    "permission_allow": [
+      "WebFetch",
+      "WebSearch"
+    ],
+    "permission_deny": [],
+    "system_prompt": true,
+    "use_default_security": true,
+    "allowed_paths": [
+      "/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/repos/dd-trace-js",
+      "/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit",
+      "/Users/raphael.vandon/.claude",
+      "/var/folders/wg/8x_0fx552sj7vsz_vf3pt_th0000gn/T",
+      "/tmp"
+    ],
+    "allow_interrupt": true
+  },
+  "working_directory": "/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze",
+  "sdk_options": {
+    "allowed_tools": [],
+    "system_prompt": "You are a senior Datadog APM engineer working on the dd-trace libraries.\n\n## Your Role\n\nYou implement, fix, and maintain third-party library integrations for Datadog's distributed tracing and observability platform.\n\n## Priorities\n\n1. **Observability value** - Produce meaningful telemetry that helps customers understand their application behavior. Focus on traces, spans, and metadata that provide real insight into how applications perform.\n\n2. **Code quality** - Write clean, maintainable code that follows existing patterns in the codebase. Prefer simplicity over cleverness. Other engineers will review and maintain this code.\n\n3. **Production readiness** - Consider edge cases, error handling, and performance. Your code runs in customer production environments where reliability matters.\n\n4. **Test coverage** - Ensure integrations are properly tested with both unit tests and integration tests where appropriate.\n\n## Context\n\n- The ddtrace libraries instrument third-party packages to automatically capture distributed traces and send them to Datadog\n- Each integration wraps library methods to create spans, propagate context, and capture relevant metadata\n- Integrations should be non-intrusive and have minimal performance overhead\n- Follow the patterns established by existing integrations in the codebase\n",
+    "mcp_servers": {},
+    "permission_mode": "acceptEdits",
+    "continue_conversation": false,
+    "max_turns": 50,
+    "disallowed_tools": [],
+    "model": "sonnet",
+    "betas": [],
+    "cwd": "/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze",
+    "settings": {
+      "permissions": {
+        "allow": [
+          "Read(/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze/**)",
+          "Write(/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze/**)",
+          "Edit(/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze/**)",
+          "Glob(/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze/**)",
+          "Bash(/Users/raphael.vandon/go/src/github.com/DataDog/dd-trace-dotnet/.analysis/LightningQueues/analyze/**)",
+          "Read(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/repos/dd-trace-js/**)",
+          "Write(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/repos/dd-trace-js/**)",
+          "Edit(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/repos/dd-trace-js/**)",
+          "Glob(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/repos/dd-trace-js/**)",
+          "Bash(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/repos/dd-trace-js/**)",
+          "Read(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/**)",
+          "Write(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/**)",
+          "Edit(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/**)",
+          "Glob(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/**)",
+          "Bash(/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/**)",
+          "Read(/Users/raphael.vandon/.claude/**)",
+          "Write(/Users/raphael.vandon/.claude/**)",
+          "Edit(/Users/raphael.vandon/.claude/**)",
+          "Glob(/Users/raphael.vandon/.claude/**)",
+          "Bash(/Users/raphael.vandon/.claude/**)",
+          "Read(/private/var/folders/wg/8x_0fx552sj7vsz_vf3pt_th0000gn/T/**)",
+          "Write(/private/var/folders/wg/8x_0fx552sj7vsz_vf3pt_th0000gn/T/**)",
+          "Edit(/private/var/folders/wg/8x_0fx552sj7vsz_vf3pt_th0000gn/T/**)",
+          "Glob(/private/var/folders/wg/8x_0fx552sj7vsz_vf3pt_th0000gn/T/**)",
+          "Bash(/private/var/folders/wg/8x_0fx552sj7vsz_vf3pt_th0000gn/T/**)",
+          "Read(/private/tmp/**)",
+          "Write(/private/tmp/**)",
+          "Edit(/private/tmp/**)",
+          "Glob(/private/tmp/**)",
+          "Bash(/private/tmp/**)",
+          "Bash",
+          "Skill",
+          "WebFetch",
+          "WebSearch"
+        ],
+        "deny": [
+          "Bash(rm:*)",
+          "Bash(rm -rf:*)",
+          "Bash(rm -r:*)",
+          "Bash(rmdir:*)",
+          "Bash(unlink:*)",
+          "Bash(shred:*)",
+          "Bash(chmod:*)",
+          "Bash(chown:*)",
+          "Bash(mv:*)",
+          "Bash(dd:*)",
+          "Bash(mkfs:*)",
+          "Bash(fdisk:*)",
+          "Bash(kill:*)",
+          "Bash(killall:*)",
+          "Bash(pkill:*)",
+          "Bash(sudo:*)",
+          "Bash(su:*)",
+          "Bash(mocha:*)",
+          "Bash(./node_modules/.bin/mocha:*)",
+          "Bash(npx mocha:*)",
+          "Bash(yarn mocha:*)",
+          "Bash(node_modules/.bin/mocha:*)"
+        ]
+      }
+    },
+    "add_dirs": [
+      "/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit/repos/dd-trace-js",
+      "/Users/raphael.vandon/go/src/github.com/DataDog/apm-instrumentation-toolkit",
+      "/Users/raphael.vandon/.claude",
+      "/private/var/folders/wg/8x_0fx552sj7vsz_vf3pt_th0000gn/T",
+      "/private/tmp"
+    ],
+    "env": {},
+    "extra_args": {},
+    "max_buffer_size": 10485760,
+    "debug_stderr": "<TextIOWrapper>",
+    "hooks": {
+      "PreToolUse": 2
+    },
+    "include_partial_messages": false,
+    "fork_session": false,
+    "setting_sources": [
+      "local",
+      "project"
+    ],
+    "sandbox": {
+      "enabled": true,
+      "excludedCommands": [
+        "node",
+        "npm",
+        "yarn",
+        "bun",
+        "python",
+        "scripts/ddtest",
+        "riot"
+      ],
+      "network": {
+        "allowLocalBinding": true
+      }
+    },
+    "plugins": [],
+    "output_format": {
+      "type": "json_schema",
+      "schema": {
+        "$defs": {
+          "AgentAnalysisContent": {
+            "type": "object",
+            "description": "The analysis section of agent output.",
+            "title": "AgentAnalysisContent",
+            "properties": {
+              "summary": {
+                "type": "string",
+                "title": "Summary"
+              },
+              "main_classes": {
+                "type": "array",
+                "title": "Main Classes",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "instrumentation_targets": {
+                "type": "array",
+                "title": "Instrumentation Targets",
+                "items": {
+                  "$ref": "#/$defs/AgentInstrumentationTarget"
+                }
+              },
+              "skipped_methods": {
+                "type": "array",
+                "title": "Skipped Methods",
+                "items": {
+                  "$ref": "#/$defs/SkippedMethod"
+                }
+              },
+              "special_considerations": {
+                "type": "array",
+                "title": "Special Considerations",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "implementation_notes": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/ImplementationNotes"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "{default: None}"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "summary"
+            ]
+          },
+          "AgentInstrumentationTarget": {
+            "type": "object",
+            "description": "A single instrumentation target from agent analysis.",
+            "title": "AgentInstrumentationTarget",
+            "properties": {
+              "method": {
+                "type": "string",
+                "title": "Method"
+              },
+              "full_signature": {
+                "type": "string",
+                "title": "Full Signature"
+              },
+              "module_name": {
+                "type": "string",
+                "title": "Module Name"
+              },
+              "location": {
+                "type": "string",
+                "description": "Dotted path: 'ClassName.method' or 'method' for module-level functions\n\n{pattern: ^[\\w$./][\\w$./]*$}",
+                "title": "Location"
+              },
+              "file_path": {
+                "type": "string",
+                "title": "File Path"
+              },
+              "line_number": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Line Number",
+                "description": "{default: None}"
+              },
+              "operation_type": {
+                "type": "string",
+                "title": "Operation Type"
+              },
+              "operation": {
+                "type": "string",
+                "title": "Operation"
+              },
+              "span_kind": {
+                "$ref": "#/$defs/SpanKind"
+              },
+              "span_name": {
+                "type": "string",
+                "title": "Span Name"
+              },
+              "span_type": {
+                "type": "string",
+                "title": "Span Type"
+              },
+              "reason": {
+                "type": "string",
+                "title": "Reason"
+              },
+              "priority": {
+                "$ref": "#/$defs/Priority"
+              },
+              "span_tags": {
+                "type": "object",
+                "title": "Span Tags",
+                "properties": {},
+                "additionalProperties": true
+              },
+              "async_pattern": {
+                "$ref": "#/$defs/AsyncPattern"
+              },
+              "error_handling": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Error Handling",
+                "description": "{default: None}"
+              },
+              "code_example_reference": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Code Example Reference",
+                "description": "{default: None}"
+              },
+              "file_paths": {
+                "type": "array",
+                "title": "File Paths",
+                "items": {
+                  "$ref": "#/$defs/FileLocation"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "method",
+              "full_signature",
+              "module_name",
+              "location",
+              "file_path",
+              "operation_type",
+              "operation",
+              "span_kind",
+              "span_name",
+              "span_type",
+              "reason",
+              "priority",
+              "async_pattern"
+            ]
+          },
+          "AsyncPattern": {
+            "type": "string",
+            "description": "Async pattern type.\n\n{enum: ['promise', 'callback', 'sync', 'async_iterator']}",
+            "title": "AsyncPattern"
+          },
+          "FileLocation": {
+            "type": "object",
+            "description": "A file location for an instrumentation target (CJS, ESM, etc.).",
+            "title": "FileLocation",
+            "properties": {
+              "path": {
+                "type": "string",
+                "title": "Path"
+              },
+              "line": {
+                "type": "integer",
+                "title": "Line",
+                "description": "{default: 0}"
+              },
+              "module_type": {
+                "type": "string",
+                "title": "Module Type",
+                "description": "{default: unknown}"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "path"
+            ]
+          },
+          "ImplementationNotes": {
+            "type": "object",
+            "description": "Implementation guidance from the agent.",
+            "title": "ImplementationNotes",
+            "properties": {
+              "wrapping_strategy": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Wrapping Strategy",
+                "description": "{default: None}"
+              },
+              "challenges": {
+                "type": "array",
+                "title": "Challenges",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "ModuleType": {
+            "type": "string",
+            "description": "Module system type for npm packages.\n\n{enum: ['commonjs', 'esm', 'dual', 'unknown']}",
+            "title": "ModuleType"
+          },
+          "Priority": {
+            "type": "string",
+            "description": "Instrumentation target priority.\n\n{enum: ['critical', 'important', 'optional']}",
+            "title": "Priority"
+          },
+          "SkippedMethod": {
+            "type": "object",
+            "description": "A method that was analyzed but not selected for instrumentation.",
+            "title": "SkippedMethod",
+            "properties": {
+              "method": {
+                "type": "string",
+                "title": "Method"
+              },
+              "reason": {
+                "type": "string",
+                "title": "Reason"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "method",
+              "reason"
+            ]
+          },
+          "SpanKind": {
+            "type": "string",
+            "description": "OpenTelemetry span kinds.\n\n{enum: ['producer', 'consumer', 'client', 'server', 'internal']}",
+            "title": "SpanKind"
+          }
+        },
+        "type": "object",
+        "description": "Agent analysis output - structured output from the analysis agent.",
+        "title": "AgentAnalysis",
+        "properties": {
+          "package_name": {
+            "type": "string",
+            "title": "Package Name"
+          },
+          "package_version": {
+            "type": "string",
+            "title": "Package Version"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory",
+            "description": "{default: None}"
+          },
+          "module_type": {
+            "$ref": "#/$defs/ModuleType"
+          },
+          "analysis": {
+            "$ref": "#/$defs/AgentAnalysisContent"
+          },
+          "output": {
+            "$defs": {
+              "AgentAnalysisContent": {
+                "type": "object",
+                "description": "The analysis section of agent output.",
+                "title": "AgentAnalysisContent",
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "title": "Summary"
+                  },
+                  "main_classes": {
+                    "type": "array",
+                    "title": "Main Classes",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "instrumentation_targets": {
+                    "type": "array",
+                    "title": "Instrumentation Targets",
+                    "items": {
+                      "$ref": "#/$defs/AgentInstrumentationTarget"
+                    }
+                  },
+                  "skipped_methods": {
+                    "type": "array",
+                    "title": "Skipped Methods",
+                    "items": {
+                      "$ref": "#/$defs/SkippedMethod"
+                    }
+                  },
+                  "special_considerations": {
+                    "type": "array",
+                    "title": "Special Considerations",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "implementation_notes": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/ImplementationNotes"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "{default: None}"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "summary"
+                ]
+              },
+              "AgentInstrumentationTarget": {
+                "type": "object",
+                "description": "A single instrumentation target from agent analysis.",
+                "title": "AgentInstrumentationTarget",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "title": "Method"
+                  },
+                  "full_signature": {
+                    "type": "string",
+                    "title": "Full Signature"
+                  },
+                  "module_name": {
+                    "type": "string",
+                    "title": "Module Name"
+                  },
+                  "location": {
+                    "type": "string",
+                    "description": "Dotted path: 'ClassName.method' or 'method' for module-level functions\n\n{pattern: ^[\\w$./][\\w$./]*$}",
+                    "title": "Location"
+                  },
+                  "file_path": {
+                    "type": "string",
+                    "title": "File Path"
+                  },
+                  "line_number": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Line Number",
+                    "description": "{default: None}"
+                  },
+                  "operation_type": {
+                    "type": "string",
+                    "title": "Operation Type"
+                  },
+                  "operation": {
+                    "type": "string",
+                    "title": "Operation"
+                  },
+                  "span_kind": {
+                    "$ref": "#/$defs/SpanKind"
+                  },
+                  "span_name": {
+                    "type": "string",
+                    "title": "Span Name"
+                  },
+                  "span_type": {
+                    "type": "string",
+                    "title": "Span Type"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "title": "Reason"
+                  },
+                  "priority": {
+                    "$ref": "#/$defs/Priority"
+                  },
+                  "span_tags": {
+                    "type": "object",
+                    "title": "Span Tags",
+                    "properties": {},
+                    "additionalProperties": true
+                  },
+                  "async_pattern": {
+                    "$ref": "#/$defs/AsyncPattern"
+                  },
+                  "error_handling": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Error Handling",
+                    "description": "{default: None}"
+                  },
+                  "code_example_reference": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Code Example Reference",
+                    "description": "{default: None}"
+                  },
+                  "file_paths": {
+                    "type": "array",
+                    "title": "File Paths",
+                    "items": {
+                      "$ref": "#/$defs/FileLocation"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "method",
+                  "full_signature",
+                  "module_name",
+                  "location",
+                  "file_path",
+                  "operation_type",
+                  "operation",
+                  "span_kind",
+                  "span_name",
+                  "span_type",
+                  "reason",
+                  "priority",
+                  "async_pattern"
+                ]
+              },
+              "AsyncPattern": {
+                "type": "string",
+                "description": "Async pattern type.\n\n{enum: ['promise', 'callback', 'sync', 'async_iterator']}",
+                "title": "AsyncPattern"
+              },
+              "FileLocation": {
+                "type": "object",
+                "description": "A file location for an instrumentation target (CJS, ESM, etc.).",
+                "title": "FileLocation",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "title": "Path"
+                  },
+                  "line": {
+                    "type": "integer",
+                    "title": "Line",
+                    "description": "{default: 0}"
+                  },
+                  "module_type": {
+                    "type": "string",
+                    "title": "Module Type",
+                    "description": "{default: unknown}"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "path"
+                ]
+              },
+              "ImplementationNotes": {
+                "type": "object",
+                "description": "Implementation guidance from the agent.",
+                "title": "ImplementationNotes",
+                "properties": {
+                  "wrapping_strategy": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Wrapping Strategy",
+                    "description": "{default: None}"
+                  },
+                  "challenges": {
+                    "type": "array",
+                    "title": "Challenges",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "ModuleType": {
+                "type": "string",
+                "description": "Module system type for npm packages.\n\n{enum: ['commonjs', 'esm', 'dual', 'unknown']}",
+                "title": "ModuleType"
+              },
+              "Priority": {
+                "type": "string",
+                "description": "Instrumentation target priority.\n\n{enum: ['critical', 'important', 'optional']}",
+                "title": "Priority"
+              },
+              "SkippedMethod": {
+                "type": "object",
+                "description": "A method that was analyzed but not selected for instrumentation.",
+                "title": "SkippedMethod",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "title": "Method"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "title": "Reason"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "method",
+                  "reason"
+                ]
+              },
+              "SpanKind": {
+                "type": "string",
+                "description": "OpenTelemetry span kinds.\n\n{enum: ['producer', 'consumer', 'client', 'server', 'internal']}",
+                "title": "SpanKind"
+              }
+            },
+            "type": "object",
+            "description": "Agent analysis output - structured output from the analysis agent.",
+            "title": "AgentAnalysis",
+            "properties": {
+              "package_name": {
+                "type": "string",
+                "title": "Package Name"
+              },
+              "package_version": {
+                "type": "string",
+                "title": "Package Version"
+              },
+              "category": {
+                "type": "string",
+                "title": "Category"
+              },
+              "subcategory": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Subcategory",
+                "description": "{default: None}"
+              },
+              "module_type": {
+                "$ref": "#/$defs/ModuleType"
+              },
+              "analysis": {
+                "$ref": "#/$defs/AgentAnalysisContent"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "package_name",
+              "package_version",
+              "category",
+              "analysis"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "enable_file_checkpointing": false
+  }
+}

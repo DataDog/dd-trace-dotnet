@@ -1,0 +1,208 @@
+{
+  "package_name": "LightningQueues",
+  "package_version": "0.6.0",
+  "category": "messaging",
+  "subcategory": "job-queue",
+  "module_type": "unknown",
+  "analysis": {
+    "summary": "LightningQueues is a high-performance, persistent store-and-forward message queue library for .NET built on LightningDB (LMDB). It provides both producer (Send/Enqueue) and consumer (Receive) operations with support for local queuing and network-based message transmission. The library follows async patterns with IAsyncEnumerable for message consumption and background tasks for network I/O.",
+    "main_classes": [
+      "Queue",
+      "QueueConfiguration",
+      "Message",
+      "MessageContext",
+      "QueueContext"
+    ],
+    "instrumentation_targets": [
+      {
+        "method": "Send",
+        "full_signature": "void Send(Message message)",
+        "module_name": "LightningQueues",
+        "location": "Queue.Send",
+        "file_path": "src/LightningQueues/Queue.cs",
+        "line_number": null,
+        "operation_type": "send",
+        "operation": "message.send",
+        "span_kind": "producer",
+        "span_name": "lightningqueues.send",
+        "span_type": "queue",
+        "reason": "Persists a single outgoing message to storage for network delivery. This is the primary producer operation users call to send messages to remote queues.",
+        "priority": "critical",
+        "span_tags": {
+          "component": "lightningqueues",
+          "messaging.system": "lightningqueues",
+          "messaging.destination.name": "message.Queue",
+          "messaging.operation": "send",
+          "messaging.destination.kind": "queue",
+          "out.host": "message.Destination.Host",
+          "out.port": "message.Destination.Port"
+        },
+        "async_pattern": "sync",
+        "error_handling": "Exceptions are caught and logged. Failed messages are stored with retry logic handled by background SendingTask.",
+        "code_example_reference": "queue.Send(new Message { Data = data, Queue = \"queue-name\", Destination = new Uri(\"lq.tcp://localhost:port\") });",
+        "file_paths": [
+          {
+            "path": "src/LightningQueues/Queue.cs",
+            "line": 0,
+            "module_type": "unknown"
+          }
+        ]
+      },
+      {
+        "method": "Send",
+        "full_signature": "void Send(params Message[] messages)",
+        "module_name": "LightningQueues",
+        "location": "Queue.Send",
+        "file_path": "src/LightningQueues/Queue.cs",
+        "line_number": null,
+        "operation_type": "send_batch",
+        "operation": "message.send.batch",
+        "span_kind": "producer",
+        "span_name": "lightningqueues.send",
+        "span_type": "queue",
+        "reason": "Batch variant of Send that persists multiple outgoing messages at once. This is important for batch send operations to capture the full batch as a single operation.",
+        "priority": "important",
+        "span_tags": {
+          "component": "lightningqueues",
+          "messaging.system": "lightningqueues",
+          "messaging.operation": "send",
+          "messaging.batch.message_count": "messages.Length"
+        },
+        "async_pattern": "sync",
+        "error_handling": "Exceptions are caught and logged. Failed batches trigger batch-level error logging.",
+        "code_example_reference": null,
+        "file_paths": [
+          {
+            "path": "src/LightningQueues/Queue.cs",
+            "line": 0,
+            "module_type": "unknown"
+          }
+        ]
+      },
+      {
+        "method": "Receive",
+        "full_signature": "IAsyncEnumerable<MessageContext> Receive(string queueName, int pollIntervalInMilliseconds = 200, CancellationToken cancellationToken = default)",
+        "module_name": "LightningQueues",
+        "location": "Queue.Receive",
+        "file_path": "src/LightningQueues/Queue.cs",
+        "line_number": null,
+        "operation_type": "receive",
+        "operation": "message.receive",
+        "span_kind": "consumer",
+        "span_name": "lightningqueues.receive",
+        "span_type": "queue",
+        "reason": "Returns an async enumerable stream of messages from a queue. Each message yielded from this enumerable represents a consumer operation. Instrumentation should wrap the enumeration to create a span per message consumed, not the entire stream.",
+        "priority": "critical",
+        "span_tags": {
+          "component": "lightningqueues",
+          "messaging.system": "lightningqueues",
+          "messaging.destination.name": "queueName",
+          "messaging.operation": "receive",
+          "messaging.destination.kind": "queue"
+        },
+        "async_pattern": "async_iterator",
+        "error_handling": "The async enumerable respects cancellation tokens. Per-message processing errors are handled by user code via QueueContext methods.",
+        "code_example_reference": "await foreach (var msg in queue.Receive(\"queue-name\", token)) { msg.QueueContext.SuccessfullyReceived(); }",
+        "file_paths": [
+          {
+            "path": "src/LightningQueues/Queue.cs",
+            "line": 0,
+            "module_type": "unknown"
+          }
+        ]
+      },
+      {
+        "method": "Enqueue",
+        "full_signature": "void Enqueue(Message message)",
+        "module_name": "LightningQueues",
+        "location": "Queue.Enqueue",
+        "file_path": "src/LightningQueues/Queue.cs",
+        "line_number": null,
+        "operation_type": "enqueue",
+        "operation": "message.enqueue",
+        "span_kind": "producer",
+        "span_name": "lightningqueues.enqueue",
+        "span_type": "queue",
+        "reason": "Adds a message directly to a local queue for processing without network transmission. This is a distinct operation from Send (local-only vs network), useful for internal task queuing.",
+        "priority": "important",
+        "span_tags": {
+          "component": "lightningqueues",
+          "messaging.system": "lightningqueues",
+          "messaging.destination.name": "message.Queue",
+          "messaging.operation": "enqueue",
+          "messaging.destination.kind": "queue"
+        },
+        "async_pattern": "sync",
+        "error_handling": "Stores message directly to incoming storage. Exceptions would propagate to caller.",
+        "code_example_reference": "queue.Enqueue(new Message { Data = data, Queue = \"queue-name\" });",
+        "file_paths": [
+          {
+            "path": "src/LightningQueues/Queue.cs",
+            "line": 0,
+            "module_type": "unknown"
+          }
+        ]
+      }
+    ],
+    "skipped_methods": [
+      {
+        "method": "CreateQueue",
+        "reason": "Configuration/setup method that creates queue structure. Runs once, not per-message."
+      },
+      {
+        "method": "Start",
+        "reason": "Lifecycle method that starts background tasks. Runs once at initialization, not per-message."
+      },
+      {
+        "method": "MoveToQueue",
+        "reason": "Administrative operation for moving messages between queues. Low frequency, optional instrumentation."
+      },
+      {
+        "method": "ReceiveLater",
+        "reason": "Scheduling operation for delayed message processing. This is metadata modification, not message I/O."
+      },
+      {
+        "method": "QueueContext.Send",
+        "reason": "This delegates to Queue.Send which is already instrumented. Would create duplicate spans."
+      },
+      {
+        "method": "QueueContext.Enqueue",
+        "reason": "This delegates to Queue.Enqueue which is already instrumented. Would create duplicate spans."
+      },
+      {
+        "method": "QueueContext.CommitChanges",
+        "reason": "Transaction commit method. Not a messaging operation itself, just persists queued actions."
+      },
+      {
+        "method": "QueueContext.SuccessfullyReceived",
+        "reason": "Message acknowledgment method. Low-level bookkeeping, not a distinct observable operation."
+      },
+      {
+        "method": "Sender.StartSendingAsync",
+        "reason": "Internal background task. The public Queue.Send methods are the correct instrumentation points."
+      },
+      {
+        "method": "Receiver.StartReceivingAsync",
+        "reason": "Internal background task. The public Queue.Receive enumeration is the correct instrumentation point."
+      }
+    ],
+    "special_considerations": [
+      "Context propagation: Producer spans (Send/Enqueue) should inject trace context into Message.Data or Message headers if the library supports it. Consumer spans (Receive) should extract context to link distributed traces.",
+      "The Receive method returns an IAsyncEnumerable - instrumentation must create one span per message yielded, not one span for the entire enumerable. This requires wrapping the async iterator pattern.",
+      "Send and Enqueue are synchronous operations that persist to storage but don't wait for network transmission. The actual network I/O happens in background tasks. Span duration should reflect the storage operation time.",
+      "Batch Send operations should capture messaging.batch.message_count tag to distinguish batch vs single sends.",
+      "The library uses LMDB for persistence - all operations are durable by default. Failed sends are retried by background tasks with exponential backoff.",
+      "Message destinations use URI format 'lq.tcp://host:port' - parse this to extract out.host and out.port tags.",
+      "QueueContext methods like Send/Enqueue called during message processing should be linked to the parent consumer span, not create independent producer spans."
+    ],
+    "implementation_notes": {
+      "wrapping_strategy": "Use .NET CallTarget instrumentation to wrap Queue.Send, Queue.Enqueue, and the async iterator for Queue.Receive. For the Receive enumeration, wrap MoveNextAsync on the IAsyncEnumerable to create spans per message. The batch Send overload should be instrumented separately to capture batch metadata.",
+      "challenges": [
+        "Async iterator instrumentation: Queue.Receive returns IAsyncEnumerable<MessageContext>. Need to instrument the MoveNextAsync calls to create one span per message, not the initial Receive call.",
+        "Message header access: Verify if Message type supports custom headers/metadata for trace context propagation. May need to serialize context into Message.Data or use a custom wrapper.",
+        "Distinguishing network vs local: Send goes over network to remote destination, Enqueue is local-only. Tags should reflect this difference (out.host/port for Send, not for Enqueue).",
+        "Background task correlation: Network transmission happens asynchronously in background tasks. Spans should reflect the user operation (Send to storage) not the background network I/O."
+      ]
+    }
+  }
+}
