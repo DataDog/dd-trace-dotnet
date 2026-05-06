@@ -106,13 +106,63 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 
 ## Build & Development
 
-**Quick start:**
+**Quick start (tracer):**
 - Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
 - Integration tests: `BuildAndRunIntegrationTests`
 
 📖 **Load when**: Setting up development environment, running builds, or troubleshooting build issues
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
+
+**Quick start (profiler — Linux, requires Docker):**
+
+The profiler native code (C++) builds inside an Alpine/clang Docker container via `build_in_docker.sh`. Direct cmake invocation does not work without this wrapper (missing module path, clang requirement, dep fetching).
+
+```bash
+# Build the profiler native library + home directory
+./tracer/build_in_docker.sh BuildProfilerHome
+
+# Build native unit tests (GoogleTest, no .NET runtime needed)
+./tracer/build_in_docker.sh CompileProfilerNativeTestsLinux
+
+# Run native unit tests
+./tracer/build_in_docker.sh RunProfilerNativeUnitTestsLinux
+
+# Build profiler integration test samples
+./tracer/build_in_docker.sh BuildProfilerSamples
+
+# Run profiler integration tests (smoke)
+./tracer/build_in_docker.sh BuildAndRunProfilerIntegrationTests --filter "Category=Smoke"
+```
+
+To run the profiler manually against a sample app (e.g. to measure timing or observe logs):
+```bash
+# 1. Build profiler home and samples
+./tracer/build_in_docker.sh BuildProfilerHome BuildProfilerSamples
+
+# 2. Launch interactive container (logs go to /var/log/datadog/dotnet/)
+docker run -it --rm --privileged \
+  --mount type=bind,source="$(pwd)",target=/project \
+  --env NugetPackageDirectory=/project/packages \
+  --env artifacts=/project/tracer/bin/artifacts \
+  --env DD_INTERNAL_USE_HYBRID_UNWINDING=1 \
+  -v /var/log/datadog:/var/log/datadog/dotnet \
+  dd-trace-dotnet/alpine-base bash
+
+# 3. Inside the container — publish and run a scenario
+dotnet publish profiler/src/Demos/Samples.Computer01/Samples.Computer01.csproj \
+  -c Release -r linux-x64 -f net10.0 --no-self-contained \
+  -o /tmp/samples
+
+DD_PROFILING_HEAPSNAPSHOT_ENABLED=1 DD_TRACE_DEBUG=1 \
+  dotnet /tmp/samples/Samples.Computer01.dll --timeout 30 --scenario HeapMemoryLeak
+```
+
+Logs land in `/var/log/datadog/dotnet/DD-DotNet-Profiler-Native-*.log`.
+For timing of a specific feature, grep for the relevant summary line, e.g.:
+```bash
+grep -i "traversal\|reference chain\|snapshot" /var/log/datadog/dotnet/DD-DotNet-Profiler-Native-*.log
+```
 
 ## Creating Integrations
 
