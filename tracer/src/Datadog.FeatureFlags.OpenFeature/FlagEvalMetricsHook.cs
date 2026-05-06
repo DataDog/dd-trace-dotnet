@@ -65,7 +65,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         {
             // Metrics recording should never break flag evaluation.
             // Log at debug level and swallow the exception.
-            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalMetricsHook.FinallyAsync failed: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalMetricsHook.FinallyAsync failed: {ex}");
         }
 
         return default;
