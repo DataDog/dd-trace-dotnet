@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Only target NET8+ since MeterListener requires NET6+ and OpenFeature 2.3.0 supports net8.0/net9.0 -->
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <!-- Disable strong naming since OpenFeature NuGet package is not signed -->
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reference only the OpenFeature project - NOT Datadog.Trace to avoid CS0433 type conflicts -->
+    <ProjectReference Include="..\..\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj" />
+  </ItemGroup>
+
+</Project>
