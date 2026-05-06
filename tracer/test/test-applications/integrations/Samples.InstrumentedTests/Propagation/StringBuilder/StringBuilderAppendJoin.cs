@@ -1,5 +1,6 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Propagation.StringBuilder;
@@ -214,6 +215,24 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => new System.Text.StringBuilder().AppendJoin(_taintedValue, new List<object> { _untaintedString, _untaintedString }));
     }
 
+    [Fact]
+    public void GivenDeferredEnumerable_WhenCallingAppendJoinWithStringSeparator_EnumerableIsOnlyEnumeratedOnce()
+    {
+        const int elementCount = 3;
+        var sideEffectInvocations = 0;
+        var values = Enumerable.Range(0, elementCount).Select<int, object>(i =>
+        {
+            sideEffectInvocations++;
+            return i == 0 ? _taintedValue : $"value{i}";
+        });
+
+        var result = new System.Text.StringBuilder().AppendJoin(".", values);
+
+        Assert.Equal("tainted.value1.value2", result.ToString());
+        Assert.Equal(elementCount, sideEffectInvocations);
+        Assert.Equal(":+-tainted.value1.value2-+:", FormatTainted(result));
+    }
+
     // System.Text.StringBuilder::AppendJoin(System.Char,System.Char[])
 
     [Fact]
@@ -354,6 +373,24 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-test3.4-+:",
             GetTaintedStringBuilder("test").AppendJoin('.', new List<int> { 3, 4 }),
             () => GetTaintedStringBuilder("test").AppendJoin('.', new List<int> { 3, 4 }));
+    }
+
+    [Fact]
+    public void GivenDeferredEnumerable_WhenCallingAppendJoinWithCharSeparator_EnumerableIsOnlyEnumeratedOnce()
+    {
+        const int elementCount = 3;
+        var sideEffectInvocations = 0;
+        var values = Enumerable.Range(0, elementCount).Select<int, object>(i =>
+        {
+            sideEffectInvocations++;
+            return i == 0 ? _taintedValue : $"value{i}";
+        });
+
+        var result = new System.Text.StringBuilder().AppendJoin('.', values);
+
+        Assert.Equal("tainted.value1.value2", result.ToString());
+        Assert.Equal(elementCount, sideEffectInvocations);
+        Assert.Equal(":+-tainted.value1.value2-+:", FormatTainted(result));
     }
 
     [Fact]

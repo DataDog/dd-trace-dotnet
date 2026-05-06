@@ -53,6 +53,9 @@ jobs:
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.octo-sts.outputs.token }}
+          # The branch name is referenced in .azure-pipelines/ultimate-pipeline.yml
+          # (isDockerImageBumpPr) to force-enable the installer tests on this PR.
+          # Keep the two in sync if this ever changes.
           branch: "bot/smoke-test-docker-image-bump"
           commit-message: "[Smoke Test Docker Image Bump]"
           delete-branch: true
