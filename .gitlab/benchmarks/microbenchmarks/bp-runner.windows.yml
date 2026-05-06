@@ -88,13 +88,11 @@
 .how_to_run_benchmarks: &how_to_run_benchmarks |
   $ErrorActionPreference = "Stop"
 
-  $project = $env:BENCHMARK_PROJECT
-
   # Skip if benchmark project DLL not built.
   # Some projects (e.g., Benchmarks.OpenTelemetry.Api) are not built on PRs. See Build.cs GetBenchmarkProjectsWithSettings().
-  $dllPattern = "$env:CODE_SRC\tracer\test\benchmarks\$project\bin\Release\*\$project.dll"
+  $dllPattern = "$env:CODE_SRC\tracer\test\benchmarks\$env:BENCHMARK_PROJECT\bin\Release\*\$env:BENCHMARK_PROJECT.dll"
   if (-not (Test-Path $dllPattern)) {
-    Write-Output "Skipping: $project not built (DLL not found matching $dllPattern)"
+    Write-Output "Skipping: $env:BENCHMARK_PROJECT not built (DLL not found matching $dllPattern)"
     exit 0
   }
 
@@ -109,7 +107,7 @@
   Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
   Write-Output "CODE_SRC: $env:CODE_SRC"
   Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
-  Write-Output "BENCHMARK_PROJECT: $project"
+  Write-Output "BENCHMARK_PROJECT: $env:BENCHMARK_PROJECT"
   Write-Output "BENCHMARK_CATEGORY: $category"
   Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
   Write-Output "ARTIFACTS_INDEX: $artifactsIndex"
@@ -122,7 +120,7 @@
   & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-benchmarks.ps1" `
     -Filter "$env:PARALLEL_ITEM" `
     -ArtifactsIndex "$artifactsIndex" `
-    -Project "$project" `
+    -Project "$env:BENCHMARK_PROJECT" `
     -Category "$category"
 
   Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
