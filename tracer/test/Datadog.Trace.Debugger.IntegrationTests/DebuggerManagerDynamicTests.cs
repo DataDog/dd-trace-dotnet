@@ -62,9 +62,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, no DI objects should exist
                 memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
-                // The uploader starts early so it can subscribe to SymDB remote config
-                // even while Dynamic Instrumentation is still disabled.
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new { dynamic_instrumentation_enabled = true },
             DynamicInstrumentationEnabledLogEntry,
@@ -123,7 +121,6 @@ public class DebuggerManagerDynamicTests : TestHelper
     public async Task DebuggerManager_MultipleProducts_StartDisabled_EnabledViaRemoteConfig()
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, string.Empty);
 
         await RunDynamicConfigurationTest(
             false,
@@ -132,11 +129,10 @@ public class DebuggerManagerDynamicTests : TestHelper
                 // Initially, no debugger objects should exist
                 memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
                 memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
+                memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
                 memoryAssertions.NoObjectsExist<SnapshotSink>();
                 memoryAssertions.NoObjectsExist<LineProbeResolver>();
-                // The uploader starts early so it can subscribe to SymDB remote config
-                // even while the other debugger products remain disabled.
-                memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+                memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new
             {

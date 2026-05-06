@@ -36,7 +36,9 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
             return false;
         }
 
-        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(MetadataTokens.GetToken(methodHandle), false, out var count);
+        // For async methods, the user-facing scope is the kickoff method, but the executable
+        // sequence points often live on the generated MoveNext state machine method.
+        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(MetadataTokens.GetToken(methodHandle), true, out var count);
         if (memory == null || count == 0)
         {
             return true;
@@ -47,6 +49,12 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         methodScope.StartLine = sourcePdbInfo.StartLine;
         methodScope.EndLine = sourcePdbInfo.EndLine;
         methodScope.SourceFile = sourcePdbInfo.Path;
+        methodScope.InjectibleLines = BuildInjectibleLineRanges(sequencePoints);
+        if (methodScope.InjectibleLines is { Length: > 0 })
+        {
+            methodScope.HasInjectibleLines = true;
+        }
+
         if (sourcePdbInfo.EndColumn > 0)
         {
             var ls = new LanguageSpecifics
@@ -64,6 +72,71 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         var localScopes = GetLocalSymbols(methodHandle, method, sequencePoints, methodScope);
         methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes ?? null, localScopes);
         return true;
+    }
+
+    internal static LineRange[]? BuildInjectibleLineRanges(ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints)
+    {
+        if (sequencePoints.IsEmpty)
+        {
+            return null;
+        }
+
+        var lineRanges = ArrayPool<LineRange>.Shared.Rent(sequencePoints.Length);
+        try
+        {
+            var lineRangeCount = 0;
+            ref var firstSequencePoint = ref MemoryMarshal.GetReference(sequencePoints);
+            for (var i = 0; i < sequencePoints.Length; i++)
+            {
+                var sequencePoint = Unsafe.Add(ref firstSequencePoint, i);
+                if (sequencePoint.StartLine <= 0)
+                {
+                    continue;
+                }
+
+                var endLine = sequencePoint.EndLine >= sequencePoint.StartLine ? sequencePoint.EndLine : sequencePoint.StartLine;
+                lineRanges[lineRangeCount] = new LineRange { Start = sequencePoint.StartLine, End = endLine };
+                lineRangeCount++;
+            }
+
+            if (lineRangeCount == 0)
+            {
+                return null;
+            }
+
+            Array.Sort(lineRanges, 0, lineRangeCount, LineRangeComparer.Instance);
+            var mergedLineRangeCount = 0;
+            var currentRange = lineRanges[0];
+
+            for (var i = 1; i < lineRangeCount; i++)
+            {
+                var nextRange = lineRanges[i];
+                if (nextRange.Start <= currentRange.End + 1)
+                {
+                    if (nextRange.End > currentRange.End)
+                    {
+                        currentRange.End = nextRange.End;
+                    }
+
+                    continue;
+                }
+
+                lineRanges[mergedLineRangeCount] = currentRange;
+                mergedLineRangeCount++;
+                currentRange = nextRange;
+            }
+
+            lineRanges[mergedLineRangeCount] = currentRange;
+            mergedLineRangeCount++;
+
+            var mergedRanges = new LineRange[mergedLineRangeCount];
+            Array.Copy(lineRanges, mergedRanges, mergedLineRangeCount);
+            return mergedRanges;
+        }
+        finally
+        {
+            ArrayPool<LineRange>.Shared.Return(lineRanges);
+        }
     }
 
     private SourceLocationInfo GetSourceLocationInfo(ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> span)
@@ -476,5 +549,16 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         }
 
         return false;
+    }
+
+    private sealed class LineRangeComparer : IComparer<LineRange>
+    {
+        public static readonly LineRangeComparer Instance = new();
+
+        public int Compare(LineRange x, LineRange y)
+        {
+            var startComparison = x.Start.CompareTo(y.Start);
+            return startComparison != 0 ? startComparison : x.End.CompareTo(y.End);
+        }
     }
 }
