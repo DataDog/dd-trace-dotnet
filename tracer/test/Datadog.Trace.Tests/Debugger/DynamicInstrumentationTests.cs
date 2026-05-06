@@ -111,9 +111,15 @@ public class DynamicInstrumentationTests
     public class ProbeFileLoadingTests : IDisposable
     {
         private readonly List<string> _tempFiles = new();
+        private readonly List<DynamicInstrumentation> _debuggers = new();
 
         public void Dispose()
         {
+            foreach (var debugger in _debuggers)
+            {
+                debugger.Dispose();
+            }
+
             // Clean up temp files
             foreach (var file in _tempFiles)
             {
@@ -219,7 +225,7 @@ public class DynamicInstrumentationTests
             var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
             debugger.Initialize();
 
-            await WaitUntilAsync(() => GetCurrentConfiguration(debugger).LogProbes.Any(probe => probe.Id == "applied-file-probe"));
+            await debugger.GetInitializationTask();
 
             lineProbeResolver.Called.Should().BeTrue("file probes should be applied to the owning DynamicInstrumentation instance");
             probeStatusPoller.Called.Should().BeTrue("applying a file probe should update probe statuses");
@@ -461,7 +467,6 @@ public class DynamicInstrumentationTests
 
             debugger.IsInitialized.Should().BeTrue("file probes should not wait for the RCM availability timeout");
             GetFileProbes(debugger).Should().NotBeNull();
-            debugger.Dispose();
         }
 
         private static ProbeConfiguration? GetFileProbes(DynamicInstrumentation debugger)
@@ -508,7 +513,7 @@ public class DynamicInstrumentationTests
             var diagnosticsUploader = new UploaderMock();
             probeStatusPoller ??= new ProbeStatusPollerMock();
 
-            return new DynamicInstrumentation(
+            var debugger = new DynamicInstrumentation(
                 settings,
                 discoveryService ?? new DiscoveryServiceMock(),
                 rcmSubscriptionManagerMock,
@@ -519,6 +524,8 @@ public class DynamicInstrumentationTests
                 probeStatusPoller,
                 ConfigurationUpdater.Create("env", "version", 0),
                 global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance);
+            _debuggers.Add(debugger);
+            return debugger;
         }
     }
 
