@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -30,7 +31,10 @@ namespace Datadog.Trace.TestHelpers
         {
             FluentAssertions.Formatting.Formatter.AddFormatter(new DiffPaneModelFormatter());
 
-            if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
+            var enableCrashDumps = bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false");
+            var dumpOnCompletion = bool.Parse(Environment.GetEnvironmentVariable("DUMP_MEMORY_ON_COMPLETION") ?? "true");
+
+            if (enableCrashDumps || dumpOnCompletion)
             {
                 var progress = new Progress<string>(message => messageSink.OnMessage(new DiagnosticMessage(message)));
 
@@ -169,6 +173,29 @@ namespace Datadog.Trace.TestHelpers
                 foreach (var test in collections.Where(t => t.DisableParallelization))
                 {
                     summary.Aggregate(await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource));
+                }
+
+                try
+                {
+                    ThreadPool.GetAvailableThreads(out var availableWorkers, out var availableIo);
+                    ThreadPool.GetMaxThreads(out var maxWorkers, out var maxIo);
+                    var threadCount = Process.GetCurrentProcess().Threads.Count;
+                    var heapMb = GC.GetTotalMemory(false) / 1_048_576;
+
+                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage(
+                        $"[PostRun] ThreadPool workers: {availableWorkers}/{maxWorkers} available, IO: {availableIo}/{maxIo} available"));
+                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage(
+                        $"[PostRun] OS thread count: {threadCount}, Heap: {heapMb}MB"));
+
+                    if (bool.Parse(Environment.GetEnvironmentVariable("DUMP_MEMORY_ON_COMPLETION") ?? "true"))
+                    {
+                        var progress = new Progress<string>(msg => DiagnosticMessageSink.OnMessage(new DiagnosticMessage(msg)));
+                        MemoryDumpHelper.CaptureMemoryDump(Process.GetCurrentProcess(), progress);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"[PostRun] Error capturing diagnostics: {ex}"));
                 }
 
                 return summary;
