@@ -224,7 +224,7 @@ experiments:
 
         cpus: "1,0xE00000"
         parallelize:
-          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA 1, master only)
+          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA 1, skipped on PRs since Nuke doesn't build them)
           items: >-
             *ActivityBenchmark*
             *TelemetrySpanBenchmark*
