@@ -40,24 +40,33 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         IReadOnlyDictionary<string, object>? hints = null,
         CancellationToken cancellationToken = default)
     {
-        var flagKey = context.FlagKey;
-        var variant = details.Variant ?? string.Empty;
-
-        // Reason is already in lower_snake_case format from the provider
-        // Use "unknown" as fallback for missing reason (matches OpenFeature SDK telemetry convention)
-        var reason = string.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
-
-        // Extract error type if present
-        string? errorType = null;
-        if (details.ErrorType != ErrorType.None)
+        try
         {
-            errorType = ErrorTypeToString(details.ErrorType);
+            var flagKey = context.FlagKey;
+            var variant = details.Variant ?? string.Empty;
+
+            // Reason is already in lower_snake_case format from the provider
+            // Use "unknown" as fallback for missing reason (matches OpenFeature SDK telemetry convention)
+            var reason = string.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
+
+            // Extract error type if present
+            string? errorType = null;
+            if (details.ErrorType != ErrorType.None)
+            {
+                errorType = ErrorTypeToString(details.ErrorType);
+            }
+
+            // Extract allocation key from metadata if present
+            var allocationKey = details.FlagMetadata?.GetString(FlagEvalMetrics.MetadataAllocationKey);
+
+            _metrics.Record(flagKey, variant, reason, errorType, allocationKey);
         }
-
-        // Extract allocation key from metadata if present
-        var allocationKey = details.FlagMetadata?.GetString(FlagEvalMetrics.MetadataAllocationKey);
-
-        _metrics.Record(flagKey, variant, reason, errorType, allocationKey);
+        catch (Exception ex)
+        {
+            // Metrics recording should never break flag evaluation.
+            // Log at debug level and swallow the exception.
+            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalMetricsHook.FinallyAsync failed: {ex.Message}");
+        }
 
         return default;
     }
