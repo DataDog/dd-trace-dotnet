@@ -20,18 +20,16 @@ namespace Datadog.Trace.Tests.Debugger
     public class DebuggerManagerTests
     {
         [Fact]
-        public void DisableSymbolUploaderResetsInitializationGateSoUploaderCanBeReenabled()
+        public void DisableSymbolUploaderDisposesUploaderSoItCanBeReenabled()
         {
             var manager = CreateDebuggerManager();
             var uploader = new DebuggerUploaderMock();
-            SetSymDbInitialized(manager, 1);
             SetSymbolsUploader(manager, uploader);
 
             InvokeDisableSymbolUploader(manager);
 
             uploader.Disposed.Should().BeTrue();
             manager.SymbolsUploader.Should().BeNull();
-            GetSymDbInitialized(manager).Should().Be(0);
         }
 
         [Fact]
@@ -58,7 +56,41 @@ namespace Datadog.Trace.Tests.Debugger
                 await manager.UpdateConfiguration(tracerSettings, debuggerSettings);
 
                 GetSymDbSubscriptionInitialized(manager).Should().Be(1);
-                GetSymDbInitialized(manager).Should().Be(0);
+                manager.SymbolsUploader.Should().BeNull();
+            }
+            finally
+            {
+                InvokeShutdownTasks(manager);
+            }
+        }
+
+        [Fact]
+        public void SymDbRemoteConfigurationEnableReturnsEarlyWhenUploaderAlreadyExists()
+        {
+            var manager = CreateDebuggerManager();
+            var uploader = new DebuggerUploaderMock();
+            SetSymbolsUploader(manager, uploader);
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
+            });
+            var debuggerSettings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" },
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            try
+            {
+                InvokeOnSymbolDatabaseRemoteConfiguration(manager, tracerSettings, debuggerSettings, uploadSymbols: true);
+
+                manager.SymbolsUploader.Should().BeSameAs(uploader);
+                uploader.Started.Should().BeFalse();
+
+                InvokeDisableSymbolUploader(manager);
+
+                uploader.Disposed.Should().BeTrue();
                 manager.SymbolsUploader.Should().BeNull();
             }
             finally
@@ -79,25 +111,6 @@ namespace Datadog.Trace.Tests.Debugger
             var debuggerSettings = new DebuggerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var exceptionReplaySettings = new ExceptionReplaySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             return (DebuggerManager)constructor!.Invoke([debuggerSettings, exceptionReplaySettings]);
-        }
-
-        private static void SetSymDbInitialized(DebuggerManager manager, int value)
-        {
-            var field = GetSymDbInitializedField();
-            field.SetValue(manager, value);
-        }
-
-        private static int GetSymDbInitialized(DebuggerManager manager)
-        {
-            var field = GetSymDbInitializedField();
-            return (int)field.GetValue(manager)!;
-        }
-
-        private static FieldInfo GetSymDbInitializedField()
-        {
-            var field = typeof(DebuggerManager).GetField("_symDbInitialized", BindingFlags.Instance | BindingFlags.NonPublic);
-            field.Should().NotBeNull();
-            return field!;
         }
 
         private static int GetSymDbSubscriptionInitialized(DebuggerManager manager)
@@ -121,6 +134,13 @@ namespace Datadog.Trace.Tests.Debugger
             method!.Invoke(manager, null);
         }
 
+        private static void InvokeOnSymbolDatabaseRemoteConfiguration(DebuggerManager manager, TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool uploadSymbols)
+        {
+            var method = typeof(DebuggerManager).GetMethod("OnSymbolDatabaseRemoteConfiguration", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Should().NotBeNull();
+            method!.Invoke(manager, [tracerSettings, debuggerSettings, uploadSymbols]);
+        }
+
         private static void InvokeShutdownTasks(DebuggerManager manager)
         {
             var method = typeof(DebuggerManager).GetMethod("ShutdownTasks", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -132,8 +152,11 @@ namespace Datadog.Trace.Tests.Debugger
         {
             public bool Disposed { get; private set; }
 
+            public bool Started { get; private set; }
+
             public Task StartFlushingAsync()
             {
+                Started = true;
                 return Task.CompletedTask;
             }
 

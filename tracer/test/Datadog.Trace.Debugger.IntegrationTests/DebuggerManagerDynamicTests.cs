@@ -39,6 +39,7 @@ public class DebuggerManagerDynamicTests : TestHelper
     private const string DisabledByRemoteConfiguration = "is disabled by remote enablement.";
     private const string TracerInitialized = "The profiler has been initialized";
     private const string DebuggerConfigurationInitialized = "DATADOG DEBUGGER CONFIGURATION";
+    private const string SymbolDatabaseUploaderInitialized = "Initializing Symbol Database uploader.";
 
     public DebuggerManagerDynamicTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -370,6 +371,8 @@ public class DebuggerManagerDynamicTests : TestHelper
 
             Output.WriteLine("Sending SymDB remote config: upload_symbols=true");
             await agent.SetupRcmAndWait(Output, configurations);
+
+            await logEntryWatcher.WaitForLogEntry(SymbolDatabaseUploaderInitialized);
 
             var finalMemorySnapshot = await MemoryAssertions.TryCaptureSnapshotToAssertOn(
                                           sample,

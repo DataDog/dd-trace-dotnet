@@ -72,6 +72,11 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private void ConfigurationChanged(AgentConfiguration configuration)
         {
+            if (_disposed || _processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
             if (string.IsNullOrEmpty(configuration.SymbolDbEndpoint))
             {
                 Log.Debug("`SymbolDb endpoint` is null. This can happen if your datadog-agent version is lower than 7.45");
@@ -79,8 +84,15 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             _symDbEndpoint = configuration.SymbolDbEndpoint;
-            _discoveryServiceSemaphore.Release(1);
             _discoveryService.RemoveSubscription(ConfigurationChanged);
+            try
+            {
+                _discoveryServiceSemaphore.Release(1);
+            }
+            catch (ObjectDisposedException)
+            {
+                // The uploader may be disabled while discovery publishes an update.
+            }
         }
 
         public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
@@ -390,7 +402,16 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
-            RegisterToAssemblyLoadEvent();
+            lock (_disposeLock)
+            {
+                if (_disposed || _processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                RegisterToAssemblyLoadEvent();
+            }
+
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
@@ -400,16 +421,16 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task<bool> WaitForDiscoveryServiceAsync()
         {
+            if (_disposed || _processExit.Task.IsCompleted)
+            {
+                return false;
+            }
+
             if (!string.IsNullOrEmpty(_symDbEndpoint))
             {
                 // if it is already set, return immediately.
                 // theoretically, this can be reverted in case of version downgrade, but we not support that atm.
                 return true;
-            }
-
-            if (_disposed || _processExit.Task.IsCompleted)
-            {
-                return false;
             }
 
             await Task.Yield();
@@ -455,6 +476,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 _disposed = true;
                 _processExit.TrySetResult(true);
                 UnRegisterToAssemblyLoadEvent();
+                _discoveryService.RemoveSubscription(ConfigurationChanged);
                 _assemblySemaphore.Dispose();
                 _discoveryServiceSemaphore.Dispose();
             }

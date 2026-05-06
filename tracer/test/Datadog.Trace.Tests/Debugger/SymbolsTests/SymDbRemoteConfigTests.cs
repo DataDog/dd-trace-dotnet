@@ -98,6 +98,24 @@ public class SymDbRemoteConfigTests
     }
 
     [Fact]
+    public async Task SubscribeAcknowledgesSymDbEnablementConfig()
+    {
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        using var symDbRemoteConfig = new SymDbRemoteConfig(subscriptionManager, _ => { });
+
+        symDbRemoteConfig.Subscribe();
+
+        var config = CreateRemoteConfiguration("symDb", new { upload_symbols = true });
+        var result = await subscriptionManager.Update(new Dictionary<string, List<RemoteConfiguration>>
+        {
+            { RcmProducts.LiveDebuggingSymbolDb, [config] },
+        });
+
+        result.Should().ContainSingle()
+              .Which.Should().BeEquivalentTo(ApplyDetails.FromOk(config.Path.Path));
+    }
+
+    [Fact]
     public void DisposeDuringSubscribeDoesNotLeaveSubscriptionRegistered()
     {
         var subscriptionManager = new RcmSubscriptionManagerMock();
@@ -161,9 +179,9 @@ public class SymDbRemoteConfigTests
             return Task.CompletedTask;
         }
 
-        public Task Update(Dictionary<string, List<RemoteConfiguration>> configsByProduct)
+        public Task<ApplyDetails[]> Update(Dictionary<string, List<RemoteConfiguration>> configsByProduct)
         {
-            return _subscription?.Invoke(configsByProduct, null) ?? Task.CompletedTask;
+            return _subscription?.Invoke(configsByProduct, null) ?? Task.FromResult(Array.Empty<ApplyDetails>());
         }
     }
 }
