@@ -160,7 +160,17 @@ any-command >nul
 3. **Use PowerShell** for cross-platform compatibility where applicable
 4. **Prefer dedicated tools** over piped bash commands (use Grep, Glob, Read tools instead)
 
-**Reference:** See https://github.com/anthropics/claude-code/issues/4928 for details on this Windows limitation.
+**Examples of safe patterns:**
+```cmd
+# Bad: Creates nul file
+findstr /s /i "DD_TRACE" "*.cpp" 2>nul
+
+# Good: Let errors show
+findstr /s /i "DD_TRACE" "*.cpp"
+
+# Good: Use full device path if suppression is essential
+findstr /s /i "DD_TRACE" "*.cpp" 2>\\.\NUL
+```
 
 ## Logging Guidelines
 
