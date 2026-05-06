@@ -464,7 +464,7 @@ namespace Datadog.Trace.Activity.Handlers
             where TInner : IActivity
         {
             var span = scope.Span;
-            OtlpHelpers.UpdateSpanFromActivity(activity, scope.Span);
+            OtlpHelpers.UpdateSpanFromActivity(activity, span);
 
             // OpenTelemtry SDK / OTLP Fixups
             // TODO
