@@ -514,6 +514,31 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_NonGenericDictionaryDump_AllowsNullValues()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var holder = new HashtableHolder();
+            scopeMembers.AddMember(new ScopeMember("HashtableHolderLocal", typeof(HashtableHolder), holder, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "ref": "HashtableHolderLocal"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("{[hello, ], }", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         private async Task Test(string expressionTestFilePath)
         {
             // Arrange
@@ -877,6 +902,14 @@ namespace Datadog.Trace.Tests.Debugger
         internal class RecursiveGenericConstraintTarget<T>
             where T : IComparable<T>
         {
+        }
+		
+		private class HashtableHolder
+        {
+            private readonly Hashtable dictionary = new()
+            {
+                { "hello", null },
+            };
         }
     }
 }
