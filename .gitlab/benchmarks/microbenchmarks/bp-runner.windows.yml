@@ -96,7 +96,7 @@
     exit 0
   }
 
-  # BATCH_PREFIX set via env: in experiment step (e.g., "b0" or "b1")
+  # BATCH_PREFIX set via env: in experiment step (e.g., "b0" or "b1"). We need different indices to avoid race conditions.
   $artifactsIndex = "$env:BATCH_PREFIX-$env:PARALLEL_INDEX"
 
   # Benchmark category filters which benchmarks run via BenchmarkDotNet's --allCategories flag.
