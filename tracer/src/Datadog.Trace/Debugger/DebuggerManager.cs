@@ -48,19 +48,17 @@ namespace Datadog.Trace.Debugger
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
         private int _symDbSubscriptionInitialized;
-        private int _symDbInitialized;
         private volatile TaskCompletionSource<bool>? _diDebounceGate;
         private volatile DynamicInstrumentation? _dynamicInstrumentation;
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
         private TracerSettings.SettingsManager? _subscribedSettingsManager;
         private IDisposable? _tracerSettingsSubscription;
-        private volatile SymDbRemoteConfig? _symDbRemoteConfig;
+        private SymDbRemoteConfig? _symDbRemoteConfig;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
             _symDbSubscriptionInitialized = 0;
-            _symDbInitialized = 0;
             _isDebuggerEndpointAvailable = false;
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
@@ -331,39 +329,62 @@ namespace Datadog.Trace.Debugger
 
         private void InitializeSymbolUploaderIfNeeded(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
         {
+            IDebuggerUploader? symbolsUploader = null;
             try
             {
-                if (_processExit.Task.IsCompleted)
+                if (_processExit.Task.IsCompleted || SymbolsUploader is not null)
                 {
                     return;
                 }
 
-                if (Interlocked.CompareExchange(ref _symDbInitialized, 1, 0) != 0)
-                {
-                    // Once created, the symbol uploader persists even if DI is later disabled.
-                    return;
-                }
-
+                Log.Information("Initializing Symbol Database uploader.");
                 var tracerManager = TracerManager.Instance;
-                SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, () => ServiceName, tracerSettings, debuggerSettings, tracerManager.GitMetadataTagsProvider);
-                _ = SymbolsUploader.StartFlushingAsync()
-                        .ContinueWith(
-                             t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),
-                             CancellationToken.None,
-                             TaskContinuationOptions.OnlyOnFaulted,
-                             TaskScheduler.Default);
+                symbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, () => ServiceName, tracerSettings, debuggerSettings, tracerManager.GitMetadataTagsProvider);
+                var published = false;
+
+                lock (_syncLock)
+                {
+                    if (_processExit.Task.IsCompleted || SymbolsUploader is not null)
+                    {
+                        return;
+                    }
+
+                    SymbolsUploader = symbolsUploader;
+                    published = true;
+                }
+
+                if (published)
+                {
+                    _ = symbolsUploader.StartFlushingAsync()
+                                       .ContinueWith(
+                                            t => Log.Error(t.Exception, "Failed to initialize symbol uploader"),
+                                            CancellationToken.None,
+                                            TaskContinuationOptions.OnlyOnFaulted,
+                                            TaskScheduler.Default);
+                    symbolsUploader = null;
+                }
             }
             catch (Exception ex)
             {
+                DisableSymbolUploader();
                 Log.Error(ex, "Error initializing Symbol Database.");
+            }
+            finally
+            {
+                SafeDisposal.TryDispose(symbolsUploader);
             }
         }
 
         private void DisableSymbolUploader()
         {
-            SafeDisposal.TryDispose(SymbolsUploader);
-            SymbolsUploader = null;
-            Volatile.Write(ref _symDbInitialized, 0);
+            IDebuggerUploader? symbolsUploader;
+            lock (_syncLock)
+            {
+                symbolsUploader = SymbolsUploader;
+                SymbolsUploader = null;
+            }
+
+            SafeDisposal.TryDispose(symbolsUploader);
         }
 
         private void SetCodeOriginState(DebuggerSettings debuggerSettings)
@@ -735,6 +756,7 @@ namespace Datadog.Trace.Debugger
 
             _processExit.TrySetResult(true);
             Volatile.Write(ref _diState, 0);
+            DisableSymbolUploader();
 
             if (ex != null)
             {
@@ -746,7 +768,6 @@ namespace Datadog.Trace.Debugger
                         .Add(_symDbRemoteConfig)
                         .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
-                        .Add(SymbolsUploader)
                         .DisposeAll();
         }
     }

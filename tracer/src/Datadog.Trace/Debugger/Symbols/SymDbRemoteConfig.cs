@@ -56,17 +56,22 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private ApplyDetails[] OnRemoteConfigurationChanged(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
         {
-            if (TryGetUploadSymbols(addedConfig, out var uploadSymbols))
+            if (TryGetUploadSymbols(addedConfig, out var uploadSymbols, out var configPath))
             {
                 _onUploadSymbolsChanged(uploadSymbols);
+                return [ApplyDetails.FromOk(configPath)];
             }
 
             return [];
         }
 
         internal static bool TryGetUploadSymbols(Dictionary<string, List<RemoteConfiguration>> addedConfig, out bool uploadSymbols)
+            => TryGetUploadSymbols(addedConfig, out uploadSymbols, out _);
+
+        internal static bool TryGetUploadSymbols(Dictionary<string, List<RemoteConfiguration>> addedConfig, out bool uploadSymbols, out string configPath)
         {
             uploadSymbols = false;
+            configPath = string.Empty;
 
             if (!addedConfig.TryGetValue(RcmProducts.LiveDebuggingSymbolDb, out var configs))
             {
@@ -84,6 +89,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 if (rawFile.Deserialize<SymDbEnablement>().TypedFile is { } enablement)
                 {
                     uploadSymbols = enablement.UploadSymbols;
+                    configPath = remoteConfiguration.Path.Path;
                     return true;
                 }
             }
