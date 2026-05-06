@@ -132,7 +132,7 @@ parallelize: true
 
 # Benchmarks are split into batches:
 # - trace: stable Benchmarks.Trace benchmarks (low variance)
-# - trace-unstable: less stable Benchmarks.Trace benchmarks (higher variance, need isolation)
+# - trace-unstable: less stable Benchmarks.Trace benchmarks (higher variance)
 # - otel-instr-api: OpenTelemetry InstrumentedApi benchmarks
 # - otel-api: OpenTelemetry Api benchmarks (skipped on PRs since Nuke doesn't build them)
 
