@@ -1,11 +1,13 @@
 # bp-runner config for dd-trace-dotnet microbenchmarks on Windows.
 #
-# Two batches run in parallel on separate NUMA nodes:
-#   - batch-0 (stable benchmarks) on NUMA node 0
-#   - batch-1 (less stable benchmarks) on NUMA node 1
+# Four batches run in parallel on separate NUMA nodes:
+#   - trace (stable benchmarks) on NUMA node 0
+#   - trace-unstable (less stable benchmarks) on NUMA node 1
+#   - otel-instr-api (OpenTelemetry InstrumentedApi) on NUMA node 0
+#   - otel-api (OpenTelemetry Api, skipped on PRs) on NUMA node 1
 #
-# batch-0 clones and builds; batch-1 waits for .build-complete marker file.
-# Artifact dirs are prefixed with b0-/b1- to avoid collisions between batches.
+# trace batch clones and builds; others wait for .build-complete marker file.
+# Artifact dirs are prefixed with batch name to avoid collisions.
 #
 # bp-runner keywords (enable parallel benchmark execution on isolated CPU sets):
 #   - how_to_fetch_release: script to clone/build the repo for baseline/candidate
@@ -62,8 +64,8 @@
   Write-Output "=== Waiting for build to complete for $env:BASELINE_OR_CANDIDATE ==="
   Write-Output "CODE_SRC: $env:CODE_SRC"
 
-  # Both experiments share the same CODE_SRC (C:\app\candidate or C:\app\baseline).
-  # batch-0 does the actual build, batch-1 just waits for it to finish.
+  # All experiments share the same CODE_SRC (C:\app\candidate or C:\app\baseline).
+  # trace batch does the actual build, others wait for it to finish.
   $markerPath = "$env:CODE_SRC\tracer\.build-complete"
 
   Write-Output "Waiting for build marker at: $markerPath"
@@ -96,7 +98,7 @@
     exit 0
   }
 
-  # BATCH_PREFIX set via env: in experiment step (e.g., "b0" or "b1"). We need different indices to avoid race conditions.
+  # BATCH_PREFIX set via env: in experiment step (e.g., "trace" or "otel-api"). We need different prefixes to avoid race conditions.
   $artifactsIndex = "$env:BATCH_PREFIX-$env:PARALLEL_INDEX"
 
   # Benchmark category filters which benchmarks run via BenchmarkDotNet's --allCategories flag.
@@ -128,14 +130,16 @@
 # Run experiments in parallel (each on different NUMA node)
 parallelize: true
 
-# Benchmarks are split into two batches:
-# - batch-0: stable benchmarks (low variance)
-# - batch-1: less stable benchmarks (higher variance, need isolation)
+# Benchmarks are split into batches:
+# - trace: stable Benchmarks.Trace benchmarks (low variance)
+# - trace-unstable: less stable Benchmarks.Trace benchmarks (higher variance, need isolation)
+# - otel-instr-api: OpenTelemetry InstrumentedApi benchmarks
+# - otel-api: OpenTelemetry Api benchmarks (skipped on PRs since Nuke doesn't build them)
 
 experiments:
-  - name: batch-0
+  - name: trace
     steps:
-      - name: batch-0
+      - name: trace
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
@@ -162,9 +166,9 @@ experiments:
         how_to_fetch_release: *how_to_fetch_release_build
         how_to_run_benchmarks: *how_to_run_benchmarks
 
-  - name: batch-1
+  - name: trace-unstable
     steps:
-      - name: batch-1
+      - name: trace-unstable
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
@@ -191,9 +195,9 @@ experiments:
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
 
-  - name: batch-2
+  - name: otel-instr-api
     steps:
-      - name: batch-2
+      - name: otel-instr-api
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
@@ -217,9 +221,9 @@ experiments:
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
 
-  - name: batch-3
+  - name: otel-api
     steps:
-      - name: batch-3
+      - name: otel-api
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
