@@ -54,7 +54,7 @@ namespace Datadog.Trace.Debugger
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
         private TracerSettings.SettingsManager? _subscribedSettingsManager;
         private IDisposable? _tracerSettingsSubscription;
-        private SymDbRemoteConfig? _symDbRemoteConfig;
+        private volatile SymDbRemoteConfig? _symDbRemoteConfig;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
@@ -302,7 +302,7 @@ namespace Datadog.Trace.Debugger
                 var symDbRemoteConfig = new SymDbRemoteConfig(
                     RcmSubscriptionManager.Instance,
                     uploadSymbols => OnSymbolDatabaseRemoteConfiguration(tracerSettings, newDebuggerSettings, uploadSymbols));
-                Volatile.Write(ref _symDbRemoteConfig, symDbRemoteConfig);
+                _symDbRemoteConfig = symDbRemoteConfig;
                 if (_processExit.Task.IsCompleted)
                 {
                     symDbRemoteConfig.Dispose();
@@ -363,7 +363,7 @@ namespace Datadog.Trace.Debugger
         {
             SafeDisposal.TryDispose(SymbolsUploader);
             SymbolsUploader = null;
-            Interlocked.Exchange(ref _symDbInitialized, 0);
+            Volatile.Write(ref _symDbInitialized, 0);
         }
 
         private void SetCodeOriginState(DebuggerSettings debuggerSettings)
@@ -743,7 +743,7 @@ namespace Datadog.Trace.Debugger
 
             SafeDisposal.New()
                         .Add(_tracerSettingsSubscription)
-                        .Add(Volatile.Read(ref _symDbRemoteConfig))
+                        .Add(_symDbRemoteConfig)
                         .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
                         .Add(SymbolsUploader)
