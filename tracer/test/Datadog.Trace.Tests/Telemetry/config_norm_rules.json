@@ -346,6 +346,7 @@
   "DD_DOGSTATSD_ARGS": "agent_dogstatsd_executable_args",
   "DD_DIAGNOSTIC_SOURCE_ENABLED": "trace_diagnostic_source_enabled",
   "DD_SITE": "site",
+  "DD_SERVERLESS_COMPAT_PATH": "serverless_compat_path",
   "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS": "trace_http_client_excluded_urls",
   "DD_HTTP_SERVER_ERROR_STATUSES": "trace_http_server_error_statuses",
   "DD_HTTP_CLIENT_ERROR_STATUSES": "trace_http_client_error_statuses",

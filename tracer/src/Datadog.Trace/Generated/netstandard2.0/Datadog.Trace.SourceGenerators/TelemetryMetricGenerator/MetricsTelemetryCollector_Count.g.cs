@@ -109,7 +109,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "integration_name:emailhtmlinjection" }),
             new(new[] { "integration_name:protobuf" }),
             new(new[] { "integration_name:hangfire" }),
-            new(new[] { "integration_name:masstransit" }),
+            new(new[] { "integration_name:serverlesscompat" }),
             // spans_finished, index = 89
             new(null),
             // spans_enqueued_for_serialization, index = 90
@@ -562,7 +562,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "integration_name:emailhtmlinjection" }),
             new(new[] { "integration_name:protobuf" }),
             new(new[] { "integration_name:hangfire" }),
-            new(new[] { "integration_name:masstransit" }),
+            new(new[] { "integration_name:serverlesscompat" }),
             // direct_log_api.requests, index = 511
             new(null),
             // direct_log_api.responses, index = 512

@@ -92,5 +92,6 @@ namespace Datadog.Trace.Configuration
         Hangfire,
         OpenFeature,
         MassTransit
+        ServerlessCompat
     }
 }

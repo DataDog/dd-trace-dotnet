@@ -280,6 +280,7 @@ internal static class MetricTags
         [Description("integration_name:protobuf")] Protobuf,
         [Description("integration_name:hangfire")] Hangfire,
         [Description("integration_name:masstransit")] MassTransit
+        [Description("integration_name:serverlesscompat")] ServerlessCompat
     }
 
     public enum InstrumentationError

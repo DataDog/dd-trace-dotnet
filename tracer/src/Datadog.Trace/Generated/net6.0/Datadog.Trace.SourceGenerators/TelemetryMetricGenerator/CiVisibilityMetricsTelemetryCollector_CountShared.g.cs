@@ -356,10 +356,10 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:hangfire", "error_type:invoker" }),
             new(new[] { "integration_name:hangfire", "error_type:execution" }),
             new(new[] { "integration_name:hangfire", "error_type:missing_member" }),
-            new(new[] { "integration_name:masstransit", "error_type:duck_typing" }),
-            new(new[] { "integration_name:masstransit", "error_type:invoker" }),
-            new(new[] { "integration_name:masstransit", "error_type:execution" }),
-            new(new[] { "integration_name:masstransit", "error_type:missing_member" }),
+            new(new[] { "integration_name:serverlesscompat", "error_type:duck_typing" }),
+            new(new[] { "integration_name:serverlesscompat", "error_type:invoker" }),
+            new(new[] { "integration_name:serverlesscompat", "error_type:execution" }),
+            new(new[] { "integration_name:serverlesscompat", "error_type:missing_member" }),
         };
 
     /// <summary>
