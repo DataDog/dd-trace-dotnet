@@ -85,6 +85,7 @@ public:
     bool IsManagedActivationEnabled() const override;
     void SetEnablementStatus(EnablementStatus status) override;
     bool IsHeapSnapshotEnabled() const override;
+    bool IsHeapSnapshotSkipTraversal() const override;
     std::chrono::minutes GetHeapSnapshotInterval() const override;
     std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
@@ -203,6 +204,7 @@ private:
     bool _isWaitHandleProfilingEnabled;
 
     bool _isHeapSnapshotEnabled;
+    bool _isHeapSnapshotSkipTraversal;
     std::chrono::minutes _heapSnapshotInterval;
     std::chrono::milliseconds _heapSnapshotCheckInterval;
     uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory

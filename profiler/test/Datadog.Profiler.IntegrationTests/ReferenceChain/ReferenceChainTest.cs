@@ -69,6 +69,28 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckSkipTraversalProducesNoReferenceTree(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotSkipTraversal, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            bool hasReferenceTree = false;
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                hasReferenceTree |= HasReferenceTree(ctx.Value.Request);
+            };
+
+            runner.Run(agent);
+
+            Assert.False(hasReferenceTree, "No reference tree should be sent when skip-traversal is enabled");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckCyclesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 3: Cycles - Parent -> Child -> Parent (bidirectional tree)

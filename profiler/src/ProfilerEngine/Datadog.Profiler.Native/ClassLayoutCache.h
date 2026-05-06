@@ -71,6 +71,7 @@ public:
 
     size_t GetMemorySize() const;
     size_t GetEntryCount() const { return _cache.size(); }
+    ClassID GetStringClassID() const { return _stringClassID; }
 
 private:
     ClassLayoutData BuildLayout(ClassID classID);

@@ -43,6 +43,16 @@ private:
     size_t _count = 0;
     size_t _peakCount = 0;
     size_t _growCount = 0;
+    size_t _tryInsertCalls = 0;
+    size_t _tryInsertInserted = 0;
+    size_t _tryInsertAlreadyPresent = 0;
+    size_t _tryInsertProbes = 0;
+    size_t _tryInsertMaxProbes = 0;
+    size_t _markVisitedAndStoreCalls = 0;
+    size_t _markVisitedAndStoreInserted = 0;
+    size_t _markVisitedAndStoreAlreadyPresent = 0;
+    size_t _markVisitedAndStoreProbes = 0;
+    size_t _markVisitedAndStoreMaxProbes = 0;
     size_t _mask = 0;
 
     static constexpr size_t DefaultCapacity = 512;
@@ -134,16 +144,25 @@ public:
     // Callers write classID directly into the returned entry.
     InsertResult TryInsert(uintptr_t address, VisitedEntry*& outEntry)
     {
+        _tryInsertCalls++;
+
         if (NeedsGrow())
         {
             Grow();
         }
 
         size_t idx = HashAddress(address) & _mask;
+        size_t probes = 1;
         while (true)
         {
             if (_addresses[idx] == address)
             {
+                _tryInsertAlreadyPresent++;
+                _tryInsertProbes += probes;
+                if (probes > _tryInsertMaxProbes)
+                {
+                    _tryInsertMaxProbes = probes;
+                }
                 outEntry = &_entries[idx];
                 return InsertResult::AlreadyPresent;
             }
@@ -153,10 +172,17 @@ public:
                 _entries[idx] = {};
                 _dirtyIndices.push_back(static_cast<uint32_t>(idx));
                 _count++;
+                _tryInsertInserted++;
+                _tryInsertProbes += probes;
+                if (probes > _tryInsertMaxProbes)
+                {
+                    _tryInsertMaxProbes = probes;
+                }
                 outEntry = &_entries[idx];
                 return InsertResult::Inserted;
             }
             idx = (idx + 1) & _mask;
+            probes++;
         }
     }
 
@@ -165,12 +191,15 @@ public:
     // caller already knows the classID.
     void MarkVisitedAndStore(uintptr_t address, ClassID classID)
     {
+        _markVisitedAndStoreCalls++;
+
         if (NeedsGrow())
         {
             Grow();
         }
 
         size_t idx = HashAddress(address) & _mask;
+        size_t probes = 1;
         while (true)
         {
             if (_addresses[idx] == 0)
@@ -179,14 +208,27 @@ public:
                 _entries[idx].classID = classID;
                 _dirtyIndices.push_back(static_cast<uint32_t>(idx));
                 _count++;
+                _markVisitedAndStoreInserted++;
+                _markVisitedAndStoreProbes += probes;
+                if (probes > _markVisitedAndStoreMaxProbes)
+                {
+                    _markVisitedAndStoreMaxProbes = probes;
+                }
                 return;
             }
             if (_addresses[idx] == address)
             {
                 _entries[idx].classID = classID;
+                _markVisitedAndStoreAlreadyPresent++;
+                _markVisitedAndStoreProbes += probes;
+                if (probes > _markVisitedAndStoreMaxProbes)
+                {
+                    _markVisitedAndStoreMaxProbes = probes;
+                }
                 return;
             }
             idx = (idx + 1) & _mask;
+            probes++;
         }
     }
 
@@ -281,6 +323,56 @@ public:
     size_t GetGrowCount() const
     {
         return _growCount;
+    }
+
+    size_t GetTryInsertCalls() const
+    {
+        return _tryInsertCalls;
+    }
+
+    size_t GetTryInsertInsertedCount() const
+    {
+        return _tryInsertInserted;
+    }
+
+    size_t GetTryInsertAlreadyPresentCount() const
+    {
+        return _tryInsertAlreadyPresent;
+    }
+
+    size_t GetTryInsertProbeCount() const
+    {
+        return _tryInsertProbes;
+    }
+
+    size_t GetTryInsertMaxProbeCount() const
+    {
+        return _tryInsertMaxProbes;
+    }
+
+    size_t GetMarkVisitedAndStoreCalls() const
+    {
+        return _markVisitedAndStoreCalls;
+    }
+
+    size_t GetMarkVisitedAndStoreInsertedCount() const
+    {
+        return _markVisitedAndStoreInserted;
+    }
+
+    size_t GetMarkVisitedAndStoreAlreadyPresentCount() const
+    {
+        return _markVisitedAndStoreAlreadyPresent;
+    }
+
+    size_t GetMarkVisitedAndStoreProbeCount() const
+    {
+        return _markVisitedAndStoreProbes;
+    }
+
+    size_t GetMarkVisitedAndStoreMaxProbeCount() const
+    {
+        return _markVisitedAndStoreMaxProbes;
     }
 
     size_t GetAddressesMemorySize() const

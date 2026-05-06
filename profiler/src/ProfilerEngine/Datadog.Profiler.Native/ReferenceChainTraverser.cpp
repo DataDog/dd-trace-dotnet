@@ -78,6 +78,28 @@ void ReferenceChainTraverser::LogStats() const
               "entries: ", _visited.GetEntriesMemorySize() / 1024, " KB, ",
               "dirty: ", _visited.GetDirtyIndicesMemorySize() / 1024, " KB)");
 
+    size_t tryInsertCalls = _visited.GetTryInsertCalls();
+    size_t tryInsertAverageProbesX100 = tryInsertCalls == 0 ? 0 : (_visited.GetTryInsertProbeCount() * 100) / tryInsertCalls;
+    Log::Debug("  VisitedObjectSet TryInsert: ",
+              tryInsertCalls, " calls, ",
+              _visited.GetTryInsertInsertedCount(), " inserted, ",
+              _visited.GetTryInsertAlreadyPresentCount(), " already present, ",
+              _visited.GetTryInsertProbeCount(), " probes, avg ",
+              tryInsertAverageProbesX100 / 100, ".",
+              tryInsertAverageProbesX100 % 100, ", max ",
+              _visited.GetTryInsertMaxProbeCount());
+
+    size_t markCalls = _visited.GetMarkVisitedAndStoreCalls();
+    size_t markAverageProbesX100 = markCalls == 0 ? 0 : (_visited.GetMarkVisitedAndStoreProbeCount() * 100) / markCalls;
+    Log::Debug("  VisitedObjectSet MarkVisitedAndStore: ",
+              markCalls, " calls, ",
+              _visited.GetMarkVisitedAndStoreInsertedCount(), " inserted, ",
+              _visited.GetMarkVisitedAndStoreAlreadyPresentCount(), " already present, ",
+              _visited.GetMarkVisitedAndStoreProbeCount(), " probes, avg ",
+              markAverageProbesX100 / 100, ".",
+              markAverageProbesX100 % 100, ", max ",
+              _visited.GetMarkVisitedAndStoreMaxProbeCount());
+
     for (int i = 0; i < static_cast<int>(RootCategoryCount); i++)
     {
         auto cat = static_cast<RootCategory>(i);
@@ -286,6 +308,16 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
     // Reference type array: each element is a pointer-sized reference.
     uintptr_t* pElements = reinterpret_cast<uintptr_t*>(pData);
 
+    // For string arrays, runtime type is always System.String — skip GetClassFromObject.
+    bool isStringArray = (layout.arrayElementType == ELEMENT_TYPE_STRING);
+    ClassID stringClassID = isStringArray ? _layoutCache.GetStringClassID() : 0;
+
+    // Cache the last resolved childNode: typed arrays (Order[], string[], ...)
+    // often have all elements of the same runtime type, so GetOrCreateChild
+    // returns the same node repeatedly.
+    ClassID lastChildClassID = 0;
+    TypeTreeNode* lastChildNode = nullptr;
+
     for (uint64_t i = 0; i < totalElements; i++)
     {
         uintptr_t elementAddress = pElements[i];
@@ -298,11 +330,19 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
         VisitedObjectSet::VisitedEntry* slot = nullptr;
         if (_visited.TryInsert(elementAddress, slot) == VisitedObjectSet::InsertResult::Inserted)
         {
-            ClassID elementClassID = 0;
-            hr = _pCorProfilerInfo->GetClassFromObject(elementAddress, &elementClassID);
-            if (FAILED(hr) || elementClassID == 0)
+            ClassID elementClassID;
+            if (isStringArray && stringClassID != 0)
             {
-                continue;
+                elementClassID = stringClassID;
+            }
+            else
+            {
+                elementClassID = 0;
+                hr = _pCorProfilerInfo->GetClassFromObject(elementAddress, &elementClassID);
+                if (FAILED(hr) || elementClassID == 0)
+                {
+                    continue;
+                }
             }
 
             SIZE_T elementSizeBytes = 0;
@@ -314,7 +354,17 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
 
             slot->classID = elementClassID;
 
-            TypeTreeNode* childNode = currentNode->GetOrCreateChild(elementClassID);
+            TypeTreeNode* childNode;
+            if (elementClassID == lastChildClassID)
+            {
+                childNode = lastChildNode;
+            }
+            else
+            {
+                childNode = currentNode->GetOrCreateChild(elementClassID);
+                lastChildClassID = elementClassID;
+                lastChildNode = childNode;
+            }
             childNode->AddInstance(elementSizeBytes);
             _traversalStack.push_back({elementAddress, childNode, depth + 1, elementClassID, elementSizeBytes});
         }
@@ -322,7 +372,18 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
         {
             SIZE_T revisitSize = 0;
             _pCorProfilerInfo->GetObjectSize2(elementAddress, &revisitSize);
-            TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
+
+            TypeTreeNode* childNode;
+            if (slot->classID == lastChildClassID)
+            {
+                childNode = lastChildNode;
+            }
+            else
+            {
+                childNode = currentNode->GetOrCreateChild(slot->classID);
+                lastChildClassID = slot->classID;
+                lastChildNode = childNode;
+            }
             childNode->AddInstance(revisitSize);
         }
     }
