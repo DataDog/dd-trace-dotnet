@@ -920,6 +920,12 @@ partial class Build
                 { "DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0" },  // disable StableConfig (i.e. don't wait for the tracer to set the configuration)
             };
 
+        if (IsArm64)
+        {
+            // Temporary flag to enable profiling on arm64. This will be removed when the native profiler is updated to support arm64.
+            envVars["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
+        }
+
         if (IsLinux)
         {
             if (sanitizer is SanitizerKind.Asan)
