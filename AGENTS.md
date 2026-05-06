@@ -141,6 +141,9 @@ To run the profiler manually against a sample app (e.g. to measure timing or obs
 ./tracer/build_in_docker.sh BuildProfilerHome BuildProfilerSamples
 
 # 2. Launch interactive container (logs go to /var/log/datadog/dotnet/)
+# Use -it for interactive use; drop -i if running non-interactively (e.g. SSH without TTY).
+# The mount source must be an absolute path the Docker daemon can see — on some Linux setups,
+# only paths under the main repo root work (git worktrees in /tmp or ~ may not be visible to the daemon).
 docker run -it --rm --privileged \
   --mount type=bind,source="$(pwd)",target=/project \
   --env NugetPackageDirectory=/project/packages \
