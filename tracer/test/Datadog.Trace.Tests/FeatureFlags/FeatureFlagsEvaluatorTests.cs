@@ -456,6 +456,73 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("PARSE_ERROR", result.Error);
     }
 
+    [Fact]
+    public void EvaluateNoRulesNoShardsReturnsStaticReason()
+    {
+        // Flag with allocation that has:
+        // - Rules = null (no targeting rules)
+        // - Splits with one Split containing Shards = [] (empty list)
+        // This represents a flag that always returns the same value (100% to one variant, no bucketing)
+        var variants = new Dictionary<string, Variant>
+        {
+            ["static-variant"] = new Variant("static-variant", "static-value")
+        };
+
+        var splits = new List<Split>
+        {
+            new Split { VariationKey = "static-variant", Shards = new List<Shard>() } // Empty shards
+        };
+
+        var alloc = new Allocation { Key = "static-alloc", Rules = null, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "static-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+
+        var flags = new Dictionary<string, Flag> { ["static-flag"] = flag };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("any-user");
+
+        var result = evaluator.Evaluate("static-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("static-value", result.Value);
+        Assert.Equal(EvaluationReason.Static, result.Reason);
+        Assert.Equal("static-variant", result.Variant);
+    }
+
+    [Fact]
+    public void EvaluateNoRulesWithShardsReturnsSplitReason()
+    {
+        // Flag with allocation that has:
+        // - Rules = null (no targeting rules)
+        // - Splits with non-empty Shards (percentage-based rollout)
+        // This represents a percentage rollout without targeting rules
+        var variants = new Dictionary<string, Variant>
+        {
+            ["split-variant"] = new Variant("split-variant", "split-value")
+        };
+
+        var shards = new List<Shard>
+        {
+            new Shard { Salt = "test-salt", TotalShards = 100, Ranges = new List<ShardRange> { new ShardRange { Start = 0, End = 100 } } }
+        };
+
+        var splits = new List<Split>
+        {
+            new Split { VariationKey = "split-variant", Shards = shards } // Non-empty shards
+        };
+
+        var alloc = new Allocation { Key = "split-alloc", Rules = null, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "split-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+
+        var flags = new Dictionary<string, Flag> { ["split-flag"] = flag };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("user-in-bucket");
+
+        var result = evaluator.Evaluate("split-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("split-value", result.Value);
+        Assert.Equal(EvaluationReason.Split, result.Reason);
+        Assert.Equal("split-variant", result.Variant);
+    }
+
     [Theory]
     [InlineData("salt", "key", 1718670776)]
     [InlineData("test", "else", 1298484211)]
