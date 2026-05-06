@@ -69,23 +69,38 @@ bool ManagedCodeCache::Initialize()
     return false;
 }
 
-bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
+std::optional<bool> ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept
 {
-    std::shared_lock<std::shared_mutex> moduleLock(_modulesMutex);
+    // IsCodeInR2RModule can be called in a signal handler or not.
+    // If it's called in a signal handler, we need to use a shared lock with try_to_lock.
+    // If it's called not in a signal handler, we need to use a shared lock with defer_lock.
+    auto moduleLock = [](std::shared_mutex& mutex, bool signalSafe) {
+        if (signalSafe)
+        {
+            return std::shared_lock<std::shared_mutex>(mutex, std::try_to_lock);
+        }
+        return std::shared_lock<std::shared_mutex>(mutex);
+    }(_modulesMutex, signalSafe);
+
+    if (!moduleLock.owns_lock())
+    {
+        return std::nullopt;
+    }
 
     auto moduleCodeRange = FindRange(_modulesCodeRanges, ip);
     if (!moduleCodeRange.has_value())
     {
-        return false;
+        return {false};
     }
 
     if (moduleCodeRange->isRemoved)
     {
-        LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range was removed for ip: 0x", std::hex, ip);
-        return false;
+        // No print, can be called in a signal handler
+        // LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range was removed for ip: 0x", std::hex, ip);
+        return {false};
     }
 
-    return moduleCodeRange->contains(ip);
+    return {moduleCodeRange->contains(ip)};
 }
 
 // must not be called in a signal handler (GetFunctionFromIP is not signal-safe)
@@ -100,26 +115,32 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noe
 
     // Level 2: Check if the IP is within a module code range
     
-    if (IsCodeInR2RModule(ip))
+    auto isR2r = IsCodeInR2RModule(ip, false);
+    // GetFunctionId is NOT signal-safe: we pass signalSafe=false, so
+    // IsCodeInR2RModule takes the shared lock unconditionally and always
+    // returns an engaged optional. The !has_value() guard below is defence
+    // in depth in case IsCodeInR2RModule ever grows a new failure path.
+    if (!isR2r.has_value() || !isR2r.value())
     {
-        auto functionId = GetFunctionFromIP_Original(ip);
-        if (functionId.has_value()) {
-            // We found a function id and we can add it synchronously to our cache.
-            // It's safe to do this synchronously because this function is called
-            // by a native thread belonging to profiler.
-            // This thread won't be interrupted by the profiler.
-            AddFunctionImpl(functionId.value(), false);
-            return std::optional<FunctionID>(functionId.value());
-        }
-        // If we arrive here, it means that the call to GetFunctionFromIP_Original possibly crashed.
-        // Possible reason: race against the CLR unloading the module containing the function.
-        // On Windows, we catch the exception and return nullopt.
-        // On Linux, we cannot do anything.
-        // Maybe a better value ?
+        // if it has value `false`, just return InvalidFunctionId
         return std::optional<FunctionID>(InvalidFunctionId);
     }
 
-    return std::nullopt;
+    auto functionId = GetFunctionFromIP_Original(ip);
+    if (functionId.has_value() && functionId.value() != InvalidFunctionId) {
+        // We found a function id and we can add it synchronously to our cache.
+        // It's safe to do this synchronously because this function is called
+        // by a native thread belonging to profiler.
+        // This thread won't be interrupted by the profiler.
+        AddFunctionImpl(functionId.value(), false);
+        return std::optional<FunctionID>(functionId.value());
+    }
+    // If we arrive here, it means that the call to GetFunctionFromIP_Original possibly crashed.
+    // Possible reason: race against the CLR unloading the module containing the function.
+    // On Windows, we catch the exception and return nullopt.
+    // On Linux, we cannot do anything, we'll never get there.
+
+    return functionId;
 }
 
 std::optional<FunctionID> ManagedCodeCache::GetFunctionFromIP_Original(std::uintptr_t ip) noexcept
@@ -128,7 +149,11 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionFromIP_Original(std::uint
 
     // On Windows, the call to GetFunctionFromIP can crash:
     // We may end up in a situation where the module containing that symbol was just unloaded.
-    // For linux, we use the custom GetFunctionFromIP based on the code cache.
+    // For linux, we use the custom GetFunctionFromIP based on the code cache
+
+    // Cannot return while in __try/__except (compilation error)
+    // We need a flag to know if an access violation exception was raised.
+    bool wasAccessViolationRaised = false;
 #ifdef _WINDOWS
     __try
     {
@@ -143,10 +168,15 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionFromIP_Original(std::uint
     {
         // we could return a fake function id to display a good'ish callstack shape
         // add a metric ?
+        wasAccessViolationRaised = true;
     }
 #endif
 
-    return std::nullopt;
+    if (wasAccessViolationRaised)
+    {
+        return std::nullopt;
+    }
+    return std::optional<FunctionID>(InvalidFunctionId);
 }
 
 std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip) const noexcept
@@ -173,28 +203,36 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip)
 }
 
 // can be called in a signal handler
-bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
+std::optional<bool> ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
 {
     uint64_t page = GetPageNumber(static_cast<UINT_PTR>(ip));
     
     {
         // Level 1: Find the page (shared lock on map structure)
-        std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
+        std::shared_lock<std::shared_mutex> mapLock(_pagesMutex, std::try_to_lock);
+        if (!mapLock.owns_lock())
+        {
+            return std::nullopt;
+        }
         auto pageIt = _pagesMap.find(page);
         if (pageIt != _pagesMap.end())
-        {   
+        {
             // Level 2: Binary search within the page's ranges (shared lock on page)
-            std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
+            std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock, std::try_to_lock);
+            if (!pageLock.owns_lock())
+            {
+                return std::nullopt;
+            }
             auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
             if (range.has_value())
             {
-                return true;
+                return std::optional{true};
             }
         }
     }
 
-    // Check if the IP is within a module code range
-    return IsCodeInR2RModule(ip);
+    // Page not found or IP not in any JIT-compiled range: check R2R modules
+    return IsCodeInR2RModule(ip, true);
 }
 
 void ManagedCodeCache::AddFunction(FunctionID functionId)

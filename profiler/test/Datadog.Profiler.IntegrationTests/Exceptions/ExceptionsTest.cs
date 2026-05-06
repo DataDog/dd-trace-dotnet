@@ -113,7 +113,9 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                Assert.True(sample.Stacktrace.EndWith(expectedStack));
+                Assert.True(
+                    sample.Stacktrace.EndWith(expectedStack),
+                    $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({sample.Stacktrace.FramesCount} frames):\n{sample.Stacktrace}");
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -221,7 +223,9 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                Assert.True(sample.Stacktrace.EndWith(expectedStack));
+                Assert.True(
+                    sample.Stacktrace.EndWith(expectedStack),
+                    $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({sample.Stacktrace.FramesCount} frames):\n{sample.Stacktrace}");
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -295,7 +299,9 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             {
                 labels.Should().ContainSingle(x => x.Name == "exception type" && x.Value == "System.Exception");
                 labels.Should().ContainSingle(x => x.Name == "exception message" && string.IsNullOrWhiteSpace(x.Value));
-                Assert.True(stackTrace.EndWith(expectedStack));
+                Assert.True(
+                    stackTrace.EndWith(expectedStack),
+                    $"Stacktrace does not end with expected frames.\nExpected ({expectedStack.FramesCount} frames):\n{expectedStack}\nActual ({stackTrace.FramesCount} frames):\n{stackTrace}");
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))

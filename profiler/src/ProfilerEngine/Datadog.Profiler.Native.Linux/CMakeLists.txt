@@ -59,15 +59,15 @@ endif()
 if (ISLINUX)
     # ------------------------------------------------------
     # Hardening: make sure no target in this project ever
-    # requests an executable stack.  Without this, glibc ≥2.41
-    # (Debian 13 "trixie", Fedora 40, etc.) rejects the shared
+    # requests an executable stack.  Without this, glibc >=2.41
+    # (Debian 13 "trixie", Fedora 40, etc.) rejects the shared
     # library with:
     #   "cannot enable executable stack as shared object requires"
     # ------------------------------------------------------
     # 1. Tell the assembler to emit a .note.GNU-stack note that
-    #    marks the object as **non‑exec‑stack**.
+    #    marks the object as **non-exec-stack**.
     add_compile_options("$<$<COMPILE_LANGUAGE:ASM>:-Wa,--noexecstack>")
-    # 2. Instruct the linker to *clear* any stray exec‑stack flag
+    # 2. Instruct the linker to *clear* any stray exec-stack flag
     #    that might still be present when it produces the final ELF.
     add_link_options(-Wl,-z,noexecstack)
 endif()
@@ -89,6 +89,14 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 # ******************************************************
 
 FILE(GLOB LINUX_PROFILER_SRC CONFIGURE_DEPENDS "*.cpp")
+
+if (ISARM64)
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/Backtrace2Unwinder.cpp")
+else()
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/HybridUnwinder.cpp")
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/UnwinderTracer.cpp")
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/UnwindTracersProvider.cpp")
+endif()
 
 FILE(GLOB COMMON_PROFILER_SRC LIST_DIRECTORIES false "../Datadog.Profiler.Native/*.cpp")
 FILE(GLOB EXCLUDE_DLLMAIN "../Datadog.Profiler.Native/DllMain.cpp")

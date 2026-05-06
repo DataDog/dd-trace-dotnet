@@ -2563,12 +2563,6 @@ partial class Build
                knownPatterns.Add(new(@".*'dddlopen' dddlerror returned: Library linux-vdso\.so\.1 is not already loaded", RegexOptions.Compiled));
            }
 
-           if (IsArm64)
-           {
-               // Profiler is not yet supported on Arm64
-               knownPatterns.Add(new(@".*Profiler is deactivated because it runs on an unsupported architecture", RegexOptions.Compiled));
-           }
-
            var isAzureFunctionsScenario = SmokeTestCategory is SmokeTests.SmokeTestCategory.LinuxAzureFunctionsNuGet or SmokeTests.SmokeTestCategory.WindowsAzureFunctionsNuGet;
            if (isAzureFunctionsScenario)
            {
