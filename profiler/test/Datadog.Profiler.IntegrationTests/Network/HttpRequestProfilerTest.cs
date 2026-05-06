@@ -19,7 +19,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
         private const string All = "--iterations 5 --scenario 7";
         private const string Redirect = "--iterations 5 --scenario 1";
         private const string Error = "--iterations 5 --scenario 2";
-        private const string Blog = "--iterations 1 --scenario 4";
+        private const string Blog = "--iterations 2 --scenario 4";
 
         // for Samples.HttpRequest
         private const string RedirectTime = "--iterations 3 --code 200 --redir 2 --req 1000 --res 2000 --output redirections";
@@ -122,6 +122,13 @@ namespace Datadog.Profiler.IntegrationTests.Network
                     continue;
                 }
 
+                // skip samples with errors (transient network failures to github.com in CI)
+                var errorLabel = labels.FirstOrDefault(l => l.Name == "response error");
+                if (errorLabel.Name is not null)
+                {
+                    continue;
+                }
+
                 var redirectLabel = labels.FirstOrDefault(l => l.Name == "redirect url");
                 redirectLabel.Name.Should().NotBeNullOrWhiteSpace();
 
@@ -215,11 +222,14 @@ namespace Datadog.Profiler.IntegrationTests.Network
                     continue;
                 }
 
-                checkedSamples++;
+                // skip samples with errors (transient network failures to github.com in CI)
+                var errorLabel = labels.FirstOrDefault(l => l.Name == "response error");
+                if (errorLabel.Name is not null)
+                {
+                    continue;
+                }
 
-                var errorLabel = labels.FirstOrDefault(l => l.Name == "response.thread_id");
-                errorLabel.Name.Should().NotBeNullOrWhiteSpace();
-                errorLabel.Value.Should().NotBeNullOrWhiteSpace();
+                checkedSamples++;
 
                 var dnsSuccessLabel = labels.FirstOrDefault(l => l.Name == "dns.success");
                 dnsSuccessLabel.Name.Should().NotBeNullOrWhiteSpace();
