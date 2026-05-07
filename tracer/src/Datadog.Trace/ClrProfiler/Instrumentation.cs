@@ -427,8 +427,13 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled || Tracer.Instance.Settings.IsActivityInterceptionEnabled)
                 {
+                    // Same rationale as the ActivityListener init above: interception mode also relies on
+                    // OTel's static infrastructure (specifically Propagators.DefaultTextMapPropagator,
+                    // which our Sdk.Initialize swaps from a no-op to a composite TraceContext+Baggage
+                    // propagator). Without this, user calls to DefaultTextMapPropagator.Inject(...) silently
+                    // write nothing, even when OTel.Baggage.Current is populated.
                     Log.Debug("Initializing OpenTelemetry components.");
                     OpenTelemetry.Sdk.Initialize();
                 }
