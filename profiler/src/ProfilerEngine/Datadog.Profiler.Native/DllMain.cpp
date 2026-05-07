@@ -1,6 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include "DllMain.h"
+
 #include <iostream>
 #include <unknwn.h>
 
@@ -13,6 +15,7 @@
 #include "dd_profiler_version.h"
 
 HINSTANCE DllHandle;
+thread_local bool _dummyTLSUsage;
 
 const IID IID_IUnknown = {0x00000000,
                           0x0000,
@@ -38,6 +41,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
 
         case DLL_PROCESS_DETACH:
             Log::Info("Profiler DLL unloaded.");
+            Log::Info("Reading from the TLS variable: ", _dummyTLSUsage);
             break;
     }
 
@@ -116,6 +120,10 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
                                     0x4896,
                                     {0xb6, 0x4f, 0xd6, 0xfa, 0x25, 0xd6, 0xb2, 0x6a}};
 
+    // Dummy usage of a TLS variable.
+    _dummyTLSUsage = true;
+    Log::Info("Writing to the TLS variable", _dummyTLSUsage);
+
     if (ppv == nullptr)
     {
         Log::Info("DllGetClassObject(): the specified out-param 'ppv' is null.");
@@ -167,6 +175,6 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
 extern "C" HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
 {
     Log::Info("DllCanUnloadNow() invoked.");
-
+    Log::Info("Reading from the TLS variable: ", _dummyTLSUsage);
     return S_OK;
 }
