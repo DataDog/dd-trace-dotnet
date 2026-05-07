@@ -856,8 +856,6 @@ std::string ProfileExporter::GetInfoJson(std::string& runtimeId) const
     {
         return "";
     }
-    auto sectionCount = metadata.size();
-    auto currentSection = 0;
 
     // the json schema is supposed to send sections under the systemInfo element
     std::stringstream builder;
@@ -865,8 +863,9 @@ std::string ProfileExporter::GetInfoJson(std::string& runtimeId) const
         AppendProfilerInfo(builder, runtimeId);
     builder << ",";
         AppendGcConfig(builder);
-    builder << ",";
-        AppendEnvVars(builder);
+
+    // There might not be any env var so deal with the ',' in AppendEnvVars
+    AppendEnvVars(builder, metadata);
     builder << "}";
 
     return builder.str();
@@ -931,47 +930,25 @@ void ProfileExporter::AppendValueList(const tags& kvp, std::stringstream& builde
     }
 }
 
-bool ProfileExporter::AppendEnvVars(std::stringstream& builder) const
+void ProfileExporter::AppendEnvVars(std::stringstream& builder, const IMetadataProvider::metadata_t& metadata) const
 {
-    auto const& metadata = _metadataProvider->Get();
-    if (metadata.empty())
-    {
-        return false;
-    }
-
-    bool firstSection = true;
     for (auto const& [section, kvp] : metadata)
     {
         if (section == MetadataProvider::SectionEnvVars)
         {
-            if (!firstSection)
-            {
-                builder << ", ";
-            }
+            builder << ", ";
             ElementStart(builder, "System Properties");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
-            firstSection = false;
         }
         else if (section == MetadataProvider::SectionOverrides)
         {
-            if (!firstSection)
-            {
-                builder << ", ";
-            }
+            builder << ", ";
             ElementStart(builder, "System Overrides");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
-            firstSection = false;
-        }
-        else
-        {
-            // skip Runtime Settings and others
-            continue;
         }
     }
-
-    return true;
 }
 
 void ProfileExporter::AppendGcConfig(std::stringstream& builder) const

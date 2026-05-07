@@ -10,6 +10,9 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- ASP0014: this sample intentionally uses the legacy app.UseEndpoints(...) routing pattern to exercise that code path -->
+    <NoWarn>$(NoWarn);ASP0014</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
