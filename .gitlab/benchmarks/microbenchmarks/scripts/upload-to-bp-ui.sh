@@ -56,11 +56,18 @@ upload_one() {
     echo "ok" > "$result_file"
 }
 
+MAX_PARALLEL=4
+
 pids=()
 for CONVERTED_JSON in "${converted_files[@]}"; do
     result_file="$result_dir/$(basename "$CONVERTED_JSON").result"
     upload_one "$CONVERTED_JSON" "$result_file" &
     pids+=($!)
+
+    if (( ${#pids[@]} >= MAX_PARALLEL )); then
+        wait "${pids[0]}" || true
+        pids=("${pids[@]:1}")
+    fi
 done
 
 for pid in "${pids[@]}"; do
