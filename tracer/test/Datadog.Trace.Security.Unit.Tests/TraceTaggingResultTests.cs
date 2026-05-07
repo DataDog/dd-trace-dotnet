@@ -5,13 +5,16 @@
 
 #nullable enable
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Headers;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -22,6 +25,7 @@ using Microsoft.AspNetCore.Http;
 using System.Web;
 #endif
 using Xunit;
+using AppSecSecurity = Datadog.Trace.AppSec.Security;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
@@ -184,6 +188,60 @@ namespace Datadog.Trace.Security.Unit.Tests
             rootTestScope.Span.GetMetric("_dd.appsec.trace.numeric_string").Should().BeNull();
         }
 
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, true)]
+        [InlineData(true, false)]
+        public async Task SchemaAttributes_KeepTraceRegardlessOfExplicitKeep(bool hasKeep, bool keep)
+        {
+            var settings = TracerSettings.Create(new Dictionary<string, object>());
+            await using var tracer = TracerHelper.Create(settings);
+            using var securityOverride = OverrideSecurityInstance();
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+            rootTestScope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+
+            var schemaTag = WafConstants.AppSecSchemaPrefix + "req.body";
+            var result = new Mock<IResult>();
+            result.SetupGet(x => x.ExtractSchemaDerivatives).Returns(
+                new Dictionary<string, object?>
+                {
+                    { schemaTag, new Dictionary<string, object?> { { "type", "object" } } },
+                });
+            result.SetupGet(x => x.HasKeep).Returns(hasKeep);
+            result.SetupGet(x => x.Keep).Returns(keep);
+
+            new SecurityReporter(rootTestScope.Span, new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
+
+            rootTestScope.Span.GetTag(schemaTag).Should().NotBeNullOrEmpty();
+            rootTestScope.Span.Context.TraceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserKeep);
+        }
+
+        [Fact]
+        public async Task WafSpanAttributes_WithKeepFalse_DoNotForceUserKeep()
+        {
+            var settings = TracerSettings.Create(new Dictionary<string, object>());
+            await using var tracer = TracerHelper.Create(settings);
+            using var securityOverride = OverrideSecurityInstance();
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+            rootTestScope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+
+            var result = new Mock<IResult>();
+            result.SetupGet(x => x.WafSpanAttributes).Returns(
+                new Dictionary<string, object?>
+                {
+                    { "_dd.appsec.trace.agent", "TraceTagging/v1" },
+                    { "_dd.appsec.trace.integer", 42L },
+                });
+            result.SetupGet(x => x.HasKeep).Returns(true);
+            result.SetupGet(x => x.Keep).Returns(false);
+
+            new SecurityReporter(rootTestScope.Span, new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
+
+            rootTestScope.Span.GetTag("_dd.appsec.trace.agent").Should().Be("TraceTagging/v1");
+            rootTestScope.Span.GetMetric("_dd.appsec.trace.integer").Should().Be(42D);
+            rootTestScope.Span.Context.TraceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
+        }
+
         private static void AssertTraceTaggingAttributes(IResult result, string expectedAgentPrefix)
         {
             result.WafSpanAttributes.Should().NotBeNullOrEmpty("trace-tagging rule should populate span attributes");
@@ -220,6 +278,20 @@ namespace Datadog.Trace.Security.Unit.Tests
             var nativeResult = encodedResult.ResultDdwafObject;
             ulong duration = 0;
             return new Result(ref nativeResult, returnCode, ref duration, 0);
+        }
+
+        private static SecurityInstanceOverride OverrideSecurityInstance()
+        {
+            var previous = AppSecSecurity.Instance;
+            var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, "0"));
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+            var current = new AppSecSecurity(settings, rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>());
+            typeof(AppSecSecurity)
+               .GetField("_rateLimiter", BindingFlags.Instance | BindingFlags.NonPublic)!
+               .SetValue(current, new AppSecRateLimiter(settings.TraceRateLimit));
+
+            AppSecSecurity.Instance = current;
+            return new SecurityInstanceOverride(previous, current);
         }
 
         private IResult RunWafForUserAgent(string userAgent)
@@ -267,6 +339,24 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             internal override void MarkBlocked()
             {
+            }
+        }
+
+        private sealed class SecurityInstanceOverride : System.IDisposable
+        {
+            private readonly AppSecSecurity _previous;
+            private readonly AppSecSecurity _current;
+
+            public SecurityInstanceOverride(AppSecSecurity previous, AppSecSecurity current)
+            {
+                _previous = previous;
+                _current = current;
+            }
+
+            public void Dispose()
+            {
+                AppSecSecurity.Instance = _previous;
+                _current.Dispose();
             }
         }
     }

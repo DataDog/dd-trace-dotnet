@@ -277,7 +277,7 @@ internal sealed partial class SecurityReporter
                 }
             }
 
-            if (written && !result.HasKeep)
+            if (written)
             {
                 Security.Instance?.SetTraceSamplingPriority(_span, false); // Avoid downstream propagation in Standalone mode
             }
