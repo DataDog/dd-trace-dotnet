@@ -1,10 +1,7 @@
 ---
 name: analyze-crash
-description: Stack Trace Crash Analysis for dd-trace-dotnet
+description: "Analyzes native and managed crash stack traces for dd-trace-dotnet, classifying frames (CLR Runtime, native profiler, managed tracer), locating source code, reconstructing crash flow, and identifying related PRs. Use when the user shares a crash dump, stack trace, segfault, access violation, or native exception related to dd-trace-dotnet or the Datadog .NET tracer."
 argument-hint: <paste-stack-trace>
-disable-model-invocation: true
-context: fork
-agent: general-purpose
 ---
 
 # Stack Trace Crash Analysis for dd-trace-dotnet

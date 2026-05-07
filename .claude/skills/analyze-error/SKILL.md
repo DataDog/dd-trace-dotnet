@@ -1,8 +1,7 @@
 ---
 name: analyze-error
-description: Error Stack Trace Analysis for dd-trace-dotnet
+description: "Analyzes redacted .NET exception stack traces from dd-trace-dotnet, identifies root causes, maps failures to instrumentation code paths, and suggests fixes with git diffs. Use when the user shares an error message, exception, or redacted stack trace from Datadog .NET APM telemetry, or asks about debugging dd-trace-dotnet exceptions, duck typing errors, or instrumentation failures."
 argument-hint: <paste-error-stack-trace> <ctrl+enter any other context>
-disable-model-invocation: true
 ---
 
 # Exception Analysis for dd-trace-dotnet

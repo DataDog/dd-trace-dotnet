@@ -1,11 +1,8 @@
 ---
 name: review-pr
-description: Perform a review on a GitHub PR, leaving comments on the PR
+description: "Reviews a GitHub pull request for the dd-trace-dotnet repository, analyzing code changes for bugs, performance issues, and security concerns, then posts inline comments and a summary directly on the PR. Use when the user asks to review a PR, wants code review feedback, mentions pull request review, or shares a PR number or GitHub PR URL."
 argument-hint: <pr-number-or-url>
-disable-model-invocation: true
 allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr comment:*), Bash(gh --version), Bash(gh auth status)
-context: fork
-agent: general-purpose
 ---
 
 # Review GitHub PR
