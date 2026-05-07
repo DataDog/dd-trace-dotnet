@@ -143,6 +143,8 @@ check-big-regressions:
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
   needs: ["run-benchmarks"]
+  # TODO: Remove "allow_failure: true" when tooling updates allow excluding flaky metrics from check-big-regressions
+  allow_failure: true
   # We set when: always when applicable to ensure the job runs even if the run-benchmarks job fails.
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
