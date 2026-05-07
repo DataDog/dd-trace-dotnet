@@ -5,16 +5,14 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Numerics;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -29,7 +27,7 @@ public class FeatureFlagsModuleTests
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {
         // Arrange
-        var rcmManager = new RcmSubscriptionManagerMock();
+        var rcmManager = new MockRcmSubscriptionManager();
         var settings = CreateSettings();
         var module = new FeatureFlagsModule(settings, rcmManager);
 
@@ -85,45 +83,5 @@ public class FeatureFlagsModuleTests
         };
 
         return new TracerSettings(new NameValueConfigurationSource(collection));
-    }
-
-    private class RcmSubscriptionManagerMock : IRcmSubscriptionManager
-    {
-        public bool HasAnySubscription => LastSubscription != null;
-
-        public ICollection<string> ProductKeys { get; } = new List<string>();
-
-        public ISubscription? LastSubscription { get; private set; }
-
-        public void SubscribeToChanges(ISubscription subscription)
-        {
-            LastSubscription = subscription;
-            foreach (var productKey in subscription.ProductKeys)
-            {
-                ProductKeys.Add(productKey);
-            }
-        }
-
-        public void Replace(ISubscription oldSubscription, ISubscription newSubscription)
-        {
-            LastSubscription = newSubscription;
-        }
-
-        public void Unsubscribe(ISubscription subscription)
-        {
-            if (LastSubscription == subscription)
-            {
-                LastSubscription = null;
-            }
-        }
-
-        public void SetCapability(BigInteger index, bool available)
-        {
-        }
-
-        public byte[] GetCapabilities() => [];
-
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
-            => Task.CompletedTask;
     }
 }
