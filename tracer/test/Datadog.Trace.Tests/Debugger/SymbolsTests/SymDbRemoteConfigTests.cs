@@ -127,6 +127,126 @@ public class SymDbRemoteConfigTests
         subscriptionManager.HasAnySubscription.Should().BeFalse();
     }
 
+    [Fact]
+    public void DisposeAfterSubscribeUnregistersSubscription()
+    {
+        // Documents the invariant DebuggerManager.SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded
+        // relies on: a shutdown that disposes after Subscribe() returned must unsubscribe.
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        var symDbRemoteConfig = new SymDbRemoteConfig(subscriptionManager, _ => { });
+
+        symDbRemoteConfig.Subscribe();
+        subscriptionManager.HasAnySubscription.Should().BeTrue();
+
+        symDbRemoteConfig.Dispose();
+        subscriptionManager.HasAnySubscription.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SubscribeAfterDisposeIsNoOp()
+    {
+        // Documents the other ordering: if shutdown disposes BEFORE the init thread
+        // gets to call Subscribe(), Subscribe must safely no-op so the subscription
+        // is never registered.
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        var symDbRemoteConfig = new SymDbRemoteConfig(subscriptionManager, _ => { });
+
+        symDbRemoteConfig.Dispose();
+        symDbRemoteConfig.Subscribe();
+
+        subscriptionManager.HasAnySubscription.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RemovedSymDbConfigDisablesUploader()
+    {
+        var values = new List<bool>();
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        using var symDbRemoteConfig = new SymDbRemoteConfig(subscriptionManager, values.Add);
+
+        symDbRemoteConfig.Subscribe();
+
+        await subscriptionManager.Update(CreateConfigsByProduct(uploadSymbols: true));
+
+        var removedPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/symDb/config");
+        var result = await subscriptionManager.Update(
+            new Dictionary<string, List<RemoteConfiguration>>(),
+            new Dictionary<string, List<RemoteConfigurationPath>>
+            {
+                { RcmProducts.LiveDebuggingSymbolDb, [removedPath] },
+            });
+
+        values.Should().Equal(true, false);
+
+        // Removals are not acknowledged.
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RemovedNonSymDbConfigIsIgnored()
+    {
+        var values = new List<bool>();
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        using var symDbRemoteConfig = new SymDbRemoteConfig(subscriptionManager, values.Add);
+
+        symDbRemoteConfig.Subscribe();
+
+        await subscriptionManager.Update(CreateConfigsByProduct(uploadSymbols: true));
+
+        var removedPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/other/config");
+        await subscriptionManager.Update(
+            new Dictionary<string, List<RemoteConfiguration>>(),
+            new Dictionary<string, List<RemoteConfigurationPath>>
+            {
+                { RcmProducts.LiveDebuggingSymbolDb, [removedPath] },
+            });
+
+        values.Should().Equal(true);
+    }
+
+    [Fact]
+    public async Task MalformedPayloadProducesApplyError()
+    {
+        var values = new List<bool>();
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        using var symDbRemoteConfig = new SymDbRemoteConfig(subscriptionManager, values.Add);
+
+        symDbRemoteConfig.Subscribe();
+
+        var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/symDb/config");
+        var malformedContent = Encoding.UTF8.GetBytes("{not valid json");
+        var malformed = new RemoteConfiguration(path, malformedContent, malformedContent.Length, new Dictionary<string, string>(), version: 1);
+
+        var result = await subscriptionManager.Update(new Dictionary<string, List<RemoteConfiguration>>
+        {
+            { RcmProducts.LiveDebuggingSymbolDb, [malformed] },
+        });
+
+        result.Should().ContainSingle()
+              .Which.Should().Match<ApplyDetails>(a => a.Filename == path.Path && a.ApplyState == ApplyStates.ERROR && !string.IsNullOrEmpty(a.Error));
+
+        // The callback should not have been invoked because the payload didn't deserialize.
+        values.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TryGetUploadSymbolsReportsDeserializationError()
+    {
+        var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/symDb/config");
+        var malformedContent = Encoding.UTF8.GetBytes("{not valid json");
+        var malformed = new RemoteConfiguration(path, malformedContent, malformedContent.Length, new Dictionary<string, string>(), version: 1);
+
+        var configsByProduct = new Dictionary<string, List<RemoteConfiguration>>
+        {
+            { RcmProducts.LiveDebuggingSymbolDb, [malformed] },
+        };
+
+        SymDbRemoteConfig.TryGetUploadSymbols(configsByProduct, out _, out var configPath, out var deserializationError)
+                        .Should().BeFalse();
+        configPath.Should().Be(path.Path);
+        deserializationError.Should().NotBeNullOrEmpty();
+    }
+
     private static RemoteConfiguration CreateRemoteConfiguration(string id, object payload)
     {
         var path = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.LiveDebuggingSymbolDb}/{id}/config");
@@ -181,7 +301,14 @@ public class SymDbRemoteConfigTests
 
         public Task<ApplyDetails[]> Update(Dictionary<string, List<RemoteConfiguration>> configsByProduct)
         {
-            return _subscription?.Invoke(configsByProduct, null) ?? Task.FromResult(Array.Empty<ApplyDetails>());
+            return Update(configsByProduct, null);
+        }
+
+        public Task<ApplyDetails[]> Update(
+            Dictionary<string, List<RemoteConfiguration>> configsByProduct,
+            Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
+        {
+            return _subscription?.Invoke(configsByProduct, removedConfigsByProduct) ?? Task.FromResult(Array.Empty<ApplyDetails>());
         }
     }
 }

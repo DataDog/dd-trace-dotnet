@@ -8,12 +8,15 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
     internal sealed class SymDbRemoteConfig : IDisposable
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymDbRemoteConfig>();
+
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly Action<bool> _onUploadSymbolsChanged;
         private readonly object _lock = new();
@@ -56,22 +59,45 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private ApplyDetails[] OnRemoteConfigurationChanged(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
         {
-            if (TryGetUploadSymbols(addedConfig, out var uploadSymbols, out var configPath))
+            if (TryGetUploadSymbols(addedConfig, out var uploadSymbols, out var configPath, out var deserializationError))
             {
                 _onUploadSymbolsChanged(uploadSymbols);
                 return [ApplyDetails.FromOk(configPath)];
+            }
+
+            if (deserializationError is not null)
+            {
+                return [ApplyDetails.FromError(configPath, deserializationError)];
+            }
+
+            // Treat removal of the SymDB enablement payload as upload_symbols=false
+            if (removedConfig is not null
+                && removedConfig.TryGetValue(RcmProducts.LiveDebuggingSymbolDb, out var removedPaths))
+            {
+                foreach (var path in removedPaths)
+                {
+                    if (path.Id.StartsWith(DefinitionPaths.SymDB, StringComparison.Ordinal))
+                    {
+                        _onUploadSymbolsChanged(false);
+                        break;
+                    }
+                }
             }
 
             return [];
         }
 
         internal static bool TryGetUploadSymbols(Dictionary<string, List<RemoteConfiguration>> addedConfig, out bool uploadSymbols)
-            => TryGetUploadSymbols(addedConfig, out uploadSymbols, out _);
+            => TryGetUploadSymbols(addedConfig, out uploadSymbols, out _, out _);
 
         internal static bool TryGetUploadSymbols(Dictionary<string, List<RemoteConfiguration>> addedConfig, out bool uploadSymbols, out string configPath)
+            => TryGetUploadSymbols(addedConfig, out uploadSymbols, out configPath, out _);
+
+        internal static bool TryGetUploadSymbols(Dictionary<string, List<RemoteConfiguration>> addedConfig, out bool uploadSymbols, out string configPath, out string? deserializationError)
         {
             uploadSymbols = false;
             configPath = string.Empty;
+            deserializationError = null;
 
             if (!addedConfig.TryGetValue(RcmProducts.LiveDebuggingSymbolDb, out var configs))
             {
@@ -86,11 +112,21 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var rawFile = new NamedRawFile(remoteConfiguration.Path, remoteConfiguration.Contents);
-                if (rawFile.Deserialize<SymDbEnablement>().TypedFile is { } enablement)
+                try
                 {
-                    uploadSymbols = enablement.UploadSymbols;
+                    if (rawFile.Deserialize<SymDbEnablement>().TypedFile is { } enablement)
+                    {
+                        uploadSymbols = enablement.UploadSymbols;
+                        configPath = remoteConfiguration.Path.Path;
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to deserialize SymDB enablement payload {Path}", remoteConfiguration.Path.Path);
                     configPath = remoteConfiguration.Path.Path;
-                    return true;
+                    deserializationError = ex.Message;
+                    return false;
                 }
             }
 
