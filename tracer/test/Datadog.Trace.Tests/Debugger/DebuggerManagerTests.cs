@@ -99,6 +99,26 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
+        [Fact]
+        public void SymbolUploaderStartFailureClearsOnlyFailedUploader()
+        {
+            var manager = CreateDebuggerManager();
+            var failedUploader = new DebuggerUploaderMock();
+            var replacementUploader = new DebuggerUploaderMock();
+            SetSymbolsUploader(manager, failedUploader);
+
+            InvokeHandleSymbolUploaderStartFailure(manager, failedUploader);
+
+            failedUploader.Disposed.Should().BeTrue();
+            manager.SymbolsUploader.Should().BeNull();
+
+            SetSymbolsUploader(manager, replacementUploader);
+            InvokeHandleSymbolUploaderStartFailure(manager, failedUploader);
+
+            replacementUploader.Disposed.Should().BeFalse();
+            manager.SymbolsUploader.Should().BeSameAs(replacementUploader);
+        }
+
         private static DebuggerManager CreateDebuggerManager()
         {
             var constructor = typeof(DebuggerManager).GetConstructor(
@@ -139,6 +159,13 @@ namespace Datadog.Trace.Tests.Debugger
             var method = typeof(DebuggerManager).GetMethod("OnSymbolDatabaseRemoteConfiguration", BindingFlags.Instance | BindingFlags.NonPublic);
             method.Should().NotBeNull();
             method!.Invoke(manager, [tracerSettings, debuggerSettings, uploadSymbols]);
+        }
+
+        private static void InvokeHandleSymbolUploaderStartFailure(DebuggerManager manager, IDebuggerUploader failedUploader)
+        {
+            var method = typeof(DebuggerManager).GetMethod("HandleSymbolUploaderStartFailure", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Should().NotBeNull();
+            method!.Invoke(manager, [failedUploader, null]);
         }
 
         private static void InvokeShutdownTasks(DebuggerManager manager)

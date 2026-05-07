@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly IDiscoveryService _discoveryService;
         private volatile bool _disposed;
         private byte[]? _payload;
-        private string? _symDbEndpoint;
+        private volatile string? _symDbEndpoint;
 
         private SymbolsUploader(
             IBatchUploadApi api,
@@ -183,6 +183,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task ProcessItem(Assembly assembly)
         {
+            // Disable/dispose is cooperative: already-running extraction or upload can finish one bounded batch.
             try
             {
                 var assemblyName = assembly.GetName().Name;
@@ -447,7 +448,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                return !string.IsNullOrEmpty(Volatile.Read(ref _symDbEndpoint));
+                return !string.IsNullOrEmpty(_symDbEndpoint);
             }
             catch (OperationCanceledException)
             {
