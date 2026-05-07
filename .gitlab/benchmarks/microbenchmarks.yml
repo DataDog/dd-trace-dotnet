@@ -108,13 +108,17 @@ run-benchmarks:
     # Fetch DD_API_KEY from SSM (in GitLab runner's AWS account) and export for bp-infra
     - export DD_API_KEY=$(aws ssm get-parameter --name "ci.dd-trace-dotnet.dd_api_key-prod" --with-decryption --query "Parameter.Value" --output text --region "${AWS_REGION}")
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
+    # Nuke's BuildBenchmarks target (see Build.cs) checks PR_NUMBER to skip building
+    # Benchmarks.OpenTelemetry.Api on PRs. Only int.TryParse is used (boolean check),
+    # so any integer works. The actual PR number is not needed in this code path.
+    - if [ "$CI_COMMIT_REF_NAME" != "master" ]; then export PR_NUMBER=1; fi
     # Run benchmarks on ephemeral instance
     - |
       bp-infra launch \
         --provision .gitlab/benchmarks/microbenchmarks/infrastructure/instance.yml \
         --region "${AWS_REGION}" \
         --os windows \
-        --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_)" \
+        --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_|PR_NUMBER)" \
         --bypass-stack-destroy \
         $CLEANUP_ARG
     # Fetch results from S3, analyze, upload, and post PR comment
