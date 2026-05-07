@@ -106,7 +106,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (_isDisabled)
             {
-                Log.Debug("Exception replay is disabled.");
+                Log.Information("Exception replay is disabled.");
                 return;
             }
 
@@ -140,13 +140,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (_isDisabled)
             {
-                Log.Debug("Exception replay is disabled.");
+                Log.Information("Exception replay is disabled.");
                 return;
             }
 
             if (_snapshotSink == null)
             {
-                Log.Debug("The sink of the Exception Replay is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
+                Log.Information("The sink of the Exception Replay is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
                 return;
             }
 

@@ -464,7 +464,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             // AgentConfiguration is a record, so this compares by value
             if (existingConfiguration is null || !newConfig.Equals(existingConfiguration))
             {
-                Log.Debug("Discovery configuration updated, notifying subscribers: {Configuration}", newConfig);
+                Log.Information("Discovery configuration updated, notifying subscribers: {Configuration}", newConfig);
                 NotifySubscribers(newConfig);
             }
         }

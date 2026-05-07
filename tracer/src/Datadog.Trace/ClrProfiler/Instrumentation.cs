@@ -321,7 +321,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
-                    Log.Debug("Initializing tracer singleton instance.");
+                    Log.Information("Initializing tracer singleton instance.");
                 }
             }
             catch (Exception ex)
@@ -331,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                Log.Debug("Initializing security singleton instance.");
+                Log.Information("Initializing security singleton instance.");
                 _ = Security.Instance;
             }
             catch (Exception ex)
@@ -365,7 +365,7 @@ namespace Datadog.Trace.ClrProfiler
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
-                Log.Debug("Initializing ServiceFabric instrumentation");
+                Log.Information("Initializing ServiceFabric instrumentation");
 
                 try
                 {
@@ -391,7 +391,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (Tracer.Instance.Settings.IsActivityListenerEnabled)
                 {
-                    Log.Debug("Initializing activity listener.");
+                    Log.Information("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
                 }
             }
@@ -405,7 +405,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
                 {
-                    Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
+                    Log.Information("Initializing Opentelemetry Protocol Metrics collection.");
                     OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);
                 }
             }
@@ -424,7 +424,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (Tracer.Instance.Settings.IsActivityListenerEnabled)
                 {
-                    Log.Debug("Initializing OpenTelemetry components.");
+                    Log.Information("Initializing OpenTelemetry components.");
                     OpenTelemetry.Sdk.Initialize();
                 }
             }
@@ -433,12 +433,12 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing OpenTelemetry components.");
             }
 
-            Log.Debug("Initialization of non native parts finished.");
+            Log.Information("Initialization of non native parts finished.");
 
             var tracer = Tracer.Instance;
             if (tracer is null)
             {
-                Log.Debug("Tracer.Instance is null after InitializeNoNativeParts was invoked");
+                Log.Information("Tracer.Instance is null after InitializeNoNativeParts was invoked");
             }
 
             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
@@ -450,7 +450,7 @@ namespace Datadog.Trace.ClrProfiler
             var tracer = Tracer.Instance;
             if (tracer is null)
             {
-                Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
+                Log.Information("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
             }
             else
             {
@@ -468,7 +468,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    Log.Debug("Initializing TraceMethods instrumentation.");
+                    Log.Information("Initializing TraceMethods instrumentation.");
                     var traceMethodsConfiguration = tracer.Settings.TraceMethods;
                     var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
                     NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);

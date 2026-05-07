@@ -159,13 +159,13 @@ internal sealed class GitMetadataTagsProvider : IGitMetadataTagsProvider
             var nbTries = Interlocked.Increment(ref _tryCount);
             if (nbTries > 100 || _scopeManager.Active?.Span != null)
             {
-                Log.Debug("Giving up on trying to locate entry assembly. SourceLink information will not be retrieved.");
+                Log.Information("Giving up on trying to locate entry assembly. SourceLink information will not be retrieved.");
                 result = GitMetadata.Empty;
                 return true;
             }
             else
             {
-                Log.Debug("Cannot extract SourceLink information as the entry assembly could not be determined.");
+                Log.Information("Cannot extract SourceLink information as the entry assembly could not be determined.");
                 result = default;
                 return false;
             }

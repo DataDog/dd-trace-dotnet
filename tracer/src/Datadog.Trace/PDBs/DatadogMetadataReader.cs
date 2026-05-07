@@ -81,7 +81,7 @@ namespace Datadog.Trace.Pdb
         {
             if (assembly == null || string.IsNullOrEmpty(assembly.Location))
             {
-                Logger.Debug("Skipping PDB reader creation because assembly or assembly location is missing.");
+                Logger.Information("Skipping PDB reader creation because assembly or assembly location is missing.");
                 return null;
             }
 
@@ -97,11 +97,11 @@ namespace Datadog.Trace.Pdb
                     return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath ?? assembly.Location, null, null);
                 }
 
-                Logger.Debug("No associated portable or embedded PDB was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                Logger.Information("No associated portable or embedded PDB was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
 
                 if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
                 {
-                    Logger.Debug("No standalone PDB file was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                    Logger.Information("No standalone PDB file was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
                     return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
                 }
 
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Pdb
                 var dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
                 if (dnlibReader == null)
                 {
-                    Logger.Debug("A standalone PDB file was found for {Assembly} but a dnlib PDB reader could not be created. AssemblyLocation={AssemblyLocation}, PdbPath={PdbPath}", assembly.FullName, assembly.Location, pdbFullPath);
+                    Logger.Information("A standalone PDB file was found for {Assembly} but a dnlib PDB reader could not be created. AssemblyLocation={AssemblyLocation}, PdbPath={PdbPath}", assembly.FullName, assembly.Location, pdbFullPath);
                     return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
                 }
 
@@ -120,12 +120,12 @@ namespace Datadog.Trace.Pdb
             }
             catch (UnauthorizedAccessException e)
             {
-                Logger.Debug("Unable to access PDB for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
+                Logger.Information("Unable to access PDB for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
                 return null;
             }
             catch (IOException e)
             {
-                Logger.Debug("Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
+                Logger.Information("Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
                 return null;
             }
             catch (Exception e)

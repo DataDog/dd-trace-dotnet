@@ -64,7 +64,7 @@ namespace Datadog.Trace.Configuration
 
             if (applicableConfigs.Count == 0)
             {
-                Log.Debug("No APM_TRACING configurations match service '{ServiceName}' and environment '{Environment}'", serviceName, environment);
+                Log.Information("No APM_TRACING configurations match service '{ServiceName}' and environment '{Environment}'", serviceName, environment);
                 return GetNullObject();
             }
 

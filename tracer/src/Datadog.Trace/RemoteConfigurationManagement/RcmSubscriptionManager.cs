@@ -310,12 +310,12 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private async Task ProcessResponse(GetRcmResponse response)
     {
-        if (Log.IsEnabled(LogEventLevel.Debug))
+        if (Log.IsEnabled(LogEventLevel.Information))
         {
             var description = response.TargetFiles?.Count > 0
                                   ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
                                   : "that is empty.";
-            Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
+            Log.Information("Received Remote Configuration response {ResponseDescription}.", description);
         }
 
         var signed = response.Targets?.Signed?.Targets;
