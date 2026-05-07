@@ -240,7 +240,7 @@ public sealed partial record TracerSettings
 
             if (isSameMutableSettings && isSameExporterSettings)
             {
-                Log.Debug("No changes detected in the new configuration");
+                Log.Information("No changes detected in the new configuration");
                 return null;
             }
 

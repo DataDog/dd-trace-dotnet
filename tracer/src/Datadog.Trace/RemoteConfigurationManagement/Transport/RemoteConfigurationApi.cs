@@ -52,7 +52,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var configEndpoint = Volatile.Read(ref _configEndpoint);
             if (string.IsNullOrEmpty(configEndpoint))
             {
-                Log.Debug("Waiting for discovery service to retrieve configuration.");
+                Log.Information("Waiting for discovery service to retrieve configuration.");
                 return null;
             }
 
@@ -65,7 +65,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var isRcmDisabled = apiResponse.StatusCode == 404;
             if (isRcmDisabled)
             {
-                Log.Debug("Remote Configuration has been disabled.");
+                Log.Information("Remote Configuration has been disabled.");
                 return null;
             }
 

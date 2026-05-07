@@ -94,14 +94,14 @@ namespace Datadog.Trace.Configuration
 
             if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
             {
-                Log.Debug("No changes detected in the new dynamic debugger configuration");
+                Log.Information("No changes detected in the new dynamic debugger configuration");
                 return;
             }
 
             Log.Information("Applying new dynamic debugger configuration");
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            if (Log.IsEnabled(LogEventLevel.Information))
             {
-                Log.Debug(
+                Log.Information(
                     "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}",
                     dynamicDebuggerSettings.DynamicInstrumentationEnabled,
                     dynamicDebuggerSettings.ExceptionReplayEnabled,
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Configuration
                 {
                     if (activeConfigurations.Remove(removedConfig.Id))
                     {
-                        Log.Debug("Explicitly removed APM_TRACING configuration {ConfigId}", removedConfig.Id);
+                        Log.Information("Explicitly removed APM_TRACING configuration {ConfigId}", removedConfig.Id);
                     }
                 }
             }
@@ -137,9 +137,9 @@ namespace Datadog.Trace.Configuration
             if (configByProduct.TryGetValue(ProductName, out var apmLibrary))
             {
                 // if we have some config, then we will "overwrite" everything that's currently active
-                if (Log.IsEnabled(LogEventLevel.Debug) && activeConfigurations.Count > 0)
+                if (Log.IsEnabled(LogEventLevel.Information) && activeConfigurations.Count > 0)
                 {
-                    Log.Debug<int, int>("Implicitly removing {RemovedCount} APM_TRACING configurations and replacing with {AddedCount}", activeConfigurations.Count, apmLibrary.Count);
+                    Log.Information<int, int>("Implicitly removing {RemovedCount} APM_TRACING configurations and replacing with {AddedCount}", activeConfigurations.Count, apmLibrary.Count);
                 }
 
                 activeConfigurations.Clear();

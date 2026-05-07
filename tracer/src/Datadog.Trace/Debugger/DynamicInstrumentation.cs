@@ -159,7 +159,7 @@ namespace Datadog.Trace.Debugger
             }
             catch (OperationCanceledException e)
             {
-                Log.Debug(e, "Dynamic Instrumentation stopped due task cancellation");
+                Log.Information(e, "Dynamic Instrumentation stopped due task cancellation");
             }
             catch (Exception e)
             {
