@@ -105,6 +105,9 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         {
             Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
                          " is By-Ref like.");
+            // We couldn't reliably determine whether this value is byref-like.
+            // Do not instrument it. Instrumenting byref-like values can lead to runtime failures.
+            continue;
         }
         else if (isTypeIsByRefLike)
         {

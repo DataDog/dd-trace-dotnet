@@ -538,7 +538,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check-azure-pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts

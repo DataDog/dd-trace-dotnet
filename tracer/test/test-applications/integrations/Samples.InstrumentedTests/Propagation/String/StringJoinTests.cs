@@ -83,6 +83,39 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenDeferredStringEnumerable_WhenCallingJoin_EnumerableIsOnlyEnumeratedOnce()
+    {
+        const int elementCount = 3;
+        var sideEffectInvocations = 0;
+        var values = Enumerable.Range(0, elementCount).Select(i =>
+        {
+            sideEffectInvocations++;
+            return i == 0 ? TaintedString : $"value{i}";
+        });
+
+        var result = System.String.Join("|", values);
+
+        Assert.Equal("TaintedString|value1|value2", result);
+        Assert.Equal(elementCount, sideEffectInvocations);
+        Assert.Equal(":+-TaintedString-+:|value1|value2", FormatTainted(result));
+    }
+
+    [Fact]
+    public void GivenNullEnumerable_WhenCallingJoin_ThrowsArgumentNullExceptionForValues()
+    {
+        var stringEnumerableException = Assert.Throws<ArgumentNullException>(() => System.String.Join("|", (IEnumerable<string>)null));
+        Assert.Equal("values", stringEnumerableException.ParamName);
+
+        var genericEnumerableException = Assert.Throws<ArgumentNullException>(() => System.String.Join<object>("|", (IEnumerable<object>)null));
+        Assert.Equal("values", genericEnumerableException.ParamName);
+
+#if NETCOREAPP3_1_OR_GREATER
+        var charSeparatorException = Assert.Throws<ArgumentNullException>(() => System.String.Join('|', (IEnumerable<string>)null));
+        Assert.Equal("values", charSeparatorException.ParamName);
+#endif
+    }
+
+    [Fact]
     public void GivenATaintedObject_WhenCallingJoinWithStringArrayAndIndex_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", System.String.Join(",", new string[] { taintedValue, taintedValue2 }, 0, 1), () => System.String.Join(",", new string[] { taintedValue, taintedValue2 }, 0, 1));
