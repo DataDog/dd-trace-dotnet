@@ -59,6 +59,7 @@ namespace Datadog.Trace.FeatureFlags
                         defaultValue,
                         EvaluationReason.Error,
                         error: "PROVIDER_NOT_READY",
+                        errorCode: ErrorCode.ProviderNotReady,
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "PROVIDER_NOT_READY"
@@ -72,6 +73,7 @@ namespace Datadog.Trace.FeatureFlags
                         defaultValue,
                         EvaluationReason.Error,
                         error: "FLAG_NOT_FOUND",
+                        errorCode: ErrorCode.FlagNotFound,
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "FLAG_NOT_FOUND"
@@ -93,6 +95,7 @@ namespace Datadog.Trace.FeatureFlags
                         defaultValue,
                         EvaluationReason.Error,
                         error: "TYPE_MISMATCH",
+                        errorCode: ErrorCode.TypeMismatch,
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "TYPE_MISMATCH"
@@ -168,6 +171,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: "PARSE_ERROR",
+                    errorCode: ErrorCode.ParseError,
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "PARSE_ERROR",
@@ -181,6 +185,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: "TARGETING_KEY_MISSING",
+                    errorCode: ErrorCode.TargetingKeyMissing,
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "TARGETING_KEY_MISSING"
@@ -193,6 +198,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: ex.Message,
+                    errorCode: ErrorCode.General,
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "GENERAL",
@@ -662,6 +668,7 @@ namespace Datadog.Trace.FeatureFlags
                     defaultValue,
                     EvaluationReason.Error,
                     error: error,
+                    errorCode: ErrorCode.ParseError,
                     metadata: new Dictionary<string, string>
                     {
                         ["errorCode"] = "PARSE_ERROR",
