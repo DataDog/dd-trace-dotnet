@@ -11,6 +11,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.Activity;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
@@ -718,6 +720,145 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             if (entityName.StartsWith("Instance_", StringComparison.Ordinal)) { return "instance"; }
 
             return entityName;
+        }
+
+        /// <summary>
+        /// Gets the ActivityKind for MassTransit operations based on the operation name.
+        /// </summary>
+        internal static ActivityKind GetActivityKind(IActivity5 activity)
+        {
+            var operationName = activity.OperationName;
+
+            // Check messaging.operation tag which MassTransit sets
+            string? messagingOperation = null;
+            foreach (var tag in activity.Tags)
+            {
+                if (tag.Key == "messaging.operation")
+                {
+                    messagingOperation = tag.Value;
+                    break;
+                }
+            }
+
+            if (!StringUtil.IsNullOrWhiteSpace(messagingOperation))
+            {
+                return messagingOperation switch
+                {
+                    "send" => ActivityKind.Producer,
+                    "receive" => ActivityKind.Consumer,
+                    "process" => ActivityKind.Consumer,
+                    _ => activity.Kind
+                };
+            }
+
+            // Fallback to operation name analysis (case-insensitive using ToLowerInvariant for .NET Framework compatibility).
+            // Broad substring match here is intentional: MassTransit's actual ActivitySource names are well-defined
+            // (e.g. "MassTransit.Transport.Send", "MassTransit.Consumer.Consume"), so this rarely fires, but a forward-
+            // compatible substring check absorbs any new operation name MT may introduce without needing a code change.
+            if (operationName is not null)
+            {
+                var lowerOperationName = operationName.ToLowerInvariant();
+
+                if (lowerOperationName.Contains("send"))
+                {
+                    return ActivityKind.Producer;
+                }
+
+                if (lowerOperationName.Contains("receive") ||
+                    lowerOperationName.Contains("consume") ||
+                    lowerOperationName.Contains("handle") ||
+                    lowerOperationName.Contains("process") ||
+                    lowerOperationName.Contains("saga") ||
+                    lowerOperationName.Contains("activity"))
+                {
+                    return ActivityKind.Consumer;
+                }
+            }
+
+            return activity.Kind;
+        }
+
+        /// <summary>
+        /// Sets the ActivityKind for MassTransit operations.
+        /// </summary>
+        internal static void SetActivityKind(IActivity5 activity)
+        {
+            ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
+        }
+
+        /// <summary>
+        /// Creates a resource name for MassTransit operations based on destination and operation.
+        /// </summary>
+        internal static string CreateResourceName(string? destination, string? operation)
+        {
+            var cleanDestination = ExtractDestinationName(destination);
+            if (StringUtil.IsNullOrWhiteSpace(cleanDestination))
+            {
+                cleanDestination = "unknown";
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(operation))
+            {
+                return cleanDestination;
+            }
+
+            return $"{cleanDestination} {operation}";
+        }
+
+        /// <summary>
+        /// Enriches a MassTransit Activity with component tag, preserved operation name, and a
+        /// destination-derived display name. Called from MassTransitActivityHandler when an MT8
+        /// ActivitySource activity is mapped to a Datadog span.
+        /// </summary>
+        internal static void EnhanceActivityMetadata(IActivity5 activity)
+        {
+            // Add component tag to identify this as a MassTransit span
+            activity.AddTag(Tags.InstrumentationName, MassTransitConstants.ComponentTagName);
+
+            // Preserve the original MT8 activity operation name (e.g. "MassTransit.Transport.Send")
+            var originalOperationName = activity.OperationName ?? string.Empty;
+            if (!StringUtil.IsNullOrWhiteSpace(originalOperationName))
+            {
+                activity.AddTag("operation.name", originalOperationName);
+            }
+
+            // Read destination from messaging.destination.name, fallback to peer.address for process/consume spans.
+            string? destination = null;
+            string? peerAddress = null;
+            string? operation = null;
+
+            foreach (var tag in activity.Tags)
+            {
+                switch (tag.Key)
+                {
+                    case "messaging.destination.name":
+                        destination = tag.Value;
+                        break;
+                    case "peer.address":
+                        peerAddress = tag.Value;
+                        break;
+                    case "messaging.operation":
+                        operation = tag.Value;
+                        break;
+                }
+
+                // Early exit if we found all tags
+                if (destination != null && peerAddress != null && operation != null)
+                {
+                    break;
+                }
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(destination))
+            {
+                destination = peerAddress?.TrimStart('/');
+            }
+
+            // Update DisplayName (resource name) from destination + operation
+            if (!StringUtil.IsNullOrWhiteSpace(destination))
+            {
+                activity.DisplayName = CreateResourceName(destination, operation);
+            }
         }
 
         private readonly struct PropertyCacheKey : IEquatable<PropertyCacheKey>

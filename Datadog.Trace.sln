@@ -641,6 +641,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.LifetimeManager.Ter
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MassTransit7", "tracer\test\test-applications\integrations\Samples.MassTransit7\Samples.MassTransit7.csproj", "{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MassTransit8", "tracer\test\test-applications\integrations\Samples.MassTransit8\Samples.MassTransit8.csproj", "{962B244A-C821-40BA-B4D1-D5AB27493E30}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Ocelot.DistributedTracing", "tracer\test\test-applications\integrations\Samples.Ocelot.DistributedTracing\Samples.Ocelot.DistributedTracing.csproj", "{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AutoInstrumentation.Generator.Core", "tracer\src\Datadog.AutoInstrumentation.Generator.Core\Datadog.AutoInstrumentation.Generator.Core.csproj", "{B3A07CA3-3536-4D43-81A3-A5A73FB76F22}"
@@ -1573,6 +1575,10 @@ Global
 		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{962B244A-C821-40BA-B4D1-D5AB27493E30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{962B244A-C821-40BA-B4D1-D5AB27493E30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{962B244A-C821-40BA-B4D1-D5AB27493E30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{962B244A-C821-40BA-B4D1-D5AB27493E30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1829,6 +1835,7 @@ Global
 		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{962B244A-C821-40BA-B4D1-D5AB27493E30} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
