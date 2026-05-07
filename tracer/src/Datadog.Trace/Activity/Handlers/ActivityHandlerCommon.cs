@@ -30,6 +30,12 @@ namespace Datadog.Trace.Activity.Handlers
         // cannot: 1. Activities the customer abandoned without calling Stop (their WeakReference
         // target is GC'd); 2. Activities whose Stop fired but our listener callback missed.
         private static readonly TimeSpan ReconciliationInterval = TimeSpan.FromSeconds(10);
+
+        // Activity.Stop() sets Duration before our listener callback runs. The sweep can race
+        // that callback, so we only treat a stopped activity as "missed" once it's been stopped
+        // long enough that an in-flight listener would have completed.
+        private static readonly TimeSpan MissedStopGracePeriod = TimeSpan.FromMinutes(1);
+
         private static int _sweepInProgress;
         private static Timer? _reconciliationTimer;
 
@@ -331,7 +337,9 @@ namespace Datadog.Trace.Activity.Handlers
 
             try
             {
-                var result = ReconcileSweepCore(ActivityMappingById);
+                // Activities whose end time is at or after missedStopCutoff are considered "still
+                // in the grace period" and skipped — the listener callback may still be in flight.
+                var result = ReconcileSweepCore(ActivityMappingById, missedStopCutoff: DateTime.UtcNow - MissedStopGracePeriod);
                 if ((result.GcCollected > 0 || result.MissedStop > 0) && Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug<int, int, int>(
@@ -352,7 +360,9 @@ namespace Datadog.Trace.Activity.Handlers
         }
 
         [TestingAndPrivateOnly]
-        internal static ReconciliationSweepResult ReconcileSweepCore(ConcurrentDictionary<ActivityKey, ActivityMapping> mappings)
+        internal static ReconciliationSweepResult ReconcileSweepCore(
+            ConcurrentDictionary<ActivityKey, ActivityMapping> mappings,
+            DateTime missedStopCutoff)
         {
             var gcCollected = 0;
             var missedStop = 0;
@@ -423,11 +433,14 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 // Activity is still alive. A non-zero Duration on an entry that's still in
-                // the dictionary means Stop() was called but our listener callback didn't
-                // handle it — close it using the real end time.
+                // the dictionary means Stop() was called but our listener callback hasn't
+                // processed it yet. Skip if it stopped inside the grace window — the
+                // listener may still be in flight, and closing here would double-close the
+                // scope. Past the grace window, close it using the real end time.
                 if (activityObject.TryDuckCast<IActivity6>(out var activity6))
                 {
                     if (activity6.Duration != TimeSpan.Zero
+                     && activity6.StartTimeUtc.Add(activity6.Duration) < missedStopCutoff
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
@@ -438,6 +451,7 @@ namespace Datadog.Trace.Activity.Handlers
                 else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
                 {
                     if (activity5.Duration != TimeSpan.Zero
+                     && activity5.StartTimeUtc.Add(activity5.Duration) < missedStopCutoff
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {
@@ -448,6 +462,7 @@ namespace Datadog.Trace.Activity.Handlers
                 else if (activityObject.TryDuckCast<IActivity>(out var activity4))
                 {
                     if (activity4.Duration != TimeSpan.Zero
+                     && activity4.StartTimeUtc.Add(activity4.Duration) < missedStopCutoff
                      && mappings.TryRemove(kvp.Key, out var owned)
                      && owned.Scope is { } scope)
                     {

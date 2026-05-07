@@ -26,7 +26,7 @@ public class ReconciliationSweepTests
         var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
         var (_, span) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
 
-        var result = ActivityHandlerCommon.ReconcileSweepCore(mappings);
+        var result = ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
 
         result.GcCollected.Should().Be(1);
         result.MissedStop.Should().Be(0);
@@ -46,7 +46,7 @@ public class ReconciliationSweepTests
         var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
         var (_, span) = AddAbandonedMapping(mappings, tracer, "gcd-activity");
 
-        ActivityHandlerCommon.ReconcileSweepCore(mappings);
+        ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
 
         span.IsFinished.Should().BeTrue();
         span.GetTag("closed_reason").Should().Be("garbage_collected");
@@ -73,7 +73,7 @@ public class ReconciliationSweepTests
         var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
         var (_, span) = AddAbandonedMapping(mappings, tracer, "gcd-with-peer-service", presetTags: s => s.SetTag("peer.service", "downstream-api"));
 
-        ActivityHandlerCommon.ReconcileSweepCore(mappings);
+        ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
 
         span.IsFinished.Should().BeTrue();
         span.ServiceName.Should().Be("downstream-api");
@@ -96,13 +96,54 @@ public class ReconciliationSweepTests
             activity.Stop();
             activity.Duration.Should().NotBe(TimeSpan.Zero);
 
-            var result = ActivityHandlerCommon.ReconcileSweepCore(mappings);
+            var result = ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
 
             result.GcCollected.Should().Be(0);
             result.MissedStop.Should().Be(1);
             result.Iterated.Should().Be(1);
             mappings.Should().BeEmpty();
             span.IsFinished.Should().BeTrue();
+        }
+        finally
+        {
+            GC.KeepAlive(activity);
+        }
+    }
+
+    [Fact]
+    public async Task RecentlyStoppedActivity_IsSkippedDuringGracePeriod()
+    {
+        // The sweep races the OS Stop() listener callback. Stop() sets Duration before our
+        // callback runs, so a just-stopped activity will look "missed" even though the
+        // callback is in flight. With a cutoff before the activity's end time, the sweep
+        // should leave the entry alone.
+        await using var tracer = TracerHelper.CreateWithFakeAgent(new TracerSettings());
+
+        var mappings = new ConcurrentDictionary<ActivityKey, ActivityMapping>();
+
+        var activity = new SD.Activity("recently-stopped").Start();
+        try
+        {
+            var (key, span) = AddMapping(mappings, tracer, activity);
+            activity.Stop();
+            activity.Duration.Should().NotBe(TimeSpan.Zero);
+
+            // DateTime.MinValue is unconditionally before any real activity end time, so the
+            // grace-period check `endTime < cutoff` is always false — the entry is skipped.
+            var result = ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MinValue);
+
+            result.GcCollected.Should().Be(0);
+            result.MissedStop.Should().Be(0);
+            result.Iterated.Should().Be(1);
+            mappings.Should().ContainKey(key);
+            span.IsFinished.Should().BeFalse();
+
+            // Cleanup
+            if (mappings.TryRemove(key, out var owned))
+            {
+                owned.Scope?.Span.Finish();
+                owned.Scope?.Close();
+            }
         }
         finally
         {
@@ -122,7 +163,10 @@ public class ReconciliationSweepTests
         {
             var (key, span) = AddMapping(mappings, tracer, activity);
 
-            var result = ActivityHandlerCommon.ReconcileSweepCore(mappings);
+            // The activity is live (Duration == 0), so the missed-stop check short-circuits
+            // before the cutoff is consulted. MaxValue makes the test's intent explicit:
+            // "even with the most permissive cutoff, a live activity is left alone".
+            var result = ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
 
             result.GcCollected.Should().Be(0);
             result.MissedStop.Should().Be(0);
@@ -162,7 +206,7 @@ public class ReconciliationSweepTests
 
         try
         {
-            var result = ActivityHandlerCommon.ReconcileSweepCore(mappings);
+            var result = ActivityHandlerCommon.ReconcileSweepCore(mappings, missedStopCutoff: DateTime.MaxValue);
 
             result.GcCollected.Should().Be(1);
             result.MissedStop.Should().Be(1);
