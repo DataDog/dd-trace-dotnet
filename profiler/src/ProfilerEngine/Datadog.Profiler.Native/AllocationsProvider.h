@@ -28,6 +28,7 @@ class IRuntimeIdStore;
 class ISampledAllocationsListener;
 class RawSampleTransformer;
 class SampleValueTypeProvider;
+class StackFramesCollectorFactory;
 
 
 class AllocationsProvider
@@ -49,6 +50,7 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
+        StackFramesCollectorFactory* pStackFramesCollectorFactory,
         shared::pmr::memory_resource* memoryResource);
 
     AllocationsProvider(
@@ -61,6 +63,7 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
+        StackFramesCollectorFactory* pStackFramesCollectorFactory,
         shared::pmr::memory_resource* memoryResource);
 
     void OnAllocation(uint32_t allocationKind,
@@ -110,5 +113,5 @@ private:
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
     CallstackProvider _callstackProvider;
-    MetricsRegistry& _metricsRegistry;
+    StackFramesCollectorFactory* _pStackFramesCollectorFactory;
 };

@@ -27,12 +27,6 @@ class CallstackProvider;
 // Here are forward declarations to avoid hard coupling
 namespace OsSpecificApi
 {
-    std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
-        ICorProfilerInfo4* pCorProfilerInfo,
-        IConfiguration const* pConfiguration,
-        CallstackProvider* callstackProvider,
-        MetricsRegistry& metricsRegistry);
-
     std::chrono::milliseconds GetThreadCpuTime(IThreadInfo* pThreadInfo);
 
     //    isRunning,        cpu time          , failed 

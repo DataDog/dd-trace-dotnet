@@ -36,6 +36,7 @@ class IStackSnapshotsBufferManager;
 class IManagedThreadList;
 class ISymbolsResolver;
 class IConfiguration;
+class StackFramesCollectorFactory;
 
 constexpr std::uint64_t DeadlocksPerThreadThreshold = 5;
 constexpr std::uint64_t TotalDeadlocksThreshold = 12;
@@ -87,7 +88,8 @@ public:
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector,
         MetricsRegistry& metricsRegistry,
-        CallstackProvider callstackProvider);
+        CallstackProvider callstackProvider,
+        StackFramesCollectorFactory* pStackFramesCollectorFactory);
 
     ~StackSamplerLoopManager() override;
 

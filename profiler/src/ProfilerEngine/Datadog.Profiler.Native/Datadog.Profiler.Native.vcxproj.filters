@@ -447,6 +447,7 @@
       <Filter>libdatadog</Filter>
     </ClInclude>
     <ClInclude Include="CallstackProvider.h" />
+    <ClInclude Include="StackFramesCollectorFactory.h" />
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="ServiceBase.h">
       <Filter>Utils</Filter>
@@ -732,6 +733,9 @@
       <Filter>libdatadog</Filter>
     </ClCompile>
     <ClCompile Include="CallstackProvider.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="StackFramesCollectorFactory.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="MemoryResourceManager.cpp">

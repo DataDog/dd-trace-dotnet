@@ -23,6 +23,7 @@ class IManagedThreadList;
 class IThreadsCpuManager;
 class IConfiguration;
 class RawSampleTransformer;
+class StackFramesCollectorFactory;
 
 
 class NetworkProvider :
@@ -38,6 +39,7 @@ public:
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
+        StackFramesCollectorFactory* pStackFramesCollectorFactory,
         shared::pmr::memory_resource* memoryResource);
 
 public:
@@ -95,7 +97,7 @@ private:
     IFrameStore* _pFrameStore;
     IConfiguration const* const _pConfiguration;
     CallstackProvider _callstackProvider;
-    MetricsRegistry& _metricsRegistry;
+    StackFramesCollectorFactory* _pStackFramesCollectorFactory;
     std::chrono::nanoseconds _requestDurationThreshold;
 
     // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
