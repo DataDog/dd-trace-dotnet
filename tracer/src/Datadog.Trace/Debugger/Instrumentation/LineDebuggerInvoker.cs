@@ -45,6 +45,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
+                // Some methods legitimately create "null refs" (e.g., MemoryMarshal.GetReference(emptySpan)).
+                // Capturing such arguments would dereference a null byref when we read `arg` and can throw.
+                // If we get a null byref, skip capture.
                 if (Unsafe.IsNullRef(ref arg))
                 {
                     if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))

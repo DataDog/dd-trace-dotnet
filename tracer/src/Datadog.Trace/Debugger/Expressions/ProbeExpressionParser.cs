@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -544,6 +543,7 @@ internal partial class ProbeExpressionParser<T>
         var argsOrLocals = methodScopeMembers.Members;
         var @this = methodScopeMembers.InvocationTarget;
         var thisType = thisTypeOverride;
+
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
             var ex = new ArgumentException("Method has been called with an invalid argument");
@@ -616,6 +616,33 @@ internal partial class ProbeExpressionParser<T>
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
     {
         var parameterExpression = Expression.Parameter(scopeMember.GetType());
+        if (type.IsGenericTypeDefinition)
+        {
+            var genericArguments = type.GetGenericArguments();
+            Type[] concreteTypes = new Type[genericArguments.Length];
+            bool succeeded = true;
+            for (int i = 0; i < genericArguments.Length; i++)
+            {
+                if (genericArguments[i].IsValueType)
+                {
+                    succeeded = false;
+                    break;
+                }
+                else
+                {
+                    // For reference types, we can use object
+                    concreteTypes[i] = typeof(object);
+                }
+            }
+
+            if (!succeeded)
+            {
+                throw new InvalidOperationException($"Could not evaluate expression for type {type.FullName ?? type.Name} because it is a generic type definition.");
+            }
+
+            type = type.MakeGenericType(concreteTypes);
+        }
+
         var variable = Expression.Variable(type, name);
         var valueField = Expression.Field(parameterExpression, "Value");
 

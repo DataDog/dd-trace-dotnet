@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
@@ -789,14 +790,14 @@ public class DynamicInstrumentationTests
 
     private class SnapshotUploaderMock : UploaderMock, ISnapshotUploader
     {
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string? snapshot)
         {
         }
     }
 
     private class LogUploaderMock : UploaderMock, ISnapshotUploader
     {
-        public void Add(string probeId, string snapshot)
+        public void Add(string probeId, string? snapshot)
         {
         }
     }
