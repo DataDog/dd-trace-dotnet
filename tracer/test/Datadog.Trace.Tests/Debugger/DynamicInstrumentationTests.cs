@@ -61,6 +61,47 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
+    public async Task DynamicInstrumentationEnabled_FailedInitializationCanRetry()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var discoveryService = new DiscoveryServiceFailsOnceMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
+        var lineProbeResolver = new LineProbeResolverMock();
+        var snapshotUploader = new SnapshotUploaderMock();
+        var logUploader = new LogUploaderMock();
+        var diagnosticsUploader = new UploaderMock();
+        var probeStatusPoller = new ProbeStatusPollerMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0);
+
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
+        try
+        {
+            debugger.Initialize();
+            await debugger.GetInitializationTask();
+
+            debugger.IsInitialized.Should().BeFalse("the first discovery subscription attempt fails");
+            discoveryService.SubscribeCount.Should().Be(1);
+
+            debugger.Initialize();
+            await debugger.GetInitializationTask();
+
+            discoveryService.SubscribeCount.Should().Be(2);
+            debugger.IsInitialized.Should().BeTrue("the failed initialization attempt should not block a later retry");
+            probeStatusPoller.Called.Should().BeTrue();
+            snapshotUploader.Called.Should().BeTrue();
+            diagnosticsUploader.Called.Should().BeTrue();
+            rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
+        }
+        finally
+        {
+            debugger.Dispose();
+        }
+    }
+
+    [Fact]
     public void DynamicInstrumentationDisabled_ServicesNotCalled()
     {
         var settings = DebuggerSettings.FromSource(
@@ -111,9 +152,15 @@ public class DynamicInstrumentationTests
     public class ProbeFileLoadingTests : IDisposable
     {
         private readonly List<string> _tempFiles = new();
+        private readonly List<DynamicInstrumentation> _debuggers = new();
 
         public void Dispose()
         {
+            foreach (var debugger in _debuggers)
+            {
+                debugger.Dispose();
+            }
+
             // Clean up temp files
             foreach (var file in _tempFiles)
             {
@@ -219,7 +266,7 @@ public class DynamicInstrumentationTests
             var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
             debugger.Initialize();
 
-            await WaitUntilAsync(() => GetCurrentConfiguration(debugger).LogProbes.Any(probe => probe.Id == "applied-file-probe"));
+            await debugger.GetInitializationTask();
 
             lineProbeResolver.Called.Should().BeTrue("file probes should be applied to the owning DynamicInstrumentation instance");
             probeStatusPoller.Called.Should().BeTrue("applying a file probe should update probe statuses");
@@ -461,7 +508,6 @@ public class DynamicInstrumentationTests
 
             debugger.IsInitialized.Should().BeTrue("file probes should not wait for the RCM availability timeout");
             GetFileProbes(debugger).Should().NotBeNull();
-            debugger.Dispose();
         }
 
         private static ProbeConfiguration? GetFileProbes(DynamicInstrumentation debugger)
@@ -508,7 +554,7 @@ public class DynamicInstrumentationTests
             var diagnosticsUploader = new UploaderMock();
             probeStatusPoller ??= new ProbeStatusPollerMock();
 
-            return new DynamicInstrumentation(
+            var debugger = new DynamicInstrumentation(
                 settings,
                 discoveryService ?? new DiscoveryServiceMock(),
                 rcmSubscriptionManagerMock,
@@ -519,6 +565,8 @@ public class DynamicInstrumentationTests
                 probeStatusPoller,
                 ConfigurationUpdater.Create("env", "version", 0),
                 global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance);
+            _debuggers.Add(debugger);
+            return debugger;
         }
     }
 
@@ -639,6 +687,48 @@ public class DynamicInstrumentationTests
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
+            callback(
+                new AgentConfiguration(
+                    configurationEndpoint: "configurationEndpoint",
+                    debuggerEndpoint: "debuggerEndpoint",
+                    debuggerV2Endpoint: "debuggerV2Endpoint",
+                    diagnosticsEndpoint: "diagnosticsEndpoint",
+                    symbolDbEndpoint: "symbolDbEndpoint",
+                    agentVersion: "agentVersion",
+                    statsEndpoint: "traceStatsEndpoint",
+                    dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                    eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
+                    telemetryProxyEndpoint: "telemetryProxyEndpoint",
+                    tracerFlareEndpoint: "tracerFlareEndpoint",
+                    containerTagsHash: "containerTagsHash",
+                    clientDropP0: false,
+                    spanMetaStructs: true,
+                    spanEvents: true));
+        }
+
+        public void RemoveSubscription(Action<AgentConfiguration> callback)
+        {
+        }
+
+        public void SetCurrentConfigStateHash(string configStateHash)
+        {
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+    }
+
+    private class DiscoveryServiceFailsOnceMock : IDiscoveryService
+    {
+        internal int SubscribeCount { get; private set; }
+
+        public void SubscribeToChanges(Action<AgentConfiguration> callback)
+        {
+            SubscribeCount++;
+            if (SubscribeCount == 1)
+            {
+                throw new InvalidOperationException("Simulated discovery subscription failure");
+            }
+
             callback(
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",

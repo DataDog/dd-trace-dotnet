@@ -135,7 +135,7 @@ $arguments = @("-r") + $runtimes + @(
     # We change this manually on benchmark methods from 200 ms to 500 ms on 
     # less stable benchmarks with "[IterationTime(500)]"
     "--iterationTime", "200",
-    "--launchCount", "10",
+    "--launchCount", "5",
     "--warmupCount", "10",
     "--iterationCount", "10",
     "--buildTimeout", "3600",
