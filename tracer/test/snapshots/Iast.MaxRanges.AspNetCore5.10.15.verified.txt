@@ -1,0 +1,70 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          source: 0,
+          value: taintedString|
+        },
+        {
+          value: taintedString|taintedString|taintedString|taintedString|taintedString|
+        }
+      ]
+    },
+    hash: 1779576281,
+    location: {
+      method: MaxRanges,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.MaxRanges (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/maxranges,
+      url: http://localhost:00000/Iast/MaxRanges?count=15&tainted=taintedString%7C
+    },
+    sources: [
+      {
+        name: tainted,
+        origin: http.request.parameter,
+        value: taintedString|
+      }
+    ],
+    type: REFLECTION_INJECTION
+  }
+]

@@ -1,0 +1,15 @@
+﻿[
+  {
+    evidence: {
+      value: Authorization: Digest
+    },
+    hash: 565446921,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.InsecureAuthProtocol (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/insecureauthprotocol,
+      url: http://localhost:00000/Iast/InsecureAuthProtocol
+    },
+    type: INSECURE_AUTH_PROTOCOL
+  }
+]

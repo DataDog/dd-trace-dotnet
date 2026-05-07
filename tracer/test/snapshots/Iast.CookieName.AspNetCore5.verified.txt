@@ -1,1 +1,31 @@
-﻿
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: cookiename
+        }
+      ]
+    },
+    hash: 469656765,
+    location: {
+      method: TestCookieName,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.TestCookieName (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/testcookiename,
+      url: http://localhost:00000/Iast/TestCookieName
+    },
+    sources: [
+      {
+        name: cookiename,
+        origin: http.request.cookie.name,
+        value: cookiename
+      }
+    ],
+    type: PATH_TRAVERSAL
+  }
+]

@@ -1,0 +1,23 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: value
+        }
+      ]
+    },
+    hash: -430498668,
+    location: {
+      method: ExecuteCommandInternal,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.NewtonsoftJsonParseTainting (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/newtonsoftjsonparsetainting,
+      url: http://localhost:00000/Iast/NewtonsoftJsonParseTainting?json=%7B%22key%22:%20%22value%22%7D
+    },
+    type: COMMAND_INJECTION
+  }
+]

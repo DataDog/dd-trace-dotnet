@@ -1,0 +1,34 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: Redirected?param=
+        },
+        {
+          source: 0,
+          value: value
+        }
+      ]
+    },
+    hash: 403854644,
+    location: {
+      method: UnvalidatedRedirect,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.UnvalidatedRedirect (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/unvalidatedredirect,
+      url: http://localhost:00000/Iast/UnvalidatedRedirect?param=value
+    },
+    sources: [
+      {
+        name: param,
+        origin: http.request.parameter,
+        value: value
+      }
+    ],
+    type: UNVALIDATED_REDIRECT
+  }
+]

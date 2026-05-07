@@ -1,1 +1,48 @@
-﻿
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: myName
+        },
+        {
+          value: : 
+        },
+        {
+          source: 1,
+          value: :bear
+        },
+        {
+          source: 2,
+          value: er secret
+        }
+      ]
+    },
+    hash: -883396955,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.HeaderInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/headerinjection,
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.header,
+        value: myName
+      },
+      {
+        name: value,
+        origin: http.request.header,
+        value: :bear
+      },
+      {
+        name: value,
+        origin: http.request.cookie.value,
+        value: er secret
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

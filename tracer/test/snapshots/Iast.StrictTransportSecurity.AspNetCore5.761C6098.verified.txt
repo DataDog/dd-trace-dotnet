@@ -1,0 +1,12 @@
+﻿[
+  {
+    hash: 1476644729,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.StrictTransportSecurity (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/stricttransportsecurity,
+      url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https
+    },
+    type: HSTS_HEADER_MISSING
+  }
+]

@@ -1,0 +1,49 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: /data/user[name/text()='
+        },
+        {
+          source: 0,
+          value: klaus
+        },
+        {
+          value: ' and password/text()='
+        },
+        {
+          source: 1,
+          value: pass
+        },
+        {
+          value: }']
+        }
+      ]
+    },
+    hash: 874141243,
+    location: {
+      method: XpathInjection,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.XpathInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/xpathinjection,
+      url: http://localhost:00000/Iast/XpathInjection?user=klaus&value=pass
+    },
+    sources: [
+      {
+        name: user,
+        origin: http.request.parameter,
+        value: klaus
+      },
+      {
+        name: value,
+        origin: http.request.parameter,
+        value: pass
+      }
+    ],
+    type: XPATH_INJECTION
+  }
+]

@@ -1,0 +1,31 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: SELECT Surname from Persons where name='Vicent'
+        }
+      ]
+    },
+    hash: -209503571,
+    location: {
+      method: ExecuteQuery,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.ExecuteQueryFromBodyQueryData (Samples.Security.AspNetCore5),
+      method: POST,
+      route: iast/executequeryfrombodyquerydata,
+      url: http://localhost:00000/Iast/ExecuteQueryFromBodyQueryData
+    },
+    sources: [
+      {
+        name: Query,
+        origin: http.request.body,
+        value: SELECT Surname from Persons where name='Vicent'
+      }
+    ],
+    type: SQL_INJECTION
+  }
+]

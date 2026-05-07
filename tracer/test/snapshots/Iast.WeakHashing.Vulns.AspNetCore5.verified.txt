@@ -1,0 +1,36 @@
+﻿[
+  {
+    evidence: {
+      value: MD5
+    },
+    hash: 414128505,
+    location: {
+      method: WeakHashing,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.WeakHashing (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/weakhashing,
+      url: http://localhost:00000/Iast/WeakHashing
+    },
+    type: WEAK_HASH
+  },
+  {
+    evidence: {
+      value: SHA1
+    },
+    hash: 414128505,
+    location: {
+      method: WeakHashing,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.WeakHashing (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/weakhashing,
+      url: http://localhost:00000/Iast/WeakHashing
+    },
+    type: WEAK_HASH
+  }
+]

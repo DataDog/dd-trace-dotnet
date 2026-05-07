@@ -1,0 +1,31 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: nonexisting.exe
+        }
+      ]
+    },
+    hash: 1750686827,
+    location: {
+      method: OnPost,
+      path: Samples.Security.AspNetCore5.DataRazorIastPageModel
+    },
+    request: {
+      endpoint: /DataRazorIastPage,
+      method: POST,
+      route: datarazoriastpage,
+      url: http://localhost:00000/DataRazorIastPage
+    },
+    sources: [
+      {
+        name: Property2,
+        origin: http.request.body,
+        value: nonexisting.exe
+      }
+    ],
+    type: COMMAND_INJECTION
+  }
+]

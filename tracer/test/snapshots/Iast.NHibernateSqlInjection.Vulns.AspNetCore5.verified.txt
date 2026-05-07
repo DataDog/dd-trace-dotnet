@@ -1,0 +1,37 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: SELECT Value from FakeData where Name = '
+        },
+        {
+          source: 0,
+          value: TestUser
+        },
+        {
+          value: '
+        }
+      ]
+    },
+    hash: 1532278957,
+    location: {
+      method: CreateSqlQuery,
+      path: Samples.Security.Data.NHibernateHelper
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.NHibernateQuery (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/nhibernatequery,
+      url: http://localhost:00000/Iast/NHibernateQuery?username=TestUser
+    },
+    sources: [
+      {
+        name: username,
+        origin: http.request.parameter,
+        value: TestUser
+      }
+    ],
+    type: SQL_INJECTION
+  }
+]

@@ -1,0 +1,37 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: https://user:password@
+        },
+        {
+          source: 0,
+          value: localhost
+        },
+        {
+          value: <script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>:443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo
+        }
+      ]
+    },
+    hash: 760067032,
+    location: {
+      method: DatabaseSourceInjection,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.DatabaseSourceInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/databasesourceinjection,
+      url: http://localhost:00000/Iast/DatabaseSourceInjection?host=localhost&injectOnlyDatabase=False
+    },
+    sources: [
+      {
+        name: host,
+        origin: http.request.parameter,
+        value: localhost
+      }
+    ],
+    type: SSRF
+  }
+]

@@ -1,0 +1,31 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: System.String
+        }
+      ]
+    },
+    hash: -1084027092,
+    location: {
+      method: TypeReflectionInjection,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.TypeReflectionInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/typereflectioninjection,
+      url: http://localhost:00000/Iast/TypeReflectionInjection?type=System.String
+    },
+    sources: [
+      {
+        name: type,
+        origin: http.request.parameter,
+        value: System.String
+      }
+    ],
+    type: REFLECTION_INJECTION
+  }
+]

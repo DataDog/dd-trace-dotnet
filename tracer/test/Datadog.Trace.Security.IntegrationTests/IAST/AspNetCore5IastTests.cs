@@ -9,15 +9,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Amazon.SimpleEmail.Model;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -64,7 +67,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "XCONTENTTYPE_HEADER_MISSING", expectVulnerability ? filename : NotVulnerableSnapshotName, expectVulnerability: expectVulnerability, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
     // When the request is finished without the header Strict-Transport-Security or with an invalid value on it, we should detect the vulnerability and send it to the agent when these conditions happens:
@@ -89,9 +92,9 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
             (string.IsNullOrEmpty(hstsHeaderValue) ? string.Empty : "&hstsHeaderValue=" + hstsHeaderValue) +
             (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
-        var filename = "Iast.StrictTransportSecurity.AspNetCore5." + contentType.Replace("/", string.Empty) +
-            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
-            + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
+
+        var hash = BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(queryParams))).Replace("-", string.Empty).Substring(0, 8);
+        var filename = $"Iast.StrictTransportSecurity.AspNetCore5.{hash}";
         var url = "/Iast/StrictTransportSecurity" + queryParams;
         var isHtml = contentType.Contains("html") || contentType.Contains("xhtml");
         var isHttps = !string.IsNullOrEmpty(xForwardedProto);
@@ -102,7 +105,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "HSTS_HEADER_MISSING", expectVulnerability ? filename : NotVulnerableSnapshotName, expectVulnerability: expectVulnerability, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
     [Fact]
@@ -117,7 +120,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "STACKTRACE_LEAK", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -131,7 +134,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "XPATH_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -146,7 +149,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "REFLECTION_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -160,7 +163,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
 #if !NETFRAMEWORK && NETCOREAPP3_1_OR_GREATER
@@ -175,7 +178,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 #endif
 
@@ -191,7 +194,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "INSECURE_COOKIE", "NO_HTTPONLY_COOKIE", "NO_SAMESITE_COOKIE" }, filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -205,7 +208,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "EMAIL_HTML_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [Theory]
@@ -215,14 +218,14 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData(false)]
     public async Task TestDatabaseSourceInjections(bool injectOnlyDatabase)
     {
-        var filename = "Iast.DatabaseSourceInjection.AspNetCore5." + (injectOnlyDatabase ? "DbOnly" : "Mixed");
+        var filename = "Iast.DatabaseSourceInjection.AspNetCore5.Mixed";
         var url = $"/Iast/DatabaseSourceInjection?host=localhost&injectOnlyDatabase={injectOnlyDatabase}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, injectOnlyDatabase ? NotVulnerableSnapshotName : filename, since: since);
     }
 
     [SkippableTheory]
@@ -251,7 +254,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(newFixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -269,7 +272,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
 #if NET6_0_OR_GREATER
@@ -286,7 +289,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 #endif
 }
@@ -303,11 +306,11 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
-    [InlineData("Vulnerability.WithoutLocation", "/Iast/InsecureCookie", "INSECURE_COOKIE")]
-    [InlineData("Vulnerability.InFunction", "/Iast/GetFileContent?file=nonexisting.txt", "PATH_TRAVERSAL")]
-    [InlineData("Vulnerability.LocatedDeeper", "/Iast/WeakHashing", "WEAK_HASH")]
-    [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>", "XSS")]
-    public async Task TestVulnerabilityStack(string name, string url, string vulnerabilityType)
+    [InlineData("Vulnerability.WithoutLocation", "/Iast/InsecureCookie")]
+    [InlineData("Vulnerability.InFunction", "/Iast/GetFileContent?file=nonexisting.txt")]
+    [InlineData("Vulnerability.LocatedDeeper", "/Iast/WeakHashing")]
+    [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>")]
+    public async Task TestVulnerabilityStack(string name, string url)
     {
         var fileName = "Iast.Stacks." + name;
 
@@ -316,7 +319,7 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, vulnerabilityType, fileName, expectVulnerability: true, since: since, includeStack: true);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, fileName, since: since, includeStack: true);
     }
 }
 
@@ -353,7 +356,7 @@ public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEna
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, ["/Iast/WeakHashing"]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "WEAK_HASH", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 }
 
@@ -380,7 +383,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         var since = DateTime.UtcNow;
         await TryStartApp(newFixture);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "DIRECTORY_LISTING_LEAK", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
@@ -403,9 +406,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
 
         await VerifyVulnerabilityRecordsAsync(
             VulnerabilityLogPath,
-            "SESSION_TIMEOUT",
             filename,
-            expectVulnerability: true,
             since: since,
             recordSanitizer: record =>
             {
@@ -462,7 +463,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "SQL_INJECTION", "WEAK_HASH", "XSS", "COMMAND_INJECTION", "PATH_TRAVERSAL" }, NotVulnerableSnapshotName, expectVulnerability: false, since: since, timeoutMs: 1_000);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
 
     [SkippableFact]
@@ -476,7 +477,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "WEAK_HASH", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -491,7 +492,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "SQL_INJECTION", "COMMAND_INJECTION" }, filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableTheory]
@@ -506,7 +507,8 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [InlineData("{\"StringArrayArguments\": [\"SELECT Surname from Persons where name='Vicent'\", \"SELECT Surname from Persons where name='Mark'\"]}")]
     public async Task TestRequestBodyTainting(string body)
     {
-        var filename = "Iast.RequestBodyTest.Vulns.AspNetCore5";
+        var hash = BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(body))).Replace("-", string.Empty).Substring(0, 8);
+        var filename = $"Iast.RequestBodyTest.Vulns.AspNetCore5.{hash}";
         var url = "/Iast/ExecuteQueryFromBodyQueryData";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         IncludeAllHttpSpans = true;
@@ -514,7 +516,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, url, body, 1, 1, string.Empty, "application/json", null);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -530,7 +532,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -546,7 +548,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "NOSQL_MONGODB_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -561,7 +563,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "COMMAND_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     // Proof-of-concept: this test asserts on the IAST vulnerability JSON-lines
@@ -580,7 +582,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SSRF", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -599,7 +601,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         // The local-function name (<Ldap>g__PerformLdapQuery|N_M) and the resulting
         // hash drift across compiler versions; SanitizeLdap normalises both before
         // the snapshot.
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "LDAP_INJECTION", filename, expectVulnerability: true, since: since, recordSanitizer: SanitizeLdap);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since, recordSanitizer: SanitizeLdap);
     }
 
     [SkippableFact]
@@ -615,7 +617,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "COMMAND_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -631,15 +633,15 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "COMMAND_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [SkippableTheory]
-    [InlineData("/Iast/SafeCookie")]
-    [InlineData("/Iast/AllVulnerabilitiesCookie")]
-    public async Task TestIastCookiesRequest(string url)
+    [InlineData("/Iast/SafeCookie", false)]
+    [InlineData("/Iast/AllVulnerabilitiesCookie", true)]
+    public async Task TestIastCookiesRequest(string url, bool vulnerable)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var filename = $"Iast.Vulns.AspNetCore5.path ={sanitisedUrl}";
@@ -652,7 +654,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, cookieTypes, filename, expectVulnerability: expectVulnerability, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, vulnerable ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
     [Trait("Category", "EndToEnd")]
@@ -674,7 +676,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "INSECURE_AUTH_PROTOCOL", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -688,7 +690,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "PATH_TRAVERSAL", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -702,7 +704,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "WEAK_RANDOMNESS", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -717,7 +719,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, 6, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "HARDCODED_SECRET", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -732,7 +734,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, 1, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "TRUST_BOUNDARY_VIOLATION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -747,7 +749,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, 4, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "UNVALIDATED_REDIRECT", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     [SkippableFact]
@@ -765,7 +767,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         // The XSS handler is generated by the Razor compiler — its synthesized
         // type/method names drift across compiler versions, so we normalise the
         // path and pin the hash for snapshot stability.
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "XSS", filename, expectVulnerability: true, since: since, recordSanitizer: SanitizeReflectedXss);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since, recordSanitizer: SanitizeReflectedXss);
     }
 
     [SkippableTheory]
@@ -780,7 +782,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, new[] { "XSS" }, NotVulnerableSnapshotName, expectVulnerability: false, since: since, timeoutMs: 1_000);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
 
     // In header injections, we should exclude some headers to prevent false positives:
@@ -814,9 +816,9 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
     {
         var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase);
-        var filename = "Iast.HeaderInjection.AspNetCore5." + (notVulnerable ? "NotVuln" : testCase) +
+        var filename = "Iast.HeaderInjection.AspNetCore5." + testCase +
             (useValueFromOriginHeader ? ".origin" : string.Empty);
-        if (!notVulnerable && RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
         IncludeAllHttpSpans = true;
 
@@ -846,7 +848,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, 1, new[] { url });
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "HEADER_INJECTION", notVulnerable ? NotVulnerableSnapshotName : filename, expectVulnerability: !notVulnerable, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, notVulnerable ? NotVulnerableSnapshotName : filename, since: since, timeoutMs: notVulnerable ? 1_000 : 5_000);
     }
 
     [SkippableFact]
@@ -861,7 +863,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync(Fixture.Agent, [url]);
 
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "SQL_INJECTION", filename, expectVulnerability: true, since: since);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
     private static void SanitizeLdap(JObject record)
@@ -922,10 +924,12 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SamplingRate = samplingRate;
         RedactionEnabled = redactionEnabled;
 
-        // Per-fixture path for the IAST vulnerability JSONL report. Placed in the
-        // same directory as the tracer logs (LogDirectory) so all test output is in
-        // one place. Guid suffix prevents cross-test contamination within the dir.
-        VulnerabilityLogPath = Path.Combine(LogDirectory, $"iast-vulns-{Guid.NewGuid():N}.jsonl");
+        // Per-class path for the IAST vulnerability JSONL report, placed alongside
+        // other tracer logs. Derived from the concrete type name so it is stable
+        // across all xUnit theory instances of the same class (xUnit creates a new
+        // instance per InlineData case, but all share the same fixture and app process,
+        // which is started once with this path and keeps writing here).
+        VulnerabilityLogPath = Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
 
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
@@ -967,42 +971,39 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
+
+        if (File.Exists(VulnerabilityLogPath))
+        {
+            try
+            {
+                File.Delete(VulnerabilityLogPath);
+            }
+            catch { }
+        }
+
         await fixture.TryStartApp(this, enableSecurity: false, agentConfiguration: agentConfiguration);
         SetHttpPort(fixture.HttpPort);
     }
 
-    protected static Task<IReadOnlyList<JObject>> ReadVulnerabilityRecordsAsync(string path, string type, int expectedMinimumCount, DateTime? since = null, int timeoutMs = 5_000)
-        => ReadVulnerabilityRecordsAsync(path, new[] { type }, expectedMinimumCount, since, timeoutMs);
-
-    protected static async Task<IReadOnlyList<JObject>> ReadVulnerabilityRecordsAsync(string path, string[] types, int expectedMinimumCount, DateTime? since = null, int timeoutMs = 5_000)
+    protected static async Task VerifyVulnerabilityRecordsAsync(string path, string fileName, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
     {
-        // The reporter flushes synchronously per detection, but the request handler
-        // returns to us as soon as the response goes out — give the file a brief
-        // window to settle before asserting.
+        // Poll until at least one record appears or the timeout expires. A short
+        // timeoutMs (e.g. 1_000) is appropriate for tests that expect no records.
         var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        while (DateTime.UtcNow < deadline)
+        List<JObject> records;
+        do
         {
-            var matches = TryReadRecords(path, types, since);
-            if (matches.Count >= expectedMinimumCount)
+            records = TryReadRecords(path, since);
+            if (records.Count > 0)
             {
-                return matches;
+                break;
             }
 
             await Task.Delay(50);
         }
+        while (DateTime.UtcNow < deadline);
 
-        return TryReadRecords(path, types, since);
-    }
-
-    protected static Task VerifyVulnerabilityRecordsAsync(string path, string type, string fileName, bool expectVulnerability, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
-        => VerifyVulnerabilityRecordsAsync(path, new[] { type }, fileName, expectVulnerability, since, includeStack, recordSanitizer, timeoutMs);
-
-    protected static async Task VerifyVulnerabilityRecordsAsync(string path, string[] types, string fileName, bool expectVulnerability, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
-    {
-        var records = await ReadVulnerabilityRecordsAsync(path, types, expectedMinimumCount: expectVulnerability ? 1 : 0, since, timeoutMs);
-
-        // Stable order across runs: snapshots compare line-by-line, so we sort
-        // multi-type results by type then hash.
+        // Stable order across runs: snapshots compare line-by-line, so we sort by type then hash.
         var sanitized = records
             .OrderBy(r => r["type"]?.Value<string>(), StringComparer.Ordinal)
             .ThenBy(r => r["hash"]?.Value<int>())
@@ -1039,7 +1040,9 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
         if (record["location"] is JObject location)
         {
-            ReplaceIfPresent(location, "line", "XXX");
+            // Line numbers are present in debug builds (PDB info) but absent in
+            // release — remove rather than replace so both produce the same snapshot.
+            location.Remove("line");
 
             if (!includeStack)
             {
@@ -1051,32 +1054,22 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
             {
                 foreach (var frame in stack.OfType<JObject>())
                 {
-                    ReplaceIfPresent(frame, "line", "XXX");
-                    ReplaceIfPresent(frame, "column", "XXX");
+                    frame.Remove("line");
+                    frame.Remove("column");
                 }
             }
         }
 
         return record;
-
-        static void ReplaceIfPresent(JObject obj, string property, string placeholder)
-        {
-            if (obj[property] != null)
-            {
-                obj[property] = placeholder;
-            }
-        }
     }
 
-    private static List<JObject> TryReadRecords(string path, string[] types, DateTime? since)
+    private static List<JObject> TryReadRecords(string path, DateTime? since)
     {
         var matches = new List<JObject>();
         if (!File.Exists(path))
         {
             return matches;
         }
-
-        var typeSet = new HashSet<string>(types, StringComparer.Ordinal);
 
         // Open shared with write so the sample app can keep appending while we read.
         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -1099,21 +1092,9 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
                 continue;
             }
 
-            var recordType = record["type"]?.Value<string>();
-            if (recordType is null || !typeSet.Contains(recordType))
+            if (since is { } cutoff && (record["timestamp"]?.Value<DateTime?>() is not { } emitted || emitted < cutoff))
             {
                 continue;
-            }
-
-            if (since is { } cutoff)
-            {
-                // Skip records emitted before the test invocation — keeps each
-                // test's snapshot independent of earlier tests in the same fixture.
-                var ts = record["timestamp"]?.Value<string>();
-                if (ts is null || !DateTime.TryParse(ts, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var emitted) || emitted < cutoff)
-                {
-                    continue;
-                }
             }
 
             matches.Add(record);

@@ -1,0 +1,39 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: INSERT INTO Orders (CustomerId, EmployeeId, OrderDate, RequiredDate, ShipVia, Freight, ShipName, ShipAddress, ShipCity, ShipPostalCode, ShipCountry) VALUES ('VINET','5','2021-01-01','2021-01-01',
+        },
+        {
+          source: 0,
+          value: '3','32','Vins et alcools Chevalier','John',
+        },
+        {
+          value:
+'Reims','51100','France');
+SELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;
+        }
+      ]
+    },
+    hash: -41956447,
+    location: {
+      method: InterpolatedSqlString,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.InterpolatedSqlString (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/interpolatedsqlstring,
+      url: http://localhost:00000/Iast/InterpolatedSqlString?name=John
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.parameter,
+        value: John
+      }
+    ],
+    type: SQL_INJECTION
+  }
+]

@@ -1,0 +1,15 @@
+﻿[
+  {
+    evidence: {
+      value: dummyvalue
+    },
+    hash: -1292143444,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.XContentTypeHeaderMissing (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/xcontenttypeheadermissing,
+      url: http://localhost:00000/Iast/XContentTypeHeaderMissing?contentType=text/html&returnCode=200&xContentTypeHeaderValue=dummyvalue
+    },
+    type: XCONTENTTYPE_HEADER_MISSING
+  }
+]
