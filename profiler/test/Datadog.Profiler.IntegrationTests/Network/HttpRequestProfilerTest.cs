@@ -231,29 +231,33 @@ namespace Datadog.Profiler.IntegrationTests.Network
 
                 checkedSamples++;
 
+                // since there are 2 iterations, it is possible that low level connection has been cached for the second iteration and thus no labels are emitted
                 var dnsSuccessLabel = labels.FirstOrDefault(l => l.Name == "dns.success");
-                dnsSuccessLabel.Name.Should().NotBeNullOrWhiteSpace();
-                Assert.True(dnsSuccessLabel.Value == "true");
-
-                var dnsDurationLabel = labels.FirstOrDefault(l => l.Name == "dns.duration");
-                dnsDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                dnsDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
-
-                // no socket duration on Linux
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (dnsSuccessLabel.Name is not null)
                 {
-                    var socketDurationLabel = labels.FirstOrDefault(l => l.Name == "socket.duration");
-                    socketDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                    socketDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                    dnsSuccessLabel.Name.Should().NotBeNullOrWhiteSpace();
+                    Assert.True(dnsSuccessLabel.Value == "true");
+
+                    var dnsDurationLabel = labels.FirstOrDefault(l => l.Name == "dns.duration");
+                    dnsDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                    dnsDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+
+                    // no socket duration on Linux
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        var socketDurationLabel = labels.FirstOrDefault(l => l.Name == "socket.duration");
+                        socketDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                        socketDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                    }
+
+                    var securityDurationLabel = labels.FirstOrDefault(l => l.Name == "tls.duration");
+                    securityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                    securityDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+
+                    var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
+                    requestDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                    requestDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
                 }
-
-                var securityDurationLabel = labels.FirstOrDefault(l => l.Name == "tls.duration");
-                securityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                securityDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
-
-                var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
-                requestDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                requestDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
 
                 var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
                 responseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
