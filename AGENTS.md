@@ -158,7 +158,9 @@ dotnet publish profiler/src/Demos/Samples.Computer01/Samples.Computer01.csproj \
   -o /tmp/samples
 
 DD_PROFILING_HEAPSNAPSHOT_ENABLED=1 DD_TRACE_DEBUG=1 \
-  dotnet /tmp/samples/Samples.Computer01.dll --timeout 30 --scenario ReferenceChain --param 1
+  dotnet /tmp/samples/Samples.Computer01.dll --timeout 30 --scenario 31 --param 1
+# Note: --scenario takes the integer enum value, not the name string.
+# 31 = ReferenceChain. See profiler/src/Demos/Samples.Computer01/Program.cs Scenario enum.
 ```
 
 Logs land in `/var/log/datadog/dotnet/DD-DotNet-Profiler-Native-*.log`.
