@@ -158,7 +158,7 @@ dotnet publish profiler/src/Demos/Samples.Computer01/Samples.Computer01.csproj \
   -o /tmp/samples
 
 DD_PROFILING_HEAPSNAPSHOT_ENABLED=1 DD_TRACE_DEBUG=1 \
-  dotnet /tmp/samples/Samples.Computer01.dll --timeout 30 --scenario HeapMemoryLeak
+  dotnet /tmp/samples/Samples.Computer01.dll --timeout 30 --scenario ReferenceChain --param 1
 ```
 
 Logs land in `/var/log/datadog/dotnet/DD-DotNet-Profiler-Native-*.log`.
