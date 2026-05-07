@@ -340,8 +340,8 @@ namespace Datadog.Trace.Debugger
                 Log.Information("Initializing Symbol Database uploader.");
                 var tracerManager = TracerManager.Instance;
                 symbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, () => ServiceName, tracerSettings, debuggerSettings, tracerManager.GitMetadataTagsProvider);
-                var published = false;
 
+                // RCM updates are serialized, but shutdown can run concurrently with this path.
                 lock (_syncLock)
                 {
                     if (_processExit.Task.IsCompleted || SymbolsUploader is not null)
@@ -350,19 +350,18 @@ namespace Datadog.Trace.Debugger
                     }
 
                     SymbolsUploader = symbolsUploader;
-                    published = true;
                 }
 
-                if (published)
-                {
-                    _ = symbolsUploader.StartFlushingAsync()
-                                       .ContinueWith(
-                                            t => Log.Error(t.Exception, "Failed to initialize symbol uploader"),
-                                            CancellationToken.None,
-                                            TaskContinuationOptions.OnlyOnFaulted,
-                                            TaskScheduler.Default);
-                    symbolsUploader = null;
-                }
+                var publishedUploader = symbolsUploader!;
+                _ = publishedUploader.StartFlushingAsync()
+                                     .ContinueWith(
+                                          t => HandleSymbolUploaderStartFailure(publishedUploader, t.Exception),
+                                          CancellationToken.None,
+                                          TaskContinuationOptions.OnlyOnFaulted,
+                                          TaskScheduler.Default);
+
+                // Ownership transferred to SymbolsUploader; avoid disposing it in finally.
+                symbolsUploader = null;
             }
             catch (Exception ex)
             {
@@ -373,6 +372,22 @@ namespace Datadog.Trace.Debugger
             {
                 SafeDisposal.TryDispose(symbolsUploader);
             }
+        }
+
+        private void HandleSymbolUploaderStartFailure(IDebuggerUploader failedUploader, Exception? exception)
+        {
+            IDebuggerUploader? symbolsUploader = null;
+            lock (_syncLock)
+            {
+                if (ReferenceEquals(SymbolsUploader, failedUploader))
+                {
+                    symbolsUploader = SymbolsUploader;
+                    SymbolsUploader = null;
+                }
+            }
+
+            SafeDisposal.TryDispose(symbolsUploader);
+            Log.Error(exception, "Failed to initialize symbol uploader");
         }
 
         private void DisableSymbolUploader()
