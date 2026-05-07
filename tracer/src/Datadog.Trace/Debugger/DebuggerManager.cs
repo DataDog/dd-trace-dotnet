@@ -47,7 +47,6 @@ namespace Datadog.Trace.Debugger
         private string _serviceName;
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
-        private int _symDbSubscriptionInitialized;
         private volatile TaskCompletionSource<bool>? _diDebounceGate;
         private volatile DynamicInstrumentation? _dynamicInstrumentation;
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
@@ -58,7 +57,6 @@ namespace Datadog.Trace.Debugger
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
-            _symDbSubscriptionInitialized = 0;
             _isDebuggerEndpointAvailable = false;
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
@@ -267,51 +265,69 @@ namespace Datadog.Trace.Debugger
 
         private void SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
         {
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            if (ExceptionReplaySettings.AgentlessEnabled)
+            {
+                Log.Information("Exception Replay agentless mode enabled; skipping symbol uploader initialization because it requires the Datadog Agent and Remote Configuration.");
+                return;
+            }
+
+            if (!newDebuggerSettings.SymbolDatabaseUploadEnabled)
+            {
+                // explicitly disabled via local env var
+                return;
+            }
+
+            if (!tracerSettings.IsRemoteConfigurationAvailable)
+            {
+                Log.Debug("Remote configuration is not available in this environment, so we don't upload symbols.");
+                return;
+            }
+
+            SymDbRemoteConfig? symDbRemoteConfig = null;
             try
             {
-                if (_processExit.Task.IsCompleted)
-                {
-                    return;
-                }
-
-                if (ExceptionReplaySettings.AgentlessEnabled)
-                {
-                    Log.Information("Exception Replay agentless mode enabled; skipping symbol uploader initialization because it requires the Datadog Agent and Remote Configuration.");
-                    return;
-                }
-
-                if (!newDebuggerSettings.SymbolDatabaseUploadEnabled)
-                {
-                    // explicitly disabled via local env var
-                    return;
-                }
-
-                if (!tracerSettings.IsRemoteConfigurationAvailable)
-                {
-                    Log.Debug("Remote configuration is not available in this environment, so we don't upload symbols.");
-                    return;
-                }
-
-                if (Interlocked.CompareExchange(ref _symDbSubscriptionInitialized, 1, 0) != 0)
-                {
-                    return;
-                }
-
-                var symDbRemoteConfig = new SymDbRemoteConfig(
+                symDbRemoteConfig = new SymDbRemoteConfig(
                     RcmSubscriptionManager.Instance,
                     uploadSymbols => OnSymbolDatabaseRemoteConfiguration(tracerSettings, newDebuggerSettings, uploadSymbols));
-                _symDbRemoteConfig = symDbRemoteConfig;
+
+                if (Interlocked.CompareExchange(ref _symDbRemoteConfig, symDbRemoteConfig, null) is not null)
+                {
+                    return;
+                }
+
                 if (_processExit.Task.IsCompleted)
                 {
-                    symDbRemoteConfig.Dispose();
                     return;
                 }
 
                 symDbRemoteConfig.Subscribe();
+
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                symDbRemoteConfig = null; // ownership transferred to the field
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error initializing Symbol Database remote configuration subscription.");
+            }
+            finally
+            {
+                if (symDbRemoteConfig is not null)
+                {
+                    // The try block threw or returned early (shutdown). Dispose the partially-
+                    // initialized instance and clear the field if it still references our instance,
+                    // so a future call can retry from a clean slate.
+                    SafeDisposal.TryDispose(symDbRemoteConfig);
+                    Interlocked.CompareExchange(ref _symDbRemoteConfig, null, symDbRemoteConfig);
+                }
             }
         }
 
@@ -780,7 +796,7 @@ namespace Datadog.Trace.Debugger
 
             SafeDisposal.New()
                         .Add(_tracerSettingsSubscription)
-                        .Add(_symDbRemoteConfig)
+                        .Add(Volatile.Read(ref _symDbRemoteConfig))
                         .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
                         .DisposeAll();

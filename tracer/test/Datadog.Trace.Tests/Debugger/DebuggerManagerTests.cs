@@ -55,7 +55,6 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 await manager.UpdateConfiguration(tracerSettings, debuggerSettings);
 
-                GetSymDbSubscriptionInitialized(manager).Should().Be(1);
                 manager.SymbolsUploader.Should().BeNull();
             }
             finally
@@ -131,13 +130,6 @@ namespace Datadog.Trace.Tests.Debugger
             var debuggerSettings = new DebuggerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var exceptionReplaySettings = new ExceptionReplaySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             return (DebuggerManager)constructor!.Invoke([debuggerSettings, exceptionReplaySettings]);
-        }
-
-        private static int GetSymDbSubscriptionInitialized(DebuggerManager manager)
-        {
-            var field = typeof(DebuggerManager).GetField("_symDbSubscriptionInitialized", BindingFlags.Instance | BindingFlags.NonPublic);
-            field.Should().NotBeNull();
-            return (int)field!.GetValue(manager)!;
         }
 
         private static void SetSymbolsUploader(DebuggerManager manager, IDebuggerUploader uploader)
