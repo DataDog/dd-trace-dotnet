@@ -44,7 +44,11 @@ dsm_throughput:
     # - GITHUB_ORG_INTERNAL: GitHub org for internal repos
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/".insteadOf "https://github.com/DataDog/"
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/".insteadOf "https://github.com/${GITHUB_ORG_INTERNAL}/"
-    - git clone --branch dd-trace-dotnet/data-streams-monitoring https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
+    # NOTE: Pointing at rob.carlan/dd-trace-dotnet/data-streams-monitoring-timeit
+    # to validate the new Timeit converter end-to-end before the corresponding
+    # benchmarking-platform-tools PR (rob.carlan/timeit-converter) is merged.
+    # Restore to dd-trace-dotnet/data-streams-monitoring before merging this PR.
+    - git clone --branch rob.carlan/dd-trace-dotnet/data-streams-monitoring-timeit https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   artifacts:
