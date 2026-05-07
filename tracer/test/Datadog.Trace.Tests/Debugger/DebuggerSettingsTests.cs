@@ -81,6 +81,23 @@ namespace Datadog.Trace.Tests.Debugger
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
         }
 
+        [Theory]
+        [InlineData("false")]
+        [InlineData("0")]
+        public void SymbolsEnabled_WhenDynamicInstrumentationExplicitlyDisabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled },
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeFalse();
+            settings.DynamicInstrumentationCanBeEnabled.Should().BeFalse();
+            settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
+        }
+
         [Fact]
         public void DebuggerSettings_UseSettings()
         {

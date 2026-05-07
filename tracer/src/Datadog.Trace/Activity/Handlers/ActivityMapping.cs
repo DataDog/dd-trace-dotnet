@@ -5,14 +5,21 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.Activity.Handlers
 {
     internal readonly struct ActivityMapping
     {
-        public readonly object Activity;
+        // The Activity is held via a WeakReference so the mapping does not
+        // keep the underlying System.Diagnostics.Activity alive on its own.
+        // If the customer drops all references without calling Stop/Dispose,
+        // GC can reclaim the Activity and the periodic reconciliation sweep
+        // in ActivityHandlerCommon will close the associated Scope.
+        public readonly WeakReference<object> Activity;
         public readonly Scope Scope;
 
-        internal ActivityMapping(object activity, Scope scope)
+        internal ActivityMapping(WeakReference<object> activity, Scope scope)
         {
             Activity = activity;
             Scope = scope;
