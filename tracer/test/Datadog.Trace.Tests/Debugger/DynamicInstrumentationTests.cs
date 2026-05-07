@@ -61,6 +61,47 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
+    public async Task DynamicInstrumentationEnabled_FailedInitializationCanRetry()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var discoveryService = new DiscoveryServiceFailsOnceMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
+        var lineProbeResolver = new LineProbeResolverMock();
+        var snapshotUploader = new SnapshotUploaderMock();
+        var logUploader = new LogUploaderMock();
+        var diagnosticsUploader = new UploaderMock();
+        var probeStatusPoller = new ProbeStatusPollerMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0);
+
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
+        try
+        {
+            debugger.Initialize();
+            await debugger.GetInitializationTask();
+
+            debugger.IsInitialized.Should().BeFalse("the first discovery subscription attempt fails");
+            discoveryService.SubscribeCount.Should().Be(1);
+
+            debugger.Initialize();
+            await debugger.GetInitializationTask();
+
+            discoveryService.SubscribeCount.Should().Be(2);
+            debugger.IsInitialized.Should().BeTrue("the failed initialization attempt should not block a later retry");
+            probeStatusPoller.Called.Should().BeTrue();
+            snapshotUploader.Called.Should().BeTrue();
+            diagnosticsUploader.Called.Should().BeTrue();
+            rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
+        }
+        finally
+        {
+            debugger.Dispose();
+        }
+    }
+
+    [Fact]
     public void DynamicInstrumentationDisabled_ServicesNotCalled()
     {
         var settings = DebuggerSettings.FromSource(
@@ -646,6 +687,48 @@ public class DynamicInstrumentationTests
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
+            callback(
+                new AgentConfiguration(
+                    configurationEndpoint: "configurationEndpoint",
+                    debuggerEndpoint: "debuggerEndpoint",
+                    debuggerV2Endpoint: "debuggerV2Endpoint",
+                    diagnosticsEndpoint: "diagnosticsEndpoint",
+                    symbolDbEndpoint: "symbolDbEndpoint",
+                    agentVersion: "agentVersion",
+                    statsEndpoint: "traceStatsEndpoint",
+                    dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                    eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
+                    telemetryProxyEndpoint: "telemetryProxyEndpoint",
+                    tracerFlareEndpoint: "tracerFlareEndpoint",
+                    containerTagsHash: "containerTagsHash",
+                    clientDropP0: false,
+                    spanMetaStructs: true,
+                    spanEvents: true));
+        }
+
+        public void RemoveSubscription(Action<AgentConfiguration> callback)
+        {
+        }
+
+        public void SetCurrentConfigStateHash(string configStateHash)
+        {
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+    }
+
+    private class DiscoveryServiceFailsOnceMock : IDiscoveryService
+    {
+        internal int SubscribeCount { get; private set; }
+
+        public void SubscribeToChanges(Action<AgentConfiguration> callback)
+        {
+            SubscribeCount++;
+            if (SubscribeCount == 1)
+            {
+                throw new InvalidOperationException("Simulated discovery subscription failure");
+            }
+
             callback(
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",

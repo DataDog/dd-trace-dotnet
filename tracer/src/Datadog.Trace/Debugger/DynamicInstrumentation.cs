@@ -94,7 +94,7 @@ namespace Datadog.Trace.Debugger
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled || IsInitialized)
+            if (!_settings.DynamicInstrumentationEnabled || IsDisposed)
             {
                 return;
             }
@@ -165,11 +165,15 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Error(e, "Dynamic Instrumentation initialization failed");
             }
+            finally
+            {
+                Interlocked.CompareExchange(ref _initializationState, 0, 1);
+            }
         }
 
         private void StartRuntimeIfNeeded()
         {
-            if (IsInitialized)
+            if (IsInitialized || IsDisposed)
             {
                 return;
             }
