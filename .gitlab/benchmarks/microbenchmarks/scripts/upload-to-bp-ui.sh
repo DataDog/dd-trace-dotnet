@@ -52,7 +52,7 @@ upload_one() {
         return
     fi
 
-    echo "  Uploaded $basename successfully."
+    echo "Uploaded $basename successfully."
     echo "ok" > "$result_file"
 }
 
