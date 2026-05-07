@@ -146,7 +146,7 @@ experiments:
 
         cpus: "0,0xFFC00"
         parallelize:
-          # Stable benchmarks (CPUs 10-19 on NUMA 0)
+          # Stable benchmarks (CPUs 10-19 on NUMA node 0)
           items: >-
             *ActivityBenchmark*
             *AppSecBodyBenchmark*
@@ -175,7 +175,7 @@ experiments:
 
         cpus: "1,0xFFC00"
         parallelize:
-          # Less stable benchmarks (CPUs 10-19 on NUMA 1)
+          # Less stable benchmarks (CPUs 10-19 on NUMA node 1)
           items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
@@ -204,7 +204,7 @@ experiments:
 
         cpus: "0,0xE00000"
         parallelize:
-          # OpenTelemetry InstrumentedApi benchmarks (CPUs 21-23 on NUMA 0)
+          # OpenTelemetry InstrumentedApi benchmarks (CPUs 21-23 on NUMA node 0)
           items: >-
             *ActivityBenchmark*
             *TelemetrySpanBenchmark*
@@ -232,7 +232,7 @@ experiments:
 
         cpus: "1,0xE00000"
         parallelize:
-          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA 1, skipped on PRs since Nuke doesn't build them)
+          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA node 1, skipped on PRs since Nuke doesn't build them)
           items: >-
             *ActivityBenchmark*
             *TelemetrySpanBenchmark*
