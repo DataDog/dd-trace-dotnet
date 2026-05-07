@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionReplay));
         private bool _isDisabled;
         private SnapshotUploader? _uploader;
-        private SnapshotSink? _snapshotSink;
+        private ISnapshotSink? _snapshotSink;
         private ExceptionTrackManager? _exceptionTrackManager;
 
         private ExceptionReplay(ExceptionReplaySettings settings)
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ShadowStackHolder.ShadowStack?.Clear();
         }
 
-        internal void AddSnapshot(string probeId, string snapshot)
+        internal void AddSnapshot(string probeId, string? snapshot)
         {
             if (_isDisabled)
             {

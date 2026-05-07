@@ -12,6 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
@@ -19,6 +20,7 @@ using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -104,6 +106,28 @@ namespace Datadog.Trace.Debugger.Expressions
         [DebuggerStepThrough]
         private bool HasCondition() => _condition.HasValue;
 
+        /// <summary>
+        /// For exploration tests: checks if we should capture a snapshot for this probe.
+        /// Returns false (skip) if the probe has already captured enough snapshots.
+        /// For non-exploration tests, always returns true.
+        /// </summary>
+        private bool ShouldCaptureSnapshotForExplorationTest()
+        {
+            if (!ExplorationTestProbeTracker.IsEnabled)
+            {
+                return true;
+            }
+
+            if (ExplorationTestProbeTracker.ShouldCaptureSnapshot(ProbeInfo.ProbeId))
+            {
+                return true;
+            }
+
+            // Probe has reached its snapshot limit - skip serialization
+            ExplorationTestMetrics.RecordSnapshotSkipped();
+            return false;
+        }
+
         private DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
         {
             return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
@@ -160,7 +184,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations), null);
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(ProbeInfo.ProbeId, _templates, _condition, _metric, _spanDecorations), null);
             return _evaluator;
         }
 
@@ -603,6 +627,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!ProbeInfo.IsFullSnapshot)
                     {
+                        if (!ShouldCaptureSnapshotForExplorationTest())
+                        {
+                            snapshotCreator.Stop();
+                            break;
+                        }
+
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
@@ -622,6 +652,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!ProbeInfo.IsFullSnapshot)
                     {
+                        if (!ShouldCaptureSnapshotForExplorationTest())
+                        {
+                            snapshotCreator.Stop();
+                            break;
+                        }
+
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
                         break;
@@ -641,6 +677,12 @@ namespace Datadog.Trace.Debugger.Expressions
                         if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                         {
                             snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                        }
+
+                        if (!ShouldCaptureSnapshotForExplorationTest())
+                        {
+                            snapshotCreator.Stop();
+                            break;
                         }
 
                         if (ProbeInfo.IsFullSnapshot)
@@ -682,6 +724,12 @@ namespace Datadog.Trace.Debugger.Expressions
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
                     }
 
+                    if (!ShouldCaptureSnapshotForExplorationTest())
+                    {
+                        snapshotCreator.Stop();
+                        break;
+                    }
+
                     if (ProbeInfo.IsFullSnapshot)
                     {
                         snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
@@ -690,6 +738,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
                     DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(ProbeInfo, snapshot);
+
                     snapshotCreator.Stop();
                     break;
 

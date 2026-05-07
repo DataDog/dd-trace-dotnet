@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -40,9 +41,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter jsonWriter,
             CaptureLimitInfo limitInfo)
         {
-            using var cts = CreateCancellationTimeout();
-            var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
-            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            var start = ExplorationTestMetrics.IsEnabled ? Stopwatch.GetTimestamp() : 0;
+            try
+            {
+                using var cts = CreateCancellationTimeout();
+                var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
+                SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            }
+            finally
+            {
+                if (ExplorationTestMetrics.IsEnabled)
+                {
+                    ExplorationTestMetrics.RecordSnapshotSerialization(Stopwatch.GetTimestamp() - start);
+                }
+            }
         }
 
         public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo)
@@ -63,6 +75,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureLimitInfo limitInfo,
             HashSet<object> collectionsBeingSerialized)
         {
+            // Exploration-test-only perf split: measure at the root to avoid double counting recursive calls.
+            // This helps answer: is serialization time dominated by collections/dictionaries or object graphs?
+            var rootKindStart = 0L;
+            var rootKindIsEnumerable = false;
+            // Only measure the true "root" serialization call for the snapshot.
+            // Note: enumerable element serialization currently reuses currentDepth, so currentDepth==0 can occur
+            // for elements too. variableName is only non-null for the real root call (and for object fields).
+            var rootKindIsActive = ExplorationTestMetrics.IsEnabled && currentDepth == 0 && variableName != null;
+            if (rootKindIsActive)
+            {
+                rootKindStart = Stopwatch.GetTimestamp();
+                rootKindIsEnumerable = source is IEnumerable enumerable0 && (Redaction.IsSupportedCollection(source) || Redaction.IsSupportedDictionary(source));
+            }
+
             try
             {
                 if (Redaction.Instance.ShouldRedact(variableName, type, out var redactionReason))
@@ -123,6 +149,21 @@ namespace Datadog.Trace.Debugger.Snapshots
             catch (Exception e)
             {
                 Log.Error(e, "Error serializing object {VariableName} Depth={CurrentDepth} FieldsOnly={FieldsOnly}", variableName, currentDepth, fieldsOnly);
+            }
+            finally
+            {
+                if (rootKindIsActive)
+                {
+                    var elapsed = Stopwatch.GetTimestamp() - rootKindStart;
+                    if (rootKindIsEnumerable)
+                    {
+                        ExplorationTestMetrics.RecordSnapshotRootEnumerable(elapsed);
+                    }
+                    else
+                    {
+                        ExplorationTestMetrics.RecordSnapshotRootObject(elapsed);
+                    }
+                }
             }
 
             return false;
@@ -484,6 +525,17 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void WriteNotCapturedReason(JsonWriter writer, NotCapturedReason notCapturedReason)
         {
+            // Exploration test metrics: count why we bailed out (timeout/depth/fieldCount).
+            if (ExplorationTestMetrics.IsEnabled)
+            {
+                switch (notCapturedReason)
+                {
+                    case NotCapturedReason.timeout:
+                        ExplorationTestMetrics.RecordSnapshotTimeout();
+                        break;
+                }
+            }
+
             WriteNotCapturedReason(writer, Enum.GetName(typeof(NotCapturedReason), notCapturedReason));
         }
 

@@ -30,7 +30,7 @@ using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
-    internal sealed class DynamicInstrumentation : IDisposable
+    internal sealed partial class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
@@ -49,6 +49,8 @@ namespace Datadog.Trace.Debugger
         private readonly DebuggerSettings _settings;
         private readonly object _instanceLock = new();
         private int _disposeState;
+        private int _initializationState;
+        private Task? _initializationTask;
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -88,17 +90,30 @@ namespace Datadog.Trace.Debugger
 
         public bool IsDisposed => Volatile.Read(ref _disposeState) != 0;
 
-        public bool IsInitialized { get; private set; }
+        public bool IsInitialized => Volatile.Read(ref _initializationState) == 2;
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled)
+            if (!_settings.DynamicInstrumentationEnabled || IsInitialized)
             {
                 return;
             }
 
-            _ = InitializeAsync();
+            if (Interlocked.CompareExchange(ref _initializationState, 1, 0) != 0)
+            {
+                return;
+            }
+
+            _initializationTask = InitializeAsync();
         }
+
+        /// <summary>
+        /// Returns the task representing in-flight initialization (or a completed
+        /// task if <see cref="Initialize"/> has not been called yet). Callers can
+        /// await this to know when DI is fully initialized instead of polling
+        /// <see cref="IsInitialized"/>.
+        /// </summary>
+        internal Task GetInitializationTask() => _initializationTask ?? Task.CompletedTask;
 
         private async Task InitializeAsync()
         {
@@ -161,7 +176,7 @@ namespace Datadog.Trace.Debugger
 
             AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
             StartBackgroundProcess();
-            IsInitialized = true;
+            Volatile.Write(ref _initializationState, 2);
         }
 
         private void StartBackgroundProcess()
@@ -303,8 +318,14 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static void SetRateLimit(ProbeDefinition probe)
+        private void SetRateLimit(ProbeDefinition probe)
         {
+            if (_settings.IsSnapshotExplorationTestEnabled)
+            {
+                ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                return;
+            }
+
             switch (probe)
             {
                 case LogProbe { Sampling: { } sampling }:
@@ -319,7 +340,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static string? JoinLogValues(string[]? values)
+        private string? JoinLogValues(string[]? values)
         {
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }
@@ -632,7 +653,7 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater.AcceptRemoved(paths);
         }
 
-        internal void AddSnapshot(ProbeInfo probe, string snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string? snapshot)
         {
             if (IsDisposed)
             {
@@ -649,7 +670,7 @@ namespace Datadog.Trace.Debugger
             SetProbeStatusToEmitting(probe);
         }
 
-        internal void AddLog(ProbeInfo probe, string log)
+        internal void AddLog(ProbeInfo probe, string? log)
         {
             if (IsDisposed)
             {
