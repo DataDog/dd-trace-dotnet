@@ -40,6 +40,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         /// </summary>
         internal static CallTargetState OnMethodBegin<TTarget, TKey, TValue>(TTarget instance, TKey key, TValue value)
         {
+            // Fast-path bail when interception isn't enabled. Without this check, every Activity.SetTag
+            // call across the host process would hit the Activity custom-property lookup on the next
+            // line — pure overhead for users who haven't opted into the interception path.
+            if (!Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+            {
+                return CallTargetState.GetDefault();
+            }
+
             var scope = ActivityCustomPropertyAccessor<TTarget>.GetScope(instance);
             if (scope is not null)
             {

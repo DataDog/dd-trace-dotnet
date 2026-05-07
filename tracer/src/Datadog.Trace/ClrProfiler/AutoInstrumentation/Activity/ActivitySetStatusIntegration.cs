@@ -43,6 +43,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         /// <typeparam name="TDescription">string type</typeparam>
         internal static CallTargetState OnMethodBegin<TTarget, TStatusCode, TDescription>(TTarget instance, TStatusCode statusCode, TDescription description)
         {
+            // Fast-path bail when interception isn't enabled — see ActivitySetTagIntegration for rationale.
+            if (!Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+            {
+                return CallTargetState.GetDefault();
+            }
+
             var scope = ActivityCustomPropertyAccessor<TTarget>.GetScope(instance);
             if (scope is not null)
             {
