@@ -147,7 +147,17 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var args = EnvironmentTools.IsWindows() ? $"-ma -accepteula {cPid} {Path.GetTempPath()}" : cPid.ToString();
+                    string args;
+                    if (EnvironmentTools.IsWindows())
+                    {
+                        args = $"-ma -accepteula {cPid} {Path.GetTempPath()}";
+                    }
+                    else
+                    {
+                        var dumpOutputDir = GetDumpOutputDirectory();
+                        args = $"--withheap --name {dumpOutputDir}/coredump.%p.dmp {cPid}";
+                    }
+
                     atLeastOneDump |= CaptureMemoryDump(args, output ?? _output);
                 }
                 catch (Exception ex)
@@ -158,6 +168,13 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return atLeastOneDump;
+        }
+
+        private static string GetDumpOutputDirectory()
+        {
+            var dumpDir = Environment.GetEnvironmentVariable("DUMP_OUTPUT_DIRECTORY") ?? Path.GetTempPath();
+            Directory.CreateDirectory(dumpDir);
+            return dumpDir;
         }
 
         private static bool CaptureMemoryDump(string args, IProgress<string> output)
@@ -173,12 +190,16 @@ namespace Datadog.Trace.TestHelpers
             });
 
             using var helper = new ProcessHelper(dumpToolProcess);
-            dumpToolProcess.WaitForExit(30_000);
+            dumpToolProcess.WaitForExit(600_000);
             helper.Drain();
             output?.Report($"[dump][stdout] {helper.StandardOutput}");
             output?.Report($"[dump][stderr] {helper.ErrorOutput}");
 
-            if (dumpToolProcess.ExitCode == 0)
+            if (!dumpToolProcess.HasExited)
+            {
+                output?.Report($"Memory dump tool did not complete within timeout for '{_path} {args}'.");
+            }
+            else if (dumpToolProcess.ExitCode == 0)
             {
                 output?.Report($"Memory dump successfully captured using '{_path} {args}'.");
             }

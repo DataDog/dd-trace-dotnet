@@ -103,6 +103,7 @@ steps:
         --env DD_COLLECTOR_CPU_USAGE="1" \
         --env DD_LOGGER_DD_API_KEY="$(DD_LOGGER_DD_API_KEY)" \
         --env DD_LOGGER_DD_TRACE_LOG_DIRECTORY="/project/artifacts/build_data/infra_logs" \
+        --env DUMP_OUTPUT_DIRECTORY="/project/artifacts/build_data/dumps" \
         --env DD_LOGGER_DD_SERVICE \
         --env DD_LOGGER_DD_ENV \
         --env DD_LOGGER_ENABLED \
