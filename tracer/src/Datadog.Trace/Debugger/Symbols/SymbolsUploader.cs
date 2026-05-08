@@ -12,9 +12,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -100,12 +101,6 @@ namespace Datadog.Trace.Debugger.Symbols
             if (!settings.SymbolDatabaseUploadEnabled)
             {
                 Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
-                return new NoOpSymbolUploader();
-            }
-
-            if (!ThirdPartyModules.IsValid)
-            {
-                Log.Warning("Third party modules load has failed. Disabling Symbol Uploader.");
                 return new NoOpSymbolUploader();
             }
 

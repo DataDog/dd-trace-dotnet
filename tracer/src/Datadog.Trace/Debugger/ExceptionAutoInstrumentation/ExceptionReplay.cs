@@ -7,10 +7,10 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
 
@@ -39,13 +39,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public void Initialize()
         {
             Log.Information("Initializing Exception Replay");
-
-            if (!ThirdPartyModules.IsValid)
-            {
-                Log.Warning("Third party modules load has failed. Disabling Exception Debugging.");
-                _isDisabled = true;
-                return;
-            }
 
             InitSnapshotsSink();
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
