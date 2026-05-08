@@ -329,6 +329,10 @@ dsm_throughput:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
   rules:
+    # Auto-run on the timeit-converter validation branch so we don't have
+    # to manually click play on every push. Revert before merging.
+    - if: '$CI_COMMIT_BRANCH == "rob/dsm-throughput-timeit-validation"'
+      when: always
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
