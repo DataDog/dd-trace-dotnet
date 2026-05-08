@@ -575,36 +575,30 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
+            // DebuggerManager construction is intentionally cheap: it only reads the default
+            // settings sources. The "should we actually start any debugger product?" decision
+            // is made here, at the call site, so when nothing is enabled we don't even allocate
+            // the Task/ContinueWith pair for UpdateConfiguration.
             var manager = DebuggerManager.Instance;
-            var debuggerSettings = manager.DebuggerSettings;
 
-            if (!debuggerSettings.DynamicInstrumentationEnabled)
+            if (!manager.DebuggerSettings.DynamicInstrumentationEnabled)
             {
                 // we need this line for tests
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             }
 
-            if (!ShouldInitializeDebugger(tracerSettings, debuggerSettings, manager.ExceptionReplaySettings.Enabled))
+            if (!DebuggerManager.ShouldInitialize(tracerSettings, manager.DebuggerSettings, manager.ExceptionReplaySettings.Enabled))
             {
                 Log.Debug("Debugger products are not enabled");
+                return;
             }
-            else
-            {
-                _ = manager.UpdateConfiguration(tracerSettings)
-                           .ContinueWith(
-                                t => Log.Error(t?.Exception, "Error initializing debugger"),
-                                CancellationToken.None,
-                                TaskContinuationOptions.OnlyOnFaulted,
-                                TaskScheduler.Default);
-            }
-        }
 
-        internal static bool ShouldInitializeDebugger(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool exceptionReplayEnabled)
-        {
-            return debuggerSettings.DynamicInstrumentationEnabled
-                || debuggerSettings.CodeOriginForSpansEnabled
-                || exceptionReplayEnabled
-                || (debuggerSettings.SymbolDatabaseUploadEnabled && tracerSettings.IsRemoteConfigurationAvailable);
+            _ = manager.UpdateConfiguration(tracerSettings)
+                       .ContinueWith(
+                            t => Log.Error(t?.Exception, "Error initializing debugger"),
+                            CancellationToken.None,
+                            TaskContinuationOptions.OnlyOnFaulted,
+                            TaskScheduler.Default);
         }
 
         // /!\ This method is called by reflection in the SampleHelpers
