@@ -67,7 +67,17 @@ internal static class EndpointDetector
             ThrowHelper.ThrowArgumentNullException(nameof(datadogMetadataReader));
         }
 
-        var metadataReader = datadogMetadataReader.MetadataReader;
+        GetEndpointMethodTokens(datadogMetadataReader.MetadataReader, ref consumer);
+    }
+
+    internal static void GetEndpointMethodTokens<TConsumer>(MetadataReader metadataReader, ref TConsumer consumer)
+        where TConsumer : struct, IEndpointMethodTokenConsumer
+    {
+        if (metadataReader is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(metadataReader));
+        }
+
         foreach (var typeHandle in metadataReader.TypeDefinitions)
         {
             var typeDef = metadataReader.GetTypeDefinition(typeHandle);

@@ -10,7 +10,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
-using Datadog.Trace.Pdb;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -18,6 +17,14 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using Xunit.Abstractions;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+#endif
 
 namespace Datadog.Trace.Tests.Debugger
 {
@@ -32,7 +39,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             _output = output;
             _assemblyPath = CreateTestAssembly();
-            _assembly = Assembly.LoadFile(_assemblyPath);
+            _assembly = Assembly.Load(File.ReadAllBytes(_assemblyPath));
         }
 
         public void Dispose()
@@ -53,11 +60,8 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void GetEndpointMethodTokens_FindsAllEndpoints()
         {
-            // Arrange
-            using var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(_assembly);
-
             // Act
-            var endpointTokens = GetEndpointMethodTokens(datadogMetadataReader);
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
 
             // Create a mapping of method tokens to more friendly names for debugging
             var tokenToMethodMap = new Dictionary<int, string>();
@@ -150,11 +154,8 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void GetEndpointMethodTokens_DoesNotDetectNonEndpoints()
         {
-            // Arrange
-            using var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(_assembly);
-
             // Act
-            var endpointTokens = GetEndpointMethodTokens(datadogMetadataReader);
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
 
             // Create a list of methods that should NOT be endpoints
             var nonEndpointTokens = new List<int>();
@@ -236,11 +237,8 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void GetEndpointMethodTokens_DetectsInheritedCustomControllerAttribute()
         {
-            // Arrange
-            using var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(_assembly);
-
             // Act
-            var endpointTokens = GetEndpointMethodTokens(datadogMetadataReader);
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
 
             // Assert: the leaf controller carries no attribute itself; the chain-walk must find
             // [ApiController] on CustomApiBaseController to recognize InheritedAttributeController.
@@ -256,11 +254,8 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void GetEndpointMethodTokens_DetectsGenericSignalRHubBaseType()
         {
-            // Arrange
-            using var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(_assembly);
-
             // Act
-            var endpointTokens = GetEndpointMethodTokens(datadogMetadataReader);
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
 
             // Assert: TestGenericHub : Hub<string> drives the TypeSpecification path through
             // BaseTypeMatcher. The open-generic Hub`1 candidate must match the decoded
@@ -277,11 +272,8 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void GetEndpointMethodTokens_DoesNotDetectHubNestedInsideGenericArgument()
         {
-            // Arrange
-            using var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(_assembly);
-
             // Act
-            var endpointTokens = GetEndpointMethodTokens(datadogMetadataReader);
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
 
             // Assert: NestedGenericHubInheritor's immediate base is SomeWrapper<Hub<string>>.
             // Hub appears only as a nested generic argument, so the type must NOT be
@@ -301,14 +293,16 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // Arrange
             var assemblyPath = CreateAssemblyWithoutEndpoints();
-            var assembly = Assembly.LoadFile(assemblyPath);
 
             try
             {
-                using (var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(assembly))
+                using (var assemblyStream = File.OpenRead(assemblyPath))
+                using (var peReader = new PEReader(assemblyStream, PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage))
                 {
+                    var metadataReader = peReader.GetMetadataReader();
+
                     // Act
-                    var endpointTokens = GetEndpointMethodTokens(datadogMetadataReader);
+                    var endpointTokens = GetEndpointMethodTokens(metadataReader);
 
                     // Assert
                     endpointTokens.Should().BeEmpty();
@@ -330,11 +324,18 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
-        private static IReadOnlyList<int> GetEndpointMethodTokens(DatadogMetadataReader reader)
+        private static IReadOnlyList<int> GetEndpointMethodTokens(MetadataReader reader)
         {
             var consumer = new ListEndpointTokenConsumer(new List<int>());
             EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
             return consumer.Tokens;
+        }
+
+        private static IReadOnlyList<int> GetEndpointMethodTokens(string assemblyPath)
+        {
+            using var assemblyStream = File.OpenRead(assemblyPath);
+            using var peReader = new PEReader(assemblyStream, PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
+            return GetEndpointMethodTokens(peReader.GetMetadataReader());
         }
 
         private void LogEndpointDetails(IReadOnlyList<int> endpointTokens, Dictionary<int, string> tokenToMethodMap, HashSet<int> expectedEndpoints)
