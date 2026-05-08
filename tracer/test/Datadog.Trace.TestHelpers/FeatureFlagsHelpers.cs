@@ -128,4 +128,24 @@ internal static class FeatureFlagsHelpers
 
         return new Flag { Key = "exposure-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
     }
+
+    internal static Flag CreateInvalidRegexFlag()
+    {
+        var variants = new Dictionary<string, Variant>
+        {
+            ["matched"] = new Variant { Key = "matched", Value = "matched-value" },
+        };
+
+        // Invalid regex pattern: unclosed bracket
+        var invalidRegexConditions = new List<ConditionConfiguration>
+        {
+            new ConditionConfiguration { Operator = ConditionOperator.MATCHES, Attribute = "email", Value = "[invalid" },
+        };
+
+        var rules = new List<Rule> { new Rule(invalidRegexConditions) };
+        var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "matched" } };
+        var alloc = new Allocation { Key = "invalid-regex-alloc", Rules = rules, Splits = splits, DoLog = false };
+
+        return new Flag { Key = "invalid-regex-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+    }
 }
