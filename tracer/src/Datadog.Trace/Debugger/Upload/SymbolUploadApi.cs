@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.Upload
             discoveryService.SubscribeToChanges(c =>
             {
                 Endpoint = c.SymbolDbEndpoint;
-                Log.Information("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
+                Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
             });
         }
 

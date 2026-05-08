@@ -79,7 +79,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             if (string.IsNullOrEmpty(configuration.SymbolDbEndpoint))
             {
-                Log.Information("`SymbolDb endpoint` is null. This can happen if your datadog-agent version is lower than 7.45");
+                Log.Debug("`SymbolDb endpoint` is null. This can happen if your datadog-agent version is lower than 7.45");
                 return;
             }
 

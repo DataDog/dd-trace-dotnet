@@ -284,7 +284,7 @@ namespace Datadog.Trace.Debugger
 
             if (!tracerSettings.IsRemoteConfigurationAvailable)
             {
-                Log.Information("Remote configuration is not available in this environment, so we don't upload symbols.");
+                Log.Debug("Remote configuration is not available in this environment, so we don't upload symbols.");
                 return;
             }
 
@@ -437,7 +437,7 @@ namespace Datadog.Trace.Debugger
                     }
                     else
                     {
-                        Log.Information("Code Origin for Spans is disabled");
+                        Log.Debug("Code Origin for Spans is disabled");
                     }
 
                     return;
@@ -445,7 +445,7 @@ namespace Datadog.Trace.Debugger
 
                 if (CodeOrigin != null)
                 {
-                    Log.Information("Code Origin for Spans is already initialized");
+                    Log.Debug("Code Origin for Spans is already initialized");
                     return;
                 }
 
@@ -480,7 +480,7 @@ namespace Datadog.Trace.Debugger
                     }
                     else
                     {
-                        Log.Information("Exception Replay is disabled");
+                        Log.Debug("Exception Replay is disabled");
                     }
 
                     return;
@@ -488,7 +488,7 @@ namespace Datadog.Trace.Debugger
 
                 if (ExceptionReplay != null)
                 {
-                    Log.Information("Exception Replay is already initialized");
+                    Log.Debug("Exception Replay is already initialized");
                     return;
                 }
 
@@ -547,11 +547,11 @@ namespace Datadog.Trace.Debugger
             var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var prev = Interlocked.Exchange(ref _diDebounceGate, gate);
             prev?.TrySetResult(false);
-            Log.Information("Previous DI update request exists: {Value}", prev != null);
+            Log.Debug("Previous DI update request exists: {Value}", prev != null);
 
             try
             {
-                Log.Information("Waiting {Timeout}ms before updating Dynamic Instrumentation", _diDebounceDelay.TotalMilliseconds);
+                Log.Debug("Waiting {Timeout}ms before updating Dynamic Instrumentation", _diDebounceDelay.TotalMilliseconds);
                 var delayTask = Task.Delay(_diDebounceDelay);
                 var completed = await Task.WhenAny(delayTask, gate.Task, _processExit.Task).ConfigureAwait(false);
                 if (completed != delayTask || _processExit.Task.IsCompleted)
@@ -580,14 +580,14 @@ namespace Datadog.Trace.Debugger
         {
             if (requested && !debuggerSettings.DynamicInstrumentationCanBeEnabled)
             {
-                Log.Information("Dynamic Instrumentation can't be enabled because the local environment variable is set to false");
+                Log.Debug("Dynamic Instrumentation can't be enabled because the local environment variable is set to false");
                 return true;
             }
 
             // no change required AND no init in progress
             if ((requested == current) && Volatile.Read(ref _diState) == 0)
             {
-                Log.Information("Skip update Dynamic Instrumentation. Requested is {Requested}, Current is {Current}", requested, current);
+                Log.Debug("Skip update Dynamic Instrumentation. Requested is {Requested}, Current is {Current}", requested, current);
                 return true;
             }
 
@@ -613,7 +613,7 @@ namespace Datadog.Trace.Debugger
 
                 if (Volatile.Read(ref _diState) != 0)
                 {
-                    Log.Information("Dynamic Instrumentation is already initialized");
+                    Log.Debug("Dynamic Instrumentation is already initialized");
                     return;
                 }
 
@@ -720,7 +720,7 @@ namespace Datadog.Trace.Debugger
 
         private void DisableDynamicInstrumentation(bool dynamicallyDisabled)
         {
-            Log.Information("Disabling Dynamic Instrumentation");
+            Log.Debug("Disabling Dynamic Instrumentation");
 
             bool disabled = false;
             lock (_syncLock)
@@ -746,7 +746,7 @@ namespace Datadog.Trace.Debugger
             }
             else
             {
-                Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                Log.Debug("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to 'true'.", ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
             }
         }
 
