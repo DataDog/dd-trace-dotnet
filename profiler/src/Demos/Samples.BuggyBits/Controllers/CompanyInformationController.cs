@@ -40,6 +40,14 @@ namespace BuggyBits.Controllers
             return View("Index");
         }
 
+        [HttpPost]
+        public IActionResult Contact(ContactViewModel model)
+        {
+            BuggyMail mail = new BuggyMail();
+            mail.SendEmail(model.Message, "whocares-at-buggymail");
+            return View("Index");
+        }
+
         private string GetGitHubPageViaThread()
         {
             string result = string.Empty;
@@ -60,14 +68,6 @@ namespace BuggyBits.Controllers
             worker.Start();
             worker.Join();
             return result;
-        }
-
-        [HttpPost]
-        public IActionResult Contact(ContactViewModel model)
-        {
-            BuggyMail mail = new BuggyMail();
-            mail.SendEmail(model.Message, "whocares-at-buggymail");
-            return View("Index");
         }
     }
 }
