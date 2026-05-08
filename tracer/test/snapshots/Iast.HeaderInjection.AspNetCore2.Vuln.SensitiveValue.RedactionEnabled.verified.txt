@@ -1,0 +1,40 @@
+[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: myName
+        },
+        {
+          value: : 
+        },
+        {
+          pattern: abcdefghijklmn,
+          redacted: true,
+          source: 1
+        }
+      ]
+    },
+    hash: 2074088343,
+    request: {
+      method: GET,
+      route: iast/headerinjection,
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.header,
+        value: myName
+      },
+      {
+        name: value,
+        origin: http.request.header,
+        pattern: abcdefghijklmn,
+        redacted: true
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

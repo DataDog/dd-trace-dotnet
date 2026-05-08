@@ -979,7 +979,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         List<JObject> records;
         do
         {
-            records = TryReadRecords(path, since);
+            records = VulnerabilityJsonl.ReadRecords(path, since);
             if (records.Count > 0)
             {
                 break;
@@ -1047,46 +1047,6 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         }
 
         return record;
-    }
-
-    private static List<JObject> TryReadRecords(string path, DateTime? since)
-    {
-        var matches = new List<JObject>();
-        if (!File.Exists(path))
-        {
-            return matches;
-        }
-
-        // Open shared with write so the sample app can keep appending while we read.
-        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var reader = new StreamReader(fs);
-        string line;
-        while ((line = reader.ReadLine()) is not null)
-        {
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            JObject record;
-            try
-            {
-                record = JObject.Parse(line);
-            }
-            catch
-            {
-                continue;
-            }
-
-            if (since is { } cutoff && (record["timestamp"]?.Value<DateTime?>() is not { } emitted || emitted < cutoff))
-            {
-                continue;
-            }
-
-            matches.Add(record);
-        }
-
-        return matches;
     }
 }
 

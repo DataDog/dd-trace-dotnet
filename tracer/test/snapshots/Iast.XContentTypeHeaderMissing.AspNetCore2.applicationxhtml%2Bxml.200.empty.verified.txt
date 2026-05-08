@@ -1,0 +1,11 @@
+[
+  {
+    hash: -80579412,
+    request: {
+      method: GET,
+      route: iast/xcontenttypeheadermissing,
+      url: http://localhost:00000/Iast/XContentTypeHeaderMissing?contentType=application/xhtml%2Bxml&returnCode=200
+    },
+    type: XCONTENTTYPE_HEADER_MISSING
+  }
+]

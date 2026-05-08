@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests.IAST;
+namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 [Trait("RequiresDockerDependency", "true")]
 public class AspNetCore5IastDbTests : AspNetCore5IastTests
@@ -27,11 +27,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
-// [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
-// [InlineData("System.Data.SqlClient")]
-// [InlineData("Npgsql")]
-// [InlineData("MySql.Data")]
     public async Task TestIastStoredXssRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -55,10 +51,6 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [Trait("Category", "ArmUnsupported")]
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
-    // [InlineData("System.Data.SqlClient")]
-    // [InlineData("Npgsql")]
-    // [InlineData("MySql.Data")]
-    // [InlineData("Oracle")]
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -78,11 +70,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
-// [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
-// [InlineData("System.Data.SqlClient")]
-//    [InlineData("Npgsql")]
-//    [InlineData("MySql.Data")]
     public async Task TestIastStoredSqliRequest(string database)
     {
 #if NETCOREAPP3_0

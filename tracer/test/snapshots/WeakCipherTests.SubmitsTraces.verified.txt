@@ -1,0 +1,134 @@
+﻿[
+  {
+    evidence: {
+      value: DES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: DES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: DES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: DES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: RC2
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: RC2
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: RC2
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: RC2
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: TripleDES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: TripleDES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: TripleDES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  },
+  {
+    evidence: {
+      value: TripleDES
+    },
+    hash: 1966097305,
+    location: {
+      method: VulnerableSection,
+      path: Samples.WeakCipher.Program
+    },
+    type: WEAK_CIPHER
+  }
+]

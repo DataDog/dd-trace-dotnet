@@ -1,0 +1,18 @@
+[
+  {
+    evidence: {
+      value: Samples.Security.AspNetCore2,SystemException
+    },
+    hash: 1099366274,
+    location: {
+      method: StackTraceLeak,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      method: GET,
+      route: iast/stacktraceleak,
+      url: http://localhost:00000/Iast/StackTraceLeak
+    },
+    type: STACKTRACE_LEAK
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    evidence: {
+      value: System.Random
+    },
+    hash: -1130147155,
+    location: {
+      method: WeakRandomness,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      method: GET,
+      route: iast/weakrandomness,
+      url: http://localhost:00000/Iast/WeakRandomness
+    },
+    type: WEAK_RANDOMNESS
+  }
+]

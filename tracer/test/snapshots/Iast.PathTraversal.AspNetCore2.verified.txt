@@ -1,0 +1,30 @@
+[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: nonexisting.txt
+        }
+      ]
+    },
+    hash: 2114125236,
+    location: {
+      method: GetFileContent,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      method: GET,
+      route: iast/getfilecontent,
+      url: http://localhost:00000/Iast/GetFileContent?file=nonexisting.txt
+    },
+    sources: [
+      {
+        name: file,
+        origin: http.request.parameter,
+        value: nonexisting.txt
+      }
+    ],
+    type: PATH_TRAVERSAL
+  }
+]

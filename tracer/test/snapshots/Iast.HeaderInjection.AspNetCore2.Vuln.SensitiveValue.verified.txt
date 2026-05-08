@@ -1,0 +1,38 @@
+[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: myName
+        },
+        {
+          value: : 
+        },
+        {
+          source: 1,
+          value: :bearer secret
+        }
+      ]
+    },
+    hash: -883396955,
+    request: {
+      method: GET,
+      route: iast/headerinjection,
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.header,
+        value: myName
+      },
+      {
+        name: value,
+        origin: http.request.header,
+        value: :bearer secret
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

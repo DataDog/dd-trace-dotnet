@@ -1,0 +1,146 @@
+[
+  {
+    evidence: {
+      value: AllVulnerabilitiesCookieKey
+    },
+    hash: 990913114,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: INSECURE_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.0
+    },
+    hash: 990913114,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: INSECURE_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.1
+    },
+    hash: 990913114,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: INSECURE_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.2
+    },
+    hash: 990913114,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: INSECURE_COOKIE
+  },
+  {
+    evidence: {
+      value: AllVulnerabilitiesCookieKey
+    },
+    hash: -60481650,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_HTTPONLY_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.0
+    },
+    hash: -60481650,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_HTTPONLY_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.1
+    },
+    hash: -60481650,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_HTTPONLY_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.2
+    },
+    hash: -60481650,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_HTTPONLY_COOKIE
+  },
+  {
+    evidence: {
+      value: AllVulnerabilitiesCookieKey
+    },
+    hash: -636226626,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_SAMESITE_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.0
+    },
+    hash: -636226626,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_SAMESITE_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.1
+    },
+    hash: -636226626,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_SAMESITE_COOKIE
+  },
+  {
+    evidence: {
+      value: LongCookie.abcdefghijklmnopqrstuvwxyz0123456789.2
+    },
+    hash: -636226626,
+    request: {
+      method: GET,
+      route: iast/allvulnerabilitiescookie,
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_SAMESITE_COOKIE
+  }
+]

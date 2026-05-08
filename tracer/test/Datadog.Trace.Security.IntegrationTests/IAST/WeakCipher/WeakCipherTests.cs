@@ -3,14 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
+using Newtonsoft.Json.Linq;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,13 +21,15 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 [UsesVerify]
 public class WeakCipherTests : TestHelper
 {
-    private const string ExpectedOperationName = "weak_cipher";
+    private readonly string _vulnerabilityLogPath;
 
     public WeakCipherTests(ITestOutputHelper output)
         : base("WeakCipher", output)
     {
+        _vulnerabilityLogPath = Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
         SetServiceVersion("1.0.0");
         SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, _vulnerabilityLogPath);
     }
 
 #if !NET7_0_OR_GREATER
@@ -38,22 +41,23 @@ public class WeakCipherTests : TestHelper
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
 
-        const int expectedSpanCount = 6;
-        var filename = "WeakCipherTests.SubmitsTraces";
+        const string filename = "WeakCipherTests.SubmitsTraces";
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        // Disable meta struct for this test because if the sample run faster than the service discovery,
-        // the config from the mock agent is not fetched
-        agent.Configuration.SpanMetaStructs = false;
-
+        var since = DateTime.UtcNow;
         using var process = await RunSampleAndWaitForExit(agent);
-        var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: ExpectedOperationName);
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        var records = VulnerabilityJsonl.ReadRecords(_vulnerabilityLogPath, since);
+        var sanitized = records
+            .OrderBy(r => r["type"]?.Value<string>(), StringComparer.Ordinal)
+            .ThenBy(r => r["hash"]?.Value<int>())
+            .Select(Sanitize)
+            .ToList();
+
+        VerifyHelper.InitializeGlobalSettings();
+        await Verifier.Verify(sanitized, new VerifySettings())
+                      .UseFileName(filename)
+                      .DisableRequireUniquePrefix();
 
         VerifyInstrumentation(process.Process);
     }
@@ -69,10 +73,25 @@ public class WeakCipherTests : TestHelper
     {
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         SetEnvironmentVariable(variableName, variableValue);
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = await RunSampleAndWaitForExit(agent);
-        var spans = agent.Spans; // we expect no spans
 
-        spans.Where(s => s.Name.Equals(ExpectedOperationName)).Should().BeEmpty();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        var since = DateTime.UtcNow;
+        using var process = await RunSampleAndWaitForExit(agent);
+
+        var records = VulnerabilityJsonl.ReadRecords(_vulnerabilityLogPath, since);
+        Assert.Empty(records);
+    }
+
+    private static JObject Sanitize(JObject record)
+    {
+        record.Remove("timestamp");
+
+        if (record["location"] is JObject location)
+        {
+            location.Remove("line");
+            location.Remove("stack");
+        }
+
+        return record;
     }
 }

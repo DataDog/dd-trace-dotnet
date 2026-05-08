@@ -1,0 +1,33 @@
+[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: <b>RawValue</b>
+        },
+        {
+          value: <b>More Text</b>
+        }
+      ]
+    },
+    hash: -1547431166,
+    location: {
+      method: MoveNext,
+      path: AspNetCore.Views_Iast_Xss+<<ExecuteAsync>b__8_1>d
+    },
+    request: {
+      method: GET,
+      route: iast/reflectedxss,
+      url: http://localhost:00000/Iast/ReflectedXss?param=%3Cb%3ERawValue%3C/b%3E
+    },
+    sources: [
+      {
+        name: param,
+        origin: http.request.parameter,
+        value: <b>RawValue</b>
+      }
+    ],
+    type: XSS
+  }
+]

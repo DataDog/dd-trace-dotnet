@@ -1,0 +1,11 @@
+[
+  {
+    hash: -1606758535,
+    request: {
+      method: GET,
+      route: iast/stricttransportsecurity,
+      url: http://localhost:00000/Iast/StrictTransportSecurity?contentType=text/html;charset=UTF-8&returnCode=200&hstsHeaderValue=max-age=0&xForwardedProto=https
+    },
+    type: HSTS_HEADER_MISSING
+  }
+]

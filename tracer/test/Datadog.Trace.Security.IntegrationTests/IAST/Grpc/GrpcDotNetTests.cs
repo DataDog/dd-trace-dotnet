@@ -6,10 +6,8 @@
 #if NETCOREAPP3_0_OR_GREATER
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -19,7 +17,7 @@ using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests.IAST.GrpcDotNet;
+namespace Datadog.Trace.Security.IntegrationTests.Iast.GrpcDotNet;
 
 [UsesVerify]
 public class GrpcDotNetTests : TestHelper
@@ -60,7 +58,7 @@ public class GrpcDotNetTests : TestHelper
         using var process = await RunSampleAndWaitForExit(agent);
 
         // Process has exited — the JSONL file is fully written. Read only records from this run.
-        var records = ReadAllVulnerabilityRecords(_vulnerabilityLogPath, since);
+        var records = VulnerabilityJsonl.ReadRecords(_vulnerabilityLogPath, since);
         var sanitized = records
             .OrderBy(r => r["type"]?.Value<string>(), StringComparer.Ordinal)
             .ThenBy(r => r["hash"]?.Value<int>())
@@ -71,43 +69,6 @@ public class GrpcDotNetTests : TestHelper
         await Verifier.Verify(sanitized, new VerifySettings())
                       .UseFileName(filename)
                       .DisableRequireUniquePrefix();
-    }
-
-    private static List<JObject> ReadAllVulnerabilityRecords(string path, DateTime since)
-    {
-        var records = new List<JObject>();
-        if (!File.Exists(path))
-        {
-            return records;
-        }
-
-        foreach (var line in File.ReadLines(path))
-        {
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            JObject record;
-            try
-            {
-                record = JObject.Parse(line);
-            }
-            catch
-            {
-                continue;
-            }
-
-            var ts = record["timestamp"]?.Value<DateTime?>();
-            if (ts is null || ts.Value < since)
-            {
-                continue;
-            }
-
-            records.Add(record);
-        }
-
-        return records;
     }
 
     private static JObject Sanitize(JObject record)
