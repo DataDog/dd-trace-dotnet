@@ -39,15 +39,22 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly ImmutableHashSet<string> _symDb3rdPartyExcludes;
         private readonly long _thresholdInBytes;
         private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly IBatchUploadApi _api;
+        private readonly ISymbolUploadApi _api;
         private readonly object _disposeLock = new();
         private readonly IDiscoveryService _discoveryService;
+
+        // The (uploadId, batchNum) pair groups all batches uploaded by this
+        // uploader instance. The same values are stamped into both the
+        // attachment Root and the EvP event metadata so the backend can
+        // match them up.
+        private readonly Guid _symdbUploadId = Guid.NewGuid();
         private volatile bool _disposed;
         private byte[]? _payload;
         private volatile string? _symDbEndpoint;
+        private long _symdbBatchNum;
 
         private SymbolsUploader(
-            IBatchUploadApi api,
+            ISymbolUploadApi api,
             IDiscoveryService discoveryService,
             DebuggerSettings settings,
             TracerSettings tracerSettings,
@@ -95,7 +102,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
+        public static IDebuggerUploader Create(ISymbolUploadApi api, IDiscoveryService discoveryService, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {
@@ -241,26 +248,25 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task UploadClasses(Root root, IEnumerable<Model.Scope> classes)
         {
-            var rootAsString = JsonHelper.SerializeObject(root);
-            if (!TryBuildPrefixAndSuffix(rootAsString, out var prefix, out var suffix))
-            {
-                // this should not happen unless Root/Scope JSON shape changes
-                Log.Warning("Unable to find insertion point for class scopes in SymDB payload");
-                return;
-            }
-
-            var prefixLength = prefix.Length;
-            var builder = StringBuilderCache.Acquire(prefixLength + (int)_thresholdInBytes + suffix.Length + 16);
-            builder.Append(prefix);
+            // The payload builder is used for the whole upload: each batch
+            // starts by appending a fresh prefix (with a per-batch batch_num),
+            // class scopes are appended directly into it, and on flush we
+            // append ']' + suffix and send.
+            var payloadBuilder = StringBuilderCache.Acquire((int)_thresholdInBytes + 256);
 
             var serializer = JsonSerializer.Create(_jsonSerializerSettings);
             using var pooledWriter = new Utf8CountingPooledTextWriter();
 
-            var accumulatedBytes = 0;
-            var hasAnyClass = false;
-
             try
             {
+                if (!TryStartBatch(root, payloadBuilder, out var suffix, out var batchNum))
+                {
+                    return;
+                }
+
+                var accumulatedBytes = 0;
+                var hasAnyClass = false;
+
                 foreach (var classSymbol in classes)
                 {
                     if (classSymbol == default)
@@ -269,18 +275,24 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
 
                     // Try to serialize and append the class
-                    if (!TrySerializeClass(classSymbol, builder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out var newByteCount))
+                    if (!TrySerializeClass(classSymbol, payloadBuilder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out var newByteCount))
                     {
                         // If we couldn't append because it would exceed capacity,
                         // upload current batch first
                         bool succeeded = false;
                         if (hasAnyClass)
                         {
-                            await Upload(builder, prefixLength, suffix).ConfigureAwait(false);
+                            await Flush(payloadBuilder, suffix, batchNum).ConfigureAwait(false);
+                            payloadBuilder.Length = 0;
                             accumulatedBytes = 0;
                             hasAnyClass = false;
-                            // Try again with empty builder
-                            succeeded = TrySerializeClass(classSymbol, builder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out newByteCount);
+                            if (!TryStartBatch(root, payloadBuilder, out suffix, out batchNum))
+                            {
+                                return;
+                            }
+
+                            // Try again with empty scopes in the new batch
+                            succeeded = TrySerializeClass(classSymbol, payloadBuilder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out newByteCount);
                         }
 
                         if (!succeeded)
@@ -298,27 +310,49 @@ namespace Datadog.Trace.Debugger.Symbols
                 // Upload any remaining data
                 if (hasAnyClass)
                 {
-                    await Upload(builder, prefixLength, suffix).ConfigureAwait(false);
+                    await Flush(payloadBuilder, suffix, batchNum).ConfigureAwait(false);
                 }
             }
             finally
             {
-                if (builder != null)
-                {
-                    StringBuilderCache.Release(builder);
-                }
+                StringBuilderCache.Release(payloadBuilder);
             }
         }
 
-        private async Task Upload(StringBuilder builder, int prefixLength, string suffix)
+        private bool TryStartBatch(Root root, StringBuilder builder, out string suffix, out long batchNum)
+        {
+            batchNum = Interlocked.Increment(ref _symdbBatchNum);
+            root.UploadId = _symdbUploadId;
+            root.BatchNum = batchNum;
+            root.Final = false;
+            var rootAsString = JsonHelper.SerializeObject(root);
+            if (!TryBuildPrefixAndSuffix(rootAsString, out var prefix, out suffix))
+            {
+                // this should not happen unless Root/Scope JSON shape changes
+                Log.Warning("Unable to find insertion point for class scopes in SymDB payload");
+                return false;
+            }
+
+            builder.Append(prefix);
+            return true;
+        }
+
+        private async Task Flush(StringBuilder builder, string suffix, long batchNum)
         {
             builder.Append(']');
             builder.Append(suffix);
-            await SendSymbol(builder.ToString()).ConfigureAwait(false);
-            builder.Length = prefixLength;
+            var metadata = new SymDbUploadMetadata(
+                Service: _serviceName.Value,
+                Version: _serviceVersion,
+                UploadId: _symdbUploadId,
+                BatchNum: batchNum,
+                // Always false: the .NET tracer continuously uploads new code as
+                // assemblies get loaded; there is no defined end-of-upload point.
+                Final: false);
+            await SendSymbol(builder.ToString(), metadata).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendSymbol(string symbol)
+        private async Task<bool> SendSymbol(string symbol, SymDbUploadMetadata metadata)
         {
             var count = Encoding.UTF8.GetByteCount(symbol);
             if (_payload == null || count > _payload.Length)
@@ -329,7 +363,9 @@ namespace Datadog.Trace.Debugger.Symbols
             Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
             try
             {
-                return await _api.SendBatchAsync(new ArraySegment<byte>(_payload, 0, count)).ConfigureAwait(false);
+                return await _api
+                    .SendBatchAsync(new ArraySegment<byte>(_payload, 0, count), metadata)
+                    .ConfigureAwait(false);
             }
             catch (Exception e)
             {
