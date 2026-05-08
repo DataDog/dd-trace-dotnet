@@ -116,6 +116,41 @@ public class DynamicConfigurationManagerTests
     }
 
     [Fact]
+    public void ShouldApplyDynamicDebuggerConfig_WhenOnlySymDbIsOnAndNewDynamicAllOff_ReturnsFalse()
+    {
+        // SymDB is gated separately by SymDbRemoteConfig and is intentionally not part of
+        // IsAnyRelevantProductRequested. With SymDB on but DI/ER/CO all off, an APM_TRACING
+        // dynamic config that doesn't enable any DI/ER/CO product is a no-op for the manager,
+        // so we skip applying it. This test pins that intent so a future refactor of the gate
+        // can't silently regress the SymDB-only path that motivated this skip.
+        var oldDebuggerSettings = CreateDebuggerSettings(diEnabled: false, coEnabled: false, symDbEnabled: true);
+
+        var newDynamicSettings = new ImmutableDynamicDebuggerSettings
+        {
+            DynamicInstrumentationEnabled = false,
+            ExceptionReplayEnabled = false,
+            CodeOriginEnabled = false,
+        };
+
+        DynamicConfigurationManager
+            .ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, newDynamicSettings, exceptionReplayEnvEnabled: false)
+            .Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldApplyDynamicDebuggerConfig_WhenCodeOriginOnViaEnvAndNewDynamicAllOff_ReturnsTrue()
+    {
+        // CO is on via env; the new dynamic config differs from the default and may need to
+        // disable CO, so we must proceed with the apply.
+        var oldDebuggerSettings = CreateDebuggerSettings(diEnabled: false, coEnabled: true, symDbEnabled: false);
+        var newDynamicSettings = new ImmutableDynamicDebuggerSettings { CodeOriginEnabled = false };
+
+        DynamicConfigurationManager
+            .ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, newDynamicSettings, exceptionReplayEnvEnabled: false)
+            .Should().BeTrue();
+    }
+
+    [Fact]
     public void CombineApmTracingConfiguration_WhenNoConfiguration_ReturnsEmptyCollection()
     {
         Dictionary<string, RemoteConfiguration> activeConfigs = new();
