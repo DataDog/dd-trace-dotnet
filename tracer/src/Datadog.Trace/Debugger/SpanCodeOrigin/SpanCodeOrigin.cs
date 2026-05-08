@@ -212,7 +212,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return null;
             }
 
-            return pdbInfo is not null && pdbInfo.MethodSequencePoints.TryGetValue(metadataToken, out var sequencePoint)
+            return pdbInfo is not null && pdbInfo.TryGetSequencePoint(metadataToken, out var sequencePoint)
                        ? sequencePoint
                        : null;
         }
@@ -365,7 +365,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private sealed class AssemblyPdbInfo(Dictionary<int, CachedSequencePoint> sequencePoints)
         {
-            public Dictionary<int, CachedSequencePoint> MethodSequencePoints { get; } = sequencePoints;
+            private readonly Dictionary<int, CachedSequencePoint> _sequencePoints = sequencePoints;
+
+            public bool TryGetSequencePoint(int token, out CachedSequencePoint sequencePoint)
+            {
+                return _sequencePoints.TryGetValue(token, out sequencePoint);
+            }
         }
 
         /// <summary>
