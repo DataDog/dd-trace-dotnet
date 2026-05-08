@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <SignAssembly>false</SignAssembly>
+        <Nullable>enable</Nullable>
+        <!-- Suppress documentation warnings for internal tooling -->
+        <NoWarn>$(NoWarn);CS1591;SA1600;SA1601;SA1602;SA1611;SA1615;SA1618</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="dnlib" Version="3.6.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\Data\**\*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="Resources\Data\**\*.cs" />
+    </ItemGroup>
+</Project>

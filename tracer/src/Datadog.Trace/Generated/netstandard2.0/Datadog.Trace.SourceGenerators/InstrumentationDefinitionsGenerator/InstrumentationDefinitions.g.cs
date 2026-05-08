@@ -320,6 +320,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.TracerMetricsEnabledGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.PopulateDictionaryIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings.DiagnosticSourceEnabledSetIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.DataStreams.DataStreamsTrackTransactionIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions.SpanExtensionsSetTraceSamplingPriorityIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkEvaluateIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual.FeatureFlagsSdkIsAvailableIntegration"
@@ -622,6 +623,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerConfigurationInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Serilog,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless.CompatibilityLayer_CalculateDogStatsDPipeName_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless.CompatibilityLayer_CalculateTracePipeName_Integration"
+                    => Datadog.Trace.Configuration.IntegrationId.ServerlessCompat,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration_6_2_0"
                     => Datadog.Trace.Configuration.IntegrationId.ServiceStackRedis,

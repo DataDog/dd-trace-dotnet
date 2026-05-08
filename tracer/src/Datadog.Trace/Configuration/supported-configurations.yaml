@@ -664,6 +664,13 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling Dynamic Instrumentation.
       Default value is false (disabled).
+  DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE:
+  - implementation: B
+    type: string
+    default: null
+    product: Debugger
+    const_name: DynamicInstrumentationProbeFile
+    documentation: Configuration key for loading Dynamic Instrumentation probe definitions from a local JSON file.
   DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE:
   - implementation: A
     type: int
@@ -1507,6 +1514,15 @@ supportedConfigurations:
       Match all spans that start with "cart" without any limits and any operation name.
           "[{"service": "cart*"}]"
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.SpanSamplingRules"/>
+  DD_SERVERLESS_COMPAT_PATH:
+  - implementation: A
+    type: string
+    default: null
+    const_name: ServerlessCompatPath
+    documentation: |-
+      Overrides the default path to the serverless compatibility layer binary.
+      Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
+      Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.
   DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES:
   - implementation: A
     type: int

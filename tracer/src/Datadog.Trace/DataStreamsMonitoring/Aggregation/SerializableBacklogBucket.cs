@@ -16,7 +16,7 @@ internal readonly struct SerializableBacklogBucket
     public readonly long BucketStartTimeNs;
 
     /// <summary>
-    /// The stats bucket, keyed on <see cref="StatsBucket.Hash"/>
+    /// The stats bucket, keyed on <see cref="BacklogBucket.Tags"/> by reference identity.
     /// </summary>
     public readonly Dictionary<string, BacklogBucket> Bucket;
 

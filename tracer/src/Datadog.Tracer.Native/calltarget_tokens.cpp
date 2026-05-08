@@ -523,7 +523,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
 
     // Get new locals token
     mdToken newLocalVarSig;
-    hr = module_metadata->metadata_emit->GetTokenFromSig(newSignature.GetSignature(), newSignature.Size(), &newLocalVarSig);
+    hr = module_metadata->metadata_emit->GetTokenFromSig(newSignature.GetSignature(), static_cast<ULONG>(newSignature.Size()), &newLocalVarSig);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating new locals var signature.");

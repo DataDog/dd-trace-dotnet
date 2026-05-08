@@ -13,6 +13,9 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <PreserveCompilationContext>true</PreserveCompilationContext>
 
+    <!-- NU1510: System.IO.* / System.Text.Encoding.Extensions below are flagged as framework-provided, but they're retained to resolve transitive Serilog.Sinks.File 2.2.0 package downgrade (NU1605) -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
+
   </PropertyGroup>
 
   <ItemGroup>

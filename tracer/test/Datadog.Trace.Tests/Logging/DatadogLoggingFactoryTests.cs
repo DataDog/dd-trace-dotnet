@@ -243,10 +243,11 @@ public class DatadogLoggingFactoryTests
 
         // Should contain "ProgramData" or "Program Data" (for localized versions)
         // or be the fallback C:\ProgramData
-        (result.Contains("ProgramData", StringComparison.OrdinalIgnoreCase) ||
-         result.Contains("Program Data", StringComparison.OrdinalIgnoreCase) ||
+        (System.MemoryExtensions.Contains(result, "ProgramData", StringComparison.OrdinalIgnoreCase) ||
+         System.MemoryExtensions.Contains(result, "Program Data", StringComparison.OrdinalIgnoreCase) ||
          result.Equals(@"C:\ProgramData", StringComparison.OrdinalIgnoreCase))
-            .Should().BeTrue();
+           .Should()
+           .BeTrue();
     }
 
     [Fact]

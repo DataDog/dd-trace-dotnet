@@ -246,8 +246,13 @@ TEST_F(ManagedCodeCacheTest, GetFunctionId_BoundaryIPs_CorrectBehavior) {
     EXPECT_FALSE(cache->GetFunctionId(codeStart + codeSize).has_value());
 }
 
-// Test: Zero-sized code range
-TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_HandledGracefully) {
+// Regression: GetCodeRanges used `startAddress + size - 1` without guarding
+// size==0.  For startAddress==0 this gives endAddress==UINTPTR_MAX and the
+// page-insertion loop `for (page=0; page<=UINTPTR_MAX/pageSize; ++page)` runs
+// for billions of iterations, permanently hanging the background worker.
+// For non-zero startAddress the loop silently skips (endPage < startPage) but
+// the degenerate CodeRange still pollutes the sorted range vector.
+TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_DoesNotPolluteCacheNonZeroBase) {
     FunctionID testFuncId = 777;
     uintptr_t codeStart = 0x9000;
     ULONG32 codeSize = 0;
@@ -256,10 +261,29 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_HandledGracefully) {
     cache->AddFunction(testFuncId);
     WaitForWorkerThread();
 
-    // Should not crash, but may not find the function
-    auto result = cache->GetFunctionId(codeStart);
-    // Result is implementation-dependent, just verify no crash
-    (void)result;
+    // A zero-size range has no valid code; no IP should be reported as managed.
+    EXPECT_FALSE(cache->IsManaged(codeStart))
+        << "IP at startAddress of a size-0 range must not be managed";
+    EXPECT_FALSE(cache->IsManaged(codeStart - 1))
+        << "IP just before startAddress must not be managed";
+    EXPECT_FALSE(cache->IsManaged(codeStart + 0x1000))
+        << "Unrelated IP above a size-0 range must not be managed";
+}
+
+// For startAddress==0 with size==0 the page loop would run from page 0 to
+// ~UINTPTR_MAX/pageSize, hanging the worker forever.  After the fix the worker
+// must complete within the normal wait and IsManaged must return false.
+TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRangeAtAddressZero_WorkerDoesNotHang) {
+    FunctionID testFuncId = 778;
+    uintptr_t codeStart = 0;
+    ULONG32 codeSize = 0;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId);
+
+    // If the worker is stuck this call blocks until the test times out.
+    WaitForWorkerThread(200);
+    EXPECT_FALSE(cache->IsManaged(0x1000));
 }
 
 // Test: Very large code range

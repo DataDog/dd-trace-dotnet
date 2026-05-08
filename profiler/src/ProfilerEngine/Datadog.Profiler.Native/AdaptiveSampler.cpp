@@ -75,7 +75,7 @@ AdaptiveSampler::AdaptiveSampler(
     _samplesPerWindow = samplesPerWindow;
     _budgetLookback = budgetLookback;
 
-    _samplesBudget = samplesPerWindow + (static_cast<int64_t>(budgetLookback) * samplesPerWindow);
+    _samplesBudget.store(samplesPerWindow + (static_cast<int64_t>(budgetLookback) * samplesPerWindow), std::memory_order_relaxed);
     _emaAlpha = ComputeIntervalAlpha(averageLookback);
     _budgetAlpha = ComputeIntervalAlpha(budgetLookback);
 
@@ -97,9 +97,9 @@ bool AdaptiveSampler::Sample()
     auto* counts = _countsRef.load();
     counts->AddTest();
 
-    if (NextDouble() < _probability)
+    if (NextDouble() < _probability.load(std::memory_order_relaxed))
     {
-        return counts->AddSample(_samplesBudget);
+        return counts->AddSample(_samplesBudget.load(std::memory_order_relaxed));
     }
 
     return false;
@@ -161,7 +161,7 @@ void AdaptiveSampler::RollWindow()
     const auto totalCount = counts.TestCount();
     const auto sampledCount = counts.SampleCount();
 
-    _samplesBudget = CalculateBudgetEma(sampledCount);
+    _samplesBudget.store(CalculateBudgetEma(sampledCount), std::memory_order_relaxed);
 
     if (_totalCountRunningAverage == 0 || _emaAlpha <= 0.0)
     {
@@ -174,11 +174,11 @@ void AdaptiveSampler::RollWindow()
 
     if (_totalCountRunningAverage <= 0)
     {
-        _probability = 1;
+        _probability.store(1.0, std::memory_order_relaxed);
     }
     else
     {
-        _probability = std::min(_samplesBudget / _totalCountRunningAverage, 1.0);
+        _probability.store(std::min(_samplesBudget.load(std::memory_order_relaxed) / _totalCountRunningAverage, 1.0), std::memory_order_relaxed);
     }
 
     counts.Reset();
@@ -197,8 +197,8 @@ AdaptiveSampler::State AdaptiveSampler::GetInternalState()
     return State{
         counts->TestCount(),
         counts->SampleCount(),
-        _samplesBudget,
-        _probability,
+        _samplesBudget.load(std::memory_order_relaxed),
+        _probability.load(std::memory_order_relaxed),
         _totalCountRunningAverage};
 }
 

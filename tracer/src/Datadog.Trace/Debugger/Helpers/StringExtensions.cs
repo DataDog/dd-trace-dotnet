@@ -32,11 +32,7 @@ namespace Datadog.Trace.Debugger.Helpers
             // note that we _could_ get a UUID from these bytes by trivially doing
             // new Guid(bytes).ToString("d") but that uses a slightly different
             // layout of the bytes, which would cause a different UUID to be generated
-#if NETCOREAPP
             Span<char> chars = stackalloc char[36];
-#else
-            var chars = new char[36];
-#endif
             var targetIndex = 0;
 
             for (var sourceIndex = 0; sourceIndex < 16; sourceIndex++)
@@ -51,7 +47,11 @@ namespace Datadog.Trace.Debugger.Helpers
                 chars[targetIndex++] = Hex[sourceByte & 0xF];
             }
 
+#if NETCOREAPP
             return new string(chars);
+#else
+            return chars.ToString();
+#endif
         }
     }
 }

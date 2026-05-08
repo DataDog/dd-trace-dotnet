@@ -77,31 +77,6 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
-        [Theory]
-        [InlineData("7.65.0", true)]
-        [InlineData("7.66.0", true)]
-        [InlineData("8.0.0", true)]
-        [InlineData("7.64.0", false)]
-        [InlineData("7.64.99", false)]
-        [InlineData("7.0.0", false)]
-        [InlineData("not-a-version", true)]  // Unparseable versions don't block (e.g. test agents)
-        [InlineData(null, true)]              // Null version doesn't block
-        public async Task StatsComputation_RequiresMinimumAgentVersion(string agentVersion, bool expectedEnabled)
-        {
-            var api = new Mock<IApi>();
-            var discovery = new StubDiscoveryService(agentVersion);
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), discovery, isOtlp: false);
-
-            try
-            {
-                aggregator.CanComputeStats.Should().Be(expectedEnabled);
-            }
-            finally
-            {
-                await aggregator.DisposeAsync();
-            }
-        }
-
         [Fact]
         public async Task EmptyBuckets()
         {
@@ -1367,7 +1342,6 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         private class StubDiscoveryService(
-            string agentVersion = "7.65.0",
             int obfuscationVersion = 0,
             AgentTraceFilterConfig traceFilterConfig = null) : IDiscoveryService
         {
@@ -1379,7 +1353,7 @@ namespace Datadog.Trace.Tests.Agent
                              debuggerV2Endpoint: "debuggerV2Endpoint",
                              diagnosticsEndpoint: "diagnosticsEndpoint",
                              symbolDbEndpoint: "symbolDbEndpoint",
-                             agentVersion: agentVersion,
+                             agentVersion: null,
                              statsEndpoint: "traceStatsEndpoint",
                              dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",

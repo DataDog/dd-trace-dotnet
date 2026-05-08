@@ -90,7 +90,7 @@ internal static class FnvHash64
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
     public static ulong GenerateHash(byte[] data, Version version)
-        => GenerateHash(data, 0, data.Length, version, OffsetBasis);
+        => GenerateHash(data, version, OffsetBasis);
 
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>.
@@ -99,27 +99,10 @@ internal static class FnvHash64
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
     public static ulong GenerateHash(byte[] data, Version version, ulong initialHash)
-        => GenerateHash(data, 0, data.Length, version, initialHash);
-
-    /// <summary>
-    /// Generates the 64-bit FNV hash of a region of <paramref name="data"/> using hash version <paramref name="version"/>.
-    /// </summary>
-    /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
-    public static ulong GenerateHash(byte[] data, int offset, int count, Version version)
-        => GenerateHash(data, offset, count, version, OffsetBasis);
-
-    /// <summary>
-    /// Generates the 64-bit FNV hash of a region of <paramref name="data"/> using hash version <paramref name="version"/>.
-    /// Appends the hash to the existing value <paramref name="initialHash"/>. Equivalent to concatenating
-    /// the two data values and subsequently calling GenerateHash.
-    /// </summary>
-    /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
-    public static ulong GenerateHash(byte[] data, int offset, int count, Version version, ulong initialHash)
         => version == Version.V1
-               ? GenerateV1Hash(data, offset, count, initialHash)
-               : GenerateV1AHash(data, offset, count, initialHash);
+               ? GenerateV1Hash(data, initialHash)
+               : GenerateV1AHash(data, initialHash);
 
-#if NETCOREAPP
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>.
     /// </summary>
@@ -137,45 +120,13 @@ internal static class FnvHash64
         => version == Version.V1
                ? GenerateV1Hash(data, initialHash)
                : GenerateV1AHash(data, initialHash);
-#endif
 
-    private static ulong GenerateV1Hash(byte[] bytes, int offset, int count, ulong hash)
-    {
-        // for each octet_of_data to be hashed
-        var max = offset + count;
-        for (var i = offset; i < max; i++)
-        {
-            unchecked
-            {
-                // hash = hash * FNV_prime
-                hash *= FnvPrime;
-                // hash = hash xor octet_of_data
-                hash ^= bytes[i];
-            }
-        }
+    private static ulong GenerateV1Hash(byte[] bytes, ulong hash)
+        => GenerateV1Hash(bytes.AsSpan(), hash);
 
-        return hash;
-    }
+    private static ulong GenerateV1AHash(byte[] bytes, ulong hash)
+        => GenerateV1AHash(bytes.AsSpan(), hash);
 
-    private static ulong GenerateV1AHash(byte[] bytes, int offset, int count, ulong hash)
-    {
-        // for each octet_of_data to be hashed
-        var max = offset + count;
-        for (var i = offset; i < max; i++)
-        {
-            unchecked
-            {
-                // hash = hash xor octet_of_data
-                hash ^= bytes[i];
-                // hash = hash * FNV_prime
-                hash *= FnvPrime;
-            }
-        }
-
-        return hash;
-    }
-
-#if NETCOREAPP
     private static ulong GenerateV1Hash(ReadOnlySpan<byte> bytes, ulong hash)
     {
         // for each octet_of_data to be hashed
@@ -209,5 +160,4 @@ internal static class FnvHash64
 
         return hash;
     }
-#endif
 }

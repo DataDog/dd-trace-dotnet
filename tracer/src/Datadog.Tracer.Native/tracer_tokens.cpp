@@ -190,7 +190,7 @@ HRESULT TracerTokens::EnsureBaseCalltargetTokens()
                     DefineMemberRef(
                         bubbleUpExceptionTypeRef, calltargetbubbleexception_tracer_function_name.c_str(),
                         createInstanceSig,
-                        sigBuilder - createInstanceSig, &bubbleUpExceptionFunctionRef);
+                        static_cast<ULONG>(sigBuilder - createInstanceSig), &bubbleUpExceptionFunctionRef);
                
                 if (SUCCEEDED(defined_iscalltargetbubbleup_member_hrresult))
                 {
@@ -224,7 +224,8 @@ HRESULT TracerTokens::EnsureBaseCalltargetTokens()
         sigBuilder += CorSigCompressToken(runtimeTypeHandleRef, sigBuilder);
 
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            callTargetTypeRef, managed_profiler_calltarget_createrefstruct_name.data(), createInstanceSig, sigBuilder - createInstanceSig,
+            callTargetTypeRef, managed_profiler_calltarget_createrefstruct_name.data(), createInstanceSig,
+            static_cast<ULONG>(sigBuilder - createInstanceSig),
             &createRefStructMemberRef);
         if (FAILED(hr))
         {

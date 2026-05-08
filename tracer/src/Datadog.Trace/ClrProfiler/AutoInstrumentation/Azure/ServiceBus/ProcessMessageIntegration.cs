@@ -34,6 +34,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessMessageIntegration));
 
+        // Used when the entity path is unknown — direction:in and type:servicebus but no topic tag
+        private static readonly string[] DefaultConsumeEdgeTags = ["direction:in", "type:servicebus"];
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -81,11 +84,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 var namespaceString = instance.Processor.EntityPath;
 
-                // TODO: we could pool these arrays to reduce allocations
                 // NOTE: the tags must be sorted in alphabetical order
                 var edgeTags = string.IsNullOrEmpty(namespaceString)
-                                    ? new[] { "direction:in", "type:servicebus" }
-                                    : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
+                                    ? DefaultConsumeEdgeTags
+                                    : dataStreamsManager.GetOrCreateEdgeTags(
+                                        new ServiceBusEdgeTagCacheKey(namespaceString),
+                                        static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
                 var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
                 span.SetDataStreamsCheckpoint(
                     dataStreamsManager,

@@ -314,6 +314,10 @@ std::vector<CodeRange> ManagedCodeCache::GetCodeRanges(FunctionID functionId)
     result.reserve(nbCodeInfos);
     for (ULONG32 i = 0; i < nbCodeInfos; i++)
     {
+        if (codeInfos[i].size == 0)
+        {
+            continue;
+        }
         result.emplace_back(
             codeInfos[i].startAddress,
             codeInfos[i].startAddress + codeInfos[i].size - 1,
