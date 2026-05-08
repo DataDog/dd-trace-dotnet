@@ -214,7 +214,7 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
 
             var span = tracer.StartSpan("operation");
-            span.ServiceName = null;
+            span.SetService(null, null);
             span.Finish(); // should not throw
         }
     }

@@ -13,6 +13,10 @@ public:
 // Inherited via IRuntimeIdStore
     const char* GetId(AppDomainID appDomainId) override;
 
+    // IMemoryFootprintProvider
+    size_t GetMemorySize() const override { return 0; }
+    void LogMemoryBreakdown() const override {}
+
 private:
     static std::string _guid;
 };

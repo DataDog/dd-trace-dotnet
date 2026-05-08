@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class RemotingClientV1Tags : RemotingClientTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         public RemotingClientV1Tags()
             : base()

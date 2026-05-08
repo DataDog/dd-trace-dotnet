@@ -293,7 +293,7 @@ public class RequestDataHelperTests
         var security = new Security(null, null, null);
         var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         var scope = (Scope)tracer.StartActive("Root");
-        scope.Span.ServiceName = "service";
+        scope.Span.SetService("service", null);
         HttpContext context = new HttpContext(request, new HttpResponse(new System.IO.StringWriter()));
         request.ValidateInput();
         var transport = new SecurityCoordinator.HttpTransport(context);

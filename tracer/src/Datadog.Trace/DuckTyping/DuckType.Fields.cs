@@ -44,7 +44,10 @@ namespace Datadog.Trace.DuckTyping
             Type returnType = targetField.FieldType;
 
             // Load the field value to the stack
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
+            // Use targetField.DeclaringType (not targetType) to ensure IgnoresAccessChecksToAttribute
+            // is added for the assembly that actually owns the field. When targetType is a derived type
+            // in a different assembly, using targetType would miss the base type's assembly.
+            if (UseDirectAccessTo(proxyTypeBuilder, targetField.DeclaringType ?? targetType))
             {
                 // Load the instance
                 if (!targetField.IsStatic)
@@ -212,7 +215,9 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // We set the field value
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
+            // Use targetField.DeclaringType (not targetType) to ensure IgnoresAccessChecksToAttribute
+            // is added for the assembly that actually owns the field.
+            if (UseDirectAccessTo(proxyTypeBuilder, targetField.DeclaringType ?? targetType))
             {
                 // If the instance and the field are public then is easy to set.
                 il.WriteTypeConversion(currentValueType, targetField.FieldType);

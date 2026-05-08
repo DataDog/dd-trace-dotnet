@@ -6,18 +6,30 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     internal static class HttpMessageHandlerCommon
     {
+#if NETCOREAPP
+        public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
+#else
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
             where TRequest : IHttpRequestMessage
+#endif
         {
+#if NETCOREAPP
+            if (request is not System.Net.Http.HttpRequestMessage requestMessage)
+#else
             if (requestMessage.Instance is null)
+#endif
             {
                 return CallTargetState.GetDefault();
             }
@@ -34,6 +46,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     integrationId,
                     out var tags);
 
+                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+                if (dataStreamsManager.IsTransactionTrackingEnabled)
+                {
+                    var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders);
+                    if (extractors != null)
+                    {
+                        foreach (var extractor in extractors)
+                        {
+                            if (headers.TryGetValues(extractor.Value, out var headerValues))
+                            {
+                                foreach (var headerValue in headerValues)
+                                {
+                                    scope?.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (scope is not null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
@@ -43,15 +74,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
-                    return new CallTargetState(scope);
+
+                    bool executeOnDownstreamResponse = false;
+#if NETCOREAPP
+                    if (requestMessage != null)
+                    {
+                        var rootSpan = tracer.InternalActiveScope?.Root?.Span;
+                        try
+                        {
+                            executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(requestMessage, scope.Span.SpanId, rootSpan);
+                        }
+                        catch (AppSec.BlockException ex)
+                        {
+                            scope.DisposeWithException(ex);
+                            throw;
+                        }
+                    }
+#endif
+
+                    return new CallTargetState(scope, executeOnDownstreamResponse);
                 }
             }
 
             return CallTargetState.GetDefault();
         }
 
+#if NETCOREAPP
+        public static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
+#else
         public static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
             where TResponse : IHttpResponseMessage
+#endif
         {
             Scope scope = state.Scope;
 
@@ -62,9 +115,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
             try
             {
+#if NETCOREAPP
+                if (responseMessage is System.Net.Http.HttpResponseMessage response)
+                {
+                    var statusCode = (int)response.StatusCode;
+                    if (state.State is true)
+                    {
+                        RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+                    }
+#else
                 if (responseMessage.Instance is not null)
                 {
-                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    var statusCode = responseMessage.StatusCode;
+#endif
+                    scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
                 }
 
                 if (exception != null)
@@ -80,7 +144,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             return responseMessage;
         }
 
+#if NETCOREAPP
+        private static bool IsTracingEnabled(Tracer tracer, System.Net.Http.Headers.HttpRequestHeaders headers, IntegrationId? implementationIntegrationId)
+#else
         private static bool IsTracingEnabled(Tracer tracer, IRequestHeaders headers, IntegrationId? implementationIntegrationId)
+#endif
         {
             if (implementationIntegrationId != null && !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(implementationIntegrationId.Value))
             {

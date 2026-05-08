@@ -225,6 +225,45 @@ public interface IMyProxy
 }
 ```
 
+### Specifying `BindingFlags` for controlling how to find duck-type target members
+
+The duck typing infrastructure uses standard Reflection to find the target members, and then emits efficient IL to access these members at runtime. By default, the duck-type infrastructure uses [a wide range of `BindingFlags`](https://github.com/DataDog/dd-trace-dotnet/blob/ba8408447a6f5cfa4fc6eb99fa6ad3508ba7a23e/tracer/src/Datadog.Trace/DuckTyping/DuckAttribute.cs#L43) to try to find the target member. However, sometimes you need to be more explicit.  
+
+The `[Duck]` attribute (and derived `[DuckField]`/`[DuckProperty]` attributes) allow specifying the `BindingFlags` to use to find a target member via the `BindingFlags` property. [For example](https://github.com/DataDog/dd-trace-dotnet/blob/ba8408447a6f5cfa4fc6eb99fa6ad3508ba7a23e/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/CosmosDb/ContainerStruct.cs#L23):
+
+```csharp
+[DuckCopy]
+internal struct ContainerStruct
+{
+    [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+    public string Id;
+}
+```
+
+As shown in the example above, this adds the `IgnoreCase` flag to the set of default flags. You should not need to change the binding flags often; the default flags cover a wide range of cases. The example above shows a good example where the use of  `IgnoreCase` allows supporting a wider range of target library versions, where the case changed between versions.
+
+### Duck typing private fields from base types
+
+As described in the previous section, the duck-typing infrastructure uses standard reflection to "find" the target members on a runtime type, based on the provided `BindingFlags`. However, that means that it can also _only_ find members returned by the standard reflection APIs, as controlled by [the `BindingFlags`](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.bindingflags)
+APIs. This has some limitations, particularly when it comes to _private_ members on base types.
+
+For example, if you want to duck type a private field, which is defined on a _base_ type, you can't do that solely with `BindingFlags`. Instead, the duck-typing infrastructure must "walk" the type hierarchy to find it. This behavior is opt-in, and can be enabled by setting `FallbackToBaseTypes = true` on the `[Duck]`/`[DuckField]`/`[DuckProperty]` attribute:
+
+```csharp
+public class SomeBase
+{
+    private int _thisIsTheFieldWeWant; // Private field, defined in a base type 
+}
+
+public class TypeToDuckType : SomeBase {} // The type you have at runtime
+
+[DuckType]
+public struct MyDuckType
+{                                              // 👇 Add this, otherwise ducktyping fails
+    [DuckField(Name = "_thisIsTheFieldWeWant", FallbackToBaseTypes = true))]
+    public int MyField;
+}
+```
 
 ## Accessor modifiers (AM)
 

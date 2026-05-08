@@ -2,6 +2,7 @@
 #include "cor_profiler.h"
 #include "log.h"
 #include "util.h"
+#include <cassert>
 #ifndef _WIN32
 #include <fcntl.h>
 #include <unistd.h>
@@ -105,7 +106,10 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     }    
 
     DWORD written;
-    WriteFile(hStdinWrite, input.c_str(), input.length(), &written, nullptr);
+    // WriteFile's nNumberOfBytesToWrite is DWORD (32-bit). RunProcess only ever feeds small
+    // command-line text payloads, so this should never trip; assert captures the assumption.
+    assert(input.length() <= MAXDWORD);
+    WriteFile(hStdinWrite, input.c_str(), static_cast<DWORD>(input.length()), &written, nullptr);
 
     CloseHandle(hStdinRead);
     CloseHandle(hStdinWrite);

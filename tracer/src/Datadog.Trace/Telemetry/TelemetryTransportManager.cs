@@ -29,7 +29,7 @@ internal sealed class TelemetryTransportManager : IDisposable
     private ITelemetryTransport? _currentAgentTransport;
     private ITelemetryTransport _currentTransport;
     private bool _agentTransportUpdated;
-    private bool? _canSendToAgent = null;
+    private bool? _canSendToAgent;
 
     public TelemetryTransportManager(TracerSettings.SettingsManager settings, TelemetryTransportFactory transports, IDiscoveryService discoveryService)
     {

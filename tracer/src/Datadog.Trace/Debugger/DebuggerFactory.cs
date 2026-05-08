@@ -72,7 +72,6 @@ internal sealed class DebuggerFactory
                 tracerSettings.Manager.InitialMutableSettings,
                 tracerSettings.Manager.InitialExporterSettings,
                 includeDefaultTags: false,
-                tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : [],
                 prefix: DebuggerSettings.DebuggerMetricPrefix);
         }
 

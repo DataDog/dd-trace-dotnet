@@ -51,6 +51,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.Process, "System.Diagnostics.Process" };
             yield return new object[] { ClrNames.ByteArray, typeof(byte[]) };
             yield return new object[] { ClrNames.Exception, typeof(Exception) };
+            yield return new object[] { ClrNames.IEnumerableKeyValuePairStringString, "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.String]]" }; // Generic full names have square brackets
         }
 
         [Fact]

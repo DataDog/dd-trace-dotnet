@@ -25,8 +25,8 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
 
-    private string? _endpoint = null;
-    private string? _tags = null;
+    private string? _endpoint;
+    private string? _tags;
 
     protected DebuggerUploadApiBase(IApiRequestFactory apiRequestFactory, IGitMetadataTagsProvider? gitMetadataTagsProvider)
     {

@@ -37,7 +37,7 @@ internal sealed class ApmAgentWriter : IEventWriter
         var apiRequestFactory = TracesTransportStrategy.Get(settings.Manager.InitialExporterSettings);
         var statsdManager = new StatsdManager(settings);
         var api = new Api(apiRequestFactory, statsdManager, ContainerMetadata.Instance, updateSampleRates, updateConfigHash, partialFlushEnabled, healthMetricsEnabled: false);
-        var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
+        var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, isOtlp: false);
 
         _agentWriter = new AgentWriter(api, statsAggregator, statsdManager, maxBufferSize: maxBufferSize, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled);
     }

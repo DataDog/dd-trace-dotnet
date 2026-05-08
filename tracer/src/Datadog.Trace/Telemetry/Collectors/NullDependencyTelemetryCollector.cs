@@ -17,7 +17,7 @@ internal sealed class NullDependencyTelemetryCollector : IDependencyTelemetryCol
     {
     }
 
-    public List<DependencyTelemetryData>? GetData() => null;
+    public List<DependencyTelemetryData>? GetIncrementalData() => null;
 
     public List<DependencyTelemetryData>? GetFullData() => null;
 }

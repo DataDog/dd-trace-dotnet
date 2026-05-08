@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
@@ -77,7 +78,7 @@ namespace Datadog.Trace.Activity.Handlers
                         payloadSize ?? 0,
                         0);
 
-                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new ServiceBusHeadersCollectionAdapter(applicationProperties));
+                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new AzureHeadersCollectionAdapter(applicationProperties));
 
                     // Close the scope and return so we bypass the common code path
                     span.Finish(activity.StartTimeUtc.Add(activity.Duration));

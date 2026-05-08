@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Upload
@@ -72,7 +73,7 @@ namespace Datadog.Trace.Debugger.Upload
             const int bufferSize = 256;
             using var stream = new MemoryStream(capacity: bufferSize);
             using (var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize: bufferSize, leaveOpen: true))
-            using (var jsonWriter = new JsonTextWriter(streamWriter))
+            using (var jsonWriter = new JsonTextWriter(streamWriter) { ArrayPool = JsonArrayPool.Shared })
             {
                 jsonWriter.CloseOutput = false;
                 jsonWriter.Formatting = Formatting.None;

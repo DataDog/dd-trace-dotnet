@@ -61,7 +61,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private int _budgetLookback;
         private double _budgetAlpha;
 
-        private int _countsSlotIndex = 0;
+        private int _countsSlotIndex;
         private Counts[] _countsSlots;
 
         private Timer _timer;

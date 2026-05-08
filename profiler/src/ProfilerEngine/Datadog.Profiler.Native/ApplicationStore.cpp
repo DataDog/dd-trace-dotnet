@@ -88,3 +88,48 @@ bool ApplicationStore::StopImpl()
     // nothing special to stop
     return true;
 }
+
+ApplicationStore::MemoryStats ApplicationStore::ComputeMemoryStats() const
+{
+    std::lock_guard lock(_infosLock);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(ApplicationStore);
+    stats.mapBuckets = _infos.bucket_count();
+    stats.entryCount = _infos.size();
+    stats.mapSize = stats.mapBuckets * (sizeof(std::string) + sizeof(ApplicationInfo) + sizeof(void*));
+
+    // Calculate memory for keys (runtime IDs) and ApplicationInfo strings
+    for (const auto& [runtimeId, appInfo] : _infos)
+    {
+        // Key (runtime ID) capacity
+        stats.keysSize += runtimeId.capacity();
+
+        // ApplicationInfo strings
+        stats.appInfosSize += appInfo.ServiceName.capacity();
+        stats.appInfosSize += appInfo.Environment.capacity();
+        stats.appInfosSize += appInfo.Version.capacity();
+        stats.appInfosSize += appInfo.RepositoryUrl.capacity();
+        stats.appInfosSize += appInfo.CommitSha.capacity();
+        stats.appInfosSize += appInfo.ProcessTags.capacity();
+    }
+
+    return stats;
+}
+
+size_t ApplicationStore::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void ApplicationStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("ApplicationStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Map storage:             ", stats.mapSize, " bytes (", stats.entryCount, " entries, ", stats.mapBuckets, " buckets)");
+    Log::Debug("  Runtime ID keys:         ", stats.keysSize, " bytes");
+    Log::Debug("  ApplicationInfo content: ", stats.appInfosSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

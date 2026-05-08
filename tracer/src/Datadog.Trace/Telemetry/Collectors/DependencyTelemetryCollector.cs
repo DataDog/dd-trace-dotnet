@@ -18,7 +18,7 @@ namespace Datadog.Trace.Telemetry
     {
         // value is true when sent to the backend
         private readonly ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
-        private int _hasChangesFlag = 0;
+        private int _hasChangesFlag;
 
         /// <summary>
         /// Called when an assembly is loaded
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public List<DependencyTelemetryData>? GetData()
+        public List<DependencyTelemetryData>? GetIncrementalData()
         {
             var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
 
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Telemetry
         {
             for (int i = assemblyName.Length - 1; i >= start; i--)
             {
-                if (!IsHexChar(assemblyName[i]))
+                if (!char.IsAsciiHexDigit(assemblyName[i]))
                 {
                     return false;
                 }
@@ -192,16 +192,6 @@ namespace Datadog.Trace.Telemetry
                 default:
                     return false;
             }
-        }
-
-        private static bool IsHexChar(char c)
-        {
-            return c switch
-            {
-                >= '0' and <= '9' => true,
-                >= 'a' and <= 'f' => true,
-                _ => false
-            };
         }
 
         private static bool IsZeroVersionAssemblyPattern(string assemblyName)
@@ -255,7 +245,7 @@ namespace Datadog.Trace.Telemetry
             // Verify remaining characters are all digits
             for (int i = 14; i < assemblyName.Length; i++)
             {
-                if (assemblyName[i] is < '0' or > '9')
+                if (!char.IsAsciiDigit(assemblyName[i]))
                 {
                     return false;
                 }

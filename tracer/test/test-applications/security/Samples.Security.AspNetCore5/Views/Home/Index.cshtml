@@ -110,6 +110,8 @@
 
     <div><a href="/Iast/Ssrf?url=http://www.google.com">GET /Iast/Ssrf?url=http://www.google.com</a></div>
 
+    <div><a href="/Iast/SsrfAttack?host=169.254.169.254">GET /Iast/SsrfAttack?host=169.254.169.254</a></div>
+
     <div><a href="/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com">GET /Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com</a></div>
 
     <div><a href="/Iast/WeakRandomness">GET /Iast/WeakRandomness</a></div>
@@ -155,6 +157,8 @@
 	<div><a href="/Iast/CustomManual?userName=test">GET /Iast/CustomManual [Custom Instrumentation with Manual Span Creation]</a></div>
 
     <div><a href="/Iast/email">GET /Iast/email</a></div>
+
+    <div><a href="/Rasp/DownstreamToSelf">GET /Rasp/DownstreamToSelf</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

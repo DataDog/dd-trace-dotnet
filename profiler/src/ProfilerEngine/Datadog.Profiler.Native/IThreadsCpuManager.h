@@ -6,8 +6,10 @@
 #include <shared/src/native-src/pal.h>    // for DWORD
 #include <shared/src/native-src/string.h> // WCHAR
 
+#include "IMemoryFootprintProvider.h"
 
-class IThreadsCpuManager
+
+class IThreadsCpuManager : public IMemoryFootprintProvider
 {
 public:
     virtual void Map(DWORD threadOSId, const WCHAR* name) = 0;

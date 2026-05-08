@@ -14,9 +14,9 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class GitInfo : IGitInfo
 {
+    private const string DatadogTraceToolsRunnerAssembly = "Datadog.Trace.Tools.Runner.dll";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitInfo));
     private static readonly string? RuntimeFolder = Path.GetDirectoryName(typeof(string).Assembly.Location);
-    private static readonly string DatadogTraceToolsRunnerAssembly = "Datadog.Trace.Tools.Runner.dll";
     private static IGitInfoProvider[] _gitInfoProviders = [
         GitCommandGitInfoProvider.Instance,
     ];

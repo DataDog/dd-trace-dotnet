@@ -13,8 +13,6 @@ namespace Datadog.Trace.Iast.Dataflow;
 [AttributeUsage(AttributeTargets.Class)]
 internal sealed class AspectClassFromVersionAttribute : AspectClassAttribute
 {
-    private readonly List<object> parameters = new List<object>();
-
     public AspectClassFromVersionAttribute(string version)
         : base()
     {

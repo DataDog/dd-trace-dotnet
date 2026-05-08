@@ -36,6 +36,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.KafkaBootstrapServers)]
         public string BootstrapServers { get; set; }
 
+        [Tag(Trace.Tags.KafkaClusterId)]
+        public string ClusterId { get; set; }
+
         [Tag(Trace.Tags.MessagingDestinationName)]
         public string Topic { get; set; }
 
@@ -57,7 +60,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class KafkaV1Tags : KafkaTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         // For the sake of unit tests, define a default constructor
         // though the Kafka integration should use the constructor that takes a spanKind

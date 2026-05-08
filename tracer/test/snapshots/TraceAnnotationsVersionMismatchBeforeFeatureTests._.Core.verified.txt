@@ -844,5 +844,103 @@
       language: dotnet,
       version: 1.0.0
     }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_62,
+    Name: trace.annotation,
+    Resource: ExtremeExceptionHandling.DeepNestedExceptionHandlingSync,
+    Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_63,
+    Name: trace.annotation,
+    Resource: ExtremeExceptionHandling.SameTryMultipleCatch,
+    Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_64,
+    Name: trace.annotation,
+    Resource: ExtremeExceptionHandling.SameTryMultipleCatch,
+    Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_65,
+    Name: trace.annotation,
+    Resource: ExtremeExceptionHandling.SameTryMultipleCatch,
+    Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_66,
+    Name: trace.annotation,
+    Resource: ExtremeExceptionHandling.FilterAndTypedCatch,
+    Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_67,
+    Name: trace.annotation,
+    Resource: ExtremeExceptionHandling.FilterAndTypedCatch,
+    Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_68,
+    Name: trace.annotation,
+    Resource: ExtremeExceptionHandling.FilterAndTypedCatch,
+    Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
   }
 ]

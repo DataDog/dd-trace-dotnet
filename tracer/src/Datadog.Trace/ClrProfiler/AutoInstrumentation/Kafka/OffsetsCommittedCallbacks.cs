@@ -32,12 +32,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             if (result.TryDuckCast<ICommittedOffsets>(out var committedOffsets))
             {
                 var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+
+                string? clusterId = null;
+                if (consumer is not null)
+                {
+                    ConsumerCache.TryGetConsumerGroup(consumer, out var _, out var _, out clusterId);
+                }
+
                 for (var i = 0; i < committedOffsets?.Offsets.Count; i++)
                 {
                     var item = committedOffsets.Offsets[i];
-                    dataStreams.TrackBacklog(
-                        $"consumer_group:{GroupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit",
-                        item.Offset.Value);
+                    var cacheKey = new CommitBacklogTagCacheKey(GroupId ?? string.Empty, clusterId ?? string.Empty, item.Partition.Value, item.Topic ?? string.Empty);
+                    var backlogTags = dataStreams.GetOrCreateBacklogTags(cacheKey, static k =>
+                        k.ClusterId.Length == 0
+                            ? $"consumer_group:{k.GroupId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit"
+                            : $"consumer_group:{k.GroupId},kafka_cluster_id:{k.ClusterId},partition:{k.Partition},topic:{k.Topic},type:kafka_commit");
+                    dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
                 }
             }
 

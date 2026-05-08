@@ -384,7 +384,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // ValidateIntegrationSpans() expects only server spans, but we want all spans in the snapshot (e.g. inferred proxy spans)
             var serverSpans = spans.Where(s => s.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server);
-            ValidateIntegrationSpans(serverSpans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
+            // Exclude inferred proxy spans (aws.apigateway, azure.apim) - they have Service from x-dd-proxy-domain-name (e.g. test.api.com)
+            var spansToValidate = _enableInferredProxySpans
+                ? serverSpans.Where(s => s.Name != "aws.apigateway" && s.Name != "azure.apim")
+                : serverSpans;
+            ValidateIntegrationSpans(spansToValidate, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);

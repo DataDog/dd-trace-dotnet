@@ -121,7 +121,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public IDebuggerSnapshotCreator CreateSnapshotCreator()
         {
-            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo, Tracer.Instance.Settings.PropagateProcessTags, DebuggerManager.ServiceNameProvider);
+            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider);
         }
 
         private void SetExpressions(ProbeDefinition probe)
@@ -332,7 +332,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 {
                     // we are taking the duration at the evaluation time - this might be different from what we have in the snapshot
                     snapshotCreator.SetDuration();
-                    evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
+                    evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers!);
                 }
             }
             catch (Exception e)
@@ -345,16 +345,14 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 evaluationResult.Errors ??= new List<EvaluationError>();
                 evaluationResult.Errors.Add(new EvaluationError { Message = $"Failed to evaluate expression for probe ID: {ProbeInfo.ProbeId}. Error: {e.Message}" });
-                return evaluationResult;
             }
 
             if (evaluationResult.IsNull())
             {
-                LogEvaluationState(snapshotCreator.MethodScopeMembers);
+                LogEvaluationState(snapshotCreator.MethodScopeMembers!);
 
                 Log.Error("Evaluation result should not be null. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {ProbeInfo.ProbeId}" } };
-                return evaluationResult;
             }
 
             if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.HasError)
@@ -378,6 +376,13 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.HasError)
             {
+                // Probes with conditions defer sampling until after the condition is evaluated,
+                // so evaluation errors must honor that same sampler before emitting a snapshot.
+                if (ProbeInfo.HasCondition && !sampler.Sample())
+                {
+                    shouldStopCapture = true;
+                }
+
                 return evaluationResult;
             }
 
@@ -413,7 +418,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     var instance = methodScopeMembers.InvocationTarget;
                     var members = methodScopeMembers.Members?.Select(m => new { Name = m.Name, Type = m.Type?.FullName ?? m.Type?.Name }).ToList();
                     string? membersAsString = null;
-                    if (members?.Any() == true)
+                    if (members?.Count > 0)
                     {
                         membersAsString = string.Join(";", members);
                     }

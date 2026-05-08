@@ -12,7 +12,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
     /// <summary>
     /// StatsBufferize bufferizes metrics before sending them.
     /// </summary>
-    internal class StatsBufferize : IDisposable
+    internal class StatsBufferize
     {
         private readonly AsynchronousWorker<Stats> _worker;
 
@@ -49,9 +49,9 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
             this._worker.Flush();
         }
 
-        public void Dispose()
+        public Task DisposeAsync()
         {
-            this._worker.Dispose();
+            return this._worker.DisposeAsync();
         }
 
         private class WorkerHandler : IAsynchronousWorkerHandler<Stats>

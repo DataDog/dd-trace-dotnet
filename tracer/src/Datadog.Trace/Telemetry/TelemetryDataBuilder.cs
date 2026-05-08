@@ -18,7 +18,7 @@ namespace Datadog.Trace.Telemetry;
 internal sealed class TelemetryDataBuilder
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryDataBuilder>();
-    private int _sequence = 0;
+    private int _sequence;
 
     public TelemetryData BuildTelemetryData(
         ApplicationTelemetryData application,

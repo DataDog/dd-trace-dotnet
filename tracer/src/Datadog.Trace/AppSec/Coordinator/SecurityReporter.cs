@@ -18,6 +18,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -246,7 +247,7 @@ internal sealed partial class SecurityReporter
             bool written = false;
             foreach (var derivative in result.ExtractSchemaDerivatives)
             {
-                var serializeObject = JsonConvert.SerializeObject(derivative.Value);
+                var serializeObject = JsonHelper.SerializeObject(derivative.Value);
                 var bytes = System.Text.Encoding.UTF8.GetBytes(serializeObject);
                 if (bytes.Length <= MaxApiSecurityTagValueLength)
                 {

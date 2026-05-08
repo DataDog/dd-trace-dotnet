@@ -396,7 +396,9 @@ public class CompositeConfigurationSourceTests
         public void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
             => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
-        public ICollection<ConfigurationKeyValue> GetData() => null;
+        public ICollection<ConfigurationKeyValue> GetIncrementalData() => null;
+
+        public ICollection<ConfigurationKeyValue> GetFullData() => null;
 
         public void CopyTo(IConfigurationTelemetry destination)
         {

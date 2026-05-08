@@ -140,7 +140,7 @@ namespace Datadog.Trace.Propagators
             // we will accumulate them in this context
             SpanContext? cumulativeSpanContext = null;
             Baggage? cumulativeBaggage = null;
-            List<SpanLink> spanLinks = new();
+            List<SpanLink>? spanLinks = null;
             string? initialExtractorDisplayName = null;
 
             foreach (var extractor in _extractors)
@@ -183,6 +183,7 @@ namespace Datadog.Trace.Propagators
                 {
                     if (cumulativeSpanContext.RawTraceId != extractedSpanContext.RawTraceId)
                     {
+                        spanLinks ??= new();
                         spanLinks.Add(new SpanLink(extractedSpanContext, attributes: [new("reason", "terminated_context"), new("context_headers", extractor.DisplayName)]));
                     }
                     else if (extractor is W3CTraceContextPropagator)
@@ -295,7 +296,7 @@ namespace Datadog.Trace.Propagators
                     // Since the header name was saved to do the lookup in the input headers,
                     // convert the header to its final tag name once per prefix
                     var cacheKey = new Key(headerName, defaultTagPrefix);
-                    var tagNameResult = _defaultTagMappingCache.GetOrAdd(cacheKey, key =>
+                    var tagNameResult = _defaultTagMappingCache.GetOrAdd(cacheKey, static key =>
                     {
                         if (SpanTagHelper.TryNormalizeTagName(key.HeaderName, normalizeSpaces: true, out var normalizedHeaderTagName))
                         {

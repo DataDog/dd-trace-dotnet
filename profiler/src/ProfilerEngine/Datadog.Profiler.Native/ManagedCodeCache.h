@@ -134,7 +134,13 @@ private:
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
     void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
+#ifdef DD_TEST
+public:
+#endif
     void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
+#ifdef DD_TEST
+private:
+#endif
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
     std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);

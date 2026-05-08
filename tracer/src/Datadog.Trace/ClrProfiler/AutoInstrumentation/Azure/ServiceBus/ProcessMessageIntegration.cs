@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -32,6 +33,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     public sealed class ProcessMessageIntegration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessMessageIntegration));
+
+        // Used when the entity path is unknown — direction:in and type:servicebus but no topic tag
+        private static readonly string[] DefaultConsumeEdgeTags = ["direction:in", "type:servicebus"];
 
         /// <summary>
         /// OnMethodBegin callback
@@ -61,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 if (message.ApplicationProperties is not null)
                 {
-                    var headers = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
+                    var headers = new AzureHeadersCollectionAdapter(message.ApplicationProperties);
 
                     try
                     {
@@ -80,11 +84,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 var namespaceString = instance.Processor.EntityPath;
 
-                // TODO: we could pool these arrays to reduce allocations
                 // NOTE: the tags must be sorted in alphabetical order
                 var edgeTags = string.IsNullOrEmpty(namespaceString)
-                                    ? new[] { "direction:in", "type:servicebus" }
-                                    : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
+                                    ? DefaultConsumeEdgeTags
+                                    : dataStreamsManager.GetOrCreateEdgeTags(
+                                        new ServiceBusEdgeTagCacheKey(namespaceString),
+                                        static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
                 var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
                 span.SetDataStreamsCheckpoint(
                     dataStreamsManager,

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Threading;
+using Datadog.Trace.Logging;
 
 #if NETFRAMEWORK
 
@@ -26,16 +27,6 @@ internal sealed class ContainerMetadata
     public ContainerMetadata(string containerId, string entityId)
     {
         // nothing to do, just to match the other version
-    }
-
-    /// <summary>
-    /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
-    /// This is set when we receive a value for it in an http response from the agent
-    /// </summary>
-    public string? ContainerTagsHash
-    {
-        get => Volatile.Read(ref field);
-        set => Volatile.Write(ref field, value);
     }
 
     /// <summary>

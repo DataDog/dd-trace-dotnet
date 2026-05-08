@@ -9,7 +9,7 @@
     <RootNamespace>Benchmarks.OpenTelemetry.InstrumentedApi</RootNamespace>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
-    <LangVersion>11</LangVersion>
+    <LangVersion>14</LangVersion>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>

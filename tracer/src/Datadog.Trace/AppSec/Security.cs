@@ -11,6 +11,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.AppSec
         private readonly SecuritySettings _settings;
         private readonly ConfigurationState _configurationState;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
+        private readonly IDownstreamSampler? _downstreamSampler;
 
         /// <summary>
         /// _waf locker needs to have a longer lifecycle than the Waf object as it's used to dispose it as well
@@ -59,7 +61,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null, ConfigurationState? configurationState = null)
+        public Security(SecuritySettings? settings = null, IWaf? waf = null, IDownstreamSampler? downstreamSampler = null, IRcmSubscriptionManager? rcmSubscriptionManager = null, ConfigurationState? configurationState = null)
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
             _activeAddressesLocker = new Concurrency.ReaderWriterLock();
@@ -71,6 +73,7 @@ namespace Datadog.Trace.AppSec
                 _waf = waf;
                 _configurationState = configurationState ?? new ConfigurationState(_settings, telemetry, _waf is null);
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+                _downstreamSampler = downstreamSampler ?? new DownstreamSampler(_settings.ApiSecurityDownstreamBodyAnalysisSampleRate);
 
                 if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
                 {
@@ -119,6 +122,10 @@ namespace Datadog.Trace.AppSec
         internal bool AppsecEnabled => _configurationState.AppsecEnabled;
 
         internal bool RaspEnabled => _settings.RaspEnabled && AppsecEnabled;
+
+        internal long ApiSecurityMaxDownstreamRequestBodyAnalysis => _settings.ApiSecurityMaxDownstreamRequestBodyAnalysis;
+
+        internal long AppSecBodyParsingSizeLimit => _settings.AppSecBodyParsingSizeLimit;
 
         internal string? InitializationError { get; private set; }
 
@@ -291,7 +298,11 @@ namespace Datadog.Trace.AppSec
                 // It will happen if the WAF version used does not support new operators defined in the rules
                 foreach (var error in errors)
                 {
+#if NETCOREAPP
+                    if (!error.Key.Contains("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+#else
                     if (!error.Key.ToLower().Contains("unknown matcher:"))
+#endif
                     {
                         return false;
                     }
@@ -415,7 +426,7 @@ namespace Datadog.Trace.AppSec
                         blockingAction.SecurityResponseId = securityResponseId;
                     }
 
-                    if (location is string locationString && locationString != string.Empty)
+                    if (location is string locationString && !string.IsNullOrEmpty(locationString))
                     {
                         var statusCode = GetStatusCode(redirectInfo, 303);
                         blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
@@ -709,6 +720,11 @@ namespace Datadog.Trace.AppSec
 
             // If we don't support knowAddresses, we will have to call the WAF
             return true;
+        }
+
+        public bool SampleDownstreamRequest(AppSecRequestContext context, ulong requestId)
+        {
+            return _downstreamSampler?.SampleHttpClientRequest(context, requestId) ?? false;
         }
     }
 }

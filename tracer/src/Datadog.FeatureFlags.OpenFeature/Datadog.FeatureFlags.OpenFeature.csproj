@@ -10,8 +10,9 @@
     <NoWarn>$(NoWarn);NU5100;NU5128;NU1901;NU1902;NU1903;NU1904</NoWarn>
     <PackageOutputPath Condition="'$(PackageOutputPath)' == '' ">bin\$(Configuration)\packages</PackageOutputPath>
     <SignAssembly>False</SignAssembly>
-    <Version>2.0.0</Version>
-    <AssemblyVersion>2.0.0</AssemblyVersion>
+    <Version>2.0.1</Version>
+    <!-- These target frameworks should match the values exposed in the OpenFeature package referenced below-->
+    <TargetFrameworks>net462;netstandard2.0;net6.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,8 +45,8 @@
   </ItemGroup>
 
   <ItemGroup>
+     <!-- If you update this version, be sure to update the TargetFrameworks element above-->
     <PackageReference Include="OpenFeature" Version="2.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
 
   <PropertyGroup>

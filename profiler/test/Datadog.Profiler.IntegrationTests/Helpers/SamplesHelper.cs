@@ -90,7 +90,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public static HashSet<int> GetThreadIds(string directory)
         {
             HashSet<int> ids = new();
-            var regex = new Regex(@"<[0-9]+> \[#(?<OsId>[0-9]+)\]", RegexOptions.Compiled);
             foreach (var profile in GetProfiles(directory))
             {
                 foreach (var sample in profile.Sample)
@@ -99,8 +98,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     {
                         if (label.Name == "thread id")
                         {
-                            var match = regex.Match(label.Value);
-                            ids.Add(int.Parse(match.Groups["OsId"].Value));
+                            ids.Add(int.Parse(label.Value));
                             continue;
                         }
                     }

@@ -50,3 +50,38 @@ void AppDomainStore::Register(AppDomainID appDomainId)
     std::unique_lock lock{_lock};
     _appDomainToName[appDomainId] = std::move(appDomainName);
 }
+
+AppDomainStore::MemoryStats AppDomainStore::ComputeMemoryStats() const
+{
+    std::unique_lock lock{_lock};
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(AppDomainStore);
+    stats.mapBuckets = _appDomainToName.bucket_count();
+    stats.entryCount = _appDomainToName.size();
+    stats.mapSize = stats.mapBuckets * (sizeof(AppDomainID) + sizeof(std::string) + sizeof(void*));
+
+    // Calculate string capacities
+    for (const auto& [appDomainId, name] : _appDomainToName)
+    {
+        stats.stringsSize += name.capacity();
+    }
+
+    return stats;
+}
+
+size_t AppDomainStore::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void AppDomainStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("AppDomainStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Map storage:             ", stats.mapSize, " bytes (", stats.entryCount, " entries, ", stats.mapBuckets, " buckets)");
+    Log::Debug("  Strings content:         ", stats.stringsSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

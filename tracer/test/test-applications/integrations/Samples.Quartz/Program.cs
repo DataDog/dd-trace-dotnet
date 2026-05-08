@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using System.Diagnostics;
+using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
 using QuartzSampleApp.Infrastructure;

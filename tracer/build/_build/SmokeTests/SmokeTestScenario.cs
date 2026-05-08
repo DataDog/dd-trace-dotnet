@@ -1,0 +1,192 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SmokeTests;
+
+public abstract record SmokeTestScenario
+{
+    protected const string DefaultSnapshotIgnoredAttrs =
+        "span_id" + ",trace_id" + ",parent_id" + ",duration" + ",start" + ",metrics.system.pid" + ",meta.runtime-id" + ","
+        + "meta.network.client.ip" + ",meta.http.client_ip" + ",metrics.process_id" + ",meta._dd.p.dm" + ","
+        + "meta._dd.p.tid" + ",meta._dd.parent_id" + ",meta._dd.tags.process" + ",meta._dd.appsec.s.req.params" + ","
+        + "meta._dd.appsec.s.res.body" + ",meta._dd.appsec.s.req.headers" + ","
+        + "meta._dd.appsec.s.res.headers" + ",meta._dd.appsec.fp.http.endpoint" + ","
+        + "meta._dd.appsec.fp.http.header" + ",meta._dd.appsec.fp.http.network";
+
+    public required string ShortName { get; init; }
+    public required string PublishFramework { get; init; }
+    public required string RuntimeTag { get; init; }
+    public required string DockerImageRepo { get; init; }
+    public required string Os { get; init; }
+    public required string OsVersion { get; init; }
+
+    public bool RunCrashTest { get; init; } = true;
+    public bool ExcludeWhenPrerelease { get; init; }
+    public bool IsNoop { get; init; }
+
+    public virtual string SnapshotFile
+        => PublishFramework == "netcoreapp2.1" ? "smoke_test_snapshots_2_1" : "smoke_test_snapshots";
+
+    public virtual string SnapshotIgnoredAttrs => DefaultSnapshotIgnoredAttrs;
+
+    public string JobName => $"{ShortName}_{RuntimeTag.Replace('.', '_')}";
+    public string DockerTag => $"dd-trace-dotnet/{JobName}-tester";
+    public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
+    public bool IsWindows => Os == "windows";
+
+    public virtual Dictionary<string, string> GetEnvironment(bool isCrashTest) =>
+        isCrashTest
+            ? new()
+            {
+                {"DD_PROFILING_ENABLED", "0"},
+                {"CRASH_APP_ON_STARTUP", "1"},
+                {"DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE", "1"},
+                {"COMPlus_DbgEnableMiniDump", "0"},
+            }
+            : new() {{"DD_PROFILING_ENABLED", "1"}};
+
+}
+
+public record InstallerScenario : SmokeTestScenario
+{
+    public required InstallType InstallType { get; init; }
+    public string InstallCommand => InstallType.GetInstallCommand();
+}
+
+public record ChiseledScenario : SmokeTestScenario
+{
+    public bool IsArm64 { get; init; }
+}
+
+public record NuGetScenario : SmokeTestScenario
+{
+    public required string RuntimeId { get; init; }
+    public required string NuGetPackageName { get; init; }
+    public string RelativeProfilerPath => $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so";
+    public string RelativeApiWrapperPath => $"datadog/{RuntimeId}/Datadog.Linux.ApiWrapper.x64.so";
+
+    public override string SnapshotFile => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
+        _ => base.SnapshotFile,
+    };
+
+    public override Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        var env = base.GetEnvironment(isCrashTest);
+        // profiler, libdatadog, libddwaf, Datadog.Linux.ApiWrapper.x64.so aren't available in the package
+        if (NuGetPackageName == Projects.DatadogAzureFunctions)
+        {
+            env["DD_PROFILING_ENABLED"] = "0";
+            env["DD_APPSEC_ENABLED"] = "0";
+            env["LD_PRELOAD"] = "";
+            // Pretend to be in AAS, to avoid trying to use libdatadog for config.
+            env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            env["WEBSITE_OWNER_NAME"] = "datadog";
+            env["WEBSITE_RESOURCE_GROUP"] = "smoketests";
+            // Super hacky way to try to stop sending config to the profiler
+            env["AWS_LAMBDA_FUNCTION_NAME"] = "AspNetCoreSmokeTest";
+            // Need to have this so it counts as "safe to trace"
+            env["DD_API_KEY"] = "123";
+        }
+
+        return env;
+    }
+}
+
+public record DotnetToolScenario : SmokeTestScenario
+{
+    public required string RuntimeId { get; init; }
+}
+
+public record DotnetToolNugetScenario : SmokeTestScenario
+{
+    public required string RuntimeId { get; init; }
+}
+
+public record SelfInstrumentScenario : SmokeTestScenario
+{
+    public required InstallType InstallType { get; init; }
+    public string InstallCommand => InstallType.GetInstallCommand();
+}
+
+public record TrimmingScenario : SmokeTestScenario
+{
+    public required InstallType InstallType { get; init; }
+    public required string RuntimeId { get; init; }
+    public required string PackageName { get; init; }
+    public string? PackageVersionSuffix { get; init; }
+    public string InstallCommand => InstallType.GetInstallCommand();
+}
+
+public record WindowsMsiScenario : SmokeTestScenario
+{
+    public required string Channel32Bit { get; init; }
+}
+
+public record WindowsNuGetScenario : SmokeTestScenario
+{
+    public required string Channel32Bit { get; init; }
+    public required string RelativeProfilerPath { get; init; }
+    public required string NuGetPackageName { get; init; }
+    public bool IncludeDdDotnetScenario { get; init; }
+
+    public override string SnapshotIgnoredAttrs => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => DefaultSnapshotIgnoredAttrs + ",meta.aas.environment.instance_name",
+        _ => base.SnapshotIgnoredAttrs,
+    };
+
+    public override string SnapshotFile => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
+        _ => base.SnapshotFile,
+    };
+
+    public override Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        var env = base.GetEnvironment(isCrashTest);
+        // profiler, libdatadog, libddwaf, Datadog.Linux.ApiWrapper.x64.so aren't available in the package
+        if (NuGetPackageName == Projects.DatadogAzureFunctions)
+        {
+            env["DD_PROFILING_ENABLED"] = "0";
+            env["DD_APPSEC_ENABLED"] = "0";
+            env["LD_PRELOAD"] = "";
+            // Pretend to be in AAS, to avoid trying to use libdatadog for config.
+            env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            env["WEBSITE_OWNER_NAME"] = "datadog";
+            env["WEBSITE_RESOURCE_GROUP"] = "smoketests";
+            // Need to have this so it counts as "safe to trace"
+            env["DD_API_KEY"] = "123";
+        }
+
+        return env;
+    }
+}
+
+public record WindowsDotnetToolScenario : SmokeTestScenario
+{
+    public required string Channel32Bit { get; init; }
+}
+
+public record WindowsTracerHomeScenario : SmokeTestScenario
+{
+    public required string Channel32Bit { get; init; }
+    public required string RelativeProfilerPath { get; init; }
+}
+
+public record WindowsFleetInstallerIisScenario : SmokeTestScenario
+{
+    public required string TargetPlatform { get; init; }
+    public required string FleetInstallerCommand { get; init; }
+
+    public override string SnapshotFile => "smoke_test_iis_snapshots";
+
+    public override string SnapshotIgnoredAttrs
+        => DefaultSnapshotIgnoredAttrs
+         + ",meta._dd.appsec.waf.version" + ",metrics._dd.appsec.event_rules.loaded"
+         + ",metrics._dd.appsec.event_rules.error_count" + ",metrics._dd.tracer_kr"
+         + ",metrics._sampling_priority_v1";
+}

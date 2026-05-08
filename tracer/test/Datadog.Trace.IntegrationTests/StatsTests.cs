@@ -58,7 +58,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(null, null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -184,7 +184,7 @@ namespace Datadog.Trace.IntegrationTests
                     span.ResourceName = resourceName ?? "default-resource";
                     span.Type = type ?? "default-type";
                     span.SetTag(Tags.HttpStatusCode, httpStatusCode ?? "200");
-                    span.ServiceName = serviceName ?? "default-service";
+                    span.SetService(serviceName ?? "default-service", null);
 
                     return span;
                 }
@@ -205,7 +205,7 @@ namespace Datadog.Trace.IntegrationTests
                 { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
             });
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(null, null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -366,7 +366,7 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.TraceDataPipelineEnabled, "false" },
                     }));
 
-            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(null, null));
+            var discovery = DiscoveryService.CreateUnmanaged(settings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null), new ServiceRemappingHash(null));
             // Note: we are explicitly _not_ using a using here, as we dispose it ourselves manually at a specific point
             // and this was easiest to retrofit without changing the test structure too much.
             var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);

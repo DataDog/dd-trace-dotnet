@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -21,8 +22,21 @@ internal sealed class ChunkedEncodingWriteStream(Stream innerStream) : LeaveOpen
     private readonly Stream _innerStream = innerStream;
     private readonly byte[] _chunkSizeBuffer = new byte[8]; // max length of Int32 as UTF-8 hex
 
+#if NETCOREAPP
+    public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        => WriteAsyncCore(buffer, cancellationToken);
+
+    public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        => await WriteAsyncCore(buffer.AsMemory(offset, count), cancellationToken).ConfigureAwait(false);
+
+    private async ValueTask WriteAsyncCore(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
+    {
+        const int offset = 0;
+        var count = buffer.Length;
+#else
     public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
+#endif
         // don't want to ever send a zero-length terminator unless we're at the end
         if (count == 0)
         {
@@ -40,7 +54,11 @@ internal sealed class ChunkedEncodingWriteStream(Stream innerStream) : LeaveOpen
         await _innerStream.WriteAsync(CrLfBytes, offset: 0, count: 2, cancellationToken).ConfigureAwait(false);
 
         // add the content
+#if NETCOREAPP
+        await _innerStream.WriteAsync(buffer.Slice(offset, count), cancellationToken).ConfigureAwait(false);
+#else
         await _innerStream.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+#endif
 
         // add the extra new line
         await _innerStream.WriteAsync(CrLfBytes, offset: 0, count: 2, cancellationToken).ConfigureAwait(false);

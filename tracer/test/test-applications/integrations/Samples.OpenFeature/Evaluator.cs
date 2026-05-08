@@ -6,7 +6,7 @@ namespace Samples.FeatureFlags;
 
 class Evaluator
 {
-    static global::OpenFeature.FeatureClient client;
+    static global::OpenFeature.FeatureClient client = null!; // assigned by Init()
     static Action? _onNewConfig = null;
 
     public static bool Init()
@@ -43,7 +43,7 @@ class Evaluator
         
         if (evaluation.ErrorMessage is not null)
         {
-            Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation?.ErrorMessage}>");
+            Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation.ErrorMessage}>");
         }
         else
         {
@@ -62,11 +62,11 @@ class Evaluator
         var evaluation = client.GetObjectDetailsAsync(key, defaultValue, context).Result;
 
         Assert(evaluation is not null, "Null eval");
-        Assert(evaluation.ErrorMessage is null, $"Non Null error ({evaluation.ErrorMessage})");
+        Assert(evaluation!.ErrorMessage is null, $"Non Null error ({evaluation.ErrorMessage})");
         Assert(evaluation.Value != defaultValue, "Default value");
         Assert(evaluation.Value.IsStructure, "No structure value");
-        Assert(evaluation.Value.AsStructure.ContainsKey("integer"), "Integer value not found");
-        Assert(evaluation.Value.AsStructure.GetValue("integer").AsInteger == 1, "Wrong Integer value");
+        Assert(evaluation.Value.AsStructure!.ContainsKey("integer"), "Integer value not found");
+        Assert(evaluation.Value.AsStructure!.GetValue("integer").AsInteger == 1, "Wrong Integer value");
 
         static void Assert(bool condition, string message = "")
         {

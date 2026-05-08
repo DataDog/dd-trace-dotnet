@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyName, moduleVersionId);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
 
             var dependency = data.Should().ContainSingle().Subject;
             dependency.Name.Should().Be(name);
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(thisAssembly);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
 
             var dependency = data.Should().ContainSingle().Subject;
             dependency.Name.Should().Be("Datadog.Trace.Tests");
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var collector = new DependencyTelemetryCollector();
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             data.Should().BeNull();
             collector.HasChanges().Should().BeFalse();
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             collector.HasChanges().Should().BeTrue();
 
-            data = collector.GetData();
+            data = collector.GetIncrementalData();
             data.Should()
                 .HaveCount(1)
                 .And.ContainSingle(x => x.Name == "Datadog.Trace.Tests");
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.AssemblyLoaded(assembly);
             collector.HasChanges().Should().BeTrue();
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assembly);
@@ -265,12 +265,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyV1, "mvid");
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assemblyV2, "mvid");
             collector.HasChanges().Should().BeTrue();
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             data.Should().NotBeNull();
             data.Should()
                 .NotBeNullOrEmpty()
@@ -287,12 +287,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyName, assemblyV1ModuleVersionId);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assemblyName, assemblyV2ModuleVersionId);
             collector.HasChanges().Should().BeTrue();
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             data.Should().NotBeNull();
             data.Should()
                 .NotBeNullOrEmpty()

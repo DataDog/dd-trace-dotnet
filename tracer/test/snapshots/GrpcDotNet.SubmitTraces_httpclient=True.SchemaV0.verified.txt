@@ -43,7 +43,8 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -68,7 +69,8 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -87,6 +89,8 @@
       aspnet_core.route: /greet.tester.greeter/streamingbothways,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/StreamingBothWays,
+      grpc.status_code: 0,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/streamingbothways,
@@ -173,7 +177,8 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -198,7 +203,8 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -217,6 +223,8 @@
       aspnet_core.route: /greet.tester.greeter/streamingfromclient,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/StreamingFromClient,
+      grpc.status_code: 0,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/streamingfromclient,
@@ -305,7 +313,8 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -330,7 +339,8 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -349,6 +359,8 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -439,7 +451,8 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -464,7 +477,8 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -483,6 +497,8 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 15,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -573,7 +589,8 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -598,7 +615,8 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -617,6 +635,8 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 5,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -707,7 +727,8 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -732,7 +753,8 @@
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -751,6 +773,8 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 2,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -845,7 +869,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -870,7 +895,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -889,6 +915,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -979,7 +1007,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1004,7 +1033,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1023,6 +1053,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 15,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -1113,7 +1145,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1138,7 +1171,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1157,6 +1191,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 5,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -1247,7 +1283,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1272,7 +1309,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1291,6 +1329,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/ErroringMethod,
+      grpc.status_code: 2,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -1383,7 +1423,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1410,7 +1451,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1515,7 +1557,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1540,7 +1583,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1559,6 +1603,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/streamingfromserver,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/StreamingFromServer,
+      grpc.status_code: 0,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/streamingfromserver,
@@ -1645,7 +1691,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1670,7 +1717,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1689,6 +1737,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/unary,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/Unary,
+      grpc.status_code: 0,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/unary,
@@ -1775,7 +1825,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1800,7 +1851,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1819,6 +1871,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/unary,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/Unary,
+      grpc.status_code: 0,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/unary,
@@ -1905,7 +1959,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1930,7 +1985,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1949,6 +2005,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/veryslow,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/VerySlow,
+      grpc.status_code: 4,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/veryslow,
@@ -2037,7 +2095,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2062,7 +2121,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.GrpcDotNet
+      _dd.base_service: Samples.GrpcDotNet,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2081,6 +2141,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/veryslow,
       component: aspnet_core,
       env: integration_tests,
+      grpc.method: /greet.tester.Greeter/VerySlow,
+      grpc.status_code: 4,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/veryslow,

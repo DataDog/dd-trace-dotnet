@@ -5,7 +5,7 @@
 
 #nullable enable
 
-#if !NET461
+#if !NETFRAMEWORK && !NETCOREAPP3_1_OR_GREATER
 
 using System.Net.Http.Headers;
 using Datadog.Trace.DuckTyping;

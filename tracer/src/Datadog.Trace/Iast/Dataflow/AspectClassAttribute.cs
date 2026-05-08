@@ -15,7 +15,7 @@ namespace Datadog.Trace.Iast.Dataflow;
 [AttributeUsage(AttributeTargets.Class)]
 internal class AspectClassAttribute : Attribute
 {
-    private readonly List<object> parameters = new List<object>();
+    private readonly List<object> parameters = [];
 
     public AspectClassAttribute()
         : this(string.Empty)
@@ -23,33 +23,33 @@ internal class AspectClassAttribute : Attribute
     }
 
     public AspectClassAttribute(string defaultAssembly, InstrumentationCategory category = InstrumentationCategory.Iast)
-        : this(defaultAssembly, new AspectFilter[0], category, AspectType.Propagation)
+        : this(defaultAssembly, [], category, AspectType.Propagation)
     {
     }
 
     public AspectClassAttribute(string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
-        : this(defaultAssembly, new AspectFilter[0], InstrumentationCategory.Iast, defaultAspectType, defaultVulnerabilityTypes)
+        : this(defaultAssembly, [], InstrumentationCategory.Iast, defaultAspectType, defaultVulnerabilityTypes)
     {
     }
 
     public AspectClassAttribute(string defaultAssembly, InstrumentationCategory category, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
-        : this(defaultAssembly, new AspectFilter[0], category, defaultAspectType, defaultVulnerabilityTypes)
+        : this(defaultAssembly, [], category, defaultAspectType, defaultVulnerabilityTypes)
     {
     }
 
     public AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, InstrumentationCategory category = InstrumentationCategory.Iast, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
     {
-        if (filters.Length == 0) { filters = new AspectFilter[] { AspectFilter.None }; }
+        if (filters.Length == 0) { filters = [AspectFilter.None]; }
 
         parameters.Add(defaultAssembly);
         parameters.Add(filters);
         parameters.Add(defaultAspectType);
-        parameters.Add(defaultVulnerabilityTypes ?? new VulnerabilityType[0]);
+        parameters.Add(defaultVulnerabilityTypes ?? []);
 
         DefaultAssembly = AspectAttribute.GetAssemblyList(defaultAssembly);
         Filters = filters;
         DefaultAspectType = defaultAspectType;
-        DefaultVulnerabilityTypes = defaultVulnerabilityTypes ?? new VulnerabilityType[0];
+        DefaultVulnerabilityTypes = defaultVulnerabilityTypes ?? [];
     }
 
     public List<string> DefaultAssembly { get; private set; }

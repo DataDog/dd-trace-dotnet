@@ -13,7 +13,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.LifetimeManager;
 
@@ -26,12 +26,6 @@ public class TerminationSignalTests : TestHelper
     public TerminationSignalTests(ITestOutputHelper output)
         : base(new EnvironmentHelper("LifetimeManager.TerminationSignals", typeof(TestHelper), output), output)
     {
-    }
-
-    [SkippableFact]
-    public async Task SigtermTriggersShutdownOnce()
-    {
-        await RunSigtermTestAsync(signalCount: 1, usePublishWithRid: false);
     }
 
     [SkippableFact]
@@ -80,6 +74,7 @@ public class TerminationSignalTests : TestHelper
 
         SetEnvironmentVariable("DD_LIFETIME_READY_FILE", readyFile);
         SetEnvironmentVariable("DD_LIFETIME_SHUTDOWN_FILE", shutdownFile);
+        SetEnvironmentVariable("DD_LIFETIME_SHUTDOWN_DELAY_MS", "1000");
 
         using var process = await StartSample(agent, "--wait", packageVersion: string.Empty, aspNetCorePort: 0, usePublishWithRID: usePublishWithRid);
         using var helper = new ProcessHelper(process);
@@ -90,7 +85,7 @@ public class TerminationSignalTests : TestHelper
             SendTerminationSignals(process, signalCount);
             WaitForExit(process, helper);
 
-            process.ExitCode.Should().Be(0);
+            process.ExitCode.Should().Be(143);
             AssertSingleShutdownLine(shutdownFile);
         }
         finally

@@ -59,6 +59,9 @@ partial class Build
     [Parameter("Only update package versions for packages with the following names")]
     readonly string[] IncludePackages;
 
+    [Parameter("Minimum age in days a NuGet package version must have been published before auto-including. Defaults to 2. Ignored for packages named in --IncludePackages, which always bypass the cooldown.")]
+    readonly int? PackageVersionCooldownDays;
+
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")]
@@ -228,24 +231,128 @@ partial class Build
            }
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
-           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotFolder);
-           Logger.Information("Found {CurrentDependenciesCount} existing dependencies", currentDependencies.Count);
-           var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
-                                         {
-                                             (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
-                                             ({ } include, _) => currentDependencies.Where(x => !IncludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
-                                             _ => Enumerable.Empty<(string NugetName, Version LatestTestedVersion)>()
-                                         }).ToDictionary(x => x.NugetName, x => x.LatestTestedVersion, StringComparer.OrdinalIgnoreCase);
+           var supportedVersionsPath = BuildDirectory / "supported_versions.json";
 
-           foreach (var dep in excludedFromUpdates)
+           // Decides the cooldown treatment for each package by name. See CooldownMode for what each value does.
+           var getCooldownMode = BuildCooldownModeSelector(IncludePackages, ExcludePackages);
+
+           // Dependabot re-uses the previous entry verbatim for Freeze; Skip and Normal both refresh.
+           Func<string, bool> shouldUpdatePackage = name => getCooldownMode(name) is not CooldownMode.Freeze;
+
+           static Func<string, CooldownMode> BuildCooldownModeSelector(string[] includePackages, string[] excludePackages)
            {
-               Logger.Information("Excluding package {NugetName} from update. Fixing at {Version}", dep.Key, dep.Value);
+               // No filter: every package goes through the normal cooldown filter.
+               if (includePackages is null && excludePackages is null)
+               {
+                   return _ => CooldownMode.Normal;
+               }
+
+               // --IncludePackages Foo Bar: update only the listed packages (bypassing cooldown);
+               // freeze every other package so it re-emits its previous output unchanged.
+               if (includePackages is not null)
+               {
+                   var targeted = new HashSet<string>(includePackages, StringComparer.OrdinalIgnoreCase);
+                   return name => targeted.Contains(name) ? CooldownMode.BypassCooldown : CooldownMode.Freeze;
+               }
+
+               // --ExcludePackages Foo Bar: freeze the listed packages; everything else updates normally.
+               var blocked = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
+               return name => blocked.Contains(name) ? CooldownMode.Freeze : CooldownMode.Normal;
            }
 
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, excludedFromUpdates);
+           // supported_versions.json is still loaded for Pipeline B (dependabot + supported_versions.json
+           // regeneration). The cooldown filter in Pipeline A sources its previous-max data from the
+           // generated .g.cs files directly, because those retain per-major version history that
+           // supported_versions.json's single-max-per-package shape cannot represent.
+           var previousSupportedVersions = await GenerateSupportMatrix.LoadPreviousVersions(supportedVersionsPath);
+           Logger.Information("Loaded previous supported versions with {Count} entries", previousSupportedVersions.Count);
+
+           var effectiveCooldownDays = PackageVersionCooldownDays ?? 2;
+
+           // Pipeline A: generate .g.props/.g.cs files
+           Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, getCooldownMode, effectiveCooldownDays);
            var testedVersions = await versionGenerator.GenerateVersions(Solution);
+
+           // Log version changes: bumps, unchanged, and overridden
+           var queriedVersions = versionGenerator.QueriedVersions;
+           var bumped = 0;
+           var unchanged = 0;
+           foreach (var tested in testedVersions)
+           {
+               var packageName = tested.NugetPackageSearchName;
+               var previouslyTested = versionGenerator.GetPreviouslyTestedVersions(tested.IntegrationName);
+
+               foreach (var selected in tested.SelectedVersions)
+               {
+                   // Compare per-slot: entries can have multiple selected versions (one per glob or
+                   // per major), e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.*. Bound the predecessor search
+                   // to same-major and <= selected so each slot's previous max is found independently
+                   // -- a 3.x backport is visible even when the 4.x slot is unchanged.
+                   var previousMax = previouslyTested
+                       .Where(v => v.Major == selected.Major && v <= selected)
+                       .OrderByDescending(v => v)
+                       .FirstOrDefault();
+
+                   if (previousMax is null || selected > previousMax)
+                   {
+                       bumped++;
+                       DateTimeOffset? publishedDate = null;
+                       if (queriedVersions.TryGetValue(packageName, out var versionsForPackage))
+                       {
+                           var match = versionsForPackage.FirstOrDefault(v => v.Version == selected.ToString());
+                           publishedDate = match?.Published;
+                       }
+
+                       versionGenerator.BumpReport.AddBump(new PackageBumpReport.BumpEntry(
+                           packageName,
+                           tested.IntegrationName,
+                           previousMax,
+                           selected,
+                           publishedDate));
+
+                       Logger.Information(
+                           "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
+                           packageName,
+                           previousMax?.ToString() ?? "(new)",
+                           selected,
+                           publishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "(unknown)",
+                           packageName,
+                           selected);
+                   }
+                   else
+                   {
+                       unchanged++;
+                   }
+               }
+           }
+
+           Logger.Information("{Bumped} package(s) bumped, {Unchanged} unchanged", bumped, unchanged);
+
+           if (versionGenerator.BumpReport.CooldownEntries.Count > 0)
+           {
+               Logger.Warning(
+                   "{Count} package version(s) were excluded due to the {Days}-day cooldown period",
+                   versionGenerator.BumpReport.CooldownEntries.Count,
+                   effectiveCooldownDays);
+
+               foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
+               {
+                   Logger.Warning(
+                       "  {Package} {Version} overridden (published {Date})",
+                       entry.PackageName,
+                       entry.OverriddenVersion,
+                       entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
+               }
+           }
+
+           if (versionGenerator.BumpReport.HasEntries)
+           {
+               var reportPath = TemporaryDirectory / "bump_report.md";
+               await versionGenerator.BumpReport.SaveToFile(reportPath);
+               Logger.Information("Bump report saved to {Path}", reportPath);
+           }
 
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
@@ -253,9 +360,12 @@ partial class Build
                            .ToList();
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
-           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
-           await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
+           // Pipeline B: generate supported_versions.json
+           // TestedVersions are cooldown-filtered but the previous max pins prevent downgrades,
+           // so they accurately reflect what we're testing.
+           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
+               integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
@@ -286,7 +396,7 @@ partial class Build
             var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
             EnsureCleanDirectory(downloadDirectory);
-            await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
+            await UpdateVendorsTool.UpdateVendors(downloadDirectory, RootDirectory, vendorDirectory);
        });
 
     Target UpdateVersion => _ => _
@@ -689,6 +799,14 @@ partial class Build
         }
 
         throw new Exception("Failed to download telemetry forwarder");
+    }
+
+    static string GetDotnetSdkVersion(AbsolutePath rootDirectory)
+    {
+        var globalJsonPath = rootDirectory / "global.json";
+        var json = JsonDocument.Parse(File.ReadAllText(globalJsonPath));
+        return json.RootElement.GetProperty("sdk").GetProperty("version").GetString()
+            ?? throw new InvalidOperationException("Could not read sdk.version from global.json");
     }
 
     static string GetSha512Hash(string filePath)

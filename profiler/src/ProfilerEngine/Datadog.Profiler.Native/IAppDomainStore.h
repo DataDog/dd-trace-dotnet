@@ -4,9 +4,12 @@
 #pragma once
 #include "cor.h"
 #include "corprof.h"
+
+#include "IMemoryFootprintProvider.h"
+
 #include <string>
 
-class IAppDomainStore
+class IAppDomainStore : public IMemoryFootprintProvider
 {
 public:
     virtual ~IAppDomainStore() = default;

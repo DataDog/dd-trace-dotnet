@@ -15,6 +15,8 @@ public static class Projects
     public const string NativeLoaderNativeTests = "Datadog.Trace.ClrProfiler.Native.Tests";
     public const string DatadogTraceTrimming = "Datadog.Trace.Trimming";
 
+    public const string DatadogFeatureFlagsOpenFeature = "Datadog.FeatureFlags.OpenFeature";
+
     public const string BenchmarksTrace = "Benchmarks.Trace";
     public const string BenchmarksOpenTelemetryApi = "Benchmarks.OpenTelemetry.Api";
     public const string BenchmarksOpenTelemetryInstrumentedApi = "Benchmarks.OpenTelemetry.InstrumentedApi";

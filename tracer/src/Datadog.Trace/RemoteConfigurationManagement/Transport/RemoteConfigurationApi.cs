@@ -28,7 +28,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly ContainerMetadata _containerMetadata;
-        private string? _configEndpoint = null;
+        private string? _configEndpoint;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {

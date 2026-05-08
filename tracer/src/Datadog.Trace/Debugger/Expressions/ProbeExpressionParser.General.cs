@@ -168,7 +168,7 @@ internal partial class ProbeExpressionParser<T>
         return Expression.TypeIs(value, type);
     }
 
-    private Expression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private MemberExpression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Expression.Property(
             Expression.Call(
@@ -177,13 +177,13 @@ internal partial class ProbeExpressionParser<T>
             nameof(Type.FullName));
     }
 
-    private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private TypeBinaryExpression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
         return Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType);
     }
 
-    private Expression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private UnaryExpression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Expression.Not(IsUndefined(reader, parameters, itParameter));
     }
@@ -280,12 +280,12 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private Expression UndefinedValue()
+    private ConstantExpression UndefinedValue()
     {
         return Expression.Constant(Expressions.UndefinedValue.Instance);
     }
 
-    private Expression RedactedValue()
+    private ConstantExpression RedactedValue()
     {
         return Expression.Constant("{REDACTED}");
     }

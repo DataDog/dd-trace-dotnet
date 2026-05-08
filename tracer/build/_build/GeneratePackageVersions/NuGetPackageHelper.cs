@@ -16,35 +16,59 @@ namespace GeneratePackageVersions
 {
     public class NuGetPackageHelper
     {
-        public static async Task<IEnumerable<string>> GetNugetPackageVersions(IPackageVersionEntry entry)
+        /// <summary>
+        /// Returns all available versions for a package with their publish dates, unfiltered by version range.
+        /// Suitable for caching since the result is independent of any specific entry's version bounds.
+        /// </summary>
+        public static async Task<List<VersionWithDate>> GetAllNugetPackageVersions(string packageName)
         {
-            var searchMetadata = await GetPackageMetadatas(entry);
+            var searchMetadata = await GetPackageMetadatas(packageName);
 
-            SemanticVersion minSemanticVersion, maxSemanticVersionExclusive;
-
-            if (!SemanticVersion.TryParse(entry.MinVersion, out minSemanticVersion))
-            {
-                throw new ArgumentException($"MinVersion {entry.MinVersion} in integration {entry.IntegrationName} could not be parsed into a NuGet Semantic Version");
-            }
-
-            if (!SemanticVersion.TryParse(entry.MaxVersionExclusive, out maxSemanticVersionExclusive))
-            {
-                throw new ArgumentException($"MaxVersion {entry.MaxVersionExclusive} in integration {entry.IntegrationName} could not be parsed into a NuGet Semantic Version");
-            }
-
-            List<string> packageVersions = new List<string>();
+            var packageVersions = new List<VersionWithDate>();
             foreach (var md in searchMetadata)
             {
-                if (md.Identity.HasVersion && md.Identity.Version.CompareTo(minSemanticVersion) >= 0 && md.Identity.Version.CompareTo(maxSemanticVersionExclusive) < 0)
+                if (md.Identity.HasVersion)
                 {
-                    packageVersions.Add(md.Identity.Version.ToNormalizedString());
+                    packageVersions.Add(new VersionWithDate(
+                        md.Identity.Version.ToNormalizedString(),
+                        md.Published));
                 }
             }
 
             return packageVersions;
         }
 
-        public static async Task<IEnumerable<IPackageSearchMetadata>> GetPackageMetadatas(IPackageVersionEntry entry)
+        /// <summary>
+        /// Filters a list of versions to only those within the entry's [MinVersion, MaxVersionExclusive) range.
+        /// Preserves publish date metadata through the pipeline.
+        /// </summary>
+        public static List<VersionWithDate> FilterVersions(IEnumerable<VersionWithDate> allVersions, IPackageVersionEntry entry)
+        {
+            if (!NuGetVersion.TryParse(entry.MinVersion, out var minVersion))
+            {
+                throw new ArgumentException($"MinVersion {entry.MinVersion} in integration {entry.IntegrationName} could not be parsed into a NuGet Version");
+            }
+
+            if (!NuGetVersion.TryParse(entry.MaxVersionExclusive, out var maxVersionExclusive))
+            {
+                throw new ArgumentException($"MaxVersion {entry.MaxVersionExclusive} in integration {entry.IntegrationName} could not be parsed into a NuGet Version");
+            }
+
+            var result = new List<VersionWithDate>();
+            foreach (var item in allVersions)
+            {
+                if (NuGetVersion.TryParse(item.Version, out var version)
+                    && version.CompareTo(minVersion) >= 0
+                    && version.CompareTo(maxVersionExclusive) < 0)
+                {
+                    result.Add(item);
+                }
+            }
+
+            return result;
+        }
+
+        public static async Task<IEnumerable<IPackageSearchMetadata>> GetPackageMetadatas(string packageName)
         {
             var packageSource = new PackageSource("https://api.nuget.org/v3/index.json");
 
@@ -59,7 +83,7 @@ namespace GeneratePackageVersions
             var logger = new Logger();
 
             var searchMetadata = await packageMetadataResource.GetMetadataAsync(
-                                                                     entry.NugetPackageSearchName,
+                                                                     packageName,
                                                                      includePrerelease: false,
                                                                      includeUnlisted: true,
                                                                      sourceCacheContext,

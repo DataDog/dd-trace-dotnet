@@ -34,9 +34,6 @@ public class HangfireTests : TracingIntegrationTest
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
-        // needed for context propagation test
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))

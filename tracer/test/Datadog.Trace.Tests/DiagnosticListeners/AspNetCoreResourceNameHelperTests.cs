@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if !NETFRAMEWORK
+using System;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using FluentAssertions;
@@ -188,6 +189,84 @@ public class AspNetCoreResourceNameHelperTests
             expandRouteTemplates);
 
         resource.Should().Be(expected);
+    }
+
+    [Fact]
+    public void IsIdentifierSegment_NullValue_ReturnsFalse()
+    {
+        var result = AspNetCoreResourceNameHelper.IsIdentifierSegment(null, out var valueAsString);
+        result.Should().BeFalse();
+        valueAsString.Should().BeNull();
+    }
+
+    [Theory]
+    // Integers - both implementations agree these are identifiers
+    [InlineData(123)] // true
+    [InlineData(0)] // true
+    [InlineData(-5)] // negative int: string "-5" has digit and hyphen is allowed // true
+    [InlineData(9999999999L)] // true
+    // Whole number floats - string representation has no decimal point
+    [InlineData(123f)] // true
+    [InlineData(12334567f)] // true
+    [InlineData(123d)] // true
+    [InlineData(1234567d)] // true
+    // Fractional floats - we don't try to fast-track these, because for historical reasons
+    // we do a culture--sensitive comparison, and may-or-may not mark the same value as identifier or not
+    [InlineData(1.5f)] // true
+    [InlineData(1.5d)] // true
+    [InlineData(-1.5f)] // true
+    [InlineData(-1.5d)] // true
+    // Strings - both use UriHelpers directly
+    [InlineData("123")] // true
+    [InlineData("abc")] // short hex, no digits // false
+    [InlineData("controller")] // false
+    [InlineData("14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d")] // GUID string with digits // true
+    [InlineData("hello-world")] // contains non-hex letters // false
+    public void IsIdentifierSegment_BothImplementationsAgree(object value)
+    {
+        // We're doing a culture-insensitive ToString() here for CI consistency,
+        // even though in the real implementation it's culture sensitive!
+        var stringValue = value as string ?? FormattableString.Invariant($"{value}");
+
+        // Verify UriHelpers gives the same result for the string representation
+        var expected = Trace.Util.UriHelpers.IsIdentifierSegment(stringValue, 0, stringValue.Length);
+
+        var actual = AspNetCoreResourceNameHelper.IsIdentifierSegment(value, out _);
+        actual.Should().Be(expected);
+    }
+
+    // Guid can't be used directly in InlineData
+    [Theory]
+    // GUIDs with digits - both implementations agree (passed as string, parsed to Guid)
+    [InlineData("14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d")]
+    [InlineData("00000000-0000-0000-0000-000000000000")]
+    public void IsIdentifierSegment_BothImplementationsAgree_Guids(string guidString)
+    {
+        var guid = new Guid(guidString);
+        IsIdentifierSegment_BothImplementationsAgree(guid);
+    }
+
+    // Decimal can't be used in InlineData
+    [Theory]
+    [InlineData("123")]
+    [InlineData("1234567")]
+    [InlineData("1.5")]
+    [InlineData("-1.5")]
+    public void IsIdentifierSegment_BothImplementationsAgree_Decimal(string decimalString)
+    {
+        var value = decimal.Parse(decimalString);
+        IsIdentifierSegment_BothImplementationsAgree(value);
+    }
+
+    // These differ from the IsIdentifierSegment() result, but we don't care,
+    // because in this case our knowledge is better so we give a more accurate result
+    [Theory]
+    [InlineData("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")]
+    [InlineData("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")]
+    public void IsIdentifierSegment_Discrepancy_GuidWithNoDigits(string guidString)
+    {
+        var guid = new Guid(guidString);
+        AspNetCoreResourceNameHelper.IsIdentifierSegment(guid, out _).Should().BeTrue();
     }
 
 #if NET6_0_OR_GREATER

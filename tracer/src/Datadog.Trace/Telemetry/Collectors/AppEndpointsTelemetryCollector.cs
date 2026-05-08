@@ -26,7 +26,7 @@ internal sealed class AppEndpointsTelemetryCollector
     /// Returns the collected endpoints and clears the internal state.
     /// </summary>
     /// <returns>The collected endpoints.</returns>
-    public ICollection<AppEndpointData>? GetData()
+    public ICollection<AppEndpointData>? GetIncrementalData()
     {
         var endpoints = _endpoints;
         _endpoints = null;

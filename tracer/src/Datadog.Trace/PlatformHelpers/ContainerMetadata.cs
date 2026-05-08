@@ -62,16 +62,6 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         /// <summary>
-        /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
-        /// This is set when we receive a value for it in an http response from the agent
-        /// </summary>
-        public string? ContainerTagsHash
-        {
-            get => Volatile.Read(ref field);
-            set => Volatile.Write(ref field, value);
-        }
-
-        /// <summary>
         /// Gets the id of the container executing the code.
         /// Return <c>null</c> if code is not executing inside a supported container.
         /// </summary>
@@ -138,7 +128,7 @@ namespace Datadog.Trace.PlatformHelpers
                 var tuple = ParseControllerAndPathFromCgroupLine(line);
                 if (tuple is not null
                  && !string.IsNullOrEmpty(tuple.Item2)
-                 && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
+                 && (string.IsNullOrEmpty(tuple.Item1) || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
                 {
                     string controller = tuple.Item1;
                     string cgroupNodePath = tuple.Item2;

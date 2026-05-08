@@ -206,10 +206,15 @@ namespace Datadog.Trace.TestHelpers
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
                  ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                  // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
-                  // no matter what. That means we have unstable snapshot results.
-                  // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
+                  .Where(kvp =>
+                             // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
+                             // no matter what. That means we have unstable snapshot results.
+                             kvp.Key != Tags.GitRepositoryUrl
+                          && kvp.Key != Tags.GitCommitSha
+                             // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
+                          && kvp.Key != Tags.LastParentId
+                             // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
+                          && kvp.Key != Tags.ProcessTags)
                   .Select(
                        kvp => kvp.Key switch
                        {
@@ -238,10 +243,15 @@ namespace Datadog.Trace.TestHelpers
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
                  ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                  // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
-                  // no matter what. That means we have unstable snapshot results.
-                  // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
+                 .Where(kvp =>
+                            // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
+                            // no matter what. That means we have unstable snapshot results.
+                            kvp.Key != Tags.GitRepositoryUrl
+                         && kvp.Key != Tags.GitCommitSha
+                            // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
+                         && kvp.Key != Tags.LastParentId
+                            // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
+                         && kvp.Key != Tags.ProcessTags)
                   .Select(
                        kvp => kvp.Key switch
                        {

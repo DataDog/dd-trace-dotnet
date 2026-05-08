@@ -6,6 +6,11 @@
 #nullable enable
 
 using System;
+using System.Text;
+using Datadog.Trace.Util.Http;
+#if NET6_0_OR_GREATER
+using Datadog.Trace.DuckTyping;
+#endif
 
 namespace Datadog.Trace.Util
 {
@@ -19,20 +24,7 @@ namespace Datadog.Trace.Util
         /// <param name="removeScheme">Should the scheme be removed?</param>
         /// <param name="tryRemoveIds">Should IDs be replaced with <c>?</c></param>
         public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
-        {
-            var path = tryRemoveIds ? GetCleanUriPath(uri.AbsolutePath) : uri.AbsolutePath;
-
-            if (removeScheme)
-            {
-                // keep only host and path.
-                // remove scheme, userinfo, query, and fragment.
-                return $"{uri.Authority}{path}";
-            }
-
-            // keep only scheme, authority, and path.
-            // remove userinfo, query, and fragment.
-            return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
-        }
+            => tryRemoveIds ? CleanUriImplementation(uri, removeScheme, removeIds: true) : CleanUriKeepIds(uri, removeScheme);
 
         public static string GetCleanUriPath(Uri uri)
             => GetCleanUriPath(uri.AbsolutePath);
@@ -77,6 +69,70 @@ namespace Datadog.Trace.Util
             var maxLength = absolutePath.Length - prefixLength;
             var sb = StringBuilderCache.Acquire(maxLength);
 
+            AppendCleanedUriPath(sb, absolutePath, prefixLength);
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static string CleanUriImplementation(Uri uri, bool removeScheme, bool removeIds)
+        {
+            var sb = StringBuilderCache.Acquire();
+
+            // if removeScheme:
+            //   keep only host and path. Remove scheme, userinfo, query, and fragment.
+            // otherwise:
+            //   keep only scheme, authority, and path. Remove userinfo, query, and fragment.
+            var valuesToAppend = removeScheme
+                                     ? UriComponents.Host | UriComponents.Port
+                                     : UriComponents.Scheme | UriComponents.Host | UriComponents.Port;
+
+            // GetComponents is generally "dangerous" in .NET 6+, as it throws if the
+            // Uri was created with DangerousDisablePathAndQueryCanonicalizationFlag
+            // However, as long as we don't try to access path/query like this,
+            // and instead use the explicit properties, then we're ok (though it allocates more)
+            sb.Append(uri.GetComponents(valuesToAppend, UriFormat.UriEscaped));
+
+            var absolutePath = uri.AbsolutePath;
+            if (StringUtil.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
+            {
+                sb.Append('/');
+            }
+            else if (removeIds)
+            {
+                // We don't have a virtual path we're trying to remove
+                AppendCleanedUriPath(sb, absolutePath, prefixLength: 0);
+            }
+            else
+            {
+                // don't clean the path, just append it
+                sb.Append(absolutePath);
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static string CleanUriKeepIds(Uri uri, bool removeScheme)
+        {
+#if NET6_0_OR_GREATER
+            // we have to check if this Uri was created with DangerousDisablePathAndQueryCanonicalizationFlag
+            // If it was, we can't use the GetComponents fast path, and have to manually build the string
+            if (uri.DuckCast<UriStruct>().IsDangerousDisablePathAndQueryCanonicalization())
+            {
+                return CleanUriImplementation(uri, removeScheme, removeIds: false);
+            }
+#endif
+
+            return removeScheme
+                       // keep only authority (host, port), and path.
+                       // remove scheme, userinfo, query, and fragment.
+                       ? uri.GetComponents(UriComponents.Host | UriComponents.Port | UriComponents.Path, UriFormat.UriEscaped)
+                       // keep only scheme, authority (host, port), and path.
+                       // remove userinfo, query, and fragment.
+                       : uri.GetComponents(UriComponents.Scheme | UriComponents.Host | UriComponents.Port | UriComponents.Path, UriFormat.UriEscaped);
+        }
+
+        private static void AppendCleanedUriPath(StringBuilder sb, string absolutePath, int prefixLength)
+        {
             int previousIndex = prefixLength;
             int index;
             int segmentLength;
@@ -132,8 +188,6 @@ namespace Datadog.Trace.Util
                 previousIndex = index + 1;
             }
             while (index != -1);
-
-            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         public static bool IsIdentifierSegment(string absolutePath, int startIndex, int segmentLength)

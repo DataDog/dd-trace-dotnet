@@ -13,7 +13,7 @@ namespace GeneratePackageVersions;
 /// <summary>
 /// Used to generate the matrix of dependencies that we support
 /// </summary>
-internal static class GenerateSupportMatrix
+public static class GenerateSupportMatrix
 {
     public static async Task GenerateInstrumentationSupportMatrix(
         string outputPath,
@@ -63,6 +63,43 @@ internal static class GenerateSupportMatrix
         await JsonSerializer.SerializeAsync(file, toWrite, jsonSerializerOptions );
     }
 
+    /// <summary>
+    /// Load the previously generated supported_versions.json and return a lookup
+    /// keyed by (assemblyName, packageName), mapping to its <see cref="SupportedNuGetPackage"/> data.
+    /// The composite key ensures that integrations sharing a NuGet package but with different
+    /// support bounds each get their own entry.
+    /// Returns an empty dictionary if the file doesn't exist.
+    /// </summary>
+    public static async Task<Dictionary<(string AssemblyName, string PackageName), SupportedNuGetPackage>> LoadPreviousVersions(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return new Dictionary<(string, string), SupportedNuGetPackage>();
+        }
+
+        var JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+        await using var openStream = File.OpenRead(path);
+        var integrations = await JsonSerializer.DeserializeAsync<List<Integration>>(openStream, JsonOptions);
+
+        var result = new Dictionary<(string AssemblyName, string PackageName), SupportedNuGetPackage>();
+        if (integrations is null)
+        {
+            return result;
+        }
+
+        foreach (var integration in integrations)
+        {
+            foreach (var package in integration.Packages)
+            {
+                result[(integration.AssemblyName, package.Name)] = package;
+            }
+        }
+
+        return result;
+    }
 
     public class Integration
     {
@@ -91,7 +128,7 @@ internal static class GenerateSupportMatrix
         /// If applicable, the name of the NuGet package in which we expect to find the assemblies.
         /// If empty, the package is not available in NuGet packages (e.g. installed as part of the framework)
         /// </summary>
-        public List<SupportedNuGetPackage> Packages { get; } = new();
+        public List<SupportedNuGetPackage> Packages { get; set; } = new();
     }
 
     public class SupportedNuGetPackage

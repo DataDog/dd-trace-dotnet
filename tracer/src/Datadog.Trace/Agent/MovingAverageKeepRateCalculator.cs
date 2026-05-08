@@ -31,13 +31,13 @@ namespace Datadog.Trace.Agent
 
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
-        private int _index = 0;
-        private ulong _sumDrops = 0;
-        private ulong _sumCreated = 0;
-        private double _keepRate = 0;
+        private int _index;
+        private ulong _sumDrops;
+        private ulong _sumCreated;
+        private double _keepRate;
 
-        private long _latestDrops = 0;
-        private long _latestKeeps = 0;
+        private long _latestDrops;
+        private long _latestKeeps;
 
         internal MovingAverageKeepRateCalculator(int windowSize, TimeSpan bucketDuration)
         {

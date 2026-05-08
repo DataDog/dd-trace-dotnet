@@ -28,13 +28,11 @@ HANDLE FrameworkThreadInfo::GetOsThreadHandle() const
 std::string FrameworkThreadInfo::GetProfileThreadId()
 {
     std::stringstream buffer;
-    buffer << "<0> [#" << _osThreadId << "]";
+    buffer << _osThreadId;
     return buffer.str();
 }
 
 std::string FrameworkThreadInfo::GetProfileThreadName()
 {
-    std::stringstream buffer;
-    buffer << "Managed thread (name unknown) [#" << _osThreadId << "]";
-    return buffer.str();
+    return std::string("");
 }

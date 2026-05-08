@@ -27,9 +27,9 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     // Map containing the tainted objects
     private ConcurrentDictionary<int, ITaintedObject> _map;
     // Bitmask for fast modulo with table length.
-    private int _lengthMask = 0;
+    private int _lengthMask;
     // Flag to ensure we do not run multiple purges concurrently.
-    private bool _isPurging = false;
+    private bool _isPurging;
     private object _purgingLock = new();
     // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
     private int _entriesCount;
@@ -47,7 +47,7 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     /// Gets a value indicating whether flat mode is enabled or not. Once this is set to true, it is not set to false again unless clear() is called.
     /// The get accessor is only intended for testing purposes.
     /// </summary>
-    public bool IsFlat { get; private set; } = false;
+    public bool IsFlat { get; private set; }
 
     /// <summary>
     /// Returns the ITaintedObject for the given input object.

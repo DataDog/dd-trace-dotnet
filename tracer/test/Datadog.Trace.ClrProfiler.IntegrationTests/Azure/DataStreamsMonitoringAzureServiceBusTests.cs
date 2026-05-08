@@ -38,7 +38,6 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
     public async Task HandleProduceAndConsume(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
         // If you want to use a custom connection string, set it here
         // SetEnvironmentVariable("ASB_CONNECTION_STRING", null);
@@ -67,7 +66,6 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
     public async Task ValidateSpanTags(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
         // If you want to use a custom connection string, set it here
         // SetEnvironmentVariable("ASB_CONNECTION_STRING", null);

@@ -5,152 +5,289 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Datadog.Trace.SourceGenerators.Helpers
 {
     /// <summary>
-    /// Simple YAML parser for reading documentation strings from YAML files.
+    /// Simple YAML parser for reading configuration data from YAML files.
     /// Supports basic YAML features needed for configuration documentation.
     /// </summary>
     internal static class YamlReader
     {
         /// <summary>
-        /// Parses a YAML file containing configuration key documentation.
-        /// Expects format: KEY: | followed by multi-line documentation
+        /// Parses the full supported-configurations.yaml file.
         /// </summary>
-        public static Dictionary<string, string> ParseDocumentation(string yamlContent)
+        public static ParsedConfigurationData ParseSupportedConfigurations(string yamlContent)
         {
-            var result = new Dictionary<string, string>();
+            var configurations = new Dictionary<string, ConfigurationEntry>();
+            var deprecations = new Dictionary<string, string>();
 
-            string? currentKey = null;
-            var currentDoc = new StringBuilder();
-            var inMultiLine = false;
-            var baseIndent = 0;
+            string? currentConfigKey = null;
+            string? currentProduct = null;
+            string? currentDocumentation = null;
+            string? currentConstName = null;
+            var currentAliases = new List<string>();
+            var inDocumentation = false;
+            var inAliases = false;
+            var documentationBuilder = new StringBuilder();
+            var inDeprecations = false;
+            var inSupportedConfigurations = false;
 
+            var lineNumber = 0;
             foreach (var line in new LineEnumerator(yamlContent.AsSpan()))
             {
-                // Skip empty lines and comments when not in multi-line
-                if (!inMultiLine && (IsWhiteSpace(line) || line.TrimStart().StartsWith("#".AsSpan(), StringComparison.Ordinal)))
+                lineNumber++;
+                var lineStr = line.ToString();
+                var trimmedLine = lineStr.TrimStart();
+
+                // Skip comments
+                if (trimmedLine.StartsWith("#", StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                // Check for new key (starts at column 0, contains colon)
-                if (!inMultiLine && line.Length > 0 && line[0] != ' ' && line.IndexOf(':') >= 0)
+                // Check for top-level sections
+                if (lineStr.StartsWith("supportedConfigurations:", StringComparison.Ordinal))
                 {
-                    // Save previous key if exists
-                    if (currentKey != null)
+                    inSupportedConfigurations = true;
+                    inDeprecations = false;
+                    continue;
+                }
+
+                if (lineStr.StartsWith("deprecations:", StringComparison.Ordinal))
+                {
+                    // Save last config entry before switching sections
+                    if (currentConfigKey != null)
                     {
-                        result[currentKey] = currentDoc.ToString().TrimEnd();
-                        currentDoc.Clear();
+                        var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
+                        configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
                     }
 
-                    var colonIndex = line.IndexOf(':');
-                    currentKey = line.Slice(0, colonIndex).Trim().ToString();
+                    inSupportedConfigurations = false;
+                    inDeprecations = true;
+                    inDocumentation = false;
+                    inAliases = false;
+                    continue;
+                }
 
-                    // Check if it's a multi-line string (|)
-                    var afterColon = line.Slice(colonIndex + 1).Trim();
-                    if (afterColon.Length == 1 && (afterColon[0] == '|' || afterColon[0] == '>'))
+                if (lineStr.StartsWith("version:", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                // Handle deprecations section (simple key: value pairs with 2-space indent)
+                if (inDeprecations && lineStr.StartsWith("  ", StringComparison.Ordinal) && !lineStr.StartsWith("    ", StringComparison.Ordinal))
+                {
+                    var colonIdx = trimmedLine.IndexOf(':');
+                    if (colonIdx > 0)
                     {
-                        inMultiLine = true;
-                        baseIndent = -1; // Will be set on first content line
-                    }
-                    else if (afterColon.Length > 0)
-                    {
-                        // Single line value
-                        currentDoc.Append(afterColon.ToString());
-                        result[currentKey] = currentDoc.ToString();
-                        currentDoc.Clear();
-                        currentKey = null;
+                        var key = trimmedLine.Substring(0, colonIdx).Trim();
+                        var value = trimmedLine.Substring(colonIdx + 1).Trim();
+                        deprecations[key] = value;
                     }
 
                     continue;
                 }
 
-                // Handle multi-line content
-                if (inMultiLine && currentKey != null)
+                // Handle supportedConfigurations section
+                if (inSupportedConfigurations)
                 {
-                    // Check if we've reached the next key (no indentation)
-                    if (line.Length > 0 && line[0] != ' ' && line.IndexOf(':') >= 0)
+                    // Count leading spaces
+                    var indent = 0;
+                    while (indent < lineStr.Length && lineStr[indent] == ' ')
                     {
-                        // Save current key and process this line as new key
-                        result[currentKey] = currentDoc.ToString().TrimEnd();
-                        currentDoc.Clear();
-                        inMultiLine = false;
+                        indent++;
+                    }
 
-                        var colonIndex = line.IndexOf(':');
-                        currentKey = line.Slice(0, colonIndex).Trim().ToString();
-                        var afterColon = line.Slice(colonIndex + 1).Trim();
-                        if (afterColon.Length == 1 && (afterColon[0] == '|' || afterColon[0] == '>'))
+                    // Check for new configuration key first (2-space indent, ends with :, all uppercase)
+                    // This needs to be checked before documentation handling to properly end multi-line docs
+                    if (indent == 2 && trimmedLine.EndsWith(":", StringComparison.Ordinal))
+                    {
+                        var potentialKey = trimmedLine.TrimEnd(':');
+                        // Check if this looks like a config key (all uppercase with underscores/digits)
+                        var isConfigKey = potentialKey.Length > 0 && potentialKey.All(c => char.IsUpper(c) || c == '_' || char.IsDigit(c));
+
+                        if (isConfigKey)
                         {
-                            inMultiLine = true;
-                            baseIndent = -1;
+                            // Save previous config entry
+                            if (currentConfigKey != null)
+                            {
+                                var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
+                                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                            }
+
+                            currentConfigKey = potentialKey;
+                            currentProduct = null;
+                            currentDocumentation = null;
+                            currentConstName = null;
+                            currentAliases.Clear();
+                            inDocumentation = false;
+                            inAliases = false;
+                            documentationBuilder.Clear();
+                            continue;
+                        }
+                    }
+
+                    // Handle multi-line documentation content
+                    if (inDocumentation)
+                    {
+                        // Check if we've reached a new property at the same level (4-space indent)
+                        if (indent == 4 && !trimmedLine.StartsWith("-", StringComparison.Ordinal))
+                        {
+                            var propColonIdx = trimmedLine.IndexOf(':');
+                            if (propColonIdx > 0)
+                            {
+                                var propName = trimmedLine.Substring(0, propColonIdx);
+                                if (propName is "const_name" or "product" or "implementation" or "type" or "default" or "aliases" or "deprecation_message")
+                                {
+                                    // End of documentation, process this property
+                                    inDocumentation = false;
+                                    currentDocumentation = documentationBuilder.ToString().TrimEnd();
+                                    documentationBuilder.Clear();
+                                    // Fall through to process the property
+                                }
+                                else
+                                {
+                                    // Continue reading documentation content
+                                    if (documentationBuilder.Length > 0)
+                                    {
+                                        documentationBuilder.AppendLine();
+                                    }
+
+                                    documentationBuilder.Append(trimmedLine);
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                // Continue reading documentation content
+                                if (documentationBuilder.Length > 0)
+                                {
+                                    documentationBuilder.AppendLine();
+                                }
+
+                                documentationBuilder.Append(trimmedLine);
+                                continue;
+                            }
+                        }
+                        else if (indent >= 6)
+                        {
+                            // Documentation content (6+ space indent)
+                            if (documentationBuilder.Length > 0)
+                            {
+                                documentationBuilder.AppendLine();
+                            }
+
+                            // Remove the base indent (6 spaces) from documentation lines
+                            if (lineStr.Length > 6)
+                            {
+                                documentationBuilder.Append(lineStr.Substring(6));
+                            }
+
+                            continue;
+                        }
+                        else if (trimmedLine.StartsWith("-", StringComparison.Ordinal))
+                        {
+                            // New list item, end documentation
+                            inDocumentation = false;
+                            currentDocumentation = documentationBuilder.ToString().TrimEnd();
+                            documentationBuilder.Clear();
+                            // Fall through
+                        }
+                        else
+                        {
+                            // Continue reading documentation content
+                            if (documentationBuilder.Length > 0)
+                            {
+                                documentationBuilder.AppendLine();
+                            }
+
+                            documentationBuilder.Append(trimmedLine);
+                            continue;
+                        }
+                    }
+
+                    // Alias entry (list item starting with -)
+                    if (inAliases && trimmedLine.StartsWith("- ", StringComparison.Ordinal))
+                    {
+                        var alias = trimmedLine.Substring(2).Trim();
+                        if (!string.IsNullOrEmpty(alias))
+                        {
+                            currentAliases.Add(alias);
                         }
 
                         continue;
                     }
 
-                    // Determine base indentation from first content line
-                    if (baseIndent == -1 && line.Length > 0 && line[0] == ' ')
+                    // Properties within a config entry (4-space indent, has colon, not a list item)
+                    if (indent == 4 && !trimmedLine.StartsWith("-", StringComparison.Ordinal))
                     {
-                        baseIndent = 0;
-                        while (baseIndent < line.Length && line[baseIndent] == ' ')
+                        var colonIdx = trimmedLine.IndexOf(':');
+                        if (colonIdx > 0)
                         {
-                            baseIndent++;
+                            var propName = trimmedLine.Substring(0, colonIdx);
+                            var propValue = trimmedLine.Substring(colonIdx + 1).Trim();
+
+                            switch (propName)
+                            {
+                                case "product":
+                                    currentProduct = propValue;
+                                    break;
+                                case "const_name":
+                                    currentConstName = propValue;
+                                    break;
+                                case "aliases":
+                                    inAliases = true;
+                                    break;
+                                case "documentation":
+                                    if (propValue == "|-" || propValue == "|")
+                                    {
+                                        // Multi-line documentation
+                                        inDocumentation = true;
+                                        documentationBuilder.Clear();
+                                    }
+                                    else
+                                    {
+                                        // Single-line documentation
+                                        currentDocumentation = propValue;
+                                    }
+
+                                    break;
+                            }
+
+                            if (propName != "aliases")
+                            {
+                                inAliases = false;
+                            }
+
+                            continue;
                         }
                     }
 
-                    // Add content line (remove base indentation)
-                    if (line.Length > 0)
+                    // List item markers at indent 2 (e.g. "- implementation: A") are expected and intentionally skipped
+                    if (indent == 2 && trimmedLine.StartsWith("- ", StringComparison.Ordinal))
                     {
-                        var contentStart = 0;
-                        while (contentStart < line.Length && contentStart < baseIndent && line[contentStart] == ' ')
-                        {
-                            contentStart++;
-                        }
-
-                        if (currentDoc.Length > 0)
-                        {
-                            currentDoc.AppendLine();
-                        }
-
-                        currentDoc.Append(line.Slice(contentStart).ToString());
+                        continue;
                     }
-                    else
+
+                    // If we reach here, the line was not recognized
+                    if (!string.IsNullOrWhiteSpace(trimmedLine))
                     {
-                        // Empty line in multi-line content
-                        if (currentDoc.Length > 0)
-                        {
-                            currentDoc.AppendLine();
-                        }
+                        throw new InvalidOperationException($"Unrecognized line {lineNumber} in supportedConfigurations section: '{trimmedLine}'");
                     }
                 }
             }
 
-            // Save last key
-            if (currentKey != null)
+            // Save last config entry
+            if (currentConfigKey != null)
             {
-                result[currentKey] = currentDoc.ToString().TrimEnd();
+                var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
+                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
             }
 
-            return result;
-        }
-
-        /// <summary>
-        /// Checks if a span contains only whitespace characters.
-        /// </summary>
-        private static bool IsWhiteSpace(ReadOnlySpan<char> span)
-        {
-            for (int i = 0; i < span.Length; i++)
-            {
-                if (!char.IsWhiteSpace(span[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return new ParsedConfigurationData(configurations, deprecations);
         }
 
         /// <summary>
@@ -206,6 +343,155 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
                 _remaining = _remaining.Slice(advance);
                 return true;
+            }
+        }
+
+#pragma warning disable SA1202 // Elements should be ordered by access
+        /// <summary>
+        /// Represents a parsed configuration entry from the YAML file.
+        /// </summary>
+        internal readonly struct ConfigurationEntry : IEquatable<ConfigurationEntry>
+        {
+            public ConfigurationEntry(string key, string? product, string? documentation, string? constName, string[]? aliases = null)
+            {
+                Key = key;
+                Product = product;
+                Documentation = documentation;
+                ConstName = constName;
+                Aliases = aliases;
+            }
+
+            public string Key { get; }
+
+            public string? Product { get; }
+
+            public string? Documentation { get; }
+
+            public string? ConstName { get; }
+
+            public string[]? Aliases { get; }
+
+            public bool Equals(ConfigurationEntry other)
+            {
+                if (Key != other.Key || Product != other.Product || Documentation != other.Documentation || ConstName != other.ConstName)
+                {
+                    return false;
+                }
+
+                if (ReferenceEquals(Aliases, other.Aliases))
+                {
+                    return true;
+                }
+
+                if (Aliases is null || other.Aliases is null || Aliases.Length != other.Aliases.Length)
+                {
+                    return Aliases is null && other.Aliases is null;
+                }
+
+                for (var i = 0; i < Aliases.Length; i++)
+                {
+                    if (Aliases[i] != other.Aliases[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            public override bool Equals(object? obj) => obj is ConfigurationEntry other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                var hash = HashCode.Combine(Key, Product, Documentation, ConstName);
+                if (Aliases is not null)
+                {
+                    foreach (var alias in Aliases)
+                    {
+                        hash = HashCode.Combine(hash, alias);
+                    }
+                }
+
+                return hash;
+            }
+        }
+
+        /// <summary>
+        /// Represents the full parsed configuration data from supported-configurations.yaml.
+        /// </summary>
+        internal readonly struct ParsedConfigurationData : IEquatable<ParsedConfigurationData>
+        {
+            public ParsedConfigurationData(
+                Dictionary<string, ConfigurationEntry> configurations,
+                Dictionary<string, string> deprecations)
+            {
+                Configurations = configurations;
+                Deprecations = deprecations;
+            }
+
+            public Dictionary<string, ConfigurationEntry> Configurations { get; }
+
+            public Dictionary<string, string>? Deprecations { get; }
+
+            public bool Equals(ParsedConfigurationData other)
+            {
+                if (Configurations.Count != other.Configurations.Count)
+                {
+                    return false;
+                }
+
+                foreach (var kvp in Configurations)
+                {
+                    if (!other.Configurations.TryGetValue(kvp.Key, out var otherEntry) || !kvp.Value.Equals(otherEntry))
+                    {
+                        return false;
+                    }
+                }
+
+                if (Deprecations is null && other.Deprecations is null)
+                {
+                    return true;
+                }
+
+                if (Deprecations is null || other.Deprecations is null || Deprecations.Count != other.Deprecations.Count)
+                {
+                    return false;
+                }
+
+                foreach (var kvp in Deprecations)
+                {
+                    if (!other.Deprecations.TryGetValue(kvp.Key, out var otherValue) || kvp.Value != otherValue)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            public override bool Equals(object? obj) => obj is ParsedConfigurationData other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                var hash = new HashCode();
+                hash.Add(Configurations.Count);
+                foreach (var kvp in Configurations.OrderBy(x => x.Key))
+                {
+                    hash.Add(kvp.Key);
+                    hash.Add(kvp.Value);
+                }
+
+                if (Deprecations is not null)
+                {
+                    hash.Add(Deprecations.Count);
+                    foreach (var kvp in Deprecations.OrderBy(x => x.Key))
+                    {
+                        hash.Add(kvp.Key);
+                        hash.Add(kvp.Value);
+                    }
+                }
+
+                return hash.ToHashCode();
             }
         }
     }

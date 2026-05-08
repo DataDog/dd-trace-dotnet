@@ -3,24 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 

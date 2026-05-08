@@ -224,6 +224,7 @@ internal class DatadogExporter : IExporter
                                     BenchmarkDiscreteStats.GetFrom([benchmarkTest.GcStats.GetTotalAllocatedBytes(true) ?? 0]));
                             }
 
+                            test.GetTags().FinalStatus = benchmarkTest.Success ? TestTags.StatusPass : TestTags.StatusFail;
                             test.Close(benchmarkTest.Success ? TestStatus.Pass : TestStatus.Fail, testEndTime - testStartTime);
                         }
                         catch (Exception testException)

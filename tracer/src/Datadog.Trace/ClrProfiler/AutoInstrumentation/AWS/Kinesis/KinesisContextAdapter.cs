@@ -16,7 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     internal struct KinesisContextAdapter : IHeadersCollection, IBinaryHeadersCollection
     {
-        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KinesisContextAdapter>();
         private Dictionary<string, List<string>> headers = new Dictionary<string, List<string>>();
 
         public KinesisContextAdapter()
@@ -68,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return Convert.FromBase64String(value[value.Count - 1]);
             }
 
-            return new byte[0];
+            return [];
         }
 
         public void Add(string name, byte[] value)

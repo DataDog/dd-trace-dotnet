@@ -12,7 +12,19 @@ on:
         required: true
 
 jobs:
+  check_tag:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Verify running from a tag
+          run: |
+            if [[ "${{  github.ref }}" != refs/tags/* ]]; then
+              echo "Error: This workflow can only be run from a tag"
+              echo "Current ref: ${{ github.ref }}"
+              exit 1
+            fi
+
   bump_version:
+    needs: check_tag
     runs-on: windows-latest
     permissions:
       contents: write # Push branches
@@ -34,7 +46,7 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
+      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           global-json-file: global.json
 

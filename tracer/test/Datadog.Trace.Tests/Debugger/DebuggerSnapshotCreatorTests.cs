@@ -6,8 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.Snapshots;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -54,6 +59,51 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_Depth_AppliesToCollectionsAtMaxDepth()
+        {
+            var snapshot = SnapshotHelper.GenerateSnapshot(new CollectionAtMaxDepth(), prettify: false);
+
+            Assert.Contains("\"Items\":{", snapshot);
+            Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+            Assert.DoesNotContain("deep-value", snapshot);
+        }
+
+        [Fact]
+        public void Limits_CollectionElements_DoNotIncreaseDepth()
+        {
+            var snapshot = SnapshotHelper.GenerateSnapshot(new CollectionElementDepthRoot(), prettify: false);
+
+            Assert.Contains("\"Street\":{\"type\":\"String\",\"value\":\"Harlem\"}", snapshot);
+            Assert.Contains("\"City\":{\"type\":\"CollectionElementDepthPlace\",\"notCapturedReason\":\"depth\"}", snapshot);
+        }
+
+        [Fact]
+        public void Limits_SelfReferencingEnumerable_DoesNotStackOverflow()
+        {
+            var list = new List<object>();
+            list.Add(list);
+
+            var snapshot = SnapshotHelper.GenerateSnapshot(list, prettify: false);
+
+            Assert.NotNull(snapshot);
+            Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+        }
+
+        [Fact]
+        public void Limits_IndirectCycleEnumerable_DoesNotStackOverflow()
+        {
+            var listA = new List<object>();
+            var listB = new List<object>();
+            listA.Add(listB);
+            listB.Add(listA);
+
+            var snapshot = SnapshotHelper.GenerateSnapshot(listA, prettify: false);
+
+            Assert.NotNull(snapshot);
+            Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+        }
+
+        [Fact]
         public async Task ObjectStructure_Null()
         {
             await ValidateSingleValue(null);
@@ -69,6 +119,51 @@ namespace Datadog.Trace.Tests.Debugger
         public async Task ObjectStructure_EmptyList()
         {
             await ValidateSingleValue(new List<int>());
+        }
+
+        [Fact]
+        public void Message_UsesFirstEvaluationError()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: true,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult
+            {
+                Template = "template message",
+                Errors =
+                [
+                    new EvaluationError { Expression = "badCondition", Message = "first evaluation error" },
+                    new EvaluationError { Expression = "other", Message = "second evaluation error" }
+                ]
+            };
+
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+
+            Assert.Equal("first evaluation error", snapshot["message"]?.Value<string>());
+            Assert.Equal("first evaluation error", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
         }
 
         [Fact]
@@ -103,6 +198,10 @@ namespace Datadog.Trace.Tests.Debugger
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
             await Verifier.Verify(localVariableAsJson, verifierSettings);
+        }
+
+        private static void DummyMethod()
+        {
         }
 
         private class InfiniteRecursion
@@ -1119,6 +1218,43 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly int _numField998 = 998;
             private readonly int _numField999 = 999;
             private readonly int _numField1000 = 1000;
+        }
+
+        private class CollectionAtMaxDepth
+        {
+            public NestedCollectionLevel1 Inner { get; } = new();
+        }
+
+        private class NestedCollectionLevel1
+        {
+            public NestedCollectionLevel2 Inner { get; } = new();
+        }
+
+        private class NestedCollectionLevel2
+        {
+            public List<string> Items { get; } = new() { "deep-value" };
+        }
+
+        private class CollectionElementDepthRoot
+        {
+            public List<CollectionElementDepthChild> Children { get; } = new() { new() };
+        }
+
+        private class CollectionElementDepthChild
+        {
+            public CollectionElementDepthAddress Adrs { get; } = new();
+        }
+
+        private class CollectionElementDepthAddress
+        {
+            public CollectionElementDepthPlace City { get; } = new();
+
+            public string Street { get; } = "Harlem";
+        }
+
+        private class CollectionElementDepthPlace
+        {
+            public string Name { get; } = "New York";
         }
     }
 }

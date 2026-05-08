@@ -14,6 +14,7 @@
 #include "IContentionListener.h"
 #include "IExporter.h"
 #include "IGcSettingsProvider.h"
+#include "IMetadataProvider.h"
 #include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
@@ -100,6 +101,7 @@ public:
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
+    MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -145,6 +147,20 @@ public:
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
 };
 
+class MockMetadataProvider : public IMetadataProvider
+{
+public:
+    MOCK_METHOD(void, Initialize, (), (override));
+    MOCK_METHOD(void, Add, (std::string const&, std::string const&, std::string const&), (override));
+    MOCK_METHOD(IMetadataProvider::metadata_t const&, Get, (), (override));
+};
+
+class MockGcSettingsProvider : public IGcSettingsProvider
+{
+public:
+    MOCK_METHOD(GCMode, GetMode, (), (override));
+};
+
 class MockMetricsSender : public IMetricsSender
 {
 public:
@@ -182,12 +198,20 @@ public:
     MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
     MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
+
+    // IMemoryFootprintProvider
+    MOCK_METHOD(size_t, GetMemorySize, (), (const override));
+    MOCK_METHOD(void, LogMemoryBreakdown, (), (const override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore
 {
 public:
     MOCK_METHOD(const char*, GetId, (AppDomainID appDomainId), (override));
+
+    // IMemoryFootprintProvider
+    MOCK_METHOD(size_t, GetMemorySize, (), (const override));
+    MOCK_METHOD(void, LogMemoryBreakdown, (), (const override));
 };
 
 class MockProcessSamplesProvider : public ISamplesProvider
@@ -268,6 +292,7 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager();
+std::tuple<std::unique_ptr<IMetadataProvider>, MockMetadataProvider&> CreateMetadataProvider();
 
 std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 

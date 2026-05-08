@@ -78,6 +78,26 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 124,
                 "all_efd");
 
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0", "true"),
+                    """
+                    {
+                        "data":{
+                            "id":"lNemDTwOV8U",
+                            "type":"ci_app_libraries_tests",
+                            "attributes":{
+                                "tests":{
+                                }
+                            }
+                        }
+                    }
+                    """,
+                    string.Empty),
+                1,
+                124,
+                "all_efd_with_atr");
+
             // EFD with 1 test to bypass (TraitPassTest)
             yield return row.Concat(
                 new MockData(
@@ -387,6 +407,9 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 targetTest.Meta.Remove(TestTags.TestIsNew);
                 targetTest.Meta.Remove(TestTags.TestIsRetry);
 
+                // Remove test final status
+                targetTest.Meta.Remove(TestTags.TestFinalStatus);
+
                 // Remove capabilities
                 targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
                 targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);
@@ -600,6 +623,11 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                         // Check the tests, suites and modules count
                         Assert.Equal(2, data.TestSuites.Count);
                         Assert.Single(data.TestModules);
+
+                        if (friendlyName == "all_efd_with_atr")
+                        {
+                            AssertEfdSelectedOverAtr(data, "Samples.XUnitTestsV3.TestSuite.SimplePassTest");
+                        }
                     }))
            .ConfigureAwait(false);
     }

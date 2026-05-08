@@ -28,8 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class LogFactoryActivateLoggingConfigurationInstrumentation
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogFactoryActivateLoggingConfigurationInstrumentation));
-
     internal static CallTargetState OnMethodBegin<TTarget, TConfig>(TTarget instance, ref TConfig? configuration)
     {
         var tracerManager = TracerManager.Instance;

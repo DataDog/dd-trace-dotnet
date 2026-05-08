@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Pdb.SourceLink
@@ -15,7 +14,23 @@ namespace Datadog.Trace.Pdb.SourceLink
     {
         protected static IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(SourceLinkUrlParser));
 
-        protected static bool IsValidCommitSha([NotNullWhen(true)] string? commitSha) => commitSha is { Length: 40 } && commitSha.All(char.IsLetterOrDigit);
+        protected static bool IsValidCommitSha(ReadOnlySpan<char> commitSha)
+        {
+            if (commitSha.Length != 40)
+            {
+                return false;
+            }
+
+            foreach (var c in commitSha)
+            {
+                if (!char.IsLetterOrDigit(c))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         /// <summary>
         /// Extract the git commit sha and repository url from a GitHub SourceLink mapping string.

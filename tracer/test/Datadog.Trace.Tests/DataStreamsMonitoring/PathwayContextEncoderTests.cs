@@ -105,6 +105,23 @@ public class PathwayContextEncoderTests
         decoded.Should().BeNull();
     }
 
+#if NETCOREAPP3_1_OR_GREATER
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(12345, 1_000_000_000L, 2_000_000_000L)]
+    public void EncodeInto_ProducesSameBytesAsEncode(ulong hash, long pathwayStartNs, long edgeStartNs)
+    {
+        var pathway = new PathwayContext(new PathwayHash(hash), pathwayStartNs, edgeStartNs);
+
+        var expected = PathwayContextEncoder.Encode(pathway);
+
+        Span<byte> buffer = stackalloc byte[PathwayContextEncoder.MaxEncodedSize];
+        var bytesWritten = PathwayContextEncoder.EncodeInto(pathway, buffer);
+
+        buffer.Slice(0, bytesWritten).ToArray().Should().Equal(expected);
+    }
+#endif
+
     private static void EncodeTest(ulong hash, long pathwayStartNs, long edgeStartNs)
     {
         var pathway = new PathwayContext(

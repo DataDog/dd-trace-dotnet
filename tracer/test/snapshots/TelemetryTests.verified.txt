@@ -42,7 +42,8 @@
       out.host: localhost,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.base_service: Samples.Telemetry
+      _dd.base_service: Samples.Telemetry,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0

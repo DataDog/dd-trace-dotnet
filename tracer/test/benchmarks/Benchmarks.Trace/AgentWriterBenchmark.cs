@@ -17,6 +17,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [IterationTime(500)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
@@ -53,14 +54,14 @@ namespace Benchmarks.Trace
 
             var api = new Api(
                 new FakeApiRequestFactory(settings.Manager.InitialExporterSettings.AgentUri),
-                new StatsdManager(settings, (_, _, _) => null!),
+                new StatsdManager(settings, (_, _) => null!),
                 ContainerMetadata.Instance,
                 updateSampleRates: null,
                 updateConfigState: null,
                 partialFlushEnabled: false,
                 healthMetricsEnabled: false);
 
-            var noOpStatsd = new StatsdManager(settings, (_, _, _) => null);
+            var noOpStatsd = new StatsdManager(settings, (_, _) => null);
             var noopApi = new NullApi();
             _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
             _agentWriterNoOpFlush = new AgentWriter(noopApi, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
@@ -218,12 +219,19 @@ namespace Benchmarks.Trace
 
             private class NullApi : IApi
             {
+                public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0_4;
+
+                public Task<bool> Ping()
+                {
+                    return Task.FromResult(true);
+                }
+
                 public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
                 {
                     return Task.FromResult(true);
                 }
 
-                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
                 {
                     return Task.FromResult(true);
                 }

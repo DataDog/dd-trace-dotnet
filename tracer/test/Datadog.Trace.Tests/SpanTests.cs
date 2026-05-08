@@ -209,7 +209,7 @@ namespace Datadog.Trace.Tests
             Scope StartActive(string operationName, string serviceName)
             {
                 var scope = (Scope)_tracer.StartActive(operationName);
-                scope.Span.ServiceName = serviceName;
+                scope.Span.SetService(serviceName, null);
                 return scope;
             }
 

@@ -2,28 +2,26 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Threading;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
 /// <summary>
-/// Source generator that reads supported-configurations.json and generates a switch case
+/// Source generator that reads supported-configurations.yaml and generates a switch case
 /// for configuration key matching with alias support.
 /// </summary>
 [Generator]
 public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
 {
-    private const string SupportedConfigurationsFileName = "supported-configurations.json";
-    private const string MainKeyParamName = "mainKey";
+    private const string SupportedConfigurationsFileName = "supported-configurations.yaml";
     private const string ClassName = "ConfigKeyAliasesSwitcher";
 
     /// <inheritdoc />
@@ -33,9 +31,17 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
                                     .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
                                     .WithTrackingName(TrackingNames.ConfigurationKeysAdditionalText);
 
-        var aliasesContent = additionalText
-                            .Select(static (file, ct) => ParseAliasesFromV2File(file, ct))
-                            .WithTrackingName(TrackingNames.ConfigurationKeysParseConfiguration);
+        var yamlContent = additionalText
+                          .Select(static (file, ct) => file.GetText(ct)?.ToString())
+                          .WithTrackingName(TrackingNames.ConfigurationKeysYamlFile);
+
+        var parsedYaml = yamlContent
+                         .Select(static (content, _) => ParseYaml(content))
+                         .WithTrackingName(TrackingNames.ConfigurationKeysParseYaml);
+
+        var aliasesContent = parsedYaml
+                             .Select(static (result, _) => ExtractAliases(result))
+                             .WithTrackingName(TrackingNames.ConfigurationKeysParseConfiguration);
 
         // Always generate source code, even when there are errors
         // This ensures compilation doesn't fail due to missing generated types
@@ -59,111 +65,53 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
         context.AddSource($"{ClassName}.g.cs", SourceText.From(generatedSource, Encoding.UTF8));
     }
 
-    private static Result<ConfigurationAliases?> ParseAliasesFromV2File(AdditionalText file, CancellationToken cancellationToken)
+    private static Result<YamlReader.ParsedConfigurationData> ParseYaml(string? content)
     {
+        if (string.IsNullOrEmpty(content))
+        {
+            return new Result<YamlReader.ParsedConfigurationData>(
+                default,
+                new EquatableArray<DiagnosticInfo>(
+                [
+                    CreateDiagnosticInfo("DDSG0003", "Configuration file not found", "The supported-configurations.yaml file could not be read.", DiagnosticSeverity.Error)
+                ]));
+        }
+
         try
         {
-            var sourceText = file.GetText(cancellationToken);
-            if (sourceText is null)
-            {
-                return new Result<ConfigurationAliases?>(
-                    null,
-                    new EquatableArray<DiagnosticInfo>(
-                    [
-                        CreateDiagnosticInfo("DDSG0003", "Configuration file not found", $"The file '{file.Path}' could not be read. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
-                    ]));
-            }
-
-            var jsonContent = sourceText.ToString();
-
-            using var document = JsonDocument.Parse(jsonContent);
-            var root = document.RootElement;
-
-            if (!root.TryGetProperty("supportedConfigurations", out var supportedConfigurationsElement) ||
-                supportedConfigurationsElement.ValueKind != JsonValueKind.Object)
-            {
-                return new Result<ConfigurationAliases?>(
-                    null,
-                    new EquatableArray<DiagnosticInfo>(
-                    [
-                        CreateDiagnosticInfo("DDSG0002", "Aliases parsing error", "Missing or invalid 'supportedConfigurations' section", DiagnosticSeverity.Error)
-                    ]));
-            }
-
-            var aliases = ParseAliasesFromV2SupportedConfigurations(supportedConfigurationsElement);
-            return new Result<ConfigurationAliases?>(new ConfigurationAliases(aliases), default);
+            var parsedData = YamlReader.ParseSupportedConfigurations(content!);
+            return new Result<YamlReader.ParsedConfigurationData>(parsedData, []);
         }
         catch (Exception ex)
         {
-            return new Result<ConfigurationAliases?>(
-                null,
+            return new Result<YamlReader.ParsedConfigurationData>(
+                default,
                 new EquatableArray<DiagnosticInfo>(
                 [
-                    CreateDiagnosticInfo("DDSG0004", "Configuration file read error", $"Failed to read configuration file '{file.Path}': {ex.Message}", DiagnosticSeverity.Error)
+                    CreateDiagnosticInfo("DDSG0004", "Configuration file read error", $"Failed to parse configuration file: {ex.Message}", DiagnosticSeverity.Error)
                 ]));
         }
     }
 
-    private static Dictionary<string, string[]> ParseAliasesFromV2SupportedConfigurations(JsonElement supportedConfigurationsElement)
+    private static Result<ConfigurationAliases?> ExtractAliases(Result<YamlReader.ParsedConfigurationData> parseResult)
     {
-        var aliases = new Dictionary<string, string[]>();
-
-        foreach (var setting in supportedConfigurationsElement.EnumerateObject())
+        if (parseResult.Errors.Count > 0)
         {
-            var mainKey = setting.Name;
-            var definitions = setting.Value;
+            return new Result<ConfigurationAliases?>(null, parseResult.Errors);
+        }
 
-            if (definitions.ValueKind != JsonValueKind.Array)
+        var parsedData = parseResult.Value;
+
+        var aliases = new Dictionary<string, string[]>();
+        foreach (var kvp in parsedData.Configurations)
+        {
+            if (kvp.Value.Aliases is { Length: > 0 })
             {
-                throw new InvalidOperationException($"Configuration entry '{mainKey}' must be an array of implementation objects");
-            }
-
-            List<string>? aliasList = null;
-            HashSet<string>? seen = null;
-
-            foreach (var implementation in definitions.EnumerateArray())
-            {
-                if (implementation.ValueKind != JsonValueKind.Object)
-                {
-                    throw new InvalidOperationException($"Configuration entry '{mainKey}' must be an object");
-                }
-
-                if (!implementation.TryGetProperty("aliases", out var aliasesElement) ||
-                    aliasesElement.ValueKind != JsonValueKind.Array)
-                {
-                    continue;
-                }
-
-                foreach (var aliasElement in aliasesElement.EnumerateArray())
-                {
-                    if (aliasElement.ValueKind != JsonValueKind.String)
-                    {
-                        continue;
-                    }
-
-                    var alias = aliasElement.GetString();
-                    if (string.IsNullOrEmpty(alias))
-                    {
-                        continue;
-                    }
-
-                    aliasList ??= [];
-                    seen ??= new HashSet<string>(StringComparer.Ordinal);
-
-                    if (seen.Add(alias!))
-                    {
-                        aliasList.Add(alias!);
-                    }
-                }
-            }
-
-            if (aliasList is { Count: > 0 })
-            {
-                aliases[mainKey] = aliasList.ToArray();
+                aliases[kvp.Key] = kvp.Value.Aliases;
             }
         }
 
-        return aliases;
+        return new Result<ConfigurationAliases?>(new ConfigurationAliases(aliases), parseResult.Errors);
     }
 
     private static DiagnosticInfo CreateDiagnosticInfo(string id, string title, string message, DiagnosticSeverity severity = DiagnosticSeverity.Warning)
@@ -193,7 +141,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
         // Class XML documentation
         sb.AppendLine("/// <summary>");
         sb.AppendLine("/// Generated configuration key matcher that handles main keys and aliases.");
-        sb.AppendLine("/// Do not edit this file directly as it is auto-generated from supported-configurations.json and supported-configurations-docs.yaml.");
+        sb.AppendLine("/// Do not edit this file directly as it is auto-generated from supported-configurations.yaml.");
         sb.AppendLine("/// For more info, see docs/development/Configuration/AddingConfigurationKeys.md");
         sb.AppendLine("/// </summary>");
 

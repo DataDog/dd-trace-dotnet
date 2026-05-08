@@ -179,3 +179,38 @@ bool RuntimeIdStore::FreeDynamicLibrary(void* handle)
     return dlclose(handle) == 0;
 #endif
 }
+
+RuntimeIdStore::MemoryStats RuntimeIdStore::ComputeMemoryStats() const
+{
+    std::lock_guard<std::mutex> lock(_cacheLock);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(RuntimeIdStore);
+    stats.cacheMapBuckets = _runtimeIdPerAppdomain.bucket_count();
+    stats.entryCount = _runtimeIdPerAppdomain.size();
+    stats.cacheMapSize = stats.cacheMapBuckets * (sizeof(AppDomainID) + sizeof(std::string) + sizeof(void*));
+
+    // Calculate string capacities
+    for (const auto& [appDomainId, runtimeId] : _runtimeIdPerAppdomain)
+    {
+        stats.runtimeIdsSize += runtimeId.capacity();
+    }
+
+    return stats;
+}
+
+size_t RuntimeIdStore::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void RuntimeIdStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("RuntimeIdStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Cache map storage:       ", stats.cacheMapSize, " bytes (", stats.entryCount, " entries, ", stats.cacheMapBuckets, " buckets)");
+    Log::Debug("  Runtime IDs content:     ", stats.runtimeIdsSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

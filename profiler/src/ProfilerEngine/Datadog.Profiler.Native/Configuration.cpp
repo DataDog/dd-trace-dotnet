@@ -131,6 +131,7 @@ Configuration::Configuration()
         false;
     #endif
     _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, defaultUseManagedCodeCache);
+    _isMemoryFootprintEnabled = GetEnvironmentValue(EnvironmentVariables::MemoryFootprintEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -324,6 +325,11 @@ std::string const& Configuration::GetServiceName() const
 bool Configuration::UseManagedCodeCache() const
 {
     return _useManagedCodeCache;
+}
+
+bool Configuration::IsMemoryFootprintEnabled() const
+{
+    return _isMemoryFootprintEnabled;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const

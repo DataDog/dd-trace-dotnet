@@ -3,13 +3,11 @@ name: Auto bump test package versions
 on:
   schedule:
     - cron: "0 0 * * 0" # Every Sunday at midnight
-  pull_request_target:
-    branches: [master]
+    - cron: "0 0 * * 3" # Every Wednesday at midnight
   workflow_dispatch:
 
 jobs:
   bump_package_versions:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || startsWith(github.event.pull_request.head.ref, 'dependabot/nuget/tracer/dependabot/') == true
     runs-on: windows-latest
     permissions:
       actions: read # read secrets
@@ -22,7 +20,7 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Get dd-octo-sts token
-        uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
         id: octo-sts
         with:
           scope: DataDog/dd-trace-dotnet
@@ -30,19 +28,31 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
 
-      - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
+      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           global-json-file: global.json
 
       - name: "Regenerating package versions"
-        run: .\tracer\build.ps1 GeneratePackageVersions
+        run: .\tracer\build.ps1 GeneratePackageVersions --PackageVersionCooldownDays 2
+
+      - name: Read bump report
+        id: bump
+        if: always()
+        shell: pwsh
+        run: |
+          $report = ""
+          $reportPath = ".nuke/temp/bump_report.md"
+          if (Test-Path $reportPath) {
+            $report = Get-Content $reportPath -Raw
+          }
+          "report<<EOF" >> $env:GITHUB_OUTPUT
+          $report >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
 
       - name: Create Pull Request
         id: pr
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.octo-sts.outputs.token }}
           branch: "bot/test-package-versions-bump"
@@ -53,11 +63,13 @@ jobs:
           milestone: "${{steps.rename.outputs.milestone}}"
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
-            Updates the package versions for integration tests.
+            Updates the package versions for integration tests. See below for a summary of the changes.
+
+            ${{ steps.bump.outputs.report }}
 
       - name: Send Slack notification about generating failure
         if: failure()
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c # v3.0.2
         with:
           # This data can be any valid JSON from a previous step in the GitHub Action
           payload: |

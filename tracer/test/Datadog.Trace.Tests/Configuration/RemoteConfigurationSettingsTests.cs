@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Configuration
 #pragma warning disable CS0618
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.Rcm.PollInterval, value),
-                (ConfigurationKeys.Rcm.PollIntervalInternal, fallbackValue));
+                ("DD_INTERNAL_RCM_POLL_INTERVAL", fallbackValue));
 #pragma warning restore CS0618
 
             var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);

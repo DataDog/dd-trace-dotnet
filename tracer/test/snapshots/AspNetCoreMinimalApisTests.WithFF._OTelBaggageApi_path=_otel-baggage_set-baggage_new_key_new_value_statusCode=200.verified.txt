@@ -1,0 +1,68 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: SetBaggage,
+    Resource: SetBaggage,
+    Service: Samples.AspNetCoreMinimalApis,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel-baggage: foo_case_sensitive_key=UNTOUCHED,unused_key=unused_value,remove_me_key=remove_me_value,new_key=new_value,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet_core_mvc.request,
+    Resource: GET /otel-baggage/set-baggage/{key}/{value},
+    Service: Samples.AspNetCoreMinimalApis,
+    Type: web,
+    ParentId: Id_4,
+    Tags: {
+      aspnet_core.action: setbaggage,
+      aspnet_core.controller: otelbaggage,
+      aspnet_core.route: otel-baggage/set-baggage/{key}/{value},
+      component: aspnet_core,
+      env: integration_tests,
+      language: dotnet,
+      span.kind: server,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: aspnet_core.request,
+    Resource: GET /otel-baggage/set-baggage/{key}/{value},
+    Service: Samples.AspNetCoreMinimalApis,
+    Type: web,
+    Tags: {
+      aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.OtelBaggageController.SetBaggage (Samples.AspNetCoreMinimalApis),
+      aspnet_core.route: otel-baggage/set-baggage/{key}/{value},
+      component: aspnet_core,
+      datadog-header-tag: asp-net-core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.sample_correlation_identifier: 0000-0000-0000,
+      http.response.headers.server: Kestrel,
+      http.route: otel-baggage/set-baggage/{key}/{value},
+      http.status_code: 200,
+      http.url: http://localhost:00000/otel-baggage/set-baggage/new_key/new_value,
+      http.useragent: testhelper,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

@@ -1,0 +1,1560 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: Begin_ServerAsyncAdd_false_false,
+    Resource: Begin_ServerAsyncAdd_false_false,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_3,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_4,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_5,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_5,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_9,
+    Name: Begin_ServerAsyncAdd_false_true,
+    Resource: Begin_ServerAsyncAdd_false_true,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_10,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_9,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_11,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_10,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_12,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_11,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_13,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_12,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_14,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_12,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: Begin_ServerAsyncAdd_true_false,
+    Resource: Begin_ServerAsyncAdd_true_false,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_17,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_16,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_4,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_18,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_17,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_19,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_18,
+    Error: 1,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      error.msg: Something happened,
+      error.stack:
+System.ServiceModel.FaultException: Something happened
+at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResult),
+      error.type: System.ServiceModel.FaultException,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_20,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_19,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_21,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_19,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_23,
+    Name: Begin_ServerAsyncAdd_true_true,
+    Resource: Begin_ServerAsyncAdd_true_true,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_24,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_23,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_5,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_25,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_26,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_25,
+    Error: 1,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      error.msg: Something happened,
+      error.stack:
+System.ServiceModel.FaultException: Something happened
+at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2, Boolean throwsException, Boolean synchronouslyCompletes, AsyncCallback callback, Object state),
+      error.type: System.ServiceModel.FaultException,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_27,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_26,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_29,
+    Name: BeginEnd_ServerSyncAdd,
+    Resource: BeginEnd_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_30,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_29,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      rpc.method: ServerSyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_31,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_30,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_32,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_31,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_33,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_32,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_35,
+    Name: BeginEnd_ServerTaskAdd,
+    Resource: BeginEnd_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_36,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_35,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_7,
+      rpc.method: ServerTaskAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_37,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_36,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_38,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_37,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_39,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_38,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_40,
+    SpanId: Id_41,
+    Name: ServerEmptyActionAdd,
+    Resource: ServerEmptyActionAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_40,
+    SpanId: Id_42,
+    Name: dotnet_wcf.client.request,
+    Resource: OpenTelemetry.Instrumentation.Wcf.OutgoingRequest,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_41,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_8,
+      rpc.method: ServerEmptyActionAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_40,
+    SpanId: Id_43,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_42,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_40,
+    SpanId: Id_44,
+    Name: http.server.request,
+    Resource: /WcfSample/123,123/CalculatorService,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_43,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_40,
+    SpanId: Id_45,
+    Name: ServerEmptyActionAdd,
+    Resource: ServerEmptyActionAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_44,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_47,
+    Name: Sync_ServerAsyncAdd,
+    Resource: Sync_ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_48,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_47,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_9,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_49,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_48,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_50,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_49,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_51,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_50,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_52,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_50,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_54,
+    Name: Sync_ServerSyncAdd,
+    Resource: Sync_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_55,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_54,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_10,
+      rpc.method: ServerSyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_56,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_55,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_57,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_56,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_58,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_57,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_60,
+    Name: Sync_ServerTaskAdd,
+    Resource: Sync_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_61,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_60,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_11,
+      rpc.method: ServerTaskAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_62,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_61,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_63,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_62,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_64,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_63,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_66,
+    Name: Task_ServerAsyncAdd,
+    Resource: Task_ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_67,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_66,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_12,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_68,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_67,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_69,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_68,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_70,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_69,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_71,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_69,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_72,
+    SpanId: Id_73,
+    Name: Task_ServerSyncAdd,
+    Resource: Task_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_72,
+    SpanId: Id_74,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_73,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_13,
+      rpc.method: ServerSyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_72,
+    SpanId: Id_75,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_74,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_72,
+    SpanId: Id_76,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_75,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_72,
+    SpanId: Id_77,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_76,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_78,
+    SpanId: Id_79,
+    Name: Task_ServerTaskAdd,
+    Resource: Task_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_78,
+    SpanId: Id_80,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_79,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_14,
+      rpc.method: ServerTaskAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_78,
+    SpanId: Id_81,
+    Name: http.client.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_80,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_78,
+    SpanId: Id_82,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_81,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_78,
+    SpanId: Id_83,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_82,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  }
+]

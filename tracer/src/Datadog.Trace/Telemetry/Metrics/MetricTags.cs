@@ -81,6 +81,7 @@ internal static class MetricTags
         [Description("reason:overfull_buffer")] OverfullBuffer,
         [Description("reason:serialization_error")] SerializationError,
         [Description("reason:api_error")] ApiError,
+        [Description("reason:trace_filter")] TraceFilter,
     }
 
     internal enum StatusCode
@@ -277,7 +278,8 @@ internal static class MetricTags
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
         [Description("integration_name:protobuf")] Protobuf,
-        [Description("integration_name:hangfire")] Hangfire
+        [Description("integration_name:hangfire")] Hangfire,
+        [Description("integration_name:serverlesscompat")] ServerlessCompat
     }
 
     public enum InstrumentationError

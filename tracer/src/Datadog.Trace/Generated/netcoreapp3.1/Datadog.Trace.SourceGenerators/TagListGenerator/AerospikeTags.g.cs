@@ -15,41 +15,22 @@ namespace Datadog.Trace.Tagging
     partial class AerospikeTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
+
         // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
+
         // KeyBytes = MessagePack.Serialize("aerospike.key");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> KeyBytes => new byte[] { 173, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 107, 101, 121 };
-#else
-        private static readonly byte[] KeyBytes = new byte[] { 173, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 107, 101, 121 };
-#endif
+        private static ReadOnlySpan<byte> KeyBytes => [173, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 107, 101, 121];
+
         // NamespaceBytes = MessagePack.Serialize("aerospike.namespace");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> NamespaceBytes => new byte[] { 179, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 110, 97, 109, 101, 115, 112, 97, 99, 101 };
-#else
-        private static readonly byte[] NamespaceBytes = new byte[] { 179, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 110, 97, 109, 101, 115, 112, 97, 99, 101 };
-#endif
+        private static ReadOnlySpan<byte> NamespaceBytes => [179, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 110, 97, 109, 101, 115, 112, 97, 99, 101];
+
         // SetNameBytes = MessagePack.Serialize("aerospike.setname");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SetNameBytes => new byte[] { 177, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 115, 101, 116, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] SetNameBytes = new byte[] { 177, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 115, 101, 116, 110, 97, 109, 101 };
-#endif
+        private static ReadOnlySpan<byte> SetNameBytes => [177, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 115, 101, 116, 110, 97, 109, 101];
+
         // UserKeyBytes = MessagePack.Serialize("aerospike.userkey");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> UserKeyBytes => new byte[] { 177, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 117, 115, 101, 114, 107, 101, 121 };
-#else
-        private static readonly byte[] UserKeyBytes = new byte[] { 177, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 117, 115, 101, 114, 107, 101, 121 };
-#endif
+        private static ReadOnlySpan<byte> UserKeyBytes => [177, 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 117, 115, 101, 114, 107, 101, 121];
 
         public override string? GetTag(string key)
         {

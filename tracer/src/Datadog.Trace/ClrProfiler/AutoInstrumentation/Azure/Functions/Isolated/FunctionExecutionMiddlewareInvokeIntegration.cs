@@ -45,6 +45,13 @@ public sealed class FunctionExecutionMiddlewareInvokeIntegration
     [PreserveContext]
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
+        // The worker's FunctionExecutionMiddleware catches this exception internally,
+        // so the aspnet_core.request span otherwise records status 200. Annotate it here.
+        if (exception is not null && state.State is Scope aspNetCoreScope)
+        {
+            AzureFunctionsCommon.SetExceptionOnAspNetCoreScope(aspNetCoreScope, exception, Tracer.Instance);
+        }
+
         state.Scope?.DisposeWithException(exception);
         return returnValue;
     }

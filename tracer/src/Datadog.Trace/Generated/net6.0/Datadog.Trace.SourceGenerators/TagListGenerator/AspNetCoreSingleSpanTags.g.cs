@@ -15,29 +15,16 @@ namespace Datadog.Trace.Tagging
     partial class AspNetCoreSingleSpanTags
     {
         // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
+
         // AspNetCoreRouteBytes = MessagePack.Serialize("aspnet_core.route");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreRouteBytes => new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
-#else
-        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
-#endif
+        private static ReadOnlySpan<byte> AspNetCoreRouteBytes => [177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101];
+
         // AspNetCoreEndpointBytes = MessagePack.Serialize("aspnet_core.endpoint");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreEndpointBytes => new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#else
-        private static readonly byte[] AspNetCoreEndpointBytes = new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> AspNetCoreEndpointBytes => [180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116];
+
         // HttpRouteBytes = MessagePack.Serialize("http.route");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpRouteBytes => new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
-#else
-        private static readonly byte[] HttpRouteBytes = new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
-#endif
+        private static ReadOnlySpan<byte> HttpRouteBytes => [170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101];
 
         public override string? GetTag(string key)
         {

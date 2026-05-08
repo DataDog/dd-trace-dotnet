@@ -296,3 +296,30 @@ TEST(ManagedThreadListTest, CheckRegisterThreadTwice)
     ASSERT_TRUE(threads.RegisterThread(thread));
     ASSERT_FALSE(threads.RegisterThread(thread));
 }
+
+TEST(ManagedThreadListTest, CheckMemoryMeasurement)
+{
+    ManagedThreadList threads(nullptr);
+
+    // Get initial memory size
+    size_t initialSize = threads.GetMemorySize();
+    ASSERT_GT(initialSize, 0);
+
+    // Add some threads
+    CreateThread(threads, 1, (HANDLE)1);
+    CreateThread(threads, 2, (HANDLE)2);
+    CreateThread(threads, 3, (HANDLE)3);
+
+    // Memory size should have increased
+    size_t sizeWithThreads = threads.GetMemorySize();
+    ASSERT_GT(sizeWithThreads, initialSize);
+
+    // Remove a thread
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
+    threads.UnregisterThread(2, pInfo);
+
+    // Memory size should have decreased
+    size_t sizeAfterRemoval = threads.GetMemorySize();
+    ASSERT_LT(sizeAfterRemoval, sizeWithThreads);
+    ASSERT_GT(sizeAfterRemoval, initialSize);
+}

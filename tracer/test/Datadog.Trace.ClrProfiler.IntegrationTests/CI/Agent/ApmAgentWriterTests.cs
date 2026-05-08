@@ -36,12 +36,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             var spans1 = new SpanCollection(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
             var traceChunk1 = new TraceChunkModel(spans1);
+            var spanBufferSerializer = new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk1, SpanFormatterResolver.Instance);
 
             _ciAgentWriter.WriteTrace(spans1);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1, spanBufferSerializer.HeaderSize)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
             _api.Invocations.Clear();
 
             var spans2 = new SpanCollection(new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow));
@@ -51,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _ciAgentWriter.WriteTrace(spans2);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2, spanBufferSerializer.HeaderSize)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
 
             await _ciAgentWriter.FlushAndCloseAsync();
         }
@@ -64,9 +65,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             await w.FlushAndCloseAsync();
         }
 
-        private static bool Equals(ArraySegment<byte> data, byte[] expectedData)
+        private static bool Equals(ArraySegment<byte> data, byte[] expectedData, int headerSize)
         {
-            return data.Array!.Skip(data.Offset).Take(data.Count).Skip(SpanBuffer.HeaderSize).SequenceEqual(expectedData);
+            return data.Array!.Skip(data.Offset).Take(data.Count).Skip(headerSize).SequenceEqual(expectedData);
         }
     }
 }

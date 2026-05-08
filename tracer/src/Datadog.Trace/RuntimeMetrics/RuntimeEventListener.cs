@@ -36,7 +36,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private static readonly string[] CompactingGcTags = { "compacting_gc:true" };
         private static readonly string[] NotCompactingGcTags = { "compacting_gc:false" };
 
-        private static readonly IReadOnlyDictionary<string, string> MetricsMapping;
+        private static readonly Dictionary<string, string> MetricsMapping;
 
         private readonly Timing _contentionTime = new Timing();
 

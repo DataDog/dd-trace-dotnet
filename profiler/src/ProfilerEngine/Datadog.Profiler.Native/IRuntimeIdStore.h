@@ -7,7 +7,9 @@
 #include "cor.h"
 #include "corprof.h"
 
-class IRuntimeIdStore
+#include "IMemoryFootprintProvider.h"
+
+class IRuntimeIdStore : public IMemoryFootprintProvider
 {
 public:
     virtual ~IRuntimeIdStore() = default;

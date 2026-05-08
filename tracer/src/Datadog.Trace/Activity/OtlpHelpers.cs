@@ -16,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -191,11 +192,13 @@ namespace Datadog.Trace.Activity
             // Update Service with a reasonable default
             if (span.ServiceName is null)
             {
-                span.ServiceName = span.GetTag("peer.service") switch
-                {
-                    string peerService when !string.IsNullOrEmpty(peerService) => peerService,
-                    _ => "OTLPResourceNoServiceName",
-                };
+                span.SetService(
+                    span.GetTag("peer.service") switch
+                    {
+                        string peerService when !string.IsNullOrEmpty(peerService) => peerService,
+                        _ => "OTLPResourceNoServiceName",
+                    },
+                    source: null);
             }
 
             // Update Resource with a reasonable default
@@ -455,7 +458,7 @@ namespace Datadog.Trace.Activity
                     else
                     {
                         // we've already unrolled once, don't do it again for IEnumerable values
-                        AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                        AgentSetOtlpTag(span, key, JsonHelper.SerializeObject(value));
                     }
 
                     break;
@@ -480,7 +483,7 @@ namespace Datadog.Trace.Activity
                 case "service.name":
                     if (setKnownValues)
                     {
-                        span.ServiceName = value;
+                        span.SetService(value, source: null);
                     }
 
                     break;

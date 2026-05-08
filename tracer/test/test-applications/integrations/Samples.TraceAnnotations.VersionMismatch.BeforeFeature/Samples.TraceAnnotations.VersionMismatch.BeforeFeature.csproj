@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
@@ -21,5 +21,6 @@
     <Compile Include="..\Samples.TraceAnnotations\ProgramHelpers.cs" />
     <Compile Include="..\Samples.TraceAnnotations\TestType.cs" />
     <Compile Include="..\Samples.TraceAnnotations\TraceAttribute.cs" />
+    <Compile Include="..\Samples.TraceAnnotations\ExtremeExceptionHandling.cs" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿// <copyright file="PerTraceSettings.cs" company="Datadog">
+// <copyright file="PerTraceSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,25 +37,25 @@ namespace Datadog.Trace.Configuration
 
         public MutableSettings Settings { get; }
 
-        internal string GetServiceName(string serviceName)
+        internal ServiceNameMetadata GetServiceNameMetadata(string integrationKey)
         {
-            if (ServiceNames.TryGetValue(serviceName, out var name))
+            if (ServiceNames.TryGetValue(integrationKey, out var mappedName))
             {
-                return name;
+                return new ServiceNameMetadata(mappedName, ServiceNameMetadata.OptServiceMapping);
             }
 
             if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
             {
-                return Settings.DefaultServiceName;
+                return new ServiceNameMetadata(Settings.DefaultServiceName, null);
             }
 
-            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
+            if (!_serviceNameCache.TryGetValue(integrationKey, out var resolvedName))
             {
-                finalServiceName = $"{Settings.DefaultServiceName}-{serviceName}";
-                _serviceNameCache.TryAdd(serviceName, finalServiceName);
+                resolvedName = $"{Settings.DefaultServiceName}-{integrationKey}";
+                _serviceNameCache.TryAdd(integrationKey, resolvedName);
             }
 
-            return finalServiceName;
+            return new ServiceNameMetadata(resolvedName, integrationKey);
         }
     }
 }

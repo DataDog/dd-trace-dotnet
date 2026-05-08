@@ -44,9 +44,40 @@ public:
     bool TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     void ForEach(std::function<void (ManagedThreadInfo*)> callback) override;
 
+    // Memory measurement (IMemoryFootprintProvider)
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
+
+private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t vectorStorageSize;
+        size_t threadInfosSize;
+        size_t clrLookupSize;
+        size_t osLookupSize;
+        size_t iteratorsSize;
+        size_t threadCount;
+        size_t vectorCapacity;
+        size_t clrLookupBuckets;
+        size_t osLookupBuckets;
+        size_t iteratorsCount;
+
+        size_t GetTotal() const
+        {
+            return baseSize + vectorStorageSize + threadInfosSize + clrLookupSize + osLookupSize + iteratorsSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
 private:
     const char* _serviceName = "ManagedThreadList";
     static const std::uint32_t DefaultThreadListSize;
+
+    // Incremental memory tracking: track sum of item sizes as they're added/removed
+    // Container overhead is calculated on-demand in GetMemorySize()
+    mutable std::atomic<size_t> _cachedItemsSize;
 
 private:
     bool StartImpl() override;
@@ -56,7 +87,8 @@ private:
     // We expect very little contention on this lock:
     // Modifying operations are expected to be rare and, especially in a thread-pooled architecture.
     // Reading (i.e., LoopNext(..)) happens from the same sampler-thread.
-    std::recursive_mutex _mutex;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::recursive_mutex _mutex;
 
     // Threads are stored in a vector where new threads are added at the end
     // Also, threads are "directly" accessible from their CLR ThreadID via an index

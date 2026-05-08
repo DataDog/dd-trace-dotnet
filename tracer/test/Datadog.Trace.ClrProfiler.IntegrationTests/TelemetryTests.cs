@@ -337,6 +337,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // a debug log created in Instrumentation.cs
             allLogs.Should()
+#if NET6_0_OR_GREATER
+                   .AllSatisfy(log => log.Tags.Should().Contain("trim:no"))
+                   .And
+#endif
                    .ContainSingle()
                    .Which.Message.Should()
                    .Be("Sending an error log using hacky reflection");

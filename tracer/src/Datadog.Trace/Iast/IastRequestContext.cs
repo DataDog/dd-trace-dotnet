@@ -28,12 +28,12 @@ internal sealed class IastRequestContext
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
     private TaintedObjects _taintedObjects = new();
-    private bool _routedParametersAdded = false;
-    private bool _querySourcesAdded = false;
+    private bool _routedParametersAdded;
+    private bool _querySourcesAdded;
     private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
-    private int _lastVulnerabilityStackId = 0;
+    private int _lastVulnerabilityStackId;
 
-    private bool _routeVulnerabilityStatsDirty = false;
+    private bool _routeVulnerabilityStatsDirty;
     private VulnerabilityStats _routeVulnerabilityStats;
     private VulnerabilityStats _requestVulnerabilityStats;
 

@@ -154,7 +154,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        private ITelemetryController CreateController(
+        private TelemetryController CreateController(
             TracerSettings tracerSettings,
             TelemetryTransportFactory telemetryTransports,
             TelemetrySettings settings,
@@ -178,7 +178,8 @@ namespace Datadog.Trace.Telemetry
                         Metrics,
                         _logs.IsValueCreated ? _logs.Value : null, // if we haven't created it by now, we don't need it
                         transportManager,
-                        settings.HeartbeatInterval);
+                        settings.HeartbeatInterval,
+                        settings.ExtendedHeartbeatInterval);
                 }
             }
 

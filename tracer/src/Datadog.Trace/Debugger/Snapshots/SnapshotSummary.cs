@@ -35,9 +35,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static string FormatMethod(IReadOnlyList<StackInfo> frames, ProbeLocation probeLocation)
+        private static string FormatMethod(StackInfo[] frames, ProbeLocation probeLocation)
         {
-            if (frames?.Count > 0)
+            if (frames?.Length > 0)
             {
                 // we first try to use the top frame on the stacktrace, if available
                 return FormatMethod(frames[0]);

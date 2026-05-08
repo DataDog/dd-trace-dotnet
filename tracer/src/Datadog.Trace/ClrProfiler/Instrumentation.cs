@@ -20,6 +20,8 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -83,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler
             var tracerSettings = tracer.Settings;
             var mutableSettings = tracerSettings.Manager.InitialMutableSettings;
 
-            NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
+            var config = new NativeInterop.SharedConfig
             {
                 ProfilingEnabled = profilerSettings.ProfilerState switch
                 {
@@ -104,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (tracerSettings.PropagateProcessTags)
             {
-                config.ProcessTags = ProcessTags.SerializedTags;
+                config.ProcessTags = mutableSettings.ProcessTags?.SerializedTags;
             }
 
             // Make sure nothing bubbles up, even if there are issues
@@ -294,6 +296,21 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error printing assembly metadata");
             }
 
+#if NET6_0_OR_GREATER
+            if (TrimmingDetector.DetectedTrimmingState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile)
+            {
+                Log.Warning(
+                    "Application trimming detected: a standard .NET type could not be loaded. "
+                  + "Some Datadog instrumentation may not work correctly. "
+                  + "To make your app compatible with trimming, add a reference to the "
+                  + "Datadog.Trace.Trimming NuGet package.");
+            }
+#endif
+
+            // Eagerly initialize the root session ID so child processes
+            // inherit it even if spawned before the first telemetry flush.
+            _ = RuntimeId.GetRootSessionId();
+
             try
             {
                 // ensure global instance is created if it's not already
@@ -322,7 +339,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing Security");
             }
 
-#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
@@ -345,7 +361,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 // ignore
             }
-
+#if !NETFRAMEWORK
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
@@ -468,15 +484,16 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
 
+#if !NETFRAMEWORK
             if (!SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }
+#endif
 
             observers.Add(new QuartzDiagnosticObserver());
 
@@ -485,7 +502,12 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 
+#if !NETFRAMEWORK
+#if NET6_0_OR_GREATER
         private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
+#else
+        private static AspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver()
+#endif
         {
             // Tracer and Security should both have been initialized by now.
             // Iast hasn't yet, but doing it now is fine.
@@ -503,10 +525,52 @@ namespace Datadog.Trace.ClrProfiler
         [Pure]
         private static bool SkipAspNetCoreDiagnosticObserver()
         {
-            // this is extremely simple now, but will get more complex soon...
-            return EnvironmentHelpers.IsAzureFunctions();
-        }
+            // Enable AspNetCoreDiagnosticObserver in:
+            // - outside Azure Functions
+            // - Isolated functions worker processes with extension v4
+            //   (to create aspnet_core.request spans that azure_functions.invoke can parent to)
 
+            // Skip AspNetCoreDiagnosticObserver in Azure Functions:
+            // - In-process functions (due to AssemblyLoadContext issues)
+            // - Isolated functions host process (to avoid duplicate spans)
+            // - Isolated functions worker process with extension v1 (FUNCTIONS_EXTENSION_VERSION="~1")
+
+            if (!AzureInfo.Instance.IsAzureFunction)
+            {
+                // We only skip AspNetCoreDiagnosticObserver in Azure Functions.
+                // Don't skip it outside Azure Functions.
+                return false;
+            }
+
+            // FUNCTIONS_WORKER_RUNTIME == "dotnet-isolated"
+            if (!AzureInfo.Instance.IsIsolatedFunction)
+            {
+                // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an in-process Azure Function.");
+                return true;
+            }
+
+            if (AzureInfo.Instance.IsIsolatedFunctionHostProcess)
+            {
+                // Skip AspNetCoreDiagnosticObserver in Azure Functions _host_ processes
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an isolated Azure Function host process.");
+                return true;
+            }
+
+            // FUNCTIONS_EXTENSION_VERSION
+            var azureFunctionsExtensionVersion = AzureInfo.Instance.AzureFunctionsExtensionVersion;
+
+            if (azureFunctionsExtensionVersion != "~4")
+            {
+                // Skip AspNetCoreDiagnosticObserver in v1 isolated functions (v2 and v3 are not supported at all)
+                // to keep the previous behavior
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in Azure Function with extension version {AzureFunctionsExtensionVersion}.", azureFunctionsExtensionVersion);
+                return true;
+            }
+
+            // do not skip when running in an isolated Azure Functions worker process with extension v4
+            return false;
+        }
 #endif // #if !NETFRAMEWORK
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
@@ -522,7 +586,8 @@ namespace Datadog.Trace.ClrProfiler
 
             if (!debuggerSettings.DynamicInstrumentationEnabled
              && !debuggerSettings.CodeOriginForSpansEnabled
-             && !manager.ExceptionReplaySettings.Enabled)
+             && !manager.ExceptionReplaySettings.Enabled
+             && !debuggerSettings.SymbolDatabaseUploadEnabled)
             {
                 Log.Debug("Debugger products are not enabled");
             }

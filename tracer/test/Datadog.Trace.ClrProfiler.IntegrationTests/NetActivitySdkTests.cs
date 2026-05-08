@@ -59,7 +59,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_DISABLED_ACTIVITY_SOURCES", "Disabled.By.ExactMatch,*.By.Glob*");
 
             using (var telemetry = this.ConfigureTelemetry())

@@ -94,9 +94,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetSpan.Tags.Remove(Tags.GitCommitSha);
                             targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
 
+                            // Remove process tags that get added to the first span of a payload
+                            targetSpan.Tags.Remove(Tags.ProcessTags);
+
                             // Remove EFD tags
                             targetSpan.Tags.Remove(TestTags.TestIsNew);
                             targetSpan.Tags.Remove(TestTags.TestIsRetry);
+
+                            // Remove test final status
+                            targetSpan.Tags.Remove(TestTags.TestFinalStatus);
 
                             // Remove capabilities
                             targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);

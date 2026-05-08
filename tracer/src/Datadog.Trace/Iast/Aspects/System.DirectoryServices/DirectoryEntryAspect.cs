@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
@@ -28,7 +29,7 @@ public static partial class DirectoryEntryAspect
     {
         try
         {
-            if (!string.IsNullOrEmpty(path) && path.ToLower().StartsWith("ldap"))
+            if (!string.IsNullOrEmpty(path) && path.StartsWith("ldap", StringComparison.OrdinalIgnoreCase))
             {
                 IastModule.OnLdapInjection(path);
             }

@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpExporter.cs" company="Datadog">
+// <copyright file="OtlpExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,12 +7,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol;
@@ -35,16 +37,16 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly Telemetry.Metrics.MetricTags.MetricEncoding _encodingTag;
         private readonly OtlpMetricsSerializer _serializer;
         private readonly Uri _endpoint;
-        private readonly IReadOnlyDictionary<string, string> _headers;
+        private readonly KeyValuePair<string, string>[] _headers;
         private readonly int _timeoutMs;
         private readonly Configuration.OtlpProtocol _protocol;
 
-        public OtlpExporter(Configuration.TracerSettings settings)
+        public OtlpExporter(Configuration.TracerSettings settings, ExporterSettings exporterSettings)
         {
-            _endpoint = settings.OtlpMetricsEndpoint;
-            _headers = settings.OtlpMetricsHeaders;
-            _timeoutMs = settings.OtlpMetricsTimeoutMs;
-            _protocol = settings.OtlpMetricsProtocol;
+            _endpoint = exporterSettings.OtlpMetricsEndpoint;
+            _headers = exporterSettings.OtlpMetricsHeaders.ToArray();
+            _timeoutMs = exporterSettings.OtlpMetricsTimeoutMs;
+            _protocol = exporterSettings.OtlpMetricsProtocol;
 
             _protocolTag = _protocol switch
             {
@@ -60,7 +62,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 _ => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf
             };
 
-            _serializer = new OtlpMetricsSerializer(settings);
+            _serializer = new OtlpMetricsSerializer(settings, settings.OtlpMetricsTemporalityPreference);
             _httpClient = CreateHttpClient(_endpoint);
 
             if (_protocol == Configuration.OtlpProtocol.Grpc)
@@ -83,7 +85,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
         }
 
-        private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers);
+        private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IEnumerable<KeyValuePair<string, string>> headers);
 
         /// <summary>
         /// Exports a batch of metrics using OTLP protocol asynchronously.
@@ -124,11 +126,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         }
 
         /// <summary>
-        /// Shuts down the exporter and ensures all pending exports complete.
+        /// Releases the exporter's HTTP resources. The final export already ran
+        /// synchronously in MetricReader.StopAsync and is bounded by the HTTP
+        /// request timeout (OTEL_EXPORTER_OTLP_METRICS_TIMEOUT), so there is
+        /// nothing further to wait on here.
         /// </summary>
-        /// <param name="timeoutMilliseconds">Maximum time to wait for shutdown</param>
         /// <returns>True if shutdown completed successfully, false otherwise</returns>
-        public override bool Shutdown(int timeoutMilliseconds)
+        public override bool Shutdown()
         {
             try
             {
@@ -144,7 +148,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         /// <summary>
         /// Creates an HttpClient with Unix Domain Socket support if the endpoint uses unix:// scheme.
-        /// For TCP/IP endpoints (http:// or https://), creates a standard HttpClient with HTTP/2.
+        /// For TCP/IP endpoints (http:// or https://), creates a standard HttpClient.
         /// </summary>
         private static HttpClient CreateHttpClient(Uri endpoint)
         {
@@ -166,11 +170,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     }
                 };
 
-                return new HttpClient(handler)
-                {
-                    DefaultRequestVersion = HttpVersion.Version20,
-                    DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
-                };
+                return new HttpClient(handler);
             }
 
             // Standard TCP/IP endpoint
@@ -179,11 +179,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             };
 
-            return new HttpClient(tcpHandler)
-            {
-                DefaultRequestVersion = HttpVersion.Version20,
-                DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
-            };
+            return new HttpClient(tcpHandler);
         }
 
         private async Task<bool> SendOtlpRequest(IReadOnlyList<MetricPoint> metrics)
@@ -220,7 +216,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         private async Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
         {
-            static HttpRequestMessage CreateHttpProtobufRequest(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers)
+            static HttpRequestMessage CreateHttpProtobufRequest(byte[] payload, Uri endpoint, IEnumerable<KeyValuePair<string, string>> headers)
             {
                 var content = new ByteArrayContent(payload);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");
@@ -326,7 +322,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
                     if (statusCode == 400)
                     {
-                        Log.Warning("Bad Request (400) - not retrying: {StatusCode}", response.StatusCode);
+                        Log.Error("Bad Request (400) - not retrying: {StatusCode}", response.StatusCode);
                         return false;
                     }
 
@@ -349,6 +345,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                         }
                     }
 
+                    Log.ErrorSkipTelemetry("An error occurred while sending OTLP request to {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _endpoint);
                     return false;
                 }
                 catch (TaskCanceledException) when (attempt < maxRetries)
@@ -358,7 +355,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error sending OTLP request (attempt {Attempt})", (attempt + 1).ToString());
+                    Log.Debug<int>(ex, "Error sending OTLP request (attempt {Attempt})", attempt + 1);
                     if (attempt < maxRetries)
                     {
                         retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
@@ -366,6 +363,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     }
                     else
                     {
+                        Log.ErrorSkipTelemetry("An error occurred after {Attempt} attempts while sending OTLP request to {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", attempt + 1, _endpoint);
                         return false;
                     }
                 }

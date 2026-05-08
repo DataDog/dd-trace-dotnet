@@ -14,12 +14,14 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -33,7 +35,7 @@ namespace Datadog.Trace.Configuration
     public partial record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.PropagateProcessTags];
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
 
         private readonly Lazy<string> _fallbackApplicationName;
 
@@ -71,7 +73,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, LibDatadogAvailableResult isLibDatadogAvailable)
         {
-            var commaSeparator = new[] { ',' };
+            var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -87,7 +89,7 @@ namespace Datadog.Trace.Configuration
 
             PropagateProcessTags = config
                                        .WithKeys(ConfigurationKeys.PropagateProcessTags)
-                                       .AsBool(ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.PropagateProcessTags)); // read it as "defaults to false"
+                                       .AsBool(true);
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
@@ -177,18 +179,53 @@ namespace Datadog.Trace.Configuration
                 ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.MetricsExporter);
             }
 
-            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
+#if NET6_0_OR_GREATER
+            var defaultRuntimeMetrics = true;
+#else
+            var defaultRuntimeMetrics = false;
+#endif
 
-            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+            if (runtimeMetricsEnabledResult.ConfigurationResult is { IsPresent: true, IsValid: true })
+            {
+                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
+            }
+            else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true, Result: false })
+            {
+                // OTEL_METRICS_EXPORTER=none explicitly disables metrics export, which takes precedence
+                // over the .NET 6+ default and disables runtime metrics.
+                RuntimeMetricsEnabled = false;
+            }
+            else
+            {
+                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
+            }
 
-#if !NET6_0_OR_GREATER
+            var runtimeMetricsDiagnosticsMetricsApiEnabledResult = config
+                                                                  .WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled)
+                                                                  .AsBoolResult();
+
+#if NET6_0_OR_GREATER
+            // On .NET 8+, default to Diagnostics for all users (full metric coverage including ASP.NET Core meters).
+            // On .NET 6/7, default to Diagnostics only when runtime metrics were not explicitly configured,
+            // to avoid EventPipe crash/leak issues (dotnet/runtime#103480, dotnet/runtime#111368).
+            // Explicit DD_RUNTIME_METRICS_ENABLED=true users on .NET 6/7 keep EventListener
+            // to preserve ASP.NET Core EventCounter metrics not available via Diagnostics on < .NET 8.
+            var diagnosticsDefault = !runtimeMetricsEnabledResult.ConfigurationResult.IsValid || FrameworkDescription.Instance.RuntimeVersion.Major >= 8;
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(diagnosticsDefault);
+#else
+            // System.Diagnostics.Metrics is not available before .NET 6, keep disabled by default
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(false);
+
             if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
             {
                 Log.Warning(
                     $"{ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled} was enabled, but System.Diagnostics.Metrics is only available on .NET 6+. Using standard runtime metrics collector.");
                 telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, false, ConfigurationOrigins.Calculated);
+
+                RuntimeMetricsDiagnosticsMetricsApiEnabled = false;
             }
 #endif
+
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -213,10 +250,17 @@ namespace Datadog.Trace.Configuration
                                     },
                                     validator: null);
 
+            var otlpGeneralProtocolName = OtlpGeneralProtocol switch
+            {
+                OtlpProtocol.Grpc => "grpc",
+                OtlpProtocol.HttpProtobuf => "http/protobuf",
+                _ => "grpc",
+            };
+
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol)
                                  .GetAs(
-                                      defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                      defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
                                       converter: x => x switch
                                       {
                                           not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -275,7 +319,7 @@ namespace Datadog.Trace.Configuration
             OtlpLogsProtocol = config
                              .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol)
                              .GetAs(
-                                  defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                  defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
                                   converter: x => x switch
                                   {
                                       not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -540,14 +584,21 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(
-                                                  !EnvironmentHelpers.IsAwsLambda() &&
-                                                  !EnvironmentHelpers.IsAzureAppServices() &&
-                                                  !EnvironmentHelpers.IsAzureFunctions() &&
-                                                  !EnvironmentHelpers.IsGoogleCloudFunctions());
+                                                  !AwsInfo.Instance.IsAwsLambda &&
+                                                  !AzureInfo.Instance.IsAzureAppService &&
+                                                  !AzureInfo.Instance.IsAzureFunction &&
+                                                  !GcpInfo.Instance.IsCloudFunction);
 
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                                     .AsBool() == null;
+
+            DataStreamsTransactionExtractors = config
+                                                  .WithKeys(ConfigurationKeys.DataStreamsMonitoring.TransactionExtractors)
+                                                  .GetAs(
+                                                       defaultValue: new DefaultResult<List<DataStreamsTransactionExtractor>>([], "[]"),
+                                                       converter: json => ParsingResult<List<DataStreamsTransactionExtractor>>.Success(DataStreamsTransactionExtractor.ParseList(json)),
+                                                       validator: null);
 
             // no legacy headers if we are in "enbaled by default" state
             IsDataStreamsLegacyHeadersEnabled = config
@@ -593,6 +644,10 @@ namespace Datadog.Trace.Configuration
                                      defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
+
+            DbmInjectSqlBasehash = config
+                .WithKeys(ConfigurationKeys.DbmInjectSqlBasehash)
+                .AsBool(false);
 
             RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
 
@@ -648,6 +703,13 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
+#if NET6_0_OR_GREATER
+            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
+#else
+            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
+            OtlpRuntimeMetricsEnabled = false;
+#endif
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -674,6 +736,14 @@ namespace Datadog.Trace.Configuration
             };
 
             telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
+#if NET6_0_OR_GREATER
+            var trimState = TrimmingDetector.DetectedTrimmingState;
+            var invalidTrimming = trimState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile;
+            var isTrimmed = invalidTrimming || trimState == TrimmingDetector.TrimState.TrimmedAppUsingTrimmingFile;
+
+            telemetry.Record(ConfigTelemetryData.TrimmedAppDetected, isTrimmed, ConfigurationOrigins.Calculated);
+            telemetry.Record(ConfigTelemetryData.TrimmedAppMissingTrimmingFile, invalidTrimming, ConfigurationOrigins.Calculated);
+#endif
 
             if (AzureAppServiceMetadata is not null)
             {
@@ -1090,6 +1160,13 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether runtime metrics should be collected in OTEL format and exported via OTLP.
+        /// True when runtime metrics are enabled AND (DD_METRICS_OTEL_ENABLED=true AND OTEL_METRICS_EXPORTER=otlp).
+        /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
+        /// </summary>
+        internal bool OtlpRuntimeMetricsEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline
         /// is enabled.
         /// </summary>
@@ -1161,6 +1238,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringInDefaultState { get; }
 
         /// <summary>
+        /// Gets a raw value for DSM extractors
+        /// </summary>
+        internal List<DataStreamsTransactionExtractor> DataStreamsTransactionExtractors { get; }
+
+        /// <summary>
         /// Gets a value indicating whether data streams schema extraction is enabled or not.
         /// </summary>
         internal bool IsDataStreamsSchemaExtractionEnabled => IsDataStreamsMonitoringEnabled && !IsDataStreamsMonitoringInDefaultState;
@@ -1199,6 +1281,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
         internal DbmPropagationLevel DbmPropagationMode { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer should inject Base Hash in SQL Comments.
+        /// Default value is false (disabled).
+        /// </summary>
+        internal bool DbmInjectSqlBasehash { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer will generate 128-bit trace ids
@@ -1388,15 +1476,5 @@ namespace Datadog.Trace.Configuration
             Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
         }
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
-            new(
-                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
-                new ConfigurationTelemetry(),
-                new OverrideErrorLog(),
-                isLibDatadogAvailable);
     }
 }

@@ -14,7 +14,7 @@ public class AllTriggers
 {
     private readonly IHostApplicationLifetime _lifetime;
     private const string AtMidnightOnFirstJan = "0 0 0 1 Jan *";
-    private static readonly HttpClient HttpClient = new(); 
+    private static readonly HttpClient HttpClient = new();
     private static readonly ManualResetEventSlim _mutex = new(initialState: false, spinCount: 0);
 
     private readonly ILogger _logger;
@@ -35,7 +35,19 @@ public class AllTriggers
         _logger.LogInformation("$Profiler env vars: {EnvVars}", envVars);
 
         _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-        await CallFunctionHttp("trigger");
+
+        // Check if we should test APIM proxy headers
+        var testApim = Environment.GetEnvironmentVariable("DD_TEST_APIM_ENABLED");
+        if (testApim == "1" || testApim?.ToLowerInvariant() == "true")
+        {
+            _logger.LogInformation("APIM test enabled, calling simple endpoint with APIM headers");
+            await CallFunctionHttpWithProxy("simple");
+        }
+        else
+        {
+            await CallFunctionHttp("trigger");
+        }
+
         _logger.LogInformation($"Trigger All Timer complete: {DateTime.Now}");
         _mutex.Set();
     }
@@ -69,7 +81,7 @@ public class AllTriggers
         await Task.Yield();
         using var s = SampleHelpers.CreateScope("Manual inside Simple");
         _logger.LogInformation("C# HTTP trigger function processed a request.");
-        
+
         var res = req.CreateResponse(HttpStatusCode.OK);
         res.Headers.Add("Content-Type", "text/plain; charset=utf-8");
         await res.WriteStringAsync("This HTTP triggered function executed successfully!");
@@ -82,7 +94,7 @@ public class AllTriggers
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "trigger")] HttpRequestData req)
     {
         using var s = SampleHelpers.CreateScope("Manual inside Trigger");
-       
+
         _logger.LogInformation("Calling simple");
         await Attempt("simple");
         await Attempt("exception", expectFailure: true);
@@ -140,6 +152,31 @@ public class AllTriggers
         _logger.LogInformation("Calling Uri {Uri}", uri);
         var simpleResponse = await HttpClient.GetStringAsync(uri);
         return simpleResponse;
+    }
+
+    private async Task<string> CallFunctionHttpWithProxy(string path)
+    {
+        var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
+        var uri = $"http://{httpFunctionUrl}/api/{path}";
+        _logger.LogInformation("Calling Uri with APIM headers: {Uri}", uri);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        // Add Azure APIM proxy headers that will trigger the inferred span creation
+        var startTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        request.Headers.Add("x-dd-proxy", "azure-apim");
+        request.Headers.Add("x-dd-proxy-request-time-ms", startTimeMs.ToString());
+        request.Headers.Add("x-dd-proxy-domain-name", "my-apim-instance.azure-api.net");
+        request.Headers.Add("x-dd-proxy-httpmethod", "GET");
+        request.Headers.Add("x-dd-proxy-path", $"/api/{path}");
+        request.Headers.Add("x-dd-proxy-region", "canada central");
+
+        var response = await HttpClient.SendAsync(request);
+        var content = await response.Content.ReadAsStringAsync();
+
+        _logger.LogInformation("APIM proxy call completed with status: {StatusCode}", response.StatusCode);
+
+        return content;
     }
 
     private async Task Attempt(string endpoint, bool expectFailure = false)

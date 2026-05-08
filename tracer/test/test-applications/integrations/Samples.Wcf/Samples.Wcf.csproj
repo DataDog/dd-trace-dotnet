@@ -9,5 +9,6 @@
     <Reference Include="System.ServiceModel" />
     <ProjectReference Include="..\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj" />
     <Reference Include="System.ServiceModel.Web" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Wcf" Version="1.15.0-beta.1" />
   </ItemGroup>
 </Project>

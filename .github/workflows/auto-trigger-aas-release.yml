@@ -8,22 +8,20 @@ jobs:
   trigger_aas_release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      actions: read # read secrets
+      id-token: write # required for dd-octo-sts OIDC token
 
     steps:
-      - name: Generate GitHub App Token
-        id: generate-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      - name: Get GitHub Token via dd-octo-sts
+        id: octo-sts
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
         with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          repositories: datadog-aas-extension
+          scope: DataDog/datadog-aas-extension
+          policy: dd-trace-dotnet.github.trigger-aas-release
 
       - name: Trigger AAS release
         run: |
-          curl -X POST \
+          curl -fX POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer ${{ steps.generate-token.outputs.token }}" \
+          -H "Authorization: Bearer ${{ steps.octo-sts.outputs.token }}" \
           https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
           -d '{"event_type": "dd-trace-dotnet-release", "client_payload": {"is_prerelease":"${{github.event.release.prerelease}}", "version":"${{github.event.release.tag_name}}" } }'

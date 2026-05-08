@@ -53,7 +53,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
+      _dd.base_service: Samples.HotChocolate,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -234,7 +235,8 @@ query Book {
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
+      _dd.base_service: Samples.HotChocolate,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -264,7 +266,8 @@ mutation m {
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
+      _dd.base_service: Samples.HotChocolate,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -311,7 +314,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
+      _dd.base_service: Samples.HotChocolate,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -354,7 +358,8 @@ query ErrorQuery {
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
+      _dd.base_service: Samples.HotChocolate,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -397,7 +402,8 @@ query ErrorQuery {
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
+      _dd.base_service: Samples.HotChocolate,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -41,7 +42,7 @@ internal sealed partial class TestOptimizationClient
                 new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, GetTestConfigurations())),
             null);
 
-        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
         Log.Debug("TestOptimizationClient: Skippable.JSON RQ = {Json}", jsonQuery);
 
         string? queryResponse;
@@ -62,7 +63,7 @@ internal sealed partial class TestOptimizationClient
             return default;
         }
 
-        var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(queryResponse);
+        var deserializedResult = JsonHelper.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(queryResponse);
         if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
         {
             return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, []);
@@ -100,7 +101,7 @@ internal sealed partial class TestOptimizationClient
 
         if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
         {
-            Log.Debug("TestOptimizationClient: Skippable.JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
+            Log.Debug("TestOptimizationClient: Skippable.JSON Filtered = {Json}", JsonHelper.SerializeObject(testAttributes));
         }
 
         TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(testAttributes.Count);

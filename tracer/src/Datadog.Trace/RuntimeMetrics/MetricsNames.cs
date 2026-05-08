@@ -14,6 +14,7 @@ namespace Datadog.Trace.RuntimeMetrics
         public const string Gen2CollectionsCount = "runtime.dotnet.gc.count.gen2";
 
         public const string GcPauseTime = "runtime.dotnet.gc.pause_time";
+        public const string GcPauseTimeTotal = "runtime.dotnet.gc.pause_time.total";
         public const string GcMemoryLoad = "runtime.dotnet.gc.memory_load";
 
         public const string Gen0HeapSize = "runtime.dotnet.gc.size.gen0";

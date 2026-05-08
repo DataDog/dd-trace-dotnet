@@ -17,9 +17,6 @@ internal static class IastUtils
 
     private const int StartHash = 17;
 
-    // Avoid infinite loops
-    private const int MaxDepth = 5;
-
     public static int GetHashCode<T>(T value)
     {
         unchecked

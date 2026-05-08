@@ -55,20 +55,20 @@ public partial class FeatureFlagsEvaluatorTests
 
         void AssertEqual(object? expected, object? obj)
         {
-            if (type == Trace.FeatureFlags.ValueType.Integer && obj is int intObj)
+            if (expected is null)
+            {
+                Assert.Equal<object>(expected, obj);
+            }
+            else if (type == Trace.FeatureFlags.ValueType.Integer && obj is int intObj)
             {
                 Assert.Equal(Convert.ToInt32(expected), intObj);
             }
             else if (type == Trace.FeatureFlags.ValueType.Json)
             {
-                if (obj is string jsonTxt)
-                {
-                    Assert.Equal<object>(expected?.ToString(), obj);
-                }
-                else
-                {
-                    Assert.Equal<object>(expected, obj);
-                }
+                // Normalize BCL structure and Expected Json
+                var jsonTxt = JToken.Parse(JsonConvert.SerializeObject(obj)).ToString();
+                var expectedTxt = expected?.ToString();
+                Assert.Equal<object>(expectedTxt, jsonTxt);
             }
             else
             {

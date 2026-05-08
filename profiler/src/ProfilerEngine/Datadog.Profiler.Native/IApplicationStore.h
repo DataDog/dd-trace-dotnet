@@ -4,10 +4,11 @@
 #pragma once
 
 #include "ApplicationInfo.h"
+#include "IMemoryFootprintProvider.h"
 
 #include <string>
 
-class IApplicationStore
+class IApplicationStore : public IMemoryFootprintProvider
 {
 public:
     virtual ApplicationInfo GetApplicationInfo(const std::string& runtimeId) = 0;

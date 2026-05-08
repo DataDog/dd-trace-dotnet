@@ -14,6 +14,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Logging.TracerFlare;
@@ -76,7 +77,7 @@ internal sealed class TracerFlareApi
                 responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                 if (responseContent is not null)
                 {
-                    error = JObject.Parse(responseContent)["error"]?.ToString();
+                    error = JsonHelper.ParseJObject(responseContent)["error"]?.ToString();
                 }
             }
             catch (Exception e)

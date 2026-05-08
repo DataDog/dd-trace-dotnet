@@ -14,8 +14,8 @@ namespace Datadog.Trace.Activity.Handlers
 {
     internal sealed class DisableActivityHandler : IActivityHandler
     {
-        private List<Regex>? _disabledSourceNameGlobs = null;
-        private bool _disableAll = false;
+        private List<Regex>? _disabledSourceNameGlobs;
+        private bool _disableAll;
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity

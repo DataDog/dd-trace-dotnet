@@ -30,7 +30,7 @@ namespace Datadog.Trace.Logging
         /// <inheritdoc/>
         public bool ShouldLog(string filePath, int lineNumber, out uint skipCount)
         {
-            if (filePath == string.Empty || lineNumber == 0)
+            if (string.IsNullOrEmpty(filePath) || lineNumber == 0)
             {
                 // Shouldn't happen, but playing it safe incase there's a problem with the attributes
                 skipCount = 0;

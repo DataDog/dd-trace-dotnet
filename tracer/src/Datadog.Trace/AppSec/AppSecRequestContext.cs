@@ -1,16 +1,17 @@
-﻿// <copyright file="AppSecRequestContext.cs" company="Datadog">
+// <copyright file="AppSecRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
@@ -25,9 +26,10 @@ internal sealed partial class AppSecRequestContext
     private readonly object _sync = new();
     private readonly RaspMetricsHelper? _raspMetricsHelper = Security.Instance.RaspEnabled ? new RaspMetricsHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
-    private int _wafTimeout = 0;
-    private int? _wafError = null;
-    private int? _wafRaspError = null;
+    private readonly ConcurrentDictionary<ulong, bool> _sampledHttpClientRequests = new();
+    private int _wafTimeout;
+    private int? _wafError;
+    private int? _wafRaspError;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(Span span)
@@ -44,7 +46,7 @@ internal sealed partial class AppSecRequestContext
                 }
                 else
                 {
-                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    var triggers = JsonHelper.SerializeObject(_wafSecurityEvents);
                     span.Tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
                 }
             }
@@ -127,17 +129,37 @@ internal sealed partial class AppSecRequestContext
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(stackCategory))
+            if (!_raspStackTraces.TryGetValue(stackCategory, out var value))
             {
                 _raspStackTraces.Add(stackCategory, new());
             }
-            else if (maxStackTraces > 0 && _raspStackTraces[stackCategory].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && value.Count >= maxStackTraces)
             {
                 return;
             }
 
             _raspStackTraces[stackCategory].Add(stackTrace);
         }
+    }
+
+    public bool IsHttpClientRequestSampled(ulong id)
+    {
+        if (_sampledHttpClientRequests.TryGetValue(id, out bool value))
+        {
+            return value;
+        }
+
+        if (Security.Instance.SampleDownstreamRequest(this, id))
+        {
+            if (_sampledHttpClientRequests.Count < Security.Instance.ApiSecurityMaxDownstreamRequestBodyAnalysis)
+            {
+                _sampledHttpClientRequests[id] = true;
+                return true;
+            }
+        }
+
+        _sampledHttpClientRequests[id] = false;
+        return false;
     }
 }
 

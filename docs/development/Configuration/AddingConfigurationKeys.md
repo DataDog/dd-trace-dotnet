@@ -1,33 +1,30 @@
 # Adding New Configuration Keys
 
-This guide explains how to add new configuration keys to the .NET Tracer. Configuration keys are automatically generated from JSON and YAML source files using source generators.
+This guide explains how to add new configuration keys to the .NET Tracer. Configuration keys are automatically generated from a single YAML source file using source generators.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Step-by-Step Guide](#step-by-step-guide)
   - [1. Add the Configuration Key Definition](#1-add-the-configuration-key-definition)
-  - [2. Add Documentation](#2-add-documentation)
-  - [3. (Optional) Add Fallback Keys](#3-optional-add-fallback-keys-aliases)
-  - [4. (Optional) Override Constant Name](#4-optional-override-constant-name)
-  - [5. Build to Generate Code](#5-build-to-generate-code)
-  - [6. Use the Generated Key](#6-use-the-generated-key)
-  - [7. Add to Telemetry Normalization Rules](#7-add-to-telemetry-normalization-rules)
-  - [8. Test Your Changes](#8-test-your-changes)
+  - [2. (Optional) Add Aliases](#2-optional-add-aliases)
+  - [3. (Optional) Override Constant Name](#3-optional-override-constant-name)
+  - [4. Build to Generate Code](#4-build-to-generate-code)
+  - [5. Use the Generated Key](#5-use-the-generated-key)
+  - [6. Add to Telemetry Normalization Rules](#6-add-to-telemetry-normalization-rules)
+  - [7. Test Your Changes](#7-test-your-changes)
 - [Configuration Key Organization](#configuration-key-organization)
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
 
 ## Overview
 
-Configuration keys in the .NET Tracer are defined in two source files:
+Configuration keys in the .NET Tracer are defined in a single source file:
 
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** - Defines the configuration keys, their
-  environment variable names, and optional fallbacks.
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** - Contains XML documentation for
-  each key. We're using yaml here as it makes it easier for some of the long documentation summaries and formatting.
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** - Defines the configuration keys, their
+  environment variable names, types, defaults, optional aliases, constant name overrides, and XML documentation.
 
-Two source generators read these files at build time:
+Two source generators read this file at build time:
 
 1. **`ConfigurationKeysGenerator`** - Generates the configuration key constants:
    - `ConfigurationKeys.g.cs` - Main configuration keys class with all constants
@@ -40,86 +37,68 @@ Two source generators read these files at build time:
 
 ### 1. Add the Configuration Key Definition
 
-Add your new configuration key to `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`, specifying
-an implementation string (`"A"` being the default one, as shown below) and specifying the product if required. Any product name
+Add your new configuration key to `tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`, specifying
+an implementation string (`A` being the default one, as shown below) and specifying the product if required. Any product name
 is allowed, but try to reuse the existing ones (see [Common products](#common-products)) if it makes sense, as they will create another partial class, ie
 ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in the main class, ConfigurationKeys.cs.
 
 **Required fields (mandatory):**
 - `implementation`: The implementation identifier
-  - `"A"` being the default one, it needs to match the registry implementation with the same type and default values
+  - `A` being the default one, it needs to match the registry implementation with the same type and default values
 - `type`: The type of the configuration value (for example `string`, `boolean`, `int`, `decimal`)
 - `default`: The default value applied by the tracer when the env var is not set. Use `null` if there is no default.
+
+**Optional fields:**
+- `product`: Groups the key into a product-specific partial class (e.g., `OpenTelemetry`)
+- `aliases`: A list of fallback environment variable names checked in order when the primary key is not found
+- `const_name`: Overrides the auto-generated PascalCase constant name (useful for backward compatibility)
+- `documentation`: XML documentation for the key (supports `<see>`, `<seealso>`, `<c>` tags; do **not** include `<summary>` tags)
 
 These fields are mandatory to keep the configuration registry complete and to ensure consistent behavior and documentation across products.
 
 **Example:**
-```json
-{
-  "version": "2",
-  "supportedConfigurations": {
-    "DD_TRACE_SAMPLE_RATE": [
-      {
-        "implementation": "A",
-        "type": "decimal",
-        "default": null
-      }
-    ],
-    "OTEL_EXPORTER_OTLP_TIMEOUT": [
-      {
-        "implementation": "A",
-        "type": "int",
-        "default": null,
-        "product": "OpenTelemetry"
-      }
-    ]
-  }
-}
+```yaml
+version: '2'
+supportedConfigurations:
+  DD_TRACE_SAMPLE_RATE:
+  - implementation: A
+    type: decimal
+    default: null
+    documentation: |-
+      Configuration key for setting the global sampling rate.
+      Value should be between 0.0 and 1.0.
+  OTEL_EXPORTER_OTLP_TIMEOUT:
+  - implementation: A
+    type: int
+    default: null
+    product: OpenTelemetry
+    documentation: |-
+      Configuration key for the general OTLP export timeout in milliseconds.
+      Default value is 10000ms.
 ```
 
 This generates:
 - `ConfigurationKeys.TraceSampleRate` (no product)
 - `ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout` (with product)
 
-### 2. Add Documentation
+### 2. (Optional) Add Aliases
 
-Add XML documentation for your key in `tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`.
+Configuration keys can have **aliases** that are checked in order of appearance when the primary key is not found. Add them to the `aliases` property of the configuration entry in `supported-configurations.yaml`:
 
-**Format:**
 ```yaml
-OTEL_EXPORTER_OTLP_LOGS_TIMEOUT: |
-  Configuration key for the timeout in milliseconds for OTLP logs export.
-  Falls back to <see cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/> if not set.
-  Default value is 10000ms (10 seconds).
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtlpLogsTimeoutMs"/>
-```
-
-**Important Notes:**
-- The YAML key must **exactly match** the JSON key (environment variable name)
-- **Do NOT include `<summary>` tags** - the source generator automatically wraps your documentation in `<summary>` tags
-- You can include `<seealso>` and `<see>` tags directly in the content - the source generator will extract `<seealso>` tags and place them outside the `<summary>` section as needed
-
-### 3. (Optional) Add Aliases
-
-Configuration keys can have **aliases** that are checked in order of appearance when the primary key is not found. Add them to the `aliases` property of the configuration entry in `supported-configurations.json`:
-
-```json
-{
-  "version": "2",
-  "supportedConfigurations": {
-    "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
-      {
-        "implementation": "A",
-        "type": "int",
-        "default": null,
-        "product": "OpenTelemetry",
-        "aliases": [
-          "OTEL_EXPORTER_OTLP_TIMEOUT"
-        ]
-      }
-    ]
-  }
-}
+supportedConfigurations:
+  OTEL_EXPORTER_OTLP_LOGS_TIMEOUT:
+  - implementation: A
+    type: int
+    default: null
+    product: OpenTelemetry
+    aliases:
+    - OTEL_EXPORTER_OTLP_TIMEOUT
+    documentation: |-
+      Configuration key for the timeout in milliseconds for OTLP logs export.
+      Falls back to <see cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/> if not set.
+      Default value is 10000ms (10 seconds).
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtlpLogsTimeoutMs"/>
 ```
 
 **How it works:**
@@ -127,30 +106,36 @@ Configuration keys can have **aliases** that are checked in order of appearance 
 2. If not found, it automatically checks `OTEL_EXPORTER_OTLP_TIMEOUT` (the alias)
 3. If still not found, it uses the default value
 
-The `ConfigKeyAliasesSwitcherGenerator` source generator automatically generates the alias resolution logic from this section. No additional code is needed - just use the primary configuration key constant and the aliases are handled transparently.
+The `ConfigKeyAliasesSwitcherGenerator` source generator automatically generates the alias resolution logic from the `aliases` field. No additional code is needed - just use the primary configuration key constant and the aliases are handled transparently.
 
 **Use cases:**
 - **Specific → General fallback:** A specific key (e.g., logs timeout) falls back to a general key (e.g., overall timeout)
 - **Backward compatibility:** Renamed keys can fall back to their old names to maintain compatibility
 - **Hierarchical configuration:** More specific settings fall back to broader settings
 
-### 4. (Optional) Override Constant Name
+### 3. (Optional) Override Constant Name
 
 By default, the source generator automatically converts environment variable names to PascalCase constant names:
 - `DD_TRACE_ENABLED` → `TraceEnabled`
 - `OTEL_EXPORTER_OTLP_TIMEOUT` → `ExporterOtlpTimeout`
 
-If you need to explicitly control the constant name (e.g., for backward compatibility), add an entry to `tracer/src/Datadog.Trace/Configuration/configuration_keys_mapping.json`:
+If you need to explicitly control the constant name (e.g., for backward compatibility), add a `const_name` field to the configuration entry in `supported-configurations.yaml`:
 
-```json
-{
-  "DD_YOUR_CUSTOM_KEY": "YourPreferredConstantName"
-}
+```yaml
+supportedConfigurations:
+  DD_YOUR_CUSTOM_KEY:
+  - implementation: A
+    type: string
+    default: null
+    const_name: YourPreferredConstantName
+    documentation: Your documentation here.
 ```
 
-**Note:** This mapping file exists primarily for backward compatibility with existing constant names. For new keys, it's recommended to let the generator automatically deduce the name from the environment variable.
+**Note:** The `const_name` field exists primarily for backward compatibility with existing constant names. For new 
+keys, it's recommended to let the generator automatically deduce the name from the environment variable, unless the 
+result is not acceptable.
 
-### 5. Build to Generate Code
+### 4. Build to Generate Code
 
 Build the `Datadog.Trace` project to run the source generator, either using Nuke or by building the project directly from the command line or your IDE:
 
@@ -166,7 +151,7 @@ The generator will create/update files in:
 - `ConfigurationKeys.g.cs` - Main file with all keys
 - `ConfigurationKeys.<Product>.g.cs` - Product-specific partial classes (if using `product` field)
 
-### 6. Use the Generated Key
+### 5. Use the Generated Key
 
 After building, you can use the generated constant in your code:
 
@@ -213,7 +198,7 @@ The codebase includes Roslyn analyzers that enforce the use of configuration key
 
 These analyzers help prevent typos and ensure consistency across the codebase by enforcing compile-time validation of configuration keys.
 
-### 7. Add to Telemetry Normalization Rules
+### 6. Add to Telemetry Normalization Rules
 
 Configuration keys are reported in telemetry with normalized names. Add your key to the normalization rules:
 
@@ -234,11 +219,12 @@ Configuration keys are reported in telemetry with normalized names. Add your key
 
 **Important:** The `config_norm_rules.json` file is a copy from the [dd-go repository](https://github.com/DataDog/dd-go). After updating this file locally, you must also submit a PR to update the canonical version in the dd-go repository to keep the normalization rules synchronized across all Datadog tracers.
 
-### 8. Test Your Changes
+### 7. Test Your Changes
 
 1. **Verify generation:** Check that your key appears in the generated files
 2. **Telemetry tests:** Ensure telemetry normalization tests pass in `tracer/test/Datadog.Trace.Tests/Telemetry/`
 3. **Integration tests:** Test the configuration key in real scenarios where it's used
+4. **Documentation:** Verify the `documentation` field renders correctly in the generated XML docs
 
 ## Configuration Key Organization
 
@@ -246,12 +232,14 @@ Configuration keys are reported in telemetry with normalized names. Add your key
 
 Use the `product` field to organize related keys into nested classes:
 
-```json
-{
-  "OTEL_EXPORTER_OTLP_ENDPOINT": {
-    "product": "OpenTelemetry"
-  }
-}
+```yaml
+supportedConfigurations:
+  OTEL_EXPORTER_OTLP_ENDPOINT:
+  - implementation: A
+    type: string
+    default: null
+    product: OpenTelemetry
+    documentation: Configuration key for the OTLP exporter endpoint.
 ```
 
 Generates: `ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint`
@@ -272,24 +260,18 @@ Generates: `ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint`
 
 ### Example 1: Simple Configuration Key
 
-**supported-configurations.json:**
-```json
-{
-  "supportedConfigurations": {
-    "DD_TRACE_SAMPLE_RATE": {
-      "version": ["A"]
-    }
-  }
-}
-```
-
-**supported-configurations-docs.yaml:**
+**supported-configurations.yaml:**
 ```yaml
-DD_TRACE_SAMPLE_RATE: |
-  Configuration key for setting the global sampling rate.
-  Value should be between 0.0 and 1.0.
-  Default value is 1.0 (100% sampling).
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.GlobalSamplingRate"/>
+supportedConfigurations:
+  DD_TRACE_SAMPLE_RATE:
+  - implementation: A
+    type: decimal
+    default: null
+    documentation: |-
+      Configuration key for setting the global sampling rate.
+      Value should be between 0.0 and 1.0.
+      Default value is 1.0 (100% sampling).
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.GlobalSamplingRate"/>
 ```
 
 **Usage:**
@@ -299,39 +281,30 @@ var rate = source.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 
 ### Example 2: Configuration Key with Aliases
 
-**supported-configurations.json:**
-```json
-{
-  "supportedConfigurations": {
-    "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": {
-      "version": ["A"],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_TIMEOUT": {
-      "version": ["A"],
-      "product": "OpenTelemetry"
-    }
-  },
-  "aliases": {
-    "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
-      "OTEL_EXPORTER_OTLP_TIMEOUT"
-    ]
-  }
-}
-```
-
-**supported-configurations-docs.yaml:**
+**supported-configurations.yaml:**
 ```yaml
-OTEL_EXPORTER_OTLP_LOGS_TIMEOUT: |
-  Configuration key for the timeout in milliseconds for OTLP logs export.
-  Falls back to <see cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout"/> if not set.
-  Default value is 10000ms.
-  <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtlpLogsTimeoutMs"/>
-
-OTEL_EXPORTER_OTLP_TIMEOUT: |
-  Configuration key for the general OTLP export timeout in milliseconds.
-  Used as alias for specific timeout configurations.
-  Default value is 10000ms.
+supportedConfigurations:
+  OTEL_EXPORTER_OTLP_LOGS_TIMEOUT:
+  - implementation: A
+    type: int
+    default: null
+    product: OpenTelemetry
+    aliases:
+    - OTEL_EXPORTER_OTLP_TIMEOUT
+    documentation: |-
+      Configuration key for the timeout in milliseconds for OTLP logs export.
+      Falls back to <see cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeout"/> if not set.
+      Default value is 10000ms.
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtlpLogsTimeoutMs"/>
+  OTEL_EXPORTER_OTLP_TIMEOUT:
+  - implementation: A
+    type: int
+    default: null
+    product: OpenTelemetry
+    documentation: |-
+      Configuration key for the general OTLP export timeout in milliseconds.
+      Used as alias for specific timeout configurations.
+      Default value is 10000ms.
 ```
 
 **Usage:**
@@ -342,25 +315,19 @@ var timeout = source.GetInt32(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTi
 
 ### Example 3: Feature Flag
 
-**supported-configurations.json:**
-```json
-{
-  "supportedConfigurations": {
-    "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED": {
-      "version": ["A"],
-      "product": "FeatureFlags"
-    }
-  }
-}
-```
-
-**supported-configurations-docs.yaml:**
+**supported-configurations.yaml:**
 ```yaml
-DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED: |
-  Enables generating 128-bit trace ids instead of 64-bit trace ids.
-  Note that a 128-bit trace id may be received from an upstream service or from
-  an Activity even if we are not generating them ourselves.
-  Default value is <c>true</c> (enabled).
+supportedConfigurations:
+  DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED:
+  - implementation: A
+    type: boolean
+    default: 'true'
+    product: FeatureFlags
+    documentation: |-
+      Enables generating 128-bit trace ids instead of 64-bit trace ids.
+      Note that a 128-bit trace id may be received from an upstream service or from
+      an Activity even if we are not generating them ourselves.
+      Default value is <c>true</c> (enabled).
 ```
 
 **Usage:**
@@ -381,8 +348,8 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
 ### Key not found in generated code
 
 **Check:**
-1. JSON key matches YAML key exactly (case-sensitive)
-2. JSON is valid (no trailing commas, proper escaping)
+1. YAML key matches the environment variable name exactly (case-sensitive)
+2. YAML syntax is valid (proper indentation, correct field names)
 3. Build succeeded without errors
 4. Looking in the correct namespace/product class
 
@@ -396,16 +363,16 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
 ### Documentation not appearing
 
 **Check:**
-1. YAML key exactly matches JSON key
-2. YAML syntax is correct (proper indentation, pipe `|` for multi-line)
+1. The `documentation` field is present in the configuration entry
+2. YAML syntax is correct (proper indentation, pipe `|` or `|-` for multi-line)
 3. XML tags are properly closed
 4. Rebuild after YAML changes
 
 ### Aliases not working
 
 **Check:**
-1. Alias key is defined in `supportedConfigurations` section
-2. Alias array is in correct order (first alias is tried first)
+1. Alias key exists as its own entry in `supportedConfigurations`
+2. `aliases` list is in correct order (first alias is tried first)
 3. Both `ConfigurationKeysGenerator` and `ConfigKeyAliasesSwitcherGenerator` ran successfully during build
 
 ## Related Files
@@ -413,7 +380,6 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
 - **Source generators:**
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigurationKeysGenerator.cs` - Generates configuration key constants
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigKeyAliasesSwitcherGenerator.cs` - Generates alias resolution logic
-- **Configuration source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`
-- **Documentation source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`
+- **Configuration source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml` - Single source of truth for all configuration keys, aliases, constant name overrides, and documentation
 - **Telemetry rules:** `tracer/test/Datadog.Trace.Tests/Telemetry/config_norm_rules.json`
 - **Generated output:** `tracer/src/Datadog.Trace/Generated/<tfm>/Datadog.Trace.SourceGenerators/`

@@ -3,9 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -25,8 +30,9 @@ internal static class TracerHelper
         IScopeManager scopeManager = null,
         IDogStatsd statsd = null,
         ITelemetryController telemetryController = null,
-        IDiscoveryService discoveryService = null) =>
-        new(settings, agentWriter, sampler, scopeManager, statsd, discoveryService: discoveryService, telemetryController: telemetryController);
+        IDiscoveryService discoveryService = null,
+        ServiceRemappingHash serviceRemappingHash = null) =>
+        new(settings, agentWriter, sampler, scopeManager, statsd, discoveryService: discoveryService, telemetryController: telemetryController, serviceRemappingHash: serviceRemappingHash);
 
     /// <summary>
     /// Create a test instance of the Tracer, that doesn't use any shared instances

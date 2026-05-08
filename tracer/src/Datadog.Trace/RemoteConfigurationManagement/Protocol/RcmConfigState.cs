@@ -3,13 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal sealed class RcmConfigState
     {
-        public RcmConfigState(string id, long version, string product, ulong applyState, string applyError = null)
+        public RcmConfigState(string id, long version, string product, ulong applyState, string? applyError = null)
         {
             Id = id;
             Version = version;
@@ -31,6 +33,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public ulong ApplyState { get; }
 
         [JsonProperty("apply_error")]
-        public string ApplyError { get; }
+        public string? ApplyError { get; }
     }
 }

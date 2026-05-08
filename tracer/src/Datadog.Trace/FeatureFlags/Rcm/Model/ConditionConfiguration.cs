@@ -14,7 +14,7 @@ namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class ConditionConfiguration
 {
-    private Regex? _regex = null;
+    private Regex? _regex;
 
     public ConditionOperator? Operator { get; set; }
 

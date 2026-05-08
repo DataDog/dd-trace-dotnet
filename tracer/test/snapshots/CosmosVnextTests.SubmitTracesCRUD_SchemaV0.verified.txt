@@ -17,7 +17,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -44,7 +45,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -73,7 +75,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -100,7 +103,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -113,7 +117,7 @@
     TraceId: Id_9,
     SpanId: Id_10,
     Name: cosmosdb.query,
-    Resource: Delete dbs/db/colls/items/docs/TestFamily.1,
+    Resource: Delete dbs/db/colls/items/docs/?,
     Service: Samples.CosmosDb.Vnext-cosmosdb,
     Type: sql,
     Tags: {
@@ -129,7 +133,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -156,7 +161,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -183,7 +189,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -196,7 +203,7 @@
     TraceId: Id_15,
     SpanId: Id_16,
     Name: cosmosdb.query,
-    Resource: Read dbs/db/colls/items/docs/TestFamily.1,
+    Resource: Read dbs/db/colls/items/docs/?,
     Service: Samples.CosmosDb.Vnext-cosmosdb,
     Type: sql,
     Tags: {
@@ -212,7 +219,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -225,7 +233,7 @@
     TraceId: Id_17,
     SpanId: Id_18,
     Name: cosmosdb.query,
-    Resource: Replace dbs/db/colls/items/docs/TestFamily.1,
+    Resource: Replace dbs/db/colls/items/docs/?,
     Service: Samples.CosmosDb.Vnext-cosmosdb,
     Type: sql,
     Tags: {
@@ -241,7 +249,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,

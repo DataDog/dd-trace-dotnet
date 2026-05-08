@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -37,7 +39,7 @@ internal sealed class JsonTokenizer : ITokenizer
 
         var redactedRanges = new List<Range>();
         using var sr = new StringReader(value);
-        using var reader = new JsonTextReader(sr);
+        using var reader = new JsonTextReader(sr) { ArrayPool = JsonArrayPool.Shared };
 
         while (reader.Read())
         {

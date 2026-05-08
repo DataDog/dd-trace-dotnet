@@ -28,6 +28,27 @@ public:
     void Map(DWORD threadOSId, const WCHAR* name) override;
     void LogCpuTimes() override;
 
+    // IMemoryFootprintProvider
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
+
+private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t mapSize;
+        size_t threadCount;
+        size_t mapBuckets;
+        size_t threadInfosSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + mapSize + threadInfosSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
 private:
     bool StartImpl() override;
     bool StopImpl() override;
@@ -36,7 +57,8 @@ private:
 
     // Need to protect access to the map. However, it should not trigger a lot of contention
     // because mostly needed when naming threads and logging CPU usage
-    std::recursive_mutex _lockThreads;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::recursive_mutex _lockThreads;
 
     // map thread OS id to ThreadCpuInfo that stores name
     std::unordered_map<DWORD, std::unique_ptr<ThreadCpuInfo>> _threads;

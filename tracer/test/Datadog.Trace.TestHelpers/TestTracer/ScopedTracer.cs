@@ -25,8 +25,9 @@ internal class ScopedTracer : Tracer, IAsyncDisposable
         IScopeManager scopeManager = null,
         IDogStatsd statsd = null,
         ITelemetryController telemetryController = null,
-        IDiscoveryService discoveryService = null)
-        : this(settings, agentWriter, sampler, scopeManager, statsd is null ? null : new TestStatsdManager(statsd), telemetryController, discoveryService)
+        IDiscoveryService discoveryService = null,
+        ServiceRemappingHash serviceRemappingHash = null)
+        : this(settings, agentWriter, sampler, scopeManager, statsd is null ? null : new TestStatsdManager(statsd), telemetryController, discoveryService, serviceRemappingHash)
     {
     }
 
@@ -37,8 +38,9 @@ internal class ScopedTracer : Tracer, IAsyncDisposable
         IScopeManager scopeManager,
         IStatsdManager statsdManager,
         ITelemetryController telemetryController = null,
-        IDiscoveryService discoveryService = null)
-        : base(settings, agentWriter, sampler, scopeManager, statsdManager, telemetry: telemetryController, discoveryService: discoveryService)
+        IDiscoveryService discoveryService = null,
+        ServiceRemappingHash serviceRemappingHash = null)
+        : base(settings, agentWriter, sampler, scopeManager, statsdManager, telemetry: telemetryController, discoveryService: discoveryService, serviceRemappingHash: serviceRemappingHash)
     {
     }
 

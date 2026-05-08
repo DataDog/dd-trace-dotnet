@@ -3,12 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace
 {
     internal static class TracerConstants
     {
+        public const string TelemetrySdkName = "datadog";
         public const string Language = "dotnet";
-        public const string AssemblyVersion = "3.38.0.0";
-        public const string ThreePartVersion = "3.38.0";
+        public const string AssemblyVersion = "3.44.0.0";
+        public const string ThreePartVersion = "3.44.0";
+
+        public static ReadOnlySpan<byte> AssemblyVersionBytes => "3.44.0.0"u8;
     }
 }

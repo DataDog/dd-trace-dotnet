@@ -127,7 +127,7 @@ internal static class OtlpLogsSerializer
         return writePosition;
     }
 
-    private static int WriteScopeLogs(byte[] buffer, int writePosition, string scopeName, IReadOnlyList<LogPoint> logs)
+    private static int WriteScopeLogs(byte[] buffer, int writePosition, string scopeName, List<LogPoint> logs)
     {
         writePosition = ProtobufSerializer.WriteTag(buffer, writePosition, ScopeLogs_Scope, ProtobufWireType.LEN);
         int scopeLengthPosition = writePosition;

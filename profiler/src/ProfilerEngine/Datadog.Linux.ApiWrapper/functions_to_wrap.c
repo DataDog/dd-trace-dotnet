@@ -673,6 +673,47 @@ pid_t fork()
 }
 #endif
 #endif
+
+// https://github.com/DataDog/dd-trace-dotnet/pull/8162
+// There is a stack overflow on the altstack when coreclr's SIGSEGV handler is interrupted by
+// SIGPROF/SIGUSR1 signals.
+//
+// * sigaction is wrapped to mask SIGPROF/SIGUSR1 to make sure that the thread is not interrupted
+// while executing the SIGSEGV handler.
+//
+// * pthread_sigmask is called by the runtime to unblock SIGSEGV. The CLR never returns from SIGSEGV handler,
+// instead it jumps back from the altstack to the main stack, unblocks SIGSEGV and continues execution.
+// We need to unblock SIGPROF/SIGUSR1 as well to allow the profiler continue working.
+
+static int (*__real_sigaction)(int signum, const struct sigaction* act, struct sigaction* oldact) = NULL;
+static int (*__real_pthread_sigmask)(int how, const sigset_t *set, sigset_t *oldset) = NULL;
+
+int sigaction(int signum, const struct sigaction* act, struct sigaction* oldact)
+{
+    check_init();
+    if (signum == SIGSEGV && act != NULL)
+    {
+        struct sigaction new_act = *act;
+        sigaddset(&new_act.sa_mask, SIGPROF);
+        sigaddset(&new_act.sa_mask, SIGUSR1);
+        return __real_sigaction(signum, &new_act, oldact);
+    }
+    return __real_sigaction(signum, act, oldact);
+}
+
+int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
+{
+    check_init();
+    if (how == SIG_UNBLOCK && set != NULL && 1 == sigismember(set, SIGSEGV))
+    {
+        sigset_t new_set = *set;
+        sigaddset(&new_set, SIGPROF);
+        sigaddset(&new_set, SIGUSR1);
+        return __real_pthread_sigmask(how, &new_set, oldset);
+    }
+    return __real_pthread_sigmask(how, set, oldset);
+}
+
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 
 static void init()
@@ -682,6 +723,8 @@ static void init()
     __real_dlclose = __dd_dlsym(RTLD_NEXT, "dlclose");
     __real_dladdr = __dd_dlsym(RTLD_NEXT, "dladdr");
     __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
+    __real_sigaction = __dd_dlsym(RTLD_NEXT, "sigaction");
+    __real_pthread_sigmask = __dd_dlsym(RTLD_NEXT, "pthread_sigmask");
 #ifdef DD_ALPINE
     __real_pthread_create = __dd_dlsym(RTLD_NEXT, "pthread_create");
     __real_pthread_attr_init = __dd_dlsym(RTLD_NEXT, "pthread_attr_init");

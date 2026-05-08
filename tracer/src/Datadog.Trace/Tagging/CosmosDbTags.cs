@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class CosmosDbV1Tags : CosmosDbTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }

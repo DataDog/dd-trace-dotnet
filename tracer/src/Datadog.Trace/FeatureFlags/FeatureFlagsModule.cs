@@ -27,8 +27,8 @@ namespace Datadog.Trace.FeatureFlags
         private readonly FfeProduct _ffeProduct;
         private readonly ExposureApi _exposureApi;
 
-        private Action? _onNewConfigEventHander = null;
-        private FeatureFlagsEvaluator? _evaluator = null;
+        private Action? _onNewConfigEventHander;
+        private FeatureFlagsEvaluator? _evaluator;
 
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {

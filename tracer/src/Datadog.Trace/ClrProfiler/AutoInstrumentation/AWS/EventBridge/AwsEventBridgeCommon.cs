@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -19,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private const string DatadogAwsEventBridgeServiceName = "aws-eventbridge";
         private const string EventBridgeRequestOperationName = "eventbridge.request";
         private const string EventBridgeServiceName = "EventBridge";
-        private const string EventBridgeOperationName = "aws.eventbridge";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsEventBridgeCommon));
 
         internal const string IntegrationName = nameof(IntegrationId.AwsEventBridge);
@@ -41,9 +41,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             try
             {
                 tags = perTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
-                var serviceName = perTraceSettings.GetServiceName(DatadogAwsEventBridgeServiceName);
+                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsEventBridgeServiceName);
                 var operationName = GetOperationName(tracer);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         {
             return tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0
                        ? EventBridgeRequestOperationName
-                       : tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(EventBridgeOperationName);
+                       : tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsEventBridge);
         }
     }
 }

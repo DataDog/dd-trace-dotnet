@@ -21,13 +21,11 @@ internal interface IInferredProxyExtractor
     /// <typeparam name="TCarrierGetter">The type that can extract values from the carrier.</typeparam>
     /// <param name="carrier">The container of the headers.</param>
     /// <param name="carrierGetter">Helper to extract values from the carrier.</param>
-    /// <param name="tracer">The <see cref="Tracer"/> instance.</param>
-    /// <param name="data">When sucessful, contains the extracted proxy metadata.</param>
+    /// <param name="data">When successful, contains the extracted proxy metadata.</param>
     /// <returns><see langword="true"/> if extraction was successful; otherwise, <see langword="false"/>. </returns>
     bool TryExtract<TCarrier, TCarrierGetter>(
         TCarrier carrier,
         TCarrierGetter carrierGetter,
-        Tracer tracer,
         out InferredProxyData data)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
 }

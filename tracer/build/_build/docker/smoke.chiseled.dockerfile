@@ -30,6 +30,9 @@ ENV ASPNETCORE_URLS=http://localhost:5000
 # Copy the empty folder to create the logs directory
 COPY --chown=$APP_UID --from=builder /empty/ /var/log/datadog/dotnet/
 
+# Ensure /app is writable by the non-root user (for completed.txt marker)
+COPY --chown=$APP_UID --from=builder /empty/ /app/
+
 WORKDIR /app
 
 # Copy the app across

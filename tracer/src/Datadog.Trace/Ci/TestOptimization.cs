@@ -250,6 +250,7 @@ internal sealed class TestOptimization : ITestOptimization
             getDiscoveryServiceFunc: static s => DiscoveryService.CreateUnmanaged(
                 s.TracerSettings.Manager.InitialExporterSettings,
                 ContainerMetadata.Instance,
+                new ServiceRemappingHash(null),
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,
@@ -616,7 +617,7 @@ internal sealed class TestOptimization : ITestOptimization
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
                 DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
+                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
                 TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
@@ -668,7 +669,7 @@ internal sealed class TestOptimization : ITestOptimization
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
         DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
+        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);
         SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
         TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);

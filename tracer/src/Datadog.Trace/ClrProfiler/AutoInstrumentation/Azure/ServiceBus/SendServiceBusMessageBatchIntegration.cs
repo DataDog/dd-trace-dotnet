@@ -35,8 +35,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class SendServiceBusMessageBatchIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SendServiceBusMessageBatchIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>

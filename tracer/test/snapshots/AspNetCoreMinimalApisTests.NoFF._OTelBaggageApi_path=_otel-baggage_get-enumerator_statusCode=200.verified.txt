@@ -1,0 +1,46 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: GetEnumerator,
+    Resource: GetEnumerator,
+    Service: Samples.AspNetCoreMinimalApis,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel-baggage: foo_case_sensitive_key=UNTOUCHED,unused_key=unused_value,remove_me_key=remove_me_value,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet_core.request,
+    Resource: GET otel-baggage/get-enumerator,
+    Service: Samples.AspNetCoreMinimalApis,
+    Type: web,
+    Tags: {
+      component: aspnet_core,
+      datadog-header-tag: asp-net-core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.sample_correlation_identifier: 0000-0000-0000,
+      http.response.headers.server: Kestrel,
+      http.status_code: 200,
+      http.url: http://localhost:00000/otel-baggage/get-enumerator,
+      http.useragent: testhelper,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

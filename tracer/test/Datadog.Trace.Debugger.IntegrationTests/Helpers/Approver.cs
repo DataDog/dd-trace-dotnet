@@ -23,7 +23,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
     {
         private static readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
         private static readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
-        private static readonly string[] _knownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth" };
+        private static readonly string[] _knownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "process_tags" };
 
         internal static async Task ApproveSnapshots(string[] snapshots, string testName, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, string[] typesToScrub = null, bool orderPostScrubbing = false)
         {

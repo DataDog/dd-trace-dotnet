@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast.Settings;
 
@@ -43,9 +44,9 @@ internal sealed class IastSettings
     {
         var config = new ConfigurationBuilder(source, telemetry);
         WeakCipherAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakCipherAlgorithms).AsString(WeakCipherAlgorithmsDefault);
-        WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+        WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
         WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
-        WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+        WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
         Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(false);
         DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(true);
         RequestSampling = config

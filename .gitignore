@@ -390,7 +390,8 @@ datadog-coverage-*
 .nuke/build.schema.json
 
 # Claude Code
-.claude/settings.local.json
+.claude/*.local.*
+.claude/worktrees
 CLAUDE.local.md
 
 # tools/dumps
@@ -401,3 +402,6 @@ tools/dumps/
 !tools/dumps/README_DEBIAN_ARM64.md
 !tools/dumps/start_debian-arm64.cmd
 !tools/dumps/start_debian-arm64.sh
+
+# test optimization temp/run folder
+.dd/

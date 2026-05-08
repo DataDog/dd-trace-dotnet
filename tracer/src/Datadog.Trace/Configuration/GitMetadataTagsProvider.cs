@@ -24,8 +24,8 @@ internal sealed class GitMetadataTagsProvider : IGitMetadataTagsProvider
     private readonly string? _gitCommitSha;
     private readonly string? _gitRepositoryUrl;
     private readonly IScopeManager _scopeManager;
-    private GitMetadata? _cachedGitTags = null;
-    private int _tryCount = 0;
+    private GitMetadata? _cachedGitTags;
+    private int _tryCount;
 
     public GitMetadataTagsProvider(TracerSettings immutableTracerSettings, MutableSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
     {

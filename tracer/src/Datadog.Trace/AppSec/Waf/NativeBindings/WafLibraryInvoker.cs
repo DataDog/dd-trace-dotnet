@@ -15,11 +15,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     internal sealed class WafLibraryInvoker : IWafLibraryInvoker
     {
-#if NETFRAMEWORK
-        private const string DllName = "ddwaf.dll";
-#else
-        private const string DllName = "ddwaf";
-#endif
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
 
@@ -251,24 +246,35 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal string[] GetKnownAddresses(IntPtr wafHandle)
         {
-            uint size = 0;
-            var result = _getKnownAddresses(wafHandle, ref size);
-
-            if (size == 0)
+            try
             {
-                return Array.Empty<string>();
+                if (_isKnownAddressesSuported)
+                {
+                    uint size = 0;
+                    var result = _getKnownAddresses(wafHandle, ref size);
+
+                    if (size > 0)
+                    {
+                        string[] knownAddresses = new string[size];
+
+                        for (uint i = 0; i < size; i++)
+                        {
+                            // Calculate the pointer to each string
+                            var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
+                            knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
+                        }
+
+                        return knownAddresses;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error getting known addresses");
+                _isKnownAddressesSuported = false;
             }
 
-            string[] knownAddresses = new string[size];
-
-            for (uint i = 0; i < size; i++)
-            {
-                // Calculate the pointer to each string
-                var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
-                knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
-            }
-
-            return knownAddresses;
+            return Array.Empty<string>();
         }
 
         internal bool IsKnowAddressesSuported(string libVersion = null)
@@ -285,14 +291,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     GetVersion();
                     _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version) >= new Version("1.19.0");
                 }
-
-                return _isKnownAddressesSuported;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while checking if known addresses are supported");
-                return false;
+                _isKnownAddressesSuported = false;
             }
+
+            return _isKnownAddressesSuported;
         }
 
         internal string GetVersion()

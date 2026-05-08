@@ -35,7 +35,9 @@ public sealed class HandlerWrapperSetHandlerIntegration
 {
     private const string IntegrationName = nameof(IntegrationId.AwsLambda);
     private static readonly ILambdaExtensionRequest RequestBuilder = new LambdaRequestBuilder();
-    private static readonly Async1Callbacks Callbacks = new();
+#pragma warning disable CS0649 // Field 'HandlerWrapperSetHandlerIntegration.Callbacks' is never assigned to, and will always have its default value - and yes, that's fine
+    private static readonly Async1Callbacks Callbacks;
+#pragma warning restore CS0649
 
     /// <summary>
     /// OnMethodBegin callback. The input Delegate handler is the customer's handler.
