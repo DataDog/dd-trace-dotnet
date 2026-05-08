@@ -6,10 +6,7 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Pdb;
 
 #if NETCOREAPP
@@ -24,50 +21,63 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin;
 
 internal static class EndpointDetector
 {
-    private static readonly HashSet<string> ControllerAttributes =
-    [
-        "Microsoft.AspNetCore.Mvc.ApiControllerAttribute",
-        "Microsoft.AspNetCore.Mvc.ControllerAttribute",
-        "Microsoft.AspNetCore.Mvc.RouteAttribute"
-    ];
+    private const TypeAttributes InvalidTypeAttributes = TypeAttributes.Interface | TypeAttributes.Abstract;
+    private const MethodAttributes PublicMethodAttributes = MethodAttributes.Public;
+    private const MethodAttributes InvalidMethodAttributes = MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+    private const string MvcNamespace = "Microsoft.AspNetCore.Mvc";
+    private const string MvcRoutingNamespace = "Microsoft.AspNetCore.Mvc.Routing";
+    private const string RazorPagesNamespace = "Microsoft.AspNetCore.Mvc.RazorPages";
+    private const string SignalRNamespace = "Microsoft.AspNetCore.SignalR";
+    private const string CompilerServicesNamespace = "System.Runtime.CompilerServices";
 
-    private static readonly HashSet<string> ControllerBaseNames =
-    [
-        "Microsoft.AspNetCore.Mvc.Controller",
-        "Microsoft.AspNetCore.Mvc.ControllerBase"
-    ];
+    private enum EndpointTypeKind
+    {
+        None,
+        Controller,
+        PageModel,
+        SignalRHub,
+        CompilerGenerated
+    }
 
-    private static readonly HashSet<string> ActionAttributes =
-    [
-        "Microsoft.AspNetCore.Mvc.HttpGetAttribute",
-        "Microsoft.AspNetCore.Mvc.HttpPostAttribute",
-        "Microsoft.AspNetCore.Mvc.HttpPutAttribute",
-        "Microsoft.AspNetCore.Mvc.HttpDeleteAttribute",
-        "Microsoft.AspNetCore.Mvc.HttpPatchAttribute",
-        "Microsoft.AspNetCore.Mvc.HttpHeadAttribute",
-        "Microsoft.AspNetCore.Mvc.HttpOptionsAttribute",
-        "Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute"
-    ];
+    private enum KnownNameSet
+    {
+        ControllerAttribute,
+        ActionAttribute,
+        NoHandlerAttribute,
+        CompilerGeneratedAttribute
+    }
 
-    private static readonly HashSet<string> SignalRHubBaseNames =
-    [
-        "Microsoft.AspNetCore.SignalR.Hub",
-        "Microsoft.AspNetCore.SignalR.Hub`1"
-    ];
+    private enum KnownBaseTypeSet
+    {
+        Controller,
+        PageModel,
+        SignalRHub
+    }
 
-    private static readonly HashSet<string> PageModelBaseNames = ["Microsoft.AspNetCore.Mvc.RazorPages.PageModel"];
+    internal interface IEndpointMethodTokenConsumer
+    {
+        void OnEndpointMethodToken(int token);
+    }
 
-    private static readonly HashSet<string> NoHandlerAttributes = ["Microsoft.AspNetCore.Mvc.RazorPages.NonHandlerAttribute"];
-
-    internal static ImmutableHashSet<int> GetEndpointMethodTokens(DatadogMetadataReader datadogMetadataReader)
+    internal static void GetEndpointMethodTokens<TConsumer>(DatadogMetadataReader datadogMetadataReader, ref TConsumer consumer)
+        where TConsumer : struct, IEndpointMethodTokenConsumer
     {
         if (datadogMetadataReader is null)
         {
             ThrowHelper.ThrowArgumentNullException(nameof(datadogMetadataReader));
         }
 
-        var builder = ImmutableHashSet.CreateBuilder<int>();
-        var metadataReader = datadogMetadataReader.MetadataReader;
+        GetEndpointMethodTokens(datadogMetadataReader.MetadataReader, ref consumer);
+    }
+
+    internal static void GetEndpointMethodTokens<TConsumer>(MetadataReader metadataReader, ref TConsumer consumer)
+        where TConsumer : struct, IEndpointMethodTokenConsumer
+    {
+        if (metadataReader is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(metadataReader));
+        }
+
         foreach (var typeHandle in metadataReader.TypeDefinitions)
         {
             var typeDef = metadataReader.GetTypeDefinition(typeHandle);
@@ -77,25 +87,10 @@ internal static class EndpointDetector
                 continue;
             }
 
-            bool isPageModel = false;
-            bool isSignalRHub = false;
-            bool isCompilerGeneratedType = false;
-            var isController = IsInheritFromTypesOrHasAttribute(typeDef, metadataReader, ControllerAttributes, ControllerBaseNames);
-            if (!isController)
+            var endpointType = ClassifyType(typeDef, metadataReader);
+            if (endpointType == EndpointTypeKind.None)
             {
-                isPageModel = IsInheritFromTypes(typeDef, metadataReader, PageModelBaseNames);
-                if (!isPageModel)
-                {
-                    isSignalRHub = IsInheritFromTypes(typeDef, metadataReader, SignalRHubBaseNames);
-                    if (!isSignalRHub)
-                    {
-                        isCompilerGeneratedType = datadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeHandle));
-                        if (!isCompilerGeneratedType)
-                        {
-                            continue;
-                        }
-                    }
-                }
+                continue;
             }
 
             foreach (var methodHandle in typeDef.GetMethods())
@@ -107,64 +102,72 @@ internal static class EndpointDetector
                     continue;
                 }
 
-                if (isController && HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, ActionAttributes))
+                if (endpointType == EndpointTypeKind.Controller && HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, KnownNameSet.ActionAttribute))
                 {
-                    builder.Add(metadataReader.GetToken(methodHandle));
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                     continue;
                 }
 
-                if (isPageModel && IsPageModelHandler(methodDef, metadataReader))
+                if (endpointType == EndpointTypeKind.PageModel && IsPageModelHandler(methodDef, metadataReader))
                 {
-                    builder.Add(metadataReader.GetToken(methodHandle));
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                     continue;
                 }
 
-                if (isSignalRHub)
+                if (endpointType == EndpointTypeKind.SignalRHub)
                 {
-                    builder.Add(metadataReader.GetToken(methodHandle));
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                     continue;
                 }
 
                 // minimal API endpoints
-                if (isCompilerGeneratedType && MightBeEndpoint(methodDef, metadataReader))
+                if (endpointType == EndpointTypeKind.CompilerGenerated && MightBeEndpoint(methodDef, metadataReader))
                 {
-                    builder.Add(metadataReader.GetToken(methodHandle));
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                 }
             }
         }
-
-        return builder.ToImmutable();
     }
 
     private static bool IsValidTypeKind(TypeDefinition typeDef)
     {
-        var attributes = typeDef.Attributes;
-        return (attributes & TypeAttributes.Interface) == 0 &&
-               (attributes & TypeAttributes.Abstract) == 0;
+        return (typeDef.Attributes & InvalidTypeAttributes) == 0;
     }
 
     private static bool IsValidMethod(MethodDefinition methodDef)
     {
         var attributes = methodDef.Attributes;
-        return (attributes & MethodAttributes.Public) != 0 &&
-               (attributes & MethodAttributes.Static) == 0;
+        return (attributes & PublicMethodAttributes) != 0 &&
+               (attributes & InvalidMethodAttributes) == 0;
     }
 
-    private static bool IsInheritFromTypesOrHasAttribute(TypeDefinition typeDef, MetadataReader reader, HashSet<string> attributesNames, HashSet<string> baseTypeNames)
+    private static EndpointTypeKind ClassifyType(TypeDefinition typeDef, MetadataReader reader)
     {
-        if (HasAttributeFromSet(typeDef.GetCustomAttributes(), reader, attributesNames))
+        var typeAttributes = typeDef.GetCustomAttributes();
+        if (HasAttributeFromSet(typeAttributes, reader, KnownNameSet.ControllerAttribute))
         {
-            return true;
+            return EndpointTypeKind.Controller;
         }
 
+        var fallbackType = EndpointTypeKind.None;
+        var isCompilerGenerated = HasAttributeFromSet(typeAttributes, reader, KnownNameSet.CompilerGeneratedAttribute);
         var baseTypeHandle = typeDef.BaseType;
         while (!baseTypeHandle.IsNil)
         {
-            if (TryGetBaseTypeInfo(baseTypeHandle, reader, out var baseTypeName, out var nextBaseTypeHandle))
+            if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.Controller))
             {
-                if (baseTypeNames.Contains(baseTypeName))
+                return EndpointTypeKind.Controller;
+            }
+
+            if (fallbackType == EndpointTypeKind.None)
+            {
+                if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.PageModel))
                 {
-                    return true;
+                    fallbackType = EndpointTypeKind.PageModel;
+                }
+                else if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.SignalRHub))
+                {
+                    fallbackType = EndpointTypeKind.SignalRHub;
                 }
             }
 
@@ -174,172 +177,248 @@ internal static class EndpointDetector
             }
 
             var baseType = reader.GetTypeDefinition((TypeDefinitionHandle)baseTypeHandle);
-            if (HasAttributeFromSet(baseType.GetCustomAttributes(), reader, attributesNames))
+            if (HasAttributeFromSet(baseType.GetCustomAttributes(), reader, KnownNameSet.ControllerAttribute))
             {
-                return true;
+                return EndpointTypeKind.Controller;
             }
 
-            baseTypeHandle = nextBaseTypeHandle;
+            baseTypeHandle = baseType.BaseType;
         }
 
-        return false;
-    }
-
-    private static bool HasAttributeFromSet(CustomAttributeHandleCollection attributes, MetadataReader reader, HashSet<string> attributeNames)
-    {
-        foreach (var attributeHandle in attributes)
+        if (fallbackType != EndpointTypeKind.None)
         {
-            string fullName;
-            var attribute = reader.GetCustomAttribute(attributeHandle);
-            switch (attribute.Constructor.Kind)
-            {
-                case HandleKind.MemberReference:
-                    {
-                        var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
-                        switch (ctor.Parent.Kind)
-                        {
-                            case HandleKind.TypeReference:
-                                var tr = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
-                                fullName = GetFullTypeName(tr.Namespace, tr.Name, reader);
-                                break;
-
-                            case HandleKind.TypeDefinition:
-                                var td = reader.GetTypeDefinition((TypeDefinitionHandle)ctor.Parent);
-                                fullName = GetFullTypeName(td.Namespace, td.Name, reader);
-                                break;
-
-                            default:
-                                continue;
-                        }
-
-                        break;
-                    }
-
-                case HandleKind.MethodDefinition:
-                    {
-                        var ctor = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
-                        var td = reader.GetTypeDefinition(ctor.GetDeclaringType());
-                        fullName = GetFullTypeName(td.Namespace, td.Name, reader);
-                        break;
-                    }
-
-                default:
-                    continue;
-            }
-
-            if (attributeNames.Contains(fullName))
-            {
-                return true;
-            }
+            return fallbackType;
         }
 
-        return false;
+        return isCompilerGenerated ? EndpointTypeKind.CompilerGenerated : EndpointTypeKind.None;
     }
 
-    private static bool IsInheritFromTypes(TypeDefinition typeDef, MetadataReader reader, HashSet<string> baseTypeNames)
+    private static bool HasAttributeFromSet(CustomAttributeHandleCollection attributes, MetadataReader reader, KnownNameSet nameSet)
     {
-        var baseTypeHandle = typeDef.BaseType;
-        while (!baseTypeHandle.IsNil)
-        {
-            if (TryGetBaseTypeInfo(baseTypeHandle, reader, out var baseTypeName, out var nextBaseTypeHandle))
-            {
-                var indexOfTypeArg = baseTypeName.IndexOf('<');
-                if (indexOfTypeArg > 0)
-                {
-                    baseTypeName = baseTypeName.Substring(0, indexOfTypeArg);
-                }
-
-                if (baseTypeNames.Contains(baseTypeName))
-                {
-                    return true;
-                }
-            }
-
-            if (baseTypeHandle.Kind != HandleKind.TypeDefinition)
-            {
-                break;
-            }
-
-            baseTypeHandle = nextBaseTypeHandle;
-        }
-
-        return false;
-    }
-
-    private static bool IsPageModelHandler(MethodDefinition methodDef, MetadataReader reader)
-    {
-        // First check if the method has [NonHandler] attribute
-        if (HasAttributeFromSet(methodDef.GetCustomAttributes(), reader, NoHandlerAttributes))
+        if (attributes.Count == 0)
         {
             return false;
         }
 
-        var name = reader.GetString(methodDef.Name);
-        // https://learn.microsoft.com/en-us/dotnet/api/system.web.mvc.httpverbs
-        return name.StartsWith("On", StringComparison.Ordinal) &&
-               (name.Equals("OnGet", StringComparison.Ordinal) ||
-                name.Equals("OnGetAsync", StringComparison.Ordinal) ||
-                name.Equals("OnPost", StringComparison.Ordinal) ||
-                name.Equals("OnPostAsync", StringComparison.Ordinal) ||
-                name.Equals("OnPut", StringComparison.Ordinal) ||
-                name.Equals("OnPutAsync", StringComparison.Ordinal) ||
-                name.Equals("OnDelete", StringComparison.Ordinal) ||
-                name.Equals("OnDeleteAsync", StringComparison.Ordinal) ||
-                name.Equals("OnHead", StringComparison.Ordinal) ||
-                name.Equals("OnHeadAsync", StringComparison.Ordinal) ||
-                name.Equals("OnPatch", StringComparison.Ordinal) ||
-                name.Equals("OnPatchAsync", StringComparison.Ordinal) ||
-                name.Equals("OnOptions", StringComparison.Ordinal) ||
-                name.Equals("OnOptionsAsync", StringComparison.Ordinal));
-    }
-
-    private static bool MightBeEndpoint(MethodDefinition methodDef, MetadataReader reader)
-    {
-        var name = reader.GetString(methodDef.Name);
-        if (name.StartsWith("<", StringComparison.Ordinal))
+        foreach (var attributeHandle in attributes)
         {
-            return true;
+            var attribute = reader.GetCustomAttribute(attributeHandle);
+            if (!TryGetAttributeTypeName(attribute, reader, out var namespaceHandle, out var nameHandle))
+            {
+                continue;
+            }
+
+            if (NameMatches(reader, namespaceHandle, nameHandle, nameSet))
+            {
+                return true;
+            }
         }
 
         return false;
     }
 
-    private static bool TryGetBaseTypeInfo(EntityHandle typeHandle, MetadataReader reader, [NotNullWhen(true)] out string? baseTypeName, out EntityHandle baseType)
+    private static bool TryGetAttributeTypeName(CustomAttribute attribute, MetadataReader reader, out StringHandle namespaceHandle, out StringHandle nameHandle)
+    {
+        namespaceHandle = default;
+        nameHandle = default;
+
+        if (attribute.Constructor.IsNil)
+        {
+            return false;
+        }
+
+        switch (attribute.Constructor.Kind)
+        {
+            case HandleKind.MemberReference:
+                {
+                    var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+                    return TryGetTypeName(ctor.Parent, reader, out namespaceHandle, out nameHandle);
+                }
+
+            case HandleKind.MethodDefinition:
+                {
+                    var ctor = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
+                    var declaringType = ctor.GetDeclaringType();
+                    if (declaringType.IsNil)
+                    {
+                        return false;
+                    }
+
+                    var typeDef = reader.GetTypeDefinition(declaringType);
+                    namespaceHandle = typeDef.Namespace;
+                    nameHandle = typeDef.Name;
+                    return !nameHandle.IsNil;
+                }
+
+            default:
+                return false;
+        }
+    }
+
+    private static bool IsPageModelHandler(MethodDefinition methodDef, MetadataReader reader)
+    {
+        var name = methodDef.Name;
+        var comparer = reader.StringComparer;
+
+        // Razor Pages handler method conventions:
+        // https://learn.microsoft.com/en-us/aspnet/core/razor-pages/?view=aspnetcore-8.0#handler-methods
+        if (!comparer.StartsWith(name, "On"))
+        {
+            return false;
+        }
+
+        if (!IsKnownPageModelHandlerName(reader, name))
+        {
+            return false;
+        }
+
+        return !HasAttributeFromSet(methodDef.GetCustomAttributes(), reader, KnownNameSet.NoHandlerAttribute);
+    }
+
+    private static bool MightBeEndpoint(MethodDefinition methodDef, MetadataReader reader)
+    {
+        return reader.StringComparer.StartsWith(methodDef.Name, "<");
+    }
+
+    private static bool BaseTypeMatchesAny(EntityHandle typeHandle, MetadataReader reader, KnownBaseTypeSet baseTypeSet)
     {
         switch (typeHandle.Kind)
         {
             case HandleKind.TypeDefinition:
+            case HandleKind.TypeReference:
+                return TryGetTypeName(typeHandle, reader, out var namespaceHandle, out var nameHandle) &&
+                       BaseTypeNameMatches(reader, namespaceHandle, nameHandle, baseTypeSet);
+
+            case HandleKind.TypeSpecification:
+                return TypeSpecMatchesByOuterName((TypeSpecificationHandle)typeHandle, reader, baseTypeSet);
+
+            default:
+                return false;
+        }
+    }
+
+    private static bool TypeSpecMatchesByOuterName(TypeSpecificationHandle typeHandle, MetadataReader reader, KnownBaseTypeSet baseTypeSet)
+    {
+        var typeSpec = reader.GetTypeSpecification(typeHandle);
+        var blobReader = reader.GetBlobReader(typeSpec.Signature);
+
+        if (blobReader.ReadCompressedInteger() != (int)SignatureTypeCode.GenericTypeInstance)
+        {
+            return false;
+        }
+
+        var rawTypeKind = blobReader.ReadCompressedInteger();
+        if (rawTypeKind != (int)SignatureTypeKind.Class &&
+            rawTypeKind != (int)SignatureTypeKind.ValueType)
+        {
+            return false;
+        }
+
+        var outerTypeHandle = blobReader.ReadTypeHandle();
+        return TryGetTypeName(outerTypeHandle, reader, out var namespaceHandle, out var nameHandle) &&
+               BaseTypeNameMatches(reader, namespaceHandle, nameHandle, baseTypeSet);
+    }
+
+    private static bool TryGetTypeName(EntityHandle typeHandle, MetadataReader reader, out StringHandle namespaceHandle, out StringHandle nameHandle)
+    {
+        namespaceHandle = default;
+        nameHandle = default;
+
+        switch (typeHandle.Kind)
+        {
+            case HandleKind.TypeDefinition:
                 var typeDef = reader.GetTypeDefinition((TypeDefinitionHandle)typeHandle);
-                baseTypeName = GetFullTypeName(typeDef.Namespace, typeDef.Name, reader);
-                baseType = typeDef.BaseType;
-                break;
+                namespaceHandle = typeDef.Namespace;
+                nameHandle = typeDef.Name;
+                return !nameHandle.IsNil;
 
             case HandleKind.TypeReference:
                 var typeRef = reader.GetTypeReference((TypeReferenceHandle)typeHandle);
-                baseTypeName = GetFullTypeName(typeRef.Namespace, typeRef.Name, reader);
-                baseType = default;
-                break;
-
-            case HandleKind.TypeSpecification:
-                baseTypeName = ((TypeSpecificationHandle)typeHandle).FullName(reader);
-                baseType = default;
-                break;
+                namespaceHandle = typeRef.Namespace;
+                nameHandle = typeRef.Name;
+                return !nameHandle.IsNil;
 
             default:
-                baseTypeName = null;
-                baseType = default;
-                break;
+                return false;
         }
-
-        return !string.IsNullOrEmpty(baseTypeName);
     }
 
-    private static string GetFullTypeName(StringHandle namespaceHandle, StringHandle nameHandle, MetadataReader reader)
+    private static bool IsKnownPageModelHandlerName(MetadataReader reader, StringHandle name)
     {
-        var nameSpace = reader.GetString(namespaceHandle);
-        var name = reader.GetString(nameHandle);
-        return $"{nameSpace}.{name}";
+        var comparer = reader.StringComparer;
+        return comparer.Equals(name, "OnGet") ||
+               comparer.Equals(name, "OnGetAsync") ||
+               comparer.Equals(name, "OnPost") ||
+               comparer.Equals(name, "OnPostAsync") ||
+               comparer.Equals(name, "OnPut") ||
+               comparer.Equals(name, "OnPutAsync") ||
+               comparer.Equals(name, "OnDelete") ||
+               comparer.Equals(name, "OnDeleteAsync") ||
+               comparer.Equals(name, "OnHead") ||
+               comparer.Equals(name, "OnHeadAsync") ||
+               comparer.Equals(name, "OnPatch") ||
+               comparer.Equals(name, "OnPatchAsync") ||
+               comparer.Equals(name, "OnOptions") ||
+               comparer.Equals(name, "OnOptionsAsync");
     }
 
-    private sealed record Entity(string Name, EntityHandle Handle);
+    private static bool NameMatches(MetadataReader reader, StringHandle namespaceHandle, StringHandle nameHandle, KnownNameSet nameSet)
+    {
+        var comparer = reader.StringComparer;
+        switch (nameSet)
+        {
+            case KnownNameSet.ControllerAttribute:
+                return comparer.Equals(namespaceHandle, MvcNamespace) &&
+                       (comparer.Equals(nameHandle, "ApiControllerAttribute") ||
+                        comparer.Equals(nameHandle, "ControllerAttribute") ||
+                        comparer.Equals(nameHandle, "RouteAttribute"));
+
+            case KnownNameSet.ActionAttribute:
+                return (comparer.Equals(namespaceHandle, MvcNamespace) &&
+                        (comparer.Equals(nameHandle, "HttpGetAttribute") ||
+                         comparer.Equals(nameHandle, "HttpPostAttribute") ||
+                         comparer.Equals(nameHandle, "HttpPutAttribute") ||
+                         comparer.Equals(nameHandle, "HttpDeleteAttribute") ||
+                         comparer.Equals(nameHandle, "HttpPatchAttribute") ||
+                         comparer.Equals(nameHandle, "HttpHeadAttribute") ||
+                         comparer.Equals(nameHandle, "HttpOptionsAttribute"))) ||
+                       (comparer.Equals(namespaceHandle, MvcRoutingNamespace) &&
+                        comparer.Equals(nameHandle, "HttpMethodAttribute"));
+
+            case KnownNameSet.NoHandlerAttribute:
+                return comparer.Equals(namespaceHandle, RazorPagesNamespace) &&
+                       comparer.Equals(nameHandle, "NonHandlerAttribute");
+
+            case KnownNameSet.CompilerGeneratedAttribute:
+                return comparer.Equals(namespaceHandle, CompilerServicesNamespace) &&
+                       comparer.Equals(nameHandle, "CompilerGeneratedAttribute");
+
+            default:
+                return false;
+        }
+    }
+
+    private static bool BaseTypeNameMatches(MetadataReader reader, StringHandle namespaceHandle, StringHandle nameHandle, KnownBaseTypeSet baseTypeSet)
+    {
+        var comparer = reader.StringComparer;
+        switch (baseTypeSet)
+        {
+            case KnownBaseTypeSet.Controller:
+                return comparer.Equals(namespaceHandle, MvcNamespace) &&
+                       (comparer.Equals(nameHandle, "Controller") ||
+                        comparer.Equals(nameHandle, "ControllerBase"));
+
+            case KnownBaseTypeSet.PageModel:
+                return comparer.Equals(namespaceHandle, RazorPagesNamespace) &&
+                       comparer.Equals(nameHandle, "PageModel");
+
+            case KnownBaseTypeSet.SignalRHub:
+                return comparer.Equals(namespaceHandle, SignalRNamespace) &&
+                       (comparer.Equals(nameHandle, "Hub") ||
+                        comparer.Equals(nameHandle, "Hub`1"));
+
+            default:
+                return false;
+        }
+    }
 }

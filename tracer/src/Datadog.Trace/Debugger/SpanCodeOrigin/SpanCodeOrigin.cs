@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
@@ -175,7 +176,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
             var pdbInfo = _assemblyPdbCache.GetOrAdd(
                 assembly,
-                asm =>
+                static asm =>
                 {
                     using var reader = DatadogMetadataReader.CreatePdbReader(asm);
                     if (reader is not { IsPdbExist: true })
@@ -185,50 +186,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
                     try
                     {
-                        var endpointMethodTokens = EndpointDetector.GetEndpointMethodTokens(reader);
-
                         // Build dictionary of sequence points for ALL detected endpoint methods in one pass
-                        // This avoids reopening the PDB file on subsequent endpoint calls
-                        var builder = ImmutableDictionary.CreateBuilder<int, CachedSequencePoint?>();
+                        // This avoids reopening the PDB file on subsequent endpoint calls.
+                        var sequencePoints = new Dictionary<int, CachedSequencePoint>();
+                        var consumer = new SequencePointTokenConsumer(reader, sequencePoints, asm);
+                        EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
 
-                        foreach (var token in endpointMethodTokens)
-                        {
-                            try
-                            {
-                                var sequencePoint = reader.GetMethodSourceLocation(token);
-                                if (sequencePoint is { } sp)
-                                {
-                                    // If we don't have a source URL, the sequence point isn't useful for code origin tags
-                                    // (line/column without a file doesn't provide actionable info).
-                                    if (StringUtil.IsNullOrEmpty(sp.URL))
-                                    {
-                                        builder.Add(token, null);
-                                        continue;
-                                    }
-
-                                    // Precompute string representations once during per-assembly cache population (stored per endpoint token)
-                                    // to avoid per-span allocations (ToString()) for line/column.
-                                    builder.Add(
-                                        token,
-                                        new CachedSequencePoint(
-                                            sp.URL,
-                                            sp.StartLine.ToString(CultureInfo.InvariantCulture),
-                                            sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
-                                }
-                                else
-                                {
-                                    builder.Add(token, null);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, asm.FullName);
-                                // Add null to dictionary to avoid retrying on every call
-                                builder.Add(token, null);
-                            }
-                        }
-
-                        return new AssemblyPdbInfo(builder.ToImmutable());
+                        return new AssemblyPdbInfo(sequencePoints);
                     }
                     catch (Exception ex)
                     {
@@ -248,7 +212,9 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return null;
             }
 
-            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<CachedSequencePoint?>(metadataToken);
+            return pdbInfo is not null && pdbInfo.TryGetSequencePoint(metadataToken, out var sequencePoint)
+                       ? sequencePoint
+                       : null;
         }
 
         private void AddExitSpanTags(Span span)
@@ -353,9 +319,58 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private readonly record struct CachedSequencePoint(string Url, string Line, string Column);
 
-        private sealed class AssemblyPdbInfo(ImmutableDictionary<int, CachedSequencePoint?> sequencePoints)
+        private readonly struct SequencePointTokenConsumer : EndpointDetector.IEndpointMethodTokenConsumer
         {
-            public ImmutableDictionary<int, CachedSequencePoint?> MethodSequencePoints { get; } = sequencePoints;
+            private readonly DatadogMetadataReader _reader;
+            private readonly Dictionary<int, CachedSequencePoint> _sequencePoints;
+            private readonly Assembly _assembly;
+
+            public SequencePointTokenConsumer(DatadogMetadataReader reader, Dictionary<int, CachedSequencePoint> sequencePoints, Assembly assembly)
+            {
+                _reader = reader;
+                _sequencePoints = sequencePoints;
+                _assembly = assembly;
+            }
+
+            public void OnEndpointMethodToken(int token)
+            {
+                try
+                {
+                    var sequencePoint = _reader.GetMethodSourceLocation(token);
+                    if (sequencePoint is { } sp)
+                    {
+                        // If we don't have a source URL, the sequence point isn't useful for code origin tags
+                        // (line/column without a file doesn't provide actionable info).
+                        if (StringUtil.IsNullOrEmpty(sp.URL))
+                        {
+                            return;
+                        }
+
+                        // Precompute string representations once during per-assembly cache population (stored per endpoint token)
+                        // to avoid per-span allocations (ToString()) for line/column.
+                        _sequencePoints.Add(
+                            token,
+                            new CachedSequencePoint(
+                                sp.URL,
+                                sp.StartLine.ToString(CultureInfo.InvariantCulture),
+                                sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, _assembly.FullName);
+                }
+            }
+        }
+
+        private sealed class AssemblyPdbInfo(Dictionary<int, CachedSequencePoint> sequencePoints)
+        {
+            private readonly Dictionary<int, CachedSequencePoint> _sequencePoints = sequencePoints;
+
+            public bool TryGetSequencePoint(int token, out CachedSequencePoint sequencePoint)
+            {
+                return _sequencePoints.TryGetValue(token, out sequencePoint);
+            }
         }
 
         /// <summary>
