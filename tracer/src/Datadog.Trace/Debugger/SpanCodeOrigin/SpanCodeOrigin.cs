@@ -176,7 +176,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
             var pdbInfo = _assemblyPdbCache.GetOrAdd(
                 assembly,
-                asm =>
+                static asm =>
                 {
                     using var reader = DatadogMetadataReader.CreatePdbReader(asm);
                     if (reader is not { IsPdbExist: true })

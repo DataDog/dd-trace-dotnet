@@ -104,35 +104,29 @@ internal static class EndpointDetector
 
                 if (endpointType == EndpointTypeKind.Controller && HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, KnownNameSet.ActionAttribute))
                 {
-                    AddEndpointToken(ref consumer, metadataReader, methodHandle);
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                     continue;
                 }
 
                 if (endpointType == EndpointTypeKind.PageModel && IsPageModelHandler(methodDef, metadataReader))
                 {
-                    AddEndpointToken(ref consumer, metadataReader, methodHandle);
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                     continue;
                 }
 
                 if (endpointType == EndpointTypeKind.SignalRHub)
                 {
-                    AddEndpointToken(ref consumer, metadataReader, methodHandle);
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                     continue;
                 }
 
                 // minimal API endpoints
                 if (endpointType == EndpointTypeKind.CompilerGenerated && MightBeEndpoint(methodDef, metadataReader))
                 {
-                    AddEndpointToken(ref consumer, metadataReader, methodHandle);
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                 }
             }
         }
-    }
-
-    private static void AddEndpointToken<TConsumer>(ref TConsumer consumer, MetadataReader metadataReader, MethodDefinitionHandle methodHandle)
-        where TConsumer : struct, IEndpointMethodTokenConsumer
-    {
-        consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
     }
 
     private static bool IsValidTypeKind(TypeDefinition typeDef)
