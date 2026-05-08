@@ -146,16 +146,23 @@ namespace Datadog.Trace.Configuration
 
             if (!anyRelevantProductRequested && !newDynamicEnablesAnyProduct)
             {
-                Log.Debug("All dynamic-controlled debugger products are off and the new dynamic configuration does not enable any; skipping");
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "All dynamic-controlled debugger products are off and the new dynamic configuration does not enable any (DI={DI}, ER={ER}, CO={CO}); skipping",
+                        newDynamicSettings.DynamicInstrumentationEnabled,
+                        newDynamicSettings.ExceptionReplayEnabled,
+                        newDynamicSettings.CodeOriginEnabled);
+                }
+
                 return false;
             }
 
             return true;
         }
 
-        // "Any DI/ER/CO product is currently requested" based on env settings or the dynamic
-        // settings already applied to the manager. If true, we must always proceed with apply
-        // because the new config may need to disable a running product.
+        // Returns true when DI, ER, or CO is currently requested via env settings or the dynamic
+        // settings already applied to the manager.
         private static bool IsAnyRelevantProductRequested(DebuggerSettings settings, bool exceptionReplayEnvEnabled)
         {
             return settings.DynamicInstrumentationEnabled

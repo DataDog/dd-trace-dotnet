@@ -580,14 +580,15 @@ namespace Datadog.Trace.ClrProfiler
             // is made here, at the call site, so when nothing is enabled we don't even allocate
             // the Task/ContinueWith pair for UpdateConfiguration.
             var manager = DebuggerManager.Instance;
+            var debuggerSettings = manager.DebuggerSettings;
 
-            if (!manager.DebuggerSettings.DynamicInstrumentationEnabled)
+            if (!debuggerSettings.DynamicInstrumentationEnabled)
             {
                 // we need this line for tests
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             }
 
-            if (!DebuggerManager.ShouldInitialize(tracerSettings, manager.DebuggerSettings, manager.ExceptionReplaySettings.Enabled))
+            if (!DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, manager.ExceptionReplaySettings.Enabled))
             {
                 Log.Debug("Debugger products are not enabled");
                 return;

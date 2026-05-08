@@ -102,7 +102,7 @@ namespace Datadog.Trace.Debugger
         }
 
         // Decides whether any debugger product should be brought up given the effective settings (env + already-applied dynamic settings).
-		// Note: at startup `DynamicSettings` is the default and those branches are no-ops.
+        // Note: at startup `DynamicSettings` is the default and those branches are no-ops.
         internal static bool ShouldInitialize(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool exceptionReplayEnabled)
         {
             return debuggerSettings.DynamicInstrumentationEnabled
