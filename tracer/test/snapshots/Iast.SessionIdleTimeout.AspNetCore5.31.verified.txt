@@ -1,0 +1,13 @@
+﻿[
+  {
+    evidence: {
+      value: Session idle timeout is configured with: options.IdleTimeout, with a value of XXX minutes
+    },
+    hash: 1040241415,
+    location: {
+      method: <ConfigureServices>b__0,
+      path: Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0
+    },
+    type: SESSION_TIMEOUT
+  }
+]

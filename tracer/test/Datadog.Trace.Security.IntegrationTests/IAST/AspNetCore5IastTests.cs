@@ -375,6 +375,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
     public async Task TestDirectoryListingLeak(string featureEnvVar)
     {
         SetEnvironmentVariable(featureEnvVar, "true");
+        EnableDebugMode();
 
         var filename = "Iast.DirectoryListingLeak.AspNetCore5";
         var newFixture = new AspNetCoreTestFixture();
@@ -397,7 +398,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
     {
         SetEnvironmentVariable("IAST_TEST_SESSION_IDLE_TIMEOUT", timeoutMinutes.ToString());
 
-        var filename = "Iast.SessionIdleTimeout.AspNetCore5";
+        var filename = $"Iast.SessionIdleTimeout.AspNetCore5.{timeoutMinutes.ToString()}";
         var newFixture = new AspNetCoreTestFixture();
         newFixture.SetOutput(Output);
 

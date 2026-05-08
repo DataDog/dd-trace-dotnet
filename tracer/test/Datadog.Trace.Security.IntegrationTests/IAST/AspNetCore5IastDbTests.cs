@@ -4,12 +4,12 @@
 // </copyright>
 #if NETCOREAPP3_0_OR_GREATER
 
-using System.Collections.Immutable;
-using System.Linq;
+using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Security.IntegrationTests.Iast;
 using Datadog.Trace.TestHelpers;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,6 +18,8 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST;
 [Trait("RequiresDockerDependency", "true")]
 public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {
+    private static readonly Regex DatabaseParamScrubber = new(@"([?&]database=)[^&]+", RegexOptions.Compiled);
+
     public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, sampleName: "AspNetCore5")
     {
@@ -43,21 +45,10 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         var url = $"/Iast/StoredXss?param=<b>RawValue</b>&database={database}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(aspNetCorePathScrubber);
-        settings.AddRegexScrubber(hashScrubber);
-        settings.AddRegexScrubber((new Regex(@"&database=.*"), "&database=...,"));
-        // Oracle column names are all upper case
-        settings.AddRegexScrubber((new Regex(@"\""DETAILS\"""), @"""Details"""));
-        // Postgres column names are all lower case
-        settings.AddRegexScrubber((new Regex(@"\""details\"""), @"""Details"""));
-
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since, recordSanitizer: ScrubDatabaseParam);
     }
 
     [SkippableTheory]
@@ -67,7 +58,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     // [InlineData("System.Data.SqlClient")]
     // [InlineData("Npgsql")]
     // [InlineData("MySql.Data")]
-    // [InlineData("Oracle")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
+    // [InlineData("Oracle")]
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -76,22 +67,13 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
             throw new SkipException();
         }
 #endif
-
-        var filename = "Iast.StoredXssEscaped.AspNetCore5";
         var url = $"/Iast/StoredXssEscaped?database={database}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-
-        // Add a scrubber to remove the useMicrosoftDataDb value
-        settings.AddRegexScrubber((new Regex(@"database=.*"), "database=...,"));
-
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
 
     [SkippableTheory]
@@ -114,22 +96,18 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         var url = $"/Iast/StoredSqli?database={database}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
 
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(aspNetCorePathScrubber);
-        settings.AddRegexScrubber(hashScrubber);
-        // Add a scrubber to remove the useMicrosoftDataDb value
-        settings.AddRegexScrubber((new Regex(@"database=.*"), "database=...,"));
-        // Oracle column names are all upper case
-        settings.AddRegexScrubber((new Regex(@"\""DETAILS\"""), @"""Details"""));
-        // Postgres column names are all lower case
-        settings.AddRegexScrubber((new Regex(@"\""details\"""), @"""Details"""));
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since, recordSanitizer: ScrubDatabaseParam);
+    }
 
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+    private void ScrubDatabaseParam(JObject record)
+    {
+        if (record["request"] is JObject req && req["url"] is JValue urlVal)
+        {
+            req["url"] = DatabaseParamScrubber.Replace(urlVal.Value<string>() ?? string.Empty, "$1...");
+        }
     }
 }
 

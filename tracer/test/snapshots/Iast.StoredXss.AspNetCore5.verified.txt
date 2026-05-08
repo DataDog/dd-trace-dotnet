@@ -1,0 +1,34 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: <script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>
+        },
+        {
+          value: <b>More Text</b>
+        }
+      ]
+    },
+    hash: 1504523735,
+    location: {
+      method: MoveNext,
+      path: AspNetCoreGeneratedDocument.Views_Iast_Xss+<<ExecuteAsync>b__8_1>d
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.StoredXss (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/storedxss,
+      url: http://localhost:00000/Iast/StoredXss?param=%3Cb%3ERawValue%3C/b%3E&database=...
+    },
+    sources: [
+      {
+        name: Details,
+        origin: sql.row.value,
+        value: <script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>
+      }
+    ],
+    type: XSS
+  }
+]

@@ -1,0 +1,41 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: SELECT Surname from Persons where name='
+        },
+        {
+          pattern: OPQRST,
+          redacted: true,
+          source: 0
+        },
+        {
+          source: 0,
+          value: '
+        }
+      ]
+    },
+    hash: -209503571,
+    location: {
+      method: ExecuteQuery,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.ExecuteQueryFromBodyQueryData (Samples.Security.AspNetCore5),
+      method: POST,
+      route: iast/executequeryfrombodyquerydata,
+      url: http://localhost:00000/Iast/ExecuteQueryFromBodyQueryData
+    },
+    sources: [
+      {
+        name: query1,
+        origin: http.request.body,
+        pattern: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU,
+        redacted: true
+      }
+    ],
+    type: SQL_INJECTION
+  }
+]

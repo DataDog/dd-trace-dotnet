@@ -770,6 +770,7 @@ internal static partial class IastModule
         traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
         vulnerability.Location?.ReportStack(span);
+        VulnerabilityReporter.Report(vulnerability, traceContext?.RootSpan ?? span);
 
         if (closeAfterCreation)
         {

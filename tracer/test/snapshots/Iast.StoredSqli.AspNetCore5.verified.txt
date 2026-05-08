@@ -1,0 +1,37 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: SELECT name from Persons where Details = '
+        },
+        {
+          source: 0,
+          value: Details
+        },
+        {
+          value: '
+        }
+      ]
+    },
+    hash: 1327523550,
+    location: {
+      method: StoredSqli,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.StoredSqli (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/storedsqli,
+      url: http://localhost:00000/Iast/StoredSqli?database=...
+    },
+    sources: [
+      {
+        name: Details,
+        origin: sql.row.value,
+        value: Details
+      }
+    ],
+    type: SQL_INJECTION
+  }
+]

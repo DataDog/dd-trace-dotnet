@@ -13,6 +13,12 @@
       method: <Ldap>g__PerformLdapQuery|0,
       path: Samples.Security.AspNetCore5.Controllers.IastController+
     },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.Ldap (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/ldap,
+      url: http://localhost:00000/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com
+    },
     sources: [
       {
         name: path,

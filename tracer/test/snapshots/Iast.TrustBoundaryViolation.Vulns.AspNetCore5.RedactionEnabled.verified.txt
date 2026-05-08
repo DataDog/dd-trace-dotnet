@@ -1,0 +1,101 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: name
+        }
+      ]
+    },
+    hash: -1696363463,
+    location: {
+      method: TrustBoundaryViolation,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.TrustBoundaryViolation (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/tbv,
+      url: http://localhost:00000/Iast/Tbv?name=name&value=value
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.parameter,
+        value: name
+      }
+    ],
+    type: TRUST_BOUNDARY_VIOLATION
+  },
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: value
+        }
+      ]
+    },
+    hash: -1696363463,
+    location: {
+      method: TrustBoundaryViolation,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.TrustBoundaryViolation (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/tbv,
+      url: http://localhost:00000/Iast/Tbv?name=name&value=value
+    },
+    sources: [
+      {
+        name: value,
+        origin: http.request.parameter,
+        value: value
+      }
+    ],
+    type: TRUST_BOUNDARY_VIOLATION
+  },
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: name
+        },
+        {
+          value: -
+        },
+        {
+          source: 1,
+          value: value
+        }
+      ]
+    },
+    hash: -1696363463,
+    location: {
+      method: TrustBoundaryViolation,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.TrustBoundaryViolation (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/tbv,
+      url: http://localhost:00000/Iast/Tbv?name=name&value=value
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.parameter,
+        value: name
+      },
+      {
+        name: value,
+        origin: http.request.parameter,
+        value: value
+      }
+    ],
+    type: TRUST_BOUNDARY_VIOLATION
+  }
+]

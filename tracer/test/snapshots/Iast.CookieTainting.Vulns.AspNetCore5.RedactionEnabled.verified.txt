@@ -1,0 +1,45 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: file.txt
+        },
+        {
+          value:  
+        },
+        {
+          pattern: abcd,
+          redacted: true,
+          source: 1
+        }
+      ]
+    },
+    hash: -430498668,
+    location: {
+      method: ExecuteCommandInternal,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.ExecuteCommandFromCookie (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/executecommandfromcookie,
+      url: http://localhost:00000/Iast/ExecuteCommandFromCookie
+    },
+    sources: [
+      {
+        name: file,
+        origin: http.request.cookie.value,
+        value: file.txt
+      },
+      {
+        name: argumentLine,
+        origin: http.request.cookie.value,
+        pattern: abcd,
+        redacted: true
+      }
+    ],
+    type: COMMAND_INJECTION
+  }
+]

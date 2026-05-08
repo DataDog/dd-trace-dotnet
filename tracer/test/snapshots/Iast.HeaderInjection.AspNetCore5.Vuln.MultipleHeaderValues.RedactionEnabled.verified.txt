@@ -1,0 +1,30 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: extraName: 
+        },
+        {
+          source: 0,
+          value: value2
+        }
+      ]
+    },
+    hash: 2074088343,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.HeaderInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/headerinjection,
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: value,
+        origin: http.request.header,
+        value: value2
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

@@ -1,0 +1,13 @@
+﻿[
+  {
+    evidence: {
+      value: Directory listing is configured with: UseDirectoryBrowser
+    },
+    hash: 758800904,
+    location: {
+      method: Configure,
+      path: Samples.Security.AspNetCore5.Startup
+    },
+    type: DIRECTORY_LISTING_LEAK
+  }
+]

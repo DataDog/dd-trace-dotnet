@@ -1,0 +1,57 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: { "Price" :"
+        },
+        {
+          pattern: a,
+          redacted: true,
+          source: 0
+        },
+        {
+          source: 0,
+          value: ", "$or": [{"Price": {"$gt": 
+        },
+        {
+          pattern: EFGH,
+          redacted: true,
+          source: 0
+        },
+        {
+          source: 0,
+          value: }}], "other": "
+        },
+        {
+          pattern: a,
+          redacted: true,
+          source: 0
+        },
+        {
+          value: "}
+        }
+      ]
+    },
+    hash: 254412174,
+    location: {
+      method: NoSqlQueryMongoDb,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.NoSqlQueryMongoDb (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/nosqlquerymongodb,
+      url: http://localhost:00000/Iast/NoSqlQueryMongoDb?price=1%22,%20%22$or%22:%20[%7B%22Price%22:%20%7B%22$gt%22:%201000%7D%7D],%20%22other%22:%20%221
+    },
+    sources: [
+      {
+        name: price,
+        origin: http.request.parameter,
+        pattern: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX,
+        redacted: true
+      }
+    ],
+    type: NOSQL_MONGODB_INJECTION
+  }
+]

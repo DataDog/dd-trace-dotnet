@@ -1,0 +1,32 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: Set-Cookie: 
+        },
+        {
+          pattern: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrs,
+          redacted: true,
+          source: 0
+        }
+      ]
+    },
+    hash: 2074088343,
+    request: {
+      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.HeaderInjection (Samples.Security.AspNetCore5),
+      method: GET,
+      route: iast/headerinjection,
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: value,
+        origin: http.request.header,
+        pattern: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrs,
+        redacted: true
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

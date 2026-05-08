@@ -1,0 +1,126 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: Unary: 
+        },
+        {
+          source: 0,
+          value: GreeterClient
+        }
+      ]
+    },
+    hash: -1349409566,
+    location: {
+      method: Unary,
+      path: Samples.GrpcDotNet.Services.GreeterService
+    },
+    request: {
+      endpoint: gRPC - /greet.tester.Greeter/Unary,
+      method: POST,
+      route: /greet.tester.greeter/unary,
+      url: http://127.0.0.1:5000/greet.tester.Greeter/Unary
+    },
+    sources: [
+      {
+        origin: grpc.request.body,
+        value: GreeterClient
+      }
+    ],
+    type: COMMAND_INJECTION
+  },
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: StreamingFromServer: 
+        },
+        {
+          source: 0,
+          value: GreeterClient
+        }
+      ]
+    },
+    hash: -528525376,
+    location: {
+      method: MoveNext,
+      path: Samples.GrpcDotNet.Services.GreeterService+<StreamingFromServer>d__6
+    },
+    request: {
+      endpoint: gRPC - /greet.tester.Greeter/StreamingFromServer,
+      method: POST,
+      route: /greet.tester.greeter/streamingfromserver,
+      url: http://127.0.0.1:5000/greet.tester.Greeter/StreamingFromServer
+    },
+    sources: [
+      {
+        origin: grpc.request.body,
+        value: GreeterClient
+      }
+    ],
+    type: COMMAND_INJECTION
+  },
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: StreamingFromClient: 
+        },
+        {
+          source: 0,
+          value: GreeterClient0
+        }
+      ]
+    },
+    hash: -3125352,
+    location: {
+      method: MoveNext,
+      path: Samples.GrpcDotNet.Services.GreeterService+<StreamingFromClient>d__7
+    },
+    request: {
+      endpoint: gRPC - /greet.tester.Greeter/StreamingFromClient,
+      method: POST,
+      route: /greet.tester.greeter/streamingfromclient,
+      url: http://127.0.0.1:5000/greet.tester.Greeter/StreamingFromClient
+    },
+    sources: [
+      {
+        origin: grpc.request.body,
+        value: GreeterClient0
+      }
+    ],
+    type: COMMAND_INJECTION
+  },
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: StreamingBothWays: 
+        },
+        {
+          source: 0,
+          value: GreeterClient0
+        }
+      ]
+    },
+    hash: 1197429819,
+    location: {
+      method: MoveNext,
+      path: Samples.GrpcDotNet.Services.GreeterService+<StreamingBothWays>d__8
+    },
+    request: {
+      endpoint: gRPC - /greet.tester.Greeter/StreamingBothWays,
+      method: POST,
+      route: /greet.tester.greeter/streamingbothways,
+      url: http://127.0.0.1:5000/greet.tester.Greeter/StreamingBothWays
+    },
+    sources: [
+      {
+        origin: grpc.request.body,
+        value: GreeterClient0
+      }
+    ],
+    type: COMMAND_INJECTION
+  }
+]
