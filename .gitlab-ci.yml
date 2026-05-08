@@ -285,7 +285,7 @@ benchmark-serverless-trigger:
   needs: []
   trigger:
     project: ${GITLAB_GROUP}/serverless-tools
-    branch: onzia/test-noble
+    branch: onzia/support-release-branches
     strategy: depend
   allow_failure: true
   variables:
