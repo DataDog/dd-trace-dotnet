@@ -59,6 +59,10 @@ public sealed class TestSession
             Command = command ?? string.Empty,
             WorkingDirectory = WorkingDirectory,
             IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
+            IntelligentTestRunnerTestsSkippingEnabled =
+                _testOptimization.SkippableFeature is { } sf
+                    ? (sf.Enabled ? "true" : "false")
+                    : null,
         };
 
         tags.SetCIEnvironmentValues(ciValues);

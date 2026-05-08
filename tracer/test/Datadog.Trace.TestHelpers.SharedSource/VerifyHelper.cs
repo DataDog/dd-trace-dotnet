@@ -251,7 +251,10 @@ namespace Datadog.Trace.TestHelpers
                             // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
                          && kvp.Key != Tags.LastParentId
                             // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
-                         && kvp.Key != Tags.ProcessTags)
+                         && kvp.Key != Tags.ProcessTags
+                            // local developer environments may inject these through OTEL_RESOURCE_ATTRIBUTES
+                         && kvp.Key != "repo.name"
+                         && kvp.Key != "repo.owner")
                   .Select(
                        kvp => kvp.Key switch
                        {
