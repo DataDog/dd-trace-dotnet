@@ -382,6 +382,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.True(tests.All(t => t.TestModuleId == testModule.TestModuleId));
                         testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.SourceFile));
                         testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.CodeOwners));
+                        testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));
@@ -390,6 +391,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         testModule.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
                         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.SkippingType, IntelligentTestRunnerTags.SkippingTypeTest);
                         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
+                        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
+                        tests.Should().AllSatisfy(test => test.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
                         // Check Session
                         tests.Should().OnlyContain(t => t.TestSessionId == testSuites[0].TestSessionId);
@@ -438,6 +441,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // Remove user provided service tag
                             targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
+
+                            // Remove tags validated outside the per-span checklist
+                            Assert.True(targetTest.Meta.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
+                            targetTest.Meta.Remove("repo.name");
+                            targetTest.Meta.Remove("repo.owner");
 
                             // check the name
                             Assert.Equal("nunit.test", targetTest.Name);
