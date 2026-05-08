@@ -596,7 +596,7 @@ namespace Datadog.Trace.ClrProfiler
 
             _ = manager.UpdateConfiguration(tracerSettings)
                        .ContinueWith(
-                            t => Log.Error(t?.Exception, "Error initializing debugger"),
+                            static t => Log.Error(t?.Exception, "Error initializing debugger"),
                             CancellationToken.None,
                             TaskContinuationOptions.OnlyOnFaulted,
                             TaskScheduler.Default);

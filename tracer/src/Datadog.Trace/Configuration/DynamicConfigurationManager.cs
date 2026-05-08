@@ -113,7 +113,7 @@ namespace Datadog.Trace.Configuration
 
             manager.UpdateConfiguration(tracerSettings, newDebuggerSettings)
                    .ContinueWith(
-                        t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"),
+                        static t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"),
                         CancellationToken.None,
                         TaskContinuationOptions.OnlyOnFaulted,
                         TaskScheduler.Default);
@@ -165,12 +165,19 @@ namespace Datadog.Trace.Configuration
         // settings already applied to the manager.
         private static bool IsAnyRelevantProductRequested(DebuggerSettings settings, bool exceptionReplayEnvEnabled)
         {
-            return settings.DynamicInstrumentationEnabled
-                || settings.DynamicSettings.DynamicInstrumentationEnabled == true
+            // env-controlled flags first
+            if (settings.DynamicInstrumentationEnabled
                 || settings.CodeOriginForSpansEnabled
-                || settings.DynamicSettings.CodeOriginEnabled == true
-                || exceptionReplayEnvEnabled
-                || settings.DynamicSettings.ExceptionReplayEnabled == true;
+                || exceptionReplayEnvEnabled)
+            {
+                return true;
+            }
+
+            // fall back to checking previously-applied dynamic settings
+            var dynamicSettings = settings.DynamicSettings;
+            return dynamicSettings.DynamicInstrumentationEnabled == true
+                || dynamicSettings.CodeOriginEnabled == true
+                || dynamicSettings.ExceptionReplayEnabled == true;
         }
 
         [TestingAndPrivateOnly]
