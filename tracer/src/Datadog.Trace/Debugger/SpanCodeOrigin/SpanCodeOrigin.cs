@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             if (span?.Tags is WebTags { SpanKind: SpanKinds.Server })
             {
                 // entry span
-                Log.Information("SetCodeOriginForExitSpan: Skipping server entry span {SpanID}. Code origin will be added later. Service {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ServiceName, span.ResourceName, span.OperationName);
+                Log.Debug("SetCodeOriginForExitSpan: Skipping server entry span {SpanID}. Code origin will be added later. Service {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ServiceName, span.ResourceName, span.OperationName);
                 return;
             }
 
@@ -53,13 +53,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
             if (span == null)
             {
-                Log.Information("Can not add code origin for exit span when span is null");
+                Log.Debug("Can not add code origin for exit span when span is null");
                 return;
             }
 
             if (span.GetTag(_tags.Type) != null)
             {
-                Log.Information("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
+                Log.Debug("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
             }
 
@@ -79,13 +79,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 type == null ||
                 method == null)
             {
-                Log.Information("Can not add code origin when one of the arguments is null");
+                Log.Debug("Can not add code origin when one of the arguments is null");
                 return;
             }
 
             if (span.GetTag(_tags.Type) != null)
             {
-                Log.Information("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
+                Log.Debug("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
             }
 

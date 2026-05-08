@@ -193,7 +193,7 @@ namespace Datadog.Trace
 
                 if (RcmSubscriptionManager.Instance.HasAnySubscription)
                 {
-                    Log.Information($"{nameof(RcmSubscriptionManager)} has subscriptions but remote configuration is not available in this scenario.");
+                    Log.Debug($"{nameof(RcmSubscriptionManager)} has subscriptions but remote configuration is not available in this scenario.");
                 }
             }
 
