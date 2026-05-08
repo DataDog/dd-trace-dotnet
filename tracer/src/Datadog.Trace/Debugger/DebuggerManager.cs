@@ -47,6 +47,7 @@ namespace Datadog.Trace.Debugger
         private string _serviceName;
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
+        private volatile int _snapshotPipelineConfigured;
         private volatile TaskCompletionSource<bool>? _diDebounceGate;
         private volatile DynamicInstrumentation? _dynamicInstrumentation;
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
@@ -168,12 +169,38 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetGeneralConfig(TracerSettings tracerSettings, DebuggerSettings settings)
+        private void SetGeneralConfig(TracerSettings tracerSettings)
         {
-            DebuggerSnapshotSerializer.SetConfig(settings);
-            Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
             ServiceName = GetServiceName(tracerSettings.Manager.InitialMutableSettings);
             ProcessTags = tracerSettings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
+        }
+
+        // The snapshot serializer and redaction caches are only used by Dynamic Instrumentation and
+        // Exception Replay. SymDB and Code Origin do not capture variable values, so they don't need
+        // them. Redaction inputs (RedactedIdentifiers/Types) come from environment configuration and
+        // are immutable for the lifetime of DebuggerSettings, so configuring exactly once on first
+        // activation is sufficient. A plain CompareExchange guard would publish "configured" before
+        // the mutable Redaction state is ready, and a 3-state CAS/spin protocol is unnecessary for
+        // this warm startup path. The lock keeps the mutation exactly-once and makes concurrent
+        // callers wait until fully configured state is visible.
+        private void EnsureSnapshotPipelineConfigured(DebuggerSettings settings)
+        {
+            if (_snapshotPipelineConfigured != 0)
+            {
+                return;
+            }
+
+            lock (_syncLock)
+            {
+                if (_snapshotPipelineConfigured != 0)
+                {
+                    return;
+                }
+
+                DebuggerSnapshotSerializer.SetConfig(settings);
+                Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
+                _snapshotPipelineConfigured = 1;
+            }
         }
 
         // Callers are expected to gate on ShouldInitialize / ShouldApplyDynamicDebuggerConfig
@@ -221,7 +248,7 @@ namespace Datadog.Trace.Debugger
             }
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
-            SetGeneralConfig(tracerSettings, DebuggerSettings);
+            SetGeneralConfig(tracerSettings);
             if (tracerSettings.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
@@ -512,6 +539,7 @@ namespace Datadog.Trace.Debugger
 
                 if (ExceptionReplaySettings.Enabled || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true)
                 {
+                    EnsureSnapshotPipelineConfigured(debuggerSettings);
                     var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
                     exceptionReplay.Initialize();
                     ExceptionReplay = exceptionReplay;
@@ -695,6 +723,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                EnsureSnapshotPipelineConfigured(DebuggerSettings);
                 di.Initialize();
 
                 lock (_syncLock)

@@ -5,18 +5,22 @@
 
 #nullable enable
 
+using System;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Snapshots;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger
 {
+    [Collection(nameof(RedactionTests))]
     public class DebuggerManagerTests
     {
         [Fact]
@@ -118,6 +122,106 @@ namespace Datadog.Trace.Tests.Debugger
             manager.SymbolsUploader.Should().BeSameAs(replacementUploader);
         }
 
+        [Fact]
+        public void EnsureSnapshotPipelineConfiguredConfiguresRedactionOnce()
+        {
+            Redaction.Instance.ResetInstance();
+            var manager = CreateDebuggerManager();
+            var firstSettings = CreateDebuggerSettings(redactedIdentifier: "reviewconfigone");
+            var secondSettings = CreateDebuggerSettings(redactedIdentifier: "reviewconfigtwo");
+
+            try
+            {
+                InvokeEnsureSnapshotPipelineConfigured(manager, firstSettings);
+                InvokeEnsureSnapshotPipelineConfigured(manager, secondSettings);
+
+                GetSnapshotPipelineConfigured(manager).Should().Be(1);
+                Redaction.Instance.IsRedactedKeyword("reviewconfigone").Should().BeTrue();
+                Redaction.Instance.IsRedactedKeyword("reviewconfigtwo").Should().BeFalse();
+            }
+            finally
+            {
+                Redaction.Instance.ResetInstance();
+            }
+        }
+
+        [Fact]
+        public void EnsureSnapshotPipelineConfiguredCanRetryAfterFailure()
+        {
+            Redaction.Instance.ResetInstance();
+            var manager = CreateDebuggerManager();
+            var settings = CreateDebuggerSettings(redactedIdentifier: "reviewretrytoken");
+
+            try
+            {
+                var act = () => InvokeEnsureSnapshotPipelineConfigured(manager, null!);
+
+                act.Should().Throw<TargetInvocationException>();
+                GetSnapshotPipelineConfigured(manager).Should().Be(0);
+
+                InvokeEnsureSnapshotPipelineConfigured(manager, settings);
+
+                GetSnapshotPipelineConfigured(manager).Should().Be(1);
+                Redaction.Instance.IsRedactedKeyword("reviewretrytoken").Should().BeTrue();
+            }
+            finally
+            {
+                Redaction.Instance.ResetInstance();
+            }
+        }
+
+        [Fact]
+        public void EnsureSnapshotPipelineConfiguredWaitsForInProgressConfiguration()
+        {
+            Redaction.Instance.ResetInstance();
+            var manager = CreateDebuggerManager();
+            var settings = CreateDebuggerSettings(redactedIdentifier: "reviewblockedtoken");
+            var syncLock = GetSyncLock(manager);
+            using var blocked = new ManualResetEventSlim();
+            Exception? threadException = null;
+
+            Monitor.Enter(syncLock);
+            try
+            {
+                var configureThread = new Thread(
+                    () =>
+                    {
+                        try
+                        {
+                            blocked.Set();
+                            InvokeEnsureSnapshotPipelineConfigured(manager, settings);
+                        }
+                        catch (Exception ex)
+                        {
+                            threadException = ex;
+                        }
+                    });
+                configureThread.Start();
+
+                blocked.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+                configureThread.IsAlive.Should().BeTrue();
+                GetSnapshotPipelineConfigured(manager).Should().Be(0);
+
+                Monitor.Exit(syncLock);
+                syncLock = null;
+
+                configureThread.Join(TimeSpan.FromSeconds(5)).Should().BeTrue();
+                threadException.Should().BeNull();
+
+                GetSnapshotPipelineConfigured(manager).Should().Be(1);
+                Redaction.Instance.IsRedactedKeyword("reviewblockedtoken").Should().BeTrue();
+            }
+            finally
+            {
+                if (syncLock is not null)
+                {
+                    Monitor.Exit(syncLock);
+                }
+
+                Redaction.Instance.ResetInstance();
+            }
+        }
+
         private static DebuggerManager CreateDebuggerManager()
         {
             var constructor = typeof(DebuggerManager).GetConstructor(
@@ -132,11 +236,42 @@ namespace Datadog.Trace.Tests.Debugger
             return (DebuggerManager)constructor!.Invoke([debuggerSettings, exceptionReplaySettings]);
         }
 
+        private static DebuggerSettings CreateDebuggerSettings(string redactedIdentifier)
+        {
+            return new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.RedactedIdentifiers, redactedIdentifier },
+                }),
+                NullConfigurationTelemetry.Instance);
+        }
+
+        private static int GetSnapshotPipelineConfigured(DebuggerManager manager)
+        {
+            var field = typeof(DebuggerManager).GetField("_snapshotPipelineConfigured", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return (int)field!.GetValue(manager)!;
+        }
+
+        private static object GetSyncLock(DebuggerManager manager)
+        {
+            var field = typeof(DebuggerManager).GetField("_syncLock", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return field!.GetValue(manager)!;
+        }
+
         private static void SetSymbolsUploader(DebuggerManager manager, IDebuggerUploader uploader)
         {
             var property = typeof(DebuggerManager).GetProperty(nameof(DebuggerManager.SymbolsUploader), BindingFlags.Instance | BindingFlags.NonPublic);
             property.Should().NotBeNull();
             property!.SetValue(manager, uploader);
+        }
+
+        private static void InvokeEnsureSnapshotPipelineConfigured(DebuggerManager manager, DebuggerSettings settings)
+        {
+            var method = typeof(DebuggerManager).GetMethod("EnsureSnapshotPipelineConfigured", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Should().NotBeNull();
+            method!.Invoke(manager, [settings]);
         }
 
         private static void InvokeDisableSymbolUploader(DebuggerManager manager)
