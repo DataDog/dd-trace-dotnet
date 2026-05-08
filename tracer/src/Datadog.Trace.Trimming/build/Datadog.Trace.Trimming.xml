@@ -179,13 +179,8 @@
       <type fullname="System.Collections.Immutable.ImmutableArray`1" />
       <type fullname="System.Collections.Immutable.ImmutableArray`1/Builder" />
       <type fullname="System.Collections.Immutable.ImmutableArray`1/Enumerator" />
-      <type fullname="System.Collections.Immutable.ImmutableDictionary" />
-      <type fullname="System.Collections.Immutable.ImmutableDictionary`2" />
-      <type fullname="System.Collections.Immutable.ImmutableDictionary`2/Builder" />
       <type fullname="System.Collections.Immutable.ImmutableHashSet" />
       <type fullname="System.Collections.Immutable.ImmutableHashSet`1" />
-      <type fullname="System.Collections.Immutable.ImmutableHashSet`1/Builder" />
-      <type fullname="System.Collections.Immutable.ImmutableHashSet`1/Enumerator" />
    </assembly>
    <assembly fullname="System.Collections.NonGeneric">
       <type fullname="System.Collections.Queue" />
@@ -564,6 +559,7 @@
       <type fullname="System.Reflection.Metadata.MetadataReader" />
       <type fullname="System.Reflection.Metadata.MetadataReaderOptions" />
       <type fullname="System.Reflection.Metadata.MetadataReaderProvider" />
+      <type fullname="System.Reflection.Metadata.MetadataStringComparer" />
       <type fullname="System.Reflection.Metadata.MetadataStringDecoder" />
       <type fullname="System.Reflection.Metadata.MethodBodyBlock" />
       <type fullname="System.Reflection.Metadata.MethodDebugInformation" />
