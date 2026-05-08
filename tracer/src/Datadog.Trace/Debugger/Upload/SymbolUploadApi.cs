@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger.Upload
                 jsonWriter.WritePropertyName("runtimeId");
                 jsonWriter.WriteValue(runtimeId);
 
-                jsonWriter.WritePropertyName("debugger.type");
+                jsonWriter.WritePropertyName("type");
                 jsonWriter.WriteValue(DebuggerTags.DebuggerType.SymDb);
 
                 jsonWriter.WriteEndObject();

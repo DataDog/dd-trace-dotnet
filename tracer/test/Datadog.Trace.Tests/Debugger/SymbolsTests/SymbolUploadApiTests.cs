@@ -31,6 +31,6 @@ public class SymbolUploadApiTests
         Assert.Equal("dd_debugger", dict!["ddsource"]);
         Assert.Equal(serviceName, dict["service"]);
         Assert.Equal(runtimeId, dict["runtimeId"]);
-        Assert.Equal("symdb", dict["debugger.type"]);
+        Assert.Equal("symdb", dict["type"]);
     }
 }
