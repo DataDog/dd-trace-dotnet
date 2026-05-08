@@ -92,6 +92,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                     ApplyStatusFallback(activity6, span);
                 }
 
+                // OTel < 1.6 path: TelemetrySpan.SetStatus(Status.Error) writes "otel.status_code" via Activity.SetTag
+                // without ever calling Activity.SetStatus, so ActivitySetStatusIntegration never fires and
+                // span.Error stays false. Mirror OtlpHelpers.UpdateSpanFromActivity (the listener-path branch
+                // for the same case) here so older OTel versions get the same error mapping.
+                if (!span.Error
+                 && span.Tags is OpenTelemetryTags errorTags
+                 && string.Equals(errorTags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+                {
+                    span.Error = true;
+                    if (span.GetTag(Tags.ErrorMsg) is null
+                     && span.GetTag("otel.status_description") is { Length: > 0 } desc)
+                    {
+                        span.SetTag(Tags.ErrorMsg, desc);
+                    }
+                }
+
                 // If the span is in Error state, look in Activity.Events for an OTel "exception" event
                 // (created by RecordException()) and copy its attributes into error.type/error.msg/error.stack.
                 // The managed listener path does this via AgentStatus2ErrorActivity{5,6}; in the interception
