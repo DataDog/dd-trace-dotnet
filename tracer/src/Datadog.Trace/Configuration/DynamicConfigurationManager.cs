@@ -90,11 +90,12 @@ namespace Datadog.Trace.Configuration
                 CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
             };
 
-            var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;
+            // DebuggerManager construction is cheap; so we don't try to defer creation here.
+            var manager = DebuggerManager.Instance;
+            var oldDebuggerSettings = manager.DebuggerSettings;
 
-            if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
+            if (!ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, dynamicDebuggerSettings, manager.ExceptionReplaySettings.Enabled))
             {
-                Log.Debug("No changes detected in the new dynamic debugger configuration");
                 return;
             }
 
@@ -110,8 +111,59 @@ namespace Datadog.Trace.Configuration
 
             var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
 
-            DebuggerManager.Instance.UpdateConfiguration(Tracer.Instance.Settings, newDebuggerSettings)
-                           .ContinueWith(t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"), TaskContinuationOptions.OnlyOnFaulted);
+            manager.UpdateConfiguration(tracerSettings, newDebuggerSettings)
+                   .ContinueWith(
+                        t => Log.Error(t?.Exception, "Error updating dynamic configuration for debugger"),
+                        CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted,
+                        TaskScheduler.Default);
+        }
+
+        // Decides whether a new dynamic debugger configuration should actually be applied.
+        // Skip when:
+        //   1) the new dynamic config is identical to what's already on the manager, or
+        //   2) all dynamic-controlled products (DI/ER/CO) are currently off AND the new dynamic
+        //      config does not enable any of them. In that case we avoid the extra work in
+        //      DebuggerManager.UpdateProductsState (lock acquisition, OneTimeSetup, debounce churn, telemetry).
+        // Note: SymDB is not in this gate because it cannot be toggled via APM_TRACING
+        // dynamic config; it has its own RC product handled by SymDbRemoteConfig.
+        [TestingAndPrivateOnly]
+        internal static bool ShouldApplyDynamicDebuggerConfig(
+            DebuggerSettings oldDebuggerSettings,
+            ImmutableDynamicDebuggerSettings newDynamicSettings,
+            bool exceptionReplayEnvEnabled)
+        {
+            if (newDynamicSettings.Equals(oldDebuggerSettings.DynamicSettings))
+            {
+                Log.Debug("No changes detected in the new dynamic debugger configuration");
+                return false;
+            }
+
+            var anyRelevantProductRequested = IsAnyRelevantProductRequested(oldDebuggerSettings, exceptionReplayEnvEnabled);
+            var newDynamicEnablesAnyProduct = newDynamicSettings.DynamicInstrumentationEnabled == true
+                                           || newDynamicSettings.ExceptionReplayEnabled == true
+                                           || newDynamicSettings.CodeOriginEnabled == true;
+
+            if (!anyRelevantProductRequested && !newDynamicEnablesAnyProduct)
+            {
+                Log.Debug("All dynamic-controlled debugger products are off and the new dynamic configuration does not enable any; skipping");
+                return false;
+            }
+
+            return true;
+        }
+
+        // "Any DI/ER/CO product is currently requested" based on env settings or the dynamic
+        // settings already applied to the manager. If true, we must always proceed with apply
+        // because the new config may need to disable a running product.
+        private static bool IsAnyRelevantProductRequested(DebuggerSettings settings, bool exceptionReplayEnvEnabled)
+        {
+            return settings.DynamicInstrumentationEnabled
+                || settings.DynamicSettings.DynamicInstrumentationEnabled == true
+                || settings.CodeOriginForSpansEnabled
+                || settings.DynamicSettings.CodeOriginEnabled == true
+                || exceptionReplayEnvEnabled
+                || settings.DynamicSettings.ExceptionReplayEnabled == true;
         }
 
         [TestingAndPrivateOnly]

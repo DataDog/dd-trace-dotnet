@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler;
+using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
@@ -104,13 +104,36 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("true", true)]
         public void SymbolDatabaseUploadOnlyOpensDebuggerGateWhenRemoteConfigurationIsAvailable(string remoteConfigurationEnabled, bool expected)
         {
-            var tracerSettings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, remoteConfigurationEnabled },
-            });
-            var debuggerSettings = new DebuggerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, remoteConfigurationEnabled },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance);
 
-            Instrumentation.ShouldInitializeDebugger(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().Be(expected);
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().Be(expected);
+        }
+
+        [Fact]
+        public void ShouldInitialize_WhenAllDebuggerProductsAreDisabled_ReturnsFalse()
+        {
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                    { ConfigurationKeys.Debugger.ExceptionReplayEnabled, "false" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance);
+
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().BeFalse();
         }
 
         [Fact]

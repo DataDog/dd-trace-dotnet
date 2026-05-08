@@ -101,6 +101,19 @@ namespace Datadog.Trace.Debugger
             private set => Volatile.Write(ref field, value);
         }
 
+        // Decides whether any debugger product should be brought up given the effective settings (env + already-applied dynamic settings).
+		// Note: at startup `DynamicSettings` is the default and those branches are no-ops.
+        internal static bool ShouldInitialize(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool exceptionReplayEnabled)
+        {
+            return debuggerSettings.DynamicInstrumentationEnabled
+                || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true
+                || debuggerSettings.CodeOriginForSpansEnabled
+                || debuggerSettings.DynamicSettings.CodeOriginEnabled == true
+                || exceptionReplayEnabled
+                || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true
+                || (debuggerSettings.SymbolDatabaseUploadEnabled && tracerSettings.IsRemoteConfigurationAvailable);
+        }
+
         private string GetServiceName(MutableSettings mutableSettings)
         {
             try
@@ -163,6 +176,11 @@ namespace Datadog.Trace.Debugger
             ProcessTags = tracerSettings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
         }
 
+        // Callers are expected to gate on ShouldInitialize / ShouldApplyDynamicDebuggerConfig
+        // before invoking this method, so we don't allocate Task/ContinueWith continuations
+        // for no-op updates. The two callers today are:
+        //   - Instrumentation.InitializeDebugger (gates with ShouldInitialize)
+        //   - DynamicConfigurationManager.OnConfigurationChanged (gates with ShouldApplyDynamicDebuggerConfig)
         internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
         {
             return UpdateProductsState(tracerSettings, newDebuggerSettings ?? DebuggerSettings);
