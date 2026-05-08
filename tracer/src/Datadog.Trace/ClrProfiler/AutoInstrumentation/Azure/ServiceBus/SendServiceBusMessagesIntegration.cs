@@ -51,12 +51,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                     : dataStreamsManager.GetOrCreateEdgeTags(
                         new ServiceBusEdgeTagCacheKey(entityPath!, IsConsume: false),
                         static k => ["direction:out", $"topic:{k.EntityPath}", "type:servicebus"]);
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, 0, 0);
                 foreach (var msgObj in messages)
                 {
-                    if (msgObj?.DuckCast<IServiceBusMessage>() is { ApplicationProperties: IDictionary<string, object> props }
+                    if (msgObj?.DuckCast<IServiceBusMessage>() is { } message
+                        && message.ApplicationProperties is IDictionary<string, object> props
                         && !props.ContainsKey(DataStreamsPropagationHeaders.PropagationKeyBase64))
                     {
+                        var msgSize = dataStreamsManager.IsInDefaultState ? 0 : AzureServiceBusCommon.GetMessageSize(message);
+                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
                         dataStreamsManager.InjectPathwayContextAsBase64String(
                             span.Context.PathwayContext,
                             new AzureHeadersCollectionAdapter(props));
