@@ -23,7 +23,7 @@ struct ProfileImpl;
 class Profile
 {
 public:
-    Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName);
+    static std::unique_ptr<Profile> Create(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName);
     ~Profile();
 
     Profile(Profile const&) = delete;
@@ -37,8 +37,10 @@ public:
     std::string const& GetApplicationName() const;
 
 private:
-    friend class Exporter;
     std::unique_ptr<ProfileImpl> _impl;
+    Profile(std::unique_ptr<ProfileImpl> impl, std::string applicationName, bool addTimestampOnSample);
+
+    friend class Exporter;
     std::string _applicationName;
     bool _addTimestampOnSample;
 };
