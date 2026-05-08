@@ -113,7 +113,6 @@
       <Filter>Tracer</Filter>
     </ClCompile>
     <ClCompile Include="function_control_wrapper.cpp" />
-    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp">
       <Filter>Iast</Filter>
     </ClCompile>
     <ClCompile Include="signature_builder.cpp" />
@@ -265,7 +264,6 @@
       <Filter>Tracer</Filter>
     </ClInclude>
     <ClInclude Include="function_control_wrapper.h" />
-    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h">
       <Filter>Iast</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />

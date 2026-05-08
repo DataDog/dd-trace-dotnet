@@ -23,7 +23,6 @@ EXPORTS
     UpdateSettings
     ShouldHeal
     ReportSuccessfulInstrumentation
-    GetUserStrings
     GetInodeForPath
     InitEmbeddedCallSiteDefinitions
     InitEmbeddedCallTargetDefinitions

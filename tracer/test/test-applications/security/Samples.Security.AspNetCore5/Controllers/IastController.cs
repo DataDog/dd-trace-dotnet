@@ -229,21 +229,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             return res;
         }
 
-        [HttpGet("HardcodedSecrets")]
-        [Route("HardcodedSecrets")]
-        public IActionResult HardcodedSecrets()
-        {
-            string[] hardcodedSecrets = new[] {
-                "ghu_123456123456123456123456123456123456",
-                "glpat--A7DO-8ZdceglrnsrMJ5",
-                "glsa_6NVhs0hQUXFVHroLsch9IslQFSgd4Lum_324AC0da",
-                "xapp-1-MGVEG-1-xswt",
-            };
-
-            return Content($"Loaded {hardcodedSecrets.Length} strings with potential hardcoded secrets.\n");
-        }
-
-
         [HttpGet("WeakHashing")]
         [Route("WeakHashing/{delay1}")]
         [Route("WeakHashing2")]

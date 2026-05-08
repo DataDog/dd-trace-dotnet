@@ -482,6 +482,39 @@ Removed the native LibDatadog interop layer. IAST does not use the Datadog data 
 
 Removed DBM (`DatabaseMonitoring/`) — comment propagation for SQL query tagging. IAST detects SQL injection directly; no DBM needed.
 
+### Hardcoded secrets removal
+
+Removed hardcoded secrets detection entirely — both managed and native sides. Hardcoded secrets is a static analysis concern (scans bytecode for literal patterns) and is not an IAST vulnerability (IAST is about runtime taint flow). It was also broken and unmaintained.
+
+**Managed:**
+
+| Change | Details |
+|---|---|
+| Deleted `Iast/Analyzers/HardcodedSecretsAnalyzer.cs` | Main analyzer class with polling thread and 68 regex patterns |
+| Deleted `Iast/Analyzers/UserStringInterop.cs` | P/Invoke interop struct |
+| Removed `IastModule.OnHardcodedSecret()` | Entry point called by the analyzer |
+| Removed `OperationNameHardcodedSecret` | Replaced by `OperationNameDirectoryListingLeak` (which was incorrectly using it) |
+| Removed `HardcodedSecretsAnalyzer.Initialize()` from `Iast.cs` | |
+| Removed `VulnerabilityType.HardcodedSecret` enum value | |
+| Removed `VulnerabilityTypeUtils.HardcodedSecret` constant | |
+| Removed `IntegrationId.HardcodedSecret` | |
+| Removed `DD_TRACE_HARDCODEDSECRET_*` config mappings | From `ManualInstrumentationLegacyConfigurationSource` |
+| Removed from telemetry metrics | `MetricTags` and `IntegrationIdExtensions` |
+| Removed `GetUserStrings` P/Invoke from `NativeMethods.cs` | |
+| Deleted unit tests | `HardcodedSecretsTests.cs` (68 test cases) |
+| Removed integration test | `TestIastHardcodedSecretsRequest` from `AspNetCore5IastTests` |
+| Removed `/Iast/HardcodedSecrets` endpoint | From `IastController.cs` in the sample app |
+
+**Native (`Datadog.Tracer.Native`):**
+
+| Change | Details |
+|---|---|
+| Deleted `iast/hardcoded_secrets_method_analyzer.cpp` and `.h` | IL method analyzer that collected user strings |
+| Removed `#include` and `GetUserStrings` export from `interop.cpp` | Function now gone |
+| Removed `GetUserStrings` from `Datadog.Tracer.Native.def` | DLL export removed |
+| Removed from `CMakeLists.txt` and `.vcxproj` / `.filters` | Build system cleanup |
+| `method_analyzers.h` — `InitAnalyzers()` now returns empty vector | No analyzers remain |
+
 ---
 
 ## JSONL Vulnerability Reporter
@@ -492,19 +525,21 @@ Vulnerabilities are now written to a JSONL file (one JSON object per line) inste
 
 Central reporter class:
 
-- `Report(Vulnerability vulnerability)` — called from `IastModule.cs` at both dedup check points
+- `Report(Vulnerability vulnerability, Span? requestSpan)` — called from `IastModule.cs`, passing `traceContext.RootSpan` as `requestSpan` so request context is always the web span, not whatever child span is active at detection time
+- **Open/close per write** — no persistent file handle; the file is opened, written, and closed on every call. This prevents the process from locking the file for its entire lifetime, allowing test re-runs to start fresh.
 - `ResolveReportPath()` — honors `DD_IAST_VULNERABILITY_LOG_PATH`:
   - Bare filename → appended to the tracer log directory
   - Path with directory component → used verbatim
-  - Not set → `iast-vulnerabilities-<pid>.jsonl` in the tracer log directory
-- `SerializeVulnerability(Vulnerability)` — full JSON schema:
-  - `timestamp` (ISO 8601 UTC)
+  - Not set → `dotnet-iast-vulns-<processname>-<pid>.jsonl` in the tracer log directory
+- `SerializeVulnerability(Vulnerability, Span?)` — full JSON schema:
+  - `timestamp` (ISO 8601 UTC, `"o"` format)
   - `type` (vulnerability type string)
   - `hash` (dedup hash)
-  - `location` — `path`, `method`, `line`, `stack` (inline frames, optional)
+  - `request` — `method`, `url` (port scrubbed in tests), `route`, `endpoint` — read from `requestSpan` tags; covers both ASP.NET Core (`http.route`, `aspnet_core.endpoint`) and ASP.NET Framework (`aspnet.route`, `aspnet.controller`/`aspnet.action`)
+  - `location` — `path`, `method` (no `line` — absent in release builds)
   - `evidence` — `valueParts` array with taint ranges
   - `sources` — array of taint sources
-- Stack frames use `method` (not `function`) and `class` (not `class_name`); no `id` field
+  - `stack` (inline frames, optional, opt-in per test) — frames use `method` (not `function`) and `class` (not `class_name`); no `id`
 
 ### Configuration key: `DD_IAST_VULNERABILITY_LOG_PATH`
 
@@ -548,12 +583,16 @@ Integration tests now validate vulnerability output against snapshot files (`.ve
 
 | Addition | Purpose |
 |---|---|
-| `VulnerabilityLogPath` property (Guid-based) | Unique JSONL file path per fixture; set as `DD_IAST_VULNERABILITY_LOG_PATH` env var in `TryStartApp` |
-| `ReadVulnerabilityRecordsAsync(DateTime since)` | Reads JSONL records emitted at or after `since`; prevents cross-test contamination in the shared per-fixture file |
-| `VerifyVulnerabilityRecordsAsync(records, settings, fileName)` | Runs `Verifier.Verify` against sanitized JSONL, writing snapshots to `test/snapshots/` |
-| `SanitizeForVerification(records)` | Strips volatile fields (timestamps, PIDs, absolute paths) |
+| `VulnerabilityLogPath` — derived from `GetType().Name` | Stable path across all xUnit theory instances of the same class. xUnit creates a fresh instance per `[InlineData]` case, so a `Guid` in the constructor would give each case a different path while the app writes only to the first one. |
+| `VerifyVulnerabilityRecordsAsync(path, fileName, since, ...)` | Reads all records since the `since` cutoff, sanitizes, runs Verify snapshot. No type filter — the snapshot captures whatever is there; unexpected types are caught by snapshot diff. Timeout defaults to 5 s; pass `timeoutMs: 1_000` for not-vulnerable tests to return quickly with `[]`. |
+| `SanitizeForVerification` | Removes `timestamp` (volatile), scrubs port in `request.url` (`localhost:PORT` → `localhost:00000`), removes `line` from location and stack frames (absent in release builds, present in debug — removing ensures both produce the same snapshot). |
 | `SanitizeLdap / SanitizeReflectedXss` | Per-test sanitizers for compiler-generated class names in stack frames |
-| `Dispose` override | Deletes the JSONL file after each test class |
+| `NotVulnerableSnapshotName = "Iast.NotVulnerable"` | Shared snapshot (`[]`) for all not-vulnerable test cases — avoids duplicate empty files |
+| `Dispose` | No file deletion — JSONL lives in `LogDirectory` alongside tracer logs; deletion was failing anyway because the file was locked by the open persistent writer (now resolved) |
+
+**Key isolation design:** `since = DateTime.UtcNow` is captured before each request. `TryReadRecords` parses the `timestamp` field (ISO 8601 `"o"` format, `CultureInfo.InvariantCulture`) to filter to the current test's window. The path is stable, the file accumulates across the test run, and `since` isolates each test's records.
+
+**`vulnerabilitiesPerRequest: 200`** — both `AspNetCore5IastTestsFullSamplingIastEnabled` and `AspNetCore5IastTestsFullSamplingRedactionEnabled` use 200 (up from 3). Route-level sampling blocks detection once a route exhausts its budget; 3 was too low for Theory tests with many InlineData variants hitting the same endpoint.
 
 ### Snapshot mechanism
 
@@ -577,18 +616,18 @@ Span tags and agent transport are still used for request lifecycle (spans exist)
 
 ### IAST Module Structure
 
-**134 C# files** under `tracer/src/Datadog.Trace/Iast/`:
+**~132 C# files** under `tracer/src/Datadog.Trace/Iast/`:
 
 | Directory | Files | Purpose |
 |---|---|---|
-| Root | 40 | Core: `Iast.cs`, `IastModule.cs`, `IastRequestContext.cs`, `Vulnerability.cs`, `VulnerabilityBatch.cs`, `Evidence.cs`, `Source.cs`, `TaintedObjects.cs`, deduplication, overhead control, `VulnerabilityReporter.cs` |
+| Root | ~40 | Core: `Iast.cs`, `IastModule.cs`, `IastRequestContext.cs`, `Vulnerability.cs`, `VulnerabilityBatch.cs`, `Evidence.cs`, `Source.cs`, `TaintedObjects.cs`, deduplication, overhead control, `VulnerabilityReporter.cs` |
 | `Aspects/` | 63 | Method interception hooks organized by target library (System, System.Data, System.IO, System.Net, EntityFramework, MongoDB, NHibernate, ASP.NET, etc.) |
 | `Dataflow/` | 13 | Aspect attributes (`AspectClassAttribute`, `AspectMethodReplace`, `AspectMethodInsertBefore/After`, `AspectFilter`) |
 | `Propagation/` | 4 | Taint propagation through string operations (`StringModuleImpl`, `StringBuilderModuleImpl`, `PropagationModuleImpl`) |
 | `SensitiveData/` | 9 | Evidence redaction (`EvidenceRedactor` + tokenizers for SQL, LDAP, JSON, URLs, headers, commands) |
 | `Settings/` | 1 | `IastSettings` — IAST-specific configuration |
 | `Helpers/` | 2 | MongoDB helper, string extensions |
-| `Analyzers/` | 2 | Hardcoded secrets detection, regex patterns |
+| `Analyzers/` | 0 | Empty — `HardcodedSecretsAnalyzer` deleted (static analysis, not IAST) |
 
 ### IAST Test Structure
 
@@ -629,7 +668,7 @@ What IAST still relies on from the surrounding tracer. Drives the remaining work
 | Dependency | Where Used | How |
 |---|---|---|
 | **`Tracer.Instance.ActiveScope`** | `IastModule.cs` (~10 call sites) | Gets the current span to reach `TraceContext` and then `IastRequestContext` |
-| **`Span` / `Scope`** | `IastModule.cs`, `IastRequestContext.cs` | Vulnerabilities stored as span tags; standalone spans created for hardcoded secrets |
+| **`Span` / `Scope`** | `IastModule.cs`, `IastRequestContext.cs` | Vulnerabilities stored as span tags; standalone spans created for startup vulnerabilities (directory listing, session timeout) |
 | **`TraceContext`** | `TraceContext.cs:38,111,133` | Holds `IastRequestContext` as a field; `EnableIastInRequest()` initializes it |
 | **`SamplingPriority`** | `IastModule.cs` | Force-keeps traces with vulnerabilities |
 | **Agent transport** | Indirect via span pipeline | Vulnerabilities still ride on spans (in addition to JSONL) |
@@ -667,7 +706,9 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 
 **Can strip**: All non-IAST CallTarget definitions (integrations for Redis, HTTP clients, gRPC, logging, etc.). These are defined in managed code via `[InstrumentMethod]` attributes and registered during startup — removing the managed integration classes is sufficient; the native side discovers them dynamically.
 
-**Open question**: Whether to also strip the native C++ codebase or leave it as-is and only gut the managed side. Leaving native untouched is significantly simpler and lower risk.
+**Partial native cleanup done**: `hardcoded_secrets_method_analyzer.cpp/.h` deleted, `GetUserStrings` export removed from `interop.cpp` and `.def`. The IL rewriting engine and IAST aspect definitions are untouched.
+
+**Open question**: Whether to strip the remaining non-IAST native code or leave it. Leaving native otherwise untouched is significantly simpler and lower risk.
 
 ---
 
@@ -698,15 +739,18 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 - ~~Delete non-IAST ClrProfiler integrations (~25 directories)~~ ✅ Done
 - ~~Delete RCM, CI, PDBs, DogStatsd, DBM, ContinuousProfiler, Debugger, OpenTelemetry, RuntimeMetrics, FeatureFlags, ApiSec, AttackerFingerprint, WAF~~ ✅ Done
 - ~~Delete non-IAST tracer/src projects (~10 projects)~~ ✅ Done (20 projects removed)
+- ~~Delete hardcoded secrets analyzer (managed + native)~~ ✅ Done
 - Still pending: remove `Span.cs`, `Scope.cs`, `Tracer.cs`, `TraceContext.cs` or replace with stubs
 
 ### Phase 6 — Simplify configuration (pending)
 - Create standalone `StandaloneIastSettings` reading only IAST env vars
 - Remove `TracerSettings`, `ExporterSettings`, `IntegrationSettings`
 
-### Phase 7 — Adapt tests (partial)
-- ~~Rework integration tests to validate JSON file output instead of span assertions~~ ✅ Done (JSONL + Verify snapshots)
+### Phase 7 — Adapt tests ✅ Done
+- ~~Rework integration tests to validate JSONL file output~~ ✅ Done (Verify snapshots)
 - ~~Remove non-IAST test projects~~ ✅ Done (16 projects removed)
+- ~~Remove IAST-disabled test classes and `EnableIast` infrastructure~~ ✅ Done
+- ~~Fix process leak in `AspNetCoreTestFixture.Dispose()`~~ ✅ Done (2s timeout + try-catch on shutdown request)
 - Still pending: fix unit tests to work without tracer mocks
 
 ---
@@ -718,6 +762,6 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 3. **Output format**: ✅ JSONL chosen (one JSON object per line, custom schema).
 4. **Output strategy**: ✅ One file per process (PID-suffixed default; configurable via `DD_IAST_VULNERABILITY_LOG_PATH`), append-only.
 5. **Overhead controller**: Keep (performance safety) or remove (scan everything)? *(Currently kept.)*
-6. **Hardcoded secrets**: Keep this analyzer with file output?
+6. **Hardcoded secrets**: ✅ Removed — static analysis, not IAST (runtime taint flow).
 7. **Project structure**: Gut `Datadog.Trace.csproj` in-place (A) or new project (B)? *(Currently A — in-place gutting.)*
 8. **Dataflow traces in output**: Include full taint propagation path (source → operations → sink) in findings? *(Currently: sources + tainted value parts, no full dataflow chain.)*

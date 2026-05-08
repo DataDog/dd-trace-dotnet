@@ -1,4 +1,4 @@
-﻿// <copyright file="Iast.cs" company="Datadog">
+// <copyright file="Iast.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,6 @@ using System;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Analyzers;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -79,7 +78,6 @@ internal sealed class Iast
     {
         if (_settings.Enabled)
         {
-            HardcodedSecretsAnalyzer.Initialize(TimeSpan.FromMilliseconds(_settings.RegexTimeout));
         }
     }
 

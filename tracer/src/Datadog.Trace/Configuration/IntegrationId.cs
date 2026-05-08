@@ -69,7 +69,6 @@ namespace Datadog.Trace.Configuration
         AzureServiceBus,
         SystemRandom,
         AwsDynamoDb,
-        HardcodedSecret,
         IbmMq,
         Remoting,
         TrustBoundaryViolation,

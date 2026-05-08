@@ -46,7 +46,7 @@ internal static partial class IastModule
     private const string OperationNameLdapInjection = "ldap_injection";
     private const string OperationNameSsrf = "ssrf";
     private const string OperationNameWeakRandomness = "weak_randomness";
-    private const string OperationNameHardcodedSecret = "hardcoded_secret";
+    private const string OperationNameDirectoryListingLeak = "directory_listing_leak";
     private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private const string OperationNameUnvalidatedRedirect = "unvalidated_redirect";
     private const string OperationNameHeaderInjection = "header_injection";
@@ -397,15 +397,6 @@ internal static partial class IastModule
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeUtils.NoSameSiteCookie, GetCookieHash(VulnerabilityTypeUtils.NoSameSiteCookie, cookieName, isFiltered));
     }
 
-    public static void OnHardcodedSecret(Vulnerability vulnerability)
-    {
-        if (Iast.Instance.Settings.Enabled)
-        {
-            // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability);
-        }
-    }
-
     public static IastModuleResponse OnInsecureAuthProtocol(string authHeader, IntegrationId integrationId)
     {
         OnExecutedSinkTelemetry(IastVulnerabilityType.InsecureAuthProtocol);
@@ -424,7 +415,7 @@ internal static partial class IastModule
             new Evidence($"Directory listing is configured with: {methodName}"),
             IntegrationId.DirectoryListingLeak);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability);
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameDirectoryListingLeak, vulnerability);
     }
 
     public static void OnSessionTimeout(string methodName, TimeSpan value)

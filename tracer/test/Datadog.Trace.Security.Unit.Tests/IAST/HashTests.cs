@@ -24,7 +24,6 @@ public class HashTests
     [InlineData("c", 1271575169)]
     [InlineData("C", 1034095137)]
     [InlineData(VulnerabilityTypeUtils.CommandInjection, -969366626)]
-    [InlineData(VulnerabilityTypeUtils.HardcodedSecret, 900913240)]
     [InlineData(VulnerabilityTypeUtils.HeaderInjection, -283297663)]
     [InlineData(VulnerabilityTypeUtils.HstsHeaderMissing, 1456880170)]
     [InlineData(VulnerabilityTypeUtils.InsecureCookie, 598480805)]

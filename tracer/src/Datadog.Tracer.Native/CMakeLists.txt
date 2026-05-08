@@ -202,7 +202,6 @@ add_library("Datadog.Tracer.Native.static" STATIC
         iast/dataflow_aspects.cpp
         iast/dataflow_il_analysis.cpp
         iast/dataflow_il_rewriter.cpp
-        iast/hardcoded_secrets_method_analyzer.cpp
         iast/iast_util.cpp
         iast/method_analyzer.cpp
         iast/method_analyzers.cpp

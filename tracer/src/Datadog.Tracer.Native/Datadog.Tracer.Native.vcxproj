@@ -286,7 +286,6 @@
     <ClCompile Include="Generated\generated_callsites.g.cpp" />
     <ClCompile Include="Generated\generated_calltargets.g.cpp" />
     <ClInclude Include="Generated\generated_definitions.h" />
-    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="iast\app_domain_info.h" />
     <ClInclude Include="iast\aspect.h" />
     <ClInclude Include="calltarget_tokens.h" />
@@ -369,7 +368,6 @@
     <ClCompile Include="fault_tolerant_rewriter.cpp" />
     <ClCompile Include="fault_tolerant_tracker.cpp" />
     <ClCompile Include="function_control_wrapper.cpp" />
-    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\aspect.cpp" />
     <ClCompile Include="iast\aspect_filter.cpp" />
     <ClCompile Include="iast\dataflow.cpp" />

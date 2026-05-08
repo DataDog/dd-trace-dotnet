@@ -5,8 +5,6 @@
 #include <map>
 #include <set>
 
-#include "hardcoded_secrets_method_analyzer.h"
-
 using namespace shared;
 
 namespace iast
@@ -18,9 +16,7 @@ namespace iast
     public:
         inline static std::vector<MethodAnalyzer*> InitAnalyzers()
         {
-            std::vector<MethodAnalyzer*> res;
-            res.push_back(new HardcodedSecretsMethodAnalyzer());
-            return res;
+            return {};
         }
 
         static void ProcessMethod(MethodInfo* method);

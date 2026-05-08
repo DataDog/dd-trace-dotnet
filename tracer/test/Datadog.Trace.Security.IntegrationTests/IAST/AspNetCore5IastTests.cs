@@ -709,21 +709,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastHardcodedSecretsRequest()
-    {
-        var filename = "Iast.HardcodedSecrets.Vulns.AspNetCore5";
-        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/HardcodedSecrets";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, 6, new[] { url });
-
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
     public async Task TestIastTrustBoundaryViolationRequest()
     {
         var filename = "Iast.TrustBoundaryViolation.Vulns.AspNetCore5";

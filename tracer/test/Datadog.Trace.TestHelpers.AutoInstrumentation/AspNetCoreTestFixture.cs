@@ -148,8 +148,16 @@ namespace Datadog.Trace.TestHelpers
         {
             if (HttpPort is not 0)
             {
-                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
-                request.GetResponse().Close();
+                try
+                {
+                    var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
+                    request.Timeout = 2_000;
+                    request.GetResponse().Close();
+                }
+                catch
+                {
+                    // best effort — if the endpoint is gone or times out, fall through to Kill()
+                }
             }
 
             if (Process is not null)

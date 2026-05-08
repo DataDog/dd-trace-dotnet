@@ -8,7 +8,6 @@
 
 #include "cor_profiler.h"
 #include "logger.h"
-#include "iast/hardcoded_secrets_method_analyzer.h"
 #include "Generated/generated_definitions.h"
 
 #ifndef _WIN32
@@ -237,15 +236,6 @@ EXTERN_C int STDAPICALLTYPE InitEmbeddedCallTargetDefinitions(UINT32 enabledCate
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     return trace::profiler->UpdateSettings(keys, values, length);
-}
-
-EXTERN_C int STDAPICALLTYPE GetUserStrings(int arrSize, iast::UserStringInterop* arr)
-{
-    if (iast::HardcodedSecretsMethodAnalyzer::Instance)
-    {
-        return iast::HardcodedSecretsMethodAnalyzer::Instance->GetUserStrings(arrSize, arr);
-    }
-    return 0;
 }
 
 EXTERN_C VOID STDAPICALLTYPE ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, WCHAR* instrumentationId, int products)

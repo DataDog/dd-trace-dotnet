@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Runtime.InteropServices;
-using Datadog.Trace.Iast.Analyzers;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
 namespace Datadog.Trace.ClrProfiler
@@ -231,18 +230,6 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr)
-        {
-            if (IsWindows)
-            {
-                return Windows.GetUserStrings(arrSize, arr);
-            }
-            else
-            {
-                return NonWindows.GetUserStrings(arrSize, arr);
-            }
-        }
-
         public static bool TryGetInodeForPath(string path, out long result)
         {
             if (IsWindows)
@@ -300,9 +287,6 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern int InitEmbeddedCallTargetDefinitions(uint enabledCategories, uint platform);
-
-            [DllImport("Datadog.Tracer.Native.dll", CharSet = CharSet.Unicode)]
-            public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
         }
 
         // assume .NET Core if not running on Windows
@@ -344,9 +328,6 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int InitEmbeddedCallTargetDefinitions(uint enabledCategories, uint platform);
-
-            [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
-            public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern long GetInodeForPath([MarshalAs(UnmanagedType.LPWStr)]string path);

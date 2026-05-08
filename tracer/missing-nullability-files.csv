@@ -179,7 +179,6 @@ src/Datadog.Trace/Headers/Ip/ExtractedHeadersAndIpInfos.cs
 src/Datadog.Trace/Headers/Ip/IpInfo.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/BufferContent.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/StreamContent.cs
-src/Datadog.Trace/Iast/Analyzers/UserStringInterop.cs
 src/Datadog.Trace/Iast/Aspects/DebugAspects.cs
 src/Datadog.Trace/Iast/Dataflow/AspectFilter.cs
 src/Datadog.Trace/Iast/Dataflow/AspectType.cs
