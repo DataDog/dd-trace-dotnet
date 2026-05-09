@@ -7,7 +7,8 @@
 #if NETCOREAPP3_1_OR_GREATER
 
 using System.Collections.Generic;
-using System.Net.Http;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
@@ -192,6 +193,23 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L);
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
+    }
+
+    [Fact]
+    public async Task AddBody_JsonContent_DoesNotPreventSubsequentContentRead()
+    {
+        var body = "{\"key\":\"value\"}";
+        var mockContent = HttpMocks.CreateMockContent(body, "application/json", Encoding.UTF8.GetByteCount(body));
+        var wafArgs = new Dictionary<string, object>();
+
+        await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L);
+
+        wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);
+
+        var stream = await mockContent.ReadAsStreamAsync();
+        using var reader = new StreamReader(stream);
+        var rereadBody = await reader.ReadToEndAsync();
+        rereadBody.Should().Be(body);
     }
 
     [Theory]

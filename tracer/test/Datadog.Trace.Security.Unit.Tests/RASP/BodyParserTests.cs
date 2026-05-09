@@ -349,6 +349,20 @@ public class BodyParserTests
         result.Should().BeNull();
     }
 
+    [Fact]
+    public void Parse_DoesNotCloseInputStream()
+    {
+        var json = @"{""key"":""value""}";
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+        BodyParser.Parse(stream).Should().NotBeNull();
+
+        stream.CanRead.Should().BeTrue();
+        stream.Position = 0;
+        using var reader = new StreamReader(stream);
+        reader.ReadToEnd().Should().Be(json);
+    }
+
     private object ParseBody(string json)
     {
         if (string.IsNullOrEmpty(json))

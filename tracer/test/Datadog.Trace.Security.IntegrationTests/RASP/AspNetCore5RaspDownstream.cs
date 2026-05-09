@@ -5,12 +5,16 @@
 
 #if NET5_0_OR_GREATER
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,6 +22,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rasp;
 
 public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
+    private const string ResponseBodyReadableTestName = "ResponseBodyReadable";
+
     public AspNetCore5RaspDownstream(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.RaspDownstream")
     {
@@ -67,6 +73,34 @@ public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTes
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(testName, string.Empty, string.Empty);
         await VerifySpans(spansFiltered, settings, orderSpans: OrderSpans);
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestDownstreamResponseBodyReadableAfterAnalysis()
+    {
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var minDateTime = DateTime.UtcNow;
+
+        var response = await SubmitRequest("/Rasp/DownstreamToSelf", null, "application/json");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(response.ResponseText);
+        var root = document.RootElement;
+        root.TryGetProperty("error", out _).Should().BeFalse(response.ResponseText);
+        root.GetProperty("statusCode").GetInt32().Should().Be((int)HttpStatusCode.OK);
+        root.GetProperty("body").GetString().Should().Contain("defaultBody");
+
+        var spans = await WaitForSpansAsync(Fixture.Agent, 5, ResponseBodyReadableTestName, minDateTime, "/Rasp/DownstreamToSelf");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        await VerifySpans(
+            spansFiltered,
+            settings,
+            fileNameOverride: $"{_testName}.__testName={ResponseBodyReadableTestName}_url=_body=",
+            orderSpans: OrderSpans);
     }
 
     private static IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)
