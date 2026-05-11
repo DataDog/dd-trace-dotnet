@@ -21,22 +21,9 @@
 
 ## NuGet Package Architecture
 
-### `Datadog.Trace` Package
-The `Datadog.Trace` NuGet package provides the **manual instrumentation API** for customers:
-- **Contains**: `Datadog.Trace.Manual.dll` - Public API for manual instrumentation
-- **Does NOT contain**: Auto-instrumentation code or native profiler binaries
-- **Usage**: Reference in application code for manual tracing (e.g., `Tracer.Instance.StartActive()`)
+The `Datadog.Trace` NuGet package ships **only** the manual instrumentation API (`Datadog.Trace.Manual.dll`) — reference it in customer code for `Tracer.Instance.StartActive()` etc.
 
-Auto-instrumentation comes from the tracer "monitoring home" deployed separately (via installers, MSI, container images, or specialized packages like `Datadog.AzureFunctions`).
-
-### `Datadog.Trace.dll` vs `Datadog.Trace.Manual.dll`
-- `Datadog.Trace.dll` - The full managed tracer with all auto-instrumentation code, loaded by the native profiler into instrumented processes
-- `Datadog.Trace.Manual.dll` - Lightweight manual instrumentation API packaged in the `Datadog.Trace` NuGet package for customer reference
-
-### Specialized Packages
-- **Datadog.Trace.Bundle**: Complete bundle with managed/native libraries for all supported .NET runtimes, OS/arch combinations, and products (APM, ASM, Continuous Profiler). An alternative distribution mechanism for auto instrumentation
-- **Datadog.AzureFunctions**: Leaner bundle for Azure Functions (see `docs/development/AzureFunctions.md`)
-- Other serverless/platform-specific packages may bundle the tracer similarly
+The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation code and is delivered separately via the tracer "monitoring home" (installers, MSI, container images, or specialized packages: `Datadog.Trace.Bundle` for complete multi-runtime/multi-product distribution; `Datadog.AzureFunctions` for Azure Functions). The native profiler loads it into instrumented processes from the home.
 
 ## Tracer Structure
 
@@ -190,8 +177,6 @@ Use clear, customer-facing terminology in log messages to avoid confusion. `Prof
 - Native loader, Native tracer, Managed tracer loader, Managed tracer, Libdatadog, Continuous Profiler
 - `CorProfiler` / `ICorProfiler` / `COR Profiler` for runtime components
 
-**Reference:** See PR 7467 for examples of consistent terminology in native logs.
-
 ### Log Argument Formatting
 
 Never use `ToString()` on numeric types in log calls - use generic log methods instead:
@@ -249,7 +234,6 @@ The tracer runs in-process with customer applications and must have minimal perf
 **Frameworks:** xUnit (managed), GoogleTest (native)
 **Test style:** Inline results in assertions: `SomeMethod().Should().Be(expected)`
 **Docker:** Many integration tests require Docker; services in `docker-compose.yml`
-**Filters:** `--filter "Category=Smoke"`, `--framework net6.0`
 
 **Testing patterns:**
 - Extract interfaces for environment/filesystem dependencies (e.g., `IEnvironmentVariableProvider`)
@@ -261,18 +245,8 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 ## Commit & Pull Request Guidelines
 
-**Commits:**
-- Imperative mood; optional scope tag (e.g., `fix(telemetry): …` or `[Debugger] …`)
-- Reference issues when applicable
-- Keep messages concise - avoid full diffs or extensive details
-
-**Pull Requests:**
-- Follow `.github/pull_request_template.md`
-- Clear description, linked issues, risks/rollout notes
-- Keep concise - essential context without excessive detail
-- Focus on "what" and "why", brief "how" for complex changes
-- Include tests/docs for changes
-- CI: All checks must pass
+- Commits: imperative mood, optional `[Area]` prefix (e.g. `[Debugger]`, `[SymDB]`). Keep messages concise — avoid full diffs or extensive explanation.
+- PRs: follow [`.github/pull_request_template.md`](.github/pull_request_template.md). Keep descriptions concise — focus on "what" and "why", brief "how" only when complex.
 
 ## Documentation References
 
@@ -298,9 +272,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 ## Configuration
 
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, 
-  product categorization, key aliases, deprecations and default values for all `DD_*` and `OTEL_*` environment 
-  variables (consumed by source generators as well)
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, product categorization, key aliases, deprecations, and default values for all `DD_*` and `OTEL_*` environment variables (also consumed by source generators).
 
 - **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
 
