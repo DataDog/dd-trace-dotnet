@@ -202,12 +202,22 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var mockContent = HttpMocks.CreateMockContent(body, "application/json", Encoding.UTF8.GetByteCount(body));
         var wafArgs = new Dictionary<string, object>();
 
+        await mockContent.LoadIntoBufferAsync(Encoding.UTF8.GetByteCount(body));
+        var stream = await mockContent.ReadAsStreamAsync();
+        stream.CanSeek.Should().BeTrue();
+        stream.Position.Should().Be(0);
+
         await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L);
 
         wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);
+        stream.Position.Should().Be(0);
 
-        var stream = await mockContent.ReadAsStreamAsync();
-        using var reader = new StreamReader(stream);
+        using var reader = new StreamReader(
+            stream,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: true);
         var rereadBody = await reader.ReadToEndAsync();
         rereadBody.Should().Be(body);
     }

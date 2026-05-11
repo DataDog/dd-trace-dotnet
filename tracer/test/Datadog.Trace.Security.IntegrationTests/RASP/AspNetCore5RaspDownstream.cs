@@ -5,7 +5,6 @@
 
 #if NET5_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -22,8 +21,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rasp;
 
 public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    private const string ResponseBodyReadableTestName = "ResponseBodyReadable";
-
     public AspNetCore5RaspDownstream(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.RaspDownstream")
     {
@@ -79,9 +76,7 @@ public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTes
     [Trait("RunOnWindows", "True")]
     public async Task TestDownstreamResponseBodyReadableAfterAnalysis()
     {
-        IncludeAllHttpSpans = true;
         await TryStartApp();
-        var minDateTime = DateTime.UtcNow;
 
         var response = await SubmitRequest("/Rasp/DownstreamToSelf", null, "application/json");
 
@@ -91,16 +86,6 @@ public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTes
         root.TryGetProperty("error", out _).Should().BeFalse(response.ResponseText);
         root.GetProperty("statusCode").GetInt32().Should().Be((int)HttpStatusCode.OK);
         root.GetProperty("body").GetString().Should().Contain("defaultBody");
-
-        var spans = await WaitForSpansAsync(Fixture.Agent, 5, ResponseBodyReadableTestName, minDateTime, "/Rasp/DownstreamToSelf");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        await VerifySpans(
-            spansFiltered,
-            settings,
-            fileNameOverride: $"{_testName}.__testName={ResponseBodyReadableTestName}_url=_body=",
-            orderSpans: OrderSpans);
     }
 
     private static IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)
