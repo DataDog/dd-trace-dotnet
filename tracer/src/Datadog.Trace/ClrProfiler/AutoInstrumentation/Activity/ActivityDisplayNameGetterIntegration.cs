@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         MethodName = "get_DisplayName",
         ReturnTypeName = ClrNames.String,
         ParameterTypeNames = new string[0],
-        MinimumVersion = "6.0.0",
+        MinimumVersion = "5.0.0",
         MaximumVersion = SupportedVersions.LatestDotNet,
         IntegrationName = IntegrationName)]
     [Browsable(false)]

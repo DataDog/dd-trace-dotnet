@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         MethodName = "get_TagObjects",
         ReturnTypeName = "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.Object]]",
         ParameterTypeNames = new string[0],
-        MinimumVersion = "6.0.0",
+        MinimumVersion = "5.0.0",
         MaximumVersion = SupportedVersions.LatestDotNet,
         IntegrationName = IntegrationName)]
     [Browsable(false)]

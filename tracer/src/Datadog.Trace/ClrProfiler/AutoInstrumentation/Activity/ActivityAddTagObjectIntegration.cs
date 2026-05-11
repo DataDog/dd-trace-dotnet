@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         MethodName = "AddTag",
         ReturnTypeName = "System.Diagnostics.Activity",
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.Object },
-        MinimumVersion = "6.0.0",
+        MinimumVersion = "5.0.0",
         MaximumVersion = SupportedVersions.LatestDotNet,
         IntegrationName = IntegrationName)]
     [Browsable(false)]
