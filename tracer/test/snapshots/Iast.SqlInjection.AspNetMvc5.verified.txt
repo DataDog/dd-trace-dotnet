@@ -1,0 +1,36 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: SELECT Surname from Persons where name = '
+        },
+        {
+          source: 0,
+          value: Vicent
+        },
+        {
+          value: '
+        }
+      ]
+    },
+    hash: -1673193954,
+    location: {
+      method: SqlQuery,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/SqlQuery?username=Vicent
+    },
+    sources: [
+      {
+        name: username,
+        origin: http.request.parameter,
+        value: Vicent
+      }
+    ],
+    type: SQL_INJECTION
+  }
+]

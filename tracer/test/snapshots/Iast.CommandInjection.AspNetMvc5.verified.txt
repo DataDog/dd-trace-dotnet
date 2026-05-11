@@ -1,0 +1,42 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: nonexisting.exe
+        },
+        {
+          value:  
+        },
+        {
+          source: 1,
+          value: arg1
+        }
+      ]
+    },
+    hash: -430498668,
+    location: {
+      method: ExecuteCommandInternal,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1
+    },
+    sources: [
+      {
+        name: file,
+        origin: http.request.parameter,
+        value: nonexisting.exe
+      },
+      {
+        name: argumentLine,
+        origin: http.request.parameter,
+        value: arg1
+      }
+    ],
+    type: COMMAND_INJECTION
+  }
+]

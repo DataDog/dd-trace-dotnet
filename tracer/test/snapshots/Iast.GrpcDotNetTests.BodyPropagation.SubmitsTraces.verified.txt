@@ -20,7 +20,7 @@
       endpoint: gRPC - /greet.tester.Greeter/Unary,
       method: POST,
       route: /greet.tester.greeter/unary,
-      url: http://127.0.0.1:5000/greet.tester.Greeter/Unary
+      url: http://127.0.0.1:00000/greet.tester.Greeter/Unary
     },
     sources: [
       {
@@ -51,7 +51,7 @@
       endpoint: gRPC - /greet.tester.Greeter/StreamingFromServer,
       method: POST,
       route: /greet.tester.greeter/streamingfromserver,
-      url: http://127.0.0.1:5000/greet.tester.Greeter/StreamingFromServer
+      url: http://127.0.0.1:00000/greet.tester.Greeter/StreamingFromServer
     },
     sources: [
       {
@@ -82,7 +82,7 @@
       endpoint: gRPC - /greet.tester.Greeter/StreamingFromClient,
       method: POST,
       route: /greet.tester.greeter/streamingfromclient,
-      url: http://127.0.0.1:5000/greet.tester.Greeter/StreamingFromClient
+      url: http://127.0.0.1:00000/greet.tester.Greeter/StreamingFromClient
     },
     sources: [
       {
@@ -113,7 +113,7 @@
       endpoint: gRPC - /greet.tester.Greeter/StreamingBothWays,
       method: POST,
       route: /greet.tester.greeter/streamingbothways,
-      url: http://127.0.0.1:5000/greet.tester.Greeter/StreamingBothWays
+      url: http://127.0.0.1:00000/greet.tester.Greeter/StreamingBothWays
     },
     sources: [
       {

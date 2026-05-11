@@ -1,0 +1,14 @@
+﻿[
+  {
+    evidence: {
+      value: dummyvalue
+    },
+    hash: -721858374,
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/XContentTypeHeaderMissing?contentType=text/html&returnCode=200&xContentTypeHeaderValue=dummyvalue
+    },
+    type: XCONTENTTYPE_HEADER_MISSING
+  }
+]

@@ -1,0 +1,28 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: nonexisting.exe
+        },
+        {
+          value:  
+        },
+        {
+          value: arg1
+        }
+      ]
+    },
+    hash: -430498668,
+    location: {
+      method: ExecuteCommandInternal,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/JavaScriptSerializerDeserializeObject?input=nonexisting.exe
+    },
+    type: COMMAND_INJECTION
+  }
+]

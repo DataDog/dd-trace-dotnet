@@ -62,26 +62,13 @@ public class GrpcDotNetTests : TestHelper
         var sanitized = records
             .OrderBy(r => r["type"]?.Value<string>(), StringComparer.Ordinal)
             .ThenBy(r => r["hash"]?.Value<int>())
-            .Select(Sanitize)
+            .Select(r => VulnerabilityJsonl.Sanitize(r))
             .ToList();
 
         VerifyHelper.InitializeGlobalSettings();
         await Verifier.Verify(sanitized, new VerifySettings())
                       .UseFileName(filename)
                       .DisableRequireUniquePrefix();
-    }
-
-    private static JObject Sanitize(JObject record)
-    {
-        record.Remove("timestamp");
-
-        if (record["location"] is JObject location)
-        {
-            location.Remove("line");
-            location.Remove("stack");
-        }
-
-        return record;
     }
 
     private static void GuardAlpine()

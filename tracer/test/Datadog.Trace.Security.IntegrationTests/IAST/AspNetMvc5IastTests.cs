@@ -6,14 +6,16 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using Newtonsoft.Json.Linq;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -42,14 +44,17 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [InlineData("text/html", 500, "")]
     public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
     {
-        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated";
-        await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
+        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
+        var filename = "Iast.XContentTypeHeaderMissing.AspNetMvc5." + contentType.Replace("/", string.Empty) +
+            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(xContentTypeHeaderValue) ? "empty" : xContentTypeHeaderValue);
+        var isHtml = contentType.Contains("html") || contentType.Contains("xhtml");
+        var expectVulnerability = isHtml && returnCode == 200 && !xContentTypeHeaderValue.Equals("nosniff", StringComparison.OrdinalIgnoreCase);
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
-
-    // When the request is finished without the header Strict-Transport-Security or with aninvalid value on it, we should detect the vulnerability and send it to the agent when these conditions happens:
-    // The connection protocol is https or the request header X-Forwarded-Proto is https
-    // The Content-Type header of the response looks like html(text/html, application/xhtml+xml)
-    // Header has a valid value when it starts with max-age followed by a positive number (>0), it can finish there or continue with a semicolon ; and more content.
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
@@ -65,8 +70,20 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [InlineData("text/html", 200, "invalid", "https")]
     public async Task TestStrictTransportSecurityHeaderMissing(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto)
     {
-        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated";
-        await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+            (string.IsNullOrEmpty(hstsHeaderValue) ? string.Empty : "&hstsHeaderValue=" + hstsHeaderValue) +
+            (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
+        var url = "/Iast/StrictTransportSecurity" + queryParams;
+        var filename = "Iast.StrictTransportSecurity.AspNetMvc5." + contentType.Replace("/", string.Empty) +
+            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
+            + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
+        var isHtml = contentType.Contains("html") || contentType.Contains("xhtml");
+        var isHttps = !string.IsNullOrEmpty(xForwardedProto);
+        var isValidHsts = Regex.IsMatch(Uri.UnescapeDataString(hstsHeaderValue ?? string.Empty), @"^max-age=[1-9]\d*");
+        var expectVulnerability = isHtml && isHttps && returnCode == 200 && !isValidHsts;
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
     [Trait("Category", "EndToEnd")]
@@ -80,426 +97,11 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [InlineData("Vuln.NoSensitive", new string[] { "name", "Name", "value", "value" }, new string[] { "value", "moreText" })]
     [InlineData("NotVulnerable", new string[] { "name", "Sec-WebSocket-Accept" }, new string[] { "value", "moreText" })]
     [InlineData("Vuln.Origin", new string[] { "name", "access-control-allow-origin", "value", "https://example.com" }, null)]
-    [InlineData("NotVulnerable", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)] // Not vulnerable
+    [InlineData("NotVulnerable", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)]
     [InlineData("Vuln.Cookie.SensitiveValue", new string[] { "name", "set-cookie", "value", "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict" }, null)]
     [InlineData("NotVulnerable", null, new string[] { "name", "set-cookie", "value", "NotVulnerable%3D22%3Bmax-age%3D31536000%3BSecure%3BHttpOnly%3BSameSite%3DStrict" })]
     [InlineData("Vuln.MultipleHeaderValues", new string[] { "name", "extraName", "value", "value2" }, null)]
     public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
-    {
-        await TestIastHeaderInjectionRequestVulnerability(testCase, headers, cookies, useValueFromOriginHeader);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/StackTraceLeak")]
-    public async Task TestStackTraceLeak(string test, string url)
-    {
-        await TestStrictTransportSecurityHeaderMissingVulnerability(test, url);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1")]
-    public async Task TestQueryParameterNameVulnerability(string test, string url)
-    {
-        await TestQueryParameterName(test, url);
-    }
-}
-
-[Collection("IisTests")]
-public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
-{
-    private readonly IisFixture _iisFixture;
-
-    public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
-        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
-    {
-        EnableEvidenceRedaction(false);
-        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
-        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
-        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
-        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
-        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
-
-        _iisFixture = iisFixture;
-        _testName = "Security." + nameof(AspNetMvc5) + ".Classic";
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/QueryOwnUrl")]
-    public async Task TestIastFullUrlTaint(string test, string url)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
-        var filename = $"{_testName}.path={sanitisedPath}";
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    public async Task InitializeAsync()
-    {
-        await _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
-        SetHttpPort(_iisFixture.HttpPort);
-    }
-
-    public Task DisposeAsync() => Task.CompletedTask;
-}
-
-public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
-{
-    private readonly IisFixture _iisFixture;
-    private readonly bool _classicMode;
-
-    public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode)
-        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
-    {
-        EnableEvidenceRedaction(false);
-        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
-        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
-        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
-        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
-        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
-        DisableObfuscationQueryString();
-
-        _iisFixture = iisFixture;
-        _classicMode = classicMode;
-        _testName = "Security." + nameof(AspNetMvc5)
-                 + (classicMode ? ".Classic" : ".Integrated");
-    }
-
-    public async Task InitializeAsync()
-    {
-        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-        SetHttpPort(_iisFixture.HttpPort);
-    }
-
-    public Task DisposeAsync() => Task.CompletedTask;
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/SafeCookie")]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/AllVulnerabilitiesCookie")]
-    public async Task TestIastInsecureCookieRequest(string test, string url)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
-        var filename = $"{_testName}.path={sanitisedPath}";
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/SqlQuery?username=Vicent", null)]
-    public async Task TestIastSqlInjectionRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("SqlInjection");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/GetFileContent?file=nonexisting.txt", null)]
-    public async Task TestIastPathTraversalRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("PathTraversal");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteCommandFromHeader", null)]
-    public async Task TestIastHeaderTaintingRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        AddHeaders(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("ExecuteCommandFromHeader");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1", null)]
-    public async Task TestIastCommandInjectionRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("CommandInjection");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/SSRF?host=localhost", null)]
-    public async Task TestIastSSRFRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("SSRF");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/WeakRandomness", null)]
-    public async Task TestIastWeakRandomnessRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("WeakRandomness");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "LinuxUnsupported")]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteQueryFromBodyQueryData", "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
-    public async Task TestRequestBodyTainting(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, url, body, 1, 1, string.Empty, "application/json", null);
-        var filename = GetFileName("RequestBodyTest");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "LinuxUnsupported")]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com", null)]
-    public async Task TestIastLdapRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("Ldap");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteCommandFromCookie")]
-    public async Task TestIastCookieTaintingRequest(string test, string url)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
-        AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("CookieTainting");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/TrustBoundaryViolation?name=name&value=value", null)]
-    public async Task TestIastTrustBoundaryViolationRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("TrustBoundaryViolation");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/XpathInjection?user=klaus&value=pass")]
-    public async Task TestIastXpathInjectionRequest(string test, string url)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
-        var filename = GetFileName("XpathInjection");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false")]
-    public async Task TestIastEmailHtmlInjectionRequest(string test, string url)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
-        var filename = GetFileName("EmailHtmlInjection");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/UnvalidatedRedirect?param=value", null)]
-    public async Task TestIastUnvalidatedRedirectRequest(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("UnvalidatedRedirect");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastReflectedXssRequest()
-    {
-        (Regex RegexPattern, string Replacement) pathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
-        (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -953468592,"), "\"hash\": -623616875,");
-
-        var filename = GetFileName("ReflectedXss");
-        var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
-        IncludeAllHttpSpans = true;
-        var spans = await SendRequestsAsync(_iisFixture.Agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(pathScrubber);
-        settings.AddRegexScrubber(hashScrubber);
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastReflectedXssEscapedRequest()
-    {
-        var filename = GetFileName("ReflectedXssEscaped");
-        var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
-        IncludeAllHttpSpans = true;
-        var spans = await SendRequestsAsync(_iisFixture.Agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/JavaScriptSerializerDeserializeObject?input=nonexisting.exe", null)]
-    public async Task TestJavaScriptSerializerDeserializeObject(string test, string url, string body)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = GetFileName("JavaScriptSerializerDeserializeObject");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    protected async Task TestStrictTransportSecurityHeaderMissingVulnerability(string test, string url)
-    {
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
-        var filename = GetFileName("StackTraceLeak");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    protected async Task TestStrictTransportSecurityHeaderMissingVulnerability(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto, string testName)
-    {
-        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
-                    (string.IsNullOrEmpty(hstsHeaderValue) ? string.Empty : "&hstsHeaderValue=" + hstsHeaderValue) +
-                    (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
-        var url = "/Iast/StrictTransportSecurity" + queryParams;
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        var filename = testName + "." + contentType.Replace("/", string.Empty) +
-            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
-            + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
-    }
-
-    protected async Task TestIastHeaderInjectionRequestVulnerability(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
     {
         var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase);
         var filename = "Iast.HeaderInjection.AspNetMvc." + (notVulnerable ? "NotVuln" : testCase) +
@@ -509,7 +111,6 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
 
         Dictionary<string, string> headersDic = new();
         Dictionary<string, string> cookiesDic = new();
-
         if (headers != null)
         {
             for (int i = 0; i < headers.Length; i = i + 2)
@@ -528,45 +129,347 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
 
         AddCookies(cookiesDic);
         AddHeaders(headersDic);
-
-        var spans = await SendRequestsAsync(_iisFixture.Agent, 1, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToImmutableList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, 1, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, notVulnerable ? NotVulnerableSnapshotName : filename, since: since, timeoutMs: notVulnerable ? 1_000 : 5_000);
     }
 
-    protected async Task TestXContentVulnerability(string contentType, int returnCode, string xContentTypeHeaderValue, string testName)
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/StackTraceLeak")]
+    public async Task TestStackTraceLeak(string url)
     {
-        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
-            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
-        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = $"{testName}.path={sanitisedUrl}";
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, [url]);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("StackTraceLeak"), since: since);
     }
 
-    protected async Task TestQueryParameterName(string test, string url)
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1")]
+    public async Task TestQueryParameterNameVulnerability(string url)
     {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, [url]);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("QueryParameterName"), since: since);
+    }
+}
+
+[Collection("IisTests")]
+public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
+{
+    protected const string NotVulnerableSnapshotName = VulnerabilityJsonl.NotVulnerableSnapshotName;
+
+    private readonly IisFixture _iisFixture;
+
+    public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
+        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+    {
+        EnableEvidenceRedaction(false);
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
+        _iisFixture = iisFixture;
+        _testName = "Security." + nameof(AspNetMvc5) + ".Classic";
+    }
+
+    protected string VulnerabilityLogPath =>
+        Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
+
+    protected MockTracerAgent Agent => _iisFixture.Agent;
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/QueryOwnUrl")]
+    public async Task TestIastFullUrlTaint(string url)
+    {
+        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
+        var filename = $"{_testName}.path={sanitisedPath}";
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    protected static Task VerifyVulnerabilityRecordsAsync(string path, string fileName, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
+    {
+        return VulnerabilityJsonl.VerifyRecordsAsync(path, fileName, since, includeStack, recordSanitizer, timeoutMs);
+    }
+}
+
+public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
+{
+    protected const string NotVulnerableSnapshotName = VulnerabilityJsonl.NotVulnerableSnapshotName;
+
+    private readonly IisFixture _iisFixture;
+    private readonly bool _classicMode;
+
+    public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode)
+        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+    {
+        EnableEvidenceRedaction(false);
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
+        DisableObfuscationQueryString();
+
+        _iisFixture = iisFixture;
+        _classicMode = classicMode;
+        _testName = "Security." + nameof(AspNetMvc5) + (_classicMode ? ".Classic" : ".Integrated");
+    }
+
+    protected string VulnerabilityLogPath =>
+        Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
+
+    protected MockTracerAgent Agent => _iisFixture.Agent;
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/SafeCookie")]
+    [InlineData("/Iast/AllVulnerabilitiesCookie")]
+    public async Task TestIastInsecureCookieRequest(string url)
+    {
+        var expectVulnerability = url.Contains("AllVulnerabilitiesCookie");
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
-        var filename = GetFileName("QueryParameterName");
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToImmutableList();
-        settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
+        var filename = $"Iast.Vulns.AspNetMvc5.path={sanitisedUrl}";
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/SqlQuery?username=Vicent")]
+    public async Task TestIastSqlInjectionRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("SqlInjection"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/GetFileContent?file=nonexisting.txt")]
+    public async Task TestIastPathTraversalRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("PathTraversal"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/ExecuteCommandFromHeader")]
+    public async Task TestIastHeaderTaintingRequest(string url)
+    {
+        AddHeaders(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("ExecuteCommandFromHeader"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1")]
+    public async Task TestIastCommandInjectionRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("CommandInjection"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/SSRF?host=localhost")]
+    public async Task TestIastSSRFRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("SSRF"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/WeakRandomness")]
+    public async Task TestIastWeakRandomnessRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("WeakRandomness"), since: since);
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
+    public async Task TestRequestBodyTainting(string url, string body)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, url, body, 1, 1, string.Empty, "application/json", null);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("RequestBodyTest"), since: since);
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com")]
+    public async Task TestIastLdapRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("Ldap"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/ExecuteCommandFromCookie")]
+    public async Task TestIastCookieTaintingRequest(string url)
+    {
+        AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("CookieTainting"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/TrustBoundaryViolation?name=name&value=value")]
+    public async Task TestIastTrustBoundaryViolationRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("TrustBoundaryViolation"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/XpathInjection?user=klaus&value=pass")]
+    public async Task TestIastXpathInjectionRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, [url]);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("XpathInjection"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false")]
+    public async Task TestIastEmailHtmlInjectionRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, [url]);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("EmailHtmlInjection"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/UnvalidatedRedirect?param=value")]
+    public async Task TestIastUnvalidatedRedirectRequest(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("UnvalidatedRedirect"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    public async Task TestIastReflectedXssRequest()
+    {
+        var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, 2, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("ReflectedXss"), since: since);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    public async Task TestIastReflectedXssEscapedRequest()
+    {
+        var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, 2, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
+    }
+
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/JavaScriptSerializerDeserializeObject?input=nonexisting.exe")]
+    public async Task TestJavaScriptSerializerDeserializeObject(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(Agent, new[] { url });
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("JavaScriptSerializerDeserializeObject"), since: since);
+    }
+
+    protected static Task VerifyVulnerabilityRecordsAsync(string path, string fileName, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
+    {
+        return VulnerabilityJsonl.VerifyRecordsAsync(path, fileName, since, includeStack, recordSanitizer, timeoutMs);
     }
 
     protected override string GetTestName() => _testName;
 
-    private string GetFileName(string testName)
-    {
-        return $"Iast.{testName}.AspNetMvc5";
-    }
+    protected string GetFileName(string testName) => $"Iast.{testName}.AspNetMvc5";
 }
 #endif

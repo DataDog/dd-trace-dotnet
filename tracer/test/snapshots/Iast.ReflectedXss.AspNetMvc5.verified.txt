@@ -7,26 +7,18 @@
           value: <b>RawValue</b>
         },
         {
-          redacted: true
+          value: <b>More Text</b>
         }
       ]
     },
-    hash: 1504523735,
+    hash: -2097573301,
     location: {
-      method: MoveNext,
-      path: AspNetCore.Views_Iast_Xss+<<ExecuteAsync>b__8_1>d,
-      stack: [
-        {
-          class: HtmlString,
-          method: .ctor,
-          namespace: Microsoft.AspNetCore.Html
-        }
-      ]
+      method: Execute,
+      path: ASP._Page_Views_Iast_ReflectedXss_cshtml
     },
     request: {
-      endpoint: Samples.Security.AspNetCore5.Controllers.IastController.ReflectedXss (Samples.Security.AspNetCore5),
       method: GET,
-      route: iast/reflectedxss,
+      route: {controller}/{action}/{id},
       url: http://localhost:00000/Iast/ReflectedXss?param=%3Cb%3ERawValue%3C/b%3E
     },
     sources: [

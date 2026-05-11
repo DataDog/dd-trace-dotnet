@@ -1,0 +1,38 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: extraName
+        },
+        {
+          value: : 
+        },
+        {
+          source: 1,
+          value: value2
+        }
+      ]
+    },
+    hash: -385951913,
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.header,
+        value: extraName
+      },
+      {
+        name: value,
+        origin: http.request.header,
+        value: value2
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

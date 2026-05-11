@@ -312,8 +312,11 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
     [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>")]
     public async Task TestVulnerabilityStack(string name, string url)
     {
+#if NET6_0_OR_GREATER
         var fileName = "Iast.Stacks." + name;
-
+#else
+        var fileName = "Iast.Stacks.v1." + name;
+#endif
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
@@ -893,11 +896,10 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
 public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    protected const string NotVulnerableSnapshotName = "Iast.NotVulnerable";
+    protected const string NotVulnerableSnapshotName = VulnerabilityJsonl.NotVulnerableSnapshotName;
 #pragma warning disable SA1311 // Static readonly fields should begin with upper-case letter
     protected static readonly (Regex RegexPattern, string Replacement) aspNetCorePathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
     protected static readonly (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
-    protected static readonly Regex PortScrubber = new(@"(https?://[^/:]+):\d+", RegexOptions.Compiled);
 #pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
 
     public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, string sampleName = "AspNetCore5")
@@ -971,82 +973,9 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SetHttpPort(fixture.HttpPort);
     }
 
-    protected static async Task VerifyVulnerabilityRecordsAsync(string path, string fileName, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
+    protected static Task VerifyVulnerabilityRecordsAsync(string path, string fileName, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
     {
-        // Poll until at least one record appears or the timeout expires. A short
-        // timeoutMs (e.g. 1_000) is appropriate for tests that expect no records.
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        List<JObject> records;
-        do
-        {
-            records = VulnerabilityJsonl.ReadRecords(path, since);
-            if (records.Count > 0)
-            {
-                break;
-            }
-
-            await Task.Delay(50);
-        }
-        while (DateTime.UtcNow < deadline);
-
-        // Stable order across runs: snapshots compare line-by-line, so we sort by type then hash.
-        var sanitized = records
-            .OrderBy(r => r["type"]?.Value<string>(), StringComparer.Ordinal)
-            .ThenBy(r => r["hash"]?.Value<int>())
-            .Select(r => SanitizeForVerification(r, includeStack))
-            .ToList();
-
-        if (recordSanitizer is not null)
-        {
-            foreach (var record in sanitized)
-            {
-                recordSanitizer(record);
-            }
-        }
-
-        // Land snapshots in tracer/test/snapshots/ alongside the existing span
-        // snapshots. VerifyHelper sets this globally for all Verify calls.
-        VerifyHelper.InitializeGlobalSettings();
-
-        var settings = new VerifySettings();
-        await Verifier.Verify(sanitized, settings)
-                      .UseFileName(fileName)
-                      .DisableRequireUniquePrefix();
-    }
-
-    private static JObject SanitizeForVerification(JObject record, bool includeStack)
-    {
-        // Drop volatile fields so the snapshot stays stable across runs and code edits.
-        record.Remove("timestamp");
-
-        if (record["request"] is JObject request && request["url"] is JValue urlValue)
-        {
-            request["url"] = PortScrubber.Replace(urlValue.Value<string>() ?? string.Empty, "$1:00000");
-        }
-
-        if (record["location"] is JObject location)
-        {
-            // Line numbers are present in debug builds (PDB info) but absent in
-            // release — remove rather than replace so both produce the same snapshot.
-            location.Remove("line");
-
-            if (!includeStack)
-            {
-                // Stack frames vary by framework version and instrumentation depth,
-                // so most tests exclude them. Stack-specific tests can opt in.
-                location.Remove("stack");
-            }
-            else if (location["stack"] is JArray stack)
-            {
-                foreach (var frame in stack.OfType<JObject>())
-                {
-                    frame.Remove("line");
-                    frame.Remove("column");
-                }
-            }
-        }
-
-        return record;
+        return VulnerabilityJsonl.VerifyRecordsAsync(path, fileName, since, includeStack, recordSanitizer, timeoutMs);
     }
 }
 

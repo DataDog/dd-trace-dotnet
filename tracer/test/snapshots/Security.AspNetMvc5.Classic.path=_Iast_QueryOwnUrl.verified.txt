@@ -1,0 +1,35 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          value: SELECT Surname from Persons where name = '
+        },
+        {
+          source: 0,
+          value: http://localhost:00000/Iast/QueryOwnUrl
+        },
+        {
+          value: '
+        }
+      ]
+    },
+    hash: -1673193954,
+    location: {
+      method: SqlQuery,
+      path: Samples.Security.AspNetCore5.Controllers.IastController
+    },
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/QueryOwnUrl
+    },
+    sources: [
+      {
+        origin: http.request.uri,
+        value: http://localhost:00000/Iast/QueryOwnUrl
+      }
+    ],
+    type: SQL_INJECTION
+  }
+]

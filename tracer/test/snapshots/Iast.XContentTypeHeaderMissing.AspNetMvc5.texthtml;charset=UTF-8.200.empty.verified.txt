@@ -1,0 +1,11 @@
+﻿[
+  {
+    hash: -721858374,
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/XContentTypeHeaderMissing?contentType=text/html;charset=UTF-8&returnCode=200
+    },
+    type: XCONTENTTYPE_HEADER_MISSING
+  }
+]

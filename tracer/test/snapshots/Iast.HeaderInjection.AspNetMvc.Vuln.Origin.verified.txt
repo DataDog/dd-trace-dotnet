@@ -1,0 +1,38 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: access-control-allow-origin
+        },
+        {
+          value: : 
+        },
+        {
+          source: 1,
+          value: https://example.com
+        }
+      ]
+    },
+    hash: 371652405,
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/HeaderInjection?useValueFromOriginHeader=False
+    },
+    sources: [
+      {
+        name: name,
+        origin: http.request.header,
+        value: access-control-allow-origin
+      },
+      {
+        name: value,
+        origin: http.request.header,
+        value: https://example.com
+      }
+    ],
+    type: HEADER_INJECTION
+  }
+]

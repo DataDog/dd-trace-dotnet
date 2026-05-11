@@ -36,7 +36,11 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
             throw new SkipException();
         }
 #endif
+#if NET6_0_OR_GREATER
         var filename = "Iast.StoredXss.AspNetCore5";
+#else
+        var filename = "Iast.StoredXss.AspNetCore5.v1";
+#endif
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = $"/Iast/StoredXss?param=<b>RawValue</b>&database={database}";
         IncludeAllHttpSpans = true;

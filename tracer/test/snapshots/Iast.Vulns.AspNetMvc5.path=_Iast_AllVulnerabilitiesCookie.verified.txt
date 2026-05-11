@@ -1,0 +1,38 @@
+﻿[
+  {
+    evidence: {
+      value: AllVulnerabilitiesCookieKey
+    },
+    hash: 990913114,
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: INSECURE_COOKIE
+  },
+  {
+    evidence: {
+      value: AllVulnerabilitiesCookieKey
+    },
+    hash: -60481650,
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_HTTPONLY_COOKIE
+  },
+  {
+    evidence: {
+      value: AllVulnerabilitiesCookieKey
+    },
+    hash: -636226626,
+    request: {
+      method: GET,
+      route: {controller}/{action}/{id},
+      url: http://localhost:00000/Iast/AllVulnerabilitiesCookie
+    },
+    type: NO_SAMESITE_COOKIE
+  }
+]

@@ -485,8 +485,7 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
 
 public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    protected const string NotVulnerableSnapshotName = "Iast.NotVulnerable";
-    private static readonly Regex PortScrubber = new(@"(https?://[^/:]+):\d+", RegexOptions.Compiled);
+    protected const string NotVulnerableSnapshotName = VulnerabilityJsonl.NotVulnerableSnapshotName;
 
     public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false)
         : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
@@ -519,40 +518,9 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
         Fixture.SetOutput(null);
     }
 
-    protected static async Task VerifyVulnerabilityRecordsAsync(string path, string fileName, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
+    protected static Task VerifyVulnerabilityRecordsAsync(string path, string fileName, DateTime? since = null, bool includeStack = false, Action<JObject> recordSanitizer = null, int timeoutMs = 5_000)
     {
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        List<JObject> records;
-        do
-        {
-            records = VulnerabilityJsonl.ReadRecords(path, since);
-            if (records.Count > 0)
-            {
-                break;
-            }
-
-            await Task.Delay(50);
-        }
-        while (DateTime.UtcNow < deadline);
-
-        var sanitized = records
-            .OrderBy(r => r["type"]?.Value<string>(), StringComparer.Ordinal)
-            .ThenBy(r => r["hash"]?.Value<int>())
-            .Select(r => SanitizeForVerification(r, includeStack))
-            .ToList();
-
-        if (recordSanitizer is not null)
-        {
-            foreach (var record in sanitized)
-            {
-                recordSanitizer(record);
-            }
-        }
-
-        VerifyHelper.InitializeGlobalSettings();
-        await Verifier.Verify(sanitized, new VerifySettings())
-                      .UseFileName(fileName)
-                      .DisableRequireUniquePrefix();
+        return VulnerabilityJsonl.VerifyRecordsAsync(path, fileName, since, includeStack, recordSanitizer, timeoutMs);
     }
 
     protected virtual async Task TryStartApp()
@@ -565,36 +533,6 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
         await Fixture.TryStartApp(this, enableSecurity: false);
         SetHttpPort(Fixture.HttpPort);
-    }
-
-    private static JObject SanitizeForVerification(JObject record, bool includeStack)
-    {
-        record.Remove("timestamp");
-
-        if (record["request"] is JObject request && request["url"] is JValue urlValue)
-        {
-            request["url"] = PortScrubber.Replace(urlValue.Value<string>() ?? string.Empty, "$1:00000");
-        }
-
-        if (record["location"] is JObject location)
-        {
-            location.Remove("line");
-
-            if (!includeStack)
-            {
-                location.Remove("stack");
-            }
-            else if (location["stack"] is JArray stack)
-            {
-                foreach (var frame in stack.OfType<JObject>())
-                {
-                    frame.Remove("line");
-                    frame.Remove("column");
-                }
-            }
-        }
-
-        return record;
     }
 }
 #endif
