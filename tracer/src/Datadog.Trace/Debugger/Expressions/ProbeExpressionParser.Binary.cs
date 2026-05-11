@@ -84,8 +84,8 @@ internal sealed partial class ProbeExpressionParser<T>
             var error = e.Message;
             if (e is InvalidOperationException)
             {
-                if ((left?.Type?.IsValueType == true && right?.Type?.IsValueType == false)
-                 || (right?.Type?.IsValueType == true && left?.Type?.IsValueType == false))
+                if ((IsValueType(left) && IsReferenceType(right))
+                 || (IsValueType(right) && IsReferenceType(left)))
                 {
                     error = "A reference type cannot be compared to a not nullable value type.";
                     if (right is ConstantExpression { Value: null } || left is ConstantExpression { Value: null })
@@ -130,6 +130,10 @@ internal sealed partial class ProbeExpressionParser<T>
 
             return operand == "==" ? Expression.Equal(left, right) : Expression.NotEqual(left, right);
         }
+
+        static bool IsValueType(Expression expression) => expression is not null && expression.Type.IsValueType;
+
+        static bool IsReferenceType(Expression expression) => expression is not null && !expression.Type.IsValueType;
     }
 
     private void NumericImplicitConversion(ref Expression left, ref Expression right)
