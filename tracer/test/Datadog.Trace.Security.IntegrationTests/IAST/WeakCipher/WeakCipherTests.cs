@@ -45,7 +45,7 @@ public class WeakCipherTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         var since = DateTime.UtcNow;
-        using var process = await RunSampleAndWaitForExit(agent);
+        using var process = await RunSampleAndWaitForExit();
 
         var records = VulnerabilityJsonl.ReadRecords(_vulnerabilityLogPath, since);
         var sanitized = records
@@ -76,7 +76,7 @@ public class WeakCipherTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         var since = DateTime.UtcNow;
-        using var process = await RunSampleAndWaitForExit(agent);
+        using var process = await RunSampleAndWaitForExit();
 
         var records = VulnerabilityJsonl.ReadRecords(_vulnerabilityLogPath, since);
         Assert.Empty(records);

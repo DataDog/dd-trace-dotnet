@@ -27,7 +27,7 @@ namespace Datadog.Trace.TestHelpers
         public static async Task<Process> StartProcessWithProfiler(
             string executable,
             EnvironmentHelper environmentHelper,
-            MockTracerAgent agent,
+            ITestOutputHelper output,
             string arguments = null,
             bool redirectStandardInput = false,
             int aspNetCorePort = 5000,
@@ -53,13 +53,12 @@ namespace Datadog.Trace.TestHelpers
              && Path.GetExtension(executable) == ".exe"
              && !ExesToExcludeFromCorflags.Contains(Path.GetFileNameWithoutExtension(executable)))
             {
-                SetCorFlags(executable, agent.Output, !EnvironmentTools.IsTestTarget64BitProcess());
+                SetCorFlags(executable, output, !EnvironmentTools.IsTestTarget64BitProcess());
             }
 
             var startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
 
             environmentHelper.SetEnvironmentVariables(
-                agent,
                 aspNetCorePort,
                 startInfo.Environment,
                 processToProfile,

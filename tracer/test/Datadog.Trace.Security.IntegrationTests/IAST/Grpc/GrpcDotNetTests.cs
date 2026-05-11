@@ -55,7 +55,7 @@ public class GrpcDotNetTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         var since = DateTime.UtcNow;
-        using var process = await RunSampleAndWaitForExit(agent);
+        using var process = await RunSampleAndWaitForExit();
 
         // Process has exited — the JSONL file is fully written. Read only records from this run.
         var records = VulnerabilityJsonl.ReadRecords(_vulnerabilityLogPath, since);

@@ -17,10 +17,6 @@ namespace Datadog.Trace.TestHelpers
     [CollectionDefinition("IisTests", DisableParallelization = false)]
     public sealed class IisFixture : GacFixture, IDisposable
     {
-        // The agent is needed only so the IIS process can connect to it and flush traces without
-        // hanging; it is never read by tests. Kept private intentionally.
-        private MockTracerAgent _agent;
-
         public (ProcessHelper Process, string ConfigFile) IisExpress { get; private set; }
 
         public int HttpPort { get; private set; }
@@ -44,11 +40,8 @@ namespace Datadog.Trace.TestHelpers
                     AddAssembliesToGac();
                 }
 
-                var initialAgentPort = TcpPortProvider.GetOpenPort();
-                _agent = MockTracerAgent.Create(null, initialAgentPort);
-
                 HttpPort = TcpPortProvider.GetOpenPort();
-                IisExpress = await helper.StartIISExpress(_agent, HttpPort, appType, VirtualApplicationPath, UsePartialTrust, UseLegacyCasModel);
+                IisExpress = await helper.StartIISExpress(HttpPort, appType, VirtualApplicationPath, UsePartialTrust, UseLegacyCasModel);
 
                 await EnsureServerStarted(sendHealthCheck, url);
             }
@@ -69,8 +62,6 @@ namespace Datadog.Trace.TestHelpers
                     // best effort — fall through to process kill
                 }
             }
-
-            _agent?.Dispose();
 
             if (IisExpress.Process != null)
             {

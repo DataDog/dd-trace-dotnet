@@ -101,7 +101,7 @@ namespace Datadog.Trace.TestHelpers
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
-                agent,
+                Output,
                 $"{appPath} {arguments ?? string.Empty}",
                 aspNetCorePort: aspNetCorePort,
                 ignoreProfilerProcessesVar: true);
@@ -119,7 +119,7 @@ namespace Datadog.Trace.TestHelpers
             return WaitForProcessResult(helper, expectedExitCode, dumpChildProcesses: true);
         }
 
-        public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
+        public async Task<Process> StartSample(ITestOutputHelper output, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
             // get path to sample app that the profiler will attach to
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework, usePublishWithRID);
@@ -143,16 +143,10 @@ namespace Datadog.Trace.TestHelpers
             var executable = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{runtimeArgs}{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
-            // on windows in uds , not supported
-            if (!EnvironmentHelper.CanUseStatsD(agent.TransportType))
-            {
-                SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsEnabled, "0");
-            }
-
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
-                agent,
+                Output,
                 args,
                 aspNetCorePort: aspNetCorePort,
                 processToProfile: executable,
@@ -165,9 +159,9 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
+        public async Task<ProcessResult> RunSampleAndWaitForExit(string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
-            var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
+            var process = await StartSample(Output, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
             using var helper = new ProcessHelper(process);
 
             return WaitForProcessResult(helper);
@@ -216,7 +210,7 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(
-            MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath, bool usePartialTrust, bool useLegacyCasModel)
+            int iisPort, IisAppType appType, string subAppPath, bool usePartialTrust, bool useLegacyCasModel)
         {
             var iisExpress = EnvironmentHelper.GetIisExpressPath();
 
@@ -295,7 +289,7 @@ namespace Datadog.Trace.TestHelpers
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 iisExpress,
                 EnvironmentHelper,
-                agent,
+                Output,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
                 processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? "dotnet.exe" : iisExpress);
@@ -499,14 +493,6 @@ namespace Datadog.Trace.TestHelpers
             return EnvironmentHelper.IsRunningInAzureDevOps() && EnvironmentHelper.IsScheduledBuild();
         }
 
-        protected void EnableDirectLogSubmission(int intakePort, string integrationName, string host = "integration_tests")
-        {
-            SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.Host, host);
-            SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.Url, $"http://127.0.0.1:{intakePort}");
-            SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, integrationName);
-            SetEnvironmentVariable(ConfigurationKeys.ApiKey, "DUMMY_KEY_REQUIRED_FOR_DIRECT_SUBMISSION");
-        }
-
         /// <summary>
         /// Creates a new <see cref="HttpRequestMessage"/> to use in the test.
         /// Derived tests can override this to customize the request (e.g. add headers).
@@ -514,166 +500,6 @@ namespace Datadog.Trace.TestHelpers
         protected virtual HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string requestUri, DateTimeOffset testStart)
         {
             return new HttpRequestMessage(method, requestUri);
-        }
-
-        protected async Task<IImmutableList<MockSpan>> GetWebServerSpans(
-            string path,
-            MockTracerAgent agent,
-            int httpPort,
-            HttpStatusCode expectedHttpStatusCode,
-            int expectedSpanCount = 2,
-            bool filterServerSpans = true)
-        {
-            using var httpClient = new HttpClient();
-
-            // disable tracing for this HttpClient request
-            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
-            var testStart = DateTimeOffset.UtcNow;
-            using var request = CreateHttpRequestMessage(HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
-            using var response = await httpClient.SendAsync(request);
-            var content = await response.Content.ReadAsStringAsync();
-            Output.WriteLine($"[http] {response.StatusCode} {content}");
-            response.StatusCode.Should().Be(expectedHttpStatusCode);
-
-            if (filterServerSpans)
-            {
-                agent.SpanFilters.Add(IsServerSpan);
-            }
-
-            return await agent.WaitForSpansAsync(
-                       count: expectedSpanCount,
-                       minDateTime: testStart,
-                       returnAllOperations: true);
-        }
-
-        protected async Task AssertWebServerSpan(
-            string path,
-            MockTracerAgent agent,
-            int httpPort,
-            HttpStatusCode expectedHttpStatusCode,
-            bool isError,
-            string expectedAspNetErrorType,
-            string expectedAspNetErrorMessage,
-            string expectedErrorType,
-            string expectedErrorMessage,
-            string expectedSpanType,
-            string expectedOperationName,
-            string expectedAspNetResourceName,
-            string expectedResourceName,
-            string expectedServiceVersion,
-            SerializableDictionary expectedTags = null)
-        {
-            IImmutableList<MockSpan> spans;
-
-            using (var httpClient = new HttpClient())
-            {
-                // disable tracing for this HttpClient request
-                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-                var testStart = DateTimeOffset.UtcNow;
-                var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
-                var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine($"[http] {response.StatusCode} {content}");
-                Assert.Equal(expectedHttpStatusCode, response.StatusCode);
-
-                agent.SpanFilters.Add(IsServerSpan);
-
-                spans = await agent.WaitForSpansAsync(
-                            count: 2,
-                            minDateTime: testStart,
-                            returnAllOperations: true);
-
-                Assert.True(spans.Count == 2, $"expected two span, saw {spans.Count}");
-            }
-
-            var aspnetSpan = spans.FirstOrDefault(s => s.Name == "aspnet.request");
-            var innerSpan = spans.FirstOrDefault(s => s.Name == expectedOperationName);
-
-            Assert.NotNull(aspnetSpan);
-            Assert.Equal(expectedAspNetResourceName, aspnetSpan.Resource);
-
-            Assert.NotNull(innerSpan);
-            Assert.Equal(expectedResourceName, innerSpan.Resource);
-
-            foreach (var span in spans)
-            {
-                // base properties
-                Assert.Equal(expectedSpanType, span.Type);
-
-                // errors
-                Assert.Equal(isError, span.Error == 1);
-                if (span == aspnetSpan)
-                {
-                    Assert.Equal(expectedAspNetErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
-                    Assert.Equal(expectedAspNetErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
-                }
-                else if (span == innerSpan)
-                {
-                    Assert.Equal(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
-                    Assert.Equal(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
-                }
-
-                // other tags
-                Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
-                Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
-            }
-
-            if (expectedTags?.Values is not null)
-            {
-                foreach (var expectedTag in expectedTags)
-                {
-                    Assert.Equal(expectedTag.Value, innerSpan.Tags.GetValueOrDefault(expectedTag.Key));
-                }
-            }
-        }
-
-        protected async Task AssertAspNetSpanOnly(
-            string path,
-            MockTracerAgent agent,
-            int httpPort,
-            HttpStatusCode expectedHttpStatusCode,
-            bool isError,
-            string expectedErrorType,
-            string expectedErrorMessage,
-            string expectedSpanType,
-            string expectedResourceName,
-            string expectedServiceVersion)
-        {
-            IImmutableList<MockSpan> spans;
-
-            using (var httpClient = new HttpClient())
-            {
-                // disable tracing for this HttpClient request
-                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-                var testStart = DateTimeOffset.UtcNow;
-                var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
-                var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine($"[http] {response.StatusCode} {content}");
-                Assert.Equal(expectedHttpStatusCode, response.StatusCode);
-
-                spans = await agent.WaitForSpansAsync(
-                            count: 1,
-                            minDateTime: testStart,
-                            operationName: "aspnet.request",
-                            returnAllOperations: true);
-
-                Assert.True(spans.Count == 1, $"expected two span, saw {spans.Count}");
-            }
-
-            var span = spans[0];
-
-            // base properties
-            Assert.Equal(expectedResourceName, span.Resource);
-            Assert.Equal(expectedSpanType, span.Type);
-
-            // errors
-            Assert.Equal(isError, span.Error == 1);
-            Assert.Equal(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
-            Assert.Equal(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
-
-            // other tags
-            Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
-            Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
         private bool IsServerSpan(MockSpan span) =>

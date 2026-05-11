@@ -287,27 +287,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans;
         }
 
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
-        {
-            if (agent.Configuration.SpanMetaStructs)
-            {
-                await agent.WaitForConfigSentAsync();
-            }
-
-            return await SendRequestsAsync(agent, 1, urls);
-        }
-
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, int expectedSpansPerRequest, params string[] urls)
-        {
-            var spans = new List<MockSpan>();
-            foreach (var url in urls)
-            {
-                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, expectedSpansPerRequest, string.Empty));
-            }
-
-            return spans.ToImmutableList();
-        }
-
         protected Task SendRequestsAsync(params string[] urls) => SendRequestsAsync(1, urls);
 
         protected async Task SendRequestsAsync(int count, params string[] urls)

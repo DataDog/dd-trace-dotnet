@@ -187,7 +187,6 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public void SetEnvironmentVariables(
-            MockTracerAgent agent,
             int aspNetCorePort,
             IDictionary<string, string> environmentVariables,
             string processToProfile = null,
@@ -301,11 +300,6 @@ namespace Datadog.Trace.TestHelpers
 
             // set consistent env name (can be overwritten by custom environment variable)
             environmentVariables["DD_ENV"] = "integration_tests";
-            environmentVariables[ConfigurationKeys.Telemetry.Enabled] = agent.TelemetryEnabled.ToString();
-            if (agent.TelemetryEnabled)
-            {
-                environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
-            }
 
             if (UseCrashTracking)
             {
@@ -314,47 +308,9 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_CRASHTRACKING_FILTERING_ENABLED"] = "0";
             }
 
-            ConfigureTransportVariables(environmentVariables, agent);
-
             foreach (var key in CustomEnvironmentVariables.Keys)
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
-            }
-        }
-
-        public void ConfigureTransportVariables(IDictionary<string, string> environmentVariables, MockTracerAgent agent)
-        {
-            var envVars = agent switch
-            {
-#if NETCOREAPP3_1_OR_GREATER
-                MockTracerAgent.UdsAgent uds => new Dictionary<string, string>
-                {
-                    { "DD_APM_RECEIVER_SOCKET", uds.TracesUdsPath },
-                    { "DD_DOGSTATSD_SOCKET", uds.StatsUdsPath },
-                },
-#endif
-                MockTracerAgent.NamedPipeAgent np => new Dictionary<string, string>
-                {
-                    { "DD_TRACE_PIPE_NAME", np.TracesWindowsPipeName },
-                    { "DD_DOGSTATSD_PIPE_NAME", np.StatsWindowsPipeName },
-                },
-                MockTracerAgent.TcpUdpAgent { StatsdPort: not 0 } tcp => new Dictionary<string, string>
-                {
-                    { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
-                    { "DD_TRACE_AGENT_PORT", tcp.Port.ToString() },
-                    { "DD_DOGSTATSD_PORT", tcp.StatsdPort.ToString() },
-                },
-                MockTracerAgent.TcpUdpAgent tcp => new Dictionary<string, string>
-                {
-                    { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
-                    { "DD_TRACE_AGENT_PORT", tcp.Port.ToString() },
-                },
-                _ => throw new InvalidOperationException($"Unknown MockTracerAgent type {agent?.GetType()}")
-            };
-
-            foreach (var envVar in envVars)
-            {
-                environmentVariables[envVar.Key] = envVar.Value;
             }
         }
 

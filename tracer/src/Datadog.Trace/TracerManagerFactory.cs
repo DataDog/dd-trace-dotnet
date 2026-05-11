@@ -163,9 +163,7 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService)
         {
-            IApi api = new ManagedApi(settings.Manager, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
-            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, isOtlp: false);
-            return new AgentWriter(api, statsAggregator, settings);
+            return NullAgentWriter.Instance;
         }
 
         internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings, ServiceRemappingHash serviceRemappingHash)
