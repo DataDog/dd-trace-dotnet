@@ -222,6 +222,37 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         rereadBody.Should().Be(body);
     }
 
+    [Fact]
+    public async Task AddBody_NonSeekableJsonContent_DoesNotPreventSubsequentContentRead()
+    {
+        var body = "{\"key\":\"value\"}";
+        var bodyLength = Encoding.UTF8.GetByteCount(body);
+        var wafArgs = new Dictionary<string, object>();
+
+        using var unbufferedContent = HttpMocks.CreateMockContent(body, "application/json", bodyLength, nonSeekable: true);
+        var unbufferedStream = await unbufferedContent.ReadAsStreamAsync();
+        unbufferedStream.CanSeek.Should().BeFalse();
+
+        using var content = HttpMocks.CreateMockContent(body, "application/json", bodyLength, nonSeekable: true);
+
+        await RaspModule.AddBody(content, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L);
+
+        wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);
+
+        var bufferedStream = await content.ReadAsStreamAsync();
+        bufferedStream.CanSeek.Should().BeTrue();
+        bufferedStream.Position.Should().Be(0);
+
+        using var reader = new StreamReader(
+            bufferedStream,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: true);
+        var rereadBody = await reader.ReadToEndAsync();
+        rereadBody.Should().Be(body);
+    }
+
     [Theory]
     [InlineData(500, 1_000L)]
     [InlineData(1_000, 1_000L)]
