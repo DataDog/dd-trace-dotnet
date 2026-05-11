@@ -807,6 +807,62 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
     ASSERT_TRUE(tag.find("heap") != std::string::npos);
 }
 
+TEST(ProfileExporterTest, CheckNoCrashWhenProfileCreationFails)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+
+    fs::path pprofTempDir;
+    EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(pprofTempDir));
+
+    std::string agentUrl;
+    EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
+
+#if _WINDOWS
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
+#endif
+
+    std::string agentHost = "localhost";
+    EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
+    int agentPort = 8126;
+    EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
+    std::string host = "localhost";
+    EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
+    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
+
+    std::vector<std::pair<std::string, std::string>> tags;
+    EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
+
+    auto applicationStore = MockApplicationStore();
+
+    std::string runtimeId = "MyRid";
+    ApplicationInfo applicationInfo{"MyApp", "myenv", "1.0.2"};
+    EXPECT_CALL(applicationStore, GetApplicationInfo(runtimeId)).WillRepeatedly(Return(applicationInfo));
+
+    RuntimeInfoHelper helper(6, 0, false);
+    IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
+    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+
+    // Empty sample type definitions will cause Profile::Create to return nullptr
+    std::vector<SampleValueType> sampleTypeDefinitions;
+
+    MetricsRegistry metricsRegistry;
+    IAllocationsRecorder* allocRecorder = nullptr;
+    IMetadataProvider* metadataProvider = nullptr;
+    ISsiManager* ssiManager = nullptr;
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
+                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+
+    auto callstack = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}});
+    auto labels = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}};
+    auto sample = CreateSample(runtimeId, callstack, labels, 42);
+
+    ASSERT_NO_FATAL_FAILURE(exporter.Add(sample)) << "Adding a sample when profile creation fails must not crash";
+
+    auto exported = exporter.Export();
+    ASSERT_FALSE(exported) << "Export must return false when profile creation failed";
+}
 // ----- GetInfoJson tests -----
 
 struct InfoJsonTestComponents

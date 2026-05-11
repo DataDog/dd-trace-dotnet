@@ -137,6 +137,111 @@ internal partial class ProbeExpressionParser<T>
                        Expression.Constant(NumberFormatInfo.CurrentInfo));
     }
 
+    private static Type CloseOpenGenericType(Type type)
+    {
+        return CloseOpenGenericType(type, new List<Type>());
+    }
+
+    private static Type CloseOpenGenericType(Type type, List<Type> visitedGenericParameters)
+    {
+        if (!type.ContainsGenericParameters)
+        {
+            return type;
+        }
+
+        if (type.IsGenericParameter)
+        {
+            return CloseGenericParameter(type, visitedGenericParameters);
+        }
+
+        if (type.HasElementType)
+        {
+            var elementType = CloseOpenGenericType(type.GetElementType(), visitedGenericParameters);
+            if (type.IsArray)
+            {
+                var rank = type.GetArrayRank();
+                return rank == 1 ? elementType.MakeArrayType() : elementType.MakeArrayType(rank);
+            }
+
+            if (type.IsByRef)
+            {
+                return elementType.MakeByRefType();
+            }
+
+            if (type.IsPointer)
+            {
+                return elementType.MakePointerType();
+            }
+        }
+
+        if (type.IsGenericType)
+        {
+            var genericArguments = type.GetGenericArguments();
+            var concreteTypes = new Type[genericArguments.Length];
+            for (int i = 0; i < genericArguments.Length; i++)
+            {
+                concreteTypes[i] = CloseOpenGenericType(genericArguments[i], visitedGenericParameters);
+            }
+
+            try
+            {
+                return type.GetGenericTypeDefinition().MakeGenericType(concreteTypes);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains generic parameters that cannot be safely closed.", ex);
+            }
+        }
+
+        throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains generic parameters that cannot be safely closed.");
+    }
+
+    private static Type CloseGenericParameter(Type type, List<Type> visitedGenericParameters)
+    {
+        if (visitedGenericParameters.Contains(type))
+        {
+            throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains recursive generic parameter constraints.");
+        }
+
+        visitedGenericParameters.Add(type);
+        try
+        {
+            var attributes = type.GenericParameterAttributes;
+            if ((attributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0)
+            {
+                throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains a generic value type parameter.");
+            }
+
+            var constraints = type.GetGenericParameterConstraints();
+            if (constraints.Length == 1)
+            {
+                var constraint = CloseOpenGenericType(constraints[0], visitedGenericParameters);
+                if (constraint.IsValueType)
+                {
+                    throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains a generic value type parameter.");
+                }
+
+                return constraint;
+            }
+
+            if (constraints.Length > 1)
+            {
+                throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains generic parameters with multiple constraints.");
+            }
+
+            return typeof(object);
+        }
+        finally
+        {
+            visitedGenericParameters.RemoveAt(visitedGenericParameters.Count - 1);
+        }
+    }
+
+    private static string FormatTypeName(Type type)
+    {
+        return type.FullName ?? type.Name;
+    }
+
     private Expression IsInstanceOf(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);

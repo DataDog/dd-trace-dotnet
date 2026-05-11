@@ -164,7 +164,7 @@ std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfigura
 
 std::unique_ptr<libdatadog::Profile> ProfileExporter::CreateProfile(std::string serviceName)
 {
-    return std::make_unique<libdatadog::Profile>(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
+    return libdatadog::Profile::Create(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
 }
 
 void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
@@ -402,6 +402,14 @@ void ProfileExporter::Add(std::shared_ptr<Sample> const& sample)
     {
         auto applicationInfo = _applicationStore->GetApplicationInfo(std::string(sample->GetRuntimeId()));
         profileInfoScope.profileInfo.profile = CreateProfile(applicationInfo.ServiceName);
+        if (profileInfoScope.profileInfo.profile == nullptr)
+        {
+            Log::Error("Failed to create profile for service '", applicationInfo.ServiceName,
+                       "' (runtime id: ", sample->GetRuntimeId(),
+                       ", sample type definitions: ", _sampleTypeDefinitions.size(),
+                       "). Sample will be dropped.");
+            return;
+        }
     }
     auto* profile = profileInfoScope.profileInfo.profile.get();
     Add(profile, sample);
@@ -439,6 +447,14 @@ void ProfileExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId
     {
         auto applicationInfo = _applicationStore->GetApplicationInfo(runtimeId);
         profileInfoScope.profileInfo.profile = CreateProfile(applicationInfo.ServiceName);
+        if (profileInfoScope.profileInfo.profile == nullptr)
+        {
+            Log::Error("Failed to create profile for service '", applicationInfo.ServiceName,
+                       "' (runtime id: ", runtimeId,
+                       ", sample type definitions: ", _sampleTypeDefinitions.size(),
+                       ") while setting endpoint. Endpoint will not be set.");
+            return;
+        }
     }
 
     auto* profile = profileInfoScope.profileInfo.profile.get();

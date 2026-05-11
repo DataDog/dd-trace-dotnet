@@ -53,7 +53,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
             memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
         });
     }
@@ -81,7 +81,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_SymbolDatabaseEnabledByDefault_CreatesSymbolUploader()
+    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_SymbolDatabaseEnabledByDefault_DoesNotCreateSymbolUploaderBeforeRemoteConfig()
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false");
 
@@ -90,7 +90,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<SnapshotSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -149,7 +149,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_SymbolDatabaseUploadEnabled_WithoutDynamicInstrumentation_CreatesSymbolUploader()
+    public async Task DebuggerManager_SymbolDatabaseUploadEnabled_WithoutDynamicInstrumentation_DoesNotCreateSymbolUploaderBeforeRemoteConfig()
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
@@ -157,7 +157,7 @@ public class DebuggerManagerTests : TestHelper
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -233,7 +233,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.ObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
             memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             memoryAssertions.ObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
