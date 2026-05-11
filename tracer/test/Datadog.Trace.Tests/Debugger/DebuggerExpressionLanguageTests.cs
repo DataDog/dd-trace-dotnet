@@ -347,6 +347,59 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.Equal("A reference type cannot be compared to a not nullable value type.", error.Message);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_NullableValueTypeComparedToNull_DoesNotThrow()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "eq": [
+                                    { "ref": "NullableNullValueLocal" },
+                                    null
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_NullableValueTypeReferenceTypeComparison_KeepsOriginalError()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "eq": [
+                                    { "ref": "NullableNullValueLocal" },
+                                    "value"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("The binary operator Equal is not defined for the types", error.Message);
+        }
+
         [Theory]
         [InlineData("""
                     {
