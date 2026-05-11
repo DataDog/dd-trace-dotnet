@@ -52,7 +52,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         var isHtml = contentType.Contains("html") || contentType.Contains("xhtml");
         var expectVulnerability = isHtml && returnCode == 200 && !xContentTypeHeaderValue.Equals("nosniff", StringComparison.OrdinalIgnoreCase);
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
@@ -82,7 +82,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         var isValidHsts = Regex.IsMatch(Uri.UnescapeDataString(hstsHeaderValue ?? string.Empty), @"^max-age=[1-9]\d*");
         var expectVulnerability = isHtml && isHttps && returnCode == 200 && !isValidHsts;
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
@@ -130,7 +130,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         AddCookies(cookiesDic);
         AddHeaders(headersDic);
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, 1, new[] { url });
+        await SendRequestsAsync(1, new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, notVulnerable ? NotVulnerableSnapshotName : filename, since: since, timeoutMs: notVulnerable ? 1_000 : 5_000);
     }
 
@@ -142,7 +142,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     public async Task TestStackTraceLeak(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, [url]);
+        await SendRequestsAsync([url]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("StackTraceLeak"), since: since);
     }
 
@@ -154,7 +154,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     public async Task TestQueryParameterNameVulnerability(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, [url]);
+        await SendRequestsAsync([url]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("QueryParameterName"), since: since);
     }
 }
@@ -183,8 +183,6 @@ public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, 
     protected string VulnerabilityLogPath =>
         Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
 
-    protected MockTracerAgent Agent => _iisFixture.Agent;
-
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
@@ -195,7 +193,7 @@ public class AspNetMvc5ClassicWithIast : AspNetBase, IClassFixture<IisFixture>, 
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         var filename = $"{_testName}.path={sanitisedPath}";
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
 
@@ -240,8 +238,6 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     protected string VulnerabilityLogPath =>
         Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
 
-    protected MockTracerAgent Agent => _iisFixture.Agent;
-
     public async Task InitializeAsync()
     {
         await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
@@ -262,7 +258,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var filename = $"Iast.Vulns.AspNetMvc5.path={sanitisedUrl}";
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
@@ -274,7 +270,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastSqlInjectionRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("SqlInjection"), since: since);
     }
 
@@ -286,7 +282,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastPathTraversalRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("PathTraversal"), since: since);
     }
 
@@ -299,7 +295,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     {
         AddHeaders(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("ExecuteCommandFromHeader"), since: since);
     }
 
@@ -311,7 +307,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastCommandInjectionRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("CommandInjection"), since: since);
     }
 
@@ -323,7 +319,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastSSRFRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("SSRF"), since: since);
     }
 
@@ -335,7 +331,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastWeakRandomnessRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("WeakRandomness"), since: since);
     }
 
@@ -348,7 +344,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestRequestBodyTainting(string url, string body)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, url, body, 1, 1, string.Empty, "application/json", null);
+        await SendRequestsAsync(url, body, 1, 1, string.Empty, "application/json", null);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("RequestBodyTest"), since: since);
     }
 
@@ -361,7 +357,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastLdapRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("Ldap"), since: since);
     }
 
@@ -374,7 +370,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     {
         AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("CookieTainting"), since: since);
     }
 
@@ -386,7 +382,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastTrustBoundaryViolationRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("TrustBoundaryViolation"), since: since);
     }
 
@@ -398,7 +394,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastXpathInjectionRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, [url]);
+        await SendRequestsAsync([url]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("XpathInjection"), since: since);
     }
 
@@ -410,7 +406,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastEmailHtmlInjectionRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, [url]);
+        await SendRequestsAsync([url]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("EmailHtmlInjection"), since: since);
     }
 
@@ -422,7 +418,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestIastUnvalidatedRedirectRequest(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("UnvalidatedRedirect"), since: since);
     }
 
@@ -435,7 +431,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
         IncludeAllHttpSpans = true;
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, 2, new[] { url });
+        await SendRequestsAsync(2, new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("ReflectedXss"), since: since);
     }
 
@@ -448,7 +444,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
         IncludeAllHttpSpans = true;
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, 2, new[] { url });
+        await SendRequestsAsync(2, new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
 
@@ -459,7 +455,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     public async Task TestJavaScriptSerializerDeserializeObject(string url)
     {
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("JavaScriptSerializerDeserializeObject"), since: since);
     }
 

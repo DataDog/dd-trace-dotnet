@@ -308,6 +308,19 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans.ToImmutableList();
         }
 
+        protected Task SendRequestsAsync(params string[] urls) => SendRequestsAsync(1, urls);
+
+        protected async Task SendRequestsAsync(int count, params string[] urls)
+        {
+            foreach (var url in urls)
+            {
+                await SendRequestsAsyncNoWaitForSpans(url, null, count);
+            }
+        }
+
+        protected Task SendRequestsAsync(string url, string body, int numberOfAttacks, int unusedSpanCount, string phase, string contentType, string userAgent)
+            => SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
+
         private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
         {
             for (var x = 0; x < numberOfAttacks; x++)

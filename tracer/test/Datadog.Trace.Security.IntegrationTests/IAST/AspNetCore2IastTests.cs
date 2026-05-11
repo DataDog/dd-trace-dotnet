@@ -55,7 +55,7 @@ public abstract class AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEna
         var filename = VulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.Vulns.AspNetCore2.SingleVulnerability" : "Iast.WeakHashing.Vulns.AspNetCore2";
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, ["/Iast/WeakHashing"]);
+        await SendRequestsAsync(["/Iast/WeakHashing"]);
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -90,7 +90,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
@@ -123,7 +123,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
@@ -138,7 +138,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, [url]);
+        await SendRequestsAsync([url]);
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -152,7 +152,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -166,7 +166,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, [url]);
+        await SendRequestsAsync([url]);
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -195,7 +195,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
@@ -208,7 +208,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, ["/Iast/WeakHashing"]);
+        await SendRequestsAsync(["/Iast/WeakHashing"]);
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -223,7 +223,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
+        await SendRequestsAsync(url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -247,7 +247,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, url, body, 1, 1, string.Empty, "application/json", null);
+        await SendRequestsAsync(url, body, 1, 1, string.Empty, "application/json", null);
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -263,7 +263,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -278,7 +278,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -293,7 +293,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -308,7 +308,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -324,7 +324,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -342,7 +342,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
@@ -355,7 +355,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { "/Iast/GetFileContent?file=nonexisting.txt" });
+        await SendRequestsAsync(new[] { "/Iast/GetFileContent?file=nonexisting.txt" });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -368,7 +368,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, new[] { "/Iast/WeakRandomness" });
+        await SendRequestsAsync(new[] { "/Iast/WeakRandomness" });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -409,7 +409,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
 
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, 1, new[] { url });
+        await SendRequestsAsync(1, new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, notVulnerable ? NotVulnerableSnapshotName : filename, since: since, timeoutMs: notVulnerable ? 1_000 : 5_000);
     }
@@ -424,7 +424,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
+        await SendRequestsAsync(2, new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -437,7 +437,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, 2, new[] { url });
+        await SendRequestsAsync(2, new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
@@ -458,15 +458,15 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
         await TryStartApp();
 
         var since1 = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, ["/Iast/WeakHashing"]);
+        await SendRequestsAsync(["/Iast/WeakHashing"]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "Iast.WeakHashing.Vulns.AspNetCore2.Sampling", since: since1, timeoutMs: 2_000);
 
         var since2 = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, ["/Iast/WeakHashing"]);
+        await SendRequestsAsync(["/Iast/WeakHashing"]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "Iast.WeakHashing.Vulns.AspNetCore2.Sampling.DisabledFlag", since: since2, timeoutMs: 2_000);
 
         var since3 = DateTime.UtcNow;
-        await SendRequestsAsync(Fixture.Agent, ["/Iast/WeakHashing"]);
+        await SendRequestsAsync(["/Iast/WeakHashing"]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, "Iast.WeakHashing.Vulns.AspNetCore2.Sampling", since: since3, timeoutMs: 2_000);
     }
 

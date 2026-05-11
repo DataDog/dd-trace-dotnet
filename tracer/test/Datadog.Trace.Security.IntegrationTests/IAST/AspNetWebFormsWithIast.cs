@@ -4,7 +4,11 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
+using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.Iast;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -44,7 +48,8 @@ public abstract class AspNetWebFormsWithIast : AspNetBase, IClassFixture<IisFixt
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
@@ -53,19 +58,19 @@ public abstract class AspNetWebFormsWithIast : AspNetBase, IClassFixture<IisFixt
                  + ".enableSecurity=" + enableSecurity;
     }
 
+    protected string VulnerabilityLogPath =>
+        Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
+
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
-    [InlineData("TestQueryParameterNameVulnerability")]
-    public async Task TestQueryParameterNameVulnerability(string test)
+    [InlineData("/print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1")]
+    public async Task TestQueryParameterNameVulnerability(string url)
     {
-        var url = "/print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1";
-
-        var settings = VerifyHelper.GetSpanVerifierSettings(test);
-        settings.AddIastScrubbing();
-
-        await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 1, 1, settings, userAgent: "Hello/V");
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync(url);
+        await VulnerabilityJsonl.VerifyRecordsAsync(VulnerabilityLogPath, "Iast.QueryParameterName.AspNetWebForms", since: since);
     }
 
     public async Task InitializeAsync()

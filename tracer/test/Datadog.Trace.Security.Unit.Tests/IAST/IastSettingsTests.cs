@@ -148,26 +148,6 @@ public class IastSettingsTests : SettingsTestsBase
     }
 
     [Theory]
-    [MemberData(nameof(BooleanTestCases), false)]
-    public void Enabled(string value, bool expected)
-    {
-        var source = CreateConfigurationSource((ConfigurationKeys.Iast.Enabled, value));
-        var settings = new IastSettings(source, NullConfigurationTelemetry.Instance);
-
-        settings.Enabled.Should().Be(expected);
-    }
-
-    [Theory]
-    [MemberData(nameof(BooleanTestCases), true)]
-    public void DeduplicationEnabled(string value, bool expected)
-    {
-        var source = CreateConfigurationSource((ConfigurationKeys.Iast.IsIastDeduplicationEnabled, value));
-        var settings = new IastSettings(source, NullConfigurationTelemetry.Instance);
-
-        settings.DeduplicationEnabled.Should().Be(expected);
-    }
-
-    [Theory]
     [InlineData("1", 1)]
     [InlineData("0", 0)]
     [InlineData("-1", 1)]

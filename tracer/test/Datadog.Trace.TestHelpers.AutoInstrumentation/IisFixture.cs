@@ -17,9 +17,11 @@ namespace Datadog.Trace.TestHelpers
     [CollectionDefinition("IisTests", DisableParallelization = false)]
     public sealed class IisFixture : GacFixture, IDisposable
     {
-        public (ProcessHelper Process, string ConfigFile) IisExpress { get; private set; }
+        // The agent is needed only so the IIS process can connect to it and flush traces without
+        // hanging; it is never read by tests. Kept private intentionally.
+        private MockTracerAgent _agent;
 
-        public MockTracerAgent Agent { get; private set; }
+        public (ProcessHelper Process, string ConfigFile) IisExpress { get; private set; }
 
         public int HttpPort { get; private set; }
 
@@ -43,10 +45,10 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 var initialAgentPort = TcpPortProvider.GetOpenPort();
-                Agent = MockTracerAgent.Create(null, initialAgentPort);
+                _agent = MockTracerAgent.Create(null, initialAgentPort);
 
                 HttpPort = TcpPortProvider.GetOpenPort();
-                IisExpress = await helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath, UsePartialTrust, UseLegacyCasModel);
+                IisExpress = await helper.StartIISExpress(_agent, HttpPort, appType, VirtualApplicationPath, UsePartialTrust, UseLegacyCasModel);
 
                 await EnsureServerStarted(sendHealthCheck, url);
             }
@@ -59,32 +61,28 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{ShutdownPath}");
+                    request.Timeout = 2_000;
                     request.GetResponse().Close();
                 }
                 catch
                 {
-                    // Ignore
+                    // best effort — fall through to process kill
                 }
             }
 
-            Agent?.Dispose();
+            _agent?.Dispose();
 
             if (IisExpress.Process != null)
             {
                 try
                 {
-                    // sending "Q" to standard input does not work because
-                    // iisexpress is scanning console key press, so just kill it.
-                    // maybe try this in the future:
-                    // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
                     IisExpress.Process.Dispose(8000);
                 }
                 catch
                 {
-                    // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                    // in some circumstances the HasExited property throws
                 }
 
-                // The ProcessHelper doesn't dispose the process automatically, so we need to do it manually
                 IisExpress.Process.Process.Dispose();
 
                 try
@@ -95,8 +93,6 @@ namespace Datadog.Trace.TestHelpers
                 {
                 }
 
-                // If the operation fails, it could leave files in the GAC and impact the next tests
-                // Therefore, we don't wrap this in a try/catch
                 if (UseGac)
                 {
                     RemoveAssembliesFromGac();
@@ -111,10 +107,6 @@ namespace Datadog.Trace.TestHelpers
             var intervals = maxMillisecondsToWait / intervalMilliseconds;
             var serverReady = false;
 
-            // if we end up retrying, accept spans from previous attempts
-            var dateTime = DateTime.UtcNow;
-
-            // wait for server to be ready to receive requests
             while (intervals-- > 0)
             {
                 DateTime startTime = DateTime.Now;
@@ -126,12 +118,7 @@ namespace Datadog.Trace.TestHelpers
                         var response = request.GetResponse();
                         var responseCode = ((HttpWebResponse)response).StatusCode;
                         response.Close();
-
-                        if (responseCode == HttpStatusCode.OK)
-                        {
-                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
-                            serverReady = true;
-                        }
+                        serverReady = responseCode == HttpStatusCode.OK;
                     }
                     else
                     {
