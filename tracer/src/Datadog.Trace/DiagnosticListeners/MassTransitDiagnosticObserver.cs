@@ -175,14 +175,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 // Inject trace context into message headers — reuses the proxy from above, no second DuckCast
                 MassTransitCommon.InjectTraceContext(Tracer.Instance, sendContextProxy, scope);
 
-                // Set AsyncLocal so the InMemoryTransportMessage constructor hook can copy
-                // trace headers into the transport message. The constructor fires synchronously
-                // within the same async context, so AsyncLocal is safe here.
-                if (scope.Span.Context is SpanContext spanContext)
-                {
-                    MassTransitCommon.PendingInMemorySpanContext.Value = spanContext;
-                }
-
                 Log.Debug(
                     "MassTransitDiagnosticObserver.OnSendStart: Created span TraceId={TraceId}, SpanId={SpanId}",
                     scope.Span.TraceId,

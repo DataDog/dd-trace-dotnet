@@ -10,7 +10,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
@@ -25,12 +24,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     internal static class MassTransitCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MassTransitCommon));
-
-        // Holds the span context to inject during InMemoryTransportMessage construction.
-        // Set in OnProduceStart, read in InMemoryTransportMessageIntegration.OnMethodEnd.
-        // AsyncLocal is safe here because the constructor fires synchronously within the
-        // same async context as the DiagnosticObserver Send.Start event.
-        internal static readonly AsyncLocal<SpanContext?> PendingInMemorySpanContext = new();
 
         // Cache of resolved PropertyInfo lookups for TryGetProperty. Keyed by (concrete type, property name).
         // The MassTransit context type space is small and bounded, so unbounded growth is not a concern.

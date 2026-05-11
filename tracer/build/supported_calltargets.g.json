@@ -9733,8 +9733,8 @@
     },
     "MaximumVersion": {
       "Item1": 7,
-      "Item2": 65535,
-      "Item3": 65535
+      "Item2": 3,
+      "Item3": 0
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.InMemoryTransportMessageIntegration",
     "IntegrationKind": 0,
