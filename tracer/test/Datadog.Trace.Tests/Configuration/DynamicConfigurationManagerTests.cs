@@ -22,6 +22,46 @@ public class DynamicConfigurationManagerTests
     private const string ProductName = DynamicConfigurationManager.ProductName;
     private static int _version;
 
+    public enum DynamicDebuggerProduct
+    {
+        DynamicInstrumentation,
+        ExceptionReplay,
+        CodeOrigin
+    }
+
+    public static IEnumerable<object[]> DynamicDebuggerProductTransitions()
+    {
+        foreach (var product in new[] { DynamicDebuggerProduct.DynamicInstrumentation, DynamicDebuggerProduct.ExceptionReplay, DynamicDebuggerProduct.CodeOrigin })
+        {
+            yield return new object[] { product, null, null, false, false };
+            yield return new object[] { product, null, false, false, false };
+            yield return new object[] { product, null, true, false, true };
+            yield return new object[] { product, false, null, false, false };
+            yield return new object[] { product, false, false, false, false };
+            yield return new object[] { product, false, true, false, true };
+            yield return new object[] { product, true, null, false, true };
+            yield return new object[] { product, true, false, false, true };
+            yield return new object[] { product, true, true, false, false };
+
+            // A null/empty RC payload does not dispose an already-running product. The next explicit
+            // false must still be applied even though the old DynamicSettings value is null.
+            yield return new object[] { product, null, false, true, true };
+        }
+    }
+
+    public static IEnumerable<object[]> DynamicDebuggerProductTransitionSequences()
+    {
+        foreach (var product in new[] { DynamicDebuggerProduct.DynamicInstrumentation, DynamicDebuggerProduct.ExceptionReplay, DynamicDebuggerProduct.CodeOrigin })
+        {
+            yield return new object[] { product, new bool?[] { true, null, false }, new[] { true, true, true } };
+            yield return new object[] { product, new bool?[] { null, false, true }, new[] { false, false, true } };
+            yield return new object[] { product, new bool?[] { false, null, true }, new[] { false, false, true } };
+            yield return new object[] { product, new bool?[] { true, false, null }, new[] { true, true, false } };
+            yield return new object[] { product, new bool?[] { false, true, false }, new[] { false, true, true } };
+            yield return new object[] { product, new bool?[] { null, true, null, false }, new[] { false, true, true, true } };
+        }
+    }
+
     [Fact]
     public void ShouldApplyDynamicDebuggerConfig_WhenDynamicSettingsUnchanged_ReturnsFalse()
     {
@@ -113,6 +153,63 @@ public class DynamicConfigurationManagerTests
         DynamicConfigurationManager
             .ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, newDynamicSettings, exceptionReplayEnvEnabled: false)
             .Should().BeTrue();
+    }
+
+    [Theory]
+    [MemberData(nameof(DynamicDebuggerProductTransitions))]
+    public void ShouldApplyDynamicDebuggerConfig_ForDynamicDebuggerProductTransitions_ReturnsExpected(
+        DynamicDebuggerProduct product,
+        bool? previousDynamicValue,
+        bool? newDynamicValue,
+        bool hasActiveDynamicDebuggerProduct,
+        bool expected)
+    {
+        var baseSettings = CreateDebuggerSettings(diEnabled: false, coEnabled: false, symDbEnabled: false);
+        var oldDebuggerSettings = baseSettings with { DynamicSettings = CreateDynamicSettings(product, previousDynamicValue) };
+        var newDynamicSettings = CreateDynamicSettings(product, newDynamicValue);
+
+        DynamicConfigurationManager
+            .ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, newDynamicSettings, exceptionReplayEnvEnabled: false, hasActiveDynamicDebuggerProduct)
+            .Should().Be(expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(DynamicDebuggerProductTransitionSequences))]
+    public void ShouldApplyDynamicDebuggerConfig_ForDynamicDebuggerProductTransitionSequences_ReturnsExpected(
+        DynamicDebuggerProduct product,
+        bool?[] sequence,
+        bool[] expectedApplyResults)
+    {
+        var oldDebuggerSettings = CreateDebuggerSettings(diEnabled: false, coEnabled: false, symDbEnabled: true);
+        var activeProduct = false;
+        var actualApplyResults = new bool[sequence.Length];
+
+        for (var i = 0; i < sequence.Length; i++)
+        {
+            var newDynamicSettings = CreateDynamicSettings(product, sequence[i]);
+            var shouldApply = DynamicConfigurationManager.ShouldApplyDynamicDebuggerConfig(
+                oldDebuggerSettings,
+                newDynamicSettings,
+                exceptionReplayEnvEnabled: false,
+                hasActiveDynamicDebuggerProduct: activeProduct);
+            actualApplyResults[i] = shouldApply;
+
+            if (shouldApply)
+            {
+                oldDebuggerSettings = oldDebuggerSettings with { DynamicSettings = newDynamicSettings };
+
+                if (sequence[i] == true)
+                {
+                    activeProduct = true;
+                }
+                else if (sequence[i] == false)
+                {
+                    activeProduct = false;
+                }
+            }
+        }
+
+        actualApplyResults.Should().Equal(expectedApplyResults);
     }
 
     [Fact]
@@ -378,4 +475,15 @@ public class DynamicConfigurationManagerTests
                 { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, symDbEnabled ? "true" : "false" },
             }),
             NullConfigurationTelemetry.Instance);
+
+    private static ImmutableDynamicDebuggerSettings CreateDynamicSettings(DynamicDebuggerProduct product, bool? value)
+    {
+        return product switch
+        {
+            DynamicDebuggerProduct.DynamicInstrumentation => new ImmutableDynamicDebuggerSettings { DynamicInstrumentationEnabled = value },
+            DynamicDebuggerProduct.ExceptionReplay => new ImmutableDynamicDebuggerSettings { ExceptionReplayEnabled = value },
+            DynamicDebuggerProduct.CodeOrigin => new ImmutableDynamicDebuggerSettings { CodeOriginEnabled = value },
+            _ => throw new ArgumentOutOfRangeException(nameof(product), product, null)
+        };
+    }
 }

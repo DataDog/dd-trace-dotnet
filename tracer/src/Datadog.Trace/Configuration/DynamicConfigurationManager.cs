@@ -94,7 +94,7 @@ namespace Datadog.Trace.Configuration
             var manager = DebuggerManager.Instance;
             var oldDebuggerSettings = manager.DebuggerSettings;
 
-            if (!ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, dynamicDebuggerSettings, manager.ExceptionReplaySettings.Enabled))
+            if (!ShouldApplyDynamicDebuggerConfig(oldDebuggerSettings, dynamicDebuggerSettings, manager.ExceptionReplaySettings.Enabled, manager.HasActiveDynamicDebuggerProduct))
             {
                 return;
             }
@@ -131,7 +131,8 @@ namespace Datadog.Trace.Configuration
         internal static bool ShouldApplyDynamicDebuggerConfig(
             DebuggerSettings oldDebuggerSettings,
             ImmutableDynamicDebuggerSettings newDynamicSettings,
-            bool exceptionReplayEnvEnabled)
+            bool exceptionReplayEnvEnabled,
+            bool hasActiveDynamicDebuggerProduct = false)
         {
             if (newDynamicSettings.Equals(oldDebuggerSettings.DynamicSettings))
             {
@@ -139,7 +140,7 @@ namespace Datadog.Trace.Configuration
                 return false;
             }
 
-            var anyRelevantProductRequested = IsAnyRelevantProductRequested(oldDebuggerSettings, exceptionReplayEnvEnabled);
+            var anyRelevantProductRequested = hasActiveDynamicDebuggerProduct || IsAnyRelevantProductRequested(oldDebuggerSettings, exceptionReplayEnvEnabled);
             var newDynamicEnablesAnyProduct = newDynamicSettings.DynamicInstrumentationEnabled == true
                                            || newDynamicSettings.ExceptionReplayEnabled == true
                                            || newDynamicSettings.CodeOriginEnabled == true;

@@ -90,6 +90,11 @@ namespace Datadog.Trace.Debugger
 
         internal ExceptionReplay? ExceptionReplay { get; private set; }
 
+        // Best-effort hint used by the serialized RC update path to avoid skipping explicit
+        // disable updates after an empty payload leaves a debugger product running.
+        internal bool HasActiveDynamicDebuggerProduct =>
+            DynamicInstrumentation is not null || CodeOrigin is not null || ExceptionReplay is not null || Volatile.Read(ref _diState) == 1;
+
         internal string ServiceName
         {
             get => Volatile.Read(ref _serviceName);
