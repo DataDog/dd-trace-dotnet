@@ -545,22 +545,40 @@ partial class Build
                         return;
                     }
                     
-                    // Create a copy of the "full solution"
-                    var sln = ProjectModelTasks.CreateSolution(
+                    // Create a copy of the "full solution" containing only the standalone test-application projects
+                    var samplesSln = ProjectModelTasks.CreateSolution(
                         fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
-                        solutions: new[] { Solution },
+                        solutions: new[] { FullSolution },
                         randomizeProjectIds: false);
 
-                    // Remove everything except the standalone test-application projects
-                    sln.AllProjects
+                    samplesSln.AllProjects
                        .Where(x => !IsTestApplication(x))
                        .ForEach(x =>
                         {
-                            Logger.Information("Removing project '{Name}'", x.Name);
-                            sln.RemoveProject(x);
+                            Logger.Information("Samples sln: removing project '{Name}'", x.Name);
+                            samplesSln.RemoveProject(x);
                         });
 
-                    sln.Save();
+                    samplesSln.Save();
+
+                    // Create a copy of the "full solution" containing everything EXCEPT the standalone test-application projects.
+                    // This is the inverse of Samples.g.sln; together they cover the full project graph with zero overlap.
+                    // It is the default Nuke Solution used by CI/build targets — restoring it does not pull in sample-only NuGet
+                    // dependencies (MongoDB, Elasticsearch, etc.), which dominate the local packages folder shipped via working-directory artifacts.
+                    var buildSln = ProjectModelTasks.CreateSolution(
+                        fileName: RootDirectory / "Datadog.Trace.Build.g.sln",
+                        solutions: new[] { FullSolution },
+                        randomizeProjectIds: false);
+
+                    buildSln.AllProjects
+                       .Where(IsTestApplication)
+                       .ForEach(x =>
+                        {
+                            Logger.Information("Build sln: removing project '{Name}'", x.Name);
+                            buildSln.RemoveProject(x);
+                        });
+
+                    buildSln.Save();
 
                     bool IsTestApplication(Project x)
                     {

@@ -23,13 +23,13 @@ partial class Build
 
     Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
 
-    Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
+    Project DebuggerSamples => SamplesSolution.GetProject(Projects.DebuggerSamples);
 
-    Project ExceptionReplaySamples => Solution.GetProject(Projects.ExceptionReplaySamples);
+    Project ExceptionReplaySamples => SamplesSolution.GetProject(Projects.ExceptionReplaySamples);
 
-    Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
+    Project DebuggerSamplesTestRuns => SamplesSolution.GetProject(Projects.DebuggerSamplesTestRuns);
 
-    Project DebuggerUnreferencedExternal => Solution.GetProject(Projects.DebuggerUnreferencedExternal);
+    Project DebuggerUnreferencedExternal => SamplesSolution.GetProject(Projects.DebuggerUnreferencedExternal);
 
     Target BuildAndRunDebuggerIntegrationTests => _ => _
         .Description("Builds and runs the debugger integration tests")

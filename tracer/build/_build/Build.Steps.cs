@@ -38,8 +38,9 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
-    [Solution("Datadog.Trace.sln")] readonly Solution Solution;
+    [Solution("Datadog.Trace.sln")] readonly Solution FullSolution;
     [Solution("Datadog.Trace.Samples.g.sln")] readonly Solution SamplesSolution;
+    [Solution("Datadog.Trace.Build.g.sln")] readonly Solution Solution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
@@ -1548,7 +1549,8 @@ partial class Build
             // Compile the dependent samples.
             if (IsWin && !Framework.ToString().StartsWith("net4"))
             {
-                DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
+                // RazorPages is a sample, looked up in SamplesSolution (the default Solution excludes standalone samples).
+                DotnetBuild(SamplesSolution.GetProject(Projects.RazorPages), framework: Framework);
             }
 
             var projects = TracerDirectory
@@ -1656,10 +1658,11 @@ partial class Build
                       return SamplesSolution;
                   }
 
-                  // Filter to a single candidate SampleName
+                  // Filter to a single candidate SampleName.
+                  // Look up in SamplesSolution: the default Solution is Datadog.Trace.Build.g.sln, which excludes standalone samples.
                   var candidates =
                       TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj")
-                                     .Select(x => Solution.GetProject(x))
+                                     .Select(x => SamplesSolution.GetProject(x))
                                      .Where(project => project is not null
                                                     && project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase));
 
@@ -1729,8 +1732,9 @@ partial class Build
                 (project: "Samples.Trimming",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
                 (project: "Samples.ManualInstrumentation",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
             };
+            // These are sample projects, looked up in SamplesSolution (the default Solution is now Datadog.Trace.Build.g.sln, which excludes samples).
             var projectsToPublish = trimmingSamples
-                                   .Select(x => (project: Solution.GetProject(x.project), x.include, x.r2r))
+                                   .Select(x => (project: SamplesSolution.GetProject(x.project), x.include, x.r2r))
                                    .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
                                     {
                                         ({include: false }, _, _) => false,
