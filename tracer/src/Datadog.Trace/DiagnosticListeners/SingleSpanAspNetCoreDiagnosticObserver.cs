@@ -288,7 +288,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var appsecEnabled = _security.AppsecEnabled;
             var iastEnabled = _iast.Settings.Enabled;
-            var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
+            var codeOrigin = CurrentCodeOrigin;
+            var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
             if (!appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
             {
@@ -299,11 +300,11 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                if (isCodeOriginEnabled)
+                if (isCodeOriginEnabled && !codeOrigin!.HasCodeOrigin(rootSpan))
                 {
                     if (AspNetCoreDiagnosticObserver.TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
-                        CurrentCodeOrigin!.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
                     else
                     {
