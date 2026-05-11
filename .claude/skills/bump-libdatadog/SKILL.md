@@ -23,9 +23,13 @@ These versions can differ (Windows may lag behind Linux/macOS). Confirm with the
 ### 1. Linux/macOS — `build/cmake/FindLibdatadog.cmake`
 
 Update these values:
-- **Line 7**: `LIBDATADOG_VERSION` — the version tag (e.g. `"v32.0.0"`)
-- **Lines 11-12**: macOS SHA-256 hashes (arm64 + x86_64)
-- **Lines 65-78**: Linux SHA-256 hashes (4 variants: aarch64-gnu, aarch64-musl, x86_64-musl, x86_64-gnu)
+- `LIBDATADOG_VERSION` — the version tag (e.g. `"v32.0.0"`)
+- `SHA256_LIBDATADOG_ARM64` — macOS arm64 hash
+- `SHA256_LIBDATADOG_X86_64` — macOS x86_64 hash
+- `SHA256_LIBDATADOG` (aarch64 gnu) — Linux aarch64 glibc hash
+- `SHA256_LIBDATADOG` (aarch64 musl) — Linux aarch64 Alpine hash
+- `SHA256_LIBDATADOG` (x86_64 musl) — Linux x86_64 Alpine hash
+- `SHA256_LIBDATADOG` (x86_64 gnu) — Linux x86_64 glibc hash
 
 Artifact filenames (from GitHub releases):
 - `libdatadog-aarch64-apple-darwin.tar.gz`
@@ -62,7 +66,7 @@ SHA-256 and SHA-512 checksums are published directly in the GitHub release notes
 2. Run the helper script which fetches them via the GitHub API:
 
 ```bash
-bash .claude/skills/bump-libdatadog/scripts/compute-hashes.sh <VERSION>
+bash .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh <VERSION>
 ```
 
 Where `<VERSION>` is without the `v` prefix (e.g. `33.0.0`).
@@ -88,9 +92,13 @@ Replace the SHA-512 hashes for x64 and x86 Windows builds.
 
 - Confirm all 8 hashes were updated (6 for CMake SHA-256, 2 for vcpkg SHA-512)
 - Confirm version strings match in both files
-- Run a quick CMake configure if possible to validate:
+- Run the Nuke build targets to validate hashes:
   ```bash
-  cd profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux && mkdir -p build && cd build && cmake ..
+  # Linux — validates CMake SHA-256 hashes during configure
+  ./tracer/build.sh CompileProfilerNativeSrc
+
+  # Windows — validates vcpkg SHA-512 hashes during install
+  .\tracer\build.cmd CompileProfilerNativeSrc
   ```
 
 ## Files That May Need Regeneration

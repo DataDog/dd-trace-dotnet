@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Fetches SHA-256 and SHA-512 checksums from a libdatadog GitHub release page.
-# Usage: ./compute-hashes.sh <VERSION>
-# Example: ./compute-hashes.sh 33.0.0
+# Usage: ./fetch-release-hashes.sh <VERSION>
+# Example: ./fetch-release-hashes.sh 33.0.0
 #
 # The version should NOT include the 'v' prefix.
 # Checksums are published in the release notes — no need to download artifacts.
@@ -16,7 +16,7 @@ echo "libdatadog v${VERSION} — Fetching checksums"
 echo "============================================"
 echo ""
 
-BODY=$(curl -fsSL "$RELEASE_URL" | python3 -c "import sys,json; print(json.load(sys.stdin)['body'])")
+BODY=$(curl -fsSL "$RELEASE_URL" | jq -r '.body')
 
 echo ">>> SHA-256 checksums (for build/cmake/FindLibdatadog.cmake) <<<"
 echo ""
