@@ -132,6 +132,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public async Task TestNullAction()
         {
             // test integrations like ReflectedHttpActionDescriptor_ExecuteAsync_Integration and ControllerActionInvoker_InvokeAction_Integration dont crash
