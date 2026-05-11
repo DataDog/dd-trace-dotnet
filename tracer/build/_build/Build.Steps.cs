@@ -1550,7 +1550,8 @@ partial class Build
             if (IsWin && !Framework.ToString().StartsWith("net4"))
             {
                 // RazorPages is a sample, looked up in SamplesSolution (the default Solution excludes standalone samples).
-                DotnetBuild(SamplesSolution.GetProject(Projects.RazorPages), framework: Framework);
+                // noRestore: false because the build-stage Restore is scoped to Build.g.sln; sample packages must be restored on demand.
+                DotnetBuild(SamplesSolution.GetProject(Projects.RazorPages), framework: Framework, noRestore: false);
             }
 
             var projects = TracerDirectory
