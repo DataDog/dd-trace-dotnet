@@ -35,7 +35,8 @@ internal static class AspNetCoreEndpointCodeOrigin
 
         // Fallback: minimal API/internal shapes (RequestDelegate.Target.handler)
         if (requestDelegate?.Target is { } requestDelegateTarget &&
-            TryGetHandlerFromRequestDelegateTarget(requestDelegateTarget, out var handler) &&
+            requestDelegateTarget.TryDuckCast<Target>(out var target) &&
+            target.Handler is { } handler &&
             handler.Method is { } handlerMethod)
         {
             var candidate = handler.Target?.GetType() ?? handlerMethod.DeclaringType ?? handlerMethod.ReflectedType;
@@ -49,20 +50,6 @@ internal static class AspNetCoreEndpointCodeOrigin
 
         // We can consider adding additional fallbacks here
         // (e.g., endpoint metadata scan and/or a carefully bounded reflection-based fallback).
-
-        return false;
-    }
-
-    private static bool TryGetHandlerFromRequestDelegateTarget(object requestDelegateTarget, [NotNullWhen(true)] out Delegate? handler)
-    {
-        handler = null;
-
-        // Common shape: field "handler"
-        if (requestDelegateTarget.TryDuckCast<Target>(out var target) && target.Handler is { } h1)
-        {
-            handler = h1;
-            return true;
-        }
 
         return false;
     }
