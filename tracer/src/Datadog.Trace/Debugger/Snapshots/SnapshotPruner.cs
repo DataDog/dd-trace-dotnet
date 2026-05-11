@@ -117,30 +117,36 @@ namespace DatadogDebugger.Util
             }
 
             var sb = StringBuilderCache.Acquire();
-            sb.Append(snapshot, 0, prunedNodes[0].Start);
-            for (var i = 1; i < prunedNodes.Count; i++)
+            try
             {
-                var nextSegmentStart = prunedNodes[i - 1].End + 1;
-                var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
-                if (nextSegmentStart < 0 || nextSegmentStart > snapshot.Length || nextSegmentLength < 0 || (nextSegmentStart + nextSegmentLength) > snapshot.Length)
+                sb.Append(snapshot, 0, prunedNodes[0].Start);
+                for (var i = 1; i < prunedNodes.Count; i++)
                 {
-                    // Malformed segment boundaries - abort pruning
-                    StringBuilderCache.Release(sb);
-                    return snapshot;
+                    var nextSegmentStart = prunedNodes[i - 1].End + 1;
+                    var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
+                    if (nextSegmentStart < 0 || nextSegmentStart > snapshot.Length || nextSegmentLength < 0 || (nextSegmentStart + nextSegmentLength) > snapshot.Length)
+                    {
+                        // Malformed segment boundaries - abort pruning
+                        return snapshot;
+                    }
+
+                    sb.Append(Pruned);
+                    sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
                 }
 
                 sb.Append(Pruned);
-                sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
-            }
+                var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
+                if (lastSegmentStart < snapshot.Length)
+                {
+                    sb.Append(snapshot, lastSegmentStart, snapshot.Length - lastSegmentStart);
+                }
 
-            sb.Append(Pruned);
-            var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
-            if (lastSegmentStart < snapshot.Length)
+                return sb.ToString();
+            }
+            finally
             {
-                sb.Append(snapshot, lastSegmentStart, snapshot.Length - lastSegmentStart);
+                StringBuilderCache.Release(sb);
             }
-
-            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private IEnumerable<Node> GetLeaves(int minLevel)
