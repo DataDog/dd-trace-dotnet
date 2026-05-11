@@ -839,6 +839,7 @@
       <type fullname="System.Reflection.EventInfo" />
       <type fullname="System.Reflection.FieldAttributes" />
       <type fullname="System.Reflection.FieldInfo" />
+      <type fullname="System.Reflection.GenericParameterAttributes" />
       <type fullname="System.Reflection.ICustomAttributeProvider" />
       <type fullname="System.Reflection.IntrospectionExtensions" />
       <type fullname="System.Reflection.LocalVariableInfo" />
