@@ -4,6 +4,7 @@
 #pragma once
 
 #include "IExporter.h"
+#include "IMetadataProvider.h"
 #include "IUpscaleProvider.h"
 #include "MetricsRegistry.h"
 #include "Sample.h"
@@ -24,7 +25,6 @@ class IRuntimeInfo;
 class IEnabledProfilers;
 class IAllocationsRecorder;
 class IProcessSamplesProvider;
-class IMetadataProvider;
 class IConfiguration;
 class IRuntimeInfo;
 class ISsiManager;
@@ -115,10 +115,9 @@ private:
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
     std::string GetMetadataJson() const;
-    std::string GetInfoJson(std::string& runtimeId) const;
     void AppendProfilerInfo(std::stringstream& builder, std::string& runtimeId) const;
     void AppendValueList(const tags& kvp, std::stringstream& builder) const;
-    bool AppendEnvVars(std::stringstream& builder) const;
+    void AppendEnvVars(std::stringstream& builder, const IMetadataProvider::metadata_t& metadata) const;
     void AppendGcConfig(std::stringstream& builder) const;
 
     inline void ElementStart(std::stringstream& builder, const std::string& name) const
@@ -176,4 +175,5 @@ private:
 
 public: // for tests
     static std::string GetEnabledProfilers(IEnabledProfilers* enabledProfilers);
+    std::string GetInfoJson(std::string& runtimeId) const;
 };

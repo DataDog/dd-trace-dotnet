@@ -173,6 +173,29 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void SpecialType_NullableSafeToStringTypes_DoNotRecurseIntoFields()
+        {
+            var expectedDate = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var expectedDuration = TimeSpan.FromSeconds(3);
+            var snapshot = JObject.Parse(SnapshotHelper.GenerateSnapshot(new NullableSafeToStringHolder(), prettify: false));
+
+            var dateToken = snapshot.SelectToken("debugger.snapshot.captures.return.locals.local0.fields.Date");
+            Assert.NotNull(dateToken);
+            Assert.Equal("Nullable`1", dateToken["type"]?.Value<string>());
+            Assert.Equal(expectedDate.ToString(), dateToken["value"]?.Value<string>());
+            Assert.Null(dateToken["fields"]);
+
+            var durationToken = snapshot.SelectToken("debugger.snapshot.captures.return.locals.local0.fields.Duration");
+            Assert.NotNull(durationToken);
+            Assert.Equal("Nullable`1", durationToken["type"]?.Value<string>());
+            Assert.Equal(expectedDuration.ToString(), durationToken["value"]?.Value<string>());
+            Assert.Null(durationToken["fields"]);
+
+            Assert.Equal("Bar", snapshot.SelectToken("logger.name")?.Value<string>());
+            Assert.Equal("Foo", snapshot.SelectToken("logger.method")?.Value<string>());
+        }
+
+        [Fact]
         public async Task SpecialType_LazyUninitialized()
         {
             await ValidateSingleValue(new Lazy<int>(() => Math.Max(1, 2)));
@@ -1218,6 +1241,13 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly int _numField998 = 998;
             private readonly int _numField999 = 999;
             private readonly int _numField1000 = 1000;
+        }
+
+        private class NullableSafeToStringHolder
+        {
+            public DateTime? Date { get; } = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            public TimeSpan? Duration { get; } = TimeSpan.FromSeconds(3);
         }
 
         private class CollectionAtMaxDepth

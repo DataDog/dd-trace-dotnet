@@ -875,7 +875,7 @@ partial class Build
             var filesAndVersion = new []
             {
                 (FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
-                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
+                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
             var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);

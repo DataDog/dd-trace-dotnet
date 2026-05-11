@@ -50,6 +50,11 @@ namespace DatadogDebugger.Util
 
         public static string Prune(string snapshot, int maxTargetedSize, int minLevel)
         {
+            if (snapshot is null)
+            {
+                return snapshot;
+            }
+
             var delta = Encoding.UTF8.GetByteCount(snapshot) - maxTargetedSize;
             if (delta <= 0)
             {
@@ -63,6 +68,12 @@ namespace DatadogDebugger.Util
             foreach (var leaf in leaves)
             {
                 sortedLeaves.Add(leaf);
+            }
+
+            if (sortedLeaves.Count == 0)
+            {
+                // Nothing to prune (could be invalid JSON, or it doesn't contain any objects deep enough)
+                return snapshot;
             }
 
             var total = 0;
@@ -100,24 +111,42 @@ namespace DatadogDebugger.Util
             }
 
             var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
+            if (prunedNodes.Count == 0)
+            {
+                return snapshot;
+            }
+
             var sb = StringBuilderCache.Acquire();
-            sb.Append(snapshot, 0, prunedNodes[0].Start);
-            for (var i = 1; i < prunedNodes.Count; i++)
+            try
             {
+                sb.Append(snapshot, 0, prunedNodes[0].Start);
+                for (var i = 1; i < prunedNodes.Count; i++)
+                {
+                    var nextSegmentStart = prunedNodes[i - 1].End + 1;
+                    var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
+                    if (nextSegmentStart < 0 || nextSegmentStart > snapshot.Length || nextSegmentLength < 0 || (nextSegmentStart + nextSegmentLength) > snapshot.Length)
+                    {
+                        // Malformed segment boundaries - abort pruning
+                        return snapshot;
+                    }
+
+                    sb.Append(Pruned);
+                    sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
+                }
+
                 sb.Append(Pruned);
-                var nextSegmentStart = prunedNodes[i - 1].End + 1;
-                var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
-                sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
-            }
+                var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
+                if (lastSegmentStart < snapshot.Length)
+                {
+                    sb.Append(snapshot, lastSegmentStart, snapshot.Length - lastSegmentStart);
+                }
 
-            sb.Append(Pruned);
-            var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
-            if (lastSegmentStart < Encoding.UTF8.GetByteCount(snapshot))
+                return sb.ToString();
+            }
+            finally
             {
-                sb.Append(snapshot, lastSegmentStart, snapshot.Length - lastSegmentStart);
+                StringBuilderCache.Release(sb);
             }
-
-            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private IEnumerable<Node> GetLeaves(int minLevel)
@@ -197,7 +226,7 @@ namespace DatadogDebugger.Util
             switch (c)
             {
                 case '"':
-                    if (pruner._strMatchIdx == Encoding.UTF8.GetByteCount(pruner._matchingString))
+                    if (pruner._strMatchIdx == pruner._matchingString.Length)
                     {
                         return NotCapturedAction();
                     }

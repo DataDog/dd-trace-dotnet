@@ -6,20 +6,17 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -37,26 +34,21 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly string? _environment;
         private readonly SemaphoreSlim _assemblySemaphore;
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
-        private readonly SemaphoreSlim _enablementSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
         private readonly ImmutableHashSet<string> _symDb3rdPartyIncludes;
         private readonly ImmutableHashSet<string> _symDb3rdPartyExcludes;
         private readonly long _thresholdInBytes;
         private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly IBatchUploadApi _api;
-        private readonly IRcmSubscriptionManager _subscriptionManager;
-        private readonly ISubscription _subscription;
         private readonly object _disposeLock = new();
         private readonly IDiscoveryService _discoveryService;
         private volatile bool _disposed;
         private byte[]? _payload;
-        private string? _symDbEndpoint;
-        private bool _isSymDbEnabled;
+        private volatile string? _symDbEndpoint;
 
         private SymbolsUploader(
             IBatchUploadApi api,
             IDiscoveryService discoveryService,
-            IRcmSubscriptionManager remoteConfigurationManager,
             DebuggerSettings settings,
             TracerSettings tracerSettings,
             Func<string> serviceNameProvider)
@@ -71,45 +63,20 @@ namespace Datadog.Trace.Debugger.Symbols
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
             _discoveryServiceSemaphore = new SemaphoreSlim(0);
-            _enablementSemaphore = new SemaphoreSlim(0);
             _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
             _symDb3rdPartyIncludes = settings.SymDbThirdPartyDetectionIncludes;
             _symDb3rdPartyExcludes = settings.SymDbThirdPartyDetectionExcludes;
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
-            _subscription = new Subscription(Callback, RcmProducts.LiveDebuggingSymbolDb);
-            _subscriptionManager = remoteConfigurationManager;
-            _subscriptionManager.SubscribeToChanges(_subscription);
-        }
-
-        private ApplyDetails[] Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
-        {
-            var result =
-                (from configByProduct in addedConfig
-                 where configByProduct.Key == RcmProducts.LiveDebuggingSymbolDb
-                 from remoteConfiguration in configByProduct.Value
-                 where remoteConfiguration.Path.Id.StartsWith(DefinitionPaths.SymDB, StringComparison.Ordinal)
-                 select new NamedRawFile(remoteConfiguration.Path, remoteConfiguration.Contents)
-                 into rawFile
-                 select rawFile.Deserialize<SymDbEnablement>()).FirstOrDefault();
-
-            if (_isSymDbEnabled == false && result.TypedFile?.UploadSymbols == true)
-            {
-                _isSymDbEnabled = true;
-                _enablementSemaphore.Release(1);
-            }
-            else if (_isSymDbEnabled && result.TypedFile?.UploadSymbols == false)
-            {
-                _isSymDbEnabled = false;
-                UnRegisterToAssemblyLoadEvent();
-                _processExit.TrySetResult(true);
-            }
-
-            return [];
         }
 
         private void ConfigurationChanged(AgentConfiguration configuration)
         {
+            if (_disposed || _processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
             if (string.IsNullOrEmpty(configuration.SymbolDbEndpoint))
             {
                 Log.Debug("`SymbolDb endpoint` is null. This can happen if your datadog-agent version is lower than 7.45");
@@ -117,26 +84,33 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             _symDbEndpoint = configuration.SymbolDbEndpoint;
-            _discoveryServiceSemaphore.Release(1);
             _discoveryService.RemoveSubscription(ConfigurationChanged);
+            try
+            {
+                _discoveryServiceSemaphore.Release(1);
+            }
+            catch (ObjectDisposedException)
+            {
+                // The uploader may be disabled while discovery publishes an update.
+            }
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {
                 Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
-                return new NoOpSymbolUploader();
+                return NoOpSymbolUploader.Instance;
             }
 
             if (!ThirdPartyModules.IsValid)
             {
                 Log.Warning("Third party modules load has failed. Disabling Symbol Uploader.");
-                return new NoOpSymbolUploader();
+                return NoOpSymbolUploader.Instance;
             }
 
             // TODO: we need to be able to update the tracer settings dynamically
-            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceNameProvider);
+            return new SymbolsUploader(api, discoveryService, settings, tracerSettings, serviceNameProvider);
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -156,7 +130,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task ProcessItemAsync(Assembly assembly)
         {
-            if (!_isSymDbEnabled || _disposed)
+            if (_disposed)
             {
                 return;
             }
@@ -172,7 +146,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     semaphoreAcquired = await _assemblySemaphore.WaitAsync(acquireTimeout).ConfigureAwait(false);
                 }
 
-                if (!_isSymDbEnabled || _processExit.Task.IsCompleted || _disposed)
+                if (_processExit.Task.IsCompleted || _disposed)
                 {
                     return;
                 }
@@ -209,6 +183,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task ProcessItem(Assembly assembly)
         {
+            // Disable/dispose is cooperative: already-running extraction or upload can finish one bounded batch.
             try
             {
                 var assemblyName = assembly.GetName().Name;
@@ -428,12 +403,16 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
-            if (await WaitForEnablementAsync().ConfigureAwait(false) == false)
+            lock (_disposeLock)
             {
-                return;
+                if (_disposed || _processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                RegisterToAssemblyLoadEvent();
             }
 
-            RegisterToAssemblyLoadEvent();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
@@ -443,16 +422,16 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task<bool> WaitForDiscoveryServiceAsync()
         {
+            if (_disposed || _processExit.Task.IsCompleted)
+            {
+                return false;
+            }
+
             if (!string.IsNullOrEmpty(_symDbEndpoint))
             {
                 // if it is already set, return immediately.
                 // theoretically, this can be reverted in case of version downgrade, but we not support that atm.
                 return true;
-            }
-
-            if (_disposed || _processExit.Task.IsCompleted)
-            {
-                return false;
             }
 
             await Task.Yield();
@@ -469,40 +448,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                return !string.IsNullOrEmpty(Volatile.Read(ref _symDbEndpoint));
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
-            }
-        }
-
-        private async Task<bool> WaitForEnablementAsync()
-        {
-            if (_disposed || _processExit.Task.IsCompleted)
-            {
-                return false;
-            }
-
-            await Task.Yield();
-
-            try
-            {
-                var completedTask = await Task.WhenAny(
-                                                   _enablementSemaphore.WaitAsync(),
-                                                   _processExit.Task)
-                                              .ConfigureAwait(false);
-
-                if (completedTask == _processExit.Task || _disposed)
-                {
-                    return false;
-                }
-
-                return true;
+                return !string.IsNullOrEmpty(_symDbEndpoint);
             }
             catch (OperationCanceledException)
             {
@@ -531,9 +477,8 @@ namespace Datadog.Trace.Debugger.Symbols
                 _disposed = true;
                 _processExit.TrySetResult(true);
                 UnRegisterToAssemblyLoadEvent();
-                _subscriptionManager.Unsubscribe(_subscription);
+                _discoveryService.RemoveSubscription(ConfigurationChanged);
                 _assemblySemaphore.Dispose();
-                _enablementSemaphore.Dispose();
                 _discoveryServiceSemaphore.Dispose();
             }
         }

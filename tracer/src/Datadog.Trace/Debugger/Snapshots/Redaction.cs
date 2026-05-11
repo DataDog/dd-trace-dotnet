@@ -191,10 +191,17 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static Redaction Instance => _instnace;
 
-        internal static bool IsSafeToCallToString(Type type)
+        internal static bool IsSafeToCallToString(Type? type)
         {
-            return TypeExtensions.IsSimple(type) ||
-                   AllowedTypesSafeToCallToString.Contains(type) ||
+            if (type is null)
+            {
+                return false;
+            }
+
+            var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+
+            return TypeExtensions.IsSimple(effectiveType) ||
+                   AllowedTypesSafeToCallToString.Contains(effectiveType) ||
                    IsSupportedCollection(type);
         }
 

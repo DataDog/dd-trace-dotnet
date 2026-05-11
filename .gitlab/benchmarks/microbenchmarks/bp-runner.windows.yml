@@ -1,11 +1,13 @@
 # bp-runner config for dd-trace-dotnet microbenchmarks on Windows.
 #
-# Two batches run in parallel on separate NUMA nodes:
-#   - batch-0 (stable benchmarks) on NUMA node 0
-#   - batch-1 (less stable benchmarks) on NUMA node 1
+# Four batches run in parallel on separate NUMA nodes:
+#   - trace (stable benchmarks) on NUMA node 0
+#   - trace-unstable (less stable benchmarks) on NUMA node 1
+#   - otel-instr-api (OpenTelemetry InstrumentedApi) on NUMA node 0
+#   - otel-api (OpenTelemetry Api, skipped on PRs) on NUMA node 1
 #
-# batch-0 clones and builds; batch-1 waits for .build-complete marker file.
-# Artifact dirs are prefixed with b0-/b1- to avoid collisions between batches.
+# trace batch clones and builds; others wait for .build-complete marker file.
+# Artifact dirs are prefixed with batch name to avoid collisions.
 #
 # bp-runner keywords (enable parallel benchmark execution on isolated CPU sets):
 #   - how_to_fetch_release: script to clone/build the repo for baseline/candidate
@@ -62,8 +64,8 @@
   Write-Output "=== Waiting for build to complete for $env:BASELINE_OR_CANDIDATE ==="
   Write-Output "CODE_SRC: $env:CODE_SRC"
 
-  # Both experiments share the same CODE_SRC (C:\app\candidate or C:\app\baseline).
-  # batch-0 does the actual build, batch-1 just waits for it to finish.
+  # All experiments share the same CODE_SRC (C:\app\candidate or C:\app\baseline).
+  # trace batch does the actual build, others wait for it to finish.
   $markerPath = "$env:CODE_SRC\tracer\.build-complete"
 
   Write-Output "Waiting for build marker at: $markerPath"
@@ -88,21 +90,27 @@
 .how_to_run_benchmarks: &how_to_run_benchmarks |
   $ErrorActionPreference = "Stop"
 
-  $env:BENCHMARK_PROJECT = "Benchmarks.Trace"
-  $env:BENCHMARK_CATEGORY = "prs"
-  if ($env:CI_COMMIT_REF_NAME -eq "master") {
-    $env:BENCHMARK_CATEGORY = "master"
+  # Skip if benchmark project DLL not built.
+  # Some projects (e.g., Benchmarks.OpenTelemetry.Api) are not built on PRs. See Build.cs GetBenchmarkProjectsWithSettings().
+  $dllPattern = "$env:CODE_SRC\tracer\test\benchmarks\$env:BENCHMARK_PROJECT\bin\Release\*\$env:BENCHMARK_PROJECT.dll"
+  if (-not (Test-Path $dllPattern)) {
+    Write-Output "Skipping: $env:BENCHMARK_PROJECT not built (DLL not found matching $dllPattern)"
+    exit 0
   }
 
-  # BATCH_PREFIX set via env: in experiment step (e.g., "b0" or "b1")
+  # BATCH_PREFIX set via env: in experiment step (e.g., "trace" or "otel-api"). We need different prefixes to avoid race conditions.
   $artifactsIndex = "$env:BATCH_PREFIX-$env:PARALLEL_INDEX"
+
+  # Benchmark category filters which benchmarks run via BenchmarkDotNet's --allCategories flag.
+  # Benchmarks are tagged with [BenchmarkCategory("prs")] or [BenchmarkCategory("master")] attributes.
+  $category = if ($env:CI_COMMIT_REF_NAME -eq "master") { "master" } else { "prs" }
 
   Write-Output "=== Running benchmarks ==="
   Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
   Write-Output "CODE_SRC: $env:CODE_SRC"
   Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
   Write-Output "BENCHMARK_PROJECT: $env:BENCHMARK_PROJECT"
-  Write-Output "BENCHMARK_CATEGORY: $env:BENCHMARK_CATEGORY"
+  Write-Output "BENCHMARK_CATEGORY: $category"
   Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
   Write-Output "ARTIFACTS_INDEX: $artifactsIndex"
   Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
@@ -113,28 +121,32 @@
   # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
   & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-benchmarks.ps1" `
     -Filter "$env:PARALLEL_ITEM" `
-    -ArtifactsIndex "$artifactsIndex"
+    -ArtifactsIndex "$artifactsIndex" `
+    -Project "$env:BENCHMARK_PROJECT" `
+    -Category "$category"
 
   Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
 
 # Run experiments in parallel (each on different NUMA node)
 parallelize: true
 
-# Benchmarks are split into two batches:
-# - batch-0: stable benchmarks (low variance)
-# - batch-1: less stable benchmarks (higher variance, need isolation)
+# Benchmarks are split into batches:
+# - trace: stable Benchmarks.Trace benchmarks (low variance)
+# - trace-unstable: less stable Benchmarks.Trace benchmarks (higher variance)
+# - otel-instr-api: OpenTelemetry InstrumentedApi benchmarks
+# - otel-api: OpenTelemetry Api benchmarks (skipped on PRs since Nuke doesn't build them)
 
 experiments:
-  - name: batch-0
+  - name: trace
     steps:
-      - name: batch-0
+      - name: trace
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "0,0xFFFFF"
+        cpus: "0,0xFFC00"
         parallelize:
-          # Stable benchmarks
+          # Stable benchmarks (CPUs 10-19 on NUMA node 0)
           items: >-
             *ActivityBenchmark*
             *AppSecBodyBenchmark*
@@ -146,23 +158,24 @@ experiments:
             *RedisBenchmark*
             *SpanBenchmark*
             *TraceAnnotationsBenchmark*
-          cpus_per_item: 2
+          cpus_per_item: 1
 
         env:
-          BATCH_PREFIX: "b0"
+          BATCH_PREFIX: "trace"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
         how_to_fetch_release: *how_to_fetch_release_build
         how_to_run_benchmarks: *how_to_run_benchmarks
 
-  - name: batch-1
+  - name: trace-unstable
     steps:
-      - name: batch-1
+      - name: trace-unstable
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0xFFFFF"
+        cpus: "1,0xFFC00"
         parallelize:
-          # Less stable benchmarks
+          # Less stable benchmarks (CPUs 10-19 on NUMA node 1)
           items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
@@ -174,9 +187,60 @@ experiments:
             *Log4netBenchmark*
             *SerilogBenchmark*
             *StringAspectsBenchmark*
-          cpus_per_item: 2
+          cpus_per_item: 1
 
         env:
-          BATCH_PREFIX: "b1"
+          BATCH_PREFIX: "trace-unstable"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+  - name: otel-instr-api
+    steps:
+      - name: otel-instr-api
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "0,0xE00000"
+        parallelize:
+          # OpenTelemetry InstrumentedApi benchmarks (CPUs 21-23 on NUMA node 0)
+          items: >-
+            *ActivityBenchmark*
+            *TelemetrySpanBenchmark*
+            *TracerBenchmark*
+          cpus_per_item: 1
+
+        env:
+          BATCH_PREFIX: "otel-instr-api"
+          BENCHMARK_PROJECT: "Benchmarks.OpenTelemetry.InstrumentedApi"
+          # Env vars below replicate what Nuke sets in GetBenchmarkProjectsWithSettings() for InstrumentedApi.
+          # We set them here because bp-runner runs benchmarks directly, not via Nuke.
+          DD_TRACE_OTEL_ENABLED: "true"
+          DD_INSTRUMENTATION_TELEMETRY_ENABLED: "false"
+          DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED: "true"
+          DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY: "V4"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+  - name: otel-api
+    steps:
+      - name: otel-api
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "1,0xE00000"
+        parallelize:
+          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA node 1, skipped on PRs since Nuke doesn't build them)
+          items: >-
+            *ActivityBenchmark*
+            *TelemetrySpanBenchmark*
+            *TracerBenchmark*
+          cpus_per_item: 1
+
+        env:
+          BATCH_PREFIX: "otel-api"
+          BENCHMARK_PROJECT: "Benchmarks.OpenTelemetry.Api"
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks

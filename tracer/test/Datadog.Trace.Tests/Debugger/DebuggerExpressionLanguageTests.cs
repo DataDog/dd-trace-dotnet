@@ -217,6 +217,214 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_OpenGenericReferenceTypeParameter_CanCompileExpression()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(GenericReferenceTypeTarget<>), new GenericReferenceTypeTarget<string>(), ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "ref": "this"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers, typeof(GenericReferenceTypeTarget<>));
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.IsType<GenericReferenceTypeTarget<string>>(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ConstructedOpenGenericReferenceTypeParameter_CanCompileExpression()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var collection = new List<string> { "value" };
+            var openCollectionType = typeof(GenericReferenceTypeTarget<>).GetProperty(nameof(GenericReferenceTypeTarget<string>.Collection)).PropertyType;
+            scopeMembers.Return = new ScopeMember("return", openCollectionType, collection, ScopeMemberKind.Return);
+
+            const string json = """
+                                {
+                                  "ref": "@return"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Same(collection, result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_NullConstructedOpenGenericArgument_CanCompileExpression()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var openCollectionType = typeof(GenericReferenceTypeTarget<>).GetProperty(nameof(GenericReferenceTypeTarget<string>.Collection)).PropertyType;
+            scopeMembers.AddMember(new ScopeMember("OpenCollectionArg", openCollectionType, null, ScopeMemberKind.Argument));
+
+            const string json = """
+                                {
+                                  "eq": [
+                                    { "ref": "OpenCollectionArg" },
+                                    null
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_OpenGenericValueTypeParameter_ReturnsEvaluationError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(GenericValueTypeTarget<>), null, ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "ref": "this"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers, typeof(GenericValueTypeTarget<>));
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Null(result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("generic value type parameter", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_RecursiveGenericConstraint_ReturnsEvaluationError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(RecursiveGenericConstraintTarget<>), null, ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "ref": "this"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers, typeof(RecursiveGenericConstraintTarget<>));
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Null(result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("recursive generic parameter constraints", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ValueTypeReferenceTypeComparison_ReturnsFriendlyError()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "gt": [
+                                    { "ref": "IntLocal" },
+                                    "value"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Equal("A reference type cannot be compared to a not nullable value type.", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_NullableValueTypeComparedToNull_DoesNotThrow()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "eq": [
+                                    { "ref": "NullableNullValueLocal" },
+                                    null
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_NullableValueTypeReferenceTypeComparison_KeepsOriginalError()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "eq": [
+                                    { "ref": "NullableNullValueLocal" },
+                                    "value"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("The binary operator Equal is not defined for the types", error.Message);
+        }
+
         [Theory]
         [InlineData("""
                     {
@@ -303,6 +511,31 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.Members);
 
             Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_NonGenericDictionaryDump_AllowsNullValues()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var holder = new HashtableHolder();
+            scopeMembers.AddMember(new ScopeMember("HashtableHolderLocal", typeof(HashtableHolder), holder, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "ref": "HashtableHolderLocal"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("{[hello, ], }", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
@@ -653,6 +886,30 @@ namespace Datadog.Trace.Tests.Debugger
                 private string _childPrivateMember = "Hello from child private member";
 #pragma warning restore CS0414 // Field is assigned but its value is never used
             }
+        }
+
+        internal class GenericReferenceTypeTarget<T>
+            where T : class
+        {
+            public IEnumerable<T> Collection { get; set; }
+        }
+
+        internal class GenericValueTypeTarget<T>
+            where T : struct
+        {
+        }
+
+        internal class RecursiveGenericConstraintTarget<T>
+            where T : IComparable<T>
+        {
+        }
+
+        private class HashtableHolder
+        {
+            private readonly Hashtable dictionary = new()
+            {
+                { "hello", null },
+            };
         }
     }
 }
