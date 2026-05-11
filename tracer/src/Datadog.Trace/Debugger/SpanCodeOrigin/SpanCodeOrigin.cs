@@ -92,6 +92,11 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             AddEntrySpanTags(span, type, method);
         }
 
+        internal bool HasCodeOrigin(Span? span)
+        {
+            return span?.GetTag(_tags.Type) != null;
+        }
+
         private void AddEntrySpanTags(Span span, Type type, MethodInfo method)
         {
             try

@@ -90,6 +90,22 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             [Fact]
+            public void HasCodeOrigin_ReturnsWhetherSpanHasCodeOriginTags()
+            {
+                // Arrange
+                SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
+                var span = CreateSpan();
+
+                // Act / Assert
+                spanCodeOrigin.HasCodeOrigin(null).Should().BeFalse();
+                spanCodeOrigin.HasCodeOrigin(span).Should().BeFalse();
+
+                span.SetTag($"{CodeOriginTag}.type", "existing");
+
+                spanCodeOrigin.HasCodeOrigin(span).Should().BeTrue();
+            }
+
+            [Fact]
             public void SetCodeOriginForEntrySpan_WithValidInputs_ShouldSetCorrectTags()
             {
                 // Arrange

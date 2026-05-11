@@ -109,6 +109,71 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
 #if NET6_0_OR_GREATER
         [Fact]
+        public void AspNetCoreEndpointCodeOrigin_ExtractsTypeAndMethodFromRequestDelegate()
+        {
+            // Arrange
+            var target = new EndpointHandlerTarget();
+            var expectedMethod = typeof(EndpointHandlerTarget).GetMethod(nameof(EndpointHandlerTarget.Handle));
+            var routeEndpoint = new RouteEndpoint
+            {
+                RequestDelegate = new Datadog.Trace.DiagnosticListeners.RequestDelegate
+                {
+                    Method = expectedMethod,
+                    Target = target
+                }
+            };
+
+            // Act
+            var success = AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint, out var type, out var method);
+
+            // Assert
+            success.Should().BeTrue();
+            type.Should().Be(typeof(EndpointHandlerTarget));
+            method.Should().BeSameAs(expectedMethod);
+        }
+
+        [Fact]
+        public void AspNetCoreEndpointCodeOrigin_ExtractsTypeAndMethodFromRequestDelegateTargetHandler()
+        {
+            // Arrange
+            var handlerTarget = new EndpointHandlerTarget();
+            var expectedMethod = typeof(EndpointHandlerTarget).GetMethod(nameof(EndpointHandlerTarget.Handle));
+            var routeEndpoint = new RouteEndpoint
+            {
+                RequestDelegate = new Datadog.Trace.DiagnosticListeners.RequestDelegate
+                {
+                    Target = new RequestDelegateTarget(handlerTarget.Handle)
+                }
+            };
+
+            // Act
+            var success = AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint, out var type, out var method);
+
+            // Assert
+            success.Should().BeTrue();
+            type.Should().Be(typeof(EndpointHandlerTarget));
+            method.Should().BeSameAs(expectedMethod);
+        }
+
+        [Fact]
+        public void AspNetCoreEndpointCodeOrigin_ReturnsFalseWhenEndpointHasNoHandler()
+        {
+            // Arrange
+            var routeEndpoint = new RouteEndpoint
+            {
+                RequestDelegate = new Datadog.Trace.DiagnosticListeners.RequestDelegate()
+            };
+
+            // Act
+            var success = AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint, out var type, out var method);
+
+            // Assert
+            success.Should().BeFalse();
+            type.Should().BeNull();
+            method.Should().BeNull();
+        }
+
+        [Fact]
         public async Task CompleteSingleSpanDiagnosticObserverTest()
         {
             await using var tracer = GetTracer();
@@ -253,6 +318,30 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 builder.UseMvcWithDefaultRoute();
             }
         }
+
+#if NET6_0_OR_GREATER
+        private class EndpointHandlerTarget
+        {
+            public Task Handle(HttpContext context)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        private class RequestDelegateTarget
+        {
+#pragma warning disable SA1401 // Fields should be private
+#pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
+            public readonly Delegate handler;
+#pragma warning restore SA1307 // Accessible fields should begin with upper-case letter
+#pragma warning restore SA1401 // Fields should be private
+
+            public RequestDelegateTarget(Delegate handler)
+            {
+                this.handler = handler;
+            }
+        }
+#endif
     }
 
     /// <summary>

@@ -375,13 +375,15 @@ internal static class EndpointDetector
 
             case KnownNameSet.ActionAttribute:
                 return (comparer.Equals(namespaceHandle, MvcNamespace) &&
-                        (comparer.Equals(nameHandle, "HttpGetAttribute") ||
+                        (comparer.Equals(nameHandle, "AcceptVerbsAttribute") ||
+                         comparer.Equals(nameHandle, "HttpGetAttribute") ||
                          comparer.Equals(nameHandle, "HttpPostAttribute") ||
                          comparer.Equals(nameHandle, "HttpPutAttribute") ||
                          comparer.Equals(nameHandle, "HttpDeleteAttribute") ||
                          comparer.Equals(nameHandle, "HttpPatchAttribute") ||
                          comparer.Equals(nameHandle, "HttpHeadAttribute") ||
-                         comparer.Equals(nameHandle, "HttpOptionsAttribute"))) ||
+                         comparer.Equals(nameHandle, "HttpOptionsAttribute") ||
+                         comparer.Equals(nameHandle, "RouteAttribute"))) ||
                        (comparer.Equals(namespaceHandle, MvcRoutingNamespace) &&
                         comparer.Equals(nameHandle, "HttpMethodAttribute"));
 
