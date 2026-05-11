@@ -321,6 +321,31 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_RecursiveGenericConstraint_ReturnsEvaluationError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(RecursiveGenericConstraintTarget<>), null, ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "ref": "this"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers, typeof(RecursiveGenericConstraintTarget<>));
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Null(result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("recursive generic parameter constraints", error.Message);
+        }
+
+        [Fact]
         public void ProbeExpressionParser_ValueTypeReferenceTypeComparison_ReturnsFriendlyError()
         {
             var scopeMembers = CreateScopeMembers();
@@ -846,6 +871,11 @@ namespace Datadog.Trace.Tests.Debugger
 
         internal class GenericValueTypeTarget<T>
             where T : struct
+        {
+        }
+
+        internal class RecursiveGenericConstraintTarget<T>
+            where T : IComparable<T>
         {
         }
     }

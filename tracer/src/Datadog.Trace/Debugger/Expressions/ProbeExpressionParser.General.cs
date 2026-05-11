@@ -139,6 +139,11 @@ internal partial class ProbeExpressionParser<T>
 
     private static Type CloseOpenGenericType(Type type)
     {
+        return CloseOpenGenericType(type, new List<Type>());
+    }
+
+    private static Type CloseOpenGenericType(Type type, List<Type> visitedGenericParameters)
+    {
         if (!type.ContainsGenericParameters)
         {
             return type;
@@ -146,12 +151,12 @@ internal partial class ProbeExpressionParser<T>
 
         if (type.IsGenericParameter)
         {
-            return CloseGenericParameter(type);
+            return CloseGenericParameter(type, visitedGenericParameters);
         }
 
         if (type.HasElementType)
         {
-            var elementType = CloseOpenGenericType(type.GetElementType());
+            var elementType = CloseOpenGenericType(type.GetElementType(), visitedGenericParameters);
             if (type.IsArray)
             {
                 var rank = type.GetArrayRank();
@@ -175,7 +180,7 @@ internal partial class ProbeExpressionParser<T>
             var concreteTypes = new Type[genericArguments.Length];
             for (int i = 0; i < genericArguments.Length; i++)
             {
-                concreteTypes[i] = CloseOpenGenericType(genericArguments[i]);
+                concreteTypes[i] = CloseOpenGenericType(genericArguments[i], visitedGenericParameters);
             }
 
             try
@@ -191,32 +196,45 @@ internal partial class ProbeExpressionParser<T>
         throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains generic parameters that cannot be safely closed.");
     }
 
-    private static Type CloseGenericParameter(Type type)
+    private static Type CloseGenericParameter(Type type, List<Type> visitedGenericParameters)
     {
-        var attributes = type.GenericParameterAttributes;
-        if ((attributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0)
+        if (visitedGenericParameters.Contains(type))
         {
-            throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains a generic value type parameter.");
+            throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains recursive generic parameter constraints.");
         }
 
-        var constraints = type.GetGenericParameterConstraints();
-        if (constraints.Length == 1)
+        visitedGenericParameters.Add(type);
+        try
         {
-            var constraint = CloseOpenGenericType(constraints[0]);
-            if (constraint.IsValueType)
+            var attributes = type.GenericParameterAttributes;
+            if ((attributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0)
             {
                 throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains a generic value type parameter.");
             }
 
-            return constraint;
-        }
+            var constraints = type.GetGenericParameterConstraints();
+            if (constraints.Length == 1)
+            {
+                var constraint = CloseOpenGenericType(constraints[0], visitedGenericParameters);
+                if (constraint.IsValueType)
+                {
+                    throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains a generic value type parameter.");
+                }
 
-        if (constraints.Length > 1)
+                return constraint;
+            }
+
+            if (constraints.Length > 1)
+            {
+                throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains generic parameters with multiple constraints.");
+            }
+
+            return typeof(object);
+        }
+        finally
         {
-            throw new InvalidOperationException($"Could not evaluate expression for type {FormatTypeName(type)} because it contains generic parameters with multiple constraints.");
+            visitedGenericParameters.RemoveAt(visitedGenericParameters.Count - 1);
         }
-
-        return typeof(object);
     }
 
     private static string FormatTypeName(Type type)
