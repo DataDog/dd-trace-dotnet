@@ -47,4 +47,4 @@ Expression: (
 }
 Result: True
 Errors:
-EvaluationError { Expression = "SomeLocal" > 2, Message = The binary operator GreaterThan is not defined for the types 'System.String' and 'System.Int32'. }
+EvaluationError { Expression = "SomeLocal" > 2, Message = A reference type cannot be compared to a not nullable value type. }

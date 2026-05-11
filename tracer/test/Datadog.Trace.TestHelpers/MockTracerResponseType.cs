@@ -56,4 +56,9 @@ public enum MockTracerResponseType
     /// The Tracer flare endpoint
     /// </summary>
     TracerFlare,
+
+    /// <summary>
+    /// The symbol database upload endpoint
+    /// </summary>
+    SymbolDb,
 }
