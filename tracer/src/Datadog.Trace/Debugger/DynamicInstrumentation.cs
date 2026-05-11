@@ -30,6 +30,12 @@ using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
+    internal delegate void NativeProbeInstrumentationRequester(
+        NativeMethodProbeDefinition[] methodProbes,
+        NativeLineProbeDefinition[] lineProbes,
+        NativeSpanProbeDefinition[] spanProbes,
+        NativeRemoveProbeRequest[] revertProbes);
+
     internal sealed class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
@@ -43,10 +49,12 @@ namespace Datadog.Trace.Debugger
         private readonly IDebuggerUploader _diagnosticsUploader;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
+        private readonly Dictionary<string, string> _lastReportedUnboundProbeErrors;
         private readonly IProbeStatusPoller _probeStatusPoller;
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
         private readonly DebuggerSettings _settings;
+        private readonly NativeProbeInstrumentationRequester _instrumentProbes;
         private readonly object _instanceLock = new();
         private int _disposeState;
         private int _initializationState;
@@ -62,7 +70,8 @@ namespace Datadog.Trace.Debugger
             IDebuggerUploader diagnosticsUploader,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
-            IDogStatsd dogStats)
+            IDogStatsd dogStats,
+            NativeProbeInstrumentationRequester? instrumentProbes = null)
         {
             Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
@@ -77,7 +86,9 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater = configurationUpdater;
             _configurationUpdater.SetProbeInstrumentationHandlers(UpdateAddedProbeInstrumentations, UpdateRemovedProbeInstrumentations);
             _dogStats = dogStats;
+            _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
+            _lastReportedUnboundProbeErrors = new Dictionary<string, string>();
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -252,16 +263,25 @@ namespace Datadog.Trace.Debugger
                                             case LiveProbeResolveStatus.Bound:
                                                 lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                                 fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
+                                                _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
                                                 ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
                                                 SetRateLimit(addedProbe);
                                                 break;
                                             case LiveProbeResolveStatus.Unbound:
-                                                Log.Information("ProbeID {ProbeID} is unbound.", addedProbe.Id);
+                                                // Unbound line probes remain retryable on future assembly loads. Some retryable
+                                                // outcomes are still reported as ERROR so the backend can show actionable user
+                                                // feedback while the tracer keeps looking for a later exact/unique match.
+                                                Log.Information("ProbeID {ProbeID} is unbound. It will be retried when new assemblies are loaded.", addedProbe.Id);
                                                 _unboundProbes.Add(addedProbe);
-                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
+                                                var unboundProbeStatus = lineProbeResult.ReportError
+                                                                             ? new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: lineProbeResult.Message)
+                                                                             : new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null);
+                                                UpdateLastReportedUnboundProbeError(addedProbe.Id, lineProbeResult);
+                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, unboundProbeStatus));
                                                 break;
                                             case LiveProbeResolveStatus.Error:
                                                 Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", addedProbe.Id, lineProbeResult.Message);
+                                                _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
                                                 fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: lineProbeResult.Message)));
                                                 break;
                                         }
@@ -308,7 +328,7 @@ namespace Datadog.Trace.Debugger
                     using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
                     if (methodProbes.Count != 0 || lineProbes.Count != 0 || spanProbes.Count != 0)
                     {
-                        DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                        _instrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
                     }
 
                     var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
@@ -343,6 +363,31 @@ namespace Datadog.Trace.Debugger
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }
 
+        private void UpdateLastReportedUnboundProbeError(string probeId, LineProbeResolveResult result)
+        {
+            if (result.ReportError)
+            {
+                _lastReportedUnboundProbeErrors[probeId] = result.Message ?? string.Empty;
+            }
+            else
+            {
+                _lastReportedUnboundProbeErrors.Remove(probeId);
+            }
+        }
+
+        private bool ShouldReportUnboundProbeError(string probeId, string? message)
+        {
+            var errorMessage = message ?? string.Empty;
+            if (_lastReportedUnboundProbeErrors.TryGetValue(probeId, out var lastErrorMessage) &&
+                string.Equals(lastErrorMessage, errorMessage, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            _lastReportedUnboundProbeErrors[probeId] = errorMessage;
+            return true;
+        }
+
         internal void UpdateRemovedProbeInstrumentations(string[] removedProbesIds)
         {
             if (IsDisposed)
@@ -367,6 +412,7 @@ namespace Datadog.Trace.Debugger
                     try
                     {
                         _unboundProbes.RemoveAll(pd => pd.Id == id);
+                        _lastReportedUnboundProbeErrors.Remove(id);
 
                         _probeStatusPoller.RemoveProbes(removedProbesIds);
 
@@ -389,7 +435,7 @@ namespace Datadog.Trace.Debugger
                     var revertProbes = probesToRemoveFromNative
                        .Select(probeId => new NativeRemoveProbeRequest(probeId));
 
-                    DebuggerNativeMethods.InstrumentProbes([], [], [], revertProbes.ToArray());
+                    _instrumentProbes([], [], [], revertProbes.ToArray());
                 }
 
                 // This log entry is being checked in integration test
@@ -459,6 +505,41 @@ namespace Datadog.Trace.Debugger
                 ]);
         }
 
+        private void LogLineProbeRetryResolution(string probeId, AssemblyLoadEventArgs args, LineProbeResolveResult result)
+        {
+            if (!Log.IsEnabled(LogEventLevel.Debug))
+            {
+                return;
+            }
+
+            var diagnostics = result.Diagnostics;
+            Log.Debug(
+                "Rechecked unbound line probe for ProbeID {ProbeId} after assembly load {AssemblyName}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} PathMatchType={PathMatchType} MatchingTrailingSegments={MatchingTrailingSegments} FallbackFailureReason={FallbackFailureReason} QualifiedFallbackMatches={QualifiedFallbackMatches} AssemblyName={ResolvedAssemblyName} AssemblyLocation={ResolvedAssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
+                [
+                    probeId,
+                    args.LoadedAssembly.GetName().Name,
+                    result.Status,
+                    result.Reason,
+                    result.Message,
+                    diagnostics?.ProbeFile,
+                    diagnostics?.ProbeLine,
+                    diagnostics?.RawLines,
+                    diagnostics?.ResolvedSourceFile,
+                    diagnostics?.PathMatchType,
+                    diagnostics?.MatchingTrailingSegments,
+                    diagnostics?.FallbackFailureReason,
+                    diagnostics?.QualifiedFallbackMatchCount,
+                    diagnostics?.AssemblyName,
+                    diagnostics?.AssemblyLocation,
+                    diagnostics?.ModuleVersionId,
+                    diagnostics?.ExceptionType,
+                    diagnostics?.LoadedAssemblyCount,
+                    diagnostics?.SymbolicatedAssemblyCount,
+                    diagnostics?.SameFileNameMatchCount,
+                    JoinLogValues(diagnostics?.SameFileNameExamples)
+                ]);
+        }
+
         private void CheckUnboundProbes(object? sender, AssemblyLoadEventArgs args)
         {
             // A new assembly was loaded, so re-examine whether the probe can now be resolved.
@@ -469,80 +550,92 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                // Initialize these lists only when there is at least one unbound probe that becomes bound, to reduce unnecessary allocations.
+                // Initialize these lists only when a retry reaches a terminal state, to reduce unnecessary allocations.
                 List<NativeLineProbeDefinition>? lineProbes = null;
-                List<ProbeDefinition>? noLongerUnboundProbes = null;
+                List<ProbeDefinition>? boundProbes = null;
+                List<ProbeDefinition>? probesToRemoveFromRetry = null;
                 var diagnosticLevel = Log.IsEnabled(LogEventLevel.Debug) ? LineProbeDiagnosticLevel.Full : LineProbeDiagnosticLevel.Minimal;
 
                 foreach (var unboundProbe in _unboundProbes)
                 {
                     var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var location, diagnosticLevel);
+                    LogLineProbeRetryResolution(unboundProbe.Id, args, result);
+
                     if (result.Status == LiveProbeResolveStatus.Bound)
                     {
                         lineProbes ??= new List<NativeLineProbeDefinition>();
-                        noLongerUnboundProbes ??= new List<ProbeDefinition>();
+                        boundProbes ??= new List<ProbeDefinition>();
+                        probesToRemoveFromRetry ??= new List<ProbeDefinition>();
 
-                        noLongerUnboundProbes.Add(unboundProbe);
+                        boundProbes.Add(unboundProbe);
+                        probesToRemoveFromRetry.Add(unboundProbe);
                         lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                     }
-                    else if (Log.IsEnabled(LogEventLevel.Debug))
+                    else if (result.Status == LiveProbeResolveStatus.Unbound)
                     {
-                        var diagnostics = result.Diagnostics;
-                        Log.Debug(
-                            "Rechecked unbound line probe for ProbeID {ProbeId} after assembly load {AssemblyName}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} PathMatchType={PathMatchType} MatchingTrailingSegments={MatchingTrailingSegments} FallbackFailureReason={FallbackFailureReason} QualifiedFallbackMatches={QualifiedFallbackMatches} AssemblyName={ResolvedAssemblyName} AssemblyLocation={ResolvedAssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
-                            [
+                        if (result.ReportError && ShouldReportUnboundProbeError(unboundProbe.Id, result.Message))
+                        {
+                            _probeStatusPoller.UpdateProbe(
                                 unboundProbe.Id,
-                                args.LoadedAssembly.GetName().Name,
-                                result.Status,
-                                result.Reason,
-                                result.Message,
-                                diagnostics?.ProbeFile,
-                                diagnostics?.ProbeLine,
-                                diagnostics?.RawLines,
-                                diagnostics?.ResolvedSourceFile,
-                                diagnostics?.PathMatchType,
-                                diagnostics?.MatchingTrailingSegments,
-                                diagnostics?.FallbackFailureReason,
-                                diagnostics?.QualifiedFallbackMatchCount,
-                                diagnostics?.AssemblyName,
-                                diagnostics?.AssemblyLocation,
-                                diagnostics?.ModuleVersionId,
-                                diagnostics?.ExceptionType,
-                                diagnostics?.LoadedAssemblyCount,
-                                diagnostics?.SymbolicatedAssemblyCount,
-                                diagnostics?.SameFileNameMatchCount,
-                                JoinLogValues(diagnostics?.SameFileNameExamples)
-                            ]);
+                                new FetchProbeStatus(
+                                    unboundProbe.Id,
+                                    unboundProbe.Version ?? 0,
+                                    new ProbeStatus(unboundProbe.Id, Sink.Models.Status.ERROR, errorMessage: result.Message)));
+                        }
+                        else if (!result.ReportError)
+                        {
+                            _lastReportedUnboundProbeErrors.Remove(unboundProbe.Id);
+                        }
+                    }
+                    else if (result.Status == LiveProbeResolveStatus.Error)
+                    {
+                        probesToRemoveFromRetry ??= new List<ProbeDefinition>();
+                        probesToRemoveFromRetry.Add(unboundProbe);
+                        _lastReportedUnboundProbeErrors.Remove(unboundProbe.Id);
+                        _probeStatusPoller.UpdateProbe(
+                            unboundProbe.Id,
+                            new FetchProbeStatus(
+                                unboundProbe.Id,
+                                unboundProbe.Version ?? 0,
+                                new ProbeStatus(unboundProbe.Id, Sink.Models.Status.ERROR, errorMessage: result.Message)));
                     }
                 }
 
-                if (lineProbes?.Count > 0 && noLongerUnboundProbes != null)
+                if (lineProbes?.Count > 0 && boundProbes != null)
                 {
-                    Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: noLongerUnboundProbes.Count);
+                    Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: boundProbes.Count);
 
-                    // Register processors and samplers BEFORE the native call makes the IL live:
+                    _instrumentProbes([], lineProbes.ToArray(), [], []);
+
+					// Register processors and samplers BEFORE the native call makes the IL live:
                     // otherwise a probe hit between InstrumentProbes returning and SetRateLimit
                     // running would insert a default-rate sampler via GerOrAddSampler, and the
                     // configured rate would never take effect for that probe.
-                    foreach (var boundProbe in noLongerUnboundProbes)
+                    foreach (var boundProbe in boundProbes)
                     {
                         ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe);
                         SetRateLimit(boundProbe);
                     }
 
-                    DebuggerNativeMethods.InstrumentProbes([], lineProbes.ToArray(), [], []);
-
-                    foreach (var boundProbe in noLongerUnboundProbes)
+                    var probeIds = new string[lineProbes.Count];
+                    var newProbeStatuses = new FetchProbeStatus[boundProbes.Count];
+                    for (var i = 0; i < lineProbes.Count; i++)
                     {
-                        _unboundProbes.Remove(boundProbe);
+                        probeIds[i] = lineProbes[i].ProbeId;
+                        var boundProbe = boundProbes[i];
+                        newProbeStatuses[i] = new FetchProbeStatus(boundProbe.Id, boundProbe.Version ?? 0);
                     }
 
-                    // Update probe statuses
-
-                    var probeIds = noLongerUnboundProbes.Select(p => p.Id).ToArray();
-                    var newProbeStatuses = noLongerUnboundProbes.Select(p => new FetchProbeStatus(p.Id, p.Version ?? 0)).ToArray();
-
                     _probeStatusPoller.UpdateProbes(probeIds, newProbeStatuses);
+                }
+
+                if (probesToRemoveFromRetry != null)
+                {
+                    foreach (var probeToRemove in probesToRemoveFromRetry)
+                    {
+                        _unboundProbes.Remove(probeToRemove);
+                        _lastReportedUnboundProbeErrors.Remove(probeToRemove.Id);
+                    }
                 }
             }
         }
