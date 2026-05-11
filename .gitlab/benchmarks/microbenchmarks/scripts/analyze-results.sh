@@ -37,6 +37,39 @@ CPU_MODEL="${CPU_MODEL:-Intel(R) Xeon(R) Platinum 8259CL}"
 KERNEL_VERSION=$(uname -a || echo "Unknown")
 FRAMEWORK="Benchmarkdotnet"
 
+convert_one() {
+    local input_file="$1" output_file="$2" result_file="$3"
+    local baseline_or_candidate="$4" branch="$5" commit_sha="$6"
+    local commit_date="$7" job_id="$8" pipeline_id="$9" job_date="${10}"
+
+    echo "  Converting: $(basename "$input_file") -> $(basename "$output_file")"
+
+    local exit_code=0
+    benchmark_analyzer convert \
+        --extra-params="{\
+            \"baseline_or_candidate\":\"$baseline_or_candidate\", \
+            \"cpu_model\":\"$CPU_MODEL\", \
+            \"kernel_version\":\"$KERNEL_VERSION\", \
+            \"ci_job_date\":\"$job_date\", \
+            \"ci_job_id\":\"$job_id\", \
+            \"ci_pipeline_id\":\"$pipeline_id\", \
+            \"git_commit_sha\":\"$commit_sha\", \
+            \"git_commit_date\":\"$commit_date\", \
+            \"git_branch\":\"$branch\"\
+        }" \
+        --framework="$FRAMEWORK" \
+        --outpath="$output_file" \
+        "$input_file" || exit_code=$?
+
+    if [ $exit_code -ne 0 ]; then
+        echo "  ERROR: Failed to convert $(basename "$input_file") (exit $exit_code)"
+        echo "fail" > "$result_file"
+        return
+    fi
+
+    echo "ok" > "$result_file"
+}
+
 convert_results() {
     local BASELINE_OR_CANDIDATE=$1
     local BRANCH=$2
@@ -48,42 +81,56 @@ convert_results() {
 
     echo "Converting $BASELINE_OR_CANDIDATE results..."
 
+    local convert_dir
+    convert_dir=$(mktemp -d)
+
+    local pids=()
     local files_found=false
     for INPUT_FILE in "$ARTIFACTS_DIR/$BASELINE_OR_CANDIDATE".*.json; do
         [ -e "$INPUT_FILE" ] || continue
-
-        # Skip already converted files
         [[ "$INPUT_FILE" == *.converted.json ]] && continue
 
         files_found=true
 
-        OUTPUT_FILE="${INPUT_FILE%.json}.converted.json"
+        local OUTPUT_FILE="${INPUT_FILE%.json}.converted.json"
+        local result_file="$convert_dir/$(basename "$INPUT_FILE").result"
 
-        echo "  Converting: $(basename "$INPUT_FILE") -> $(basename "$OUTPUT_FILE")"
-
-        benchmark_analyzer convert \
-            --extra-params="{\
-                \"baseline_or_candidate\":\"$BASELINE_OR_CANDIDATE\", \
-                \"cpu_model\":\"$CPU_MODEL\", \
-                \"kernel_version\":\"$KERNEL_VERSION\", \
-                \"ci_job_date\":\"$JOB_DATE\", \
-                \"ci_job_id\":\"$JOB_ID\", \
-                \"ci_pipeline_id\":\"$PIPELINE_ID\", \
-                \"git_commit_sha\":\"$COMMIT_SHA\", \
-                \"git_commit_date\":\"$COMMIT_DATE\", \
-                \"git_branch\":\"$BRANCH\"\
-            }" \
-            --framework="$FRAMEWORK" \
-            --outpath="$OUTPUT_FILE" \
-            "$INPUT_FILE"
+        convert_one "$INPUT_FILE" "$OUTPUT_FILE" "$result_file" \
+            "$BASELINE_OR_CANDIDATE" "$BRANCH" "$COMMIT_SHA" \
+            "$COMMIT_DATE" "$JOB_ID" "$PIPELINE_ID" "$JOB_DATE" &
+        pids+=($!)
     done
 
     if [ "$files_found" = false ]; then
+        rm -rf "$convert_dir"
         if [ "$BASELINE_OR_CANDIDATE" = "candidate" ]; then
             echo "  ERROR: No candidate results found in $ARTIFACTS_DIR"
             exit 1
         else
             echo "  WARNING: No $BASELINE_OR_CANDIDATE results found"
+        fi
+        return
+    fi
+
+    for pid in "${pids[@]}"; do
+        wait "$pid" || true
+    done
+
+    local any_failed=false
+    for result_file in "$convert_dir"/*.result; do
+        if [ "$(cat "$result_file" 2>/dev/null)" != "ok" ]; then
+            any_failed=true
+            break
+        fi
+    done
+    rm -rf "$convert_dir"
+
+    if [ "$any_failed" = true ]; then
+        if [ "$BASELINE_OR_CANDIDATE" = "candidate" ]; then
+            echo "  ERROR: One or more candidate conversions failed"
+            exit 1
+        else
+            echo "  WARNING: One or more $BASELINE_OR_CANDIDATE conversions failed"
         fi
     fi
 }

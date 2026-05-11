@@ -81,7 +81,21 @@ internal sealed partial class ProbeExpressionParser<T>
         }
         catch (Exception e)
         {
-            AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", e.Message);
+            var error = e.Message;
+            if (e is InvalidOperationException)
+            {
+                if ((IsNonNullableValueType(left) && IsReferenceType(right))
+                 || (IsNonNullableValueType(right) && IsReferenceType(left)))
+                {
+                    error = "A reference type cannot be compared to a not nullable value type.";
+                    if (right is ConstantExpression { Value: null } || left is ConstantExpression { Value: null })
+                    {
+                        error += " Did you mean to compare to 'default' instead of 'null'?";
+                    }
+                }
+            }
+
+            AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", error);
             return ReturnDefaultValueExpression();
         }
 
@@ -116,6 +130,10 @@ internal sealed partial class ProbeExpressionParser<T>
 
             return operand == "==" ? Expression.Equal(left, right) : Expression.NotEqual(left, right);
         }
+
+        static bool IsNonNullableValueType(Expression expression) => expression is not null && expression.Type.IsValueType && Nullable.GetUnderlyingType(expression.Type) is null;
+
+        static bool IsReferenceType(Expression expression) => expression is not null && !expression.Type.IsValueType;
     }
 
     private void NumericImplicitConversion(ref Expression left, ref Expression right)
