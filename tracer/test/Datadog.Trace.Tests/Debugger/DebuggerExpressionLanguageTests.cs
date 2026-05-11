@@ -903,8 +903,8 @@ namespace Datadog.Trace.Tests.Debugger
             where T : IComparable<T>
         {
         }
-		
-		private class HashtableHolder
+
+        private class HashtableHolder
         {
             private readonly Hashtable dictionary = new()
             {
