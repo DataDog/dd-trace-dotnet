@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests.Debugger
 
                     // Controller with HTTP methods
                     else if (type.Name == "HttpMethodController" &&
-                            method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom")
+                            method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom" or "AcceptVerbs" or "RouteOnly")
                     {
                         isExpectedEndpoint = true;
                     }
@@ -249,6 +249,24 @@ namespace Datadog.Trace.Tests.Debugger
             getMethod.Should().NotBeNull();
 
             endpointTokens.Should().Contain(getMethod.MetadataToken, "the inherited [ApiController] on the base type must be discovered by the chain walk");
+        }
+
+        [Theory]
+        [InlineData("AcceptVerbs")]
+        [InlineData("RouteOnly")]
+        public void GetEndpointMethodTokens_DetectsAdditionalMvcActionAttributes(string methodName)
+        {
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert
+            var controller = _assembly.GetType("EndpointDetectorTestNamespace.HttpMethodController");
+            controller.Should().NotBeNull();
+
+            var method = controller.GetMethod(methodName);
+            method.Should().NotBeNull();
+
+            endpointTokens.Should().Contain(method.MetadataToken, "[AcceptVerbs] and method-level [Route] should identify MVC controller actions");
         }
 
         [Fact]
@@ -459,6 +477,12 @@ namespace Microsoft.AspNetCore.Mvc
     }
 
     [AttributeUsage(AttributeTargets.Method)]
+    public class AcceptVerbsAttribute : Attribute
+    {
+        public AcceptVerbsAttribute(params string[] verbs) { }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
     public class HttpGetAttribute : Attribute 
     {
         public HttpGetAttribute() { }
@@ -629,6 +653,12 @@ namespace EndpointDetectorTestNamespace
 
         [Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute]
         public object Custom() => null;
+
+        [Microsoft.AspNetCore.Mvc.AcceptVerbs(""GET"", ""POST"")]
+        public object AcceptVerbs() => null;
+
+        [Microsoft.AspNetCore.Mvc.Route(""route-only"")]
+        public object RouteOnly() => null;
     }
 
     // PageModel with handler methods
