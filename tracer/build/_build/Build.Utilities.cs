@@ -590,6 +590,13 @@ partial class Build
                             return false;
                         }
 
+                        // These library projects are directly referenced via <ProjectReference> by Datadog.Tracer.Native.Tests.vcxproj,
+                        // so they must live in the build solution, not the samples solution.
+                        if (x.Name is "Samples.ExampleLibrary" or "Samples.ExampleLibraryTracer")
+                        {
+                            return false;
+                        }
+
                         // Include test-applications, but exclude the following for now:
                         // - test-applications/aspnet
                         // - test-applications/security/aspnet
