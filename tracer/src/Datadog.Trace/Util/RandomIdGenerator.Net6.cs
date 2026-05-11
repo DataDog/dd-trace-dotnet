@@ -7,6 +7,8 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Util;
 
@@ -15,6 +17,13 @@ namespace Datadog.Trace.Util;
 /// </summary>
 internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
+    // When true, all ID generation uses RandomNumberGenerator.Fill()
+    // (reads kernel entropy on every call) instead of Random.Shared (PRNG
+    // state that may be duplicated across process copies).
+    // Not readonly so tests can override via reflection on all .NET versions.
+    private static bool _secureRandom =
+        EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom) == "true";
+
     // On .NET 6+, we delegate to System.Random.Shared which can be safely accessed from
     // multiple threads and implements xoshiro128** or xoshiro256**.
     public static RandomIdGenerator Shared { get; } = new();
@@ -24,7 +33,20 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     /// </summary>
     private static ulong NextNonZeroUInt64()
     {
-        ulong result;
+        if (_secureRandom)
+        {
+            Span<byte> buf = stackalloc byte[8];
+            ulong result;
+            do
+            {
+                RandomNumberGenerator.Fill(buf);
+                result = BitConverter.ToUInt64(buf);
+            }
+            while (result == 0);
+            return result;
+        }
+
+        ulong result2;
 
         // returns a value in the range [Int64.MinValue, Int64.MaxValue),
         var int64 = Random.Shared.NextInt64(long.MinValue, long.MaxValue);
@@ -32,17 +54,17 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
         if (int64 >= 0)
         {
             // if zero or positive, add 1 to shift the range to (0, Int64.MaxValue]
-            result = (ulong)int64 + 1;
+            result2 = (ulong)int64 + 1;
         }
         else
         {
             // the negative numbers in range [Int64.MinValue, 0)
             // become (Int64.MaxValue, UInt64.MaxValue] when cast to ulong
-            result = unchecked((ulong)int64);
+            result2 = unchecked((ulong)int64);
         }
 
         // result is in range (0, UInt64.MaxValue]
-        return result;
+        return result2;
     }
 
     /// <summary>
@@ -52,9 +74,23 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     /// </summary>
     private static ulong NextLegacyId()
     {
+        if (_secureRandom)
+        {
+            return (NextNonZeroUInt64() >> 1) | 1UL;
+        }
+
         // Random.NextInt64() returns a number in the range [0, Int64.MaxValue).
         // Add 1 to shift the range to (0, Int64.MaxValue].
         return (ulong)Random.Shared.NextInt64() + 1;
+    }
+
+    /// <summary>
+    /// No-op on .NET 6+: RandomNumberGenerator.Fill() reads from the kernel
+    /// entropy pool on every call — no buffered PRNG state to reset.
+    /// Provided for API symmetry with the pre-.NET 6 variant.
+    /// </summary>
+    public static void NotifyRestore()
+    {
     }
 
     /// <inheritDoc />

@@ -742,6 +742,15 @@ internal static partial class ConfigurationKeys
     public const string CustomSamplingRulesFormat = "DD_TRACE_SAMPLING_RULES_FORMAT";
 
     /// <summary>
+    /// When <c>true</c>, all trace and span ID generation uses <c>RandomNumberGenerator.Fill()</c>
+    /// (reads kernel entropy on every call) instead of the thread-local PRNG.
+    /// Enable this when the process may be forked or restored from a snapshot
+    /// to guarantee ID uniqueness across copies.
+    /// Default value is <c>false</c>.
+    /// </summary>
+    public const string TraceSecureRandom = "DD_TRACE_SECURE_RANDOM";
+
+    /// <summary>
     /// Configuration key for a map of services to rename.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceNameMappings"/>

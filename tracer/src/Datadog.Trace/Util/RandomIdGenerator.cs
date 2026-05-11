@@ -28,6 +28,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Util;
 
@@ -36,6 +37,11 @@ namespace Datadog.Trace.Util;
 /// </summary>
 internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
+    // Evaluated once at class load; avoids a per-call env-var lookup.
+    // Not readonly so tests can override via reflection on all .NET versions.
+    private static bool _secureRandom =
+        EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom) == "true";
+
     [ThreadStatic]
     private static RandomIdGenerator? _shared;
 
@@ -79,6 +85,20 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     }
 
     public static RandomIdGenerator Shared => _shared ??= new RandomIdGenerator();
+
+    /// <summary>
+    /// Discards the thread-local Xoshiro256** state. The next call to Shared
+    /// constructs a new instance seeded from Guid.NewGuid(), ensuring ID
+    /// uniqueness after any process restore event. No-op when
+    /// DD_TRACE_SECURE_RANDOM is not set.
+    /// </summary>
+    public static void NotifyRestore()
+    {
+        if (_secureRandom)
+        {
+            _shared = null;
+        }
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
