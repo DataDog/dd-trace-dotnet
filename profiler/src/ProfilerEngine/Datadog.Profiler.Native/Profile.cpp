@@ -18,11 +18,21 @@ using namespace std::chrono_literals;
 
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
 
-Profile::Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName) :
-    _applicationName{std::move(applicationName)},
-    _addTimestampOnSample{configuration->IsTimestampsAsLabelEnabled()}
+std::unique_ptr<Profile> Profile::Create(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName)
 {
-    _impl = CreateProfile(valueTypes, periodType, periodUnit);
+    auto impl = CreateProfile(valueTypes, periodType, periodUnit);
+    if (impl == nullptr)
+    {
+        return nullptr;
+    }
+    return std::unique_ptr<Profile>(new Profile(std::move(impl), std::move(applicationName), configuration->IsTimestampsAsLabelEnabled()));
+}
+
+Profile::Profile(profile_unique_ptr impl, std::string applicationName, bool addTimestampOnSample) :
+    _impl{std::move(impl)},
+    _applicationName{std::move(applicationName)},
+    _addTimestampOnSample{addTimestampOnSample}
+{
 }
 
 Profile::~Profile() = default;
@@ -188,6 +198,12 @@ libdatadog::Success Profile::AddUpscalingRulePoisson(std::vector<std::uintptr_t>
 
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
 {
+    if (valueTypes.empty())
+    {
+        Log::Error("Cannot create profile: no sample value types defined. Ensure at least one profiler provider is enabled.");
+        return nullptr;
+    }
+
     std::vector<ddog_prof_SampleType> samplesTypes;
     samplesTypes.reserve(valueTypes.size());
 
@@ -216,9 +232,15 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
     period.sample_type = periodSampleType;
     period.value = 1;
 
+    Log::Debug("Creating libdatadog profile with ", samplesTypes.size(), " sample type(s), slice ptr=", (void*)sample_types.ptr, ", len=", sample_types.len);
+
     auto res = ddog_prof_Profile_new(sample_types, &period);
     if (res.tag == DDOG_PROF_PROFILE_NEW_RESULT_ERR)
     {
+        auto error = libdatadog::make_error(res.err);
+        Log::Error("ddog_prof_Profile_new failed: ", error.message(),
+                   " (sample_types count=", samplesTypes.size(),
+                   ", period=", periodType, "/", periodUnit, ")");
         return nullptr;
     }
     return std::make_unique<ProfileImpl>(res.ok);

@@ -11,9 +11,14 @@
     <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!-- System.Memory / System.Threading.Tasks.Extensions are needed on net4x for Span<T> / ValueTask;
+       on netcoreapp2.1+ they ship with the BCL. -->
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" Aliases="DatadogTrace" />
   </ItemGroup>
 

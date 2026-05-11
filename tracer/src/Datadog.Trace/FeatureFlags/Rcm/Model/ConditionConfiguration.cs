@@ -32,7 +32,14 @@ internal sealed class ConditionConfiguration
                 throw new FormatException("Condition value can not be null nor empty");
             }
 
-            _regex = new Regex(pattern, RegexOptions.Compiled);
+            try
+            {
+                _regex = new Regex(pattern, RegexOptions.Compiled);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FormatException($"Invalid regex pattern: {pattern}", ex);
+            }
         }
 
         try
