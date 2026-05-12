@@ -10,6 +10,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -22,11 +23,13 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FileTestOptimizationClient));
     private static readonly SHA256 Hasher = SHA256.Create();
     private readonly ITestOptimizationClient _testOptimizationClient;
+    private readonly ITestOptimization _testOptimization;
     private readonly string _cacheFolder;
 
     internal FileTestOptimizationClient(ITestOptimizationClient testOptimizationClient, ITestOptimization testOptimization)
     {
         _testOptimizationClient = testOptimizationClient;
+        _testOptimization = testOptimization;
 
         string cacheFolder;
         try
@@ -109,13 +112,18 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
     {
         using var cd = CodeDuration.Create();
         const string key = "getSkippableTests.json";
-        if (TryReadPayload<TestOptimizationClient.SkippableTestsResponse>(key, out var payload))
+        var bypassCache = ShouldBypassSkippableTestsCacheForCoverageBackfill();
+        if (!bypassCache && TryReadPayload<TestOptimizationClient.SkippableTestsResponse>(key, out var payload))
         {
             return payload;
         }
 
         var response = await _testOptimizationClient.GetSkippableTestsAsync().ConfigureAwait(false);
-        WritePayload(key, response);
+        if (!bypassCache)
+        {
+            WritePayload(key, response);
+        }
+
         return response;
     }
 
@@ -190,5 +198,14 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         {
             Log.Warning(ex, "FileTestOptimizationClient: Error writing the cache file.");
         }
+    }
+
+    private bool ShouldBypassSkippableTestsCacheForCoverageBackfill()
+    {
+        var settings = _testOptimization.Settings;
+        return settings.TestsSkippingEnabled == true &&
+               (settings.CodeCoverageEnabled == true ||
+                !string.IsNullOrWhiteSpace(settings.CodeCoveragePath) ||
+                !string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)));
     }
 }
