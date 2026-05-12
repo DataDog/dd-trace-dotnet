@@ -47,9 +47,9 @@ public sealed class ManagedVanguardStopIntegration
                 }
 
                 if (Path.GetExtension(file).Equals(".xml", StringComparison.OrdinalIgnoreCase) &&
-                    DotnetCommon.TryGetCoveragePercentageFromXml(file, out var percentage))
+                    DotnetCommon.TryProcessCoverageXml(file, session: null, out var coverageResult))
                 {
-                    DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", percentage);
+                    DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", coverageResult.Percentage);
 
                     // Extract session variables (from out of process sessions)
                     var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
@@ -63,8 +63,15 @@ public sealed class ManagedVanguardStopIntegration
                             var name = $"session_{sessionContext.SpanId}";
                             Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                             using var ipcClient = new IpcClient(name);
-                            Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                            if (!ipcClient.TrySendMessage(new SessionCodeCoverageMessage(CodeCoverageReportSource.MicrosoftCodeCoverage, percentage, backfilled: false)))
+                            Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", coverageResult.Percentage);
+                            if (!ipcClient.TrySendMessage(
+                                    new SessionCodeCoverageMessage(
+                                        CodeCoverageReportSource.MicrosoftCodeCoverage,
+                                        coverageResult.Percentage,
+                                        coverageResult.Backfilled,
+                                        coverageResult.ExecutableLines,
+                                        coverageResult.CoveredLines,
+                                        coverageResult.Diagnostic)))
                             {
                                 Common.Log.Warning("ManagedVanguardStopIntegration: Could not send Microsoft CodeCoverage IPC message.");
                             }

@@ -8,10 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Xml;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Backfill;
@@ -211,9 +209,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
                     File.Exists(extCodeCoverageFilePath))
                 {
-                    if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
+                    if (TryProcessCoverageXml(extCodeCoverageFilePath, session, out var coverageResult))
                     {
-                        session.RecordCodeCoverage(CodeCoverageReportSource.ExternalXml, coveragePercentage);
+                        session.RecordCodeCoverage(
+                            CodeCoverageReportSource.ExternalXml,
+                            coverageResult.Percentage,
+                            coverageResult.Backfilled,
+                            coverageResult.ExecutableLines,
+                            coverageResult.CoveredLines,
+                            coverageResult.Diagnostic);
                         hasDirectCoverageResult = true;
                     }
                     else
@@ -244,10 +248,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         /// <returns>Result of the backfill merge operation.</returns>
         internal static CoverageBackfillResult TryApplyItrCoverageBackfill(TestSession session, GlobalCoverageInfo globalCoverage)
         {
-            var skippableFeature = TestOptimization.Instance.SkippableFeature;
-            if (skippableFeature?.IsCoverageBackfillRequired() != true ||
-                !skippableFeature.IsCoverageBackfillSafe() ||
-                !HasActualItrSkips(session, skippableFeature))
+            if (!ShouldApplyItrCoverageBackfill(session, out var skippableFeature))
             {
                 return new CoverageBackfillResult(applied: false, matchedFiles: 0, updatedFiles: 0);
             }
@@ -264,112 +265,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             return result;
         }
 
+        /// <summary>
+        /// Reads and optionally backfills an external XML coverage report for the supplied session.
+        /// </summary>
+        /// <param name="filePath">Coverage XML report path.</param>
+        /// <param name="session">Test session that may publish the result.</param>
+        /// <param name="result">Coverage result after optional backfill.</param>
+        /// <returns>True if the XML report was parsed successfully.</returns>
+        internal static bool TryProcessCoverageXml(string filePath, TestSession? session, out ExternalCoverageXmlResult result)
+        {
+            var shouldBackfill = session is not null && ShouldApplyItrCoverageBackfill(session, out _);
+            var backfillData = shouldBackfill ? TestOptimization.Instance.SkippableFeature?.GetCoverageBackfillData() : null;
+            return ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData, shouldBackfill, out result);
+        }
+
+        /// <summary>
+        /// Gets backend ITR coverage data when the current process has actually applied ITR skips.
+        /// </summary>
+        /// <param name="backfillData">Backend coverage data returned by the skippable-tests endpoint.</param>
+        /// <returns>True when backfill data can be safely used by an in-process coverage tool adapter.</returns>
+        internal static bool TryGetCoverageBackfillDataForCurrentProcess(out CoverageBackfillData backfillData)
+        {
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
+            if (skippableFeature?.IsCoverageBackfillRequired() == true &&
+                skippableFeature.IsCoverageBackfillSafe() &&
+                skippableFeature.HasSkippedTestsByItr())
+            {
+                backfillData = skippableFeature.GetCoverageBackfillData();
+                return backfillData is { IsPresent: true, IsValid: true };
+            }
+
+            backfillData = CoverageBackfillData.Missing;
+            return false;
+        }
+
         private static bool HasActualItrSkips(TestSession session, ITestOptimizationSkippableFeature skippableFeature)
         {
             return skippableFeature.HasSkippedTestsByItr() ||
                    string.Equals(session.Tags.TestsSkipped, "true", StringComparison.OrdinalIgnoreCase);
         }
 
+        private static bool ShouldApplyItrCoverageBackfill(TestSession session, out ITestOptimizationSkippableFeature skippableFeature)
+        {
+            skippableFeature = TestOptimization.Instance.SkippableFeature!;
+            return skippableFeature?.IsCoverageBackfillRequired() == true &&
+                   skippableFeature.IsCoverageBackfillSafe() &&
+                   HasActualItrSkips(session, skippableFeature);
+        }
+
         internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)
         {
+            if (File.Exists(filePath) &&
+                ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData: null, applyBackfill: false, out var result))
+            {
+                percentage = result.Percentage;
+                Log.Debug("TryGetCoveragePercentageFromXml: {Diagnostic} code coverage was reported: {Value}", result.Diagnostic, result.Percentage);
+                return true;
+            }
+
             percentage = 0;
-            if (!File.Exists(filePath))
-            {
-                return false;
-            }
-
-            // Load Code Coverage from the file.
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(filePath);
-
-            if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
-                double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
-            {
-                // Found using the OpenCover format.
-                percentage = Math.Round(seqCovValue, 2).ToValidPercentage();
-                Log.Debug("TryGetCoveragePercentageFromXml: OpenCover code coverage was reported: {Value}", seqCovValue);
-                return true;
-            }
-
-            if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
-                double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
-            {
-                // Found using the Cobertura format.
-                percentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
-                Log.Debug("TryGetCoveragePercentageFromXml: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
-                return true;
-            }
-
-            var linesCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_covered");
-            var linesPartiallyCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_partially_covered");
-            var linesNotCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_not_covered");
-
-            if (linesCovered != null && linesPartiallyCovered != null && linesNotCovered != null &&
-                linesCovered.Count == linesPartiallyCovered.Count && linesCovered.Count == linesNotCovered.Count)
-            {
-                // Found using Microsoft.CodeCoverage xml format
-                var modulesCount = linesCovered.Count;
-
-                var totalLinesCovered = 0d;
-                foreach (XmlNode? lineCovered in linesCovered)
-                {
-                    if (lineCovered is null)
-                    {
-                        continue;
-                    }
-
-                    if (double.TryParse(lineCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
-                    {
-                        totalLinesCovered += value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                var totalLinesPartiallyCovered = 0d;
-                foreach (XmlNode? linePartiallyCovered in linesPartiallyCovered)
-                {
-                    if (linePartiallyCovered is null)
-                    {
-                        continue;
-                    }
-
-                    if (double.TryParse(linePartiallyCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
-                    {
-                        totalLinesPartiallyCovered += value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                var totalLinesNotCovered = 0d;
-                foreach (XmlNode? lineNotCovered in linesNotCovered)
-                {
-                    if (lineNotCovered is null)
-                    {
-                        continue;
-                    }
-
-                    if (double.TryParse(lineNotCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
-                    {
-                        totalLinesNotCovered += value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                var totalLines = totalLinesCovered + totalLinesPartiallyCovered + totalLinesNotCovered;
-                percentage = Math.Round((totalLinesCovered / totalLines) * 100, 2).ToValidPercentage();
-                Log.Debug("TryGetCoveragePercentageFromXml: Microsoft.CodeCoverage code coverage was reported: {Value}", percentage);
-                return true;
-            }
-
             return false;
         }
 

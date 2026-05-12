@@ -60,6 +60,14 @@ public sealed class CoverageGetCoverageResultIntegration
             instance?.GetType().Assembly() is { } assembly &&
             assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
         {
+            var backfilled = false;
+            if (DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(out var backfillData) &&
+                CoverletCoverageBackfill.TryApply(modules, backfillData, out var updatedLines))
+            {
+                backfilled = true;
+                DotnetCommon.Log.Information<int>("CoverageGetCoverageResult.BackfilledLines: {Value}", updatedLines);
+            }
+
             var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
             var coverageDetails = coverageSummary!.CalculateLineCoverage(modules);
             var percentage = coverageDetails.Percent;
@@ -77,7 +85,7 @@ public sealed class CoverageGetCoverageResultIntegration
                     Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                     using var ipcClient = new IpcClient(name);
                     Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                    if (!ipcClient.TrySendMessage(new SessionCodeCoverageMessage(CodeCoverageReportSource.Coverlet, percentage, backfilled: false)))
+                    if (!ipcClient.TrySendMessage(new SessionCodeCoverageMessage(CodeCoverageReportSource.Coverlet, percentage, backfilled)))
                     {
                         Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
                     }
