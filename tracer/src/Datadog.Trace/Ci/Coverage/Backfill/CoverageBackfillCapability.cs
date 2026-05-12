@@ -25,12 +25,22 @@ internal static class CoverageBackfillCapability
     /// <returns>True when a coverage result can become inaccurate if ITR skips tests without backfill.</returns>
     public static bool IsCoverageBackfillRequired(TestOptimizationSettings settings)
     {
+        var commandLine = GetCommandLine();
         return settings.TestsSkippingEnabled == true &&
-               (settings.CodeCoverageEnabled == true ||
-                !string.IsNullOrWhiteSpace(settings.CodeCoveragePath) ||
-                !string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)) ||
-                IsCoverletCoverageCommand(GetCommandLine()) ||
-                IsMicrosoftCodeCoverageCommand(GetCommandLine()));
+               HasSelectedCoverageReportSource(settings, commandLine);
+    }
+
+    /// <summary>
+    /// Gets whether finalization should wait for a coverage result sent by a child coverage-tool process.
+    /// </summary>
+    /// <param name="settings">Resolved Test Optimization settings for the current process.</param>
+    /// <returns>True when the selected coverage source is expected to arrive through session IPC.</returns>
+    public static bool ShouldWaitForCoverageIpc(TestOptimizationSettings settings)
+    {
+        var commandLine = GetCommandLine();
+        return settings.TestsSkippingEnabled == true &&
+               HasSelectedCoverageReportSource(settings, commandLine) &&
+               (IsCoverletCoverageCommand(commandLine) || IsMicrosoftCodeCoverageCommand(commandLine));
     }
 
     /// <summary>
@@ -42,6 +52,12 @@ internal static class CoverageBackfillCapability
     public static bool IsActiveCoverageModeBackfillable(TestOptimizationSettings settings, out string reason)
     {
         var commandLine = GetCommandLine();
+
+        if (!HasSelectedCoverageReportSource(settings, commandLine))
+        {
+            reason = string.Empty;
+            return true;
+        }
 
         if (HasUnsupportedSelection(commandLine, out reason))
         {
@@ -123,8 +139,20 @@ internal static class CoverageBackfillCapability
         }
 
         var externalCoveragePathValue = externalCoveragePath!;
+        if (HasUnsupportedExternalThreshold(commandLine))
+        {
+            reason = "An external coverage threshold was detected before Datadog can mutate the XML report.";
+            return false;
+        }
+
         if (File.Exists(externalCoveragePathValue) &&
             ExternalCoverageXmlBackfill.IsLineBackfillableReport(externalCoveragePathValue, out reason))
+        {
+            reason = string.Empty;
+            return true;
+        }
+
+        if (IsKnownGeneratedLineXmlReport(commandLine, externalCoveragePathValue))
         {
             reason = string.Empty;
             return true;
@@ -158,6 +186,12 @@ internal static class CoverageBackfillCapability
             return true;
         }
 
+        if (HasExplicitTestTarget(commandLine))
+        {
+            reason = "A targeted project, solution, or test assembly was detected; backend coverage may include candidates outside the executed subset.";
+            return true;
+        }
+
 // TODO temporary, this needs to be addressed
 #pragma warning disable DD0011
         var vstestTestCaseFilter = EnvironmentHelpers.GetEnvironmentVariable("VSTEST_TESTCASEFILTER");
@@ -170,6 +204,57 @@ internal static class CoverageBackfillCapability
 
         reason = string.Empty;
         return false;
+    }
+
+    /// <summary>
+    /// Gets whether the current process has a customer-visible coverage report source, not just ITR line collection.
+    /// </summary>
+    /// <param name="settings">Resolved Test Optimization settings for the current process.</param>
+    /// <param name="commandLine">Command line to inspect for coverage tool activation.</param>
+    /// <returns>True when ITR skips could make a published coverage report inaccurate.</returns>
+    private static bool HasSelectedCoverageReportSource(TestOptimizationSettings settings, string commandLine)
+    {
+        return !string.IsNullOrWhiteSpace(settings.CodeCoveragePath) ||
+               !string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)) ||
+               IsCoverletCoverageCommand(commandLine) ||
+               IsMicrosoftCodeCoverageCommand(commandLine);
+    }
+
+    /// <summary>
+    /// Detects explicit test project, solution, or assembly targets that can narrow the local execution scope.
+    /// </summary>
+    /// <param name="commandLine">Propagated test-session command line.</param>
+    /// <returns>True when the command appears to target only part of the repository.</returns>
+    private static bool HasExplicitTestTarget(string commandLine)
+    {
+        if (string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand)))
+        {
+            return false;
+        }
+
+        return ContainsAny(commandLine, ".csproj", ".fsproj", ".vbproj", ".sln", ".dll");
+    }
+
+    /// <summary>
+    /// Detects threshold modes that execute after the external tool computes coverage but before Datadog can rewrite an XML file.
+    /// </summary>
+    /// <param name="commandLine">Command line to inspect.</param>
+    /// <returns>True when an unsupported external threshold mode was detected.</returns>
+    private static bool HasUnsupportedExternalThreshold(string commandLine)
+    {
+        return ContainsAny(commandLine, "--threshold", "/p:threshold", "threshold=", "threshold%3d", "thresholdtype", "thresholdstat");
+    }
+
+    /// <summary>
+    /// Detects external XML commands that explicitly request a supported line-capable report format generated after the test command.
+    /// </summary>
+    /// <param name="commandLine">Command line to inspect.</param>
+    /// <param name="externalCoveragePath">Configured external XML report path.</param>
+    /// <returns>True when the missing report is expected to be Cobertura or OpenCover XML.</returns>
+    private static bool IsKnownGeneratedLineXmlReport(string commandLine, string externalCoveragePath)
+    {
+        return Path.GetExtension(externalCoveragePath).Equals(".xml", StringComparison.OrdinalIgnoreCase) &&
+               ContainsAny(commandLine, "cobertura", "opencover");
     }
 
     /// <summary>

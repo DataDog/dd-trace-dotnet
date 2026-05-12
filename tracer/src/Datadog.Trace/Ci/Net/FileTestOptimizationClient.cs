@@ -10,7 +10,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -202,10 +202,6 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
 
     private bool ShouldBypassSkippableTestsCacheForCoverageBackfill()
     {
-        var settings = _testOptimization.Settings;
-        return settings.TestsSkippingEnabled == true &&
-               (settings.CodeCoverageEnabled == true ||
-                !string.IsNullOrWhiteSpace(settings.CodeCoveragePath) ||
-                !string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)));
+        return CoverageBackfillCapability.IsCoverageBackfillRequired(_testOptimization.Settings);
     }
 }
