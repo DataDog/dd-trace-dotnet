@@ -316,6 +316,13 @@ internal sealed partial class SecurityReporter
             case double d:
                 _span.SetMetric(key, d);
                 break;
+            default:
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Unsupported WAF span attribute type {Type} for key {Key}", value?.GetType(), key);
+                }
+
+                break;
         }
     }
 
