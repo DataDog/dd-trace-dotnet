@@ -30,7 +30,13 @@ internal sealed record SnapshotSegment
 
     // The record-synthesized members would hash/compare Json by reference (JObject inherits
     // object.GetHashCode/Equals), which means two SnapshotSegment instances parsed from the
-    // same JSON would be considered different. Compare and hash by content instead.
+    // same JSON would be considered different. Compare by content instead.
+    //
+    // Json is intentionally excluded from GetHashCode: JToken.DeepEquals ignores JObject
+    // property order, but any string-based hash of the JObject (e.g. ToString) preserves it,
+    // which would violate the Equals/GetHashCode contract when two payloads contain the same
+    // expression with re-ordered keys. Dsl already encodes the same expression as Json, so
+    // hashing on Str + Dsl gives equal hashes whenever Equals returns true.
     public bool Equals(SnapshotSegment other)
     {
         if (ReferenceEquals(null, other))
@@ -50,6 +56,6 @@ internal sealed record SnapshotSegment
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Str, Dsl, Json?.ToString());
+        return HashCode.Combine(Str, Dsl);
     }
 }
