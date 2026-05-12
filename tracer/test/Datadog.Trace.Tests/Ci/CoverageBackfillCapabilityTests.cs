@@ -91,15 +91,15 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
     }
 
     [Fact]
-    public void GeneratedCoberturaXmlIsBackfillableWhenNoThresholdIsDetected()
+    public void GeneratedCoberturaXmlMustExistBeforeSkipping()
     {
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, "/tmp/generated-cobertura.xml");
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet-coverage collect --output-format cobertura --output /tmp/generated-cobertura.xml");
         var settings = CreateSettings();
 
         CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
-        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeTrue();
-        reason.Should().BeEmpty();
+        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeFalse();
+        reason.Should().Contain("verified line-capable");
     }
 
     [Fact]

@@ -152,12 +152,6 @@ internal static class CoverageBackfillCapability
             return true;
         }
 
-        if (IsKnownGeneratedLineXmlReport(commandLine, externalCoveragePathValue))
-        {
-            reason = string.Empty;
-            return true;
-        }
-
         if (string.IsNullOrEmpty(reason))
         {
             reason = "External coverage XML was not available as a verified line-capable report before skipping.";
@@ -243,18 +237,6 @@ internal static class CoverageBackfillCapability
     private static bool HasUnsupportedExternalThreshold(string commandLine)
     {
         return ContainsAny(commandLine, "--threshold", "/p:threshold", "threshold=", "threshold%3d", "thresholdtype", "thresholdstat");
-    }
-
-    /// <summary>
-    /// Detects external XML commands that explicitly request a supported line-capable report format generated after the test command.
-    /// </summary>
-    /// <param name="commandLine">Command line to inspect.</param>
-    /// <param name="externalCoveragePath">Configured external XML report path.</param>
-    /// <returns>True when the missing report is expected to be Cobertura or OpenCover XML.</returns>
-    private static bool IsKnownGeneratedLineXmlReport(string commandLine, string externalCoveragePath)
-    {
-        return Path.GetExtension(externalCoveragePath).Equals(".xml", StringComparison.OrdinalIgnoreCase) &&
-               ContainsAny(commandLine, "cobertura", "opencover");
     }
 
     /// <summary>
