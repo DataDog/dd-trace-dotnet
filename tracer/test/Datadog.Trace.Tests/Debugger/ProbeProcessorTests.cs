@@ -28,12 +28,11 @@ public class ProbeProcessorTests
     public void ConditionEvaluationErrorsAreDroppedWhenSamplerRejects()
     {
         var processor = CreateConditionalProbeProcessor();
-        var snapshotCreator = CreateSnapshotCreator();
         var sampler = new TestAdaptiveSampler(false);
         var probeData = new ProbeData("probe-id", sampler, processor);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
 
-        Assert.True(processor.ShouldProcess(in probeData));
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.Equal(0, sampler.SampleCalls);
 
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
@@ -45,12 +44,11 @@ public class ProbeProcessorTests
     public void ConditionEvaluationErrorsAreCapturedWhenSamplerKeeps()
     {
         var processor = CreateConditionalProbeProcessor();
-        var snapshotCreator = CreateSnapshotCreator();
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData("probe-id", sampler, processor);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
 
-        Assert.True(processor.ShouldProcess(in probeData));
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.Equal(0, sampler.SampleCalls);
 
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
@@ -62,12 +60,11 @@ public class ProbeProcessorTests
     public void ConditionEvaluationExceptionsAreDroppedWhenSamplerRejects()
     {
         var processor = CreateConditionalProbeProcessor();
-        var snapshotCreator = CreateSnapshotCreator();
         var sampler = new TestAdaptiveSampler(false);
         var probeData = new ProbeData("probe-id", sampler, processor);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
 
-        Assert.True(processor.ShouldProcess(in probeData));
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.Equal(0, sampler.SampleCalls);
 
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
@@ -80,9 +77,9 @@ public class ProbeProcessorTests
     public void CaptureExpressionOnlyProbeEvaluatesAndSerializesResults()
     {
         var processor = CreateCaptureExpressionProbeProcessor();
-        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData("probe-id", sampler, processor);
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
@@ -95,9 +92,9 @@ public class ProbeProcessorTests
     public void CaptureExpressionOnlyProbeIgnoresNullCaptureExpressionEntries()
     {
         var processor = CreateCaptureExpressionProbeProcessor(includeNullEntry: true);
-        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData("probe-id", sampler, processor);
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
@@ -109,9 +106,9 @@ public class ProbeProcessorTests
     public void CaptureExpressionOnlyProbeIgnoresEmptyNameCaptureExpressionEntries()
     {
         var processor = CreateCaptureExpressionProbeProcessor(includeEmptyNameEntry: true);
-        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData("probe-id", sampler, processor);
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
@@ -123,14 +120,14 @@ public class ProbeProcessorTests
     public void CaptureExpressionOnlyProbeDropsSnapshotWhenNoExpressionsCaptureValues()
     {
         var processor = CreateUndefinedCaptureExpressionProbeProcessor();
-        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
         var sampler = new TestAdaptiveSampler(true);
         var probeData = new ProbeData("probe-id", sampler, processor);
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
         Assert.False(ProcessExitEnd(processor, snapshotCreator, in probeData, method));
-        Assert.Equal(0, sampler.SampleCalls);
+        Assert.Equal(1, sampler.SampleCalls);
     }
 
     private static ProbeProcessor CreateConditionalProbeProcessor()
@@ -198,22 +195,10 @@ public class ProbeProcessorTests
             });
     }
 
-    private static DebuggerSnapshotCreator CreateSnapshotCreator()
+    private static DebuggerSnapshotCreator CreateSnapshotCreator(ProbeProcessor processor, in ProbeData probeData)
     {
-        var captureLimitInfo = new CaptureLimitInfo(
-            MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
-            MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
-            MaxLength: DebuggerSettings.DefaultMaxStringLength,
-            MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
-
-        return new DebuggerSnapshotCreator(
-            isFullSnapshot: false,
-            ProbeLocation.Method,
-            hasCondition: true,
-            tags: [],
-            limitInfo: captureLimitInfo,
-            processTagsProvider: static () => null,
-            serviceNameProvider: static () => "test-service");
+        Assert.True(processor.TryBeginProcess(in probeData, out var snapshotCreator));
+        return (DebuggerSnapshotCreator)snapshotCreator;
     }
 
     private static bool ProcessEntryStart(ProbeProcessor processor, DebuggerSnapshotCreator snapshotCreator, in ProbeData probeData, MethodInfo method)

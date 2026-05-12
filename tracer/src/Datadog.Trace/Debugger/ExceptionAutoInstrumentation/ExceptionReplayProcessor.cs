@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public MethodUniqueIdentifier Method { get; }
 
-        public bool ShouldProcess(in ProbeData probeData)
+        private bool ShouldProcess()
         {
             if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
             {
@@ -51,6 +51,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return false;
             }
 
+            return true;
+        }
+
+        public bool TryBeginProcess(in ProbeData probeData, out IDebuggerSnapshotCreator snapshotCreator)
+        {
+            if (!ShouldProcess())
+            {
+                snapshotCreator = null!;
+                return false;
+            }
+
+            snapshotCreator = CreateSnapshotCreator();
             return true;
         }
 
@@ -245,7 +257,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return this;
         }
 
-        public IDebuggerSnapshotCreator CreateSnapshotCreator()
+        private ExceptionSnapshotCreator CreateSnapshotCreator()
         {
             // ReSharper disable once InconsistentlySynchronizedField
             return new ExceptionSnapshotCreator(_processors, ProbeId);

@@ -77,6 +77,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             Initialize();
         }
 
+        internal DebuggerSnapshotCreator(ProbeProcessor.ProbeProcessorState probeProcessorState)
+            : this(probeProcessorState.ProbeInfo.IsFullSnapshot, probeProcessorState.ProbeInfo.ProbeLocation, probeProcessorState.ProbeInfo.HasCondition, probeProcessorState.ProbeInfo.Tags, probeProcessorState.ProbeInfo.CaptureLimitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider)
+        {
+            ProbeProcessorState = probeProcessorState;
+        }
+
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
             : this(isFullSnapshot, location, hasCondition, tags, limitInfo, processTagsProvider, serviceNameProvider)
         {
@@ -102,6 +108,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         internal MethodScopeMembers? MethodScopeMembers { get; private set; }
+
+        internal ProbeProcessor.ProbeProcessorState? ProbeProcessorState { get; }
 
         internal bool ProbeHasCondition { get; }
 
