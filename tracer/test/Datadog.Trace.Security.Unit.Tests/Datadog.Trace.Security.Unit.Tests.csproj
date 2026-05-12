@@ -59,9 +59,10 @@
     <None Update="remote-rules.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="trace-tagging-rules.json">
+    <Content Include="..\Datadog.Trace.Security.IntegrationTests\trace-tagging-rules.json">
+      <Link>trace-tagging-rules.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>
