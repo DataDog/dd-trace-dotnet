@@ -176,7 +176,8 @@ partial class Build
             envVars.Add("DD_PROFILER_EXCLUDE_PROCESSES", "dotnet.exe");
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
-            string project = Solution.GetProject(SampleName)?.Path;
+            // SampleName may resolve to a standalone sample (in SamplesSolution) or an aspnet/test-helper sample (in Solution).
+            string project = (SamplesSolution.GetProject(SampleName) ?? Solution.GetProject(SampleName))?.Path;
             if (project is not null)
             {
                 Logger.Information($"Running sample '{SampleName}'");
@@ -273,7 +274,9 @@ partial class Build
            // Pipeline A: generate .g.props/.g.cs files
            Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
            var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, getCooldownMode, effectiveCooldownDays);
-           var testedVersions = await versionGenerator.GenerateVersions(Solution);
+           // Entries in the package versions JSON reference standalone sample projects, so they live in
+           // SamplesSolution (the default Solution = Datadog.Trace.Build.g.sln excludes samples).
+           var testedVersions = await versionGenerator.GenerateVersions(SamplesSolution);
 
            // Log version changes: bumps, unchanged, and overridden
            var queriedVersions = versionGenerator.QueriedVersions;

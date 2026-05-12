@@ -1936,10 +1936,11 @@ partial class Build
             // This does some "unnecessary" rebuilding and restoring
             var azureFunctions = TracerDirectory.GlobFiles("test/test-applications/azure-functions/**/*.csproj");
 
+            // Azure-functions samples live in SamplesSolution (the default Solution = Datadog.Trace.Build.g.sln excludes standalone samples).
             var projects = azureFunctions
                 .Where(path =>
                 {
-                    var project = Solution.GetProject(path);
+                    var project = SamplesSolution.GetProject(path);
                     return project.TryGetTargetFrameworks() switch
                     {
                         { } targets => targets.Contains(Framework),
