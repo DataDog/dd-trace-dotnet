@@ -119,59 +119,6 @@ public partial class FeatureFlagsEvaluatorTests
     }
 
     [Fact]
-    public void EvaluateWithMissingTargetingKeyReturnsTargetingKeyMissing()
-    {
-        var flags = new Dictionary<string, Flag>
-        {
-            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "default", "on")
-        };
-
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-
-        var ctx = new EvaluationContext("user-123");
-        var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
-        Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Split, result.Reason); // Flag has shards → Split reason
-        Assert.Equal("on", result.Variant);
-
-        var noTargettingKeyCtx = new EvaluationContext(string.Empty); // no targetingKey
-        result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", noTargettingKeyCtx);
-
-        Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("TARGETING_KEY_MISSING", result.Error);
-    }
-
-    [Fact]
-    public void EvaluateWithUnknownFlagReturnsDefault()
-    {
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration());
-        var ctx = new EvaluationContext("user-123");
-        var result = evaluator.Evaluate("unknown", Trace.FeatureFlags.ValueType.String, "default", ctx);
-
-        Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Default, result.Reason);
-        Assert.Null(result.Error);
-    }
-
-    [Fact]
-    public void EvaluateDisabledFlagReturnsDisabledReason()
-    {
-        var flags = new Dictionary<string, Flag>
-        {
-            ["disabled-flag"] = new Flag { Key = "disabled-flag", Enabled = false, VariationType = ValueType.Boolean }
-        };
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("user");
-
-        var result = evaluator.Evaluate("disabled-flag", Trace.FeatureFlags.ValueType.Boolean, true, ctx);
-
-        Assert.Equal(true, result.Value);
-        Assert.Equal(EvaluationReason.Disabled, result.Reason);
-        Assert.Null(result.Error);
-    }
-
-    [Fact]
     public void EvaluateFlagWithTypeMismatchReturnsTypeMismatchError()
     {
         var flags = new Dictionary<string, Flag>
@@ -191,26 +138,6 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal(23, result2.Value);
         Assert.Equal(EvaluationReason.Error, result2.Reason);
         Assert.Equal("TYPE_MISMATCH", result2.FlagMetadata?["errorCode"]);
-    }
-
-    [Fact]
-    public void EvaluateFlagWithoutAllocationsReturnsDefaultValue()
-    {
-        var flags = new Dictionary<string, Flag>
-        {
-            ["null-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String },
-            ["empty-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String, Allocations = new List<Allocation>() },
-        };
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("allocation");
-
-        var result1 = evaluator.Evaluate("null-allocation", Trace.FeatureFlags.ValueType.String, 23, ctx);
-        Assert.Equal(23, result1.Value);
-        Assert.Equal(EvaluationReason.Default, result1.Reason);
-
-        var result2 = evaluator.Evaluate("empty-allocation", Trace.FeatureFlags.ValueType.String, 23, ctx);
-        Assert.Equal(23, result2.Value);
-        Assert.Equal(EvaluationReason.Default, result2.Reason);
     }
 
     // ---------------------------------------------------------------------
@@ -265,81 +192,9 @@ public partial class FeatureFlagsEvaluatorTests
     }
 
     // ---------------------------------------------------------------------
-    // Happy-path evaluation + rule-based + numeric + exposure
-    //    These are example slices; you can easily add more tests in same style.
+    // Exposure dispatch is a .NET implementation concern; evaluator behavior is covered by
+    // FeatureFlagsEvaluatorTests.Bundle.cs using the canonical JSON fixtures.
     // ---------------------------------------------------------------------
-
-    [Fact]
-    public void EvaluateSimpleStringFlagReturnsSplitReason()
-    {
-        // CreateSimpleFlag creates a flag with shards (100% rollout), so reason is Split
-        var flags = new Dictionary<string, Flag>
-        {
-            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on")
-        };
-
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("user-123");
-
-        var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
-
-        Assert.Equal("test-value", result.Value);
-        Assert.Equal(EvaluationReason.Split, result.Reason);
-        Assert.Equal("on", result.Variant);
-    }
-
-    [Fact]
-    public void EvaluateRuleBasedFlagMatchesEmailPremium()
-    {
-        var flags = new Dictionary<string, Flag>
-        {
-            ["rule-based-flag"] = FeatureFlagsHelpers.CreateRuleBasedFlag()
-        };
-
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("user-premium", new Dictionary<string, object?> { { "email", "john@company.com" } });
-
-        var result = evaluator.Evaluate("rule-based-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
-
-        Assert.Equal("premium", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("premium", result.Variant);
-    }
-
-    [Fact]
-    public void EvaluateNumericRuleFlagMatchesScoreGte800()
-    {
-        var flags = new Dictionary<string, Flag>
-        {
-            ["numeric-rule-flag"] = FeatureFlagsHelpers.CreateNumericRuleFlag()
-        };
-
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("user-vip", new Dictionary<string, object?> { { "score", 850 } });
-
-        var result = evaluator.Evaluate("numeric-rule-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
-
-        Assert.Equal("vip", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("vip", result.Variant);
-    }
-
-    [Fact]
-    public void EvaluateTimeBasedFlagWithExpiredAllocationReturnsDefaultReason()
-    {
-        var flags = new Dictionary<string, Flag>
-        {
-            ["time-based-flag"] = FeatureFlagsHelpers.CreateTimeBasedFlag()
-        };
-
-        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext("user");
-
-        var result = evaluator.Evaluate("time-based-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
-
-        Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Default, result.Reason);
-    }
 
     [Fact]
     public void EvaluateExposureFlagLogsExposureEvent()
