@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles.DirectoryBrowserExtensionsUseDirectoryBrowserIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles.DirectoryBrowserExtensionsUseDirectoryBrowserIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetCore,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.IAST.ParsingPrimitivesReadRawStringIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.Iast.ParsingPrimitivesReadRawStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.ServerCallHandlerBaseHandleCallAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.GrpcProtocolHelpersBuildHttpErrorResponseIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.HttpContextServerCallContextLogCallEndIntegration"

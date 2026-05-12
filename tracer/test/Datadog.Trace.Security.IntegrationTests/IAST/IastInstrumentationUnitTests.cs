@@ -370,39 +370,36 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task TestInstrumentedUnitTests()
     {
-        using (var agent = EnvironmentHelper.GetMockAgent())
-        {
-            var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
-            SetDumpInfo(logDirectory);
-            EnableEvidenceRedaction(false);
-            string arguments = string.Empty;
+        var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
+        SetDumpInfo(logDirectory);
+        EnableEvidenceRedaction(false);
+        string arguments = string.Empty;
 #if NETFRAMEWORK
-            arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
+        arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #else
-            if (!EnvironmentTools.IsWindows())
+        if (!EnvironmentTools.IsWindows())
+        {
+            arguments += (RuntimeInformation.ProcessArchitecture == Architecture.Arm64, EnvironmentHelper.IsAlpine()) switch
             {
-                arguments += (RuntimeInformation.ProcessArchitecture == Architecture.Arm64, EnvironmentHelper.IsAlpine()) switch
-                {
-                    (true, false) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)""",
-                    (true, true) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=AlpineArmUnsupported)&(Category!=LinuxUnsupported)""",
-                    _ => @" --TestCaseFilter:""Category!=LinuxUnsupported""",
-                };
-            }
-#endif
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
-            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
-            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
-
-            var securityControlsConfig = """
-                INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String);
-                INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1;
-                      SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)
-                """;
-            SetEnvironmentVariable("DD_IAST_SECURITY_CONTROLS_CONFIGURATION", securityControlsConfig);
-
-            ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
-            processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
+                (true, false) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)""",
+                (true, true) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=AlpineArmUnsupported)&(Category!=LinuxUnsupported)""",
+                _ => @" --TestCaseFilter:""Category!=LinuxUnsupported""",
+            };
         }
+#endif
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
+        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
+
+        var securityControlsConfig = """
+            INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String);
+            INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1;
+                    SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)
+            """;
+        SetEnvironmentVariable("DD_IAST_SECURITY_CONTROLS_CONFIGURATION", securityControlsConfig);
+
+        ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(arguments: arguments, forceVsTestParam: true);
+        processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
     }
 
     private string NormalizeName(string signature)

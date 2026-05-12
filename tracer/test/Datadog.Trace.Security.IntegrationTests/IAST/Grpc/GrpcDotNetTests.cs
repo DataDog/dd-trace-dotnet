@@ -53,7 +53,6 @@ public class GrpcDotNetTests : TestHelper
 
         const string filename = "Iast.GrpcDotNetTests.BodyPropagation.SubmitsTraces";
 
-        using var agent = EnvironmentHelper.GetMockAgent();
         var since = DateTime.UtcNow;
         using var process = await RunSampleAndWaitForExit();
 

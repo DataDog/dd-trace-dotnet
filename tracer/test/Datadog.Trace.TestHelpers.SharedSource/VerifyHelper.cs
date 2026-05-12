@@ -62,16 +62,6 @@ namespace Datadog.Trace.TestHelpers
                     new PathInfo(directory: Path.Combine(projectDirectory, "..", "snapshots")));
         }
 
-        public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(scrubbers: null, parameters);
-
-        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)>? scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, ScrubNumericTags, ciVisStringTagsScrubber: null, ciVisNumericTagsScrubber: null);
-
-        public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(scrubbers: null, parameters);
-
-        public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)>? scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics);
-
         public static VerifySettings GetSpanVerifierSettings(
             IEnumerable<(Regex RegexPattern, string Replacement)>? scrubbers,
             object[] parameters,
@@ -129,58 +119,6 @@ namespace Datadog.Trace.TestHelpers
             return settings;
         }
 
-        public static SettingsTask VerifySpans(
-            IReadOnlyCollection<MockSpan> spans,
-            VerifySettings settings,
-            Func<IReadOnlyCollection<MockSpan>, IOrderedEnumerable<MockSpan>>? orderSpans = null)
-        {
-            // Ensure a static ordering for the spans
-            var orderedSpans = orderSpans?.Invoke(spans) ??
-                               spans
-                                  .OrderBy(x => GetRootSpanResourceName(x, spans))
-                                  .ThenBy(x => GetSpanDepth(x, spans))
-                                  .ThenBy(x => x.Start)
-                                  .ThenBy(x => x.Duration);
-
-            return Verifier.Verify(orderedSpans, settings);
-        }
-
-        public static string GetRootSpanResourceName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
-        {
-            while (span.ParentId is not null)
-            {
-                var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
-                if (parent is null)
-                {
-                    // no span with the given Parent Id, so treat this one as the root instead
-                    break;
-                }
-
-                span = parent;
-            }
-
-            return span.Resource;
-        }
-
-        public static int GetSpanDepth(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
-        {
-            var depth = 0;
-            while (span.ParentId is not null)
-            {
-                var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
-                if (parent is null)
-                {
-                    // no span with the given Parent Id, so treat this one as the root instead
-                    break;
-                }
-
-                span = parent;
-                depth++;
-            }
-
-            return depth;
-        }
-
         public static VerifySettings AddRegexScrubber(this VerifySettings settings, Regex regex, string replacement)
         {
             settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
@@ -190,12 +128,6 @@ namespace Datadog.Trace.TestHelpers
         public static VerifySettings AddRegexScrubber(this VerifySettings settings, (Regex RegexPattern, string Replacement) scrubber)
         {
             settings.AddScrubber(builder => ReplaceRegex(builder, scrubber.RegexPattern, scrubber.Replacement));
-            return settings;
-        }
-
-        public static VerifySettings AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
-        {
-            settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
             return settings;
         }
 
@@ -227,15 +159,6 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public static Dictionary<string, double>? ScrubNumericTags(MockSpan span, Dictionary<string, double>? tags)
-        {
-            return tags; // no-op
-        }
-
-        public static Dictionary<string, string>? ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string>? tags) => ScrubCIVisibilityTags(tags);
-
-        public static Dictionary<string, string>? ScrubCIVisibilityTags(MockCIVisibilityTest span, Dictionary<string, string>? tags) => ScrubCIVisibilityTags(tags);
-
         public static Dictionary<string, string>? ScrubCIVisibilityTags(Dictionary<string, string>? tags)
         {
             return tags
@@ -263,38 +186,10 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public static Dictionary<string, double>? ScrubCIVisibilityMetrics(MockSpan span, Dictionary<string, double>? metrics) => ScrubCIVisibilityMetrics(metrics);
-
-        public static Dictionary<string, double>? ScrubCIVisibilityMetrics(MockCIVisibilityTest span, Dictionary<string, double>? metrics) => ScrubCIVisibilityMetrics(metrics);
-
-        public static Dictionary<string, double>? ScrubCIVisibilityMetrics(Dictionary<string, double>? metrics)
-        {
-            return metrics
-                 ?.Where(kvp => kvp.Key != Metrics.SamplingAgentDecision)
-                  .Select(
-                       kvp => kvp)
-                  .OrderBy(x => x.Key)
-                  .ToDictionary(x => x.Key, x => x.Value);
-        }
-
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
         {
             var value = builder.ToString();
             var result = regex.Replace(value, replacement);
-
-            if (value.Equals(result, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            builder.Clear();
-            builder.Append(result);
-        }
-
-        private static void ReplaceSimple(StringBuilder builder, string oldValue, string newValue)
-        {
-            var value = builder.ToString();
-            var result = value.Replace(oldValue, newValue);
 
             if (value.Equals(result, StringComparison.Ordinal))
             {

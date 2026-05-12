@@ -14,7 +14,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
@@ -478,7 +477,7 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
-        await Fixture.TryStartApp(this, enableSecurity: false, sendHealthCheck: false);
+        await Fixture.TryStartApp(this, sendHealthCheck: false);
         SetHttpPort(Fixture.HttpPort);
     }
 }
@@ -531,7 +530,7 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilityLogPath, VulnerabilityLogPath);
-        await Fixture.TryStartApp(this, enableSecurity: false);
+        await Fixture.TryStartApp(this);
         SetHttpPort(Fixture.HttpPort);
     }
 }

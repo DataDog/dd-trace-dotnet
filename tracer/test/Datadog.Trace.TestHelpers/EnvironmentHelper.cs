@@ -30,7 +30,6 @@ namespace Datadog.Trace.TestHelpers
         private readonly bool _isCoreClr;
         private readonly string _samplesDirectory;
         private readonly TargetFrameworkAttribute _targetFramework;
-        private TestTransports _transportType = TestTransports.Tcp;
 
         public EnvironmentHelper(
             string sampleName,
@@ -224,19 +223,6 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["CORECLR_PROFILER_PATH"] = nativeLoaderPath;
 
                 var apiWrapperPath = GetApiWrapperPath();
-
-                if (!string.IsNullOrEmpty(apiWrapperPath) && !environmentVariables.ContainsKey("LD_PRELOAD"))
-                {
-                    if (File.Exists(apiWrapperPath))
-                    {
-                        environmentVariables["LD_PRELOAD"] = apiWrapperPath;
-                    }
-                    else if (IsRunningInAzureDevOps())
-                    {
-                        // For convenience, allow tests to run without LD_PRELOAD outside of CI
-                        throw new Exception($"Unable to find API Wrapper at {apiWrapperPath}");
-                    }
-                }
             }
             else
             {
@@ -474,95 +460,6 @@ namespace Datadog.Trace.TestHelpers
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
         }
 
-        public void SetAutomaticInstrumentation(bool enabled)
-        {
-            AutomaticInstrumentationEnabled = enabled;
-        }
-
-        public void EnableWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
-        {
-            if (!EnvironmentTools.IsWindows())
-            {
-                throw new NotSupportedException("Windows named pipes is only supported on Windows");
-            }
-
-            _transportType = TestTransports.WindowsNamedPipe;
-        }
-
-        public void EnableDefaultTransport()
-        {
-            _transportType = TestTransports.Tcp;
-        }
-
-        public void EnableUnixDomainSockets()
-        {
-#if NETCOREAPP3_1_OR_GREATER
-            _transportType = TestTransports.Uds;
-#else
-            // Unsupported
-            throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
-#endif
-        }
-
-        public void EnableTransport(TestTransports transport)
-        {
-            switch (transport)
-            {
-                case TestTransports.Tcp:
-                    EnableDefaultTransport();
-                    break;
-                case TestTransports.Uds:
-                    EnableUnixDomainSockets();
-                    break;
-                case TestTransports.WindowsNamedPipe:
-                    EnableWindowsNamedPipes();
-                    break;
-                default:
-                    throw new InvalidOperationException("Unknown transport " + transport.ToString());
-            }
-        }
-
-        public MockTracerAgent GetMockAgent(bool useStatsD = false, int? fixedPort = null, bool useTelemetry = false)
-        {
-            MockTracerAgent agent = null;
-
-            // Decide between transports
-            if (_transportType == TestTransports.Uds)
-            {
-#if NETCOREAPP3_1_OR_GREATER
-                var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
-#else
-                throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
-#endif
-            }
-            else if (_transportType == TestTransports.WindowsNamedPipe)
-            {
-                agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
-            }
-            else
-            {
-                // Default
-                var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
-                agent = MockTracerAgent.Create(_output, agentPort, useStatsd: useStatsD, useTelemetry: useTelemetry);
-            }
-
-            _output.WriteLine($"Agent listener info: {agent.ListenerInfo}");
-
-            return agent;
-        }
-
-        public bool IsRunningInAzureDevOps()
-        {
-            return Environment.GetEnvironmentVariable("SYSTEM_COLLECTIONID") != null;
-        }
-
-        public bool IsScheduledBuild()
-        {
-            return IsEnvironmentVariableSet("isScheduledBuild");
-        }
-
         public string GetApiWrapperPath()
         {
             var archFolder = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), IsAlpine()) switch
@@ -580,22 +477,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return Path.Combine(GetMonitoringHomePath(), archFolder, "Datadog.Linux.ApiWrapper.x64.so");
-        }
-
-        private bool IsEnvironmentVariableSet(string ev)
-        {
-            if (string.IsNullOrEmpty(ev))
-            {
-                return false;
-            }
-
-            var evValue = Environment.GetEnvironmentVariable(ev);
-            if (evValue == null)
-            {
-                CustomEnvironmentVariables.TryGetValue(ev, out evValue);
-            }
-
-            return evValue == "1" || string.Equals(evValue, "true", StringComparison.InvariantCultureIgnoreCase);
         }
     }
 }

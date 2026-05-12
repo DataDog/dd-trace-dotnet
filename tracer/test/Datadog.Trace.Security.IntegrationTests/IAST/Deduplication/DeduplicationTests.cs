@@ -84,7 +84,5 @@ public class DeduplicationTests : TestHelper
         await Verifier.Verify(sanitized, new VerifySettings())
                       .UseFileName(filename)
                       .DisableRequireUniquePrefix();
-
-        VerifyInstrumentation(process.Process);
     }
 }

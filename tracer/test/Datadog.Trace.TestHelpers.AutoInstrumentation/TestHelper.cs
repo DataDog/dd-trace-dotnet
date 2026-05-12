@@ -76,7 +76,7 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool useDotnetExec = false)
+        public async Task<Process> StartDotnetTestSample(string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool useDotnetExec = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
@@ -111,9 +111,9 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
         {
-            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
+            var process = await StartDotnetTestSample(arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
 
             using var helper = new ProcessHelper(process);
             return WaitForProcessResult(helper, expectedExitCode, dumpChildProcesses: true);
@@ -456,41 +456,6 @@ namespace Datadog.Trace.TestHelpers
         {
             SecurityEnabled = security;
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
-        }
-
-        protected void SetInstrumentationVerification()
-        {
-            bool verificationEnabled = ShouldUseInstrumentationVerification();
-
-            if (verificationEnabled)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.LogDirectory, EnvironmentHelper.LogDirectory);
-            }
-        }
-
-        protected void VerifyInstrumentation(Process process)
-        {
-            if (!ShouldUseInstrumentationVerification())
-            {
-                return;
-            }
-
-            var logDirectory = EnvironmentHelper.LogDirectory;
-            InstrumentationVerification.VerifyInstrumentation(process, logDirectory);
-        }
-
-        protected bool ShouldUseInstrumentationVerification()
-        {
-            if (!EnvironmentTools.IsWindows())
-            {
-                // Instrumentation Verification is currently only supported only on Windows
-                return false;
-            }
-
-            // verify instrumentation adds a lot of time to tests so we only run it on azure and if it a scheduled build.
-            // Return 'true' to verify instrumentation on local machine.
-            // return true;
-            return EnvironmentHelper.IsRunningInAzureDevOps() && EnvironmentHelper.IsScheduledBuild();
         }
 
         /// <summary>

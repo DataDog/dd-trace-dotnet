@@ -10,20 +10,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Amazon.SimpleEmail.Model;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Newtonsoft.Json.Linq;
-using VerifyTests;
-using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -946,12 +941,12 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         Fixture.SetOutput(null);
     }
 
-    public virtual async Task TryStartApp(MockTracerAgent.AgentConfiguration agentConfiguration = null)
+    public virtual async Task TryStartApp()
     {
-        await TryStartApp(Fixture, agentConfiguration);
+        await TryStartApp(Fixture);
     }
 
-    public virtual async Task TryStartApp(AspNetCoreTestFixture fixture, MockTracerAgent.AgentConfiguration agentConfiguration = null)
+    public virtual async Task TryStartApp(AspNetCoreTestFixture fixture)
     {
         EnableEvidenceRedaction(RedactionEnabled);
         DisableObfuscationQueryString();
@@ -969,7 +964,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
             catch { }
         }
 
-        await fixture.TryStartApp(this, enableSecurity: false, agentConfiguration: agentConfiguration);
+        await fixture.TryStartApp(this);
         SetHttpPort(fixture.HttpPort);
     }
 

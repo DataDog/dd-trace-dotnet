@@ -5,22 +5,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using FluentAssertions;
-using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -97,115 +90,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        public void ResetDefaultUserAgent()
-        {
-            _httpClient.DefaultRequestHeaders.Remove("user-agent");
-        }
-
-        /// <summary>
-        /// Will call verify for this type of request and add the right scrubbers and right serialization methods
-        /// </summary>
-        /// <param name="agent">agent</param>
-        /// <param name="url">url</param>
-        /// <param name="body">body</param>
-        /// <param name="expectedSpans">expected spans</param>
-        /// <param name="spansPerRequest">spans per request</param>
-        /// <param name="settings">settings</param>
-        /// <param name="contentType">content type</param>
-        /// <param name="testInit">are we testing first spans at app start</param>
-        /// <param name="userAgent">user agent</param>
-        /// <param name="methodNameOverride">override the method name</param>
-        /// <param name="fileNameOverride">override the file name</param>
-        /// <param name="scrubCookiesFingerprint">only scrub session fingerprint part that changes every request. in some conditions we might want to scrub cookies fields and values, as an authenticated user/login might generate changing values at each request</param>
-        /// <returns>when it's finished</returns>
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null, bool scrubCookiesFingerprint = false)
-        {
-            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
-            await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride, scrubCookiesFingerprint: scrubCookiesFingerprint);
-        }
-
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false)
-        {
-            settings.ModifySerialization(
-                serializationSettings =>
-                {
-                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
-                        sp => sp.Tags,
-                        (target, value) =>
-                        {
-                            if (target.Tags.Any(t => t.Key.StartsWith("_dd.appsec.s.re")))
-                            {
-                                var apisecurityTags = target.Tags.Where(t => t.Key.StartsWith("_dd.appsec.s.re")).ToList();
-
-                                foreach (var tag in apisecurityTags)
-                                {
-                                    var bytes = System.Convert.FromBase64String(tag.Value);
-                                    using var memoryStream = new MemoryStream(bytes);
-                                    using var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
-                                    gZipStream.Flush();
-                                    var t = JsonSerializer.Create(_jsonSerializerSettingsOrderProperty);
-                                    using var textReader = new JsonTextReader(new StreamReader(gZipStream));
-                                    // this will work until children have more complex properties with more order
-                                    var result = t.Deserialize<JArray>(textReader);
-
-                                    SortJToken(result);
-                                    target.Tags[tag.Key] = JsonConvert.SerializeObject(result);
-                                }
-                            }
-
-                            if (target.MetaStruct != null)
-                            {
-                                IastVerifyScrubberExtensions.IastMetaStructScrubbing(target);
-
-                                target.MetaStruct = null;
-                            }
-
-                            return VerifyHelper.ScrubStringTags(target, target.Tags);
-                        });
-                });
-
-            settings.ScrubSessionFingerprint(scrubCookiesFingerprint);
-
-            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
-            if (appsecSpans.Any())
-            {
-                appsecSpans.Should()
-                           .OnlyContain(
-                                s =>
-                                    (s.Metrics.ContainsKey("_dd.appsec.waf.duration")
-                                 && s.Metrics.ContainsKey("_dd.appsec.waf.duration_ext"))
-                                 || (s.Metrics.ContainsKey("_dd.appsec.rasp.duration")
-                                 && s.Metrics.ContainsKey("_dd.appsec.rasp.duration_ext")),
-                                "if waf has run, these metrics should be present and are not, has the waf really run?")
-                           .And.OnlyContain(
-                                s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]
-                                  || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"],
-                                "duration with encodings should be longer than duration for only a waf run");
-            }
-
-            if (string.IsNullOrEmpty(fileNameOverride))
-            {
-                // Overriding the type name here as we have multiple test classes in the file
-                // Ensures that we get nice file nesting in Solution Explorer
-                await Verifier.Verify(spans, settings)
-                              .UseMethodName(methodNameOverride ?? "_")
-                              .UseTypeName(testName ?? GetTestName());
-            }
-            else
-            {
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(fileNameOverride)
-                                  .DisableRequireUniquePrefix();
-            }
-        }
-
-        protected string MetaStructToJson(byte[] data)
-        {
-            var metaStruct = MetaStructByteArrayToObject.Invoke(null, [data]);
-            var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
-            return json;
-        }
-
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, string accept = null, IEnumerable<KeyValuePair<string, string>> headers = null)
@@ -260,32 +144,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         protected virtual string GetTestName() => _testName;
-
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
-        {
-            var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
-
-            return await WaitForSpansAsync(agent, expectedSpans, phase, minDateTime, url);
-        }
-
-        protected async Task<IImmutableList<MockSpan>> WaitForSpansAsync(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
-        {
-            agent.SpanFilters.Clear();
-
-            if (!IncludeAllHttpSpans)
-            {
-                agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
-            }
-
-            var spans = await agent.WaitForSpansAsync(expectedSpans, minDateTime: minDateTime, assertExpectedCount: false);
-            if (spans.Count != expectedSpans)
-            {
-                Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");
-            }
-
-            return spans;
-        }
 
         protected Task SendRequestsAsync(params string[] urls) => SendRequestsAsync(1, urls);
 

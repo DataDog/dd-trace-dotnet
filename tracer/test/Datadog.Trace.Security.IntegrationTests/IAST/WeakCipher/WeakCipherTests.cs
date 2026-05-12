@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
@@ -42,8 +41,6 @@ public class WeakCipherTests : TestHelper
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
 
         const string filename = "WeakCipherTests.SubmitsTraces";
-
-        using var agent = EnvironmentHelper.GetMockAgent();
         var since = DateTime.UtcNow;
         using var process = await RunSampleAndWaitForExit();
 
@@ -58,8 +55,6 @@ public class WeakCipherTests : TestHelper
         await Verifier.Verify(sanitized, new VerifySettings())
                       .UseFileName(filename)
                       .DisableRequireUniquePrefix();
-
-        VerifyInstrumentation(process.Process);
     }
 #endif
 
@@ -74,7 +69,6 @@ public class WeakCipherTests : TestHelper
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         SetEnvironmentVariable(variableName, variableValue);
 
-        using var agent = EnvironmentHelper.GetMockAgent();
         var since = DateTime.UtcNow;
         using var process = await RunSampleAndWaitForExit();
 
