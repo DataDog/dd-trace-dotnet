@@ -8,8 +8,7 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write # Pushes to a branch
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      id-token: write # Required for dd-octo-sts authentication
 
     steps:
       - name: Fail if branch is on master
@@ -24,12 +23,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.generate-package-versions
+
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           global-json-file: global.json
 
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 GeneratePackageVersions
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
 
       - name: Create commits
         run: |
@@ -38,4 +46,4 @@ jobs:
           git commit -am "Updated package versions"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}

@@ -9,6 +9,7 @@ jobs:
     permissions:
       contents: read
       statuses: write # Update status checks
+      id-token: write # required for dd-octo-sts OIDC token
 
     steps:
       - name: Fail if branch is not version-bump PR or bot PR
@@ -16,6 +17,13 @@ jobs:
         run: |
           echo "This workflow should only be triggered on the version-bump-x.x.x or bot/* branches but found  ${{ github.ref }}"
           exit 1
+
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.override-version-bump-pr-checks
 
       - run: |
           set -o pipefail
@@ -27,14 +35,14 @@ jobs:
           targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/override_version_bump_pr_checks.yml"
           state="success"
           description="Forced override (via GitHub Action)"
-          
+
           for context in ${contexts[@]}; do
             echo "Forcing check check status to $state for $context"
-          
+
             curl -X POST \
             --fail-with-body \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ steps.generate-token.outputs.token }}" \
               "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
               -d '{"state":"'"$state"'","context":"'"$context"'","description":"'"$description"'","target_url":"'"$targetUrl"'"}'
           done

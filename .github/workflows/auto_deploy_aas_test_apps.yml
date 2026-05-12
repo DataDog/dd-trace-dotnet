@@ -3,8 +3,8 @@ name: Auto deploy AAS test apps
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * TUE'
-    - cron: '0 0 * * FRI'
+    - cron: "0 0 * * TUE"
+    - cron: "0 0 * * FRI"
 
 jobs:
   deploy_aas_test_apps:
@@ -12,17 +12,22 @@ jobs:
     permissions:
       contents: read
       actions: read # read secrets
-      issues: read # Read milestones milestones
+      issues: read # Read milestones
       id-token: write # required for dd-octo-sts OIDC token
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.auto-deploy-aas-test-apps
+
       - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
-        name: 'Open Code Freeze Milestone'
+        name: "Open Code Freeze Milestone"
         id: milestones
         if: github.event_name != 'workflow_dispatch'
         with:
@@ -31,16 +36,16 @@ jobs:
           repo: dd-trace-dotnet
           state: open
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
-      - name: 'Check if code freeze is in place'
+      - name: "Check if code freeze is in place"
         if: github.event_name != 'workflow_dispatch' # don't check if triggered manually
         run: |
           json=$(cat << 'ENDOFMESSAGE'
             ${{ steps.milestones.outputs.data }}
           ENDOFMESSAGE
           )
-          
+
           if addr=$(echo $json | jq -er '.[] | select(.title == "Code Freeze")'); then
             echo "A code freeze is in place, we should not trigger a deployment."
             echo "stop=true" >> "$GITHUB_ENV"
@@ -57,7 +62,7 @@ jobs:
           policy: dd-trace-dotnet.github.deploy-aas-dev-apps
 
       - uses: ./.github/actions/deploy-aas-dev-apps
-        name: 'Trigger AAS deploy'
+        name: "Trigger AAS deploy"
         if: env.stop != 'true'
         with:
           github_token: ${{ steps.octo-sts.outputs.token }}

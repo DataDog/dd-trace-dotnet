@@ -4,33 +4,33 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Hotfix Version Number (x.x.x)'
+        description: "Hotfix Version Number (x.x.x)"
         required: true
       is_prerelease:
-        description: 'Is Prerelease version? (true/false)'
-        default: 'false'
+        description: "Is Prerelease version? (true/false)"
+        default: "false"
         required: true
 
 jobs:
   check_tag:
     runs-on: ubuntu-latest
     steps:
-        - name: Verify running from a tag
-          run: |
-            if [[ "${{  github.ref }}" != refs/tags/* ]]; then
-              echo "Error: This workflow can only be run from a tag"
-              echo "Current ref: ${{ github.ref }}"
-              exit 1
-            fi
+      - name: Verify running from a tag
+        run: |
+          if [[ "${{  github.ref }}" != refs/tags/* ]]; then
+            echo "Error: This workflow can only be run from a tag"
+            echo "Current ref: ${{ github.ref }}"
+            exit 1
+          fi
 
   bump_version:
     needs: check_tag
     runs-on: windows-latest
     permissions:
       contents: write # Push branches
-      issues: write # change milestones 
+      issues: write # change milestones
+      id-token: write # Required for dd-octo-sts authentication
     env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       NewVersion: "${{ github.event.inputs.version }}"
       NewIsPrerelease: "${{ github.event.inputs.is_prerelease }}"
 
@@ -40,6 +40,13 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.create-hotfix-branch
 
       - name: "Configure Git Credentials"
         run: |
@@ -52,14 +59,20 @@ jobs:
 
       - name: "Bump Version"
         run: .\tracer\build.ps1 UpdateVersion
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Verify Changes"
         id: changes
         run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Output Version"
         id: versions
         run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Push hotfix branch"
         run: |
@@ -67,3 +80,5 @@ jobs:
           git add .
           git commit -m "[Version Bump] ${{steps.versions.outputs.full_version}}"
           git push origin -u hotfix/${{ steps.versions.outputs.full_version }}
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"

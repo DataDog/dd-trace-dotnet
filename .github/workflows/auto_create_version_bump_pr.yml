@@ -17,8 +17,6 @@ jobs:
       contents: write # Creates a branch
       issues: write # Closes milestones
       id-token: write # Required for dd-octo-sts authentication
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
       - name: Support longpaths
@@ -30,6 +28,13 @@ jobs:
         with:
           scope: DataDog/dd-trace-dotnet
           policy: self.auto_create_version_bump_pr.create-pr
+
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.auto-create-version-bump-pr
 
       - name: "Select branch"
         id: select_branch
@@ -59,21 +64,27 @@ jobs:
       - name: "Update Changelog"
         run: .\tracer\build.ps1 UpdateChangeLog
         env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
           RELEASE_NOTES: ${{ github.event.release.body }}
 
       - name: "CalculateNextVersion"
         run: .\tracer\build.ps1 CalculateNextVersion
         id: versions
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: "Bump Version"
         run: .\tracer\build.ps1 UpdateVersion
         env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
           NewVersion: ${{ steps.versions.outputs.version }}
           NewIsPrerelease: ${{ steps.versions.outputs.isprerelease }}
 
       - name: "Verify Changes"
         id: changes
         run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: Create Pull Request
         id: pr
@@ -90,6 +101,7 @@ jobs:
       - name: "Close previous milestone"
         run: .\tracer\build.ps1 CloseMilestone
         env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
           Version: ${{steps.versions.outputs.previous_version}}
 
       - name: Display output

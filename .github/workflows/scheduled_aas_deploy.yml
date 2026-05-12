@@ -2,15 +2,15 @@ name: Scheduled AAS Deployment
 
 on:
   schedule:
-    - cron: '30 22 * * FRI'  # Every Friday at 10:30 PM UTC
+    - cron: "30 22 * * FRI" # Every Friday at 10:30 PM UTC
   workflow_dispatch:
     inputs:
       force_deploy:
-        description: '[TESTING] Force deployment regardless of code freeze status'
+        description: "[TESTING] Force deployment regardless of code freeze status"
         type: boolean
         default: false
       override_week:
-        description: '[TESTING] Override week number (empty = use current week, even number = deploy)'
+        description: "[TESTING] Override week number (empty = use current week, even number = deploy)"
         required: false
         type: string
 
@@ -22,7 +22,7 @@ jobs:
       actions: read
       issues: write
       id-token: write # required for dd-octo-sts OIDC token
-    
+
     steps:
       - name: Calculate week number
         id: week
@@ -52,17 +52,25 @@ jobs:
             echo "should_proceed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Get GitHub Token via dd-octo-sts
+        if: steps.should_run.outputs.should_proceed == 'true'
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.scheduled-aas-deploy
+
       # Check skip milestone
       - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
         if: steps.should_run.outputs.should_proceed == 'true'
-        name: 'Check Skip Milestone'
+        name: "Check Skip Milestone"
         id: skip_milestone
         with:
           route: GET /repos/{owner}/{repo}/milestones/183 # Skip Scheduled Code Freeze milestone ID
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
 
       - name: Process skip state
         if: steps.should_run.outputs.should_proceed == 'true'
@@ -81,14 +89,14 @@ jobs:
       # Close skip milestone if we're skipping
       - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
         if: steps.should_run.outputs.should_proceed == 'true' && steps.check_skip.outputs.should_proceed == 'false'
-        name: 'Close Skip Milestone'
+        name: "Close Skip Milestone"
         with:
           route: PATCH /repos/{owner}/{repo}/milestones/183 # Skip Scheduled Code Freeze milestone ID
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
           state: closed
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
 
       # Checkout and deploy if we should proceed
       - name: Clone repository
@@ -105,6 +113,6 @@ jobs:
 
       - uses: ./.github/actions/deploy-aas-dev-apps
         if: steps.check_skip.outputs.should_proceed == 'true'
-        name: 'Trigger AAS deploy'
+        name: "Trigger AAS deploy"
         with:
           github_token: ${{ steps.octo-sts.outputs.token }}
