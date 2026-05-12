@@ -11,7 +11,6 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -99,7 +98,6 @@ namespace Datadog.Trace.ClrProfiler
                         if (iastEnabled)
                         {
                             Log.Debug("Enabling Iast call target category");
-                            Iast.Iast.Instance.InitAnalyzers();
                             EnableTracerInstrumentations(InstrumentationCategory.Iast);
                         }
                     }
@@ -334,24 +332,6 @@ namespace Datadog.Trace.ClrProfiler
         [Pure]
         private static bool SkipAspNetCoreDiagnosticObserver() => false;
 #endif
-
-        // /!\ This method is called by reflection in the SampleHelpers
-        // If you remove it then you need to provide an alternative way to wait for the discovery service
-        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
-        {
-            var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            // Stop waiting if we're shutting down
-            LifetimeManager.Instance.AddShutdownTask(_ => tc.TrySetResult(false));
-
-            discoveryService.SubscribeToChanges(Callback);
-            return await tc.Task.ConfigureAwait(false);
-
-            void Callback(AgentConfiguration x)
-            {
-                tc.TrySetResult(true);
-                discoveryService.RemoveSubscription(Callback);
-            }
-        }
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {

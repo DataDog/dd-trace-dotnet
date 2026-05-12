@@ -7,7 +7,6 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
@@ -25,8 +24,6 @@ internal sealed class Iast
     private static object _globalInstanceLock = new();
     private readonly IastSettings _settings;
     private readonly OverheadController _overheadController;
-    private IDiscoveryService? _discoveryService;
-    private bool _spanMetaStructs;
 
     static Iast()
     {
@@ -44,13 +41,6 @@ internal sealed class Iast
     {
         _settings = settings;
         _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
-    }
-
-    internal Iast(IastSettings settings, IDiscoveryService discoveryService)
-        : this(settings)
-    {
-        _discoveryService = discoveryService;
-        SubscribeToDiscoveryService(_discoveryService);
     }
 
     internal IastSettings Settings => _settings;
@@ -72,28 +62,5 @@ internal sealed class Iast
                 _globalInstanceInitialized = true;
             }
         }
-    }
-
-    internal void InitAnalyzers()
-    {
-        if (_settings.Enabled)
-        {
-        }
-    }
-
-    internal bool IsMetaStructSupported()
-    {
-        if (_discoveryService is null)
-        {
-            _discoveryService = Tracer.Instance.TracerManager.DiscoveryService;
-            SubscribeToDiscoveryService(_discoveryService);
-        }
-
-        return _spanMetaStructs;
-    }
-
-    private void SubscribeToDiscoveryService(IDiscoveryService discoveryService)
-    {
-        discoveryService.SubscribeToChanges(config => _spanMetaStructs = config.SpanMetaStructs);
     }
 }

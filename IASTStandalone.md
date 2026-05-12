@@ -482,6 +482,67 @@ Removed the native LibDatadog interop layer. IAST does not use the Datadog data 
 
 Removed DBM (`DatabaseMonitoring/`) — comment propagation for SQL query tagging. IAST detects SQL injection directly; no DBM needed.
 
+### Agent transport neutralised — NullAgentWriter
+
+Spans are still created and managed in-process (IAST's request lifecycle depends on `TraceContext` + `IastRequestContext`), but nothing is ever transmitted to an agent.
+
+| Change | Details |
+|---|---|
+| New `Agent/NullAgentWriter.cs` | Implements `IAgentWriter` with no-ops: `WriteTrace` discards immediately, `Ping()` returns `true`, flush methods return `Task.CompletedTask` |
+| `TracerManagerFactory.GetAgentWriter` | Now returns `NullAgentWriter.Instance` unconditionally — `AgentWriter`, `ManagedApi`, `StatsAggregator` are dead code |
+| `AspNetCoreTestFixture` | `MockTracerAgent Agent` property removed. `StartSample(null, ...)` — `null` agent causes `EnvironmentHelper.ConfigureTransportVariables` to return early (null guard added). Health check no longer waits for a span — HTTP 200 is sufficient. `WaitForSpans` replaced with `SendHttpRequestAndWait`. |
+| `IisFixture` | `MockTracerAgent` completely removed. `StartIISExpress` no longer takes an agent parameter — passes `null` to `ProfilerHelper`. |
+| `EnvironmentHelper.ConfigureTransportVariables` | Added `if (agent is null) return;` guard. `TelemetryEnabled` access made null-safe. |
+| `TestHelper.StartIISExpress` | `MockTracerAgent agent` parameter removed. |
+| `AspNetBase.SendRequestsAsync` | New agent-free overloads: `SendRequestsAsync(params string[] urls)`, `SendRequestsAsync(int count, params string[] urls)`, `SendRequestsAsync(string url, string body, ...)`. All 86 IAST test call sites updated to drop the agent argument. |
+
+### Test infrastructure cleanup
+
+Deleted all test helper code that existed solely to support the old span-based verification approach. These files were unused once all integration tests were migrated to JSONL.
+
+**Deleted from `Datadog.Trace.TestHelpers/`:**
+
+| File | Purpose |
+|---|---|
+| `MockSpan.cs`, `MockSpanEvent.cs`, `MockSpanLink.cs` | Span model |
+| `MockHttpRequest.cs`, `MockTracerResponse.cs` | HTTP mock models |
+| `MockAttributeAnyValue.cs`, `MockAttributeArray.cs`, `MockAttributeArrayValue.cs` | OTel attribute mocks |
+| `LogEntryWatcher.cs`, `LogSettingsHelper.cs` | Log monitoring |
+| `SpanAssertion.cs`, `SpanAdditionalTagsAssertion.cs`, `SpanPropertyAssertion.cs`, `SpanTagAssertion.cs` | Span assertion DSL |
+| `Stats/MockClientGroupedStats.cs`, `MockClientStatsBucket.cs`, `MockClientStatsPayload.cs` | StatsD mocks |
+| `TestTracer/ScopedTracer.cs`, `TestTracer/TracerHelper.cs` | Tracer test utilities |
+| `PlatformHelpers/AzureAppServiceHelper.cs`, `PlatformHelpers/GcpHelper.cs` | Cloud platform helpers |
+| `TestTransports.cs`, `UnixDomainSocketConfig.cs`, `WindowsPipesConfig.cs` | Transport configuration |
+| `UnixSignalHelper.cs`, `TelemetryRestorerAttribute.cs`, `Result.cs`, `PublicApiTestsBase.cs` | Miscellaneous |
+| `AlphabeticalOrderer.cs`, `AzureAppServicesTestCollection.cs` | Test ordering/collection |
+
+**Deleted from `Datadog.Trace.TestHelpers.AutoInstrumentation/`:**
+
+| File | Purpose |
+|---|---|
+| `Containers/AerospikeFixture.cs`, `ContainerFixture.cs`, `ContainersRegistry.cs` | Docker container fixtures |
+| `DockerTestFramework.cs`, `ErrorHelpers.cs` | Docker test utilities |
+| `Ci/MockCIVisibilityEvent.cs`, `MockCIVisibilityProtocol.cs`, `MockCIVisibilityTest.cs`, `MockCIVisibilityTestModule.cs` | CI visibility mocks |
+
+**Deleted from `Datadog.Trace.Security.IntegrationTests/`:**
+
+| File | Purpose |
+|---|---|
+| `IAST/IastVerifyScrubberExtensions.cs` | Span-based IAST scrubbers (no longer needed) |
+| ~142 lines from `AspNetBase.cs` | Span-reading methods (`WaitForSpansAsync`, `VerifySpans`, etc.) |
+
+**Vendored library removals:**
+
+| Library | Notes |
+|---|---|
+| `Vendors/Newtonsoft.Json/` | Replaced by direct `Newtonsoft.Json` NuGet package reference |
+| `System.Memory` vendored source | Runtime provides it |
+| `System.Collections.Immutable` vendored source | Runtime provides it |
+
+### Sample app cleanup
+
+Deleted `Samples.Security.AspNetCoreBare/` — this sample was referenced by no integration test or build file and had no IAST coverage.
+
 ### Hardcoded secrets removal
 
 Removed hardcoded secrets detection entirely — both managed and native sides. Hardcoded secrets is a static analysis concern (scans bytecode for literal patterns) and is not an IAST vulnerability (IAST is about runtime taint flow). It was also broken and unmaintained.
@@ -612,7 +673,7 @@ Native CLR Profiler (IL rewriting)
             → Appended as JSON line to DD_IAST_VULNERABILITY_LOG_PATH
 ```
 
-Span tags and agent transport are still used for request lifecycle (spans exist), but vulnerabilities are **additionally** written to the JSONL file in parallel. The long-term goal is to remove the span dependency entirely (see "Future Work" below).
+Spans are still created in-process (IAST request context is initialised on the web span), but `NullAgentWriter` discards all traces immediately — nothing is ever transmitted to an agent. The remaining work is to remove the span creation itself and replace it with a lightweight request lifecycle hook.
 
 ### IAST Module Structure
 
@@ -635,10 +696,11 @@ Span tags and agent transport are still used for request lifecycle (spans exist)
 - Component-level tests using Moq: redaction, deduplication, settings, taint tracking, vulnerability batching
 - Subdirectory `Tainted/` (12 files) for taint-specific tests
 
-**Integration tests** (11 files): `tracer/test/Datadog.Trace.Security.IntegrationTests/IAST/`
-- Full end-to-end tests with real ASP.NET/ASP.NET Core apps
+**Integration tests**: `tracer/test/Datadog.Trace.Security.IntegrationTests/IAST/`
+- All test files fully migrated to JSONL verification: `AspNetCore5IastTests`, `AspNetCore2IastTests`, `AspNetMvc5IastTests`, `AspNetWebFormsWithIast`, `AspNetCore5IastDbTests`, `GrpcDotNetTests`, `WeakCipherTests`, `DeduplicationTests`
 - JSONL output verified against Verify snapshots in `test/snapshots/`
-- Test applications under `tracer/test/test-applications/security/`
+- Shared helper: `VulnerabilityJsonl.cs` — `ReadRecords`, `VerifyRecordsAsync`, `Sanitize` (port scrubbing, line removal, Razor namespace normalisation)
+- Test applications: `Samples.Security.AspNetCore2/`, `Samples.Security.AspNetCore5/`, `aspnet/` (MVC5, WebApi, WebForms). `AspNetCoreBare` deleted.
 
 ---
 
@@ -671,7 +733,7 @@ What IAST still relies on from the surrounding tracer. Drives the remaining work
 | **`Span` / `Scope`** | `IastModule.cs`, `IastRequestContext.cs` | Vulnerabilities stored as span tags; standalone spans created for startup vulnerabilities (directory listing, session timeout) |
 | **`TraceContext`** | `TraceContext.cs:38,111,133` | Holds `IastRequestContext` as a field; `EnableIastInRequest()` initializes it |
 | **`SamplingPriority`** | `IastModule.cs` | Force-keeps traces with vulnerabilities |
-| **Agent transport** | Indirect via span pipeline | Vulnerabilities still ride on spans (in addition to JSONL) |
+| **Agent transport** | Indirect via span pipeline | ✅ Neutralised — `NullAgentWriter` discards all traces; no agent needed |
 
 ### Moderate (simplify or keep)
 
@@ -691,9 +753,9 @@ What IAST still relies on from the surrounding tracer. Drives the remaining work
 | **Evidence redaction** (`SensitiveData/`) | Local-only tool — no need to mask data |
 | **AppSec / WAF / RASP** | ✅ Done |
 | **Telemetry to backend** (`Iast/Telemetry/`, `Datadog.Trace/Telemetry/`) | ✅ Iast/Telemetry/ deleted; outer `Telemetry/` neutralized |
-| **Agent discovery service** | Pending (no agent in standalone mode) |
-| **Sampling infrastructure** | Pending (no traces to sample) |
-| **Span tags / MetaStruct serialization** | Pending — JSONL writes in parallel today |
+| **Agent discovery service** | ✅ No longer needed — `NullAgentWriter` requires no agent |
+| **Sampling infrastructure** | Pending (no traces to sample once spans are removed) |
+| **Span tags / MetaStruct serialization** | Pending — spans still created but not sent; VulnerabilityBatch still serialises |
 | **`InstrumentationCategory.IastRasp`** aspects | ✅ Done |
 
 ---
@@ -728,11 +790,11 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 - Delete `Iast/SensitiveData/` (9 files)
 - Remove redaction calls from `VulnerabilityBatch` and `IastModule`
 
-### Phase 4 — Remove telemetry and agent dependencies (partial)
+### Phase 4 — Remove telemetry and agent dependencies ✅ Done
 - ~~Delete `Iast/Telemetry/` (2 files)~~ ✅ Done
 - ~~Remove all `TelemetryFactory` / metric emissions from IAST code~~ ✅ Done (neutralized)
 - ~~Delete `LibDatadog/`~~ ✅ Done
-- Still pending: delete `Agent/`, `HttpOverStreams/` directories
+- ~~Neutralise agent transport~~ ✅ Done (`NullAgentWriter` — no agent needed at runtime or in tests)
 
 ### Phase 5 — Gut non-IAST code (mostly done)
 - ~~Delete DataStreamsMonitoring~~ ✅ Done
@@ -747,10 +809,13 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 - Remove `TracerSettings`, `ExporterSettings`, `IntegrationSettings`
 
 ### Phase 7 — Adapt tests ✅ Done
-- ~~Rework integration tests to validate JSONL file output~~ ✅ Done (Verify snapshots)
+- ~~Rework integration tests to validate JSONL file output~~ ✅ Done (Verify snapshots, all frameworks)
 - ~~Remove non-IAST test projects~~ ✅ Done (16 projects removed)
 - ~~Remove IAST-disabled test classes and `EnableIast` infrastructure~~ ✅ Done
 - ~~Fix process leak in `AspNetCoreTestFixture.Dispose()`~~ ✅ Done (2s timeout + try-catch on shutdown request)
+- ~~Remove `MockTracerAgent` from test fixtures~~ ✅ Done (`NullAgentWriter` handles transport; fixtures no longer create or expose agents)
+- ~~Remove `MockTracerAgent` from `SendRequestsAsync` call sites~~ ✅ Done (86 call sites updated)
+- ~~Extract shared JSONL helpers~~ ✅ Done (`VulnerabilityJsonl.cs` — `ReadRecords`, `VerifyRecordsAsync`, `Sanitize`)
 - Still pending: fix unit tests to work without tracer mocks
 
 ---

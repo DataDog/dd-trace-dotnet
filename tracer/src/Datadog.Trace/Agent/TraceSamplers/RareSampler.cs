@@ -92,27 +92,11 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private bool SampleSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span, IsOtlp);
-            var isNewKey = _keys.Add(key);
-
-            if (isNewKey)
-            {
-                span.Tags.SetMetric(Metrics.RareSpan, 1);
-                UpdateCache(key);
-            }
-
-            return isNewKey;
+            return true;
         }
 
         private void UpdateSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span, IsOtlp);
-            var isNewKey = _keys.Add(key);
-
-            if (isNewKey)
-            {
-                UpdateCache(key);
-            }
         }
 
         private void UpdateCache(StatsAggregationKey key)

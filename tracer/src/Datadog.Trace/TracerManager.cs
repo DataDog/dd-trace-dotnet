@@ -10,7 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -58,7 +57,6 @@ namespace Datadog.Trace
             IScopeManager scopeManager,
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
-            IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -74,7 +72,6 @@ namespace Datadog.Trace
             GitMetadataTagsProvider = gitMetadataTagsProvider;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
-            DiscoveryService = discoveryService;
             TraceProcessors = traceProcessors ?? [];
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
@@ -150,8 +147,6 @@ namespace Datadog.Trace
         public ITagProcessor[] TagProcessors { get; }
 
         public ITelemetryController Telemetry { get; }
-
-        public IDiscoveryService DiscoveryService { get; }
 
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
@@ -239,11 +234,6 @@ namespace Datadog.Trace
                 }
 
                 var discoveryReplaced = false;
-                if (oldManager.DiscoveryService != newManager.DiscoveryService && oldManager.DiscoveryService is not null)
-                {
-                    discoveryReplaced = true;
-                    await oldManager.DiscoveryService.DisposeAsync().ConfigureAwait(false);
-                }
 
                 var dynamicConfigurationManagerReplaced = false;
                 if (oldManager.DynamicConfigurationManager != newManager.DynamicConfigurationManager && oldManager.DynamicConfigurationManager is not null)
@@ -627,10 +617,9 @@ namespace Datadog.Trace
                     Log.Debug("Disposing DirectLogSubmission.");
                     var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DiscoveryService.");
-                    var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask).ConfigureAwait(false);
 
                     Log.Debug("Disposing Telemetry");
                     if (instance.Telemetry is { })

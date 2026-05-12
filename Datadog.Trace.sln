@@ -74,8 +74,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebApi", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebForms", "tracer\test\test-applications\security\aspnet\Samples.Security.WebForms\Samples.Security.WebForms.csproj", "{C861221D-9C3B-441F-BBD5-343F49B9DD10}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCoreBare", "tracer\test\test-applications\security\Samples.Security.AspNetCoreBare\Samples.Security.AspNetCoreBare.csproj", "{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ProcessStart", "tracer\test\test-applications\integrations\Samples.ProcessStart\Samples.ProcessStart.csproj", "{B1F9F419-87E1-4B59-A954-9895FCD7949E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.TestHelpers.AutoInstrumentation", "tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj", "{FFF9AF47-7556-4B38-8BAC-1CB51EDF8F7A}"
@@ -89,14 +87,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore2", "tracer\test\test-applications\security\Samples.Security.AspNetCore2\Samples.Security.AspNetCore2.csproj", "{C5E7978A-DE2A-4944-86DB-4721A110E720}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.InstrumentedTests", "tracer\test\test-applications\integrations\Samples.InstrumentedTests\Samples.InstrumentedTests.csproj", "{753BE7E5-5199-53B2-DE69-43A05E78C2C8}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tracer", "tracer", "{37327733-E955-A410-2082-0DA02DCDC37C}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{98FDE921-7921-D619-BDDB-1048E2F771C2}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-applications", "test-applications", "{A3A2FB7D-4F81-4CD8-C9DD-0EC96E50CF58}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integrations", "{826CC548-CA10-E736-9B8C-11F9FD98E92D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Deduplication", "tracer\test\test-applications\integrations\Samples.Deduplication\Samples.Deduplication.csproj", "{99039F0D-CF8F-4487-A666-2B714CC197B5}"
 EndProject
@@ -244,18 +234,6 @@ Global
 		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x64.Build.0 = Release|Any CPU
 		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x86.ActiveCfg = Release|Any CPU
 		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x86.Build.0 = Release|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Debug|x64.Build.0 = Debug|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Debug|x86.Build.0 = Debug|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Release|x64.ActiveCfg = Release|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Release|x64.Build.0 = Release|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Release|x86.ActiveCfg = Release|Any CPU
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD}.Release|x86.Build.0 = Release|Any CPU
 		{B1F9F419-87E1-4B59-A954-9895FCD7949E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B1F9F419-87E1-4B59-A954-9895FCD7949E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1F9F419-87E1-4B59-A954-9895FCD7949E}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -384,7 +362,6 @@ Global
 		{C49095FE-A186-4DED-8DC1-02CE8A42F56B} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{B02AA609-811D-478B-94CE-D614CCAA687E} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
 		{C861221D-9C3B-441F-BBD5-343F49B9DD10} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
-		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{B1F9F419-87E1-4B59-A954-9895FCD7949E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{FFF9AF47-7556-4B38-8BAC-1CB51EDF8F7A} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{43C696FA-3812-4312-9529-98CECCD32A81} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
@@ -392,9 +369,6 @@ Global
 		{87D57940-9A6E-473C-A4D6-777E3BAFD5F9} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{C5E7978A-DE2A-4944-86DB-4721A110E720} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{753BE7E5-5199-53B2-DE69-43A05E78C2C8} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
-		{98FDE921-7921-D619-BDDB-1048E2F771C2} = {37327733-E955-A410-2082-0DA02DCDC37C}
-		{A3A2FB7D-4F81-4CD8-C9DD-0EC96E50CF58} = {98FDE921-7921-D619-BDDB-1048E2F771C2}
-		{826CC548-CA10-E736-9B8C-11F9FD98E92D} = {A3A2FB7D-4F81-4CD8-C9DD-0EC96E50CF58}
 		{99039F0D-CF8F-4487-A666-2B714CC197B5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{7707A74D-E1C3-45C4-B556-21F31C7A3015} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
@@ -413,6 +387,5 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c5e7978a-de2a-4944-86db-4721a110e720}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c861221d-9c3b-441f-bbd5-343f49b9dd10}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{f5582f54-e911-4258-b419-5e894d338c5b}*SharedItemsImports = 4
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{f6a03b6c-ebf9-4581-9904-edc7270cf3bd}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

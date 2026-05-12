@@ -1,4 +1,4 @@
-﻿// <copyright file="IastRequestContext.cs" company="Datadog">
+// <copyright file="IastRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -66,21 +66,10 @@ internal sealed class IastRequestContext
 
             if (_vulnerabilityBatch != null)
             {
-                if (Iast.Instance.IsMetaStructSupported())
+                span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+                if (_vulnerabilityBatch.IsTruncated())
                 {
-                    span.SetMetaStruct(IastModule.IastMetaStructKey, _vulnerabilityBatch.ToMessagePack());
-                    if (_vulnerabilityBatch.IsTruncated())
-                    {
-                        span.Tags.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
-                    }
-                }
-                else
-                {
-                    span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
-                    if (_vulnerabilityBatch.IsTruncated())
-                    {
-                        span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
-                    }
+                    span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
                 }
             }
         }

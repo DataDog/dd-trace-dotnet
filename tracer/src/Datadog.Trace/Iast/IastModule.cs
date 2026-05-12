@@ -1,4 +1,4 @@
-﻿// <copyright file="IastModule.cs" company="Datadog">
+// <copyright file="IastModule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -745,23 +745,10 @@ internal static partial class IastModule
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
         var span = scope.Span;
 
-        if (Iast.Instance.IsMetaStructSupported())
+        tags.IastJson = batch.ToJson();
+        if (batch.IsTruncated())
         {
-            var iastEventMetaStruct = batch.ToMessagePack();
-            if (batch.IsTruncated())
-            {
-                span.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
-            }
-
-            span.SetMetaStruct(IastMetaStructKey, iastEventMetaStruct);
-        }
-        else
-        {
-            tags.IastJson = batch.ToJson();
-            if (batch.IsTruncated())
-            {
-                span.SetTag(Tags.IastJsonTagSizeExceeded, "1");
-            }
+            span.SetTag(Tags.IastJsonTagSizeExceeded, "1");
         }
 
         var traceContext = span.Context.TraceContext;
