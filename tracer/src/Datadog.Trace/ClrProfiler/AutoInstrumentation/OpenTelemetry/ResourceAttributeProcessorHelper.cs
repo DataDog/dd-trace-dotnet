@@ -58,11 +58,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return;
             }
 
-            // When CallTarget-based Activity interception is enabled, the Datadog span doesn't exist yet
-            // (this OnStart fires during Activity.Start(), before ActivityStartIntegration.OnMethodEnd).
-            // Stash the raw resource object on the activity so OnMethodEnd can apply it to the span.
-            // This naturally handles multiple TracerProviders with different resources, since each Activity
-            // carries the resource of the provider that started it.
+            // When CallTarget-based Activity interception is enabled, this OnStart fires at different
+            // points depending on the loaded DiagnosticSource version:
+            //
+            //  - DS 6.0+: from inside Activity.Start() — BEFORE ActivityStartIntegration.OnMethodEnd
+            //    creates the Datadog scope. Stash the Resource on the activity so OnMethodEnd can read
+            //    it back when it creates the span.
+            //  - DS 5.x: from inside ActivitySource.StartActivity, AFTER Activity.CreateAndStart returns
+            //    (and therefore AFTER ActivityCreateAndStartIntegration.OnMethodEnd has already created
+            //    the scope). The stash on the activity is too late to be read by OnMethodEnd, so apply
+            //    the Resource directly to the existing span instead.
+            //
+            // Both branches handle multiple TracerProviders with different resources correctly, since
+            // each Activity carries the resource of the provider that started it.
             if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
             {
                 if (baseProcessor.ParentProvider is not null
@@ -70,6 +78,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 {
                     var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
                     activity5.SetCustomProperty(ActivityCustomPropertyKeys.Resource, resourceObject);
+
+                    // DS 5.x path: scope already exists; apply the Resource directly. On DS 6.0+ this
+                    // is a no-op because OnMethodEnd hasn't run yet so __dd_span__ isn't set.
+                    if (activity5.GetCustomProperty(ActivityCustomPropertyKeys.Span) is Scope scope
+                     && resourceObject.TryDuckCast<IResource>(out var resource))
+                    {
+                        ApplyResourceToSpan(scope.Span, resource);
+                    }
                 }
 
                 return;
