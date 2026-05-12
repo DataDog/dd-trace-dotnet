@@ -215,7 +215,8 @@ public class AssemblyBrowser : IDisposable
 
     private static bool IsCompilerGenerated(IHasCustomAttribute member)
     {
-        return member.CustomAttributes.Any(a => a.TypeFullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+        return member.CustomAttributes.Any(a => a.TypeFullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")
+            || (member is TypeDef type && type.Name.String.StartsWith("<>", StringComparison.Ordinal));
     }
 
     private static bool MatchesParameterTypes(MethodDef method, string[] parameterTypes)
