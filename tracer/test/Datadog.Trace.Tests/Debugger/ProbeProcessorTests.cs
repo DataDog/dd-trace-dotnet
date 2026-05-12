@@ -8,7 +8,6 @@ using System.Reflection;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
@@ -77,6 +76,63 @@ public class ProbeProcessorTests
         Assert.Equal(1, sampler.SampleCalls);
     }
 
+    [Fact]
+    public void CaptureExpressionOnlyProbeEvaluatesAndSerializesResults()
+    {
+        var processor = CreateCaptureExpressionProbeProcessor();
+        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
+
+        Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "inputValue", "testValue"));
+        Assert.True(ProcessLogLocal(processor, snapshotCreator, in probeData, method, "localValue", 9));
+        Assert.True(ProcessExitEnd(processor, snapshotCreator, in probeData, method));
+    }
+
+    [Fact]
+    public void CaptureExpressionOnlyProbeIgnoresNullCaptureExpressionEntries()
+    {
+        var processor = CreateCaptureExpressionProbeProcessor(includeNullEntry: true);
+        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
+
+        Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "inputValue", "testValue"));
+        Assert.True(ProcessExitEnd(processor, snapshotCreator, in probeData, method));
+    }
+
+    [Fact]
+    public void CaptureExpressionOnlyProbeIgnoresEmptyNameCaptureExpressionEntries()
+    {
+        var processor = CreateCaptureExpressionProbeProcessor(includeEmptyNameEntry: true);
+        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
+
+        Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "inputValue", "testValue"));
+        Assert.True(ProcessExitEnd(processor, snapshotCreator, in probeData, method));
+    }
+
+    [Fact]
+    public void CaptureExpressionOnlyProbeDropsSnapshotWhenNoExpressionsCaptureValues()
+    {
+        var processor = CreateUndefinedCaptureExpressionProbeProcessor();
+        var snapshotCreator = (DebuggerSnapshotCreator)processor.CreateSnapshotCreator();
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
+
+        Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
+        Assert.False(ProcessExitEnd(processor, snapshotCreator, in probeData, method));
+        Assert.Equal(0, sampler.SampleCalls);
+    }
+
     private static ProbeProcessor CreateConditionalProbeProcessor()
     {
         return new ProbeProcessor(
@@ -92,6 +148,53 @@ public class ProbeProcessorTests
                     MethodName = nameof(SampleTarget.Execute)
                 },
                 When = new SnapshotSegment(dsl: string.Empty, json: InvalidConditionJson, str: string.Empty)
+            });
+    }
+
+    private static ProbeProcessor CreateCaptureExpressionProbeProcessor(bool includeNullEntry = false, bool includeEmptyNameEntry = false)
+    {
+        return new ProbeProcessor(
+            new LogProbe
+            {
+                Id = "probe-id",
+                CaptureSnapshot = false,
+                EvaluateAt = EvaluateAt.Exit,
+                Tags = [],
+                Where = new Where
+                {
+                    TypeName = typeof(SampleTarget).FullName!,
+                    MethodName = nameof(SampleTarget.ExecuteWithValue)
+                },
+                CaptureExpressions =
+                    includeNullEntry
+                        ? [null, new CaptureExpression { Name = "inputValue", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""inputValue""}", null) }]
+                        : includeEmptyNameEntry
+                            ? [new CaptureExpression { Name = string.Empty, Expr = new SnapshotSegment(string.Empty, @"{""ref"":""localValue""}", null) }, new CaptureExpression { Name = "inputValue", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""inputValue""}", null) }]
+                        : [
+                            new CaptureExpression { Name = "inputValue", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""inputValue""}", null) },
+                            new CaptureExpression { Name = "localValue", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""localValue""}", null) }
+                        ]
+            });
+    }
+
+    private static ProbeProcessor CreateUndefinedCaptureExpressionProbeProcessor()
+    {
+        return new ProbeProcessor(
+            new LogProbe
+            {
+                Id = "probe-id",
+                CaptureSnapshot = false,
+                EvaluateAt = EvaluateAt.Exit,
+                Tags = [],
+                Where = new Where
+                {
+                    TypeName = typeof(SampleTarget).FullName!,
+                    MethodName = nameof(SampleTarget.ExecuteWithValue)
+                },
+                CaptureExpressions =
+                [
+                    new CaptureExpression { Name = "missingValue" }
+                ]
             });
     }
 
@@ -143,6 +246,67 @@ public class ProbeProcessorTests
         return processor.Process(ref captureInfo, snapshotCreator, in probeData);
     }
 
+    private static bool ProcessExitStart(ProbeProcessor processor, DebuggerSnapshotCreator snapshotCreator, in ProbeData probeData, MethodInfo method)
+    {
+        var captureInfo = new CaptureInfo<string>(
+            methodMetadataIndex: 0,
+            methodState: MethodState.ExitStart,
+            value: "result",
+            name: "@return",
+            method: method,
+            type: typeof(string),
+            invocationTargetType: method.DeclaringType!,
+            memberKind: ScopeMemberKind.Return,
+            localsCount: 1,
+            argumentsCount: 1);
+
+        return processor.Process(ref captureInfo, snapshotCreator, in probeData);
+    }
+
+    private static bool ProcessLogArg<T>(ProbeProcessor processor, DebuggerSnapshotCreator snapshotCreator, in ProbeData probeData, MethodInfo method, string name, T value)
+    {
+        var captureInfo = new CaptureInfo<T>(
+            methodMetadataIndex: 0,
+            methodState: MethodState.LogArg,
+            name: name,
+            value: value,
+            method: method,
+            type: value?.GetType() ?? typeof(T),
+            invocationTargetType: method.DeclaringType!,
+            memberKind: ScopeMemberKind.Argument);
+
+        return processor.Process(ref captureInfo, snapshotCreator, in probeData);
+    }
+
+    private static bool ProcessLogLocal<T>(ProbeProcessor processor, DebuggerSnapshotCreator snapshotCreator, in ProbeData probeData, MethodInfo method, string name, T value)
+    {
+        var captureInfo = new CaptureInfo<T>(
+            methodMetadataIndex: 0,
+            methodState: MethodState.LogLocal,
+            name: name,
+            value: value,
+            method: method,
+            type: value?.GetType() ?? typeof(T),
+            invocationTargetType: method.DeclaringType!,
+            memberKind: ScopeMemberKind.Local);
+
+        return processor.Process(ref captureInfo, snapshotCreator, in probeData);
+    }
+
+    private static bool ProcessExitEnd(ProbeProcessor processor, DebuggerSnapshotCreator snapshotCreator, in ProbeData probeData, MethodInfo method)
+    {
+        var captureInfo = new CaptureInfo<SampleTarget>(
+            methodMetadataIndex: 0,
+            methodState: MethodState.ExitEnd,
+            value: new SampleTarget(),
+            method: method,
+            type: typeof(SampleTarget),
+            invocationTargetType: typeof(SampleTarget),
+            memberKind: ScopeMemberKind.This);
+
+        return processor.Process(ref captureInfo, snapshotCreator, in probeData);
+    }
+
     private static void ClearMethodScopeMembers(DebuggerSnapshotCreator snapshotCreator)
     {
         typeof(DebuggerSnapshotCreator)
@@ -154,6 +318,12 @@ public class ProbeProcessorTests
     {
         public void Execute()
         {
+        }
+
+        public string ExecuteWithValue(string inputValue)
+        {
+            var localValue = inputValue.Length;
+            return localValue.ToString();
         }
     }
 

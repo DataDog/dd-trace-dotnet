@@ -169,6 +169,43 @@ public class ProbeConfigurationComparerTests
     }
 
     [Fact]
+    public void CurrentSnapshotsCaptureExpressionChanged_ProbeRelatedChanged()
+    {
+        var current = new ProbeConfiguration
+        {
+            LogProbes = new LogProbe[]
+            {
+                new()
+                {
+                    Id = "probe",
+                    CaptureExpressions =
+                    [
+                        new CaptureExpression { Name = "value", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""value""}", null) }
+                    ]
+                }
+            }
+        };
+        var incoming = new ProbeConfiguration
+        {
+            LogProbes = new LogProbe[]
+            {
+                new()
+                {
+                    Id = "probe",
+                    CaptureExpressions =
+                    [
+                        new CaptureExpression { Name = "value", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""otherValue""}", null) }
+                    ]
+                }
+            }
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeTrue();
+    }
+
+    [Fact]
     public void CurrentSnaphotsWhereValue_IncomingSnapshotsWhereSameValue_ProbeRelatedChanged()
     {
         var current = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };

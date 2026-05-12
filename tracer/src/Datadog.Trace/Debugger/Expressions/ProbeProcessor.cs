@@ -33,6 +33,7 @@ namespace Datadog.Trace.Debugger.Expressions
         private DebuggerExpression? _condition;
         private DebuggerExpression? _metric;
         private KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? _spanDecorations;
+        private CaptureExpressionDefinition[]? _captureExpressions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
@@ -48,6 +49,8 @@ namespace Datadog.Trace.Debugger.Expressions
         internal ProbeInfo ProbeInfo { get; private set; }
 
         private bool IsMetricCountWithoutExpression => ProbeInfo.ProbeType == ProbeType.Metric && (_metric?.Json == null) && ProbeInfo.MetricKind == MetricKind.COUNT;
+
+        private bool ShouldCaptureExpressions => !ProbeInfo.IsFullSnapshot && _captureExpressions is { Length: > 0 };
 
         private void InitializeProbeProcessor(ProbeDefinition probe)
         {
@@ -74,18 +77,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             SetExpressions(probe);
 
-            var capture = (probe as LogProbe)?.Capture;
-            var maxInfo = capture != null
-                ? new CaptureLimitInfo(
-                    MaxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
-                    MaxCollectionSize: capture.Value.MaxCollectionSize <= 0 ? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy : capture.Value.MaxCollectionSize,
-                    MaxFieldCount: capture.Value.MaxFieldCount <= 0 ? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy : capture.Value.MaxFieldCount,
-                    MaxLength: capture.Value.MaxLength <= 0 ? DebuggerSettings.DefaultMaxStringLength : capture.Value.MaxLength)
-                : new CaptureLimitInfo(
-                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
-                    MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
-                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
-                    MaxLength: DebuggerSettings.DefaultMaxStringLength);
+            var maxInfo = ToCaptureLimitInfo((probe as LogProbe)?.Capture);
 
             ProbeInfo = new ProbeInfo(
                 probe.Id,
@@ -124,19 +116,70 @@ namespace Datadog.Trace.Debugger.Expressions
             return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider);
         }
 
+        private CaptureLimitInfo ToCaptureLimitInfo(Capture? capture)
+        {
+            return capture != null
+                ? new CaptureLimitInfo(
+                    MaxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
+                    MaxCollectionSize: capture.Value.MaxCollectionSize <= 0 ? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy : capture.Value.MaxCollectionSize,
+                    MaxFieldCount: capture.Value.MaxFieldCount <= 0 ? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy : capture.Value.MaxFieldCount,
+                    MaxLength: capture.Value.MaxLength <= 0 ? DebuggerSettings.DefaultMaxStringLength : capture.Value.MaxLength)
+                : new CaptureLimitInfo(
+                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                    MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
+                    MaxLength: DebuggerSettings.DefaultMaxStringLength);
+        }
+
+        private CaptureExpressionDefinition[]? CreateCaptureExpressions(CaptureExpression[]? captureExpressions)
+        {
+            if (captureExpressions == null || captureExpressions.Length == 0)
+            {
+                return null;
+            }
+
+            var result = new List<CaptureExpressionDefinition>(captureExpressions.Length);
+            for (int i = 0; i < captureExpressions.Length; i++)
+            {
+                var captureExpression = captureExpressions[i];
+                if (captureExpression?.Name is not { Length: > 0 } name)
+                {
+                    continue;
+                }
+
+                result.Add(new CaptureExpressionDefinition(
+                    name,
+                    ToDebuggerExpression(captureExpression.Expr),
+                    ToCaptureLimitInfo(captureExpression.Capture)));
+            }
+
+            return result.Count == 0 ? null : result.ToArray();
+        }
+
         private void SetExpressions(ProbeDefinition probe)
         {
             // ReSharper disable once PossibleInvalidOperationException
             switch (probe)
             {
                 case LogProbe logProbe:
+                    _metric = null;
+                    _spanDecorations = null;
                     _templates = logProbe.Segments?.Select(ToDebuggerExpression).ToArray();
                     _condition = ToDebuggerExpression(logProbe.When);
+                    _captureExpressions = logProbe.CaptureSnapshot ? null : CreateCaptureExpressions(logProbe.CaptureExpressions);
                     break;
                 case MetricProbe metricProbe:
+                    _templates = null;
+                    _condition = null;
+                    _spanDecorations = null;
+                    _captureExpressions = null;
                     _metric = ToDebuggerExpression(metricProbe.Value);
                     break;
                 case SpanDecorationProbe spanDecorationProbe:
+                    _templates = null;
+                    _condition = null;
+                    _metric = null;
+                    _captureExpressions = null;
                     _spanDecorations = spanDecorationProbe.
                         Decorations
                       ?.Where(dec => dec != null)
@@ -160,8 +203,14 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations), null);
-            return _evaluator;
+            var evaluator = Volatile.Read(ref _evaluator);
+            if (evaluator != null)
+            {
+                return evaluator;
+            }
+
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations, _captureExpressions), null);
+            return _evaluator!;
         }
 
         public bool ShouldProcess(in ProbeData probeData)
@@ -322,6 +371,9 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             ExpressionEvaluationResult evaluationResult = default;
             shouldStopCapture = false;
+            var captureExpressionsEvaluated = false;
+            ProbeExpressionsCacheEntry? cacheEntry = null;
+            ProbeExpressionEvaluator? evaluator = null;
             try
             {
                 if (IsMetricCountWithoutExpression)
@@ -332,7 +384,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 {
                     // we are taking the duration at the evaluation time - this might be different from what we have in the snapshot
                     snapshotCreator.SetDuration();
-                    evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers!);
+                    evaluator = GetOrCreateEvaluator();
+                    evaluationResult = evaluator.Evaluate(snapshotCreator.MethodScopeMembers!, out cacheEntry);
                 }
             }
             catch (Exception e)
@@ -347,6 +400,19 @@ namespace Datadog.Trace.Debugger.Expressions
                 evaluationResult.Errors.Add(new EvaluationError { Message = $"Failed to evaluate expression for probe ID: {ProbeInfo.ProbeId}. Error: {e.Message}" });
             }
 
+            if (ShouldCaptureExpressions && evaluationResult.IsNull())
+            {
+                evaluator ??= GetOrCreateEvaluator();
+                evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
+                captureExpressionsEvaluated = true;
+            }
+
+            if (captureExpressionsEvaluated && evaluationResult.IsNull())
+            {
+                shouldStopCapture = true;
+                return evaluationResult;
+            }
+
             if (evaluationResult.IsNull())
             {
                 LogEvaluationState(snapshotCreator.MethodScopeMembers!);
@@ -355,9 +421,9 @@ namespace Datadog.Trace.Debugger.Expressions
                 evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {ProbeInfo.ProbeId}" } };
             }
 
-            if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.HasError)
+            if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.Errors is { Count: > 0 } errors)
             {
-                Log.Debug("Evaluation errors: {Errors}", evaluationResult.Errors.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
+                Log.Debug("Evaluation errors: {Errors}", errors.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
             }
 
             if (evaluationResult.Metric.HasValue && ProbeInfo.MetricKind.HasValue)
@@ -383,6 +449,13 @@ namespace Datadog.Trace.Debugger.Expressions
                     shouldStopCapture = true;
                 }
 
+                if (!shouldStopCapture && ShouldCaptureExpressions && !captureExpressionsEvaluated)
+                {
+                    evaluator ??= GetOrCreateEvaluator();
+                    evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
+                    captureExpressionsEvaluated = true;
+                }
+
                 return evaluationResult;
             }
 
@@ -395,6 +468,13 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
+            if (ShouldCaptureExpressions && !captureExpressionsEvaluated)
+            {
+                evaluator ??= GetOrCreateEvaluator();
+                evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
+                captureExpressionsEvaluated = true;
+            }
+
             return evaluationResult;
         }
 
@@ -403,7 +483,8 @@ namespace Datadog.Trace.Debugger.Expressions
             if (_templates == null
              && _condition == null
              && _metric == null
-             && _spanDecorations == null)
+             && _spanDecorations == null
+             && _captureExpressions == null)
             {
                 return;
             }
@@ -434,6 +515,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
+            var decorations = evaluationResult.Decorations;
+            if (decorations == null)
+            {
+                return;
+            }
+
             if (!TryGetScope(out var scope))
             {
                 Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", ProbeInfo.ProbeId);
@@ -442,16 +529,21 @@ namespace Datadog.Trace.Debugger.Expressions
 
             var attachedTags = false;
 
-            for (int i = 0; i < evaluationResult.Decorations.Length; i++)
+            for (int i = 0; i < decorations.Length; i++)
             {
-                var decoration = evaluationResult.Decorations[i];
-                var evaluationErrorTag = $"{DynamicPrefix}{decoration.TagName}.evaluation_error";
-                var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
+                var decoration = decorations[i];
+                if (decoration.TagName is not { Length: > 0 } tagName)
+                {
+                    continue;
+                }
+
+                var evaluationErrorTag = $"{DynamicPrefix}{tagName}.evaluation_error";
+                var probeIdTag = $"{DynamicPrefix}{tagName}.probe_id";
                 ISpan? targetSpan = null;
 
                 if (ProbeInfo.TargetSpan == null)
                 {
-                    Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span is null", decoration.TagName, ProbeInfo.ProbeId);
+                    Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span is null", tagName, ProbeInfo.ProbeId);
                 }
 
                 switch (ProbeInfo.TargetSpan)
@@ -463,17 +555,17 @@ namespace Datadog.Trace.Debugger.Expressions
                         targetSpan = scope.Span;
                         break;
                     default:
-                        Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span {Span} is invalid", decoration.TagName, ProbeInfo.ProbeId, ProbeInfo.TargetSpan);
+                        Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span {Span} is invalid", tagName, ProbeInfo.ProbeId, ProbeInfo.TargetSpan);
                         break;
                 }
 
                 if (targetSpan == null)
                 {
-                    Log.Warning("We can't set the {Tag} tag. Probe ID: {ProbeId}, because the chosen span {Span} is not available", decoration.TagName, ProbeInfo.ProbeId, ProbeInfo.TargetSpan);
+                    Log.Warning("We can't set the {Tag} tag. Probe ID: {ProbeId}, because the chosen span {Span} is not available", tagName, ProbeInfo.ProbeId, ProbeInfo.TargetSpan);
                     continue;
                 }
 
-                targetSpan.SetTag(decoration.TagName, decoration.Value);
+                targetSpan.SetTag(tagName, decoration.Value);
                 targetSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
                 if (decoration.Errors?.Length > 0)
                 {
@@ -487,7 +579,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 attachedTags = true;
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID: {ProbeId}", decoration.TagName, targetSpan.SpanId, ProbeInfo.ProbeId);
+                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID: {ProbeId}", tagName, targetSpan.SpanId, ProbeInfo.ProbeId);
                 }
             }
 
@@ -599,6 +691,12 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                     {
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                        if (ShouldCaptureExpressions && evaluationResult.HasCaptureExpressions)
+                        {
+                            snapshotCreator.StartEntry();
+                            snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
+                            snapshotCreator.EndEntry();
+                        }
                     }
 
                     if (!ProbeInfo.IsFullSnapshot)
@@ -618,6 +716,12 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                     {
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                        if (ShouldCaptureExpressions && evaluationResult.HasCaptureExpressions)
+                        {
+                            snapshotCreator.StartEntry();
+                            snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
+                            snapshotCreator.EndEntry();
+                        }
                     }
 
                     if (!ProbeInfo.IsFullSnapshot)
@@ -641,6 +745,12 @@ namespace Datadog.Trace.Debugger.Expressions
                         if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                         {
                             snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                            if (ShouldCaptureExpressions && evaluationResult.HasCaptureExpressions)
+                            {
+                                snapshotCreator.StartReturn();
+                                snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
+                                snapshotCreator.EndReturn();
+                            }
                         }
 
                         if (ProbeInfo.IsFullSnapshot)
@@ -680,6 +790,12 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                     {
                         snapshotCreator.SetEvaluationResult(ref evaluationResult);
+                        if (ShouldCaptureExpressions && evaluationResult.HasCaptureExpressions)
+                        {
+                            snapshotCreator.StartLines(info.LineCaptureInfo.LineNumber);
+                            snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
+                            snapshotCreator.EndReturn();
+                        }
                     }
 
                     if (ProbeInfo.IsFullSnapshot)

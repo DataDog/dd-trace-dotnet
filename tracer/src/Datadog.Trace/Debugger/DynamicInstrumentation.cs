@@ -330,7 +330,7 @@ namespace Datadog.Trace.Debugger
                     ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
                     break;
                 case LogProbe logProbe:
-                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot || logProbe.CaptureExpressions is { Length: > 0 } ? 1 : 5000);
                     break;
                 case SpanDecorationProbe or MetricProbe:
                     ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);

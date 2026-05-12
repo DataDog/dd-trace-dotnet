@@ -412,6 +412,11 @@ internal partial class ProbeExpressionParser<T>
             // metric
             return Expression.Return(ReturnTarget, Expression.Constant(0), typeof(T));
         }
+        else if (typeof(T) == typeof(object))
+        {
+            // capture expression
+            return Expression.Return(ReturnTarget, Expression.Constant(Expressions.UndefinedValue.Instance, typeof(object)), typeof(T));
+        }
         else
         {
             throw new ArgumentException($"Unsupported type: {typeof(T).FullName}");
