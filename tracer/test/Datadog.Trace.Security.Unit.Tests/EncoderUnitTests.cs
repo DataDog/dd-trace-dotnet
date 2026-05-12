@@ -135,6 +135,58 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         Assert.Equal(expectedLength, result.Count);
     }
 
+    [SkippableFact]
+    public void DictionaryEntriesWithEmptyKeysAreSkipped_StringValues()
+    {
+        var target = new Dictionary<string, string>
+        {
+            { "key1", "value1" },
+            { string.Empty, "skipped-middle" },
+            { "key2", "value2" },
+        };
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+
+        // Invariant 1: NbEntries reflects the count *after* skipping invalid keys.
+        // Under the bug, NbEntries remained at the original count (3) because the caller's
+        // childrenCount was never decremented.
+        intermediate.ResultDdwafObject.NbEntries.Should().Be(2UL);
+
+        // Invariant 2: the encoded slots [0, NbEntries) contain exactly the valid entries with
+        // their values intact. Under the bug, the decoder either threw (reading a zeroed slot
+        // as a null key) or surfaced stale/shifted data from beyond the valid entries.
+        var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().Contain("key1", "value1");
+        result.Should().Contain("key2", "value2");
+        result.Should().NotContainKey(string.Empty);
+    }
+
+    [SkippableFact]
+    public void DictionaryEntriesWithEmptyKeysAreSkipped_ObjectValues_EmptyKeyAtEnd()
+    {
+        // Empty key at the end exercises the worst case under the bug: the final slot is never
+        // written, so a decode that reads NbEntries=count slots reads uninitialized memory.
+        var target = new Dictionary<string, object>
+        {
+            { "key1", "value1" },
+            { "key2", 42 },
+            { string.Empty, "skipped-end" },
+        };
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+
+        intermediate.ResultDdwafObject.NbEntries.Should().Be(2UL);
+
+        var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().Contain("key1", "value1");
+        result.Should().ContainKey("key2").WhoseValue.Should().Be(42L);
+        result.Should().NotContainKey(string.Empty);
+    }
+
     [SkippableTheory]
     [InlineData(WafConstants.MaxContainerSize - 1, WafConstants.MaxContainerSize - 1)]
     [InlineData(WafConstants.MaxContainerSize, WafConstants.MaxContainerSize)]
