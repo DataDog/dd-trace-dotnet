@@ -411,7 +411,7 @@ internal readonly partial struct SecurityCoordinator
     {
         var request = _httpTransport.Context.Request;
         var headers = request.Headers;
-        var headersDic = ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
+        var headersDic = ExtractHeaders(headers.AllKeys, headers, static (collection, key) => GetHeaderValueForWaf((NameValueCollection)collection, key));
         var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);
