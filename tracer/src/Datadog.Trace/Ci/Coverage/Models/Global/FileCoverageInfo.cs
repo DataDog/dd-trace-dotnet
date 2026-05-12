@@ -83,6 +83,8 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
         {
             ExecutableBitmap = bitmapBytes;
         }
+
+        ClearData();
     }
 
     public void AggregateExecutedBitmap(byte[] bitmapBytes)
@@ -98,6 +100,16 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
         {
             ExecutedBitmap = bitmapBytes;
         }
+
+        ClearData();
+    }
+
+    /// <summary>
+    /// Clears cached count and percentage data after a direct bitmap mutation.
+    /// </summary>
+    public void ClearCachedData()
+    {
+        ClearData();
     }
 
     public void IncrementCounts(ref double total, ref double executed)

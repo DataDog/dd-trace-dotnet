@@ -43,29 +43,29 @@ internal sealed class CoverageBackfillData
     }
 
     /// <summary>
-    /// Gets a value indicating whether `meta.coverage` was present in the skippable-tests response.
+    /// Gets or sets a value indicating whether `meta.coverage` was present in the skippable-tests response.
     /// </summary>
-    public bool IsPresent { get; private set; }
+    public bool IsPresent { get; set; }
 
     /// <summary>
-    /// Gets a value indicating whether every backend bitmap was decoded successfully.
+    /// Gets or sets a value indicating whether every backend bitmap was decoded successfully.
     /// </summary>
-    public bool IsValid { get; private set; }
+    public bool IsValid { get; set; }
 
     /// <summary>
-    /// Gets the parse error that made the backend coverage unusable, when one exists.
+    /// Gets or sets the parse error that made the backend coverage unusable, when one exists.
     /// </summary>
-    public string? Error { get; private set; }
+    public string? Error { get; set; }
 
     /// <summary>
-    /// Gets the decoded executed-line bitmaps keyed by normalized repository-relative source path.
+    /// Gets or sets the decoded executed-line bitmaps keyed by normalized repository-relative source path.
     /// </summary>
-    public Dictionary<string, byte[]> ExecutedLinesByRelativePath { get; private set; }
+    public Dictionary<string, byte[]> ExecutedLinesByRelativePath { get; set; }
 
     /// <summary>
-    /// Gets the total number of decoded bitmap bytes.
+    /// Gets or sets the total number of decoded bitmap bytes.
     /// </summary>
-    public int TotalBitmapBytes { get; private set; }
+    public int TotalBitmapBytes { get; set; }
 
     /// <summary>
     /// Creates backend coverage data from the raw `meta.coverage` JSON map.

@@ -13,12 +13,15 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Coverage.Backfill;
+using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
@@ -185,11 +188,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage) &&
                     globalCoverage is not null)
                 {
+                    var backfillResult = TryApplyItrCoverageBackfill(session, globalCoverage);
+                    if (backfillResult.Applied)
+                    {
+                        File.WriteAllText(outputPath, JsonHelper.SerializeObject(globalCoverage));
+                    }
+
                     // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
                     if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
                     {
                         // Adds the global code coverage percentage to the session
                         session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                        if (backfillResult.Applied)
+                        {
+                            session.SetTag(CodeCoverageTags.Backfilled, "true");
+                        }
                     }
                 }
             }
@@ -217,6 +230,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+        }
+
+        /// <summary>
+        /// Merges backend skipped-test coverage into Datadog internal global coverage when the session actually skipped tests by ITR.
+        /// </summary>
+        /// <param name="session">The test session that will publish the coverage result.</param>
+        /// <param name="globalCoverage">The local global coverage model collected from executed tests.</param>
+        /// <returns>Result of the backfill merge operation.</returns>
+        internal static CoverageBackfillResult TryApplyItrCoverageBackfill(TestSession session, GlobalCoverageInfo globalCoverage)
+        {
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
+            if (skippableFeature?.IsCoverageBackfillRequired() != true ||
+                !skippableFeature.IsCoverageBackfillSafe() ||
+                !HasActualItrSkips(session, skippableFeature))
+            {
+                return new CoverageBackfillResult(applied: false, matchedFiles: 0, updatedFiles: 0);
+            }
+
+            var result = CoverageBackfillApplicator.ApplyToGlobalCoverage(globalCoverage, skippableFeature.GetCoverageBackfillData());
+            if (result.Applied)
+            {
+                Log.Information<int, int>(
+                    "RunCiCommand: ITR coverage backfill applied to internal coverage. MatchedFiles={MatchedFiles}, UpdatedFiles={UpdatedFiles}",
+                    result.MatchedFiles,
+                    result.UpdatedFiles);
+            }
+
+            return result;
+        }
+
+        private static bool HasActualItrSkips(TestSession session, ITestOptimizationSkippableFeature skippableFeature)
+        {
+            return skippableFeature.HasSkippedTestsByItr() ||
+                   string.Equals(session.Tags.TestsSkipped, "true", StringComparison.OrdinalIgnoreCase);
         }
 
         internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)

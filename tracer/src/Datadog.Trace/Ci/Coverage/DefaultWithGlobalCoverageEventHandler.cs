@@ -112,7 +112,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                             var filesLines = (byte*)moduleValue.FilesLines + moduleFile.Offset;
                             for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                             {
-                                if (filesLines[i] == 1)
+                                if (filesLines[i] > 0)
                                 {
                                     fileBitmap.Set(i + 1);
                                 }
@@ -123,7 +123,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                             var filesLines = (int*)moduleValue.FilesLines + moduleFile.Offset;
                             for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                             {
-                                if (filesLines[i] == 1)
+                                if (filesLines[i] > 0)
                                 {
                                     fileBitmap.Set(i + 1);
                                 }
