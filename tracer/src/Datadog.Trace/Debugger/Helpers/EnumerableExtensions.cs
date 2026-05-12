@@ -26,10 +26,9 @@ namespace Datadog.Trace.Debugger.Helpers
             return @this.SequenceEqual(other);
         }
 
-        // Array overload preferred by overload resolution when the static type is T[].
-        // Avoids the IEnumerator<T> heap allocation and interface dispatch that the IEnumerable<T>
-        // overload incurs on arrays, which matters because every current caller passes an array
-        // (Tags, AdditionalIds, Lines, Decorations, Segments, PackagePrefixes, Classes...).
+        // Array-only by design: every caller currently passes a T[] property.
+        // An IEnumerable<T> overload would allocate an enumerator and dispatch through the
+        // interface on every iteration, so we deliberately don't provide one.
         public static int NullableSequentialHashCode<T>(this T[] @this)
         {
             if (@this is null)
@@ -41,22 +40,6 @@ namespace Datadog.Trace.Debugger.Helpers
             for (var i = 0; i < @this.Length; i++)
             {
                 hashCode.Add(@this[i]);
-            }
-
-            return hashCode.ToHashCode();
-        }
-
-        public static int NullableSequentialHashCode<T>(this IEnumerable<T> @this)
-        {
-            if (ReferenceEquals(null, @this))
-            {
-                return 0;
-            }
-
-            var hashCode = new HashCode();
-            foreach (var item in @this)
-            {
-                hashCode.Add(item);
             }
 
             return hashCode.ToHashCode();

@@ -276,4 +276,54 @@ public class ProbeConfigurationComparerTests
         comparer.HasProbeRelatedChanges.Should().BeFalse();
         comparer.HasRateLimitChanged.Should().BeFalse();
     }
+
+    [Fact]
+    public void CurrentSnapshotsReparsedJsonContent_ProbeRelatedNotChanged()
+    {
+        // Reproduces the RCM re-apply scenario: two LogProbe instances that are content-
+        // identical but whose SnapshotSegment.Json fields are independently parsed JObject
+        // instances (different references, same content) - which is exactly what
+        // DynamicInstrumentation.Deserialize<LogProbe> produces on every RCM poll.
+        // Without content-based equality on SnapshotSegment, the comparer would treat
+        // the probe as added every cycle and trigger unnecessary IL re-instrumentation.
+        const string whenJson = @"{""ne"":[{""ref"":""x""},null]}";
+        const string refJson = @"{""ref"":""x""}";
+
+        var current = new ProbeConfiguration
+        {
+            LogProbes = new[]
+            {
+                new LogProbe
+                {
+                    Id = "probe-1",
+                    When = new SnapshotSegment("x != null", whenJson, string.Empty),
+                    Segments = new[]
+                    {
+                        new SnapshotSegment(string.Empty, null, "x="),
+                        new SnapshotSegment("x", refJson, string.Empty),
+                    },
+                },
+            },
+        };
+        var incoming = new ProbeConfiguration
+        {
+            LogProbes = new[]
+            {
+                new LogProbe
+                {
+                    Id = "probe-1",
+                    When = new SnapshotSegment("x != null", whenJson, string.Empty),
+                    Segments = new[]
+                    {
+                        new SnapshotSegment(string.Empty, null, "x="),
+                        new SnapshotSegment("x", refJson, string.Empty),
+                    },
+                },
+            },
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeFalse();
+        comparer.HasRateLimitChanged.Should().BeFalse();
+    }
 }
