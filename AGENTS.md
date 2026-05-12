@@ -21,9 +21,9 @@
 
 ## NuGet Package Architecture
 
-The `Datadog.Trace` NuGet package ships **only** the manual instrumentation API (`Datadog.Trace.Manual.dll`) — reference it in customer code for `Tracer.Instance.StartActive()` etc.
+The `Datadog.Trace` NuGet package ships **only** the manual instrumentation API (`Datadog.Trace.Manual.dll`) — **not** auto-instrumentation code or native profiler binaries. Reference it in customer code for `Tracer.Instance.StartActive()` etc.
 
-The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation code and is delivered separately via the tracer "monitoring home" (installers, MSI, container images, or specialized packages: `Datadog.Trace.Bundle` for complete multi-runtime/multi-product distribution; `Datadog.AzureFunctions` for Azure Functions). The native profiler loads it into instrumented processes from the home.
+The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation code and is delivered separately via the tracer "monitoring home" (installers, MSI, container images, or specialized packages: `Datadog.Trace.Bundle` for complete multi-runtime/multi-product distribution; `Datadog.AzureFunctions` for Azure Functions). The native profiler loads `Datadog.Trace.dll` into instrumented processes from the home.
 
 ## Tracer Structure
 
