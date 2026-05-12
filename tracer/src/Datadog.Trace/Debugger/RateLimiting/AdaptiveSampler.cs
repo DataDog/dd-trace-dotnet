@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     /// </summary>
-    internal sealed class AdaptiveSampler : IAdaptiveSampler
+    internal sealed class AdaptiveSampler : IAdaptiveSampler, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
 
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// weight assigned by a plain arithmetic average (= 1/N).
         /// </summary>
         private readonly double _emaAlpha;
-        private readonly int _samplesPerWindow;
+        private int _samplesPerWindow;
 
         private Counts _countsRef;
 
@@ -89,10 +89,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 budgetLookback = 1;
             }
 
-            _samplesPerWindow = samplesPerWindow;
             _budgetLookback = budgetLookback;
+            UpdateSamplesPerWindow(samplesPerWindow);
 
-            _samplesBudget = samplesPerWindow + (budgetLookback * samplesPerWindow);
             _emaAlpha = ComputeIntervalAlpha(averageLookback);
             _budgetAlpha = ComputeIntervalAlpha(budgetLookback);
 
@@ -134,9 +133,29 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return ThreadSafeRandom.Shared.NextDouble();
         }
 
+        public void SetRate(int samplesPerWindow)
+        {
+            UpdateSamplesPerWindow(samplesPerWindow);
+        }
+
+        public void Dispose()
+        {
+            _timer?.Dispose();
+        }
+
         private double ComputeIntervalAlpha(int lookback)
         {
             return 1 - Math.Pow(lookback, -1.0 / lookback);
+        }
+
+        private void UpdateSamplesPerWindow(int samplesPerWindow)
+        {
+            // The sampler operates with relaxed memory semantics throughout (Sample/RollWindow read
+            // and write _samplesBudget without barriers), so we deliberately don't introduce
+            // synchronization here either. A rate update becomes visible to other threads "eventually",
+            // which is fine: sampling is approximate and self-correcting on the next window roll.
+            _samplesPerWindow = samplesPerWindow;
+            _samplesBudget = samplesPerWindow + ((long)_budgetLookback * samplesPerWindow);
         }
 
         private long CalculateBudgetEma(long sampledCount)
