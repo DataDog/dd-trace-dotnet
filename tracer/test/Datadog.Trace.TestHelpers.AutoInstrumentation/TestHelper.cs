@@ -19,7 +19,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,11 +29,6 @@ namespace Datadog.Trace.TestHelpers
     {
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
-        {
-        }
-
-        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, prependSamplesToAppName: false), output)
         {
         }
 
@@ -65,8 +59,6 @@ namespace Datadog.Trace.TestHelpers
         protected virtual string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
 
         protected EnvironmentHelper EnvironmentHelper { get; }
-
-        protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 
         protected ITestOutputHelper Output { get; }
 
@@ -202,8 +194,6 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"ProcessId: " + process.Id);
             Output.WriteLine($"Exit Code: " + exitCode);
 
-            ErrorHelpers.CheckForKnownSkipConditions(Output, exitCode, standardError, EnvironmentHelper);
-
             ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode, standardError);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
@@ -337,11 +327,6 @@ namespace Datadog.Trace.TestHelpers
             return (processHelper, newConfig);
         }
 
-        public void EnableRasp(bool enable = true)
-        {
-            SetEnvironmentVariable(ConfigurationKeys.AppSec.RaspEnabled, enable.ToString().ToLower());
-        }
-
         public void EnableEvidenceRedaction(bool? enable = null)
         {
             if (enable != null)
@@ -360,56 +345,6 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
-        public void ConfigureContainers(params ContainerFixture[] containers)
-        {
-            foreach (var container in containers)
-            {
-                foreach (var variable in container.GetEnvironmentVariables())
-                {
-                    SetEnvironmentVariable(variable.Key, variable.Value);
-                }
-            }
-        }
-
-        protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
-        {
-            var spanLookup = new Dictionary<T, int>();
-            foreach (var span in spans)
-            {
-                var key = mapper(span);
-                if (spanLookup.ContainsKey(key))
-                {
-                    spanLookup[key]++;
-                }
-                else
-                {
-                    spanLookup[key] = 1;
-                }
-            }
-
-            var missing = new List<T>();
-            foreach (var e in expected)
-            {
-                var found = spanLookup.ContainsKey(e);
-                if (found)
-                {
-                    if (--spanLookup[e] <= 0)
-                    {
-                        spanLookup.Remove(e);
-                    }
-                }
-                else
-                {
-                    missing.Add(e);
-                }
-            }
-
-            foreach (var e in missing)
-            {
-                Assert.Fail($"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
-            }
-        }
-
         /// <summary>
         /// NOTE: Only use this for local debugging, don't set permanently in tests
         /// We have a dedicated run that tests with debug mode enabled, so want to make
@@ -418,11 +353,6 @@ namespace Datadog.Trace.TestHelpers
         protected void EnableDebugMode()
         {
             EnvironmentHelper.DebugModeEnabled = true;
-        }
-
-        protected void SetServiceName(string serviceName)
-        {
-            SetEnvironmentVariable(ConfigurationKeys.ServiceName, serviceName);
         }
 
         protected void SetServiceVersion(string serviceVersion)
@@ -451,23 +381,5 @@ namespace Datadog.Trace.TestHelpers
 #endif
 
         }
-
-        protected void SetSecurity(bool security)
-        {
-            SecurityEnabled = security;
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="HttpRequestMessage"/> to use in the test.
-        /// Derived tests can override this to customize the request (e.g. add headers).
-        /// </summary>
-        protected virtual HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string requestUri, DateTimeOffset testStart)
-        {
-            return new HttpRequestMessage(method, requestUri);
-        }
-
-        private bool IsServerSpan(MockSpan span) =>
-            span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
     }
 }

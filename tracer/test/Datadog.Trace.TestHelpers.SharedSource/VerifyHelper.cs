@@ -13,7 +13,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.TestHelpers.Ci;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using VerifyTests;
@@ -62,128 +61,10 @@ namespace Datadog.Trace.TestHelpers
                     new PathInfo(directory: Path.Combine(projectDirectory, "..", "snapshots")));
         }
 
-        public static VerifySettings GetSpanVerifierSettings(
-            IEnumerable<(Regex RegexPattern, string Replacement)>? scrubbers,
-            object[] parameters,
-            ConvertMember<MockSpan, Dictionary<string, string>?> apmStringTagsScrubber,
-            ConvertMember<MockSpan, Dictionary<string, double>?> apmNumericTagsScrubber,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>?>? ciVisStringTagsScrubber,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>?>? ciVisNumericTagsScrubber)
-        {
-            var settings = new VerifySettings();
-
-            InitializeGlobalSettings();
-
-            if (parameters.Length > 0)
-            {
-                settings.UseParameters(parameters);
-            }
-
-            settings.ModifySerialization(_ =>
-            {
-                _.IgnoreMember<MockSpan>(s => s.Duration);
-                _.IgnoreMember<MockSpan>(s => s.Start);
-
-                if (apmStringTagsScrubber is not null)
-                {
-                    _.MemberConverter(x => x.Tags, apmStringTagsScrubber);
-                }
-
-                if (apmNumericTagsScrubber is not null)
-                {
-                    _.MemberConverter(x => x.Metrics, apmNumericTagsScrubber);
-                }
-
-                _.IgnoreMember<MockCIVisibilityTest>(s => s.Duration);
-                _.IgnoreMember<MockCIVisibilityTest>(s => s.Start);
-
-                if (ciVisStringTagsScrubber is not null)
-                {
-                    _.MemberConverter(x => x.Meta, ciVisStringTagsScrubber);
-                }
-
-                if (ciVisNumericTagsScrubber is not null)
-                {
-                    _.MemberConverter(x => x.Metrics, ciVisNumericTagsScrubber);
-                }
-            });
-
-            foreach (var (regexPattern, replacement) in scrubbers ?? SpanScrubbers)
-            {
-                settings.AddRegexScrubber(regexPattern, replacement);
-            }
-
-            settings.ScrubInlineGuids();
-            settings.ScrubEmptyLines();
-            VerifyDiffPlex.UseDiffPlex(settings);
-            return settings;
-        }
-
         public static VerifySettings AddRegexScrubber(this VerifySettings settings, Regex regex, string replacement)
         {
             settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
             return settings;
-        }
-
-        public static VerifySettings AddRegexScrubber(this VerifySettings settings, (Regex RegexPattern, string Replacement) scrubber)
-        {
-            settings.AddScrubber(builder => ReplaceRegex(builder, scrubber.RegexPattern, scrubber.Replacement));
-            return settings;
-        }
-
-        public static Dictionary<string, string>? ScrubStringTags(MockSpan span, Dictionary<string, string>? tags)
-        {
-            return tags
-                  // remove propagated tags because their positions in the snapshots are not stable
-                  // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
-                 ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                  .Where(kvp =>
-                             // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
-                             // no matter what. That means we have unstable snapshot results.
-                             kvp.Key != Tags.GitRepositoryUrl
-                          && kvp.Key != Tags.GitCommitSha
-                             // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                          && kvp.Key != Tags.LastParentId
-                             // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
-                          && kvp.Key != Tags.ProcessTags)
-                  .Select(
-                       kvp => kvp.Key switch
-                       {
-                           // scrub stack trace for errors
-                           Tags.ErrorStack => new(kvp.Key, ScrubStackTrace(kvp.Value)),
-                           // sort environment variables
-                           Tags.ProcessEnvironmentVariables => new(kvp.Key, string.Join("\n", kvp.Value.Split('\n').OrderBy(x => x.Split('=')[0]))),
-                           _ => kvp
-                       })
-                  .OrderBy(x => x.Key)
-                  .ToDictionary(x => x.Key, x => x.Value);
-        }
-
-        public static Dictionary<string, string>? ScrubCIVisibilityTags(Dictionary<string, string>? tags)
-        {
-            return tags
-                  // remove propagated tags because their positions in the snapshots are not stable
-                  // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
-                 ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                 .Where(kvp =>
-                            // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
-                            // no matter what. That means we have unstable snapshot results.
-                            kvp.Key != Tags.GitRepositoryUrl
-                         && kvp.Key != Tags.GitCommitSha
-                            // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                         && kvp.Key != Tags.LastParentId
-                            // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
-                         && kvp.Key != Tags.ProcessTags)
-                  .Select(
-                       kvp => kvp.Key switch
-                       {
-                           // scrub stack trace for errors
-                           Tags.ErrorMsg => new KeyValuePair<string, string>(kvp.Key, "ErrorMessage"),
-                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, "StackTrace"),
-                           _ => kvp
-                       })
-                  .OrderBy(x => x.Key)
-                  .ToDictionary(x => x.Key, x => x.Value);
         }
 
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
@@ -198,28 +79,6 @@ namespace Datadog.Trace.TestHelpers
 
             builder.Clear();
             builder.Append(result);
-        }
-
-        private static string ScrubStackTrace(string stackTrace)
-        {
-            // keep the message + the first (scrubbed) location
-            var sb = new StringBuilder();
-            using StringReader reader = new(Scrubbers.ScrubStackTrace(stackTrace)!);
-
-            while (reader.ReadLine() is { } line)
-            {
-                if (line.StartsWith("at "))
-                {
-                    // add the first line of the stack trace
-                    sb.Append(line);
-                    break;
-                }
-
-                sb.Append(line)
-                  .Append('\n');
-            }
-
-            return sb.ToString();
         }
 
         // Based on https://github.com/VerifyTests/Verify.DiffPlex/blob/9f9f2a18f35074680be47c9043e95d1857e457e0/src/Verify.DiffPlex/VerifyDiffPlex.cs
