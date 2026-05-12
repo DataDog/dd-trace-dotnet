@@ -46,6 +46,36 @@ namespace Datadog.Trace.Security.Unit.Tests
             Execute(waf, new[] { "testrule", "testrule", "crs-942-290-new" }, true, BlockingAction.BlockRequestType);
         }
 
+        [Fact]
+        public void RulesCompatUpdate()
+        {
+            var initResult = CreateWaf();
+            using var waf = initResult.Waf;
+            var configurationState = UpdateConfigurationState();
+
+            var firstRules = WafConfigurator.DeserializeEmbeddedOrStaticRules("remote-rules.json");
+            firstRules.Should().NotBeNull();
+            var firstRuleSet = RuleSet.From(firstRules!);
+            firstRuleSet.Should().NotBeNull();
+            AddAsmDDRemoteConfig(configurationState, firstRuleSet, "update1");
+
+            var firstUpdate = UpdateWaf(configurationState, waf);
+            firstUpdate.Success.Should().BeTrue();
+            Execute(waf, ["testrule", "testrule", "crs-942-290-new"], true, BlockingAction.BlockRequestType);
+
+            var traceTaggingRules = WafConfigurator.DeserializeEmbeddedOrStaticRules("trace-tagging-rules.json");
+            traceTaggingRules.Should().NotBeNull();
+            var rulesCompatOnly = new JObject { ["rules_compat"] = traceTaggingRules!["rules_compat"] };
+            var rulesCompatRuleSet = RuleSet.From(rulesCompatOnly);
+            rulesCompatRuleSet.Should().NotBeNull();
+            AddAsmDDRemoteConfig(configurationState, rulesCompatRuleSet, "trace-tagging");
+
+            var secondUpdate = UpdateWaf(configurationState, waf);
+            secondUpdate.Success.Should().BeTrue();
+            Execute(waf, ["testrule", "testrule", "crs-942-290-new"], true, BlockingAction.BlockRequestType);
+            ExecuteTraceTagging(waf, "TraceTagging/v1", 662607015);
+        }
+
         [Theory]
         [InlineData("[$ne]|arg|crs-942-290", "attack|appscan_fingerprint|crs-913-120")]
         [InlineData("attack|appscan_fingerprint|crs-913-120", "value|sleep(10)|crs-942-160")]
@@ -158,6 +188,27 @@ namespace Datadog.Trace.Security.Unit.Tests
                 result.BlockInfo.Should().NotBeNull();
                 result.Actions.Keys.Should().OnlyContain(s => s == expectedActionType);
             }
+        }
+
+        private static void ExecuteTraceTagging(Waf waf, string userAgent, long expectedInteger)
+        {
+            var args = new Dictionary<string, object>
+            {
+                { AddressesConstants.RequestUriRaw, "http://localhost/waf/" },
+                { AddressesConstants.RequestMethod, "GET" },
+                {
+                    AddressesConstants.RequestHeaderNoCookies,
+                    new Dictionary<string, string[]> { { "user-agent", new[] { userAgent } } }
+                },
+            };
+
+            using var context = waf.CreateContext();
+            var result = context.Run(args, TimeoutMicroSeconds);
+            result.Timeout.Should().BeFalse("Timeout should be false");
+            result.ReturnCode.Should().Be(WafReturnCode.Match);
+            result.WafSpanAttributes.Should().NotBeNullOrEmpty();
+            result.WafSpanAttributes!["_dd.appsec.trace.agent"].Should().Be(userAgent);
+            result.WafSpanAttributes["_dd.appsec.trace.integer"].Should().Be((ulong)expectedInteger);
         }
     }
 }
