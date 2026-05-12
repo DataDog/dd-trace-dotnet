@@ -15,14 +15,26 @@ namespace Datadog.Trace.Tests.Debugger
 {
     public class SupportedTypesServiceTests
     {
-        private static readonly object[] Objects = { 3, DateTime.MinValue, TimeSpan.FromSeconds(3), DateTimeOffset.MinValue, Guid.Empty, "Hello", new int?(5), new DateTime?(DateTime.MinValue), ConsoleColor.Blue };
+        private static readonly Type[] Types =
+        {
+            typeof(int),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(DateTimeOffset),
+            typeof(Guid),
+            typeof(string),
+            typeof(int?),
+            typeof(DateTime?),
+            typeof(TimeSpan?),
+            typeof(DateTimeOffset?),
+            typeof(ConsoleColor)
+        };
 
         [Fact]
         public void TestCanCallToString()
         {
-            foreach (var obj in Objects)
+            foreach (var type in Types)
             {
-                var type = obj.GetType();
                 Redaction.IsSafeToCallToString(type).Should().BeTrue($"Type {type} should be safe to call ToString on");
             }
         }
