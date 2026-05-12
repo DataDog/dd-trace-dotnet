@@ -121,7 +121,7 @@ public class AdaptiveSamplerTests
         const int budgetLookback = 4;
         var sampler = new AdaptiveSampler(WindowDuration, samplesPerWindow: initialRate, averageLookback: 1, budgetLookback: budgetLookback, rollWindowCallback: null);
 
-        // Drive a window roll so the sampler accumulates running stats we'll later confirm survive a rate change.
+        // Accumulate running stats; SetRate must preserve them (not behave like a re-create).
         sampler.Keep();
         sampler.Drop();
         sampler.RollWindow();
@@ -134,10 +134,6 @@ public class AdaptiveSamplerTests
 
         var afterUpdate = sampler.GetInternalState();
         Assert.Equal(newRate + (budgetLookback * newRate), afterUpdate.Budget);
-
-        // Running EMAs and probability must be preserved - mutating the rate must not behave like
-        // re-creating the sampler, otherwise every RCM-driven rate change would cause a transient
-        // sampling spike before the EMAs re-converge.
         Assert.Equal(beforeUpdate.TotalAverage, afterUpdate.TotalAverage);
         Assert.Equal(beforeUpdate.Probability, afterUpdate.Probability);
     }

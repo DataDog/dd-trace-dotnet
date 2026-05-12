@@ -40,14 +40,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public IAdaptiveSampler GerOrAddSampler(string probeId)
         {
-            // Hot path: a sampler is almost always already present (added on probe instrumentation
-            // via SetRate/TryAddSampler). The TryGetValue fast path keeps that case allocation-free.
-            //
-            // We deliberately avoid ConcurrentDictionary.GetOrAdd(key, factory) because
-            // CreateSampler() allocates a System.Threading.Timer, and the runtime roots that Timer
-            // in its global timer queue. If GetOrAdd's factory is invoked but its TryAdd loses the
-            // race (a documented possibility), the losing AdaptiveSampler and its Timer would be
-            // leaked permanently.
+            // Avoid ConcurrentDictionary.GetOrAdd(factory): its factory can run more than once
+            // under contention, leaking the losing sampler's Timer (rooted by the runtime).
             if (_samplers.TryGetValue(probeId, out var sampler))
             {
                 return sampler;
@@ -82,8 +76,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 return;
             }
 
-            // Lost the insert race - apply the new rate to whoever won and dispose our candidate
-            // so its Timer doesn't get leaked into the runtime's timer queue.
+            // Lost the insert race - apply the new rate to the winner and dispose our candidate.
             if (_samplers.TryGetValue(probeId, out existing))
             {
                 UpdateExistingRate(probeId, existing, samplesPerSecond);
@@ -94,10 +87,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public void ResetRate(string probeId)
         {
-            // Disposing the removed sampler is critical: AdaptiveSampler owns a Timer that the
-            // runtime keeps alive in its timer queue until disposed, which would otherwise pin the
-            // sampler (and its captured callback graph) for the lifetime of the process every time
-            // a probe is removed.
+            // Must dispose: AdaptiveSampler's Timer is rooted by the runtime until disposed.
             if (_samplers.TryRemove(probeId, out var removed))
             {
                 removed.Dispose();
@@ -112,8 +102,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
             else
             {
-                // Non-AdaptiveSampler entries (e.g. NopAdaptiveSampler for span decoration / metric
-                // probes) intentionally don't honor a rate; nothing to update.
+                // NopAdaptiveSampler entries (span decoration / metric probes) don't honor a rate.
                 Log.Information("Adaptive sampler for {ProbeID} cannot be updated", probeId);
             }
         }

@@ -22,17 +22,14 @@ public class ProbeRateLimiterTests
             limiter.SetRate(probeId, samplesPerSecond: 1);
             var initial = limiter.GerOrAddSampler(probeId);
 
-            // Updating the rate must preserve the existing sampler instance: replacing it would
-            // wipe the running EMAs and cause a transient sampling spike on every RCM-driven
-            // rate change.
+            // SetRate must mutate in place; replacing would wipe running EMAs.
             limiter.SetRate(probeId, samplesPerSecond: 100);
             var afterUpdate = limiter.GerOrAddSampler(probeId);
 
             Assert.Same(initial, afterUpdate);
 
+            // Budget = samplesPerWindow + (budgetLookback * samplesPerWindow); budgetLookback = 16.
             var state = ((AdaptiveSampler)afterUpdate).GetInternalState();
-            // Budget = samplesPerWindow + (budgetLookback * samplesPerWindow), and the ProbeRateLimiter
-            // hard-codes budgetLookback=16, so 100 + 16*100 = 1700.
             Assert.Equal(expected: 100 + (16 * 100), state.Budget);
         }
         finally
@@ -52,9 +49,7 @@ public class ProbeRateLimiterTests
 
         limiter.ResetRate(probeId);
 
-        // Without disposal the sampler graph (and, for real AdaptiveSampler instances, its Timer)
-        // would be rooted by the runtime forever - a leak that accumulates across every RCM
-        // probe removal over the process lifetime.
+        // Without disposal, an AdaptiveSampler's Timer would leak on every probe removal.
         Assert.True(tracker.Disposed);
     }
 

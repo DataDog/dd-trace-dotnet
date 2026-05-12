@@ -150,10 +150,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         private void UpdateSamplesPerWindow(int samplesPerWindow)
         {
-            // The sampler operates with relaxed memory semantics throughout (Sample/RollWindow read
-            // and write _samplesBudget without barriers), so we deliberately don't introduce
-            // synchronization here either. A rate update becomes visible to other threads "eventually",
-            // which is fine: sampling is approximate and self-correcting on the next window roll.
+            // Plain writes match the rest of the class's relaxed memory model; rate change is
+            // visible "eventually" and self-corrects on the next window roll.
             _samplesPerWindow = samplesPerWindow;
             _samplesBudget = samplesPerWindow + ((long)_budgetLookback * samplesPerWindow);
         }
