@@ -28,6 +28,7 @@ internal static class CoverageBackfillDataStore
     public const string ActualItrSkipEnvironmentVariable = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_ACTUAL_SKIP";
 
     private const string BackfillFileName = "coverage-backfill.json";
+    private const string ActualSkipFileName = "coverage-backfill-actual-skip";
 
     /// <summary>
     /// Persists backend coverage data for later coverage adapters and propagates the file path through the process environment.
@@ -43,14 +44,8 @@ internal static class CoverageBackfillDataStore
 
         try
         {
-            var baseDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-            var folder = Path.Combine(baseDirectory, ".dd", testOptimization.RunId);
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
-
-            var filePath = Path.Combine(folder, BackfillFileName);
+            var filePath = GetBackfillDataPath(testOptimization);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             File.WriteAllText(filePath, JsonHelper.SerializeObject(coverageBackfillData));
             EnvironmentHelpers.SetEnvironmentVariable(BackfillDataPathEnvironmentVariable, filePath);
         }
@@ -74,7 +69,11 @@ internal static class CoverageBackfillDataStore
 #pragma warning restore DD0012
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
-            return false;
+            filePath = GetBackfillDataPath(TestOptimization.Instance);
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            {
+                return false;
+            }
         }
 
         try
@@ -100,6 +99,16 @@ internal static class CoverageBackfillDataStore
     public static void RecordActualItrSkip()
     {
         EnvironmentHelpers.SetEnvironmentVariable(ActualItrSkipEnvironmentVariable, "1");
+        try
+        {
+            var filePath = GetActualSkipPath(TestOptimization.Instance);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, "1");
+        }
+        catch (Exception ex)
+        {
+            TestOptimization.Instance.Log.Warning(ex, "CoverageBackfillDataStore: Error persisting actual ITR skip state.");
+        }
     }
 
     /// <summary>
@@ -112,6 +121,49 @@ internal static class CoverageBackfillDataStore
 #pragma warning disable DD0012
         var actualItrSkip = EnvironmentHelpers.GetEnvironmentVariable(ActualItrSkipEnvironmentVariable);
 #pragma warning restore DD0012
-        return string.Equals(actualItrSkip, "1", StringComparison.Ordinal);
+        if (string.Equals(actualItrSkip, "1", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        try
+        {
+            return File.Exists(GetActualSkipPath(TestOptimization.Instance));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Builds the deterministic backend coverage file path shared by testhost, coverage collectors, and the parent session.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <returns>Absolute path to the backend coverage file for this run.</returns>
+    private static string GetBackfillDataPath(ITestOptimization testOptimization)
+    {
+        return Path.Combine(GetRunFolder(testOptimization), BackfillFileName);
+    }
+
+    /// <summary>
+    /// Builds the deterministic marker-file path used to share actual ITR skip state across testhost and coverage collector processes.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <returns>Absolute path to the actual-skip marker file for this run.</returns>
+    private static string GetActualSkipPath(ITestOptimization testOptimization)
+    {
+        return Path.Combine(GetRunFolder(testOptimization), ActualSkipFileName);
+    }
+
+    /// <summary>
+    /// Builds the run-scoped `.dd` folder shared by all processes participating in the same test-optimization run.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <returns>Absolute path to the run-scoped folder.</returns>
+    private static string GetRunFolder(ITestOptimization testOptimization)
+    {
+        var baseDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
+        return Path.Combine(baseDirectory, ".dd", testOptimization.RunId);
     }
 }

@@ -100,6 +100,12 @@ internal static class CoverageBackfillCapability
                commandLineValue.IndexOf("xplat code coverage", StringComparison.OrdinalIgnoreCase) < 0;
     }
 
+    /// <summary>
+    /// Checks whether an external coverage path is safe to use before any ITR skip is applied.
+    /// </summary>
+    /// <param name="commandLine">Command line used to identify known in-process coverage hooks.</param>
+    /// <param name="reason">Reason why the external path is not safe for coverage-active skipping.</param>
+    /// <returns>True when the external source is either handled in-process or already verified as line-capable.</returns>
     private static bool IsExternalCoveragePathBackfillable(string commandLine, out string reason)
     {
         reason = string.Empty;
@@ -132,6 +138,12 @@ internal static class CoverageBackfillCapability
         return false;
     }
 
+    /// <summary>
+    /// Detects local test subsetting that can make the backend aggregate broader than the current execution.
+    /// </summary>
+    /// <param name="commandLine">Command line to inspect.</param>
+    /// <param name="reason">Reason why the command scope is unsafe.</param>
+    /// <returns>True when coverage-active skipping must be disabled for aggregate safety.</returns>
     private static bool HasUnsupportedSelection(string commandLine, out string reason)
     {
         if (ContainsAny(commandLine, "--filter", "/testcasefilter", "--testcasefilter", "/tests:", "--tests:"))
@@ -160,6 +172,12 @@ internal static class CoverageBackfillCapability
         return false;
     }
 
+    /// <summary>
+    /// Checks whether a command line contains any known unsafe selector fragment.
+    /// </summary>
+    /// <param name="value">Command line to inspect.</param>
+    /// <param name="fragments">Case-insensitive fragments to search for.</param>
+    /// <returns>True when at least one fragment appears in the command line.</returns>
     private static bool ContainsAny(string value, params string[] fragments)
     {
         foreach (var fragment in fragments)
@@ -173,6 +191,10 @@ internal static class CoverageBackfillCapability
         return false;
     }
 
+    /// <summary>
+    /// Gets the propagated test-session command line, falling back to the current process command line.
+    /// </summary>
+    /// <returns>Command line used for coverage capability decisions.</returns>
     private static string GetCommandLine()
     {
         return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand) ??

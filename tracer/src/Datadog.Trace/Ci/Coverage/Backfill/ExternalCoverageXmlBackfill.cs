@@ -532,6 +532,12 @@ internal static class ExternalCoverageXmlBackfill
         return matchingBitmap;
     }
 
+    /// <summary>
+    /// Produces normalized report path candidates and filters out forms that cannot be compared with backend keys.
+    /// </summary>
+    /// <param name="sourcePath">Source path read from the coverage report.</param>
+    /// <param name="reportPath">Coverage report path used for report-directory-relative source paths.</param>
+    /// <returns>Normalized backend-key candidates for the source path.</returns>
     private static IEnumerable<string> GetPathCandidates(string sourcePath, string reportPath)
     {
         foreach (var candidate in GetRawPathCandidates(sourcePath, reportPath))
@@ -550,6 +556,12 @@ internal static class ExternalCoverageXmlBackfill
         }
     }
 
+    /// <summary>
+    /// Produces raw path forms that are commonly emitted by external XML coverage tools.
+    /// </summary>
+    /// <param name="sourcePath">Source path read from the coverage report.</param>
+    /// <param name="reportPath">Coverage report path used for report-directory-relative source paths.</param>
+    /// <returns>Raw absolute, source-root-relative, and report-directory-relative path candidates.</returns>
     private static IEnumerable<string> GetRawPathCandidates(string sourcePath, string reportPath)
     {
         yield return sourcePath;
@@ -567,6 +579,11 @@ internal static class ExternalCoverageXmlBackfill
         }
     }
 
+    /// <summary>
+    /// Gets whether the backend provided a valid but empty coverage map, which is still a safe backend-aware path.
+    /// </summary>
+    /// <param name="backfillData">Backend coverage data returned by the skippable-tests endpoint.</param>
+    /// <returns>True when `meta.coverage` was present and contained no covered lines.</returns>
     private static bool IsEmptyBackfill(CoverageBackfillData? backfillData)
     {
         return backfillData is { IsPresent: true, IsValid: true, ExecutedLinesByRelativePath.Count: 0 };

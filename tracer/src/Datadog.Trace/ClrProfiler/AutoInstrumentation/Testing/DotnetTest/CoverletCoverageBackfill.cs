@@ -158,6 +158,11 @@ internal static class CoverletCoverageBackfill
         return matchingBitmap;
     }
 
+    /// <summary>
+    /// Produces normalized path candidates for Coverlet document paths without allowing ambiguous backend matches.
+    /// </summary>
+    /// <param name="sourcePath">Document path from Coverlet's module model.</param>
+    /// <returns>Normalized backend-key candidates for the document.</returns>
     private static IEnumerable<string> GetPathCandidates(string sourcePath)
     {
         var rawCandidates = new[]
