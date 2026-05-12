@@ -142,15 +142,15 @@ public partial class FeatureFlagsEvaluatorTests
     }
 
     [Fact]
-    public void EvaluateWithUnknownFlagReturnsFlagNotFound()
+    public void EvaluateWithUnknownFlagReturnsDefault()
     {
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration());
         var ctx = new EvaluationContext("user-123");
         var result = evaluator.Evaluate("unknown", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("FLAG_NOT_FOUND", result.Error);
+        Assert.Equal(EvaluationReason.Default, result.Reason);
+        Assert.Null(result.Error);
     }
 
     [Fact]
