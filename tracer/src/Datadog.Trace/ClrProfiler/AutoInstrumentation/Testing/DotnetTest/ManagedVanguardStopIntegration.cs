@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
@@ -58,6 +59,7 @@ public sealed class ManagedVanguardStopIntegration
                     if (shouldBackfill)
                     {
                         DotnetCommon.Log.Warning("MicrosoftCodeCoverage: XML report could not be backfilled, so no stale coverage percentage will be sent.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
                     }
 
                     continue;
@@ -89,6 +91,7 @@ public sealed class ManagedVanguardStopIntegration
                                         coverageResult.Diagnostic)))
                             {
                                 Common.Log.Warning("ManagedVanguardStopIntegration: Could not send Microsoft CodeCoverage IPC message.");
+                                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
                                 CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
                             }
                         }

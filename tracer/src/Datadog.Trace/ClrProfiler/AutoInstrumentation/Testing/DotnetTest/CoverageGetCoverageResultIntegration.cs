@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
@@ -67,6 +68,7 @@ public sealed class CoverageGetCoverageResultIntegration
                 if (!CoverletCoverageBackfill.TryApply(modules, backfillData, out var updatedLines))
                 {
                     DotnetCommon.Log.Warning("CoverageGetCoverageResult: Coverlet modules could not be matched to backend coverage, so no stale coverage percentage will be sent.");
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
                     return new CallTargetReturn<TReturn>(returnValue);
                 }
 
@@ -94,6 +96,7 @@ public sealed class CoverageGetCoverageResultIntegration
                     if (!ipcClient.TrySendMessage(new SessionCodeCoverageMessage(CodeCoverageReportSource.Coverlet, percentage, backfilled)))
                     {
                         Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
                         CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
                     }
                 }

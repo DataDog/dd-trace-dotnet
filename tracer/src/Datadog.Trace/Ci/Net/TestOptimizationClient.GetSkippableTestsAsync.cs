@@ -73,6 +73,10 @@ internal sealed partial class TestOptimizationClient
                 coverageBackfillData.ExecutedLinesByRelativePath.Count,
                 coverageBackfillData.TotalBitmapBytes,
                 coverageBackfillData.IsValid);
+            if (!coverageBackfillData.IsValid)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            }
         }
 
         if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)

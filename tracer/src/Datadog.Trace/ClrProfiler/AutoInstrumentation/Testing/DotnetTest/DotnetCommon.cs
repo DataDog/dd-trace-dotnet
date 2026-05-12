@@ -19,6 +19,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -223,6 +224,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     else
                     {
                         Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
                     }
                 }
             }
@@ -238,6 +240,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             if (CoverageBackfillDataStore.TryReadCoverageIpcFailure(out var ipcFailure))
             {
                 Log.Warning("RunCiCommand: A selected coverage tool could not deliver its coverage result through IPC: {Reason}", ipcFailure);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
             }
 
             session.PublishCodeCoverage();
