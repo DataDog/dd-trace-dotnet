@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       aspnet.route: api/home/null-action/{pathparam}/{pathparam2},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -30,6 +31,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -71,6 +73,7 @@
     ParentId: Id_6,
     Tags: {
       aspnet.route: api/home/null-action-async/{pathparam}/{pathparam2},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -92,6 +95,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,

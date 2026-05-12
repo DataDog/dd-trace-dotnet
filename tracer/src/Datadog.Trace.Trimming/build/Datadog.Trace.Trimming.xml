@@ -16,6 +16,7 @@
    <assembly fullname="Couchbase.NetClient" />
    <assembly fullname="coverlet.core" />
    <assembly fullname="Datadog.FeatureFlags.OpenFeature" />
+   <assembly fullname="Datadog.Serverless.Compat" />
    <assembly fullname="Datadog.Trace" />
    <assembly fullname="Datadog.Trace.Manual" />
    <assembly fullname="Datadog.Trace.OpenTracing" />
@@ -178,13 +179,8 @@
       <type fullname="System.Collections.Immutable.ImmutableArray`1" />
       <type fullname="System.Collections.Immutable.ImmutableArray`1/Builder" />
       <type fullname="System.Collections.Immutable.ImmutableArray`1/Enumerator" />
-      <type fullname="System.Collections.Immutable.ImmutableDictionary" />
-      <type fullname="System.Collections.Immutable.ImmutableDictionary`2" />
-      <type fullname="System.Collections.Immutable.ImmutableDictionary`2/Builder" />
       <type fullname="System.Collections.Immutable.ImmutableHashSet" />
       <type fullname="System.Collections.Immutable.ImmutableHashSet`1" />
-      <type fullname="System.Collections.Immutable.ImmutableHashSet`1/Builder" />
-      <type fullname="System.Collections.Immutable.ImmutableHashSet`1/Enumerator" />
    </assembly>
    <assembly fullname="System.Collections.NonGeneric">
       <type fullname="System.Collections.Queue" />
@@ -198,6 +194,7 @@
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />
+      <type fullname="System.ComponentModel.Component" />
       <type fullname="System.ComponentModel.DescriptionAttribute" />
    </assembly>
    <assembly fullname="System.ComponentModel.TypeConverter">
@@ -261,10 +258,14 @@
       <type fullname="System.Diagnostics.ActivityTraceId" />
       <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
+      <type fullname="System.Diagnostics.Metrics.Counter`1" />
       <type fullname="System.Diagnostics.Metrics.Instrument" />
+      <type fullname="System.Diagnostics.Metrics.Measurement`1" />
       <type fullname="System.Diagnostics.Metrics.MeasurementCallback`1" />
       <type fullname="System.Diagnostics.Metrics.Meter" />
       <type fullname="System.Diagnostics.Metrics.MeterListener" />
+      <type fullname="System.Diagnostics.Metrics.ObservableCounter`1" />
+      <type fullname="System.Diagnostics.Metrics.ObservableUpDownCounter`1" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.Process" />
@@ -558,6 +559,7 @@
       <type fullname="System.Reflection.Metadata.MetadataReader" />
       <type fullname="System.Reflection.Metadata.MetadataReaderOptions" />
       <type fullname="System.Reflection.Metadata.MetadataReaderProvider" />
+      <type fullname="System.Reflection.Metadata.MetadataStringComparer" />
       <type fullname="System.Reflection.Metadata.MetadataStringDecoder" />
       <type fullname="System.Reflection.Metadata.MethodBodyBlock" />
       <type fullname="System.Reflection.Metadata.MethodDebugInformation" />
@@ -838,6 +840,7 @@
       <type fullname="System.Reflection.EventInfo" />
       <type fullname="System.Reflection.FieldAttributes" />
       <type fullname="System.Reflection.FieldInfo" />
+      <type fullname="System.Reflection.GenericParameterAttributes" />
       <type fullname="System.Reflection.ICustomAttributeProvider" />
       <type fullname="System.Reflection.IntrospectionExtensions" />
       <type fullname="System.Reflection.LocalVariableInfo" />
@@ -919,6 +922,7 @@
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
       <type fullname="System.Runtime.InteropServices.SafeHandle" />
+      <type fullname="System.Runtime.JitInfo" />
       <type fullname="System.Runtime.Serialization.IFormatterConverter" />
       <type fullname="System.Runtime.Serialization.ISerializable" />
       <type fullname="System.Runtime.Serialization.OnDeserializedAttribute" />

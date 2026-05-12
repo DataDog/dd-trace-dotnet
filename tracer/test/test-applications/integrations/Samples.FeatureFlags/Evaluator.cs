@@ -35,7 +35,7 @@ class Evaluator
         
         if (evaluation.Error is not null)
         {
-            Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation?.Error}>");
+            Console.WriteLine($"Eval ({key}) : <ERROR: {evaluation.Error}>");
         }
         else
         {

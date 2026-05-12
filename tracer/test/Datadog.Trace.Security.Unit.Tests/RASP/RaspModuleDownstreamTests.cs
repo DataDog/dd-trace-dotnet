@@ -7,7 +7,8 @@
 #if NETCOREAPP3_1_OR_GREATER
 
 using System.Collections.Generic;
-using System.Net.Http;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
@@ -192,6 +193,64 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L);
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
+    }
+
+    [Fact]
+    public async Task AddBody_JsonContent_DoesNotPreventSubsequentContentRead()
+    {
+        var body = "{\"key\":\"value\"}";
+        var mockContent = HttpMocks.CreateMockContent(body, "application/json", Encoding.UTF8.GetByteCount(body));
+        var wafArgs = new Dictionary<string, object>();
+
+        await mockContent.LoadIntoBufferAsync(Encoding.UTF8.GetByteCount(body));
+        var stream = await mockContent.ReadAsStreamAsync();
+        stream.CanSeek.Should().BeTrue();
+        stream.Position.Should().Be(0);
+
+        await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L);
+
+        wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);
+        stream.Position.Should().Be(0);
+
+        using var reader = new StreamReader(
+            stream,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: true);
+        var rereadBody = await reader.ReadToEndAsync();
+        rereadBody.Should().Be(body);
+    }
+
+    [Fact]
+    public async Task AddBody_NonSeekableJsonContent_DoesNotPreventSubsequentContentRead()
+    {
+        var body = "{\"key\":\"value\"}";
+        var bodyLength = Encoding.UTF8.GetByteCount(body);
+        var wafArgs = new Dictionary<string, object>();
+
+        using var unbufferedContent = HttpMocks.CreateMockContent(body, "application/json", bodyLength, nonSeekable: true);
+        var unbufferedStream = await unbufferedContent.ReadAsStreamAsync();
+        unbufferedStream.CanSeek.Should().BeFalse();
+
+        using var content = HttpMocks.CreateMockContent(body, "application/json", bodyLength, nonSeekable: true);
+
+        await RaspModule.AddBody(content, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L);
+
+        wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);
+
+        var bufferedStream = await content.ReadAsStreamAsync();
+        bufferedStream.CanSeek.Should().BeTrue();
+        bufferedStream.Position.Should().Be(0);
+
+        using var reader = new StreamReader(
+            bufferedStream,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: true);
+        var rereadBody = await reader.ReadToEndAsync();
+        rereadBody.Should().Be(body);
     }
 
     [Theory]
