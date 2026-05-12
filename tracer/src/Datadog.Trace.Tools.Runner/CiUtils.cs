@@ -113,6 +113,7 @@ internal static class CiUtils
         }
 
         // Initialize flags to enable code coverage and test skipping
+        var internalCodeCoverageReportingEnabled = testOptimizationSettings.CodeCoverageEnabled == true;
         var codeCoverageEnabled = testOptimizationSettings.CodeCoverageEnabled == true || testOptimizationSettings.TestsSkippingEnabled == true;
         var testSkippingEnabled = testOptimizationSettings.TestsSkippingEnabled == true;
         var knownTestsEnabled = testOptimizationSettings.KnownTestsEnabled == true;
@@ -363,8 +364,8 @@ internal static class CiUtils
                     Log.Warning("RunCiCommand: Code coverage is enabled but the command is not a 'dotnet test' nor 'dotnet vstest' nor 'vstest.console' command. Code coverage will not be collected.");
                 }
 
-                // Sets the code coverage path to store the json files for each module in case we are not skipping test (global coverage is reliable).
-                if (!testSkippingEnabled)
+                // Store Datadog global coverage when it is complete by construction, or when explicit reporting can be corrected by ITR backfill.
+                if (!testSkippingEnabled || internalCodeCoverageReportingEnabled)
                 {
                     var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
                     foreach (var folder in outputFolders)
