@@ -75,11 +75,20 @@ internal class InspectCommand : Command
         var methods = browser.ListMethods(typeFullName);
         if (methods.Count == 0)
         {
+            if (browser.TypeExists(typeFullName))
+            {
+                return OutputHelper.WriteSuccess(
+                    jsonMode,
+                    "inspect",
+                    new { type = typeFullName, methods = Array.Empty<MethodInfoDto>() },
+                    $"No instrumentable methods on {typeFullName}.{Environment.NewLine}");
+            }
+
             return OutputHelper.WriteError(
                 jsonMode,
                 "inspect",
                 ErrorCodes.TypeNotFound,
-                $"Error: Type '{typeFullName}' not found or has no instrumentable methods.");
+                $"Error: Type '{typeFullName}' not found.");
         }
 
         // Group by name to compute overload indices
