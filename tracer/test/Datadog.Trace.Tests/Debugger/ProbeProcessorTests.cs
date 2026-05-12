@@ -127,7 +127,26 @@ public class ProbeProcessorTests
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
         Assert.False(ProcessExitEnd(processor, snapshotCreator, in probeData, method));
+        // TryBeginProcess is the production entry gate, so non-conditional probes sample before capture-expression evaluation can drop the snapshot.
         Assert.Equal(1, sampler.SampleCalls);
+    }
+
+    [Fact]
+    public void SnapshotCreatorKeepsPublishedStateAfterProcessorUpdate()
+    {
+        var processor = CreateVersionedCaptureExpressionProbeProcessor("probe-id", version: 1, captureName: "inputValue");
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
+
+        processor.UpdateProbeProcessor(CreateVersionedCaptureExpressionProbe("probe-id", version: 2, captureName: "missingValue"));
+
+        Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "inputValue", "testValue"));
+        Assert.True(ProcessExitEnd(processor, snapshotCreator, in probeData, method));
+        Assert.Equal(1, snapshotCreator.ProbeProcessorState!.ProbeInfo.ProbeVersion);
+        Assert.Equal("probe-id", snapshotCreator.ProbeProcessorState.ProbeInfo.ProbeId);
     }
 
     private static ProbeProcessor CreateConditionalProbeProcessor()
@@ -172,6 +191,32 @@ public class ProbeProcessorTests
                             new CaptureExpression { Name = "localValue", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""localValue""}", null) }
                         ]
             });
+    }
+
+    private static ProbeProcessor CreateVersionedCaptureExpressionProbeProcessor(string probeId, int version, string captureName)
+    {
+        return new ProbeProcessor(CreateVersionedCaptureExpressionProbe(probeId, version, captureName));
+    }
+
+    private static LogProbe CreateVersionedCaptureExpressionProbe(string probeId, int version, string captureName)
+    {
+        return new LogProbe
+        {
+            Id = probeId,
+            Version = version,
+            CaptureSnapshot = false,
+            EvaluateAt = EvaluateAt.Exit,
+            Tags = [],
+            Where = new Where
+            {
+                TypeName = typeof(SampleTarget).FullName!,
+                MethodName = nameof(SampleTarget.ExecuteWithValue)
+            },
+            CaptureExpressions =
+            [
+                new CaptureExpression { Name = captureName, Expr = new SnapshotSegment(string.Empty, @"{""ref"":""inputValue""}", null) }
+            ]
+        };
     }
 
     private static ProbeProcessor CreateUndefinedCaptureExpressionProbeProcessor()

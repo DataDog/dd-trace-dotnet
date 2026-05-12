@@ -38,6 +38,7 @@ namespace Datadog.Trace.Debugger.Expressions
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
         {
+            // The instance is not published until after construction, so a plain assignment is sufficient here.
             _state = ProbeProcessorState.Create(probe);
         }
 
@@ -96,12 +97,12 @@ namespace Datadog.Trace.Debugger.Expressions
             return result.Count == 0 ? null : result.ToArray();
         }
 
-        public bool TryBeginProcess(in ProbeData probeData, out IDebuggerSnapshotCreator snapshotCreator)
+        public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             var state = Volatile.Read(ref _state);
             if (!state.HasCondition && !probeData.Sampler.Sample())
             {
-                snapshotCreator = null!;
+                snapshotCreator = null;
                 return false;
             }
 
@@ -111,8 +112,12 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
         {
-            var snapshotCreator = (DebuggerSnapshotCreator)inSnapshotCreator;
-            var state = snapshotCreator.ProbeProcessorState!;
+            if (inSnapshotCreator is not DebuggerSnapshotCreator { ProbeProcessorState: { } state } snapshotCreator)
+            {
+                throw new InvalidOperationException($"{nameof(ProbeProcessor)}.{nameof(Process)} requires a snapshot creator produced by {nameof(TryBeginProcess)}.");
+            }
+
+            var probeInfo = state.ProbeInfo;
 
             if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
             {
@@ -135,12 +140,12 @@ namespace Datadog.Trace.Debugger.Expressions
                     case MethodState.BeginLineAsync:
                     case MethodState.EntryStart:
                     case MethodState.EntryAsync:
-                        var captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, state.ProbeInfo.EvaluateAt, state.HasCondition);
+                        var captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, probeInfo.EvaluateAt, state.HasCondition);
                         if (captureBehaviour == CaptureBehaviour.Evaluate && info.IsAsyncCapture())
                         {
                             AddAsyncMethodArguments(snapshotCreator, ref info);
                             snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                            evaluationResult = Evaluate(state, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
+                            evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
                             if (shouldStopCapture)
                             {
                                 snapshotCreator.Stop();
@@ -158,7 +163,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         break;
                     case MethodState.ExitStart:
                     case MethodState.ExitStartAsync:
-                        captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, state.ProbeInfo.EvaluateAt, state.HasCondition);
+                        captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, probeInfo.EvaluateAt, state.HasCondition);
                         switch (captureBehaviour)
                         {
                             case CaptureBehaviour.Stop:
@@ -189,7 +194,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     case MethodState.ExitEnd:
                     case MethodState.ExitEndAsync:
                         {
-                            captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, state.ProbeInfo.EvaluateAt, state.HasCondition);
+                            captureBehaviour = snapshotCreator.DefineSnapshotBehavior(ref info, probeInfo.EvaluateAt, state.HasCondition);
                             switch (captureBehaviour)
                             {
                                 case CaptureBehaviour.NoCapture or CaptureBehaviour.Stop:
@@ -206,7 +211,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                         }
 
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                                        evaluationResult = Evaluate(state, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
+                                        evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
                                         if (shouldStopCapture)
                                         {
                                             snapshotCreator.Stop();
@@ -246,11 +251,11 @@ namespace Datadog.Trace.Debugger.Expressions
                             $"{info.MethodState} is not valid value here");
                 }
 
-                return ProcessCapture(state, ref info, snapshotCreator, ref evaluationResult);
+                return ProcessCapture(state, probeInfo, ref info, snapshotCreator, ref evaluationResult);
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", state.ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", probeInfo.ProbeId);
                 return false;
             }
             finally
@@ -259,7 +264,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private ExpressionEvaluationResult Evaluate(ProbeProcessorState state, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
+        private ExpressionEvaluationResult Evaluate(ProbeProcessorState state, ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
         {
             ExpressionEvaluationResult evaluationResult = default;
             shouldStopCapture = false;
@@ -282,14 +287,14 @@ namespace Datadog.Trace.Debugger.Expressions
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", state.ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", probeInfo.ProbeId);
                 if (evaluationResult.IsNull())
                 {
                     evaluationResult = new ExpressionEvaluationResult();
                 }
 
                 evaluationResult.Errors ??= new List<EvaluationError>();
-                evaluationResult.Errors.Add(new EvaluationError { Message = $"Failed to evaluate expression for probe ID: {state.ProbeInfo.ProbeId}. Error: {e.Message}" });
+                evaluationResult.Errors.Add(new EvaluationError { Message = $"Failed to evaluate expression for probe ID: {probeInfo.ProbeId}. Error: {e.Message}" });
             }
 
             if (state.ShouldCaptureExpressions && evaluationResult.IsNull())
@@ -309,8 +314,8 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 state.LogEvaluationState(snapshotCreator.MethodScopeMembers!);
 
-                Log.Error("Evaluation result should not be null. Probe: {ProbeId}", state.ProbeInfo.ProbeId);
-                evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {state.ProbeInfo.ProbeId}" } };
+                Log.Error("Evaluation result should not be null. Probe: {ProbeId}", probeInfo.ProbeId);
+                evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {probeInfo.ProbeId}" } };
             }
 
             if (Log.IsEnabled(LogEventLevel.Debug) && evaluationResult.Errors is { Count: > 0 } errors)
@@ -318,9 +323,9 @@ namespace Datadog.Trace.Debugger.Expressions
                 Log.Debug("Evaluation errors: {Errors}", errors.Select(er => $"Expression: {er.Expression}{Environment.NewLine}Error: {er.Message}"));
             }
 
-            if (evaluationResult.Metric.HasValue && state.ProbeInfo.MetricKind.HasValue)
+            if (evaluationResult.Metric.HasValue && probeInfo.MetricKind.HasValue)
             {
-                DebuggerManager.Instance.DynamicInstrumentation?.SendMetrics(state.ProbeInfo, state.ProbeInfo.MetricKind.Value, state.ProbeInfo.MetricName, evaluationResult.Metric.Value, state.ProbeInfo.ProbeId);
+                DebuggerManager.Instance.DynamicInstrumentation?.SendMetrics(probeInfo, probeInfo.MetricKind.Value, probeInfo.MetricName, evaluationResult.Metric.Value, probeInfo.ProbeId);
                 // snapshot creator is created for all probes in the method invokers,
                 // if it is a metric probe, once we sent the value, we can stop the invokers and dispose the snapshot creator
                 snapshotCreator.Dispose();
@@ -329,14 +334,14 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Decorations != null)
             {
-                SetSpanDecoration(state, snapshotCreator, ref shouldStopCapture, evaluationResult);
+                SetSpanDecoration(state, in probeInfo, snapshotCreator, ref shouldStopCapture, evaluationResult);
             }
 
             if (evaluationResult.HasError)
             {
                 // Probes with conditions defer sampling until after the condition is evaluated,
                 // so evaluation errors must honor that same sampler before emitting a snapshot.
-                if (state.ProbeInfo.HasCondition && !sampler.Sample())
+                if (probeInfo.HasCondition && !sampler.Sample())
                 {
                     shouldStopCapture = true;
                 }
@@ -370,7 +375,7 @@ namespace Datadog.Trace.Debugger.Expressions
             return evaluationResult;
         }
 
-        private void SetSpanDecoration(ProbeProcessorState state, DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
+        private void SetSpanDecoration(ProbeProcessorState state, in ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
             var decorations = evaluationResult.Decorations;
             if (decorations == null)
@@ -378,9 +383,9 @@ namespace Datadog.Trace.Debugger.Expressions
                 return;
             }
 
-            if (!TryGetScope(state.ProbeInfo, out var scope))
+            if (!TryGetScope(in probeInfo, out var scope))
             {
-                Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", state.ProbeInfo.ProbeId);
+                Log.Debug("No active scope available, skipping span decoration. Probe: {ProbeId}", probeInfo.ProbeId);
                 return;
             }
 
@@ -398,12 +403,12 @@ namespace Datadog.Trace.Debugger.Expressions
                 var probeIdTag = $"{DynamicPrefix}{tagName}.probe_id";
                 ISpan? targetSpan = null;
 
-                if (state.ProbeInfo.TargetSpan == null)
+                if (probeInfo.TargetSpan == null)
                 {
-                    Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span is null", tagName, state.ProbeInfo.ProbeId);
+                    Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span is null", tagName, probeInfo.ProbeId);
                 }
 
-                switch (state.ProbeInfo.TargetSpan)
+                switch (probeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
                         targetSpan = scope.Root?.Span;
@@ -412,18 +417,18 @@ namespace Datadog.Trace.Debugger.Expressions
                         targetSpan = scope.Span;
                         break;
                     default:
-                        Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span {Span} is invalid", tagName, state.ProbeInfo.ProbeId, state.ProbeInfo.TargetSpan);
+                        Log.Error("We can't set the {Tag} tag. Probe ID: {ProbeId}, because target span {Span} is invalid", tagName, probeInfo.ProbeId, probeInfo.TargetSpan);
                         break;
                 }
 
                 if (targetSpan == null)
                 {
-                    Log.Warning("We can't set the {Tag} tag. Probe ID: {ProbeId}, because the chosen span {Span} is not available", tagName, state.ProbeInfo.ProbeId, state.ProbeInfo.TargetSpan);
+                    Log.Warning("We can't set the {Tag} tag. Probe ID: {ProbeId}, because the chosen span {Span} is not available", tagName, probeInfo.ProbeId, probeInfo.TargetSpan);
                     continue;
                 }
 
                 targetSpan.SetTag(tagName, decoration.Value);
-                targetSpan.SetTag(probeIdTag, state.ProbeInfo.ProbeId);
+                targetSpan.SetTag(probeIdTag, probeInfo.ProbeId);
                 if (decoration.Errors?.Length > 0)
                 {
                     targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
@@ -436,7 +441,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 attachedTags = true;
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID: {ProbeId}", tagName, targetSpan.SpanId, state.ProbeInfo.ProbeId);
+                    Log.Debug("Successfully attached tag {Tag} to span {Span}. ProbID: {ProbeId}", tagName, targetSpan.SpanId, probeInfo.ProbeId);
                 }
             }
 
@@ -449,11 +454,11 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (attachedTags)
             {
-                DebuggerManager.Instance.DynamicInstrumentation?.SetProbeStatusToEmitting(state.ProbeInfo);
+                DebuggerManager.Instance.DynamicInstrumentation?.SetProbeStatusToEmitting(probeInfo);
             }
         }
 
-        private bool TryGetScope(ProbeInfo probeInfo, [NotNullWhen(true)] out Scope? scope)
+        private bool TryGetScope(in ProbeInfo probeInfo, [NotNullWhen(true)] out Scope? scope)
         {
             try
             {
@@ -520,15 +525,15 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private bool ProcessCapture<TCapture>(ProbeProcessorState state, ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
+        private bool ProcessCapture<TCapture>(ProbeProcessorState state, ProbeInfo probeInfo, ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
         {
-            switch (state.ProbeInfo.ProbeLocation)
+            switch (probeInfo.ProbeLocation)
             {
                 case ProbeLocation.Method:
-                    ProcessMethod(state, ref info, ref snapshotCreator, ref evaluationResult);
+                    ProcessMethod(state, in probeInfo, ref info, ref snapshotCreator, ref evaluationResult);
                     break;
                 case ProbeLocation.Line:
-                    ProcessLine(state, ref info, ref snapshotCreator, ref evaluationResult);
+                    ProcessLine(state, in probeInfo, ref info, ref snapshotCreator, ref evaluationResult);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException($"{nameof(ProbeInfo.ProbeLocation)}", $"{info.MethodState} is not valid value here");
@@ -537,7 +542,7 @@ namespace Datadog.Trace.Debugger.Expressions
             return true;
         }
 
-        private void ProcessMethod<TCapture>(ProbeProcessorState state, ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
+        private void ProcessMethod<TCapture>(ProbeProcessorState state, in ProbeInfo probeInfo, ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
         {
             switch (info.MethodState)
             {
@@ -556,10 +561,10 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
                     }
 
-                    if (!state.ProbeInfo.IsFullSnapshot)
+                    if (!probeInfo.IsFullSnapshot)
                     {
-                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(state.ProbeInfo.ProbeId, state.ProbeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(state.ProbeInfo, snapshot);
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
                         break;
                     }
 
@@ -581,10 +586,10 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
                     }
 
-                    if (!state.ProbeInfo.IsFullSnapshot)
+                    if (!probeInfo.IsFullSnapshot)
                     {
-                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(state.ProbeInfo.ProbeId, state.ProbeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(state.ProbeInfo, snapshot);
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
                         break;
                     }
 
@@ -610,14 +615,14 @@ namespace Datadog.Trace.Debugger.Expressions
                             }
                         }
 
-                        if (state.ProbeInfo.IsFullSnapshot)
+                        if (probeInfo.IsFullSnapshot)
                         {
                             snapshotCreator.ProcessDelayedSnapshot(ref info, state.HasCondition);
                             snapshotCreator.CaptureExitMethodEndMarker(ref info);
                         }
 
-                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(state.ProbeInfo.ProbeId, state.ProbeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(state.ProbeInfo, snapshot);
+                        var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
                         snapshotCreator.Stop();
                         break;
                     }
@@ -633,7 +638,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private void ProcessLine<TCapture>(ProbeProcessorState state, ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
+        private void ProcessLine<TCapture>(ProbeProcessorState state, in ProbeInfo probeInfo, ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
         {
             switch (info.MethodState)
             {
@@ -655,14 +660,14 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
                     }
 
-                    if (state.ProbeInfo.IsFullSnapshot)
+                    if (probeInfo.IsFullSnapshot)
                     {
                         snapshotCreator.ProcessDelayedSnapshot(ref info, state.HasCondition);
                         snapshotCreator.CaptureEndLine(ref info);
                     }
 
-                    var snapshot = snapshotCreator.FinalizeLineSnapshot(state.ProbeInfo.ProbeId, state.ProbeInfo.ProbeVersion, ref info);
-                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(state.ProbeInfo, snapshot);
+                    var snapshot = snapshotCreator.FinalizeLineSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
+                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
                     snapshotCreator.Stop();
                     break;
 
@@ -808,8 +813,9 @@ namespace Datadog.Trace.Debugger.Expressions
                     return evaluator;
                 }
 
-                Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions), null);
-                return _evaluator!;
+                var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions);
+                var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, null);
+                return previousEvaluator ?? newEvaluator;
             }
 
             internal void LogEvaluationState(MethodScopeMembers methodScopeMembers)

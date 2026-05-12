@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
@@ -54,11 +55,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return true;
         }
 
-        public bool TryBeginProcess(in ProbeData probeData, out IDebuggerSnapshotCreator snapshotCreator)
+        public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             if (!ShouldProcess())
             {
-                snapshotCreator = null!;
+                snapshotCreator = null;
                 return false;
             }
 
