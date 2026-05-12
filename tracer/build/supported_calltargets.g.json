@@ -14235,6 +14235,39 @@
     "IntegrationName": "OpenTelemetry",
     "AssemblyName": "System.Diagnostics.DiagnosticSource",
     "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "CreateAndStart",
+    "TargetReturnType": "System.Diagnostics.Activity",
+    "TargetParameterTypes": [
+      "System.Diagnostics.ActivitySource",
+      "System.String",
+      "System.Diagnostics.ActivityKind",
+      "System.String",
+      "System.Diagnostics.ActivityContext",
+      "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.Object]]",
+      "System.Collections.Generic.IEnumerable`1[System.Diagnostics.ActivityLink]",
+      "System.DateTimeOffset",
+      "System.Diagnostics.ActivityTagsCollection",
+      "System.Diagnostics.ActivitySamplingResult"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityCreateAndStartIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
     "TargetMethodName": "get_DisplayName",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [],

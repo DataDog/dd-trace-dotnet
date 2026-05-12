@@ -555,6 +555,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.StartSpanWithParentSpanIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityAddTagObjectIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityAddTagStringIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityCreateAndStartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityDisplayNameGetterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityStatusGetterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityStatusDescriptionGetterIntegration"
