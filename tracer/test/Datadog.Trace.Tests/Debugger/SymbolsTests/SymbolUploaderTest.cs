@@ -150,11 +150,17 @@ public class SymbolUploaderTest
         return (root, scopes);
     }
 
-    private class MockBatchUploadApi : IBatchUploadApi
+    private class MockBatchUploadApi : ISymbolUploadApi
     {
         public List<byte[]> Segments { get; } = new();
 
         public Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
+        {
+            Segments.Add(symbols.ToArray());
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols, SymDbUploadMetadata metadata)
         {
             Segments.Add(symbols.ToArray());
             return Task.FromResult(true);
