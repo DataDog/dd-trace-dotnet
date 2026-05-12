@@ -7,8 +7,8 @@ on:
 
 jobs:
   end_code_freeze:
-    if: | 
-      github.event_name == 'workflow_dispatch' || 
+    if: |
+      github.event_name == 'workflow_dispatch' ||
       (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'closed')
     runs-on: ubuntu-latest
     permissions:
@@ -16,29 +16,35 @@ jobs:
       pull-requests: read # Fetches PRs
       issues: write # Opens milestones
       statuses: write # add a commit status check
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      id-token: write # required for dd-octo-sts OIDC token
 
     steps:
-    - name: Clone dd-trace-dotnet repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-    - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
-      name: 'Close Code Freeze Milestone'
-      id: milestones
-      if: github.event_name == 'workflow_dispatch'
-      with:
-        route: PATCH /repos/{owner}/{repo}/milestones/115
-        owner: DataDog
-        repo: dd-trace-dotnet
-        state: closed
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.code-freeze-end
 
-    # Unfreeze PRs
-    - uses: ./.github/actions/pr-status-updater
-      name: 'Unfreeze PRs'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        state: success
-        workflow_name: code_freeze_end.yml # this allows for a click through to go to the action
+      - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+        name: "Close Code Freeze Milestone"
+        id: milestones
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          route: PATCH /repos/{owner}/{repo}/milestones/115
+          owner: DataDog
+          repo: dd-trace-dotnet
+          state: closed
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
+
+      # Unfreeze PRs
+      - uses: ./.github/actions/pr-status-updater
+        name: "Unfreeze PRs"
+        with:
+          github_token: ${{ steps.generate-token.outputs.token }}
+          state: success
+          workflow_name: code_freeze_end.yml # this allows for a click through to go to the action

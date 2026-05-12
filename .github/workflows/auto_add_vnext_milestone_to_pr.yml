@@ -16,6 +16,7 @@ jobs:
       contents: read
       pull-requests: write # need to modify existing PR
       issues: write # need to potentially create a new milestone
+      id-token: write # required for dd-octo-sts OIDC token
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -24,8 +25,15 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.auto-add-vnext-milestone-to-pr
+
       - name: "Assign to vNext Milestone"
         run: ./tracer/build.sh AssignPullRequestToMilestone
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
           PullRequestNumber: "${{ github.event.pull_request.number }}"

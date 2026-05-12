@@ -7,8 +7,8 @@ on:
 
 jobs:
   start_code_freeze:
-    if: | 
-      github.event_name == 'workflow_dispatch' || 
+    if: |
+      github.event_name == 'workflow_dispatch' ||
       (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'open')
     runs-on: ubuntu-latest
     permissions:
@@ -18,15 +18,20 @@ jobs:
       issues: write # Opens milestones
       statuses: write # add a commit status check
       id-token: write # required for dd-octo-sts OIDC token
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.code-freeze-start
+
       - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
-        name: 'Open Code Freeze Milestone'
+        name: "Open Code Freeze Milestone"
         id: milestones
         if: github.event_name == 'workflow_dispatch'
         with:
@@ -35,12 +40,12 @@ jobs:
           repo: dd-trace-dotnet
           state: open
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - uses: ./.github/actions/pr-status-updater
-        name: 'Freeze PRs'
+        name: "Freeze PRs"
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.generate-token.outputs.token }}
           state: failure
           workflow_name: code_freeze_start.yml # this allows for a click through to go to the action
 
@@ -52,6 +57,6 @@ jobs:
           policy: dd-trace-dotnet.github.deploy-aas-dev-apps
 
       - uses: ./.github/actions/deploy-aas-dev-apps
-        name: 'Trigger AAS deploy'
+        name: "Trigger AAS deploy"
         with:
           github_token: ${{ steps.octo-sts.outputs.token }}

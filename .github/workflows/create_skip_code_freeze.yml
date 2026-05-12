@@ -9,14 +9,22 @@ jobs:
     permissions:
       contents: read
       issues: write
-    
+      id-token: write
+
     steps:
-      - uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d  # v2.4.0
-        name: 'Open Skip Milestone'
+      - name: Get GitHub Token via dd-octo-sts
+        id: generate-token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.create-skip-code-freeze
+
+      - uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d # v2.4.0
+        name: "Open Skip Milestone"
         with:
           route: PATCH /repos/{owner}/{repo}/milestones/183
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
           state: open
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
