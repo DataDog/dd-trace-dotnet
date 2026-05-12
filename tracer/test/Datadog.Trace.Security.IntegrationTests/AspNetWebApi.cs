@@ -131,6 +131,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, expectedSpans, settings, "application/json");
         }
 
+        [Trait("Category", "EndToEnd")]
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
