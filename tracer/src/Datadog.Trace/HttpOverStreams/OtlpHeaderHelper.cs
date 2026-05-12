@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams;
@@ -17,10 +18,14 @@ internal sealed class OtlpHeaderHelper : HttpHeaderHelperBase
 
     public OtlpHeaderHelper(KeyValuePair<string, string>[] signalHeaders)
     {
-        DefaultHeaders = signalHeaders;
+        DefaultHeaders =
+        [
+            ..signalHeaders,
+            new(HttpHeaderNames.TracingEnabled, "false"),
+        ];
 
         var sb = StringBuilderCache.Acquire();
-        foreach (var kvp in signalHeaders)
+        foreach (var kvp in DefaultHeaders)
         {
             sb.Append(kvp.Key);
             sb.Append(": ");
