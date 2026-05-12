@@ -20,8 +20,7 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     // When true, all ID generation uses RandomNumberGenerator.Fill()
     // (reads kernel entropy on every call) instead of Random.Shared (PRNG
     // state that may be duplicated across process copies).
-    // Not readonly so tests can override via reflection on all .NET versions.
-    private static bool _secureRandom =
+    private static readonly bool _secureRandom =
         EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom) == "true";
 
     // On .NET 6+, we delegate to System.Random.Shared which can be safely accessed from
@@ -35,15 +34,7 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     {
         if (_secureRandom)
         {
-            Span<byte> buf = stackalloc byte[8];
-            ulong result;
-            do
-            {
-                RandomNumberGenerator.Fill(buf);
-                result = BitConverter.ToUInt64(buf);
-            }
-            while (result == 0);
-            return result;
+            return NextNonZeroUInt64Secure();
         }
 
         ulong result2;
@@ -91,6 +82,50 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     /// </summary>
     public static void NotifyRestore()
     {
+    }
+
+    /// <summary>
+    /// Always uses the CSPRNG path, regardless of <see cref="_secureRandom"/>.
+    /// For testing only.
+    /// </summary>
+    internal static ulong NextSpanIdSecureForTesting(bool useAllBits)
+    {
+        if (!useAllBits)
+        {
+            return (NextNonZeroUInt64Secure() >> 1) | 1UL;
+        }
+
+        return NextNonZeroUInt64Secure();
+    }
+
+    /// <summary>
+    /// Always uses the CSPRNG path, regardless of <see cref="_secureRandom"/>.
+    /// For testing only.
+    /// </summary>
+    internal static TraceId NextTraceIdSecureForTesting(bool useAllBits)
+    {
+        if (!useAllBits)
+        {
+            return (TraceId)((NextNonZeroUInt64Secure() >> 1) | 1UL);
+        }
+
+        var seconds = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var upper = (ulong)seconds << 32;
+        var lower = NextNonZeroUInt64Secure();
+        return new TraceId(upper, lower);
+    }
+
+    private static ulong NextNonZeroUInt64Secure()
+    {
+        Span<byte> buf = stackalloc byte[8];
+        ulong result;
+        do
+        {
+            RandomNumberGenerator.Fill(buf);
+            result = BitConverter.ToUInt64(buf);
+        }
+        while (result == 0);
+        return result;
     }
 
     /// <inheritDoc />

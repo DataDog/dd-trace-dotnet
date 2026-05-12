@@ -38,8 +38,7 @@ namespace Datadog.Trace.Util;
 internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
     // Evaluated once at class load; avoids a per-call env-var lookup.
-    // Not readonly so tests can override via reflection on all .NET versions.
-    private static bool _secureRandom =
+    private static readonly bool _secureRandom =
         EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom) == "true";
 
     [ThreadStatic]
@@ -99,6 +98,12 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
             _shared = null;
         }
     }
+
+    /// <summary>
+    /// Unconditionally resets the thread-local instance, bypassing the <see cref="_secureRandom"/> guard.
+    /// For testing only.
+    /// </summary>
+    internal static void ResetSharedForTesting() => _shared = null;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));

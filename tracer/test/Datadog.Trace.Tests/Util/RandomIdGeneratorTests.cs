@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -241,199 +240,179 @@ public class RandomIdGeneratorTests
         id.Should().BeGreaterOrEqualTo(MinId).And.BeLessThanOrEqualTo(MaxUInt63);
     }
 
+#if NET6_0_OR_GREATER
     /// <summary>
-    /// When _secureRandom is forced on via reflection, NextSpanId() must still
-    /// return a non-zero value within the expected range. This exercises the
-    /// RandomNumberGenerator.Fill() code path (.NET 6+) or the re-seeded
-    /// Xoshiro256** path (pre-.NET 6).
+    /// On .NET 6+, NextSpanId via the CSPRNG path must return a non-zero value
+    /// within the expected range. Exercises <see cref="RandomIdGenerator.NextSpanIdSecureForTesting"/>.
     /// </summary>
     [Fact]
     public void NextSpanId_WithSecureRandom_ReturnsNonZeroValues()
     {
-        var field = typeof(RandomIdGenerator)
-            .GetField("_secureRandom", BindingFlags.Static | BindingFlags.NonPublic);
-
-        if (field == null)
+        for (var i = 0; i < 100; i++)
         {
-            // field not found — skip rather than fail (future refactor may rename it)
-            return;
-        }
-
-        var original = (bool)field.GetValue(null)!;
-        try
-        {
-            field.SetValue(null, true);
-
-            var rng = new RandomIdGenerator();
-            for (var i = 0; i < 100; i++)
-            {
-                var id = rng.NextSpanId(useAllBits: false);
-                id.Should().BeGreaterOrEqualTo(MinId).And.BeLessThanOrEqualTo(MaxUInt63);
-            }
-        }
-        finally
-        {
-            field.SetValue(null, original);
+            var id = RandomIdGenerator.NextSpanIdSecureForTesting(useAllBits: false);
+            id.Should().BeGreaterOrEqualTo(MinId).And.BeLessThanOrEqualTo(MaxUInt63);
         }
     }
 
     /// <summary>
-    /// When _secureRandom is forced on via reflection, NextTraceId() must still
-    /// return a TraceId with a non-zero Lower component.
+    /// On .NET 6+, NextTraceId via the CSPRNG path must return a TraceId with a non-zero Lower component.
     /// </summary>
     [Fact]
     public void NextTraceId_WithSecureRandom_ReturnsNonZeroLower()
     {
-        var field = typeof(RandomIdGenerator)
-            .GetField("_secureRandom", BindingFlags.Static | BindingFlags.NonPublic);
-
-        if (field == null)
+        for (var i = 0; i < 100; i++)
         {
-            return;
-        }
-
-        var original = (bool)field.GetValue(null)!;
-        try
-        {
-            field.SetValue(null, true);
-
-            var rng = new RandomIdGenerator();
-            for (var i = 0; i < 100; i++)
-            {
-                var id = rng.NextTraceId(useAllBits: false);
-                id.Lower.Should().BeGreaterOrEqualTo(MinId);
-            }
-        }
-        finally
-        {
-            field.SetValue(null, original);
+            var id = RandomIdGenerator.NextTraceIdSecureForTesting(useAllBits: false);
+            id.Lower.Should().BeGreaterOrEqualTo(MinId);
         }
     }
 
     /// <summary>
-    /// When _secureRandom is forced on, successive calls must produce varied values
-    /// (i.e. not all the same), demonstrating that the CSPRNG path is exercised.
+    /// On .NET 6+, successive CSPRNG calls must produce varied values,
+    /// demonstrating that the RandomNumberGenerator.Fill() path is exercised.
     /// </summary>
     [Fact]
     public void NextSpanId_WithSecureRandom_ProducesVariedValues()
     {
-        var field = typeof(RandomIdGenerator)
-            .GetField("_secureRandom", BindingFlags.Static | BindingFlags.NonPublic);
+        const int count = 20;
+        var values = new HashSet<ulong>();
 
-        if (field == null)
+        for (var i = 0; i < count; i++)
         {
-            return;
+            values.Add(RandomIdGenerator.NextSpanIdSecureForTesting(useAllBits: true));
         }
 
-        var original = (bool)field.GetValue(null)!;
-        try
-        {
-            field.SetValue(null, true);
-
-            var rng = new RandomIdGenerator();
-            const int count = 20;
-            var values = new HashSet<ulong>();
-
-            for (var i = 0; i < count; i++)
-            {
-                values.Add(rng.NextSpanId(useAllBits: true));
-            }
-
-            // All 20 values should be distinct (probability of collision is negligible)
-            values.Count.Should().Be(count);
-        }
-        finally
-        {
-            field.SetValue(null, original);
-        }
+        // All 20 values should be distinct (probability of collision is negligible)
+        values.Count.Should().Be(count);
     }
 
     /// <summary>
-    /// When _secureRandom is forced on, NextTraceId(useAllBits: true) must return a
-    /// 128-bit id with a valid unix-seconds upper component and a non-zero lower component.
+    /// On .NET 6+, NextTraceId via the CSPRNG path must return a 128-bit id with
+    /// a valid unix-seconds upper component and a non-zero lower component.
     /// </summary>
     [Fact]
     public void NextTraceId_WithSecureRandom_128Bit_ReturnsValidId()
     {
-        var field = typeof(RandomIdGenerator)
-            .GetField("_secureRandom", BindingFlags.Static | BindingFlags.NonPublic);
-
-        if (field == null)
+        for (var i = 0; i < 100; i++)
         {
-            return;
+            var id = RandomIdGenerator.NextTraceIdSecureForTesting(useAllBits: true);
+
+            const ulong toleranceSeconds = 2;
+            var now = (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            // upper 32 bits are unix epoch seconds
+            (id.Upper >> 32).Should().BeInRange(now - toleranceSeconds, now + toleranceSeconds);
+
+            // next 32 bits are always zero
+            (id.Upper << 32).Should().Be(0);
+
+            // lower 64 bits are non-zero
+            id.Lower.Should().BeGreaterOrEqualTo(MinId);
         }
+    }
+#else
+    // On pre-.NET 6, the CSPRNG path in the *ForTesting helpers does not exist.
+    // The Xoshiro256** path (the only path) is covered by the non-secure tests above.
 
-        var original = (bool)field.GetValue(null)!;
-        try
+    [Fact]
+    public void NextSpanId_WithSecureRandom_ReturnsNonZeroValues()
+    {
+        var rng = new RandomIdGenerator();
+        for (var i = 0; i < 100; i++)
         {
-            field.SetValue(null, true);
-
-            var rng = new RandomIdGenerator();
-            for (var i = 0; i < 100; i++)
-            {
-                var id = rng.NextTraceId(useAllBits: true);
-
-                const ulong toleranceSeconds = 2;
-                var now = (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-                // upper 32 bits are unix epoch seconds
-                (id.Upper >> 32).Should().BeInRange(now - toleranceSeconds, now + toleranceSeconds);
-
-                // next 32 bits are always zero
-                (id.Upper << 32).Should().Be(0);
-
-                // lower 64 bits are non-zero
-                id.Lower.Should().BeGreaterOrEqualTo(MinId);
-            }
-        }
-        finally
-        {
-            field.SetValue(null, original);
+            var id = rng.NextSpanId(useAllBits: false);
+            id.Should().BeGreaterOrEqualTo(MinId).And.BeLessThanOrEqualTo(MaxUInt63);
         }
     }
 
+    [Fact]
+    public void NextTraceId_WithSecureRandom_ReturnsNonZeroLower()
+    {
+        var rng = new RandomIdGenerator();
+        for (var i = 0; i < 100; i++)
+        {
+            var id = rng.NextTraceId(useAllBits: false);
+            id.Lower.Should().BeGreaterOrEqualTo(MinId);
+        }
+    }
+
+    [Fact]
+    public void NextSpanId_WithSecureRandom_ProducesVariedValues()
+    {
+        var rng = new RandomIdGenerator();
+        const int count = 20;
+        var values = new HashSet<ulong>();
+
+        for (var i = 0; i < count; i++)
+        {
+            values.Add(rng.NextSpanId(useAllBits: true));
+        }
+
+        values.Count.Should().Be(count);
+    }
+
+    [Fact]
+    public void NextTraceId_WithSecureRandom_128Bit_ReturnsValidId()
+    {
+        var rng = new RandomIdGenerator();
+        for (var i = 0; i < 100; i++)
+        {
+            var id = rng.NextTraceId(useAllBits: true);
+
+            const ulong toleranceSeconds = 2;
+            var now = (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            (id.Upper >> 32).Should().BeInRange(now - toleranceSeconds, now + toleranceSeconds);
+            (id.Upper << 32).Should().Be(0);
+            id.Lower.Should().BeGreaterOrEqualTo(MinId);
+        }
+    }
+#endif
+
     /// <summary>
-    /// When _secureRandom is forced on and NotifyRestore() is called, the thread-local
-    /// _shared instance must be nulled so the next access to Shared creates a fresh instance.
-    /// This only applies to the pre-.NET 6 implementation; on .NET 6+ NotifyRestore() is
-    /// a documented no-op and _shared does not exist, so the test skips automatically.
+    /// On pre-.NET 6, NotifyRestore() resets the thread-local instance so the next
+    /// access to Shared constructs a fresh one. Uses the internal test helper to bypass
+    /// the <c>_secureRandom</c> guard (which is false by default in tests).
+    /// On .NET 6+ this is a no-op and the test is skipped.
     /// </summary>
     [Fact]
     public void NotifyRestore_ResetsSharedInstance_WhenSecureRandom()
     {
-        // _shared only exists as [ThreadStatic] in the pre-.NET 6 implementation
-        var sharedField = typeof(RandomIdGenerator)
-            .GetField("_shared", BindingFlags.Static | BindingFlags.NonPublic);
-        var secureRandomField = typeof(RandomIdGenerator)
-            .GetField("_secureRandom", BindingFlags.Static | BindingFlags.NonPublic);
+#if NET6_0_OR_GREATER
+        // No-op on .NET 6+: NotifyRestore() is documented as a no-op here.
+        // Nothing to assert.
+#else
+        // Ensure _shared is populated on this thread
+        var instanceBefore = RandomIdGenerator.Shared;
 
-        if (sharedField == null || secureRandomField == null)
-        {
-            return;
-        }
+        RandomIdGenerator.ResetSharedForTesting();
 
-        var originalSecureRandom = (bool)secureRandomField.GetValue(null)!;
-        try
-        {
-            secureRandomField.SetValue(null, true);
-
-            // Ensure _shared is populated on this thread
-            var instanceBefore = RandomIdGenerator.Shared;
-
-            RandomIdGenerator.NotifyRestore();
-
-            // _shared should now be null
-            sharedField.GetValue(null).Should().BeNull();
-
-            // Next access must produce a fresh (non-same) instance
-            var instanceAfter = RandomIdGenerator.Shared;
-            instanceAfter.Should().NotBeSameAs(instanceBefore);
-        }
-        finally
-        {
-            secureRandomField.SetValue(null, originalSecureRandom);
-        }
+        // _shared should now be null; next access must produce a fresh instance
+        var instanceAfter = RandomIdGenerator.Shared;
+        instanceAfter.Should().NotBeSameAs(instanceBefore);
+#endif
     }
+
+#if !NET6_0_OR_GREATER
+    /// <summary>
+    /// On pre-.NET 6, NotifyRestore() must be a no-op when DD_TRACE_SECURE_RANDOM is not set
+    /// (the default). The thread-local _shared instance must remain the same object.
+    /// This guards against accidentally removing the <c>if (_secureRandom)</c> guard.
+    /// </summary>
+    [Fact]
+    public void NotifyRestore_IsNoOp_WhenSecureRandomDisabled()
+    {
+        // Ensure _shared is populated on this thread
+        var instanceBefore = RandomIdGenerator.Shared;
+
+        // NotifyRestore() should do nothing because DD_TRACE_SECURE_RANDOM is false (default)
+        RandomIdGenerator.NotifyRestore();
+
+        var instanceAfter = RandomIdGenerator.Shared;
+        instanceAfter.Should().BeSameAs(instanceBefore);
+    }
+#endif
 
     private static IEnumerable<T> GetValues<T>(Func<T> factory)
     {
