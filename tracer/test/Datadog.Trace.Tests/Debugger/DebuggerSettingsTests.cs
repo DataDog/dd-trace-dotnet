@@ -4,9 +4,11 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations;
 using FluentAssertions;
 using Xunit;
 
@@ -79,6 +81,135 @@ namespace Datadog.Trace.Tests.Debugger
                 NullConfigurationTelemetry.Instance);
 
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("false")]
+        [InlineData("0")]
+        public void SymbolsEnabled_WhenDynamicInstrumentationExplicitlyDisabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled },
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeFalse();
+            settings.DynamicInstrumentationCanBeEnabled.Should().BeFalse();
+            settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("false", false)]
+        [InlineData("true", true)]
+        public void SymbolDatabaseUploadOnlyOpensDebuggerGateWhenRemoteConfigurationIsAvailable(string remoteConfigurationEnabled, bool expected)
+        {
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, remoteConfigurationEnabled },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance);
+
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().Be(expected);
+        }
+
+        [Fact]
+        public void ShouldInitialize_WhenAllDebuggerProductsAreDisabled_ReturnsFalse()
+        {
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                    { ConfigurationKeys.Debugger.ExceptionReplayEnabled, "false" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance);
+
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().BeFalse();
+        }
+
+        [Fact]
+        public void ShouldInitialize_WhenDynamicInstrumentationEnabledViaEnv_ReturnsTrue()
+        {
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance);
+
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().BeTrue();
+        }
+
+        [Fact]
+        public void ShouldInitialize_WhenCodeOriginEnabledViaEnv_ReturnsTrue()
+        {
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance);
+
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().BeTrue();
+        }
+
+        [Fact]
+        public void ShouldInitialize_WhenExceptionReplayEnabledViaEnv_ReturnsTrue()
+        {
+            // ExceptionReplay enablement is read from a separate settings type, so it's plumbed in
+            // as the third argument here. All other products are off.
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance);
+
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: true).Should().BeTrue();
+        }
+
+        [Fact]
+        public void ShouldInitialize_WhenDynamicSettingsEnableDynamicInstrumentation_ReturnsTrue()
+        {
+            // Env has all DI/ER/CO/SymDB off, but a previously-applied dynamic config has DI on.
+            // ShouldInitialize must observe the dynamic-settings branch to return true.
+            var configurationSource = new DictionaryConfigurationSource(
+                new Dictionary<string, string>
+                {
+                    { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                });
+            var tracerSettings = new TracerSettings(configurationSource);
+            var debuggerSettings = new DebuggerSettings(configurationSource, NullConfigurationTelemetry.Instance) with
+            {
+                DynamicSettings = new ImmutableDynamicDebuggerSettings { DynamicInstrumentationEnabled = true },
+            };
+
+            DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, exceptionReplayEnabled: false).Should().BeTrue();
         }
 
         [Fact]

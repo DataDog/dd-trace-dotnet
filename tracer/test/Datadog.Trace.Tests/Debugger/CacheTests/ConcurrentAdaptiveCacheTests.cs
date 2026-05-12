@@ -50,6 +50,19 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         }
 
         [Fact]
+        public void GetOrAdd_Should_Return_Item_Found_By_Write_Lock_Double_Check()
+        {
+            // Simulate the race window deterministically instead of relying on thread scheduling.
+            var comparer = new FirstLookupMissComparer();
+            using var cache = new ConcurrentAdaptiveCache<string, int?>(capacity: 10, comparer: comparer);
+            cache.Add(42, keys: "target");
+
+            var result = cache.GetOrAdd("target", _ => null);
+
+            Assert.Equal(42, result);
+        }
+
+        [Fact]
         public void Cache_Should_Evict_Items_When_Capacity_Is_Reached()
         {
             using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 3, evictionPolicyKind: EvictionPolicy.Lru);
@@ -554,6 +567,29 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
 
             Assert.Equal(CacheState.Error, cache.State);
             Assert.Throws<InvalidCacheStateException>(() => cache.Add(1, keys: "test"));
+        }
+
+        private sealed class FirstLookupMissComparer : IEqualityComparer<string>
+        {
+            private const string TargetKey = "target";
+            private int _shouldMissTargetLookup = 1;
+
+            public bool Equals(string x, string y)
+            {
+                if (x == TargetKey &&
+                    y == TargetKey &&
+                    Interlocked.Exchange(ref _shouldMissTargetLookup, 0) == 1)
+                {
+                    return false;
+                }
+
+                return string.Equals(x, y, StringComparison.Ordinal);
+            }
+
+            public int GetHashCode(string obj)
+            {
+                return 0;
+            }
         }
     }
 }

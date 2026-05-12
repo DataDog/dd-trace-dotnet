@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
 
@@ -1231,10 +1232,10 @@ public sealed class StringBuilderAspects
     [AspectMethodReplaceFromVersion("3.2.0", "System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static StringBuilder AppendJoin<T>(StringBuilder? target, char separator, IEnumerable<T>? values)
     {
-        var result = target!.AppendJoin(separator, values!);
+        var result = AppendJoinAndMaterialize(target, separator, values, out var materializedValues);
         try
         {
-            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
+            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(result, null, materializedValues);
         }
         catch (Exception ex)
         {
@@ -1253,10 +1254,10 @@ public sealed class StringBuilderAspects
     [AspectMethodReplaceFromVersion("3.2.0", "System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static StringBuilder AppendJoin<T>(StringBuilder? target, string separator, IEnumerable<T>? values)
     {
-        var result = target!.AppendJoin(separator, values!);
+        var result = AppendJoinAndMaterialize(target, separator, values, out var materializedValues);
         try
         {
-            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
+            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(result, separator, materializedValues);
         }
         catch (Exception ex)
         {
@@ -1264,6 +1265,20 @@ public sealed class StringBuilderAspects
         }
 
         return result;
+    }
+
+    private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, char separator, IEnumerable<T>? values, out IReadOnlyCollection<T>? materializedValues)
+    {
+        materializedValues = values.Materialize();
+        // Intentionally throw null ref / argument null exception if customer passes in null
+        return target!.AppendJoin(separator, materializedValues!);
+    }
+
+    private static StringBuilder AppendJoinAndMaterialize<T>(StringBuilder? target, string separator, IEnumerable<T>? values, out IReadOnlyCollection<T>? materializedValues)
+    {
+        materializedValues = values.Materialize();
+        // Intentionally throw null ref / argument null exception if customer passes in null
+        return target!.AppendJoin(separator, materializedValues!);
     }
 
 #endif
