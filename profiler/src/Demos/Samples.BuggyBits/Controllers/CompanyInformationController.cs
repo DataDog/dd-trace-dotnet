@@ -19,7 +19,7 @@ namespace BuggyBits.Controllers
             this.dataLayer = dataLayer;
         }
 
-        public IActionResult Index(bool shortLived=false)
+        public IActionResult Index(bool shortLived = false)
         {
             if (shortLived)
             {
