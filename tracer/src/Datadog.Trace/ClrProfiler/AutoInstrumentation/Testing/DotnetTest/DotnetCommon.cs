@@ -234,7 +234,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             session.DrainIpcMessages(
                 TimeSpan.FromMilliseconds(250),
                 TimeSpan.FromMilliseconds(50),
-                waitForFirstMessage: !hasDirectCoverageResult && EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true);
+                waitForFirstMessage: !hasDirectCoverageResult && CoverageBackfillCapability.ShouldWaitForCoverageIpc(TestOptimization.Instance.Settings));
+            if (CoverageBackfillDataStore.TryReadCoverageIpcFailure(out var ipcFailure))
+            {
+                Log.Warning("RunCiCommand: A selected coverage tool could not deliver its coverage result through IPC: {Reason}", ipcFailure);
+            }
+
             session.PublishCodeCoverage();
 
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);

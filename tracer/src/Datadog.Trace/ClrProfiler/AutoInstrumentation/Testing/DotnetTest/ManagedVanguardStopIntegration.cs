@@ -89,6 +89,7 @@ public sealed class ManagedVanguardStopIntegration
                                         coverageResult.Diagnostic)))
                             {
                                 Common.Log.Warning("ManagedVanguardStopIntegration: Could not send Microsoft CodeCoverage IPC message.");
+                                CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
                             }
                         }
                         catch (Exception ex)

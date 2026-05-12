@@ -29,6 +29,7 @@ internal static class CoverageBackfillDataStore
 
     private const string BackfillFileName = "coverage-backfill.json";
     private const string ActualSkipFileName = "coverage-backfill-actual-skip";
+    private const string IpcFailureFileName = "coverage-backfill-ipc-failure";
 
     /// <summary>
     /// Persists backend coverage data for later coverage adapters and propagates the file path through the process environment.
@@ -137,6 +138,49 @@ internal static class CoverageBackfillDataStore
     }
 
     /// <summary>
+    /// Persists a compact marker when a selected child coverage source cannot deliver its result to the parent session.
+    /// </summary>
+    /// <param name="source">Coverage source that failed to send IPC.</param>
+    public static void RecordCoverageIpcFailure(string source)
+    {
+        try
+        {
+            var filePath = GetIpcFailurePath(TestOptimization.Instance);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.AppendAllText(filePath, $"{DateTime.UtcNow:o} {source}{Environment.NewLine}");
+        }
+        catch (Exception ex)
+        {
+            TestOptimization.Instance.Log.Warning(ex, "CoverageBackfillDataStore: Error persisting coverage IPC failure state.");
+        }
+    }
+
+    /// <summary>
+    /// Reads the compact coverage IPC failure marker, if a selected child coverage source failed to deliver a result.
+    /// </summary>
+    /// <param name="reason">Failure marker contents.</param>
+    /// <returns>True when a coverage IPC failure marker was found.</returns>
+    public static bool TryReadCoverageIpcFailure(out string reason)
+    {
+        reason = string.Empty;
+        try
+        {
+            var filePath = GetIpcFailurePath(TestOptimization.Instance);
+            if (!File.Exists(filePath))
+            {
+                return false;
+            }
+
+            reason = File.ReadAllText(filePath).Trim();
+            return reason.Length > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Builds the deterministic backend coverage file path shared by testhost, coverage collectors, and the parent session.
     /// </summary>
     /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
@@ -154,6 +198,16 @@ internal static class CoverageBackfillDataStore
     private static string GetActualSkipPath(ITestOptimization testOptimization)
     {
         return Path.Combine(GetRunFolder(testOptimization), ActualSkipFileName);
+    }
+
+    /// <summary>
+    /// Builds the deterministic marker-file path used to share selected-source IPC delivery failures with the parent session.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <returns>Absolute path to the coverage IPC failure marker file.</returns>
+    private static string GetIpcFailurePath(ITestOptimization testOptimization)
+    {
+        return Path.Combine(GetRunFolder(testOptimization), IpcFailureFileName);
     }
 
     /// <summary>
