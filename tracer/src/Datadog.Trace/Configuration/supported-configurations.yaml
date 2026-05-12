@@ -526,6 +526,12 @@ supportedConfigurations:
     default: null
     product: CIVisibility
     documentation: Jenkins CI environment variable for custom trace ID correlation.
+  DD_CUSTOM_PARENT_ID:
+  - implementation: A
+    type: string
+    default: null
+    product: CIVisibility
+    documentation: Jenkins CI environment variable for custom parent ID correlation.
   DD_DATA_STREAMS_ENABLED:
   - implementation: B
     type: boolean
