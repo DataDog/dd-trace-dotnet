@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
@@ -37,8 +38,11 @@ public sealed class TestSession
     private readonly ITestOptimization _testOptimization;
     private readonly Span _span;
     private readonly Dictionary<string, string?>? _environmentVariablesToRestore;
+    private readonly CodeCoverageResultAggregator _codeCoverageResults = new();
     private IpcServer? _ipcServer;
     private int _finished;
+    private int _ipcMessageCount;
+    private long _lastIpcMessageTicks;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
@@ -175,6 +179,11 @@ public sealed class TestSession
     }
 
     internal TestSessionSpanTags Tags => (TestSessionSpanTags)_span.Tags;
+
+    /// <summary>
+    /// Gets a value indicating whether any session-level code coverage result has been recorded.
+    /// </summary>
+    internal bool HasCodeCoverageResults => _codeCoverageResults.HasResults;
 
     /// <summary>
     /// Get or create a new Test Session
@@ -424,6 +433,79 @@ public sealed class TestSession
         }
     }
 
+    /// <summary>
+    /// Records a candidate session coverage result for source arbitration.
+    /// </summary>
+    /// <param name="source">Coverage source that produced the result.</param>
+    /// <param name="percentage">Line coverage percentage reported by the source.</param>
+    /// <param name="backfilled">Whether backend ITR coverage was used to compute the result.</param>
+    /// <param name="executableLines">Executable-line count, when available.</param>
+    /// <param name="coveredLines">Covered-line count, when available.</param>
+    /// <param name="diagnostic">Compact diagnostic text, when available.</param>
+    internal void RecordCodeCoverage(CodeCoverageReportSource source, double percentage, bool backfilled = false, double? executableLines = null, double? coveredLines = null, string? diagnostic = null)
+    {
+        _testOptimization.Log.Debug<CodeCoverageReportSource, double, bool>(
+            "TestSession.RecordCodeCoverage: Source={Source}, Percentage={Percentage}, Backfilled={Backfilled}",
+            source,
+            percentage,
+            backfilled);
+        _codeCoverageResults.Add(source, percentage, backfilled, executableLines, coveredLines, diagnostic);
+    }
+
+    /// <summary>
+    /// Waits briefly for IPC callbacks that may have been written near process finalization.
+    /// </summary>
+    /// <param name="maxWait">Maximum time to wait.</param>
+    /// <param name="quietPeriod">Required period without an IPC callback before returning.</param>
+    /// <param name="waitForFirstMessage">Whether to wait for the first new IPC message before applying the quiet-period rule.</param>
+    internal void DrainIpcMessages(TimeSpan maxWait, TimeSpan quietPeriod, bool waitForFirstMessage)
+    {
+        if (_ipcServer is null || maxWait <= TimeSpan.Zero || quietPeriod <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        var initialMessageCount = Volatile.Read(ref _ipcMessageCount);
+        var deadlineTicks = DateTime.UtcNow.Ticks + maxWait.Ticks;
+        while (DateTime.UtcNow.Ticks < deadlineTicks)
+        {
+            var currentMessageCount = Volatile.Read(ref _ipcMessageCount);
+            var hasNewMessage = currentMessageCount > initialMessageCount;
+            if (!waitForFirstMessage || hasNewMessage)
+            {
+                var lastMessageTicks = Volatile.Read(ref _lastIpcMessageTicks);
+                if (lastMessageTicks == 0 || DateTime.UtcNow.Ticks - lastMessageTicks >= quietPeriod.Ticks)
+                {
+                    return;
+                }
+            }
+
+            Thread.Sleep(10);
+        }
+    }
+
+    /// <summary>
+    /// Publishes the selected session coverage result to the session span.
+    /// </summary>
+    internal void PublishCodeCoverage()
+    {
+        if (!_codeCoverageResults.TryGetBestResult(out var result))
+        {
+            return;
+        }
+
+        _testOptimization.Log.Information<CodeCoverageReportSource, double, bool>(
+            "TestSession.PublishCodeCoverage: Source={Source}, Percentage={Percentage}, Backfilled={Backfilled}",
+            result.Source,
+            result.Percentage,
+            result.Backfilled);
+        SetTag(CodeCoverageTags.PercentageOfTotalLines, result.Percentage);
+        if (result.Backfilled)
+        {
+            SetTag(CodeCoverageTags.Backfilled, "true");
+        }
+    }
+
     private void OnIpcMessageReceived(object message)
     {
         _testOptimization.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
@@ -433,6 +515,9 @@ public sealed class TestSession
         {
             return;
         }
+
+        Interlocked.Increment(ref _ipcMessageCount);
+        Interlocked.Exchange(ref _lastIpcMessageTicks, DateTime.UtcNow.Ticks);
 
         // If the message is a SetSessionTagMessage, we set the tag
         if (message is SetSessionTagMessage tagMessage)
@@ -450,10 +535,18 @@ public sealed class TestSession
         }
         else if (message is SessionCodeCoverageMessage { Value: >= 0.0 } codeCoverageMessage)
         {
-            _testOptimization.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
-
-            // Adds the global code coverage percentage to the session
-            SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoverageMessage.Value);
+            _testOptimization.Log.Information<CodeCoverageReportSource, double, bool>(
+                "TestSession.ReceiveMessage (code coverage): Source={Source}, Value={Value}, Backfilled={Backfilled}",
+                codeCoverageMessage.Source,
+                codeCoverageMessage.Value,
+                codeCoverageMessage.Backfilled);
+            RecordCodeCoverage(
+                codeCoverageMessage.Source,
+                codeCoverageMessage.Value,
+                codeCoverageMessage.Backfilled,
+                codeCoverageMessage.ExecutableLines,
+                codeCoverageMessage.CoveredLines,
+                codeCoverageMessage.Diagnostic);
         }
     }
 

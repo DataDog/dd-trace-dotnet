@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -63,7 +64,10 @@ public sealed class ManagedVanguardStopIntegration
                             Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                             using var ipcClient = new IpcClient(name);
                             Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                            ipcClient.TrySendMessage(new SessionCodeCoverageMessage(percentage));
+                            if (!ipcClient.TrySendMessage(new SessionCodeCoverageMessage(CodeCoverageReportSource.MicrosoftCodeCoverage, percentage, backfilled: false)))
+                            {
+                                Common.Log.Warning("ManagedVanguardStopIntegration: Could not send Microsoft CodeCoverage IPC message.");
+                            }
                         }
                         catch (Exception ex)
                         {

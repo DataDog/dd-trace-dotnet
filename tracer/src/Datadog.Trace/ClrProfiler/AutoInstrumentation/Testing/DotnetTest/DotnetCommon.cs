@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Tags;
@@ -173,17 +174,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
+            var hasDirectCoverageResult = false;
 
             // If the code coverage path is set we try to read all json files created, merge them into a single one and extract the
             // global code coverage percentage.
             // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
             if (!string.IsNullOrEmpty(codeCoveragePath))
             {
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
-                {
-                    Log.Warning("DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH was ignored because DD_CIVISIBILITY_CODE_COVERAGE_ENABLED is set.");
-                }
-
                 var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
                 if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage) &&
                     globalCoverage is not null)
@@ -197,37 +194,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
                     if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
                     {
-                        // Adds the global code coverage percentage to the session
-                        session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
-                        if (backfillResult.Applied)
-                        {
-                            session.SetTag(CodeCoverageTags.Backfilled, "true");
-                        }
+                        var data = globalCoverage.Data;
+                        session.RecordCodeCoverage(
+                            CodeCoverageReportSource.DatadogInternal,
+                            globalCoverage.GetTotalPercentage(),
+                            backfillResult.Applied,
+                            executableLines: data[1],
+                            coveredLines: data[2]);
+                        hasDirectCoverageResult = true;
                     }
                 }
             }
-            else
+
+            try
             {
-                try
+                if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
+                    File.Exists(extCodeCoverageFilePath))
                 {
-                    if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
-                        File.Exists(extCodeCoverageFilePath))
+                    if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
                     {
-                        if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
-                        {
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                        }
-                        else
-                        {
-                            Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
-                        }
+                        session.RecordCodeCoverage(CodeCoverageReportSource.ExternalXml, coveragePercentage);
+                        hasDirectCoverageResult = true;
+                    }
+                    else
+                    {
+                        Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "RunCiCommand: Error while reading the external file code coverage.");
-                }
             }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "RunCiCommand: Error while reading the external file code coverage.");
+            }
+
+            session.DrainIpcMessages(
+                TimeSpan.FromMilliseconds(250),
+                TimeSpan.FromMilliseconds(50),
+                waitForFirstMessage: !hasDirectCoverageResult && EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true);
+            session.PublishCodeCoverage();
 
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
         }

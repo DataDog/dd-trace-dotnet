@@ -5,6 +5,7 @@
 #nullable enable
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -76,7 +77,10 @@ public sealed class CoverageGetCoverageResultIntegration
                     Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                     using var ipcClient = new IpcClient(name);
                     Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                    ipcClient.TrySendMessage(new SessionCodeCoverageMessage(percentage));
+                    if (!ipcClient.TrySendMessage(new SessionCodeCoverageMessage(CodeCoverageReportSource.Coverlet, percentage, backfilled: false)))
+                    {
+                        Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
+                    }
                 }
                 catch (Exception ex)
                 {
