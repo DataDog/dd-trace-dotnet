@@ -6,20 +6,27 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Net;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
 
 internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
+    private readonly TestOptimizationSettings _settings;
     private readonly Task<SkippableTestsDictionary>? _skippableTestsTask;
+    private int _itrSkippedTests;
 
     private TestOptimizationSkippableFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
+        _settings = settings;
         if (settings.TestsSkippingEnabled == null && clientSettingsResponse.TestsSkipping.HasValue)
         {
             Log.Information("TestOptimizationSkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);
@@ -49,10 +56,15 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
             Log.Debug("TestOptimizationSkippableFeature: Getting skippable tests...");
             var skippeableTests = await testOptimizationClient.GetSkippableTestsAsync().ConfigureAwait(false);
-            Log.Information<string?, int>("TestOptimizationSkippableFeature: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Count);
+            var tests = skippeableTests.Tests ?? Array.Empty<SkippableTest>();
+            Log.Information<string?, int, bool>(
+                "TestOptimizationSkippableFeature: CorrelationId = {CorrelationId}, SkippableTests = {Length}, CoverageBackfillSafe = {CoverageBackfillSafe}.",
+                skippeableTests.CorrelationId,
+                tests.Count,
+                skippeableTests.IsCoverageBackfillSafe);
 
             var skippableTestsBySuiteAndName = new SkippableTestsDictionary();
-            foreach (var item in skippeableTests.Tests)
+            foreach (var item in tests)
             {
                 if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
                 {
@@ -70,6 +82,8 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             }
 
             skippableTestsBySuiteAndName.CorrelationId = skippeableTests.CorrelationId;
+            skippableTestsBySuiteAndName.BackfillData = skippeableTests.Coverage ?? CoverageBackfillData.Missing;
+            skippableTestsBySuiteAndName.IsCoverageBackfillSafe = skippeableTests.IsCoverageBackfillSafe;
             Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built. CorrelationId: {CorrelationId}", skippableTestsBySuiteAndName.CorrelationId);
             return skippableTestsBySuiteAndName;
         }
@@ -138,8 +152,73 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         return skippableTestsBySuiteAndName.CorrelationId;
     }
 
+    /// <inheritdoc />
+    public CoverageBackfillData GetCoverageBackfillData()
+    {
+        if (_skippableTestsTask is null)
+        {
+            return CoverageBackfillData.Missing;
+        }
+
+        var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
+        return skippableTestsBySuiteAndName.BackfillData;
+    }
+
+    /// <inheritdoc />
+    public bool IsCoverageBackfillRequired()
+    {
+        if (_settings.TestsSkippingEnabled != true)
+        {
+            return false;
+        }
+
+        return _settings.CodeCoverageEnabled == true ||
+               !string.IsNullOrWhiteSpace(_settings.CodeCoveragePath) ||
+               !string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath));
+    }
+
+    /// <inheritdoc />
+    public bool IsCoverageBackfillSafe()
+    {
+        if (_skippableTestsTask is null)
+        {
+            return false;
+        }
+
+        var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
+        var coverageBackfillData = skippableTestsBySuiteAndName.BackfillData;
+        return skippableTestsBySuiteAndName.IsCoverageBackfillSafe &&
+               coverageBackfillData.IsPresent &&
+               coverageBackfillData.IsValid;
+    }
+
+    /// <inheritdoc />
+    public void RecordTestSkippedByItr()
+    {
+        Interlocked.Increment(ref _itrSkippedTests);
+    }
+
+    /// <inheritdoc />
+    public bool HasSkippedTestsByItr()
+    {
+        return Volatile.Read(ref _itrSkippedTests) > 0;
+    }
+
     internal sealed class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
     {
+        /// <summary>
+        /// Gets or sets the backend correlation id associated with this skippable-test response.
+        /// </summary>
         public string? CorrelationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the backend coverage data associated with this skippable-test response.
+        /// </summary>
+        public CoverageBackfillData BackfillData { get; set; } = CoverageBackfillData.Missing;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the backend coverage aggregate still matches the local candidate set.
+        /// </summary>
+        public bool IsCoverageBackfillSafe { get; set; }
     }
 }

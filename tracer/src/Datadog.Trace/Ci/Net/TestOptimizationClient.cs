@@ -667,16 +667,24 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         [JsonProperty("correlation_id")]
         public readonly string? CorrelationId;
 
+        /// <summary>
+        /// Backend line coverage map for skippable tests, when the endpoint returns coverage backfill data.
+        /// </summary>
+        [JsonProperty("coverage")]
+        public readonly Dictionary<string, string>? Coverage;
+
         public Metadata(string repositoryUrl)
         {
             RepositoryUrl = repositoryUrl;
             CorrelationId = null;
+            Coverage = null;
         }
 
         public Metadata(string repositoryUrl, string? correlationId)
         {
             RepositoryUrl = repositoryUrl;
             CorrelationId = correlationId;
+            Coverage = null;
         }
     }
 

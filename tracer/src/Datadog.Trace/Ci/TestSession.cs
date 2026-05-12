@@ -323,6 +323,11 @@ public sealed class TestSession
                 break;
         }
 
+        if (Tags.TestsSkipped is null && _testOptimization.SkippableFeature?.Enabled == true)
+        {
+            Tags.TestsSkipped = _testOptimization.SkippableFeature.HasSkippedTestsByItr() ? "true" : "false";
+        }
+
         if (_ipcServer is not null)
         {
             _ipcServer.Dispose();

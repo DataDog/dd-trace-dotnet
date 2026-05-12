@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Collections.Generic;
+using Datadog.Trace.Ci.Coverage.Backfill;
 
 namespace Datadog.Trace.Ci;
 
@@ -17,4 +18,33 @@ internal interface ITestOptimizationSkippableFeature : ITestOptimizationFeature
     bool HasSkippableTests();
 
     string? GetCorrelationId();
+
+    /// <summary>
+    /// Gets backend coverage data returned with the skippable-tests response.
+    /// </summary>
+    /// <returns>Decoded backend coverage data, or a missing marker when the response did not include coverage.</returns>
+    CoverageBackfillData GetCoverageBackfillData();
+
+    /// <summary>
+    /// Gets whether the current run needs backend coverage before applying ITR skips.
+    /// </summary>
+    /// <returns>True when skipping without backfill can make the selected coverage result inaccurate.</returns>
+    bool IsCoverageBackfillRequired();
+
+    /// <summary>
+    /// Gets whether the backend coverage aggregate is safe to use with the local skippable-test list.
+    /// </summary>
+    /// <returns>True when coverage is present, valid, and has not been invalidated by local filtering.</returns>
+    bool IsCoverageBackfillSafe();
+
+    /// <summary>
+    /// Records that a test was actually skipped by Intelligent Test Runner.
+    /// </summary>
+    void RecordTestSkippedByItr();
+
+    /// <summary>
+    /// Gets whether this process has observed an actual ITR skip.
+    /// </summary>
+    /// <returns>True when at least one test closed with the ITR skip reason.</returns>
+    bool HasSkippedTestsByItr();
 }

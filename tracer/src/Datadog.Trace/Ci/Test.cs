@@ -509,6 +509,7 @@ public sealed class Test
                 if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
                 {
                     tags.SkippedByIntelligentTestRunner = "true";
+                    _testOptimization.SkippableFeature?.RecordTestSkippedByItr();
                     Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
                     TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test);
                 }

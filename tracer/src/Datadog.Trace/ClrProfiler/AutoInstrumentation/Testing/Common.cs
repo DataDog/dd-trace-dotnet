@@ -91,7 +91,7 @@ internal static class Common
                     if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
                         (testMethodArguments is null || testMethodArguments.Length == 0))
                     {
-                        return true;
+                        return CanSkipForCoverage(skippableTest);
                     }
 
                     if (parameters?.Arguments is not null &&
@@ -127,7 +127,7 @@ internal static class Common
 
                         if (matchSignature)
                         {
-                            return true;
+                            return CanSkipForCoverage(skippableTest);
                         }
                     }
                 }
@@ -139,6 +139,34 @@ internal static class Common
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Checks whether an ITR candidate can be skipped without making the active coverage report inaccurate.
+    /// </summary>
+    /// <param name="skippableTest">Backend skippable candidate matched to the current framework test.</param>
+    /// <returns>True when the test can be skipped safely.</returns>
+    private static bool CanSkipForCoverage(SkippableTest skippableTest)
+    {
+        var skippableFeature = TestOptimization.Instance.SkippableFeature;
+        if (skippableFeature?.IsCoverageBackfillRequired() != true)
+        {
+            return true;
+        }
+
+        if (!skippableFeature.IsCoverageBackfillSafe())
+        {
+            Log.Debug("Common: Test cannot be skipped because coverage backfill is required but backend coverage is unavailable or unsafe.");
+            return false;
+        }
+
+        if (skippableTest.MissingLineCodeCoverage)
+        {
+            Log.Debug("Common: Test cannot be skipped because backend marked it as missing line coverage.");
+            return false;
+        }
+
+        return true;
     }
 
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
