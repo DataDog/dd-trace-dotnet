@@ -36,24 +36,18 @@ internal struct TelemetryClientConfiguration
     public bool DebugEnabled;
 
     /// <summary>
-    /// Stable session identifier for the instrumented process. Attached to
-    /// telemetry requests as the DD-Session-ID HTTP header. An empty
-    /// CharSlice is treated as unset.
+    /// Emitted as the dd-session-id HTTP header. Empty CharSlice is treated as unset.
     /// </summary>
     public CharSlice SessionId;
 
     /// <summary>
-    /// Identifier of the root process in a hierarchy of instrumented
-    /// processes. Attached to telemetry requests as the DD-Root-Session-ID
-    /// HTTP header when distinct from <see cref="SessionId"/>. An empty
-    /// CharSlice is treated as unset.
+    /// Emitted as the dd-root-session-id HTTP header. Empty CharSlice is treated as unset.
+    /// libdatadog suppresses the header when it equals <see cref="SessionId"/>.
     /// </summary>
     public CharSlice RootSessionId;
 
     /// <summary>
-    /// Identifier of the immediate parent process. Attached to telemetry
-    /// requests as the DD-Parent-Session-ID HTTP header when distinct from
-    /// <see cref="SessionId"/>. An empty CharSlice is treated as unset.
+    /// Emitted as the dd-parent-session-id HTTP header. Empty CharSlice is treated as unset.
     /// </summary>
     public CharSlice ParentSessionId;
 }
