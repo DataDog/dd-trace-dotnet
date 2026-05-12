@@ -36,13 +36,13 @@ public class DataStreamsMonitoringTransportTests
     }
 
     public static IEnumerable<object[]> Data =>
-        Enum.GetValues(typeof(TracesTransportType))
-            .Cast<TracesTransportType>()
+        Enum.GetValues(typeof(AgentTransportType))
+            .Cast<AgentTransportType>()
 #if !NETCOREAPP3_1_OR_GREATER
-            .Where(x => x != TracesTransportType.UnixDomainSocket)
+            .Where(x => x != AgentTransportType.UnixDomainSocket)
 #endif
              // Run named pipes tests only on Windows
-            .Where(x => EnvironmentTools.IsWindows() || x != TracesTransportType.WindowsNamedPipe)
+            .Where(x => EnvironmentTools.IsWindows() || x != AgentTransportType.WindowsNamedPipe)
             .Select(x => new object[] { x });
 
     [SkippableTheory]
@@ -51,7 +51,7 @@ public class DataStreamsMonitoringTransportTests
     [Trait("RunOnWindows", "True")]
     public async Task TransportsWorkCorrectly(Enum transport)
     {
-        using var agent = Create((TracesTransportType)transport);
+        using var agent = Create((AgentTransportType)transport);
 
         // We don't want to trigger a flush based on the timer, only based on the disposal of the writer
         // That ensures we only get a single payload
@@ -111,13 +111,13 @@ public class DataStreamsMonitoringTransportTests
     private BacklogPoint CreateBacklogPoint(long timestamp = 0)
         => new BacklogPoint("type:produce", 100, timestamp != 0 ? timestamp : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
-    private MockTracerAgent Create(TracesTransportType transportType)
+    private MockTracerAgent Create(AgentTransportType transportType)
         => transportType switch
         {
-            TracesTransportType.Default => MockTracerAgent.Create(_output),
-            TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
+            AgentTransportType.Default => MockTracerAgent.Create(_output),
+            AgentTransportType.WindowsNamedPipe => MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
 #if NETCOREAPP3_1_OR_GREATER
-            TracesTransportType.UnixDomainSocket => MockTracerAgent.Create(
+            AgentTransportType.UnixDomainSocket => MockTracerAgent.Create(
                 _output,
                 new UnixDomainSocketConfig(
                     Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()),

@@ -85,10 +85,10 @@ public partial class ExporterSettingsTests
     public void RelativeAgentUrlShouldWarn(string param, string expectedSocket)
     {
         var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
-        settingsFromSource.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+        settingsFromSource.AgentTransport.Should().Be(AgentTransportType.UnixDomainSocket);
         settingsFromSource.TracesUnixDomainSocketPath.Should().Be(expectedSocket);
         Assert.Equal(new Uri(param), settingsFromSource.AgentUri);
-        CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
+        CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "AgentTransport");
         settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {param} contains a relative path which may not work. This is the path to the socket that will be used: /socket.soc");
     }
 
@@ -100,10 +100,10 @@ public partial class ExporterSettingsTests
         var settingsFromSource = Setup("DD_APM_RECEIVER_SOCKET", param);
         var uri = new Uri(ExporterSettings.UnixDomainSocketPrefix + param);
 
-        settingsFromSource.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+        settingsFromSource.AgentTransport.Should().Be(AgentTransportType.UnixDomainSocket);
         settingsFromSource.TracesUnixDomainSocketPath.Should().Be(expectedSocket);
         settingsFromSource.AgentUri.Should().Be(uri);
-        CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
+        CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "AgentTransport");
         settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {uri.AbsoluteUri} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
         settingsFromSource.ValidationWarnings.Should().Contain($"The socket provided {expectedSocket} cannot be found. The tracer will still rely on this socket to send traces.");
     }
@@ -284,27 +284,27 @@ public partial class ExporterSettingsTests
 
     private void AssertHttpIsConfigured(ExporterSettings settings, Uri expectedUri)
     {
-        settings.TracesTransport.Should().Be(TracesTransportType.Default);
+        settings.AgentTransport.Should().Be(AgentTransportType.Default);
         settings.AgentUri.Should().Be(expectedUri);
         settings.AgentUri.Host.Should().NotBeEquivalentTo("localhost");
-        CheckDefaultValues(settings, "AgentUri", "TracesTransport", "MetricsHostname");
+        CheckDefaultValues(settings, "AgentUri", "AgentTransport", "MetricsHostname");
     }
 
     private void AssertUdsIsConfigured(ExporterSettings settings, string socketPath)
     {
-        settings.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+        settings.AgentTransport.Should().Be(AgentTransportType.UnixDomainSocket);
         settings.TracesUnixDomainSocketPath.Should().Be(socketPath);
         settings.AgentUri.Host.Should().NotBeEquivalentTo("localhost");
-        CheckDefaultValues(settings, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
+        CheckDefaultValues(settings, "TracesUnixDomainSocketPath", "AgentUri", "AgentTransport");
     }
 
     private void AssertPipeIsConfigured(ExporterSettings settings, string pipeName)
     {
-        settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
+        settings.AgentTransport.Should().Be(AgentTransportType.WindowsNamedPipe);
         settings.TracesPipeName.Should().Be(pipeName);
         settings.AgentUri.Should().NotBeNull();
         settings.AgentUri.Host.Should().NotBeEquivalentTo("localhost");
-        CheckDefaultValues(settings, "TracesPipeName", "AgentUri", "TracesTransport", "TracesPipeTimeoutMs");
+        CheckDefaultValues(settings, "TracesPipeName", "AgentUri", "AgentTransport", "TracesPipeTimeoutMs");
     }
 
     private Func<string, bool> NoFile()
@@ -338,9 +338,9 @@ public partial class ExporterSettingsTests
             settings.AgentUri.AbsoluteUri.Should().Be("http://127.0.0.1:8126/");
         }
 
-        if (!paramToIgnore.Contains("TracesTransport"))
+        if (!paramToIgnore.Contains("AgentTransport"))
         {
-            settings.TracesTransport.Should().Be(TracesTransportType.Default);
+            settings.AgentTransport.Should().Be(AgentTransportType.Default);
         }
 
         if (!paramToIgnore.Contains("TracesPipeName"))

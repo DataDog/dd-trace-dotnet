@@ -31,6 +31,7 @@ src/Datadog.Trace/Tracer.cs
 src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
 src/Datadog.Trace/TracerManagerFactory.cs
+src/Datadog.Trace/Agent/AgentTransportType.cs
 src/Datadog.Trace/Agent/Api.cs
 src/Datadog.Trace/Agent/ApiOtlp.cs
 src/Datadog.Trace/Agent/IApi.cs
@@ -47,7 +48,6 @@ src/Datadog.Trace/Agent/StatsAggregator.cs
 src/Datadog.Trace/Agent/StatsBucket.cs
 src/Datadog.Trace/Agent/StatsBuffer.cs
 src/Datadog.Trace/Agent/TracesTransportStrategy.cs
-src/Datadog.Trace/Agent/TracesTransportType.cs
 src/Datadog.Trace/AppSec/AddressesConstants.cs
 src/Datadog.Trace/AppSec/AppSecRateLimiter.cs
 src/Datadog.Trace/AppSec/BlockingAction.cs

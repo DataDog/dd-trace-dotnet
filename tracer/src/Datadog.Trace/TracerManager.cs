@@ -428,7 +428,7 @@ namespace Datadog.Trace
                     writer.WriteValue(exporterSettings.TraceAgentUriBase);
 
                     writer.WritePropertyName("agent_transport");
-                    writer.WriteValue(exporterSettings.TracesTransport.ToString());
+                    writer.WriteValue(exporterSettings.AgentTransport.ToString());
 
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Instance.DebugEnabled);
