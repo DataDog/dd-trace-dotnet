@@ -299,6 +299,10 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             var tag = _exceptionTagCache.GetOrAdd(typeName, static name => new KeyValuePair<string, object?>("error.type", name));
             _exceptions?.Add(1, tag);
         }
+        catch
+        {
+            // Don't want to escape here
+        }
         finally
         {
             _handlingFirstChanceException = false;
