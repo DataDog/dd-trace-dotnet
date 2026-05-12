@@ -60,6 +60,7 @@ public sealed class ManagedVanguardStopIntegration
                     {
                         DotnetCommon.Log.Warning("MicrosoftCodeCoverage: XML report could not be backfilled, so no stale coverage percentage will be sent.");
                         TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
                     }
 
                     continue;
@@ -98,7 +99,15 @@ public sealed class ManagedVanguardStopIntegration
                         catch (Exception ex)
                         {
                             Common.Log.Error(ex, "Error enabling IPC client and sending coverage data");
+                            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                            CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
                         }
+                    }
+                    else
+                    {
+                        Common.Log.Warning("ManagedVanguardStopIntegration: Could not find the parent test session context for Microsoft CodeCoverage IPC.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
                     }
                 }
             }

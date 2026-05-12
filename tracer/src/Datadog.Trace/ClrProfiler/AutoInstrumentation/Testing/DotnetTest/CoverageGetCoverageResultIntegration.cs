@@ -69,6 +69,7 @@ public sealed class CoverageGetCoverageResultIntegration
                 {
                     DotnetCommon.Log.Warning("CoverageGetCoverageResult: Coverlet modules could not be matched to backend coverage, so no stale coverage percentage will be sent.");
                     TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
                     return new CallTargetReturn<TReturn>(returnValue);
                 }
 
@@ -103,7 +104,15 @@ public sealed class CoverageGetCoverageResultIntegration
                 catch (Exception ex)
                 {
                     Common.Log.Error(ex, "Error enabling IPC client and sending coverage data");
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
                 }
+            }
+            else
+            {
+                Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not find the parent test session context for Coverlet coverage IPC.");
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
             }
         }
 
