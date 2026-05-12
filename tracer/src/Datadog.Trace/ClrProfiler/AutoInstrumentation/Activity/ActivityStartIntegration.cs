@@ -58,40 +58,50 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         /// </summary>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
+            HandleStartedActivity(instance);
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        /// <summary>
+        /// Shared post-Start work: filters the activity by source/operation-name, then creates
+        /// a Datadog scope and links it back to the activity via the <see cref="ActivityCustomPropertyKeys.Span"/>
+        /// custom property. Reused by <see cref="ActivityCreateAndStartIntegration"/> for the DS 5.x
+        /// <c>Activity.CreateAndStart</c> path that bypasses the public <c>Activity.Start()</c>.
+        /// </summary>
+        internal static void HandleStartedActivity<TActivity>(TActivity activityInstance)
+        {
             try
             {
                 if (!Tracer.Instance.Settings.IsActivityInterceptionEnabled)
                 {
-                    return new CallTargetReturn<TReturn>(returnValue);
+                    return;
                 }
 
-                if (!instance.TryDuckCast<IActivity5>(out var activity5))
+                if (!activityInstance.TryDuckCast<IActivity5>(out var activity5))
                 {
-                    return new CallTargetReturn<TReturn>(returnValue);
+                    return;
                 }
 
                 // Filter out sources already handled by other Datadog integrations
                 var sourceName = activity5.Source.Name ?? string.Empty;
                 if (ActivitySourceFilter.ShouldIgnore(sourceName, null))
                 {
-                    return new CallTargetReturn<TReturn>(returnValue);
+                    return;
                 }
 
                 // Filter by operation name prefix (e.g., System.Net.Http.*, Microsoft.AspNetCore.*)
                 if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity5.OperationName))
                 {
                     IgnoreActivityHandler.IgnoreActivity(activity5, Tracer.Instance.ActiveScope?.Span as Span);
-                    return new CallTargetReturn<TReturn>(returnValue);
+                    return;
                 }
 
-                CreateAndLinkScope(instance, activity5);
+                CreateAndLinkScope(activityInstance, activity5);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in ActivityStartIntegration.OnMethodEnd");
+                Log.Error(ex, "Error in ActivityStartIntegration.HandleStartedActivity");
             }
-
-            return new CallTargetReturn<TReturn>(returnValue);
         }
 
         private static void CreateAndLinkScope<TTarget>(TTarget instance, IActivity5 activity5)
