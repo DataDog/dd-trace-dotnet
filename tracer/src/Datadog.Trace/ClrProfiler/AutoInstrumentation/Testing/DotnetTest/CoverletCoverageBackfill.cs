@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Backfill;
 
@@ -32,6 +33,7 @@ internal static class CoverletCoverageBackfill
             return false;
         }
 
+        var matchedBackendPath = backfillData.ExecutedLinesByRelativePath.Count == 0;
         foreach (DictionaryEntry moduleEntry in EnumerateDictionary(modules))
         {
             foreach (DictionaryEntry documentEntry in EnumerateDictionary(moduleEntry.Value))
@@ -42,11 +44,12 @@ internal static class CoverletCoverageBackfill
                     continue;
                 }
 
+                matchedBackendPath = true;
                 updatedLines += BackfillCoverletDocument(documentEntry.Value, backendBitmap);
             }
         }
 
-        return true;
+        return matchedBackendPath;
     }
 
     private static int BackfillCoverletDocument(object? classes, byte[] backendBitmap)
@@ -61,17 +64,19 @@ internal static class CoverletCoverageBackfill
                     continue;
                 }
 
-                foreach (DictionaryEntry lineEntry in lineHits)
+                var lineKeys = new object[lineHits.Keys.Count];
+                lineHits.Keys.CopyTo(lineKeys, 0);
+                foreach (var lineKey in lineKeys)
                 {
-                    if (!TryConvertToInt(lineEntry.Key, out var line) ||
+                    if (!TryConvertToInt(lineKey, out var line) ||
                         !IsBackendLineCovered(backendBitmap, line) ||
-                        !TryConvertToInt(lineEntry.Value, out var hits) ||
+                        !TryConvertToInt(lineHits[lineKey], out var hits) ||
                         hits > 0)
                     {
                         continue;
                     }
 
-                    lineHits[lineEntry.Key] = 1;
+                    lineHits[lineKey] = 1;
                     updatedLines++;
                 }
             }
@@ -101,37 +106,79 @@ internal static class CoverletCoverageBackfill
 
     private static bool LooksLikeLineHitDictionary(IDictionary dictionary)
     {
-        foreach (DictionaryEntry entry in dictionary)
+        foreach (var key in dictionary.Keys)
         {
-            return TryConvertToInt(entry.Key, out _) && TryConvertToInt(entry.Value, out _);
+            if (key is null)
+            {
+                continue;
+            }
+
+            return TryConvertToInt(key, out _) && TryConvertToInt(dictionary[key], out _);
         }
 
         return true;
     }
 
-    private static IEnumerable EnumerateDictionary(object? value)
+    private static IEnumerable<DictionaryEntry> EnumerateDictionary(object? value)
     {
         if (value is not IDictionary dictionary)
         {
             yield break;
         }
 
-        foreach (DictionaryEntry entry in dictionary)
+        foreach (var key in dictionary.Keys)
         {
-            yield return entry;
+            if (key is null)
+            {
+                continue;
+            }
+
+            yield return new DictionaryEntry(key, dictionary[key]);
         }
     }
 
     private static byte[]? GetBackendBitmap(CoverageBackfillData backfillData, string sourcePath)
     {
-        var relativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
-        try
+        var matchingBitmap = default(byte[]);
+        foreach (var candidate in GetPathCandidates(sourcePath))
         {
-            return backfillData.ExecutedLinesByRelativePath.TryGetValue(CoverageBackfillData.NormalizePath(relativePath), out var bitmap) ? bitmap : null;
+            if (!backfillData.ExecutedLinesByRelativePath.TryGetValue(candidate, out var bitmap))
+            {
+                continue;
+            }
+
+            if (matchingBitmap is not null && !ReferenceEquals(matchingBitmap, bitmap))
+            {
+                return null;
+            }
+
+            matchingBitmap = bitmap;
         }
-        catch
+
+        return matchingBitmap;
+    }
+
+    private static IEnumerable<string> GetPathCandidates(string sourcePath)
+    {
+        var rawCandidates = new[]
         {
-            return null;
+            sourcePath,
+            CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false)
+        };
+
+        foreach (var candidate in rawCandidates)
+        {
+            string normalized;
+            try
+            {
+                normalized = CoverageBackfillData.NormalizePath(candidate);
+            }
+            catch
+            {
+                continue;
+            }
+
+            yield return normalized;
         }
     }
 

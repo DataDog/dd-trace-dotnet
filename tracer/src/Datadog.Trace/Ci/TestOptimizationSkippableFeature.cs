@@ -84,6 +84,8 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             skippableTestsBySuiteAndName.CorrelationId = skippeableTests.CorrelationId;
             skippableTestsBySuiteAndName.BackfillData = skippeableTests.Coverage ?? CoverageBackfillData.Missing;
             skippableTestsBySuiteAndName.IsCoverageBackfillSafe = skippeableTests.IsCoverageBackfillSafe;
+            skippableTestsBySuiteAndName.HasAmbiguousCoverageScope = HasAmbiguousCoverageScope(tests);
+            CoverageBackfillDataStore.Persist(TestOptimization.Instance, skippableTestsBySuiteAndName.BackfillData);
             Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built. CorrelationId: {CorrelationId}", skippableTestsBySuiteAndName.CorrelationId);
             return skippableTestsBySuiteAndName;
         }
@@ -167,14 +169,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     /// <inheritdoc />
     public bool IsCoverageBackfillRequired()
     {
-        if (_settings.TestsSkippingEnabled != true)
-        {
-            return false;
-        }
-
-        return _settings.CodeCoverageEnabled == true ||
-               !string.IsNullOrWhiteSpace(_settings.CodeCoveragePath) ||
-               !string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath));
+        return CoverageBackfillCapability.IsCoverageBackfillRequired(_settings);
     }
 
     /// <inheritdoc />
@@ -188,20 +183,92 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
         var coverageBackfillData = skippableTestsBySuiteAndName.BackfillData;
         return skippableTestsBySuiteAndName.IsCoverageBackfillSafe &&
+               !skippableTestsBySuiteAndName.HasAmbiguousCoverageScope &&
                coverageBackfillData.IsPresent &&
                coverageBackfillData.IsValid;
+    }
+
+    /// <inheritdoc />
+    public bool CanSkipWithCoverageBackfill(SkippableTest skippableTest, out string reason)
+    {
+        reason = string.Empty;
+        if (!IsCoverageBackfillRequired())
+        {
+            return true;
+        }
+
+        if (skippableTest.MissingLineCodeCoverage)
+        {
+            reason = "backend marked the test as missing line coverage";
+            return false;
+        }
+
+        if (!CoverageBackfillCapability.IsActiveCoverageModeBackfillable(_settings, out reason))
+        {
+            return false;
+        }
+
+        if (_skippableTestsTask is null)
+        {
+            reason = "skippable-tests response is unavailable";
+            return false;
+        }
+
+        var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
+        if (skippableTestsBySuiteAndName.HasAmbiguousCoverageScope)
+        {
+            reason = "duplicate skippable candidates make the backend coverage aggregate ambiguous";
+            return false;
+        }
+
+        if (!skippableTestsBySuiteAndName.IsCoverageBackfillSafe)
+        {
+            reason = "backend coverage aggregate was invalidated by local filtering";
+            return false;
+        }
+
+        var coverageBackfillData = skippableTestsBySuiteAndName.BackfillData;
+        if (!coverageBackfillData.IsPresent)
+        {
+            reason = "skippable-tests response did not include meta.coverage";
+            return false;
+        }
+
+        if (!coverageBackfillData.IsValid)
+        {
+            reason = coverageBackfillData.Error ?? "backend coverage could not be decoded";
+            return false;
+        }
+
+        return true;
     }
 
     /// <inheritdoc />
     public void RecordTestSkippedByItr()
     {
         Interlocked.Increment(ref _itrSkippedTests);
+        CoverageBackfillDataStore.RecordActualItrSkip();
     }
 
     /// <inheritdoc />
     public bool HasSkippedTestsByItr()
     {
         return Volatile.Read(ref _itrSkippedTests) > 0;
+    }
+
+    private static bool HasAmbiguousCoverageScope(ICollection<SkippableTest> tests)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var test in tests)
+        {
+            var key = $"{test.Suite}\0{test.Name}\0{test.RawParameters}";
+            if (!seen.Add(key))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal sealed class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
@@ -220,5 +287,10 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         /// Gets or sets a value indicating whether the backend coverage aggregate still matches the local candidate set.
         /// </summary>
         public bool IsCoverageBackfillSafe { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether local suite/name/parameter matching cannot uniquely scope backend coverage.
+        /// </summary>
+        public bool HasAmbiguousCoverageScope { get; set; }
     }
 }

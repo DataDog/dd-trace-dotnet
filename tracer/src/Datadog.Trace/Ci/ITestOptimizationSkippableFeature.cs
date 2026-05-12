@@ -38,6 +38,14 @@ internal interface ITestOptimizationSkippableFeature : ITestOptimizationFeature
     bool IsCoverageBackfillSafe();
 
     /// <summary>
+    /// Checks whether a matched skippable candidate can be skipped without making active coverage reports inaccurate.
+    /// </summary>
+    /// <param name="skippableTest">Backend skippable candidate matched to the current framework test.</param>
+    /// <param name="reason">Reason why skipping is unsafe when the method returns false.</param>
+    /// <returns>True when coverage-active skipping is safe for this candidate.</returns>
+    bool CanSkipWithCoverageBackfill(SkippableTest skippableTest, out string reason);
+
+    /// <summary>
     /// Records that a test was actually skipped by Intelligent Test Runner.
     /// </summary>
     void RecordTestSkippedByItr();

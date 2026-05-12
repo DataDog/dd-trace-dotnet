@@ -50,4 +50,37 @@ public class CoverletCoverageBackfillTests
         lineHits[3].Should().Be(1);
         lineHits.Should().NotContainKey(4);
     }
+
+    [Fact]
+    public void FailsWhenBackendPathDoesNotMatchCoverletDocuments()
+    {
+        var lineHits = new Dictionary<int, int>
+        {
+            [1] = 1,
+            [2] = 0
+        };
+        var modules = new Dictionary<string, object>
+        {
+            ["Calculator.dll"] = new Dictionary<string, object>
+            {
+                ["src/Calculator.cs"] = new Dictionary<string, object>
+                {
+                    ["Calculator"] = new Dictionary<string, object>
+                    {
+                        ["Add"] = lineHits
+                    }
+                }
+            }
+        };
+        var backfill = CoverageBackfillData.FromBackendCoverage(
+            new Dictionary<string, string>
+            {
+                ["src/Other.cs"] = Convert.ToBase64String([0b_0100_0000])
+            });
+
+        CoverletCoverageBackfill.TryApply(modules, backfill, out var updatedLines).Should().BeFalse();
+
+        updatedLines.Should().Be(0);
+        lineHits[2].Should().Be(0);
+    }
 }

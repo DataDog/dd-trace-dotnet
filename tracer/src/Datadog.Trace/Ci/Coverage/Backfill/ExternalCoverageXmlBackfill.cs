@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Xml;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.ExtensionMethods;
@@ -62,6 +63,42 @@ internal static class ExternalCoverageXmlBackfill
         return TryReadMicrosoftAggregateXml(xmlDoc, out result);
     }
 
+    /// <summary>
+    /// Checks whether an existing XML report has line entries that can be rewritten for ITR coverage backfill.
+    /// </summary>
+    /// <param name="filePath">Coverage XML file path.</param>
+    /// <param name="reason">Reason why the report cannot be used for line backfill.</param>
+    /// <returns>True when the report format exposes mutable line-level coverage data.</returns>
+    public static bool IsLineBackfillableReport(string filePath, out string reason)
+    {
+        reason = string.Empty;
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        {
+            reason = "Coverage XML report does not exist yet.";
+            return false;
+        }
+
+        try
+        {
+            var xmlDoc = new XmlDocument { PreserveWhitespace = true };
+            xmlDoc.Load(filePath);
+            if (xmlDoc.SelectSingleNode("/coverage//class[lines/line]") is not null ||
+                xmlDoc.SelectSingleNode("/CoverageSession//SequencePoint[@sl and @vc]") is not null ||
+                xmlDoc.SelectSingleNode("//*[translate(local-name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='line'][@number or @num or @line]") is not null)
+            {
+                return true;
+            }
+
+            reason = "Coverage XML report is aggregate-only or unsupported.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            reason = $"Coverage XML report could not be inspected: {ex.Message}";
+            return false;
+        }
+    }
+
     private static bool TryProcessCobertura(XmlDocument xmlDoc, string filePath, CoverageBackfillData? backfillData, bool canBackfill, out ExternalCoverageXmlResult result)
     {
         result = default;
@@ -72,6 +109,7 @@ internal static class ExternalCoverageXmlBackfill
         }
 
         var rewritten = false;
+        var matchedBackendPath = false;
         foreach (XmlNode? classNode in classNodes)
         {
             if (classNode is null)
@@ -80,9 +118,10 @@ internal static class ExternalCoverageXmlBackfill
             }
 
             var filename = classNode.Attributes?["filename"]?.Value;
-            var backendBitmap = GetBackendBitmap(backfillData, filename);
+            var backendBitmap = GetBackendBitmap(backfillData, filename, filePath);
             if (canBackfill && backendBitmap is not null)
             {
+                matchedBackendPath = true;
                 rewritten |= BackfillCoberturaClass(classNode, backendBitmap);
             }
 
@@ -113,6 +152,11 @@ internal static class ExternalCoverageXmlBackfill
             return false;
         }
 
+        if (canBackfill && !IsEmptyBackfill(backfillData) && !matchedBackendPath)
+        {
+            return false;
+        }
+
         if (rewritten)
         {
             xmlDoc.Save(filePath);
@@ -139,6 +183,7 @@ internal static class ExternalCoverageXmlBackfill
         }
 
         var rewritten = false;
+        var matchedBackendPath = false;
         foreach (XmlNode? sequencePointNode in sequencePointNodes)
         {
             if (sequencePointNode is null)
@@ -149,8 +194,13 @@ internal static class ExternalCoverageXmlBackfill
             if (!canBackfill ||
                 !TryGetIntAttribute(sequencePointNode, "fileid", out var fileId) ||
                 !fileMap.TryGetValue(fileId, out var sourcePath) ||
-                GetBackendBitmap(backfillData, sourcePath) is not { } backendBitmap ||
-                !TryGetIntAttribute(sequencePointNode, "sl", out var line) ||
+                GetBackendBitmap(backfillData, sourcePath, filePath) is not { } backendBitmap)
+            {
+                continue;
+            }
+
+            matchedBackendPath = true;
+            if (!TryGetIntAttribute(sequencePointNode, "sl", out var line) ||
                 !IsBackendLineCovered(backendBitmap, line) ||
                 !TryGetIntAttribute(sequencePointNode, "vc", out var visits) ||
                 visits > 0)
@@ -168,6 +218,11 @@ internal static class ExternalCoverageXmlBackfill
             !TryGetDoubleAttribute(rootSummary, "numSequencePoints", out var total) ||
             !TryGetDoubleAttribute(rootSummary, "visitedSequencePoints", out var covered) ||
             total <= 0)
+        {
+            return false;
+        }
+
+        if (canBackfill && !IsEmptyBackfill(backfillData) && !matchedBackendPath)
         {
             return false;
         }
@@ -197,6 +252,7 @@ internal static class ExternalCoverageXmlBackfill
         }
 
         var rewritten = false;
+        var matchedBackendPath = false;
         double total = 0;
         double covered = 0;
         foreach (XmlNode? lineNode in lineNodes)
@@ -210,10 +266,17 @@ internal static class ExternalCoverageXmlBackfill
             var hitAttribute = GetHitAttribute(lineNode);
             var hits = hitAttribute is null ? 0 : ParseCoverageHits(hitAttribute.Value);
             if (canBackfill &&
-                hits <= 0 &&
                 TryGetSourcePathFromNode(lineNode, out var sourcePath) &&
-                GetBackendBitmap(backfillData, sourcePath) is { } backendBitmap &&
-                IsBackendLineCovered(backendBitmap, line))
+                GetBackendBitmap(backfillData, sourcePath, filePath) is { } backendBitmap)
+            {
+                matchedBackendPath = true;
+            }
+
+            if (canBackfill &&
+                hits <= 0 &&
+                TryGetSourcePathFromNode(lineNode, out sourcePath) &&
+                GetBackendBitmap(backfillData, sourcePath, filePath) is { } backendBitmapForLine &&
+                IsBackendLineCovered(backendBitmapForLine, line))
             {
                 SetAttribute(lineNode, hitAttribute?.Name ?? "hits", "1");
                 hits = 1;
@@ -227,6 +290,11 @@ internal static class ExternalCoverageXmlBackfill
         }
 
         if (total <= 0)
+        {
+            return false;
+        }
+
+        if (canBackfill && !IsEmptyBackfill(backfillData) && !matchedBackendPath)
         {
             return false;
         }
@@ -438,22 +506,70 @@ internal static class ExternalCoverageXmlBackfill
         SetAttribute(summaryNode, "sequenceCoverage", FormatPercentage(CalculatePercentage(covered, total)));
     }
 
-    private static byte[]? GetBackendBitmap(CoverageBackfillData? backfillData, string? sourcePath)
+    private static byte[]? GetBackendBitmap(CoverageBackfillData? backfillData, string? sourcePath, string reportPath)
     {
         if (backfillData is not { IsPresent: true, IsValid: true } || string.IsNullOrWhiteSpace(sourcePath))
         {
             return null;
         }
 
-        var relativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath!, false);
-        try
+        var matchingBitmap = default(byte[]);
+        foreach (var candidate in GetPathCandidates(sourcePath!, reportPath))
         {
-            return backfillData.ExecutedLinesByRelativePath.TryGetValue(CoverageBackfillData.NormalizePath(relativePath), out var bitmap) ? bitmap : null;
+            if (!backfillData.ExecutedLinesByRelativePath.TryGetValue(candidate, out var bitmap))
+            {
+                continue;
+            }
+
+            if (matchingBitmap is not null && !ReferenceEquals(matchingBitmap, bitmap))
+            {
+                return null;
+            }
+
+            matchingBitmap = bitmap;
         }
-        catch
+
+        return matchingBitmap;
+    }
+
+    private static IEnumerable<string> GetPathCandidates(string sourcePath, string reportPath)
+    {
+        foreach (var candidate in GetRawPathCandidates(sourcePath, reportPath))
         {
-            return null;
+            string normalized;
+            try
+            {
+                normalized = CoverageBackfillData.NormalizePath(candidate);
+            }
+            catch
+            {
+                continue;
+            }
+
+            yield return normalized;
         }
+    }
+
+    private static IEnumerable<string> GetRawPathCandidates(string sourcePath, string reportPath)
+    {
+        yield return sourcePath;
+        yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
+
+        if (!Path.IsPathRooted(sourcePath))
+        {
+            var reportDirectory = Path.GetDirectoryName(reportPath);
+            if (!string.IsNullOrWhiteSpace(reportDirectory))
+            {
+                var reportRelativePath = Path.Combine(reportDirectory!, sourcePath);
+                yield return reportRelativePath;
+                yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(reportRelativePath, false);
+            }
+        }
+    }
+
+    private static bool IsEmptyBackfill(CoverageBackfillData? backfillData)
+    {
+        return backfillData is { IsPresent: true, IsValid: true, ExecutedLinesByRelativePath.Count: 0 };
     }
 
     private static bool IsBackendLineCovered(byte[] bitmap, int line)

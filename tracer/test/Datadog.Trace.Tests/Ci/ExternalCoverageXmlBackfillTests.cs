@@ -107,6 +107,73 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
+    public void CoberturaBackfillFailsWhenBackendPathDoesNotMatchReport()
+    {
+        var filePath = WriteTempCoverageFile(
+            """
+            <coverage line-rate="0.5" lines-valid="2" lines-covered="1">
+              <packages>
+                <package name="sample" line-rate="0.5">
+                  <classes>
+                    <class name="Calculator" filename="src/Calculator.cs" line-rate="0.5">
+                      <lines>
+                        <line number="1" hits="1" />
+                        <line number="2" hits="0" />
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """);
+
+        try
+        {
+            var backfill = BackfillForLine("src/Other.cs", line: 2);
+
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
+            File.ReadAllText(filePath).Should().Contain("""<line number="2" hits="0" />""");
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public void MicrosoftLineReportIsRewrittenWithBackendCoveredLines()
+    {
+        var filePath = WriteTempCoverageFile(
+            """
+            <report>
+              <file path="src/Calculator.cs">
+                <line number="1" hits="1" />
+                <line number="2" hits="0" />
+              </file>
+            </report>
+            """);
+
+        try
+        {
+            var backfill = BackfillForLine("src/Calculator.cs", line: 2);
+
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+
+            result.Percentage.Should().Be(100);
+            result.ExecutableLines.Should().Be(2);
+            result.CoveredLines.Should().Be(2);
+            result.Backfilled.Should().BeTrue();
+            result.Rewritten.Should().BeTrue();
+            result.Diagnostic.Should().Be("microsoft-line");
+            File.ReadAllText(filePath).Should().Contain("""<line number="2" hits="1" />""");
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
     public void AggregateOnlyMicrosoftXmlDoesNotBackfill()
     {
         var filePath = WriteTempCoverageFile(
@@ -126,6 +193,29 @@ public class ExternalCoverageXmlBackfillTests
             ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData: null, applyBackfill: false, out var result).Should().BeTrue();
             result.Percentage.Should().Be(50);
             result.Backfilled.Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public void BackfillableReportDetectionRejectsAggregateOnlyXml()
+    {
+        var filePath = WriteTempCoverageFile(
+            """
+            <results>
+              <modules>
+                <module lines_covered="1" lines_partially_covered="0" lines_not_covered="1" />
+              </modules>
+            </results>
+            """);
+
+        try
+        {
+            ExternalCoverageXmlBackfill.IsLineBackfillableReport(filePath, out var reason).Should().BeFalse();
+            reason.Should().Contain("aggregate-only");
         }
         finally
         {

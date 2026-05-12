@@ -248,12 +248,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         /// <returns>Result of the backfill merge operation.</returns>
         internal static CoverageBackfillResult TryApplyItrCoverageBackfill(TestSession session, GlobalCoverageInfo globalCoverage)
         {
-            if (!ShouldApplyItrCoverageBackfill(session, out var skippableFeature))
+            if (!TryGetCoverageBackfillDataForSession(session, out var backfillData))
             {
                 return new CoverageBackfillResult(applied: false, matchedFiles: 0, updatedFiles: 0);
             }
 
-            var result = CoverageBackfillApplicator.ApplyToGlobalCoverage(globalCoverage, skippableFeature.GetCoverageBackfillData());
+            var result = CoverageBackfillApplicator.ApplyToGlobalCoverage(globalCoverage, backfillData);
             if (result.Applied)
             {
                 Log.Information<int, int>(
@@ -274,8 +274,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         /// <returns>True if the XML report was parsed successfully.</returns>
         internal static bool TryProcessCoverageXml(string filePath, TestSession? session, out ExternalCoverageXmlResult result)
         {
-            var shouldBackfill = session is not null && ShouldApplyItrCoverageBackfill(session, out _);
-            var backfillData = shouldBackfill ? TestOptimization.Instance.SkippableFeature?.GetCoverageBackfillData() : null;
+            CoverageBackfillData? backfillData = null;
+            var shouldBackfill = session is not null && TryGetCoverageBackfillDataForSession(session, out backfillData);
             return ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData, shouldBackfill, out result);
         }
 
@@ -286,31 +286,47 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         /// <returns>True when backfill data can be safely used by an in-process coverage tool adapter.</returns>
         internal static bool TryGetCoverageBackfillDataForCurrentProcess(out CoverageBackfillData backfillData)
         {
+            backfillData = CoverageBackfillData.Missing;
+            if (!CoverageBackfillDataStore.HasActualItrSkip())
+            {
+                return false;
+            }
+
             var skippableFeature = TestOptimization.Instance.SkippableFeature;
-            if (skippableFeature?.IsCoverageBackfillRequired() == true &&
-                skippableFeature.IsCoverageBackfillSafe() &&
-                skippableFeature.HasSkippedTestsByItr())
+            if (skippableFeature?.IsCoverageBackfillRequired() == true && skippableFeature.IsCoverageBackfillSafe())
             {
                 backfillData = skippableFeature.GetCoverageBackfillData();
                 return backfillData is { IsPresent: true, IsValid: true };
             }
 
-            backfillData = CoverageBackfillData.Missing;
-            return false;
+            return CoverageBackfillDataStore.TryLoad(out backfillData);
         }
 
         private static bool HasActualItrSkips(TestSession session, ITestOptimizationSkippableFeature skippableFeature)
         {
             return skippableFeature.HasSkippedTestsByItr() ||
+                   CoverageBackfillDataStore.HasActualItrSkip() ||
                    string.Equals(session.Tags.TestsSkipped, "true", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool ShouldApplyItrCoverageBackfill(TestSession session, out ITestOptimizationSkippableFeature skippableFeature)
+        private static bool TryGetCoverageBackfillDataForSession(TestSession session, out CoverageBackfillData backfillData)
         {
-            skippableFeature = TestOptimization.Instance.SkippableFeature!;
-            return skippableFeature?.IsCoverageBackfillRequired() == true &&
-                   skippableFeature.IsCoverageBackfillSafe() &&
-                   HasActualItrSkips(session, skippableFeature);
+            backfillData = CoverageBackfillData.Missing;
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
+            if (skippableFeature?.IsCoverageBackfillRequired() != true ||
+                !skippableFeature.IsCoverageBackfillSafe() ||
+                !HasActualItrSkips(session, skippableFeature))
+            {
+                return false;
+            }
+
+            backfillData = skippableFeature.GetCoverageBackfillData();
+            if (backfillData is { IsPresent: true, IsValid: true })
+            {
+                return true;
+            }
+
+            return CoverageBackfillDataStore.TryLoad(out backfillData);
         }
 
         internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)

@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
@@ -560,6 +561,20 @@ public sealed class TestSession
             [ConfigurationKeys.CIVisibility.TestSessionCommand] = tags.Command,
             [ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = tags.WorkingDirectory,
         };
+
+// TODO temporary, this needs to be addressed
+#pragma warning disable DD0012
+        var currentBackfillDataPath = EnvironmentHelpers.GetEnvironmentVariable(CoverageBackfillDataStore.BackfillDataPathEnvironmentVariable);
+#pragma warning restore DD0012
+        if (currentBackfillDataPath is { Length: > 0 })
+        {
+            environmentVariables[CoverageBackfillDataStore.BackfillDataPathEnvironmentVariable] = currentBackfillDataPath;
+        }
+
+        if (CoverageBackfillDataStore.HasActualItrSkip())
+        {
+            environmentVariables[CoverageBackfillDataStore.ActualItrSkipEnvironmentVariable] = "1";
+        }
 
         Tracer.Instance.TracerManager.SpanContextPropagator.Inject(
             new PropagationContext(span.Context, Baggage.Current),

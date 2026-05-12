@@ -154,15 +154,9 @@ internal static class Common
             return true;
         }
 
-        if (!skippableFeature.IsCoverageBackfillSafe())
+        if (!skippableFeature.CanSkipWithCoverageBackfill(skippableTest, out var reason))
         {
-            Log.Debug("Common: Test cannot be skipped because coverage backfill is required but backend coverage is unavailable or unsafe.");
-            return false;
-        }
-
-        if (skippableTest.MissingLineCodeCoverage)
-        {
-            Log.Debug("Common: Test cannot be skipped because backend marked it as missing line coverage.");
+            Log.Debug("Common: Test cannot be skipped because coverage backfill is required but unsafe: {Reason}", reason);
             return false;
         }
 

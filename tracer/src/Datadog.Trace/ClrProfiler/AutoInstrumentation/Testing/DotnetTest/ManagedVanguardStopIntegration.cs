@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -46,8 +47,22 @@ public sealed class ManagedVanguardStopIntegration
                     continue;
                 }
 
-                if (Path.GetExtension(file).Equals(".xml", StringComparison.OrdinalIgnoreCase) &&
-                    DotnetCommon.TryProcessCoverageXml(file, session: null, out var coverageResult))
+                if (!Path.GetExtension(file).Equals(".xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var shouldBackfill = DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(out var backfillData);
+                if (!ExternalCoverageXmlBackfill.TryProcess(file, shouldBackfill ? backfillData : null, shouldBackfill, out var coverageResult))
+                {
+                    if (shouldBackfill)
+                    {
+                        DotnetCommon.Log.Warning("MicrosoftCodeCoverage: XML report could not be backfilled, so no stale coverage percentage will be sent.");
+                    }
+
+                    continue;
+                }
+
                 {
                     DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", coverageResult.Percentage);
 

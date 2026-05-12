@@ -61,9 +61,14 @@ public sealed class CoverageGetCoverageResultIntegration
             assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
         {
             var backfilled = false;
-            if (DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(out var backfillData) &&
-                CoverletCoverageBackfill.TryApply(modules, backfillData, out var updatedLines))
+            if (DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(out var backfillData))
             {
+                if (!CoverletCoverageBackfill.TryApply(modules, backfillData, out var updatedLines))
+                {
+                    DotnetCommon.Log.Warning("CoverageGetCoverageResult: Coverlet modules could not be matched to backend coverage, so no stale coverage percentage will be sent.");
+                    return new CallTargetReturn<TReturn>(returnValue);
+                }
+
                 backfilled = true;
                 DotnetCommon.Log.Information<int>("CoverageGetCoverageResult.BackfilledLines: {Value}", updatedLines);
             }
