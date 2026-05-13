@@ -5,6 +5,7 @@
 #include <corprof.h>
 #include <functional>
 #include <utility>
+#include <vector>
 
 #include "integration.h"
 
@@ -468,6 +469,8 @@ struct TypeSignature
 struct FunctionMethodSignature
 {
 private:
+    // Parsed TypeSignature entries are views into this owned metadata signature buffer.
+    std::vector<BYTE> signature;
     PCCOR_SIGNATURE pbBase;
     unsigned len;
     ULONG numberOfTypeArguments = 0;
@@ -475,13 +478,16 @@ private:
     TypeSignature returnValue{};
     std::vector<TypeSignature> params;
 
+    void RebindTypeSignatureViews();
+    void SetSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer);
+
 public:
-    FunctionMethodSignature() : pbBase(nullptr), len(0)
-    {
-    }
-    FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer) : pbBase(pb), len(cbBuffer)
-    {
-    };
+    FunctionMethodSignature();
+    FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer);
+    FunctionMethodSignature(const FunctionMethodSignature& other);
+    FunctionMethodSignature(FunctionMethodSignature&& other) noexcept;
+    FunctionMethodSignature& operator=(const FunctionMethodSignature& other);
+    FunctionMethodSignature& operator=(FunctionMethodSignature&& other) noexcept;
     ULONG NumberOfTypeArguments() const
     {
         return numberOfTypeArguments;
@@ -516,7 +522,7 @@ public:
         return len == 0;
     }
 
-    std::tuple<PCCOR_SIGNATURE, unsigned> GetFunctionSignatureAndLength()
+    std::tuple<PCCOR_SIGNATURE, unsigned> GetFunctionSignatureAndLength() const
     {
         return {pbBase, len};
     }

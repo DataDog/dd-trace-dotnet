@@ -4,6 +4,7 @@
 #include "test_helpers.h"
 #include "../../../shared/src/native-src/pal.h"
 
+#include <tuple>
 #include <vector>
 
 using namespace trace;
@@ -307,6 +308,54 @@ TEST_F(CLRHelperTest, TypeSignatureGetTypeTokName) {
 
     EXPECT_EQ(actual, expected);
   }
+}
+
+TEST_F(CLRHelperTest, FunctionMethodSignatureOwnsSignatureBytesAndRebindsCopiedViews) {
+  COR_SIGNATURE rawSignature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      0x01,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_STRING};
+
+  FunctionMethodSignature original(rawSignature, sizeof(rawSignature));
+  ASSERT_EQ(original.TryParse(), S_OK);
+
+  FunctionMethodSignature copy = original;
+
+  PCCOR_SIGNATURE originalSignature = nullptr;
+  PCCOR_SIGNATURE copySignature = nullptr;
+  auto originalSignatureLength = 0u;
+  auto copySignatureLength = 0u;
+  std::tie(originalSignature, originalSignatureLength) = original.GetFunctionSignatureAndLength();
+  std::tie(copySignature, copySignatureLength) = copy.GetFunctionSignatureAndLength();
+
+  ASSERT_NE(originalSignature, nullptr);
+  ASSERT_NE(copySignature, nullptr);
+  EXPECT_NE(originalSignature, copySignature);
+  EXPECT_EQ(originalSignatureLength, sizeof(rawSignature));
+  EXPECT_EQ(copySignatureLength, sizeof(rawSignature));
+
+  PCCOR_SIGNATURE copyReturnSignature = nullptr;
+  auto copyReturnSignatureLength = copy.GetReturnValue().GetSignature(copyReturnSignature);
+  ASSERT_NE(copyReturnSignature, nullptr);
+  EXPECT_EQ(copyReturnSignature, copySignature + 2);
+  EXPECT_EQ(copyReturnSignatureLength, 1);
+
+  const auto& copyArguments = copy.GetMethodArguments();
+  ASSERT_EQ(copyArguments.size(), 1);
+
+  PCCOR_SIGNATURE copyArgumentSignature = nullptr;
+  auto copyArgumentSignatureLength = copyArguments[0].GetSignature(copyArgumentSignature);
+  ASSERT_NE(copyArgumentSignature, nullptr);
+  EXPECT_EQ(copyArgumentSignature, copySignature + 3);
+  EXPECT_EQ(copyArgumentSignatureLength, 1);
+
+  rawSignature[2] = ELEMENT_TYPE_VOID;
+  rawSignature[3] = ELEMENT_TYPE_OBJECT;
+
+  EXPECT_EQ(std::get<unsigned>(original.GetReturnValue().GetElementTypeAndFlags()), ELEMENT_TYPE_I4);
+  EXPECT_EQ(std::get<unsigned>(copy.GetReturnValue().GetElementTypeAndFlags()), ELEMENT_TYPE_I4);
+  EXPECT_EQ(std::get<unsigned>(copyArguments[0].GetElementTypeAndFlags()), ELEMENT_TYPE_STRING);
 }
 
 TEST_F(CLRHelperTest, FunctionLocalSignatureTryParse) {
