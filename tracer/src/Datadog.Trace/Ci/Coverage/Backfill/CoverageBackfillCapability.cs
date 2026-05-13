@@ -194,7 +194,7 @@ internal static class CoverageBackfillCapability
         // a testhost-scoped skippable request keyed by test.bundle once backfill is required. Local filters and
         // framework selectors are still rejected because they can narrow execution within the same bundle.
 
-        var vstestTestCaseFilter = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.VstestTestCaseFilter);
+        var vstestTestCaseFilter = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.VstestTestCaseFilter);
         if (!string.IsNullOrWhiteSpace(vstestTestCaseFilter))
         {
             reason = "A VSTest testcase filter was detected in the environment.";

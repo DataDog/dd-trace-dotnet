@@ -51,7 +51,7 @@ internal static class CoverageBackfillDataStore
             var filePath = GetBackfillDataPath(testOptimization, scope);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             File.WriteAllText(filePath, JsonHelper.SerializeObject(coverageBackfillData));
-            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillPath, filePath);
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillPath, filePath);
         }
         catch (Exception ex)
         {
@@ -86,7 +86,7 @@ internal static class CoverageBackfillDataStore
             return false;
         }
 
-        var filePath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillPath);
+        var filePath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillPath);
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
             filePath = GetBackfillDataPath(testOptimization);
@@ -133,7 +133,7 @@ internal static class CoverageBackfillDataStore
     /// <param name="scope">Request scope that produced the skip decision.</param>
     internal static void RecordActualItrSkip(ITestOptimization testOptimization, SkippableTestsRequestScope scope)
     {
-        EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillActualSkip, "1");
+        EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip, "1");
         try
         {
             var filePath = GetActualSkipPath(testOptimization);
@@ -158,7 +158,7 @@ internal static class CoverageBackfillDataStore
     /// <returns>True when a prior test closed with the ITR skip reason in this process.</returns>
     public static bool HasActualItrSkip()
     {
-        var actualItrSkip = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillActualSkip);
+        var actualItrSkip = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip);
         if (string.Equals(actualItrSkip, "1", StringComparison.Ordinal))
         {
             return true;
@@ -224,7 +224,7 @@ internal static class CoverageBackfillDataStore
     /// <returns>Absolute path to the shared run folder.</returns>
     internal static string GetOrCreateRunFolder(ITestOptimization testOptimization)
     {
-        var runFolder = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder);
+        var runFolder = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder);
         if (!StringUtil.IsNullOrEmpty(runFolder))
         {
             return runFolder!;
@@ -232,7 +232,7 @@ internal static class CoverageBackfillDataStore
 
         var baseDirectory = GetRunFolderBaseDirectory(testOptimization);
         runFolder = Path.Combine(baseDirectory, ".dd", testOptimization.RunId);
-        EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder, runFolder);
+        EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
         return runFolder;
     }
 

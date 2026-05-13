@@ -435,7 +435,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
         runId = Guid.NewGuid().ToString("n");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder, Path.Combine(Environment.CurrentDirectory, ".dd", runId));
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, Path.Combine(Environment.CurrentDirectory, ".dd", runId));
     }
 
     protected virtual async Task ExecuteTestAsync(string packageVersion, string evpVersionToRemove, bool expectedGzip, TestScenario testScenario)

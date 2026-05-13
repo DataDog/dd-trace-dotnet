@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled,
         Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
         Configuration.ConfigurationKeys.CIVisibility.TestOptimizationRunId,
-        Configuration.ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder,
+        Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
         Configuration.ConfigurationKeys.CIVisibility.GitCommitSha,
         Configuration.ConfigurationKeys.CIVisibility.GitRepositoryUrl)]
     public class CiRunCommandTests : BaseRunCommandTests
@@ -247,7 +247,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, null);
             EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled, null);
             EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestOptimizationRunId, null);
-            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder, null);
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, null);
             EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.GitCommitSha, "0123456789abcdef0123456789abcdef01234567");
             EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.GitRepositoryUrl, "https://github.com/DataDog/dd-trace-dotnet");
             SetCachedCiEnvironmentValue(nameof(CIEnvironmentValues.Commit), "0123456789abcdef0123456789abcdef01234567");

@@ -579,18 +579,18 @@ public sealed class TestSession
         {
             [ConfigurationKeys.CIVisibility.TestSessionCommand] = tags.Command,
             [ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = tags.WorkingDirectory,
-            [ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder] = CoverageBackfillDataStore.GetOrCreateRunFolder(_testOptimization),
+            [ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder] = CoverageBackfillDataStore.GetOrCreateRunFolder(_testOptimization),
         };
 
-        var currentBackfillDataPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillPath);
+        var currentBackfillDataPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillPath);
         if (currentBackfillDataPath is { Length: > 0 })
         {
-            environmentVariables[ConfigurationKeys.CIVisibility.ItrCoverageBackfillPath] = currentBackfillDataPath;
+            environmentVariables[ConfigurationKeys.CIVisibilityItrCoverageBackfillPath] = currentBackfillDataPath;
         }
 
         if (CoverageBackfillDataStore.HasActualItrSkip())
         {
-            environmentVariables[ConfigurationKeys.CIVisibility.ItrCoverageBackfillActualSkip] = "1";
+            environmentVariables[ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip] = "1";
         }
 
         Tracer.Instance.TracerManager.SpanContextPropagator.Inject(

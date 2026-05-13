@@ -20,9 +20,9 @@ namespace Datadog.Trace.Tests.Ci;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
 [EnvironmentVariablesCleaner(
-    ConfigurationKeys.CIVisibility.ItrCoverageBackfillActualSkip,
-    ConfigurationKeys.CIVisibility.ItrCoverageBackfillPath,
-    ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder)]
+    ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip,
+    ConfigurationKeys.CIVisibilityItrCoverageBackfillPath,
+    ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder)]
 public class CoverageBackfillDataStoreTests
 {
     [Fact]
@@ -85,7 +85,7 @@ public class CoverageBackfillDataStoreTests
         try
         {
             var sharedRunFolder = Path.Combine(sharedBasePath, ".dd", "test-run");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder, sharedRunFolder);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, sharedRunFolder);
 
             var producer = CreateTestOptimization(producerWorkspacePath);
             var consumer = CreateTestOptimization(consumerWorkspacePath);

@@ -132,21 +132,6 @@ internal static partial class ConfigurationKeys
         public const string ImpactedTestsDetectionEnabled = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
 
         /// <summary>
-        /// Internal marker set when the current process observes at least one test skipped by Intelligent Test Runner while coverage backfill is active.
-        /// </summary>
-        public const string ItrCoverageBackfillActualSkip = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_ACTUAL_SKIP";
-
-        /// <summary>
-        /// Internal file path used to share backend ITR coverage backfill data between the test session, testhost, and coverage-tool processes.
-        /// </summary>
-        public const string ItrCoverageBackfillPath = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_PATH";
-
-        /// <summary>
-        /// Internal run-scoped folder used to exchange ITR coverage backfill files and markers between test session, testhost, and coverage-tool processes.
-        /// </summary>
-        public const string ItrCoverageBackfillRunFolder = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_RUN_FOLDER";
-
-        /// <summary>
         /// Configuration key for enabling or disabling Intelligent Test Runner in CI Visibility
         /// Default Value is false (disabled)
         /// </summary>
@@ -281,10 +266,5 @@ internal static partial class ConfigurationKeys
         /// This is used to track the working directory where the test session was executed.
         /// </summary>
         public const string TestSessionWorkingDirectory = "DD_TESTSESSION_WORKINGDIRECTORY";
-
-        /// <summary>
-        /// VSTest environment variable used to pass a testcase filter to child testhost processes.
-        /// </summary>
-        public const string VstestTestCaseFilter = "VSTEST_TESTCASEFILTER";
     }
 }
