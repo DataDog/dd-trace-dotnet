@@ -66,7 +66,7 @@ check-azure-pipeline:
 build-dd-trace-dotnet-macrobenchmarks-ami:
   stage: build-win
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
   allow_failure: true
   when: manual
   timeout: 3h
