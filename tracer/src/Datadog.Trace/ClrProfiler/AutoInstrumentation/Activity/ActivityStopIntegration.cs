@@ -91,6 +91,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 {
                     ApplyStatusFallback(activity6, span);
                 }
+                else if (span.Tags is OpenTelemetryTags unsetTags && unsetTags.OtelStatusCode is null)
+                {
+                    // DS 5.x has no Activity.Status / Activity.SetStatus, so the fallback above is unreachable.
+                    // Default to STATUS_CODE_UNSET so the span carries the otel.status_code tag (matches the
+                    // listener-path behaviour in OtlpHelpers.UpdateSpanFromActivity).
+                    unsetTags.OtelStatusCode = "STATUS_CODE_UNSET";
+                }
 
                 // OTel < 1.6 path: TelemetrySpan.SetStatus(Status.Error) writes "otel.status_code" via Activity.SetTag
                 // without ever calling Activity.SetStatus, so ActivitySetStatusIntegration never fires and
