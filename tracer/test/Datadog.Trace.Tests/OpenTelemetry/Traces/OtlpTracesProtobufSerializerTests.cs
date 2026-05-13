@@ -9,8 +9,11 @@ using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Xunit;
+
+#nullable enable
 
 namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 
@@ -25,6 +28,81 @@ public class OtlpTracesProtobufSerializerTests
         var written = serializer.FinishBody(ref buffer, offset: 0, maxSize: buffer.Length);
 
         written.Should().Be(0);
+    }
+
+    [Fact]
+    public void SerializeSpans_SingleChunk_ProducesParsableExportTraceServiceRequest()
+    {
+        var traceChunk = TestData.CreateTraceChunkWithSingleSpan(
+            operationName: "op",
+            resourceName: "res",
+            serviceName: "svc");
+
+        var serializer = new OtlpTracesProtobufSerializer();
+        var buffer = new byte[8 * 1024];
+
+        var written = serializer.SerializeSpans(ref buffer, temporaryBufferOffset: 0, traceChunk, spanBufferOffset: 0, maxSize: buffer.Length);
+        serializer.FinishBody(ref buffer, offset: written, maxSize: buffer.Length);
+
+        var request = OtlpProtoParser.ParseExportTraceServiceRequest(buffer, 0, written);
+
+        request.ResourceSpans.Should().HaveCount(1);
+        var resourceSpans = request.ResourceSpans[0];
+        resourceSpans.ScopeSpans.Should().HaveCount(1);
+        resourceSpans.ScopeSpans[0].Spans.Should().HaveCount(1);
+
+        var span = resourceSpans.ScopeSpans[0].Spans[0];
+        span.Name.Should().Be("res");
+        span.Kind.Should().Be(1); // SPAN_KIND_INTERNAL
+        span.TraceId.Should().HaveCount(16);
+        span.SpanId.Should().HaveCount(8);
+    }
+
+    /// <summary>
+    /// Helper that builds <see cref="TraceChunkModel"/> instances for tests.
+    /// Mirrors the construction pattern from <c>OtlpMapperTests.cs</c>.
+    /// </summary>
+    internal static class TestData
+    {
+        internal static TraceChunkModel CreateTraceChunkWithSingleSpan(
+            string operationName = "op",
+            string resourceName = "res",
+            string serviceName = "svc",
+            string? environment = null,
+            string? serviceVersion = null)
+        {
+            var span = CreateSpan(operationName, resourceName, serviceName, environment, serviceVersion);
+            return new TraceChunkModel(new SpanCollection(new[] { span }));
+        }
+
+        internal static Span CreateSpan(
+            string operationName,
+            string resourceName,
+            string serviceName,
+            string? environment = null,
+            string? serviceVersion = null)
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+
+            if (environment is not null)
+            {
+                traceContext.Environment = environment;
+            }
+
+            if (serviceVersion is not null)
+            {
+                traceContext.ServiceVersion = serviceVersion;
+            }
+
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: serviceName);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow)
+            {
+                OperationName = operationName,
+                ResourceName = resourceName,
+            };
+            span.SetDuration(TimeSpan.FromMilliseconds(1));
+            return span;
+        }
     }
 }
 
