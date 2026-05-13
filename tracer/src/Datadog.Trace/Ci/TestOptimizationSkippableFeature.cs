@@ -24,8 +24,12 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     private readonly ITestOptimizationClient _testOptimizationClient;
     private readonly Task<SkippableTestsDictionary>? _skippableTestsTask;
     private readonly Dictionary<string, Task<SkippableTestsDictionary>> _scopedSkippableTestsTasks = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _actualSkippedScopes = new(StringComparer.Ordinal);
+    // Stores scoped skippable responses that actually produced ITR skips, keyed by the backend scope fingerprint when available.
+    private readonly Dictionary<string, SkippableTestsDictionary> _actualSkippedDictionaries = new(StringComparer.Ordinal);
     private readonly bool _coverageBackfillRequiresScopedRequests;
+    // Keeps scoped tasks in insertion order so shutdown can wait for them without allocating array snapshots.
+    private List<Task<SkippableTestsDictionary>>? _scopedSkippableTestsTaskList;
+
     private int _itrSkippedTests;
 
     private TestOptimizationSkippableFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
@@ -107,15 +111,12 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         try
         {
             _skippableTestsTask?.SafeWait();
-            Task<SkippableTestsDictionary>[] scopedTasks;
-            lock (_scopedSkippableTestsTasks)
-            {
-                scopedTasks = _scopedSkippableTestsTasks.Count == 0 ? [] : [.. _scopedSkippableTestsTasks.Values];
-            }
 
-            foreach (var scopedTask in scopedTasks)
+            var scopedTaskIndex = 0;
+            while (TryGetScopedTaskAt(scopedTaskIndex, out var scopedTask))
             {
                 scopedTask.SafeWait();
+                scopedTaskIndex++;
             }
         }
         catch (Exception ex)
@@ -174,6 +175,8 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
                 var scope = SkippableTestsRequestScope.Create(TestOptimization.Instance, moduleName);
                 task = Task.Run(() => InternalGetSkippableTestsAsync(_testOptimizationClient, scope));
                 _scopedSkippableTestsTasks[moduleName!] = task;
+                _scopedSkippableTestsTaskList ??= new List<Task<SkippableTestsDictionary>>();
+                _scopedSkippableTestsTaskList.Add(task);
             }
 
             return task;
@@ -184,15 +187,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         if (_coverageBackfillRequiresScopedRequests)
         {
-            foreach (var dictionary in GetCompletedScopedDictionaries())
-            {
-                if (dictionary.Count > 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return HasCompletedScopedSkippableTests();
         }
 
         if (_skippableTestsTask is null)
@@ -208,15 +203,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         if (_coverageBackfillRequiresScopedRequests)
         {
-            foreach (var dictionary in GetCompletedScopedDictionaries())
-            {
-                if (!StringUtil.IsNullOrEmpty(dictionary.CorrelationId))
-                {
-                    return dictionary.CorrelationId;
-                }
-            }
-
-            return null;
+            return GetCompletedScopedCorrelationId();
         }
 
         if (_skippableTestsTask is null)
@@ -233,13 +220,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         if (_coverageBackfillRequiresScopedRequests)
         {
-            var coverageMaps = new List<CoverageBackfillData>();
-            foreach (var dictionary in GetActualSkippedScopedDictionaries())
-            {
-                coverageMaps.Add(dictionary.BackfillData);
-            }
-
-            return CoverageBackfillData.Merge(coverageMaps);
+            return GetActualSkippedCoverageBackfillData();
         }
 
         if (_skippableTestsTask is null)
@@ -262,17 +243,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         if (_coverageBackfillRequiresScopedRequests)
         {
-            var sawActualSkippedScope = false;
-            foreach (var dictionary in GetActualSkippedScopedDictionaries())
-            {
-                sawActualSkippedScope = true;
-                if (!IsDictionaryCoverageBackfillSafe(dictionary))
-                {
-                    return false;
-                }
-            }
-
-            return sawActualSkippedScope;
+            return AreActualSkippedDictionariesCoverageBackfillSafe();
         }
 
         if (_skippableTestsTask is null)
@@ -350,11 +321,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             if (skippableTestsTask is not null)
             {
                 var dictionary = skippableTestsTask.SafeGetResult();
-                lock (_actualSkippedScopes)
-                {
-                    _actualSkippedScopes.Add(moduleName!);
-                }
-
+                RecordActualSkippedDictionary(moduleName!, dictionary);
                 CoverageBackfillDataStore.RecordActualItrSkip(dictionary.Scope);
                 return;
             }
@@ -384,50 +351,153 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     }
 
     /// <summary>
-    /// Enumerates scoped skippable-test responses that have completed without forcing pending backend requests to block.
+    /// Gets a scoped skippable task by index while holding the scoped-task lock.
+    /// The caller can then wait outside the lock without allocating a snapshot of the task collection.
     /// </summary>
-    /// <returns>Completed scoped skippable-test dictionaries.</returns>
-    private IEnumerable<SkippableTestsDictionary> GetCompletedScopedDictionaries()
+    /// <param name="index">The scoped-task insertion index.</param>
+    /// <param name="task">The scoped-task instance when the index exists.</param>
+    /// <returns><c>true</c> when a task exists for the requested index; otherwise, <c>false</c>.</returns>
+    private bool TryGetScopedTaskAt(int index, out Task<SkippableTestsDictionary> task)
     {
-        Task<SkippableTestsDictionary>[] scopedTasks;
         lock (_scopedSkippableTestsTasks)
         {
-            scopedTasks = _scopedSkippableTestsTasks.Count == 0 ? [] : [.. _scopedSkippableTestsTasks.Values];
+            if (_scopedSkippableTestsTaskList is { Count: > 0 } scopedTasks && index < scopedTasks.Count)
+            {
+                task = scopedTasks[index];
+                return true;
+            }
         }
 
-        foreach (var task in scopedTasks)
+        task = null!;
+        return false;
+    }
+
+    /// <summary>
+    /// Checks completed scoped skippable responses without copying the mutable task collection.
+    /// </summary>
+    /// <returns><c>true</c> when any completed scoped response contains skippable tests; otherwise, <c>false</c>.</returns>
+    private bool HasCompletedScopedSkippableTests()
+    {
+        lock (_scopedSkippableTestsTasks)
         {
-            if (task.Status == TaskStatus.RanToCompletion)
+            if (_scopedSkippableTestsTaskList is not { Count: > 0 } scopedTasks)
             {
-                yield return task.Result;
+                return false;
             }
+
+            foreach (var task in scopedTasks)
+            {
+                if (task.Status == TaskStatus.RanToCompletion && task.Result.Count > 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the first completed scoped correlation id without copying the mutable task collection.
+    /// </summary>
+    /// <returns>The first completed scoped response correlation id, or <c>null</c> when no scoped response has completed.</returns>
+    private string? GetCompletedScopedCorrelationId()
+    {
+        lock (_scopedSkippableTestsTasks)
+        {
+            if (_scopedSkippableTestsTaskList is not { Count: > 0 } scopedTasks)
+            {
+                return null;
+            }
+
+            foreach (var task in scopedTasks)
+            {
+                if (task.Status == TaskStatus.RanToCompletion)
+                {
+                    var correlationId = task.Result.CorrelationId;
+                    if (!StringUtil.IsNullOrEmpty(correlationId))
+                    {
+                        return correlationId;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Records a scoped skippable response that produced at least one actual ITR skip.
+    /// </summary>
+    /// <param name="moduleName">The test module that requested the scoped response.</param>
+    /// <param name="dictionary">The resolved skippable response for the test module.</param>
+    private void RecordActualSkippedDictionary(string moduleName, SkippableTestsDictionary dictionary)
+    {
+        var key = dictionary.Scope.Fingerprint;
+        if (key is null || key.Length == 0)
+        {
+            key = moduleName;
+        }
+
+        lock (_actualSkippedDictionaries)
+        {
+            _actualSkippedDictionaries[key] = dictionary;
         }
     }
 
     /// <summary>
-    /// Enumerates only scoped skippable-test responses that produced at least one actual ITR skip.
+    /// Gets merged coverage backfill data from the scoped responses that actually produced ITR skips.
     /// </summary>
-    /// <returns>Scoped dictionaries for scopes that actually skipped tests.</returns>
-    private IEnumerable<SkippableTestsDictionary> GetActualSkippedScopedDictionaries()
+    /// <returns>The merged coverage backfill data, or missing coverage data when no scoped ITR skip was recorded.</returns>
+    private CoverageBackfillData GetActualSkippedCoverageBackfillData()
     {
-        string[] actualSkippedScopes;
-        lock (_actualSkippedScopes)
+        lock (_actualSkippedDictionaries)
         {
-            actualSkippedScopes = _actualSkippedScopes.Count == 0 ? [] : [.. _actualSkippedScopes];
+            if (_actualSkippedDictionaries.Count == 0)
+            {
+                return CoverageBackfillData.Missing;
+            }
+
+            if (_actualSkippedDictionaries.Count == 1)
+            {
+                foreach (var dictionary in _actualSkippedDictionaries.Values)
+                {
+                    return dictionary.BackfillData is { IsPresent: true, IsValid: true } ? dictionary.BackfillData : CoverageBackfillData.Missing;
+                }
+            }
+
+            var coverageMaps = new List<CoverageBackfillData>(_actualSkippedDictionaries.Count);
+            foreach (var dictionary in _actualSkippedDictionaries.Values)
+            {
+                coverageMaps.Add(dictionary.BackfillData);
+            }
+
+            return CoverageBackfillData.Merge(coverageMaps);
         }
+    }
 
-        foreach (var scope in actualSkippedScopes)
+    /// <summary>
+    /// Checks whether all scoped responses that produced actual ITR skips can safely backfill coverage.
+    /// </summary>
+    /// <returns><c>true</c> when scoped backfill data exists and all entries are safe to merge; otherwise, <c>false</c>.</returns>
+    private bool AreActualSkippedDictionariesCoverageBackfillSafe()
+    {
+        lock (_actualSkippedDictionaries)
         {
-            Task<SkippableTestsDictionary>? task;
-            lock (_scopedSkippableTestsTasks)
+            if (_actualSkippedDictionaries.Count == 0)
             {
-                _scopedSkippableTestsTasks.TryGetValue(scope, out task);
+                return false;
             }
 
-            if (task is not null)
+            foreach (var dictionary in _actualSkippedDictionaries.Values)
             {
-                yield return task.SafeGetResult();
+                if (!IsDictionaryCoverageBackfillSafe(dictionary))
+                {
+                    return false;
+                }
             }
+
+            return true;
         }
     }
 
