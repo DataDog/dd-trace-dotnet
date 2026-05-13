@@ -8,6 +8,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using FluentAssertions;
 using Xunit;
+using DebuggerTags = Datadog.Trace.Debugger.Configurations.Models.Tags;
 
 namespace Datadog.Trace.Tests.Debugger;
 
@@ -317,6 +318,119 @@ public class ProbeConfigurationComparerTests
                     {
                         new SnapshotSegment(string.Empty, null, "x="),
                         new SnapshotSegment("x", refJson, string.Empty),
+                    },
+                },
+            },
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeFalse();
+        comparer.HasRateLimitChanged.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentMetricsReparsedJsonContent_ProbeRelatedNotChanged()
+    {
+        const string valueJson = @"{""ref"":""duration""}";
+
+        var current = new ProbeConfiguration
+        {
+            MetricProbes = new[]
+            {
+                new MetricProbe
+                {
+                    Id = "probe-1",
+                    MetricName = "method.duration",
+                    Value = new SnapshotSegment("duration", valueJson, string.Empty),
+                },
+            },
+        };
+        var incoming = new ProbeConfiguration
+        {
+            MetricProbes = new[]
+            {
+                new MetricProbe
+                {
+                    Id = "probe-1",
+                    MetricName = "method.duration",
+                    Value = new SnapshotSegment("duration", valueJson, string.Empty),
+                },
+            },
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeFalse();
+        comparer.HasRateLimitChanged.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentSpanDecorationsReparsedJsonContent_ProbeRelatedNotChanged()
+    {
+        const string whenJson = @"{""eq"":[{""ref"":""http.status_code""},500]}";
+        const string tagValueJson = @"{""ref"":""error.message""}";
+
+        var current = new ProbeConfiguration
+        {
+            SpanDecorationProbes = new[]
+            {
+                new SpanDecorationProbe
+                {
+                    Id = "probe-1",
+                    Decorations = new[]
+                    {
+                        new Decoration
+                        {
+                            When = new SnapshotSegment("http.status_code == 500", whenJson, string.Empty),
+                            Tags = new[]
+                            {
+                                new DebuggerTags
+                                {
+                                    Name = "error.message",
+                                    Value = new TagValue
+                                    {
+                                        Template = "error={error.message}",
+                                        Segments = new[]
+                                        {
+                                            new SnapshotSegment(string.Empty, null, "error="),
+                                            new SnapshotSegment("error.message", tagValueJson, string.Empty),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        };
+        var incoming = new ProbeConfiguration
+        {
+            SpanDecorationProbes = new[]
+            {
+                new SpanDecorationProbe
+                {
+                    Id = "probe-1",
+                    Decorations = new[]
+                    {
+                        new Decoration
+                        {
+                            When = new SnapshotSegment("http.status_code == 500", whenJson, string.Empty),
+                            Tags = new[]
+                            {
+                                new DebuggerTags
+                                {
+                                    Name = "error.message",
+                                    Value = new TagValue
+                                    {
+                                        Template = "error={error.message}",
+                                        Segments = new[]
+                                        {
+                                            new SnapshotSegment(string.Empty, null, "error="),
+                                            new SnapshotSegment("error.message", tagValueJson, string.Empty),
+                                        },
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             },
