@@ -34,13 +34,15 @@ internal static class OtlpTransportStrategy
         int timeoutMs,
         string productName)
     {
+        var httpHeaderHelper = new OtlpHeaderHelper(signalHeaders);
+
         switch (strategy)
         {
             case AgentTransportType.WindowsNamedPipe:
                 Log.Information<string, string?, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for {ProductName} transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", productName, signalEndpoint.ToString(), timeoutMs);
                 return new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(signalEndpoint.ToString(), timeoutMs),
-                    new DatadogHttpClient(new OtlpHeaderHelper(signalHeaders)),
+                    new DatadogHttpClient(httpHeaderHelper),
                     Localhost);
 
             case AgentTransportType.UnixDomainSocket:
@@ -48,14 +50,14 @@ internal static class OtlpTransportStrategy
                 // use http://localhost as base endpoint
                 return new SocketHandlerRequestFactory(
                     new UnixDomainSocketStreamFactory(signalEndpoint.ToString()),
-                    signalHeaders,
+                    httpHeaderHelper.DefaultHeaders,
                     Localhost);
             case AgentTransportType.Default:
             default:
                 Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
                 return new HttpClientRequestFactory(
                     signalEndpoint,
-                    signalHeaders,
+                    httpHeaderHelper.DefaultHeaders,
                     timeout: TimeSpan.FromMilliseconds(timeoutMs));
         }
     }
