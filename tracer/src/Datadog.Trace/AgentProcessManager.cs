@@ -107,7 +107,9 @@ namespace Datadog.Trace
                         "[aas-repro] init iis_worker_pid={Pid} app_domain={AppDomain} process_name={ProcessName} trace_pipe={TracePipe} stats_pipe={StatsPipe} trace_agent_path={TraceAgentPath}",
                         new object[]
                         {
+#pragma warning disable CA1837
                             System.Diagnostics.Process.GetCurrentProcess().Id,
+#pragma warning restore CA1837
                             DomainMetadata.Instance.AppDomainName,
                             DomainMetadata.Instance.ProcessName,
                             TraceAgentMetadata.PipeName ?? "<unset>",
@@ -268,7 +270,7 @@ namespace Datadog.Trace
 
                                     metadata.Process = Process.Start(startInfo);
                                     var spawnedPid = metadata.Process?.Id ?? -1;
-                                    Log.Information("[aas-repro] spawned process={Process} child_pid={ChildPid}", path, spawnedPid);
+                                    Log.Information("[aas-repro] spawned process={Process} child_pid={ChildPid}", new object[] { path, spawnedPid });
                                     var timeout = 2000;
 
                                     while (timeout > 0)
@@ -277,7 +279,7 @@ namespace Datadog.Trace
                                         {
                                             metadata.SequentialFailures = 0;
                                             metadata.ProcessState = ProcessState.Healthy;
-                                            Log.Information("[aas-repro] start_success process={Process} child_pid={ChildPid} after_ms={Elapsed}", path, spawnedPid, 2000 - timeout);
+                                            Log.Information("[aas-repro] start_success process={Process} child_pid={ChildPid} after_ms={Elapsed}", new object[] { path, spawnedPid, 2000 - timeout });
                                             Log.Information("Successfully started {Process}.", path);
                                             break;
                                         }
