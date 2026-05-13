@@ -141,7 +141,7 @@ internal sealed partial class TestOptimizationClient
 
         if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
         {
-            Log.Debug<int, int>("TestOptimizationClient: Skippable tests filtered by local configuration. Original={Original}, Filtered={Filtered}", deserializedResult.Data.Length, testAttributes.Count);
+            Log.Debug("TestOptimizationClient: Skippable.JSON Filtered = {Json}", JsonHelper.SerializeObject(testAttributes));
         }
 
         TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(testAttributes.Count);
