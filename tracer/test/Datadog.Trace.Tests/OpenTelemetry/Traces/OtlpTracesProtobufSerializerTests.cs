@@ -76,6 +76,19 @@ public class OtlpTracesProtobufSerializerTests
     }
 
     [Fact]
+    public void SerializeSpans_ReturnsZero_WhenSpansExceedMaxSize()
+    {
+        var chunk = TestData.CreateTraceChunkWithSingleSpan("op", "res", "svc", "test-env", "1.0.0");
+        var serializer = new OtlpTracesProtobufSerializer();
+        var buffer = new byte[8 * 1024];
+
+        // Pick a maxSize tiny enough that any real span overflows.
+        var written = serializer.SerializeSpans(ref buffer, temporaryBufferOffset: 0, chunk, spanBufferOffset: 0, maxSize: 8);
+
+        written.Should().Be(0);
+    }
+
+    [Fact]
     public void SerializeSpans_SingleChunk_ProducesParsableExportTraceServiceRequest()
     {
         var traceChunk = TestData.CreateTraceChunkWithSingleSpan(

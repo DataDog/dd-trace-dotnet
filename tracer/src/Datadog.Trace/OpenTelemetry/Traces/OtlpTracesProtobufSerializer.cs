@@ -13,6 +13,7 @@ using Datadog.Trace.OpenTelemetry.Common;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpCommonFieldNumberConstants;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpTraceFieldNumberConstants;
@@ -44,8 +45,13 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     private const int Resource_Attributes = 1;
 #pragma warning restore SA1310
 
-    // Positions of the length placeholders inside the active output buffer.
-    // Set on the first SerializeSpans call (when spanBufferOffset == HeaderSize) and patched in FinishBody.
+    // Absolute positions of the length placeholders. INVARIANT: these are offsets
+    // into the caller's eventual `_buffer` (the destination), NOT into the temporary
+    // serialization buffer (`bytes` in SerializeSpans). This works because
+    // `SpanBuffer.TryWrite` copies the temporary buffer's contents into `_buffer`
+    // starting at `_offset`, which on the first chunk equals `spanBufferOffset`
+    // (which on the first chunk equals `HeaderSize`).
+    // Set on the first SerializeSpans call and patched in FinishBody.
     private int _resourceSpansLengthPos = -1;
     private int _scopeSpansLengthPos = -1;
 
@@ -58,13 +64,23 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     public int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
     {
+        // Grow the caller's buffer up-front so per-field writes can't IndexOutOfRangeException.
+        // Conservative upper bound: this single call won't write more than `maxSize` bytes;
+        // if it does, we'll detect the overflow at the end and return 0.
+        MessagePackBinary.EnsureCapacity(ref bytes, temporaryBufferOffset, maxSize);
+
         int writePosition = temporaryBufferOffset;
+
+        // Snapshot length-position fields before mutating them, so we can roll back on overflow.
+        int savedResourceSpansLengthPos = _resourceSpansLengthPos;
+        int savedScopeSpansLengthPos = _scopeSpansLengthPos;
 
         if (spanBufferOffset == HeaderSize)
         {
             // Open ExportTraceServiceRequest -> ResourceSpans (field 1, LEN)
             writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, TracesData_Resource_Spans, ProtobufWireType.LEN);
-            _resourceSpansLengthPos = writePosition;
+            // Convert the absolute position in the temporary buffer to an absolute position in `_buffer`.
+            _resourceSpansLengthPos = (writePosition - temporaryBufferOffset) + spanBufferOffset;
             writePosition += ReserveSizeForLength;
 
             // ResourceSpans.resource (field 1, LEN)
@@ -78,7 +94,8 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
             // ResourceSpans.scope_spans (field 2, LEN)
             writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ResourceSpans_Scope_Spans, ProtobufWireType.LEN);
-            _scopeSpansLengthPos = writePosition;
+            // Convert the absolute position in the temporary buffer to an absolute position in `_buffer`.
+            _scopeSpansLengthPos = (writePosition - temporaryBufferOffset) + spanBufferOffset;
             writePosition += ReserveSizeForLength;
 
             // Note: we intentionally skip emitting ScopeSpans.scope (instrumentation scope) to match the JSON serializer's behavior.
@@ -90,7 +107,18 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             writePosition = WriteSpan(bytes, writePosition, in spanModel);
         }
 
-        return writePosition - temporaryBufferOffset;
+        var bytesWritten = writePosition - temporaryBufferOffset;
+
+        if (bytesWritten >= maxSize)
+        {
+            // We've reached or exceeded the maximum size; signal overflow to the caller.
+            // Roll back length-position fields so a retry into a fresh buffer is unaffected.
+            _resourceSpansLengthPos = savedResourceSpansLengthPos;
+            _scopeSpansLengthPos = savedScopeSpansLengthPos;
+            return 0;
+        }
+
+        return bytesWritten;
     }
 
     public int FinishBody(ref byte[] bytes, int offset, int maxSize)
