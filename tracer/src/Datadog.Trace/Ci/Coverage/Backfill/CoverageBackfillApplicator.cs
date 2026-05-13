@@ -86,7 +86,6 @@ internal static class CoverageBackfillApplicator
         }
 
         file.ExecutedBitmap = merged;
-        file.ClearCachedData();
         return true;
     }
 

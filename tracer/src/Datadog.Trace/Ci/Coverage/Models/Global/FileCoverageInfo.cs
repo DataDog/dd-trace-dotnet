@@ -15,14 +15,33 @@ namespace Datadog.Trace.Ci.Coverage.Models.Global;
 
 internal sealed class FileCoverageInfo(string? path) : CoverageInfo
 {
+    private byte[]? _executableBitmap;
+    private byte[]? _executedBitmap;
+
     [JsonProperty("path")]
     public string? Path { get; set; } = path;
 
     [JsonProperty("executableBitmap")]
-    public byte[]? ExecutableBitmap { get; set; }
+    public byte[]? ExecutableBitmap
+    {
+        get => _executableBitmap;
+        set
+        {
+            _executableBitmap = value;
+            ClearData();
+        }
+    }
 
     [JsonProperty("executedBitmap")]
-    public byte[]? ExecutedBitmap { get; set; }
+    public byte[]? ExecutedBitmap
+    {
+        get => _executedBitmap;
+        set
+        {
+            _executedBitmap = value;
+            ClearData();
+        }
+    }
 
     public static FileCoverageInfo? operator +(FileCoverageInfo? a, FileCoverageInfo? b)
     {
@@ -83,8 +102,6 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
         {
             ExecutableBitmap = bitmapBytes;
         }
-
-        ClearData();
     }
 
     public void AggregateExecutedBitmap(byte[] bitmapBytes)
@@ -100,16 +117,6 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
         {
             ExecutedBitmap = bitmapBytes;
         }
-
-        ClearData();
-    }
-
-    /// <summary>
-    /// Clears cached count and percentage data after a direct bitmap mutation.
-    /// </summary>
-    public void ClearCachedData()
-    {
-        ClearData();
     }
 
     public void IncrementCounts(ref double total, ref double executed)
