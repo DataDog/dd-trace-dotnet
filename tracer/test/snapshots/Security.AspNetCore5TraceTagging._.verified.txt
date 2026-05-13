@@ -23,6 +23,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.trace.agent: TraceTagging/v1,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -58,6 +62,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.trace.agent: TraceTagging/v2,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -101,6 +109,10 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ttr-000-003","name":"Trace Tagging Rule: Attributes, Keep, Event","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"^TraceTagging\\/v3","parameters":[{"address":"server.request.headers.no_cookies","highlight":["TraceTagging/v3"],"key_path":["user-agent"],"value":"TraceTagging/v3"}]}]}]},
       _dd.appsec.trace.agent: TraceTagging/v3,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -147,6 +159,10 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ttr-000-004","name":"Trace Tagging Rule: Attributes, No Keep, Event","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"^TraceTagging\\/v4","parameters":[{"address":"server.request.headers.no_cookies","highlight":["TraceTagging/v4"],"key_path":["user-agent"],"value":"TraceTagging/v4"}]}]}]},
       _dd.appsec.trace.agent: TraceTagging/v4,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
