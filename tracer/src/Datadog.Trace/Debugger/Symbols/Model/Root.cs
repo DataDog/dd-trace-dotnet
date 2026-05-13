@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -42,5 +43,16 @@ namespace Datadog.Trace.Debugger.Symbols.Model
 
         [JsonProperty("scopes")]
         internal IReadOnlyList<Scope>? Scopes { get; set; }
+
+        // upload_id/batch_num/final use snake_case to match the rest of the
+        // attachment scope schema (scope_type, source_file, etc.).
+        [JsonProperty("upload_id")]
+        internal Guid? UploadId { get; set; }
+
+        [JsonProperty("batch_num")]
+        internal long? BatchNum { get; set; }
+
+        [JsonProperty("final")]
+        internal bool? Final { get; set; }
     }
 }

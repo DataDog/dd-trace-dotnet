@@ -22,6 +22,9 @@ internal sealed class RuleSet
     [JsonProperty("rules")]
     internal JToken? Rules { get; set; }
 
+    [JsonProperty("rules_compat")]
+    internal JToken? RulesCompat { get; set; }
+
     [JsonProperty("processors")]
     internal JToken? Processors { get; set; }
 
@@ -47,6 +50,7 @@ internal sealed class RuleSet
             Metadata = result["metadata"],
             RulesData = result["rules_data"],
             Rules = result["rules"],
+            RulesCompat = result["rules_compat"],
             Processors = result["processors"],
             Scanners = result["scanners"],
             Actions = result["actions"],
@@ -70,6 +74,11 @@ internal sealed class RuleSet
         if (Rules != null)
         {
             dictionary["rules"] = Rules;
+        }
+
+        if (RulesCompat != null)
+        {
+            dictionary["rules_compat"] = RulesCompat;
         }
 
         if (Metadata != null)

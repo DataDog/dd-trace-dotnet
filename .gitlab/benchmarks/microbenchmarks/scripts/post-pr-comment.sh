@@ -26,9 +26,14 @@ red='\033[1;91m'
 normal='\033[0m'
 
 # Check for baseline files
+# Exclude OpenTelemetry.Api benchmarks from PR comments since they only run on master (not on PRs).
 shopt -s nullglob
 baseline_files=("$ARTIFACTS_DIR"/baseline*.converted.json)
-candidate_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
+candidate_files=()
+for f in "$ARTIFACTS_DIR"/candidate*.converted.json; do
+    [[ "$f" == *OpenTelemetry.Api.* ]] && continue
+    candidate_files+=("$f")
+done
 shopt -u nullglob
 
 if [ ${#candidate_files[@]} -eq 0 ]; then

@@ -147,6 +147,20 @@ namespace BuggyBits
             WriteLine($"The application exited after: {sw.Elapsed} at {DateTime.UtcNow}");
         }
 
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                })
+                .ConfigureLogging((context, logging) =>
+                {
+                    if (_disableLogs)
+                    {
+                        logging.ClearProviders();
+                    }
+                });
+
         public static int GetOpenPort()
         {
             TcpListener tcpListener = null;
@@ -204,20 +218,6 @@ namespace BuggyBits
                 return -1; // no valid port found
             }
         }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                })
-                .ConfigureLogging((context, logging) =>
-                {
-                    if (_disableLogs)
-                    {
-                        logging.ClearProviders();
-                    }
-                });
 
         private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
         {
