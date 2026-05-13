@@ -44,14 +44,23 @@ namespace Datadog.Trace.Pdb
         private static readonly Guid StateMachineHoistedLocalScopes = new("6DA9A61E-F8C7-4874-BE62-68BC5630DF71");
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogMetadataReader>();
         private readonly PEReader _peReader;
+        private readonly MetadataReaderProvider? _pdbReaderProvider;
         private readonly bool _isDnlibPdbReader;
         private bool _disposed;
 
-        private DatadogMetadataReader(PEReader peReader, MetadataReader metadataReader, MetadataReader? pdbReader, string? pdbFullPath, Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols.SymbolReader? dnlibPdbReader, Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD? dnlibModule)
+        private DatadogMetadataReader(
+            PEReader peReader,
+            MetadataReader metadataReader,
+            MetadataReaderProvider? pdbReaderProvider,
+            MetadataReader? pdbReader,
+            string? pdbFullPath,
+            Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols.SymbolReader? dnlibPdbReader,
+            Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD? dnlibModule)
         {
             MetadataReader = metadataReader;
             PdbReader = pdbReader;
             _peReader = peReader;
+            _pdbReaderProvider = pdbReaderProvider;
             _dnlibModule = dnlibModule;
             DnlibPdbReader = dnlibPdbReader;
             PdbFullPath = pdbFullPath;
@@ -77,7 +86,19 @@ namespace Datadog.Trace.Pdb
             return MetadataTokens.MethodDefinitionHandle(RidOf(methodToken));
         }
 
-        internal static DatadogMetadataReader? CreatePdbReader(Assembly? assembly)
+        /// <summary>
+        /// Opens a <see cref="DatadogMetadataReader"/> for the given assembly.
+        /// </summary>
+        /// <param name="assembly">The assembly to open.</param>
+        /// <param name="metadataOnly">
+        /// When <c>true</c>, the PE image is opened without prefetching (<see cref="PEStreamOptions.Default"/>) to
+        /// avoid reading the whole DLL into memory. The reader can be used for metadata lookups and for PDB-only
+        /// methods such as <see cref="GetMethodSourceLocation"/>, <see cref="GetMethodSequencePoints"/>, and
+        /// <see cref="GetDocuments"/>. It must NOT be used to read IL bodies or local-variable signatures: callers
+        /// of <see cref="HasMethodBody"/>, <see cref="GetLocalVariableNames(int, int, bool)"/>, and
+        /// <see cref="GetLocalSymbols"/> require the full image and must pass <c>metadataOnly: false</c>.
+        /// </param>
+        internal static DatadogMetadataReader? CreatePdbReader(Assembly? assembly, bool metadataOnly = false)
         {
             if (assembly == null || string.IsNullOrEmpty(assembly.Location))
             {
@@ -85,16 +106,44 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
+            // We track each owned resource locally and only null it out when ownership is
+            // transferred to a successfully constructed DatadogMetadataReader. The finally
+            // block disposes anything still owned, which guarantees that the underlying
+            // FileStream held by the PEReader (under PEStreamOptions.Default, see below) and
+            // by the sidecar-PDB MetadataReaderProvider are released even if a later step
+            // throws or short-circuits to a partial result.
+            PEReader? peReader = null;
+            MetadataReaderProvider? pdbReaderProvider = null;
+            Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD? dnlibModule = null;
+            Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols.SymbolReader? dnlibReader = null;
+
             try
             {
-                // For metadata we are always using System.Reflection.Metadata
-                // For PDB, Reflection.Metadata for portable and embedded PDB and dnlib for windows PDB
-                var peReader = new PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
+                // For metadata we are always using System.Reflection.Metadata.
+                // For PDB, Reflection.Metadata for portable and embedded PDB and dnlib for Windows PDB.
+                //
+                // When metadataOnly is true the caller only needs MetadataReader + PdbReader (no IL bodies),
+                // so we avoid PrefetchEntireImage which would otherwise read the full DLL into memory.
+                // We use PEStreamOptions.Default rather than PrefetchMetadata alone because PrefetchMetadata
+                // reads the metadata blob and then disposes the PE stream, but TryOpenAssociatedPortablePdb
+                // still needs to read the PE Debug Directory (in a non-metadata section) and would fail.
+                // With Default, the PEReader keeps the stream open and reads only the bytes it needs;
+                // the stream is closed when the PEReader is disposed.
+                var peOptions = metadataOnly
+                                    ? PEStreamOptions.Default
+                                    : PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage;
+                peReader = new PEReader(File.OpenRead(assembly.Location), peOptions);
                 MetadataReader metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
-                if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
+                if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out pdbReaderProvider, out var pdbPath))
                 {
-                    var pdbReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                    return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath ?? assembly.Location, null, null);
+                    // For sidecar portable PDBs, pdbReaderProvider owns a FileStream (opened by the File.OpenRead
+                    // callback) that is only released when the provider is disposed. Transfer ownership to the
+                    // DatadogMetadataReader so Dispose() releases the handle.
+                    var pdbReader = pdbReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
+                    var portableResult = new DatadogMetadataReader(peReader, metadataReader, pdbReaderProvider, pdbReader, pdbPath ?? assembly.Location, null, null);
+                    peReader = null;
+                    pdbReaderProvider = null;
+                    return portableResult;
                 }
 
                 Logger.Debug("No associated portable or embedded PDB was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
@@ -102,21 +151,29 @@ namespace Datadog.Trace.Pdb
                 if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
                 {
                     Logger.Debug("No standalone PDB file was found for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
-                    return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
+                    var noPdbResult = new DatadogMetadataReader(peReader, metadataReader, null, null, null, null, null);
+                    peReader = null;
+                    return noPdbResult;
                 }
 
-                var module = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
+                dnlibModule = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
                 var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
-                var dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
+                dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, dnlibModule.Metadata, pdbStream);
                 if (dnlibReader == null)
                 {
                     Logger.Debug("A standalone PDB file was found for {Assembly} but a dnlib PDB reader could not be created. AssemblyLocation={AssemblyLocation}, PdbPath={PdbPath}", assembly.FullName, assembly.Location, pdbFullPath);
-                    return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
+                    var noDnlibReaderResult = new DatadogMetadataReader(peReader, metadataReader, null, null, null, null, null);
+                    peReader = null; // ownership transferred; dnlibModule will be disposed in finally
+                    return noDnlibReaderResult;
                 }
 
-                dnlibReader.Initialize(module);
-                module.LoadPdb(dnlibReader);
-                return new DatadogMetadataReader(peReader, metadataReader, null, pdbFullPath, dnlibReader, module);
+                dnlibReader.Initialize(dnlibModule);
+                dnlibModule.LoadPdb(dnlibReader);
+                var dnlibResult = new DatadogMetadataReader(peReader, metadataReader, null, null, pdbFullPath, dnlibReader, dnlibModule);
+                peReader = null;
+                dnlibModule = null;
+                dnlibReader = null;
+                return dnlibResult;
             }
             catch (UnauthorizedAccessException e)
             {
@@ -132,6 +189,16 @@ namespace Datadog.Trace.Pdb
             {
                 Logger.Error(e, "Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
                 return null;
+            }
+            finally
+            {
+                // Any resource still owned here was not transferred to a DatadogMetadataReader,
+                // so it must be released to avoid leaking the underlying file handles (PEReader and
+                // sidecar-PDB MetadataReaderProvider) and the dnlib module / symbol reader.
+                dnlibReader?.Dispose();
+                dnlibModule?.Dispose();
+                pdbReaderProvider?.Dispose();
+                peReader?.Dispose();
             }
         }
 
@@ -982,6 +1049,7 @@ namespace Datadog.Trace.Pdb
             }
 
             DnlibPdbReader?.Dispose();
+            _pdbReaderProvider?.Dispose();
             _peReader?.Dispose();
             _dnlibModule?.Dispose();
             _disposed = true;
