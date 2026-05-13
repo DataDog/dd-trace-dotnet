@@ -1,3 +1,0 @@
-[submodule "tracer/test/Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data"]
-	path = tracer/test/Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data
-	url = https://github.com/DataDog/ffe-system-test-data.git

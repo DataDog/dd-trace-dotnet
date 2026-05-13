@@ -1,0 +1,64 @@
+name: Update FFE fixtures
+
+on:
+  workflow_dispatch:
+    inputs:
+      fixture_ref:
+        description: Branch, tag, or commit from DataDog/ffe-system-test-data
+        required: true
+        default: main
+        type: string
+
+jobs:
+  update_ffe_fixtures:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Get dd-octo-sts token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        id: octo-sts
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.update_ffe_fixtures.create-pr
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Update fixture snapshot
+        id: fixtures
+        env:
+          FFE_FIXTURE_REF: ${{ inputs.fixture_ref }}
+        run: bash .github/scripts/update-ffe-fixtures.sh
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
+          branch: bot/ffe-fixtures-update
+          commit-message: "test(ffe): update canonical fixtures"
+          delete-branch: true
+          base: master
+          title: "test(ffe): update canonical fixtures"
+          draft: true
+          body: |
+            ## Motivation
+
+            Keep the dd-trace-dotnet FFE fixture snapshot current with the canonical fixture source.
+
+            Canonical source: https://github.com/DataDog/ffe-system-test-data
+            Source commit: ${{ steps.fixtures.outputs.source_commit }}
+
+            ## Changes
+
+            - Refresh `tracer/test/Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data` from the canonical fixture repository.
+            - Keep the fixture files checked in so local unit tests run without network access or git submodule setup.
+            - Loaded ${{ steps.fixtures.outputs.fixture_count }} JSON fixture cases.
+
+            ## Decisions
+
+            - `DataDog/ffe-system-test-data` remains the canonical source for shared FFE fixtures.
+            - dd-trace-dotnet consumes those fixtures as a generated checked-in snapshot, not as a git submodule.
