@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.Ci;
 [EnvironmentVariablesCleaner(
     ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
     ConfigurationKeys.CIVisibility.TestSessionCommand,
-    "VSTEST_TESTCASEFILTER")]
+    ConfigurationKeys.CIVisibility.VstestTestCaseFilter)]
 public class CoverageBackfillCapabilityTests : SettingsTestsBase
 {
     [Fact]

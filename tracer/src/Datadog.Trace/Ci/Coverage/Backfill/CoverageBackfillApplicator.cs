@@ -80,7 +80,7 @@ internal static class CoverageBackfillApplicator
         using var beforeBitmap = new FileBitmap(before);
         using var mergedBitmap = FileBitmap.Or(maskedBackendBitmap, beforeBitmap, reuseBufferFromBitmapA: false);
         var merged = mergedBitmap.GetInternalArrayOrToArrayAndDispose();
-        if (AreEqual(before, merged))
+        if (before.AsSpan().SequenceEqual(merged))
         {
             return false;
         }
@@ -94,23 +94,5 @@ internal static class CoverageBackfillApplicator
     {
         var relativePath = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(path, false);
         return CoverageBackfillData.NormalizePath(relativePath);
-    }
-
-    private static bool AreEqual(byte[] left, byte[] right)
-    {
-        if (left.Length != right.Length)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < left.Length; i++)
-        {
-            if (left[i] != right[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

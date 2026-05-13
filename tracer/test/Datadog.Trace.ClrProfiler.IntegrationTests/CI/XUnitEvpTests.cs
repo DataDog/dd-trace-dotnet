@@ -725,6 +725,10 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     /// <param name="expectedGzip">Whether the target EVP path should use gzip.</param>
     public virtual async Task ItrCoverageBackfillSendsBackfilledCoverletCoverage(string packageVersion, string evpVersionToRemove, bool expectedGzip)
     {
+        Skip.If(
+            EnvironmentTools.IsLinux(),
+            "Coverlet collector writes a Cobertura attachment on Linux under auto instrumentation but does not invoke the in-process callback that this IPC smoke test validates.");
+
         var tests = new List<MockCIVisibilityTest>();
         var coverageMessages = new List<SessionCodeCoverageMessage>();
         var evpRequests = new List<string>();

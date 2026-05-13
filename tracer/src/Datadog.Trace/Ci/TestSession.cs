@@ -107,7 +107,7 @@ public sealed class TestSession
             var environmentVariables = GetPropagateEnvironmentVariables();
             foreach (var envVar in environmentVariables)
             {
-// TODO temporary, this needs to be addressed
+                // The propagated environment variable set is assembled dynamically from generated keys and propagation headers, so each previous value must be restored by dictionary key.
 #pragma warning disable DD0012
                 _environmentVariablesToRestore[envVar.Key] = EnvironmentHelpers.GetEnvironmentVariable(envVar.Key);
 #pragma warning restore DD0012
@@ -579,21 +579,18 @@ public sealed class TestSession
         {
             [ConfigurationKeys.CIVisibility.TestSessionCommand] = tags.Command,
             [ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = tags.WorkingDirectory,
-            [CoverageBackfillDataStore.RunFolderEnvironmentVariable] = CoverageBackfillDataStore.GetOrCreateRunFolder(_testOptimization),
+            [ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder] = CoverageBackfillDataStore.GetOrCreateRunFolder(_testOptimization),
         };
 
-// TODO temporary, this needs to be addressed
-#pragma warning disable DD0012
-        var currentBackfillDataPath = EnvironmentHelpers.GetEnvironmentVariable(CoverageBackfillDataStore.BackfillDataPathEnvironmentVariable);
-#pragma warning restore DD0012
+        var currentBackfillDataPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ItrCoverageBackfillPath);
         if (currentBackfillDataPath is { Length: > 0 })
         {
-            environmentVariables[CoverageBackfillDataStore.BackfillDataPathEnvironmentVariable] = currentBackfillDataPath;
+            environmentVariables[ConfigurationKeys.CIVisibility.ItrCoverageBackfillPath] = currentBackfillDataPath;
         }
 
         if (CoverageBackfillDataStore.HasActualItrSkip())
         {
-            environmentVariables[CoverageBackfillDataStore.ActualItrSkipEnvironmentVariable] = "1";
+            environmentVariables[ConfigurationKeys.CIVisibility.ItrCoverageBackfillActualSkip] = "1";
         }
 
         Tracer.Instance.TracerManager.SpanContextPropagator.Inject(

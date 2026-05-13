@@ -60,7 +60,7 @@ internal static class CiUtils
         // We force Test optimization mode on child process
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestOptimizationRunId] = testOptimization.RunId;
-        profilerEnvironmentVariables[CoverageBackfillDataStore.RunFolderEnvironmentVariable] = CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ItrCoverageBackfillRunFolder] = CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
 
         // We check the settings and merge with the command settings options
         var agentless = testOptimizationSettings.Agentless;

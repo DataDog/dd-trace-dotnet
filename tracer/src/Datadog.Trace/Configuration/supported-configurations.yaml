@@ -456,6 +456,27 @@ supportedConfigurations:
     product: CIVisibility
     const_name: ImpactedTestsDetectionEnabled
     documentation: Configuration key for enabling Impacted Tests Detection.
+  DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_ACTUAL_SKIP:
+  - implementation: A
+    type: string
+    default: null
+    product: CIVisibility
+    const_name: ItrCoverageBackfillActualSkip
+    documentation: Internal marker set when the current process observes at least one test skipped by Intelligent Test Runner while coverage backfill is active.
+  DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_PATH:
+  - implementation: A
+    type: string
+    default: null
+    product: CIVisibility
+    const_name: ItrCoverageBackfillPath
+    documentation: Internal file path used to share backend ITR coverage backfill data between the test session, testhost, and coverage-tool processes.
+  DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_RUN_FOLDER:
+  - implementation: A
+    type: string
+    default: null
+    product: CIVisibility
+    const_name: ItrCoverageBackfillRunFolder
+    documentation: Internal run-scoped folder used to exchange ITR coverage backfill files and markers between test session, testhost, and coverage-tool processes.
   DD_CIVISIBILITY_ITR_ENABLED:
   - implementation: A
     type: boolean
@@ -2780,6 +2801,13 @@ supportedConfigurations:
       Configuration key to set an additional argument for the
       traces sampler.
       to false.
+  VSTEST_TESTCASEFILTER:
+  - implementation: A
+    type: string
+    default: null
+    product: CIVisibility
+    const_name: VstestTestCaseFilter
+    documentation: VSTest environment variable used to pass a testcase filter to child testhost processes.
   _DD_EXTENSION_ENDPOINT:
   - implementation: A
     type: string

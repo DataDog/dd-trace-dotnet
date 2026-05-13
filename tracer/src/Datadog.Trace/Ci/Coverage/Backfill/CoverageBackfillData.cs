@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Ci.Coverage.Util;
 
 namespace Datadog.Trace.Ci.Coverage.Backfill;
 
@@ -184,14 +185,9 @@ internal sealed class CoverageBackfillData
 
     private static byte[] OrBitmaps(byte[] left, byte[] right)
     {
-        var result = new byte[Math.Max(left.Length, right.Length)];
-        for (var i = 0; i < result.Length; i++)
-        {
-            var leftValue = i < left.Length ? left[i] : 0;
-            var rightValue = i < right.Length ? right[i] : 0;
-            result[i] = (byte)(leftValue | rightValue);
-        }
-
-        return result;
+        using var leftBitmap = new FileBitmap(left);
+        using var rightBitmap = new FileBitmap(right);
+        var mergedBitmap = FileBitmap.Or(leftBitmap, rightBitmap, reuseBufferFromBitmapA: false);
+        return mergedBitmap.GetInternalArrayOrToArrayAndDispose();
     }
 }

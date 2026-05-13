@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
@@ -193,10 +194,7 @@ internal static class CoverageBackfillCapability
         // a testhost-scoped skippable request keyed by test.bundle once backfill is required. Local filters and
         // framework selectors are still rejected because they can narrow execution within the same bundle.
 
-// TODO temporary, this needs to be addressed
-#pragma warning disable DD0011
-        var vstestTestCaseFilter = EnvironmentHelpers.GetEnvironmentVariable("VSTEST_TESTCASEFILTER");
-#pragma warning restore DD0011
+        var vstestTestCaseFilter = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.VstestTestCaseFilter);
         if (!string.IsNullOrWhiteSpace(vstestTestCaseFilter))
         {
             reason = "A VSTest testcase filter was detected in the environment.";
@@ -249,15 +247,7 @@ internal static class CoverageBackfillCapability
     /// <returns>True when at least one fragment appears in the command line.</returns>
     private static bool ContainsAny(string value, params string[] fragments)
     {
-        foreach (var fragment in fragments)
-        {
-            if (value.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return fragments.Any(fragment => value.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     /// <summary>
