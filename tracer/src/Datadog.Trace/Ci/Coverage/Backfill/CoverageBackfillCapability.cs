@@ -38,8 +38,7 @@ internal static class CoverageBackfillCapability
     public static bool ShouldWaitForCoverageIpc(TestOptimizationSettings settings)
     {
         var commandLine = GetCommandLine();
-        return settings.TestsSkippingEnabled == true &&
-               HasSelectedCoverageReportSource(settings, commandLine) &&
+        return HasSelectedCoverageReportSource(settings, commandLine) &&
                (IsCoverletCoverageCommand(commandLine) || IsMicrosoftCodeCoverageCommand(commandLine));
     }
 
@@ -67,12 +66,6 @@ internal static class CoverageBackfillCapability
         if (!string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
         {
             return IsExternalCoveragePathBackfillable(commandLine, out reason);
-        }
-
-        if (IsMicrosoftCodeCoverageCommand(commandLine))
-        {
-            reason = "Microsoft CodeCoverage was detected without a pre-verified line-capable XML report, so coverage-active skipping is disabled.";
-            return false;
         }
 
         reason = string.Empty;
@@ -121,7 +114,7 @@ internal static class CoverageBackfillCapability
     /// </summary>
     /// <param name="commandLine">Command line used to identify known in-process coverage hooks.</param>
     /// <param name="reason">Reason why the external path is not safe for coverage-active skipping.</param>
-    /// <returns>True when the external source is either handled in-process or already verified as line-capable.</returns>
+    /// <returns>True when the external source is handled in-process, already verified as line-capable, or configured as a post-command XML report.</returns>
     private static bool IsExternalCoveragePathBackfillable(string commandLine, out string reason)
     {
         reason = string.Empty;
@@ -145,8 +138,18 @@ internal static class CoverageBackfillCapability
             return false;
         }
 
-        if (File.Exists(externalCoveragePathValue) &&
-            ExternalCoverageXmlBackfill.IsLineBackfillableReport(externalCoveragePathValue, out reason))
+        if (File.Exists(externalCoveragePathValue))
+        {
+            if (ExternalCoverageXmlBackfill.IsLineBackfillableReport(externalCoveragePathValue, out reason))
+            {
+                reason = string.Empty;
+                return true;
+            }
+
+            return false;
+        }
+
+        if (Path.GetExtension(externalCoveragePathValue).Equals(".xml", StringComparison.OrdinalIgnoreCase))
         {
             reason = string.Empty;
             return true;
@@ -154,7 +157,7 @@ internal static class CoverageBackfillCapability
 
         if (string.IsNullOrEmpty(reason))
         {
-            reason = "External coverage XML was not available as a verified line-capable report before skipping.";
+            reason = "External coverage path must point to an XML report when the report will be generated after the test command.";
         }
 
         return false;

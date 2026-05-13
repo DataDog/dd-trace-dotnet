@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using System;
+using System.Collections.Generic;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -53,5 +55,45 @@ internal readonly struct SkippableTest
     public TestParameters? GetParameters()
     {
         return string.IsNullOrWhiteSpace(RawParameters) ? null : JsonHelper.DeserializeObject<TestParameters>(RawParameters!);
+    }
+
+    /// <summary>
+    /// Gets whether this backend candidate belongs to the supplied local module or bundle scope.
+    /// </summary>
+    /// <param name="moduleName">Local test module or bundle name. Null means no local module scope is available.</param>
+    /// <returns>True when the candidate has no backend module scope or when it matches the local module.</returns>
+    internal bool MatchesModuleScope(string? moduleName)
+    {
+        if (Configurations?.Custom is not { } customConfigurations)
+        {
+            return true;
+        }
+
+        if (!TryGetScopedModuleName(customConfigurations, out var scopedModuleName))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrEmpty(moduleName) &&
+               string.Equals(scopedModuleName, moduleName, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Extracts backend module or bundle scope from the candidate configurations.
+    /// </summary>
+    /// <param name="customConfigurations">Backend custom configurations for the skippable candidate.</param>
+    /// <param name="moduleName">Scoped module or bundle name, when present.</param>
+    /// <returns>True when the backend candidate is scoped to a non-empty module or bundle.</returns>
+    private static bool TryGetScopedModuleName(Dictionary<string, string> customConfigurations, out string moduleName)
+    {
+        if (customConfigurations.TryGetValue(Tags.TestTags.Bundle, out var bundle) ||
+            customConfigurations.TryGetValue(Tags.TestTags.Module, out bundle))
+        {
+            moduleName = bundle;
+            return !string.IsNullOrEmpty(moduleName);
+        }
+
+        moduleName = string.Empty;
+        return false;
     }
 }

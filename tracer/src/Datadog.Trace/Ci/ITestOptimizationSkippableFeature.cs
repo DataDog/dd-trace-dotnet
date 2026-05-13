@@ -13,7 +13,7 @@ internal interface ITestOptimizationSkippableFeature : ITestOptimizationFeature
 {
     void WaitForSkippableTaskToFinish();
 
-    IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name);
+    IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name, string? moduleName = null);
 
     bool HasSkippableTests();
 

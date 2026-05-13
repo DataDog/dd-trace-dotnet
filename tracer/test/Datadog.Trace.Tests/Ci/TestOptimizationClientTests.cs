@@ -6,7 +6,9 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Net;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Util.Json;
 using FluentAssertions;
 using Xunit;
@@ -92,5 +94,39 @@ public class TestOptimizationClientTests
         response.Coverage.IsPresent.Should().BeTrue();
         response.Coverage.IsValid.Should().BeTrue();
         response.IsCoverageBackfillSafe.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ModuleScopedSkippableCandidateMatchesLocalBundle()
+    {
+        var candidate = new SkippableTest(
+            "SimplePassTest",
+            "Samples.XUnitTests.TestSuite",
+            parameters: null,
+            new TestsConfigurations(
+                "linux",
+                "1",
+                "x64",
+                runtimeName: null,
+                runtimeVersion: null,
+                runtimeArchitecture: null,
+                new Dictionary<string, string> { [TestTags.Bundle] = "Samples.XUnitTests" }));
+
+        candidate.MatchesModuleScope("Samples.XUnitTests").Should().BeTrue();
+        candidate.MatchesModuleScope("Other.Tests").Should().BeFalse();
+        candidate.MatchesModuleScope(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void UnscopedSkippableCandidateKeepsLegacyMatching()
+    {
+        var candidate = new SkippableTest(
+            "SimplePassTest",
+            "Samples.XUnitTests.TestSuite",
+            parameters: null,
+            configurations: null);
+
+        candidate.MatchesModuleScope(null).Should().BeTrue();
+        candidate.MatchesModuleScope("Any.Module").Should().BeTrue();
     }
 }

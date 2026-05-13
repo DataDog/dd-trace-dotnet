@@ -173,7 +173,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
-            var hasDirectCoverageResult = false;
 
             // If the code coverage path is set we try to read all json files created, merge them into a single one and extract the
             // global code coverage percentage.
@@ -200,17 +199,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                             backfillResult.Applied,
                             executableLines: data[1],
                             coveredLines: data[2]);
-                        hasDirectCoverageResult = true;
                     }
                 }
             }
 
             try
             {
-                if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
-                    File.Exists(extCodeCoverageFilePath))
+                if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath)
                 {
-                    if (TryProcessCoverageXml(extCodeCoverageFilePath, session, out var coverageResult))
+                    if (!File.Exists(extCodeCoverageFilePath))
+                    {
+                        Log.Warning("RunCiCommand: The configured external code coverage file was not found: {Path}", extCodeCoverageFilePath);
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    }
+                    else if (TryProcessCoverageXml(extCodeCoverageFilePath, session, out var coverageResult))
                     {
                         session.RecordCodeCoverage(
                             CodeCoverageReportSource.ExternalXml,
@@ -219,7 +221,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                             coverageResult.ExecutableLines,
                             coverageResult.CoveredLines,
                             coverageResult.Diagnostic);
-                        hasDirectCoverageResult = true;
                     }
                     else
                     {
@@ -236,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             session.DrainIpcMessages(
                 TimeSpan.FromMilliseconds(250),
                 TimeSpan.FromMilliseconds(50),
-                waitForFirstMessage: !hasDirectCoverageResult && CoverageBackfillCapability.ShouldWaitForCoverageIpc(TestOptimization.Instance.Settings));
+                waitForFirstMessage: CoverageBackfillCapability.ShouldWaitForCoverageIpc(TestOptimization.Instance.Settings));
             if (CoverageBackfillDataStore.TryReadCoverageIpcFailure(out var ipcFailure))
             {
                 Log.Warning("RunCiCommand: A selected coverage tool could not deliver its coverage result through IPC: {Reason}", ipcFailure);

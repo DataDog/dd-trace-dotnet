@@ -108,7 +108,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         }
     }
 
-    public IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
+    public IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name, string? moduleName = null)
     {
         if (_skippableTestsTask is null)
         {
@@ -121,7 +121,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
                 testsInSuite.TryGetValue(name, out var tests))
             {
-                return tests;
+                return FilterByModuleScope(tests, moduleName);
             }
         }
         catch (Exception ex)
@@ -269,6 +269,41 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Keeps module-scoped backend candidates aligned with the currently executing local test module.
+    /// </summary>
+    /// <param name="tests">Backend candidates that matched suite and name.</param>
+    /// <param name="moduleName">Local test module or bundle name, when available.</param>
+    /// <returns>Candidates that are valid for the local module scope.</returns>
+    private static IList<SkippableTest> FilterByModuleScope(IList<SkippableTest> tests, string? moduleName)
+    {
+        List<SkippableTest>? filtered = null;
+        for (var i = 0; i < tests.Count; i++)
+        {
+            var test = tests[i];
+            if (test.MatchesModuleScope(moduleName))
+            {
+                filtered?.Add(test);
+                continue;
+            }
+
+            filtered ??= CopyBefore(tests, i);
+        }
+
+        return filtered ?? tests;
+
+        static List<SkippableTest> CopyBefore(IList<SkippableTest> source, int count)
+        {
+            var result = new List<SkippableTest>(source.Count);
+            for (var i = 0; i < count; i++)
+            {
+                result.Add(source[i]);
+            }
+
+            return result;
+        }
     }
 
     internal sealed class SkippableTestsDictionary : Dictionary<string, Dictionary<string, IList<SkippableTest>>>
