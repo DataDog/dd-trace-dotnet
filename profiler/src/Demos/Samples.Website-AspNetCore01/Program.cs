@@ -5,11 +5,13 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Hosting;
 
 namespace Samples.Website_AspNetCore01
@@ -46,20 +48,6 @@ namespace Samples.Website_AspNetCore01
                 WriteLine($"host built in {sw.ElapsedMilliseconds} ms");
                 sw.Restart();
 
-                // ASP.NET Core accepts listening url via what is set by Visual Studio
-                // (from the launchsettings.json). It could be overriden by --Urls
-                // on the command line
-                var configuration = host.Services.GetService(typeof(IConfiguration)) as IConfiguration;
-                var rootUrl = configuration["Urls"];
-
-                // otherwise, use the default ASP.NET Core value
-                if (string.IsNullOrEmpty(rootUrl))
-                {
-                    rootUrl = "http://localhost:5000";
-                }
-
-                WriteLine($"Listening to {rootUrl}");
-
                 var cts = new CancellationTokenSource();
                 using (var selfInvoker = new SelfInvoker(cts.Token))
                 {
@@ -71,6 +59,12 @@ namespace Samples.Website_AspNetCore01
 
                     sw.Stop();
                     WriteLine($"host started in {sw.ElapsedMilliseconds} ms");
+
+                    // Read the address Kestrel actually bound (after StartAsync). Configuration["Urls"]
+                    // may be "http://127.0.0.1:0" when the test runner asks for a dynamic port, so the
+                    // bound address is the only reliable source of the real listening URL.
+                    var rootUrl = GetBoundRootUrl(host);
+                    WriteLine($"Listening to {rootUrl}");
 
                     WriteLine();
                     WriteLine($"Started at {DateTime.UtcNow}.");
@@ -106,6 +100,13 @@ namespace Samples.Website_AspNetCore01
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+
+        private static string GetBoundRootUrl(IHost host)
+        {
+            var server = (IServer)host.Services.GetService(typeof(IServer));
+            var address = server?.Features.Get<IServerAddressesFeature>()?.Addresses.FirstOrDefault();
+            return string.IsNullOrEmpty(address) ? "http://localhost:5000" : address.TrimEnd('/');
+        }
 
         // Helper method to output both to the console (when the app runs in the console)
         // and via Trace to see them while running under IISExpress both in Visual Studio
