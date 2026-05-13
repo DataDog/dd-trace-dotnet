@@ -94,16 +94,19 @@ namespace Datadog.Trace.Agent
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
 
-            ISpanBufferSerializer spanBufferSerializer = api.TracesEncoding switch
+            ISpanBufferSerializer CreateSpanSerializer() => api.TracesEncoding switch
             {
                 TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
+#if NETCOREAPP3_1_OR_GREATER
+                TracesEncoding.OtlpProtobuf => new OpenTelemetry.Traces.OtlpTracesProtobufSerializer(),
+#endif
                 _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
             };
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
-            _frontBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
-            _backBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
+            _frontBuffer = new SpanBuffer(maxBufferSize, CreateSpanSerializer());
+            _backBuffer = new SpanBuffer(maxBufferSize, CreateSpanSerializer());
             _activeBuffer = _frontBuffer;
 
             _apmTracingEnabled = apmTracingEnabled;
