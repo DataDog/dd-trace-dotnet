@@ -74,11 +74,25 @@ internal static class CoverageBackfillDataStore
     /// <param name="coverageBackfillData">Decoded backend coverage data when the persisted file is available and valid.</param>
     /// <returns>True when valid backend coverage data was loaded.</returns>
     public static bool TryLoad(out CoverageBackfillData coverageBackfillData)
+        => TryLoad(TestOptimization.Instance, out coverageBackfillData);
+
+    /// <summary>
+    /// Loads persisted backend coverage data for the supplied test-optimization instance.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <param name="coverageBackfillData">Decoded backend coverage data when the persisted file is available and valid.</param>
+    /// <returns>True when valid backend coverage data was loaded.</returns>
+    internal static bool TryLoad(ITestOptimization testOptimization, out CoverageBackfillData coverageBackfillData)
     {
         coverageBackfillData = CoverageBackfillData.Missing;
-        if (TryLoadScopedActualSkipCoverage(TestOptimization.Instance, out coverageBackfillData))
+        if (TryLoadScopedActualSkipCoverage(testOptimization, out coverageBackfillData, out var hasScopedActualSkips))
         {
             return true;
+        }
+
+        if (hasScopedActualSkips)
+        {
+            return false;
         }
 
 // TODO temporary, this needs to be addressed
@@ -87,7 +101,7 @@ internal static class CoverageBackfillDataStore
 #pragma warning restore DD0012
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
-            filePath = GetBackfillDataPath(TestOptimization.Instance);
+            filePath = GetBackfillDataPath(testOptimization);
             if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             {
                 return false;
@@ -115,30 +129,38 @@ internal static class CoverageBackfillDataStore
     /// Records in the process environment that a test was actually skipped by ITR.
     /// </summary>
     public static void RecordActualItrSkip()
-        => RecordActualItrSkip(default);
+        => RecordActualItrSkip(TestOptimization.Instance, default);
 
     /// <summary>
     /// Records in the process environment and shared run folder that a scope has actually skipped at least one test by ITR.
     /// </summary>
     /// <param name="scope">Request scope that produced the skip decision.</param>
     public static void RecordActualItrSkip(SkippableTestsRequestScope scope)
+        => RecordActualItrSkip(TestOptimization.Instance, scope);
+
+    /// <summary>
+    /// Records in the process environment and shared run folder that the supplied instance actually skipped at least one test by ITR.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <param name="scope">Request scope that produced the skip decision.</param>
+    internal static void RecordActualItrSkip(ITestOptimization testOptimization, SkippableTestsRequestScope scope)
     {
         EnvironmentHelpers.SetEnvironmentVariable(ActualItrSkipEnvironmentVariable, "1");
         try
         {
-            var filePath = GetActualSkipPath(TestOptimization.Instance);
+            var filePath = GetActualSkipPath(testOptimization);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             File.WriteAllText(filePath, "1");
             if (scope.HasFingerprint)
             {
-                var scopedFilePath = GetScopedActualSkipPath(TestOptimization.Instance, scope.Fingerprint);
+                var scopedFilePath = GetScopedActualSkipPath(testOptimization, scope.Fingerprint);
                 Directory.CreateDirectory(Path.GetDirectoryName(scopedFilePath)!);
                 File.WriteAllText(scopedFilePath, "1");
             }
         }
         catch (Exception ex)
         {
-            TestOptimization.Instance.Log.Warning(ex, "CoverageBackfillDataStore: Error persisting actual ITR skip state.");
+            testOptimization.Log.Warning(ex, "CoverageBackfillDataStore: Error persisting actual ITR skip state.");
         }
     }
 
@@ -292,10 +314,12 @@ internal static class CoverageBackfillDataStore
     /// </summary>
     /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
     /// <param name="coverageBackfillData">Merged backend coverage for actual skipped scopes.</param>
+    /// <param name="hasScopedActualSkips">True when any scoped actual-skip marker was found, even if its coverage map could not be loaded.</param>
     /// <returns>True when at least one scoped coverage map was loaded and merged.</returns>
-    private static bool TryLoadScopedActualSkipCoverage(ITestOptimization testOptimization, out CoverageBackfillData coverageBackfillData)
+    private static bool TryLoadScopedActualSkipCoverage(ITestOptimization testOptimization, out CoverageBackfillData coverageBackfillData, out bool hasScopedActualSkips)
     {
         coverageBackfillData = CoverageBackfillData.Missing;
+        hasScopedActualSkips = false;
         try
         {
             var actualSkipFolder = GetScopedActualSkipFolder(testOptimization);
@@ -313,17 +337,21 @@ internal static class CoverageBackfillDataStore
                     continue;
                 }
 
+                hasScopedActualSkips = true;
                 var backfillPath = Path.Combine(GetScopedBackfillFolder(testOptimization), $"{scopeFingerprint}.json");
                 if (!File.Exists(backfillPath))
                 {
-                    continue;
+                    return false;
                 }
 
                 var data = JsonHelper.DeserializeObject<CoverageBackfillData>(File.ReadAllText(backfillPath));
                 if (data is { IsPresent: true, IsValid: true })
                 {
                     coverageMaps.Add(data);
+                    continue;
                 }
+
+                return false;
             }
 
             var mergedCoverage = CoverageBackfillData.Merge(coverageMaps);

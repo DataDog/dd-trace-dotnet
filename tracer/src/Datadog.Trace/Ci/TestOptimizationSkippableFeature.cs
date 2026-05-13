@@ -32,13 +32,13 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         _settings = settings;
         _testOptimizationClient = testOptimizationClient;
-        _coverageBackfillRequiresScopedRequests = CoverageBackfillCapability.IsCoverageBackfillRequired(settings);
         if (settings.TestsSkippingEnabled == null && clientSettingsResponse.TestsSkipping.HasValue)
         {
             Log.Information("TestOptimizationSkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);
             settings.SetTestsSkippingEnabled(clientSettingsResponse.TestsSkipping.Value);
         }
 
+        _coverageBackfillRequiresScopedRequests = CoverageBackfillCapability.IsCoverageBackfillRequired(settings);
         if (settings.TestsSkippingEnabled == true)
         {
             Log.Information("TestOptimizationSkippableFeature: Test skipping is enabled.");
