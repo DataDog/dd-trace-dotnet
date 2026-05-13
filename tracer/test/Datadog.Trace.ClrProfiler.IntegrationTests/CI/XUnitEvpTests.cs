@@ -66,10 +66,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     /// <returns>Package version, EVP endpoint version to remove, and expected compression.</returns>
     public static IEnumerable<object[]> GetDataForCoverageBackfill()
     {
-        foreach (var version in PackageVersions.XUnit.Take(1))
-        {
-            yield return version.Concat("evp_proxy/v4", false);
-        }
+        // Use the newest XUnit row so this focused smoke test exercises the current Coverlet collector and test-platform path.
+        yield return PackageVersions.XUnit.Last().Concat("evp_proxy/v4", false);
     }
 
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]

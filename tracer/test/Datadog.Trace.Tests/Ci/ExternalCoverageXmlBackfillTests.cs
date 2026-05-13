@@ -238,6 +238,35 @@ public class ExternalCoverageXmlBackfillTests
         }
     }
 
+    /// <summary>
+    /// Verifies that the report processor tolerates coverage paths that disappear before they are inspected.
+    /// </summary>
+    [Fact]
+    public void MissingCoverageFileDoesNotThrow()
+    {
+        var filePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "coverage.xml");
+
+        ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData: null, applyBackfill: false, out _).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that malformed XML is treated as an unsupported report instead of escaping the Try API.
+    /// </summary>
+    [Fact]
+    public void MalformedCoverageFileDoesNotThrow()
+    {
+        var filePath = WriteTempCoverageFile("<coverage>");
+
+        try
+        {
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData: null, applyBackfill: false, out _).Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
     [Fact]
     public void BackfillableReportDetectionRejectsAggregateOnlyXml()
     {

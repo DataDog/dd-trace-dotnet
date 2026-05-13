@@ -31,13 +31,21 @@ internal static class ExternalCoverageXmlBackfill
     public static bool TryProcess(string filePath, CoverageBackfillData? backfillData, bool applyBackfill, out ExternalCoverageXmlResult result)
     {
         result = default;
-        if (string.IsNullOrWhiteSpace(filePath))
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
             return false;
         }
 
-        var xmlDoc = new XmlDocument { PreserveWhitespace = true };
-        xmlDoc.Load(filePath);
+        XmlDocument xmlDoc;
+        try
+        {
+            xmlDoc = new XmlDocument { PreserveWhitespace = true };
+            xmlDoc.Load(filePath);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
 
         var canBackfill = applyBackfill && backfillData is { IsPresent: true, IsValid: true };
         if (xmlDoc.SelectSingleNode("/coverage") is not null)
