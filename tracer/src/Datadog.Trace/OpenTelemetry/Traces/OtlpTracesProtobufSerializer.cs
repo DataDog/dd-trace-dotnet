@@ -35,18 +35,16 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     internal const int AttributePerEventCountLimit = 128;
     internal const int AttributePerLinkCountLimit = 128;
 
-#pragma warning disable CA1823
     private const int ReserveSizeForLength = 4;
+#pragma warning disable CA1823
     private const int TraceIdSize = 16;
     private const int SpanIdSize = 8;
 #pragma warning restore CA1823
 
     // Positions of the length placeholders inside the active output buffer.
     // Set on the first SerializeSpans call (when spanBufferOffset == HeaderSize) and patched in FinishBody.
-#pragma warning disable CS0414, CA1823
     private int _resourceSpansLengthPos = -1;
     private int _scopeSpansLengthPos = -1;
-#pragma warning restore CS0414, CA1823
 
     public int HeaderSize => 0;
 
@@ -62,7 +60,23 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     public int FinishBody(ref byte[] bytes, int offset, int maxSize)
     {
-        throw new NotImplementedException();
+        if (_resourceSpansLengthPos < 0)
+        {
+            return 0;
+        }
+
+        // Patch ScopeSpans length: from end of its 4-byte placeholder up to current write position (offset).
+        var scopeSpansBodyLength = offset - (_scopeSpansLengthPos + ReserveSizeForLength);
+        ProtobufSerializer.WriteReservedLength(bytes, _scopeSpansLengthPos, scopeSpansBodyLength);
+
+        // Patch ResourceSpans length.
+        var resourceSpansBodyLength = offset - (_resourceSpansLengthPos + ReserveSizeForLength);
+        ProtobufSerializer.WriteReservedLength(bytes, _resourceSpansLengthPos, resourceSpansBodyLength);
+
+        // Reset for next flush cycle (same serializer instance can be reused on the same buffer).
+        _resourceSpansLengthPos = -1;
+        _scopeSpansLengthPos = -1;
+        return 0;
     }
 }
 

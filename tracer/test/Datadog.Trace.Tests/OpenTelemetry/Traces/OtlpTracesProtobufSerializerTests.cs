@@ -16,7 +16,16 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 
 public class OtlpTracesProtobufSerializerTests
 {
-    // Tests will be added in subsequent steps.
+    [Fact]
+    public void FinishBody_ReturnsZero_WhenNothingSerialized()
+    {
+        var serializer = new OtlpTracesProtobufSerializer();
+        var buffer = new byte[1024];
+
+        var written = serializer.FinishBody(ref buffer, offset: 0, maxSize: buffer.Length);
+
+        written.Should().Be(0);
+    }
 }
 
 #endif
