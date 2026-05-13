@@ -79,12 +79,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                     var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
                     activity5.SetCustomProperty(ActivityCustomPropertyKeys.Resource, resourceObject);
 
-                    // DS 5.x path: scope already exists; apply the Resource directly. On DS 6.0+ this
-                    // is a no-op because OnMethodEnd hasn't run yet so __dd_span__ isn't set.
+                    // DS 5.x path: scope already exists; apply the Resource directly to the span.
+                    // Use the preserve-existing-tags variant because, unlike the DS 6.0+ path
+                    // (where Resource is applied BEFORE the activity tag-copy step in
+                    // ActivityStartIntegration.CreateAndLinkScope), here the scope creation has
+                    // already finished, so any explicit `service.name` tag the user set will
+                    // already be on the span — we must not overwrite it with the Resource value.
+                    // On DS 6.0+ this branch is a no-op because OnMethodEnd hasn't run yet so
+                    // __dd_span__ isn't set.
                     if (activity5.GetCustomProperty(ActivityCustomPropertyKeys.Span) is Scope scope
                      && resourceObject.TryDuckCast<IResource>(out var resource))
                     {
-                        ApplyResourceToSpan(scope.Span, resource);
+                        ApplyResourceToSpanPreservingExistingTags(scope.Span, resource);
                     }
                 }
 
@@ -120,36 +126,59 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             }
         }
 
+        /// <summary>
+        /// Applies the Resource attributes to a span, but only for attributes the span doesn't
+        /// already have. Used on the DS 5.x interception path where the activity tag-copy in
+        /// <c>ActivityStartIntegration.CreateAndLinkScope</c> has already run by the time this
+        /// is called from <see cref="OnStart"/>; we must not clobber user-supplied tag overrides
+        /// (in particular `service.name = "ServiceNameOverride"` style overrides).
+        /// </summary>
+        private static void ApplyResourceToSpanPreservingExistingTags(Span span, IResource resource)
+            => ApplyResourceToSpanCore(span, resource, preserveExisting: true);
+
         private static void ApplyResourceToSpan(Span span, IResource resource)
+            => ApplyResourceToSpanCore(span, resource, preserveExisting: false);
+
+        // One SetTag per resource attribute (plus an optional Tags.Version mirror for service.version).
+        // attribute.Value.ToString() is computed at most once per attribute.
+        private static void ApplyResourceToSpanCore(Span span, IResource resource, bool preserveExisting)
         {
             foreach (var attribute in resource.Attributes)
             {
-                span.SetTag(attribute.Key, attribute.Value?.ToString());
+                var key = attribute.Key;
 
-                // In addition to copying the attribute as a tag, update span fields for specific keys
-                if (attribute.Value is not null)
+                if (preserveExisting && span.GetTag(key) is not null)
                 {
-                    if (attribute.Key == "service.name")
+                    continue;
+                }
+
+                var value = attribute.Value?.ToString();
+
+                if (key == "service.name" && attribute.Value is not null)
+                {
+                    // If OTEL_SERVICE_NAME isn't set, OpenTelemetry will set "service.name" to
+                    // "unknown_service" or "unknown_service:ProcessName" — fall back to the
+                    // Datadog default service name in that case.
+                    if (string.IsNullOrEmpty(value)
+                     || string.Equals(value, "unknown_service", StringComparison.Ordinal)
+                     || value!.StartsWith("unknown_service:", StringComparison.Ordinal))
                     {
-                        var resourceServiceName = attribute.Value.ToString();
-
-                        // if OTEL_SERVICE_NAME isn't set, OpenTelemetry will set "service.name" to:
-                        // "unknown_service" or "unknown_service:ProcessName"
-                        if (string.IsNullOrEmpty(resourceServiceName)
-                         || string.Equals(resourceServiceName, "unknown_service", StringComparison.Ordinal)
-                         || resourceServiceName.StartsWith("unknown_service:", StringComparison.Ordinal))
-                        {
-                            resourceServiceName = Tracer.Instance.DefaultServiceName;
-
-                            span.SetTag(attribute.Key, resourceServiceName);
-                        }
-
-                        span.SetService(resourceServiceName, null);
+                        value = Tracer.Instance.DefaultServiceName;
                     }
-                    else if (attribute.Key == "service.version")
-                    {
-                        span.SetTag(Tags.Version, attribute.Value.ToString());
-                    }
+
+                    span.SetTag(key, value);
+                    span.SetService(value!, source: null);
+                    continue;
+                }
+
+                span.SetTag(key, value);
+
+                // service.version is additionally mirrored into the Datadog `version` tag.
+                // The early-out at the top has already preserved any user-supplied service.version
+                // tag in preserveExisting mode; if we reach here, mirroring is always desired.
+                if (key == "service.version" && value is not null)
+                {
+                    span.SetTag(Tags.Version, value);
                 }
             }
         }
