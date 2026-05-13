@@ -196,8 +196,13 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     // TODO: Telemetry - Record OTLP Traces API submissions
-                    // TODO: Add more precise logic for "application/x-protobuf" vs "application/json"
-                    response = await request.PostAsync(traces, MimeTypes.Json).ConfigureAwait(false);
+                    var contentType = _tracesEncoding switch
+                    {
+                        TracesEncoding.OtlpProtobuf => MimeTypes.XProtobuf,
+                        _ => MimeTypes.Json,
+                    };
+
+                    response = await request.PostAsync(traces, contentType).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
