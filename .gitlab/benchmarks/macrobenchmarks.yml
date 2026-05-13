@@ -1,4 +1,8 @@
 include:
+  # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
+  # GitLab does not expand top-level `variables:` inside `include:` keywords,
+  # so the group path cannot be parameterized here. Update both `project:`
+  # lines by hand at org-split cutover.
   - project: 'DataDog/benchmarking-platform-tools'
     file: 'images/templates/gitlab/check-slo-breaches.template.yml'
   - project: 'DataDog/benchmarking-platform-tools'
@@ -569,8 +573,10 @@ profiler_cpu_timer_create-arm64:
 
     RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
 
-    # Allows ephemeral instances to read content from benchmarking-platform
-    DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
+    # Allows ephemeral instances to read content from benchmarking-platform.
+    # benchmarking-platform is an internal repo on GitHub, so its org tracks
+    # GITHUB_ORG_INTERNAL (see .gitlab-ci.yml variables block).
+    DDOCTOSTS_SCOPE: "${GITHUB_ORG_INTERNAL}/benchmarking-platform"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
     AWS_REGION: "us-east-1"
