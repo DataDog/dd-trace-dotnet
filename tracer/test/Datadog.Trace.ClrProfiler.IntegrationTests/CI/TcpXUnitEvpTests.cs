@@ -26,6 +26,9 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     /// <summary>
     /// Runs the TCP transport variant for the ITR coverage-backfill integration smoke test.
     /// </summary>
+    /// <remarks>
+    /// This smoke test depends on Coverlet's in-process data-collector hook emitting a coverage message; the linux-musl-arm64 CI lane currently generates the Cobertura attachment but does not deliver that hook callback.
+    /// </remarks>
     /// <param name="packageVersion">XUnit package version under test.</param>
     /// <param name="evpVersionToRemove">EVP endpoint version removed from the mock agent to force the target path.</param>
     /// <param name="expectedGzip">Whether the target EVP path should use gzip.</param>
@@ -34,6 +37,7 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     [MemberData(nameof(GetDataForCoverageBackfill))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "ArmUnsupported")]
     public override Task ItrCoverageBackfillSendsBackfilledCoverletCoverage(string packageVersion, string evpVersionToRemove, bool expectedGzip)
     {
         EnvironmentHelper.EnableDefaultTransport();
