@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading;
 using Datadog.Trace.Debugger.RateLimiting;
 using Xunit;
 
@@ -19,8 +20,8 @@ public class ProbeRateLimiterTests
 
         try
         {
-            limiter.SetRate(probeId, samplesPerSecond: 1);
-            var initial = limiter.GerOrAddSampler(probeId);
+            var initial = new AdaptiveSampler(Timeout.InfiniteTimeSpan, samplesPerWindow: 1, averageLookback: 180, budgetLookback: 16, rollWindowCallback: null);
+            Assert.True(limiter.TryAddSampler(probeId, initial));
 
             // SetRate must mutate in place; replacing would wipe running EMAs.
             limiter.SetRate(probeId, samplesPerSecond: 100);
