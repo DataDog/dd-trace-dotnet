@@ -208,6 +208,7 @@ internal static class CiUtils
                         itrSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                     }
 
+                    internalCodeCoverageReportingEnabled = internalCodeCoverageReportingEnabled || itrSettings.CodeCoverage == true;
                     codeCoverageEnabled = codeCoverageEnabled || itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                     testSkippingEnabled = itrSettings.TestsSkipping == true;
                     knownTestsEnabled = knownTestsEnabled || itrSettings.KnownTestsEnabled == true;

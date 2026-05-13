@@ -189,11 +189,9 @@ internal static class CoverageBackfillCapability
             return true;
         }
 
-        if (HasExplicitTestTarget(commandLine))
-        {
-            reason = "A targeted project, solution, or test assembly was detected; backend coverage may include candidates outside the executed subset.";
-            return true;
-        }
+        // Explicit project, solution, and assembly targets are safe here because coverage-active skipping uses
+        // a testhost-scoped skippable request keyed by test.bundle once backfill is required. Local filters and
+        // framework selectors are still rejected because they can narrow execution within the same bundle.
 
 // TODO temporary, this needs to be addressed
 #pragma warning disable DD0011
@@ -221,21 +219,6 @@ internal static class CoverageBackfillCapability
                !string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)) ||
                IsCoverletCoverageCommand(commandLine) ||
                IsMicrosoftCodeCoverageCommand(commandLine);
-    }
-
-    /// <summary>
-    /// Detects explicit test project, solution, or assembly targets that can narrow the local execution scope.
-    /// </summary>
-    /// <param name="commandLine">Propagated test-session command line.</param>
-    /// <returns>True when the command appears to target only part of the repository.</returns>
-    private static bool HasExplicitTestTarget(string commandLine)
-    {
-        if (string.IsNullOrWhiteSpace(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand)))
-        {
-            return false;
-        }
-
-        return ContainsAny(commandLine, ".csproj", ".fsproj", ".vbproj", ".sln");
     }
 
     /// <summary>

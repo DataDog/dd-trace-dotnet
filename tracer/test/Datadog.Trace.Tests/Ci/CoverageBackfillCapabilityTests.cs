@@ -78,14 +78,25 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
     }
 
     [Fact]
-    public void TargetedProjectMakesAggregateCoverageUnsafe()
+    public void TargetedProjectDoesNotDisableScopedCoverageBackfill()
     {
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test tests/Sample.Tests/Sample.Tests.csproj");
         var settings = CreateSettings((ConfigurationKeys.CIVisibility.CodeCoveragePath, "/tmp/datadog-coverage"));
 
         CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
-        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeFalse();
-        reason.Should().Contain("targeted project");
+        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeTrue();
+        reason.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TargetedSolutionDoesNotDisableScopedCoverageBackfill()
+    {
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test tests/Sample.sln --collect \"XPlat Code Coverage\"");
+        var settings = CreateSettings();
+
+        CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
+        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeTrue();
+        reason.Should().BeEmpty();
     }
 
     [Fact]
