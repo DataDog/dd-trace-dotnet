@@ -28,6 +28,25 @@ public partial class FeatureFlagsEvaluatorTests
     internal static ServerConfiguration _config = ReadConfig();
 #pragma warning restore SA1401 // Fields should be private
 
+    public enum CanonicalEvaluationReason
+    {
+        DEFAULT,
+
+        STATIC,
+
+        TARGETING_MATCH,
+
+        SPLIT,
+
+        DISABLED,
+
+        CACHED,
+
+        UNKNOWN,
+
+        ERROR
+    }
+
     [SkippableTheory]
     [MemberData(nameof(TestData))]
     public void BundledTest(string description, TestCase? testCase)
@@ -55,7 +74,7 @@ public partial class FeatureFlagsEvaluatorTests
             AssertEqual(testCase.Result.Variant, result.Variant);
         }
 
-        Assert.Equal(testCase.Result.Reason, ToFixtureReason(result.Reason));
+        Assert.Equal(testCase.Result.Reason, ToCanonicalReason(result.Reason));
 
         Assert.NotNull(description);
 
@@ -166,18 +185,18 @@ public partial class FeatureFlagsEvaluatorTests
         return testData;
     }
 
-    private static string ToFixtureReason(EvaluationReason reason)
+    private static CanonicalEvaluationReason ToCanonicalReason(EvaluationReason reason)
     {
         return reason switch
         {
-            EvaluationReason.Default => "DEFAULT",
-            EvaluationReason.Static => "STATIC",
-            EvaluationReason.TargetingMatch => "TARGETING_MATCH",
-            EvaluationReason.Split => "SPLIT",
-            EvaluationReason.Disabled => "DISABLED",
-            EvaluationReason.Cached => "CACHED",
-            EvaluationReason.Unknown => "UNKNOWN",
-            EvaluationReason.Error => "ERROR",
+            EvaluationReason.Default => CanonicalEvaluationReason.DEFAULT,
+            EvaluationReason.Static => CanonicalEvaluationReason.STATIC,
+            EvaluationReason.TargetingMatch => CanonicalEvaluationReason.TARGETING_MATCH,
+            EvaluationReason.Split => CanonicalEvaluationReason.SPLIT,
+            EvaluationReason.Disabled => CanonicalEvaluationReason.DISABLED,
+            EvaluationReason.Cached => CanonicalEvaluationReason.CACHED,
+            EvaluationReason.Unknown => CanonicalEvaluationReason.UNKNOWN,
+            EvaluationReason.Error => CanonicalEvaluationReason.ERROR,
             _ => throw new NotImplementedException(),
         };
     }
@@ -200,7 +219,7 @@ public partial class FeatureFlagsEvaluatorTests
         {
             public object? Value { get; set; }
 
-            public string? Reason { get; set; }
+            public CanonicalEvaluationReason Reason { get; set; }
 
             public string? Variant { get; set; }
 
