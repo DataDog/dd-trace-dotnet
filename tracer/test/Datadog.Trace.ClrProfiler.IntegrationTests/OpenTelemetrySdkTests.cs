@@ -110,10 +110,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manualy if needed.
+                // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manually if needed.
                 // yield return [packageVersion[0], "false", "true", "http/protobuf", false];
                 yield return [packageVersion[0], "true", "false", "http/json", false];
                 yield return [packageVersion[0], "true", "false", "http/json", true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true];
             }
         }
 
