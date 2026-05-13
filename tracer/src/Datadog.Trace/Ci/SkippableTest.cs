@@ -64,18 +64,29 @@ internal readonly struct SkippableTest
     /// <returns>True when the candidate has no backend module scope or when it matches the local module.</returns>
     internal bool MatchesModuleScope(string? moduleName)
     {
-        if (Configurations?.Custom is not { } customConfigurations)
-        {
-            return true;
-        }
-
-        if (!TryGetScopedModuleName(customConfigurations, out var scopedModuleName))
+        if (!TryGetModuleScope(out var scopedModuleName))
         {
             return true;
         }
 
         return !string.IsNullOrEmpty(moduleName) &&
                string.Equals(scopedModuleName, moduleName, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Gets the backend module or bundle scope attached to this candidate.
+    /// </summary>
+    /// <param name="moduleName">Scoped module or bundle name, when present.</param>
+    /// <returns>True when the backend candidate is scoped to a non-empty module or bundle.</returns>
+    internal bool TryGetModuleScope(out string moduleName)
+    {
+        if (Configurations?.Custom is not { } customConfigurations)
+        {
+            moduleName = string.Empty;
+            return false;
+        }
+
+        return TryGetScopedModuleName(customConfigurations, out moduleName);
     }
 
     /// <summary>

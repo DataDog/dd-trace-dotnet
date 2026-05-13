@@ -256,13 +256,35 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         return Volatile.Read(ref _itrSkippedTests) > 0;
     }
 
-    private static bool HasAmbiguousCoverageScope(ICollection<SkippableTest> tests)
+    internal static bool HasAmbiguousCoverageScope(ICollection<SkippableTest> tests)
     {
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var scopedCandidates = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        var unscopedCandidates = new HashSet<string>(StringComparer.Ordinal);
         foreach (var test in tests)
         {
             var key = $"{test.Suite}\0{test.Name}\0{test.RawParameters}";
-            if (!seen.Add(key))
+            if (!test.TryGetModuleScope(out var moduleScope))
+            {
+                if (!unscopedCandidates.Add(key) || scopedCandidates.ContainsKey(key))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (unscopedCandidates.Contains(key))
+            {
+                return true;
+            }
+
+            if (!scopedCandidates.TryGetValue(key, out var scopes))
+            {
+                scopes = new HashSet<string>(StringComparer.Ordinal);
+                scopedCandidates[key] = scopes;
+            }
+
+            if (!scopes.Add(moduleScope))
             {
                 return true;
             }

@@ -129,4 +129,48 @@ public class TestOptimizationClientTests
         candidate.MatchesModuleScope(null).Should().BeTrue();
         candidate.MatchesModuleScope("Any.Module").Should().BeTrue();
     }
+
+    [Fact]
+    public void ModuleScopedDuplicateCandidatesAreNotAmbiguous()
+    {
+        var candidates = new[]
+        {
+            CreateModuleScopedCandidate("Samples.XUnitTests"),
+            CreateModuleScopedCandidate("Samples.NUnitTests")
+        };
+
+        TestOptimizationSkippableFeature.HasAmbiguousCoverageScope(candidates).Should().BeFalse();
+    }
+
+    [Fact]
+    public void UnscopedDuplicateCandidatesRemainAmbiguous()
+    {
+        var candidates = new[]
+        {
+            CreateModuleScopedCandidate("Samples.XUnitTests"),
+            new SkippableTest(
+                "SimplePassTest",
+                "Samples.Tests.TestSuite",
+                parameters: null,
+                configurations: null)
+        };
+
+        TestOptimizationSkippableFeature.HasAmbiguousCoverageScope(candidates).Should().BeTrue();
+    }
+
+    private static SkippableTest CreateModuleScopedCandidate(string moduleName)
+    {
+        return new SkippableTest(
+            "SimplePassTest",
+            "Samples.Tests.TestSuite",
+            parameters: null,
+            new TestsConfigurations(
+                "linux",
+                "1",
+                "x64",
+                runtimeName: null,
+                runtimeVersion: null,
+                runtimeArchitecture: null,
+                new Dictionary<string, string> { [TestTags.Bundle] = moduleName }));
+    }
 }
