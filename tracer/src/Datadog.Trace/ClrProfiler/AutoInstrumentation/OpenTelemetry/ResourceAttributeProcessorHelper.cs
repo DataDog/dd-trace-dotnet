@@ -130,9 +130,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// Applies the Resource attributes to a span, but only for attributes the span doesn't
         /// already have. Used on the DS 5.x interception path where the activity tag-copy in
         /// <c>ActivityStartIntegration.CreateAndLinkScope</c> has already run by the time this
-        /// is called from <see cref="OnStart"/>; we must not clobber user-supplied tag overrides
-        /// (in particular `service.name = "ServiceNameOverride"` style overrides).
+        /// is called from <see cref="OnStart"/>.
         /// </summary>
+        /// <remarks>
+        /// Known limitation: on DS 5.x, <c>OtlpHelpers.AgentSetOtlpTag</c> handles <c>service.name</c>
+        /// by writing <c>span.ServiceName</c> via <c>Span.SetService</c> but NOT as a regular tag — so
+        /// the <c>span.GetTag</c> early-out cannot detect an explicit user-supplied <c>service.name</c>
+        /// override. The Resource's <c>service.name</c> will therefore overwrite a user override on
+        /// DS 5.x. We accept this as a snapshot diff for OTel.Api 1.0.1 on .NET Core 3.x / .NET 5
+        /// (those runtimes already use a separate <c>_1_0</c> snapshot).
+        /// </remarks>
         private static void ApplyResourceToSpanPreservingExistingTags(Span span, IResource resource)
             => ApplyResourceToSpanCore(span, resource, preserveExisting: true);
 
