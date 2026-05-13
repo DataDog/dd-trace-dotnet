@@ -58,7 +58,7 @@ internal sealed partial class TestOptimizationClient
             throw;
         }
 
-        Log.Debug<int>("TestOptimizationClient: Skippable.JSON RS length = {Length}", queryResponse?.Length ?? 0);
+        Log.Debug("TestOptimizationClient: Skippable.JSON RS = {Json}", queryResponse);
         return ParseSkippableTestsResponse(queryResponse, _customConfigurations, scope);
     }
 
