@@ -20,6 +20,7 @@ namespace Samples.Kafka
             ClientConfig config)
         {
             var attempts = 3;
+            bool? created = null;
             do
             {
                 using var adminClient = new AdminClientBuilder(config).Build();
@@ -37,20 +38,58 @@ namespace Samples.Kafka
                     });
 
                     Console.WriteLine($"Topic created");
-                    return true;
+                    created = true;
+                    break;
                 }
                 catch (CreateTopicsException e)
                 {
                     if (e.Results[0].Error.Code == ErrorCode.TopicAlreadyExists)
                     {
                         Console.WriteLine("Topic already exists");
-                        return false;
+                        created = false;
+                        break;
                     }
 
                     Console.WriteLine($"An error occured creating topic {topicName}: {e.Results[0].Error.Reason}");
                 }
             } while (!TopicExists(topicName, config) && attempts-- > 0);
-            throw new Exception("Unable to create topic");
+
+            if (created is null)
+            {
+                throw new Exception("Unable to create topic");
+            }
+
+            // The create call returns as soon as the broker acks the request, but
+            // metadata propagation can lag behind. Wait until the topic is visible
+            // with the expected partition count, otherwise downstream callers that
+            // immediately query metadata (e.g. to pick a partition) can race and
+            // see a topic with zero partitions.
+            if (!await WaitForTopicMetadata(topicName, numPartitions, config, TimeSpan.FromSeconds(30)))
+            {
+                throw new Exception($"Topic {topicName} metadata did not propagate with {numPartitions} partitions");
+            }
+
+            return created.Value;
+        }
+
+        private static async Task<bool> WaitForTopicMetadata(string topicName, int expectedPartitions, ClientConfig config, TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            while (DateTime.UtcNow < deadline)
+            {
+                using var adminClient = new AdminClientBuilder(config).Build();
+                var metadata = adminClient.GetMetadata(topicName, TimeSpan.FromSeconds(5));
+                var topic = metadata.Topics.FirstOrDefault(t => string.Equals(t.Topic, topicName, StringComparison.Ordinal));
+                if (topic != null && topic.Error.Code == ErrorCode.NoError && topic.Partitions.Count == expectedPartitions)
+                {
+                    return true;
+                }
+
+                Console.WriteLine($"Waiting for topic {topicName} metadata (partitions: {topic?.Partitions.Count ?? 0}/{expectedPartitions})...");
+                await Task.Delay(TimeSpan.FromMilliseconds(500));
+            }
+
+            return false;
         }
 
         /// <summary>
