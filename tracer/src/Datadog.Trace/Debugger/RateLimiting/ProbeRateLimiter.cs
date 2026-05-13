@@ -48,13 +48,13 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
 
             var candidate = CreateSampler();
-            if (_samplers.TryAdd(probeId, candidate))
+            sampler = _samplers.GetOrAdd(probeId, candidate);
+            if (!ReferenceEquals(sampler, candidate))
             {
-                return candidate;
+                candidate.Dispose();
             }
 
-            candidate.Dispose();
-            return _samplers.TryGetValue(probeId, out sampler) ? sampler : candidate;
+            return sampler;
         }
 
         public bool TryAddSampler(string probeId, IAdaptiveSampler sampler)
