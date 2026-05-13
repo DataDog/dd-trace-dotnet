@@ -27,7 +27,7 @@ internal sealed partial class TestOptimizationClient
     private const string SkippableType = "test_params";
     private Uri? _skippableTestsUrl;
 
-    public async Task<SkippableTestsResponse> GetSkippableTestsAsync()
+    public async Task<SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
     {
         Log.Debug("TestOptimizationClient: Getting skippable tests...");
         if (!EnsureRepositoryUrl() || !EnsureCommitSha())
@@ -40,7 +40,7 @@ internal sealed partial class TestOptimizationClient
             new Data<SkippableTestsQuery>(
                 null,
                 SkippableType,
-                new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, GetTestConfigurations(), "test")),
+                new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, GetTestConfigurations(testBundle: scope.TestBundle), SkippableTestsRequestScope.TestLevel)),
             null);
 
         var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
@@ -59,7 +59,7 @@ internal sealed partial class TestOptimizationClient
         }
 
         Log.Debug<int>("TestOptimizationClient: Skippable.JSON RS length = {Length}", queryResponse?.Length ?? 0);
-        return ParseSkippableTestsResponse(queryResponse, _customConfigurations);
+        return ParseSkippableTestsResponse(queryResponse, _customConfigurations, scope);
     }
 
     /// <summary>
@@ -67,8 +67,9 @@ internal sealed partial class TestOptimizationClient
     /// </summary>
     /// <param name="queryResponse">Raw JSON response returned by the skippable-tests endpoint.</param>
     /// <param name="customConfigurations">Local custom test configurations used to filter remote test rows.</param>
+    /// <param name="scope">Request scope used to ask for the backend candidates.</param>
     /// <returns>The skippable tests, correlation id, and decoded coverage backfill data.</returns>
-    internal static SkippableTestsResponse ParseSkippableTestsResponse(string? queryResponse, IReadOnlyDictionary<string, string>? customConfigurations)
+    internal static SkippableTestsResponse ParseSkippableTestsResponse(string? queryResponse, IReadOnlyDictionary<string, string>? customConfigurations, SkippableTestsRequestScope scope = default)
     {
         if (string.IsNullOrEmpty(queryResponse))
         {
@@ -101,6 +102,14 @@ internal sealed partial class TestOptimizationClient
         {
             var includeItem = true;
             var item = deserializedResult.Data[i].Attributes;
+            if (scope.HasTestBundle &&
+                item.TryGetModuleScope(out var itemScope) &&
+                !string.Equals(itemScope, scope.TestBundle, StringComparison.Ordinal))
+            {
+                filteredOutTests = true;
+                continue;
+            }
+
             if (item.Configurations?.Custom is { } itemCustomConfiguration)
             {
                 if (customConfigurations is null)

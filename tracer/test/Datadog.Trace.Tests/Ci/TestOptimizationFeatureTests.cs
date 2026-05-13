@@ -86,7 +86,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         public Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync()
             => Task.FromResult(default(TestOptimizationClient.SearchCommitResponse));
 
-        public Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync()
+        public Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
             => Task.FromResult(default(TestOptimizationClient.SkippableTestsResponse));
 
         public Task<long> SendPackFilesAsync(string commitSha, string[] commitsToInclude, string[] commitsToExclude)

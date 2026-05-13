@@ -92,7 +92,7 @@ internal static class Common
                     if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
                         (testMethodArguments is null || testMethodArguments.Length == 0))
                     {
-                        return CanSkipForCoverage(skippableTest);
+                        return CanSkipForCoverage(skippableTest, moduleName);
                     }
 
                     if (parameters?.Arguments is not null &&
@@ -128,7 +128,7 @@ internal static class Common
 
                         if (matchSignature)
                         {
-                            return CanSkipForCoverage(skippableTest);
+                            return CanSkipForCoverage(skippableTest, moduleName);
                         }
                     }
                 }
@@ -146,8 +146,9 @@ internal static class Common
     /// Checks whether an ITR candidate can be skipped without making the active coverage report inaccurate.
     /// </summary>
     /// <param name="skippableTest">Backend skippable candidate matched to the current framework test.</param>
+    /// <param name="moduleName">Local test module or bundle that is about to skip the test.</param>
     /// <returns>True when the test can be skipped safely.</returns>
-    private static bool CanSkipForCoverage(SkippableTest skippableTest)
+    private static bool CanSkipForCoverage(SkippableTest skippableTest, string? moduleName)
     {
         var skippableFeature = TestOptimization.Instance.SkippableFeature;
         if (skippableFeature?.IsCoverageBackfillRequired() != true)
@@ -155,7 +156,7 @@ internal static class Common
             return true;
         }
 
-        if (!skippableFeature.CanSkipWithCoverageBackfill(skippableTest, out var reason))
+        if (!skippableFeature.CanSkipWithCoverageBackfill(skippableTest, moduleName, out var reason))
         {
             Log.Debug("Common: Test cannot be skipped because coverage backfill is required but unsafe: {Reason}", reason);
             return false;

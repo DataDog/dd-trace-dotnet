@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -30,6 +31,8 @@ internal static class CoverageBackfillDataStore
     private const string BackfillFileName = "coverage-backfill.json";
     private const string ActualSkipFileName = "coverage-backfill-actual-skip";
     private const string IpcFailureFileName = "coverage-backfill-ipc-failure";
+    private const string ScopedBackfillFolderName = "coverage-backfill-scopes";
+    private const string ScopedActualSkipFolderName = "coverage-backfill-actual-skip-scopes";
 
     /// <summary>
     /// Persists backend coverage data for later coverage adapters and propagates the file path through the process environment.
@@ -37,6 +40,15 @@ internal static class CoverageBackfillDataStore
     /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
     /// <param name="coverageBackfillData">Decoded backend coverage data returned by the skippable-tests endpoint.</param>
     public static void Persist(ITestOptimization testOptimization, CoverageBackfillData coverageBackfillData)
+        => Persist(testOptimization, default, coverageBackfillData);
+
+    /// <summary>
+    /// Persists backend coverage data for a specific skippable-tests request scope.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <param name="scope">Request scope that produced the backend coverage.</param>
+    /// <param name="coverageBackfillData">Decoded backend coverage data returned by the skippable-tests endpoint.</param>
+    public static void Persist(ITestOptimization testOptimization, SkippableTestsRequestScope scope, CoverageBackfillData coverageBackfillData)
     {
         if (coverageBackfillData is not { IsPresent: true, IsValid: true })
         {
@@ -45,7 +57,7 @@ internal static class CoverageBackfillDataStore
 
         try
         {
-            var filePath = GetBackfillDataPath(testOptimization);
+            var filePath = GetBackfillDataPath(testOptimization, scope);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             File.WriteAllText(filePath, JsonHelper.SerializeObject(coverageBackfillData));
             EnvironmentHelpers.SetEnvironmentVariable(BackfillDataPathEnvironmentVariable, filePath);
@@ -64,6 +76,11 @@ internal static class CoverageBackfillDataStore
     public static bool TryLoad(out CoverageBackfillData coverageBackfillData)
     {
         coverageBackfillData = CoverageBackfillData.Missing;
+        if (TryLoadScopedActualSkipCoverage(TestOptimization.Instance, out coverageBackfillData))
+        {
+            return true;
+        }
+
 // TODO temporary, this needs to be addressed
 #pragma warning disable DD0012
         var filePath = EnvironmentHelpers.GetEnvironmentVariable(BackfillDataPathEnvironmentVariable);
@@ -98,6 +115,13 @@ internal static class CoverageBackfillDataStore
     /// Records in the process environment that a test was actually skipped by ITR.
     /// </summary>
     public static void RecordActualItrSkip()
+        => RecordActualItrSkip(default);
+
+    /// <summary>
+    /// Records in the process environment and shared run folder that a scope has actually skipped at least one test by ITR.
+    /// </summary>
+    /// <param name="scope">Request scope that produced the skip decision.</param>
+    public static void RecordActualItrSkip(SkippableTestsRequestScope scope)
     {
         EnvironmentHelpers.SetEnvironmentVariable(ActualItrSkipEnvironmentVariable, "1");
         try
@@ -105,6 +129,12 @@ internal static class CoverageBackfillDataStore
             var filePath = GetActualSkipPath(TestOptimization.Instance);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             File.WriteAllText(filePath, "1");
+            if (scope.HasFingerprint)
+            {
+                var scopedFilePath = GetScopedActualSkipPath(TestOptimization.Instance, scope.Fingerprint);
+                Directory.CreateDirectory(Path.GetDirectoryName(scopedFilePath)!);
+                File.WriteAllText(scopedFilePath, "1");
+            }
         }
         catch (Exception ex)
         {
@@ -191,6 +221,22 @@ internal static class CoverageBackfillDataStore
     }
 
     /// <summary>
+    /// Builds the deterministic backend coverage file path for a request scope.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <param name="scope">Request scope that produced the backend coverage.</param>
+    /// <returns>Absolute path to the backend coverage file for this run and scope.</returns>
+    private static string GetBackfillDataPath(ITestOptimization testOptimization, SkippableTestsRequestScope scope)
+    {
+        if (!scope.HasFingerprint)
+        {
+            return GetBackfillDataPath(testOptimization);
+        }
+
+        return Path.Combine(GetScopedBackfillFolder(testOptimization), $"{scope.Fingerprint}.json");
+    }
+
+    /// <summary>
     /// Builds the deterministic marker-file path used to share actual ITR skip state across testhost and coverage collector processes.
     /// </summary>
     /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
@@ -201,6 +247,17 @@ internal static class CoverageBackfillDataStore
     }
 
     /// <summary>
+    /// Builds the deterministic marker-file path used to share actual ITR skip state for a single request scope.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <param name="scopeFingerprint">Stable request-scope fingerprint.</param>
+    /// <returns>Absolute path to the actual-skip marker file for this run and scope.</returns>
+    private static string GetScopedActualSkipPath(ITestOptimization testOptimization, string scopeFingerprint)
+    {
+        return Path.Combine(GetScopedActualSkipFolder(testOptimization), scopeFingerprint);
+    }
+
+    /// <summary>
     /// Builds the deterministic marker-file path used to share selected-source IPC delivery failures with the parent session.
     /// </summary>
     /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
@@ -208,6 +265,80 @@ internal static class CoverageBackfillDataStore
     private static string GetIpcFailurePath(ITestOptimization testOptimization)
     {
         return Path.Combine(GetRunFolder(testOptimization), IpcFailureFileName);
+    }
+
+    /// <summary>
+    /// Builds the folder that stores backend coverage files keyed by request-scope fingerprint.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <returns>Absolute path to the scoped backend coverage folder.</returns>
+    private static string GetScopedBackfillFolder(ITestOptimization testOptimization)
+    {
+        return Path.Combine(GetRunFolder(testOptimization), ScopedBackfillFolderName);
+    }
+
+    /// <summary>
+    /// Builds the folder that stores actual-skip markers keyed by request-scope fingerprint.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <returns>Absolute path to the scoped actual-skip marker folder.</returns>
+    private static string GetScopedActualSkipFolder(ITestOptimization testOptimization)
+    {
+        return Path.Combine(GetRunFolder(testOptimization), ScopedActualSkipFolderName);
+    }
+
+    /// <summary>
+    /// Loads and merges only scoped backend coverage maps whose scope recorded at least one actual ITR skip.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <param name="coverageBackfillData">Merged backend coverage for actual skipped scopes.</param>
+    /// <returns>True when at least one scoped coverage map was loaded and merged.</returns>
+    private static bool TryLoadScopedActualSkipCoverage(ITestOptimization testOptimization, out CoverageBackfillData coverageBackfillData)
+    {
+        coverageBackfillData = CoverageBackfillData.Missing;
+        try
+        {
+            var actualSkipFolder = GetScopedActualSkipFolder(testOptimization);
+            if (!Directory.Exists(actualSkipFolder))
+            {
+                return false;
+            }
+
+            var coverageMaps = new List<CoverageBackfillData>();
+            foreach (var markerPath in Directory.EnumerateFiles(actualSkipFolder))
+            {
+                var scopeFingerprint = Path.GetFileName(markerPath);
+                if (StringUtil.IsNullOrEmpty(scopeFingerprint))
+                {
+                    continue;
+                }
+
+                var backfillPath = Path.Combine(GetScopedBackfillFolder(testOptimization), $"{scopeFingerprint}.json");
+                if (!File.Exists(backfillPath))
+                {
+                    continue;
+                }
+
+                var data = JsonHelper.DeserializeObject<CoverageBackfillData>(File.ReadAllText(backfillPath));
+                if (data is { IsPresent: true, IsValid: true })
+                {
+                    coverageMaps.Add(data);
+                }
+            }
+
+            var mergedCoverage = CoverageBackfillData.Merge(coverageMaps);
+            if (mergedCoverage is { IsPresent: true, IsValid: true })
+            {
+                coverageBackfillData = mergedCoverage;
+                return true;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return false;
     }
 
     /// <summary>

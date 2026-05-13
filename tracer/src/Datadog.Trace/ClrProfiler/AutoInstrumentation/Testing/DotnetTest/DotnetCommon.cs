@@ -323,16 +323,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             backfillData = CoverageBackfillData.Missing;
             var skippableFeature = TestOptimization.Instance.SkippableFeature;
             if (skippableFeature?.IsCoverageBackfillRequired() != true ||
-                !skippableFeature.IsCoverageBackfillSafe() ||
                 !HasActualItrSkips(session, skippableFeature))
             {
                 return false;
             }
 
-            backfillData = skippableFeature.GetCoverageBackfillData();
-            if (backfillData is { IsPresent: true, IsValid: true })
+            if (skippableFeature.IsCoverageBackfillSafe())
             {
-                return true;
+                backfillData = skippableFeature.GetCoverageBackfillData();
+                if (backfillData is { IsPresent: true, IsValid: true })
+                {
+                    return true;
+                }
             }
 
             return CoverageBackfillDataStore.TryLoad(out backfillData);

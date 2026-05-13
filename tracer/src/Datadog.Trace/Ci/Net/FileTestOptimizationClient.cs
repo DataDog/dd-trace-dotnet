@@ -108,17 +108,17 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         return response;
     }
 
-    public async Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync()
+    public async Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
     {
         using var cd = CodeDuration.Create();
-        const string key = "getSkippableTests.json";
-        var bypassCache = ShouldBypassSkippableTestsCacheForCoverageBackfill();
+        var key = GetSkippableTestsCacheKey(scope);
+        var bypassCache = ShouldBypassSkippableTestsCacheForCoverageBackfill(scope);
         if (!bypassCache && TryReadPayload<TestOptimizationClient.SkippableTestsResponse>(key, out var payload))
         {
             return payload;
         }
 
-        var response = await _testOptimizationClient.GetSkippableTestsAsync().ConfigureAwait(false);
+        var response = await _testOptimizationClient.GetSkippableTestsAsync(scope).ConfigureAwait(false);
         if (!bypassCache)
         {
             WritePayload(key, response);
@@ -149,6 +149,21 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         var response = await _testOptimizationClient.GetTestManagementTests().ConfigureAwait(false);
         WritePayload(key, response);
         return response;
+    }
+
+    /// <summary>
+    /// Builds the file-cache key for the skippable-tests response without sharing coverage aggregates across request scopes.
+    /// </summary>
+    /// <param name="scope">Skippable-tests request scope.</param>
+    /// <returns>Cache file name for the supplied scope.</returns>
+    private string GetSkippableTestsCacheKey(SkippableTestsRequestScope scope)
+    {
+        if (scope.HasFingerprint)
+        {
+            return $"getSkippableTests-{scope.Fingerprint}.json";
+        }
+
+        return "getSkippableTests.json";
     }
 
     private bool TryReadPayload<T>(string name, [NotNullWhen(true)] out T? payload)
@@ -200,8 +215,13 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         }
     }
 
-    private bool ShouldBypassSkippableTestsCacheForCoverageBackfill()
+    /// <summary>
+    /// Gets whether the skippable-tests cache is unsafe because coverage backfill is required but no scoped fingerprint is available.
+    /// </summary>
+    /// <param name="scope">Skippable-tests request scope.</param>
+    /// <returns>True when the request should bypass the shared cache.</returns>
+    private bool ShouldBypassSkippableTestsCacheForCoverageBackfill(SkippableTestsRequestScope scope)
     {
-        return CoverageBackfillCapability.IsCoverageBackfillRequired(_testOptimization.Settings);
+        return CoverageBackfillCapability.IsCoverageBackfillRequired(_testOptimization.Settings) && !scope.HasFingerprint;
     }
 }

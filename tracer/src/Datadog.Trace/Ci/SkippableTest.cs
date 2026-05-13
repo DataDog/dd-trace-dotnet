@@ -80,6 +80,12 @@ internal readonly struct SkippableTest
     /// <returns>True when the backend candidate is scoped to a non-empty module or bundle.</returns>
     internal bool TryGetModuleScope(out string moduleName)
     {
+        if (Configurations?.TestBundle is { Length: > 0 } testBundle)
+        {
+            moduleName = testBundle;
+            return true;
+        }
+
         if (Configurations?.Custom is not { } customConfigurations)
         {
             moduleName = string.Empty;

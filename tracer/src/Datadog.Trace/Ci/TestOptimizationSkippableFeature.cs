@@ -21,12 +21,18 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
     private readonly TestOptimizationSettings _settings;
+    private readonly ITestOptimizationClient _testOptimizationClient;
     private readonly Task<SkippableTestsDictionary>? _skippableTestsTask;
+    private readonly Dictionary<string, Task<SkippableTestsDictionary>> _scopedSkippableTestsTasks = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _actualSkippedScopes = new(StringComparer.Ordinal);
+    private readonly bool _coverageBackfillRequiresScopedRequests;
     private int _itrSkippedTests;
 
     private TestOptimizationSkippableFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         _settings = settings;
+        _testOptimizationClient = testOptimizationClient;
+        _coverageBackfillRequiresScopedRequests = CoverageBackfillCapability.IsCoverageBackfillRequired(settings);
         if (settings.TestsSkippingEnabled == null && clientSettingsResponse.TestsSkipping.HasValue)
         {
             Log.Information("TestOptimizationSkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);
@@ -36,7 +42,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         if (settings.TestsSkippingEnabled == true)
         {
             Log.Information("TestOptimizationSkippableFeature: Test skipping is enabled.");
-            _skippableTestsTask = Task.Run(() => InternalGetSkippableTestsAsync(testOptimizationClient));
+            _skippableTestsTask = _coverageBackfillRequiresScopedRequests ? null : Task.Run(() => InternalGetSkippableTestsAsync(testOptimizationClient, default));
             Enabled = true;
         }
         else
@@ -45,50 +51,6 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             _skippableTestsTask = null;
             Enabled = false;
         }
-
-        return;
-
-        static async Task<SkippableTestsDictionary> InternalGetSkippableTestsAsync(ITestOptimizationClient testOptimizationClient)
-        {
-            // For ITR we need the git metadata upload before consulting the skippable tests.
-            // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.
-            await testOptimizationClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
-
-            Log.Debug("TestOptimizationSkippableFeature: Getting skippable tests...");
-            var skippeableTests = await testOptimizationClient.GetSkippableTestsAsync().ConfigureAwait(false);
-            var tests = skippeableTests.Tests ?? Array.Empty<SkippableTest>();
-            Log.Information<string?, int, bool>(
-                "TestOptimizationSkippableFeature: CorrelationId = {CorrelationId}, SkippableTests = {Length}, CoverageBackfillSafe = {CoverageBackfillSafe}.",
-                skippeableTests.CorrelationId,
-                tests.Count,
-                skippeableTests.IsCoverageBackfillSafe);
-
-            var skippableTestsBySuiteAndName = new SkippableTestsDictionary();
-            foreach (var item in tests)
-            {
-                if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
-                {
-                    suite = new Dictionary<string, IList<SkippableTest>>();
-                    skippableTestsBySuiteAndName[item.Suite] = suite;
-                }
-
-                if (!suite.TryGetValue(item.Name, out var name))
-                {
-                    name = new List<SkippableTest>();
-                    suite[item.Name] = name;
-                }
-
-                name.Add(item);
-            }
-
-            skippableTestsBySuiteAndName.CorrelationId = skippeableTests.CorrelationId;
-            skippableTestsBySuiteAndName.BackfillData = skippeableTests.Coverage ?? CoverageBackfillData.Missing;
-            skippableTestsBySuiteAndName.IsCoverageBackfillSafe = skippeableTests.IsCoverageBackfillSafe;
-            skippableTestsBySuiteAndName.HasAmbiguousCoverageScope = HasAmbiguousCoverageScope(tests);
-            CoverageBackfillDataStore.Persist(TestOptimization.Instance, skippableTestsBySuiteAndName.BackfillData);
-            Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built. CorrelationId: {CorrelationId}", skippableTestsBySuiteAndName.CorrelationId);
-            return skippableTestsBySuiteAndName;
-        }
     }
 
     public bool Enabled { get; }
@@ -96,11 +58,65 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     public static ITestOptimizationSkippableFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationSkippableFeature(settings, clientSettingsResponse, testOptimizationClient);
 
+    private static async Task<SkippableTestsDictionary> InternalGetSkippableTestsAsync(ITestOptimizationClient testOptimizationClient, SkippableTestsRequestScope scope)
+    {
+        // For ITR we need the git metadata upload before consulting the skippable tests.
+        // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.
+        await testOptimizationClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+
+        Log.Debug("TestOptimizationSkippableFeature: Getting skippable tests...");
+        var skippeableTests = await testOptimizationClient.GetSkippableTestsAsync(scope).ConfigureAwait(false);
+        var tests = skippeableTests.Tests ?? Array.Empty<SkippableTest>();
+        Log.Information<string?, string?, int, bool>(
+            "TestOptimizationSkippableFeature: CorrelationId = {CorrelationId}, Scope = {Scope}, SkippableTests = {Length}, CoverageBackfillSafe = {CoverageBackfillSafe}.",
+            skippeableTests.CorrelationId,
+            scope.TestBundle,
+            tests.Count,
+            skippeableTests.IsCoverageBackfillSafe);
+
+        var skippableTestsBySuiteAndName = new SkippableTestsDictionary();
+        foreach (var item in tests)
+        {
+            if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
+            {
+                suite = new Dictionary<string, IList<SkippableTest>>();
+                skippableTestsBySuiteAndName[item.Suite] = suite;
+            }
+
+            if (!suite.TryGetValue(item.Name, out var name))
+            {
+                name = new List<SkippableTest>();
+                suite[item.Name] = name;
+            }
+
+            name.Add(item);
+        }
+
+        skippableTestsBySuiteAndName.CorrelationId = skippeableTests.CorrelationId;
+        skippableTestsBySuiteAndName.Scope = scope;
+        skippableTestsBySuiteAndName.BackfillData = skippeableTests.Coverage ?? CoverageBackfillData.Missing;
+        skippableTestsBySuiteAndName.IsCoverageBackfillSafe = skippeableTests.IsCoverageBackfillSafe;
+        skippableTestsBySuiteAndName.HasAmbiguousCoverageScope = HasAmbiguousCoverageScope(tests);
+        CoverageBackfillDataStore.Persist(TestOptimization.Instance, scope, skippableTestsBySuiteAndName.BackfillData);
+        Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built. CorrelationId: {CorrelationId}", skippableTestsBySuiteAndName.CorrelationId);
+        return skippableTestsBySuiteAndName;
+    }
+
     public void WaitForSkippableTaskToFinish()
     {
         try
         {
             _skippableTestsTask?.SafeWait();
+            Task<SkippableTestsDictionary>[] scopedTasks;
+            lock (_scopedSkippableTestsTasks)
+            {
+                scopedTasks = _scopedSkippableTestsTasks.Count == 0 ? [] : [.. _scopedSkippableTestsTasks.Values];
+            }
+
+            foreach (var scopedTask in scopedTasks)
+            {
+                scopedTask.SafeWait();
+            }
         }
         catch (Exception ex)
         {
@@ -110,18 +126,19 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
     public IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name, string? moduleName = null)
     {
-        if (_skippableTestsTask is null)
+        var skippableTestsTask = GetSkippableTestsTask(moduleName);
+        if (skippableTestsTask is null)
         {
             return [];
         }
 
         try
         {
-            var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
+            var skippableTestsBySuiteAndName = skippableTestsTask.SafeGetResult();
             if (skippableTestsBySuiteAndName.TryGetValue(suite, out var testsInSuite) &&
                 testsInSuite.TryGetValue(name, out var tests))
             {
-                return FilterByModuleScope(tests, moduleName);
+                return FilterByModuleScope(tests, moduleName, skippableTestsBySuiteAndName.Scope.HasTestBundle);
             }
         }
         catch (Exception ex)
@@ -132,8 +149,52 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         return [];
     }
 
+    /// <summary>
+    /// Gets the skippable-tests task for the current execution scope, creating a scoped backend request when coverage backfill requires it.
+    /// </summary>
+    /// <param name="moduleName">Local test module or bundle name for the currently executing test.</param>
+    /// <returns>The matching skippable-tests task, or null when a required scope is unavailable.</returns>
+    private Task<SkippableTestsDictionary>? GetSkippableTestsTask(string? moduleName)
+    {
+        if (!_coverageBackfillRequiresScopedRequests)
+        {
+            return _skippableTestsTask;
+        }
+
+        if (StringUtil.IsNullOrEmpty(moduleName))
+        {
+            Log.Debug("TestOptimizationSkippableFeature: coverage-active skipping requires a test bundle scope, but none is available.");
+            return null;
+        }
+
+        lock (_scopedSkippableTestsTasks)
+        {
+            if (!_scopedSkippableTestsTasks.TryGetValue(moduleName!, out var task))
+            {
+                var scope = SkippableTestsRequestScope.Create(TestOptimization.Instance, moduleName);
+                task = Task.Run(() => InternalGetSkippableTestsAsync(_testOptimizationClient, scope));
+                _scopedSkippableTestsTasks[moduleName!] = task;
+            }
+
+            return task;
+        }
+    }
+
     public bool HasSkippableTests()
     {
+        if (_coverageBackfillRequiresScopedRequests)
+        {
+            foreach (var dictionary in GetCompletedScopedDictionaries())
+            {
+                if (dictionary.Count > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         if (_skippableTestsTask is null)
         {
             return false;
@@ -145,6 +206,19 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
     public string? GetCorrelationId()
     {
+        if (_coverageBackfillRequiresScopedRequests)
+        {
+            foreach (var dictionary in GetCompletedScopedDictionaries())
+            {
+                if (!StringUtil.IsNullOrEmpty(dictionary.CorrelationId))
+                {
+                    return dictionary.CorrelationId;
+                }
+            }
+
+            return null;
+        }
+
         if (_skippableTestsTask is null)
         {
             return null;
@@ -157,6 +231,17 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     /// <inheritdoc />
     public CoverageBackfillData GetCoverageBackfillData()
     {
+        if (_coverageBackfillRequiresScopedRequests)
+        {
+            var coverageMaps = new List<CoverageBackfillData>();
+            foreach (var dictionary in GetActualSkippedScopedDictionaries())
+            {
+                coverageMaps.Add(dictionary.BackfillData);
+            }
+
+            return CoverageBackfillData.Merge(coverageMaps);
+        }
+
         if (_skippableTestsTask is null)
         {
             return CoverageBackfillData.Missing;
@@ -175,21 +260,32 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     /// <inheritdoc />
     public bool IsCoverageBackfillSafe()
     {
+        if (_coverageBackfillRequiresScopedRequests)
+        {
+            var sawActualSkippedScope = false;
+            foreach (var dictionary in GetActualSkippedScopedDictionaries())
+            {
+                sawActualSkippedScope = true;
+                if (!IsDictionaryCoverageBackfillSafe(dictionary))
+                {
+                    return false;
+                }
+            }
+
+            return sawActualSkippedScope;
+        }
+
         if (_skippableTestsTask is null)
         {
             return false;
         }
 
         var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
-        var coverageBackfillData = skippableTestsBySuiteAndName.BackfillData;
-        return skippableTestsBySuiteAndName.IsCoverageBackfillSafe &&
-               !skippableTestsBySuiteAndName.HasAmbiguousCoverageScope &&
-               coverageBackfillData.IsPresent &&
-               coverageBackfillData.IsValid;
+        return IsDictionaryCoverageBackfillSafe(skippableTestsBySuiteAndName);
     }
 
     /// <inheritdoc />
-    public bool CanSkipWithCoverageBackfill(SkippableTest skippableTest, out string reason)
+    public bool CanSkipWithCoverageBackfill(SkippableTest skippableTest, string? moduleName, out string reason)
     {
         reason = string.Empty;
         if (!IsCoverageBackfillRequired())
@@ -208,13 +304,14 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             return false;
         }
 
-        if (_skippableTestsTask is null)
+        var skippableTestsTask = GetSkippableTestsTask(moduleName);
+        if (skippableTestsTask is null)
         {
             reason = "skippable-tests response is unavailable";
             return false;
         }
 
-        var skippableTestsBySuiteAndName = _skippableTestsTask.SafeGetResult();
+        var skippableTestsBySuiteAndName = skippableTestsTask.SafeGetResult();
         if (skippableTestsBySuiteAndName.HasAmbiguousCoverageScope)
         {
             reason = "duplicate skippable candidates make the backend coverage aggregate ambiguous";
@@ -244,9 +341,25 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     }
 
     /// <inheritdoc />
-    public void RecordTestSkippedByItr()
+    public void RecordTestSkippedByItr(string? moduleName = null)
     {
         Interlocked.Increment(ref _itrSkippedTests);
+        if (_coverageBackfillRequiresScopedRequests && !StringUtil.IsNullOrEmpty(moduleName))
+        {
+            var skippableTestsTask = GetSkippableTestsTask(moduleName);
+            if (skippableTestsTask is not null)
+            {
+                var dictionary = skippableTestsTask.SafeGetResult();
+                lock (_actualSkippedScopes)
+                {
+                    _actualSkippedScopes.Add(moduleName!);
+                }
+
+                CoverageBackfillDataStore.RecordActualItrSkip(dictionary.Scope);
+                return;
+            }
+        }
+
         CoverageBackfillDataStore.RecordActualItrSkip();
     }
 
@@ -254,6 +367,68 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     public bool HasSkippedTestsByItr()
     {
         return Volatile.Read(ref _itrSkippedTests) > 0;
+    }
+
+    /// <summary>
+    /// Gets whether one backend response can safely backfill coverage for the tests skipped from that same response.
+    /// </summary>
+    /// <param name="skippableTestsBySuiteAndName">Skippable-tests response indexed for local lookup.</param>
+    /// <returns>True when the response has valid coverage and no local ambiguity.</returns>
+    private static bool IsDictionaryCoverageBackfillSafe(SkippableTestsDictionary skippableTestsBySuiteAndName)
+    {
+        var coverageBackfillData = skippableTestsBySuiteAndName.BackfillData;
+        return skippableTestsBySuiteAndName.IsCoverageBackfillSafe &&
+               !skippableTestsBySuiteAndName.HasAmbiguousCoverageScope &&
+               coverageBackfillData.IsPresent &&
+               coverageBackfillData.IsValid;
+    }
+
+    /// <summary>
+    /// Enumerates scoped skippable-test responses that have completed without forcing pending backend requests to block.
+    /// </summary>
+    /// <returns>Completed scoped skippable-test dictionaries.</returns>
+    private IEnumerable<SkippableTestsDictionary> GetCompletedScopedDictionaries()
+    {
+        Task<SkippableTestsDictionary>[] scopedTasks;
+        lock (_scopedSkippableTestsTasks)
+        {
+            scopedTasks = _scopedSkippableTestsTasks.Count == 0 ? [] : [.. _scopedSkippableTestsTasks.Values];
+        }
+
+        foreach (var task in scopedTasks)
+        {
+            if (task.Status == TaskStatus.RanToCompletion)
+            {
+                yield return task.Result;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Enumerates only scoped skippable-test responses that produced at least one actual ITR skip.
+    /// </summary>
+    /// <returns>Scoped dictionaries for scopes that actually skipped tests.</returns>
+    private IEnumerable<SkippableTestsDictionary> GetActualSkippedScopedDictionaries()
+    {
+        string[] actualSkippedScopes;
+        lock (_actualSkippedScopes)
+        {
+            actualSkippedScopes = _actualSkippedScopes.Count == 0 ? [] : [.. _actualSkippedScopes];
+        }
+
+        foreach (var scope in actualSkippedScopes)
+        {
+            Task<SkippableTestsDictionary>? task;
+            lock (_scopedSkippableTestsTasks)
+            {
+                _scopedSkippableTestsTasks.TryGetValue(scope, out task);
+            }
+
+            if (task is not null)
+            {
+                yield return task.SafeGetResult();
+            }
+        }
     }
 
     internal static bool HasAmbiguousCoverageScope(ICollection<SkippableTest> tests)
@@ -298,14 +473,16 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     /// </summary>
     /// <param name="tests">Backend candidates that matched suite and name.</param>
     /// <param name="moduleName">Local test module or bundle name, when available.</param>
+    /// <param name="requestScopeMatchesModule">Whether the backend request itself was already scoped to the local module.</param>
     /// <returns>Candidates that are valid for the local module scope.</returns>
-    private static IList<SkippableTest> FilterByModuleScope(IList<SkippableTest> tests, string? moduleName)
+    private static IList<SkippableTest> FilterByModuleScope(IList<SkippableTest> tests, string? moduleName, bool requestScopeMatchesModule)
     {
         List<SkippableTest>? filtered = null;
         for (var i = 0; i < tests.Count; i++)
         {
             var test = tests[i];
-            if (test.MatchesModuleScope(moduleName))
+            if ((requestScopeMatchesModule && !test.TryGetModuleScope(out _)) ||
+                test.MatchesModuleScope(moduleName))
             {
                 filtered?.Add(test);
                 continue;
@@ -334,6 +511,11 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         /// Gets or sets the backend correlation id associated with this skippable-test response.
         /// </summary>
         public string? CorrelationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the backend request scope used to build this dictionary.
+        /// </summary>
+        public SkippableTestsRequestScope Scope { get; set; }
 
         /// <summary>
         /// Gets or sets the backend coverage data associated with this skippable-test response.

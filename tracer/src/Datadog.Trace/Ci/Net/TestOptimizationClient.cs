@@ -235,7 +235,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         return true;
     }
 
-    private TestsConfigurations GetTestConfigurations(bool skipFrameworkInfo = false)
+    private TestsConfigurations GetTestConfigurations(bool skipFrameworkInfo = false, string? testBundle = null)
     {
         var framework = FrameworkDescription.Instance;
         return new TestsConfigurations(
@@ -245,7 +245,8 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
             skipFrameworkInfo ? null : framework.Name,
             skipFrameworkInfo ? null : framework.ProductVersion,
             skipFrameworkInfo ? null : framework.ProcessArchitecture,
-            _customConfigurations);
+            _customConfigurations,
+            testBundle);
     }
 
     private Uri GetUriFromPath(string uriPath)

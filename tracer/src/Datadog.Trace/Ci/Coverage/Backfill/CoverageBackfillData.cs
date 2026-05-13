@@ -124,6 +124,39 @@ internal sealed class CoverageBackfillData
     }
 
     /// <summary>
+    /// Merges multiple valid backend coverage maps by OR-ing file bitmaps with the same repository-relative path.
+    /// </summary>
+    /// <param name="coverageMaps">Coverage maps to merge.</param>
+    /// <returns>A valid coverage map, or <see cref="Missing"/> when no valid map was supplied.</returns>
+    public static CoverageBackfillData Merge(IEnumerable<CoverageBackfillData> coverageMaps)
+    {
+        var sawCoverage = false;
+        var mergedCoverage = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var coverageMap in coverageMaps)
+        {
+            if (coverageMap is not { IsPresent: true, IsValid: true })
+            {
+                continue;
+            }
+
+            sawCoverage = true;
+            foreach (var item in coverageMap.ExecutedLinesByRelativePath)
+            {
+                if (mergedCoverage.TryGetValue(item.Key, out var existingBitmap))
+                {
+                    mergedCoverage[item.Key] = OrBitmaps(existingBitmap, item.Value);
+                }
+                else
+                {
+                    mergedCoverage[item.Key] = item.Value;
+                }
+            }
+        }
+
+        return sawCoverage ? new CoverageBackfillData(isPresent: true, isValid: true, error: null, mergedCoverage) : Missing;
+    }
+
+    /// <summary>
     /// Normalizes backend coverage paths to the repository-relative format used for local coverage matching.
     /// </summary>
     /// <param name="path">Path from `meta.coverage`.</param>

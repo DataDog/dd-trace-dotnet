@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
@@ -17,6 +18,25 @@ namespace Datadog.Trace.Tests.Ci;
 
 public class TestOptimizationClientTests
 {
+    [Fact]
+    public void TestsConfigurationsSerializesTopLevelBundle()
+    {
+        var configurations = new TestsConfigurations(
+            "linux",
+            "1",
+            "x64",
+            runtimeName: "dotnet",
+            runtimeVersion: "9.0.0",
+            runtimeArchitecture: "x64",
+            custom: null,
+            testBundle: "Samples.XUnitTests");
+
+        var serializedConfigurations = JsonHelper.SerializeObject(configurations);
+
+        serializedConfigurations.Should().Contain("\"test.bundle\":\"Samples.XUnitTests\"");
+        serializedConfigurations.Should().Contain("\"runtime.name\":\"dotnet\"");
+    }
+
     [Fact]
     public void ParseSkippableTestsResponseKeepsBackendCoverage()
     {
@@ -97,6 +117,43 @@ public class TestOptimizationClientTests
     }
 
     [Fact]
+    public void ParseSkippableTestsResponseFiltersMismatchedTopLevelBundle()
+    {
+        var response = TestOptimizationClient.ParseSkippableTestsResponse(
+            """
+            {
+              "data": [
+                {
+                  "id": "Samples.XUnitTests.TestSuite.SimplePassTest",
+                  "type": "test_params",
+                  "attributes": {
+                    "suite": "Samples.XUnitTests.TestSuite",
+                    "name": "SimplePassTest",
+                    "configurations": {
+                      "test.bundle": "Other.Tests"
+                    },
+                    "_missing_line_code_coverage": false
+                  }
+                }
+              ],
+              "meta": {
+                "correlation_id": "2e8a36bda770b683345957cc6c15baf9",
+                "coverage": {
+                  "src/Calculator.cs": "wA=="
+                }
+              }
+            }
+            """,
+            customConfigurations: null,
+            scope: new SkippableTestsRequestScope("Samples.XUnitTests", "scope-a"));
+
+        response.Tests.Should().BeEmpty();
+        response.Coverage.IsPresent.Should().BeTrue();
+        response.Coverage.IsValid.Should().BeTrue();
+        response.IsCoverageBackfillSafe.Should().BeFalse();
+    }
+
+    [Fact]
     public void ModuleScopedSkippableCandidateMatchesLocalBundle()
     {
         var candidate = new SkippableTest(
@@ -115,6 +172,45 @@ public class TestOptimizationClientTests
         candidate.MatchesModuleScope("Samples.XUnitTests").Should().BeTrue();
         candidate.MatchesModuleScope("Other.Tests").Should().BeFalse();
         candidate.MatchesModuleScope(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ModuleScopedSkippableCandidateMatchesTopLevelBundle()
+    {
+        var candidate = new SkippableTest(
+            "SimplePassTest",
+            "Samples.XUnitTests.TestSuite",
+            parameters: null,
+            new TestsConfigurations(
+                "linux",
+                "1",
+                "x64",
+                runtimeName: null,
+                runtimeVersion: null,
+                runtimeArchitecture: null,
+                custom: null,
+                testBundle: "Samples.XUnitTests"));
+
+        candidate.MatchesModuleScope("Samples.XUnitTests").Should().BeTrue();
+        candidate.MatchesModuleScope("Other.Tests").Should().BeFalse();
+        candidate.MatchesModuleScope(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task CachedClientCachesSkippableTestsByFullScopeFingerprint()
+    {
+        var sourceClient = new ScopedCountingClient();
+        var cachedClient = new CachedTestOptimizationClient(sourceClient);
+        var netFrameworkScope = new SkippableTestsRequestScope("Samples.XUnitTests", "net-framework-scope");
+        var netScope = new SkippableTestsRequestScope("Samples.XUnitTests", "net-scope");
+        var nunitScope = new SkippableTestsRequestScope("Samples.NUnitTests", "nunit-scope");
+
+        await cachedClient.GetSkippableTestsAsync(netFrameworkScope);
+        await cachedClient.GetSkippableTestsAsync(netFrameworkScope);
+        await cachedClient.GetSkippableTestsAsync(netScope);
+        await cachedClient.GetSkippableTestsAsync(nunitScope);
+
+        sourceClient.SkippableRequestScopes.Should().Equal(netFrameworkScope, netScope, nunitScope);
     }
 
     [Fact]
@@ -172,5 +268,34 @@ public class TestOptimizationClientTests
                 runtimeVersion: null,
                 runtimeArchitecture: null,
                 new Dictionary<string, string> { [TestTags.Bundle] = moduleName }));
+    }
+
+    private sealed class ScopedCountingClient : ITestOptimizationClient
+    {
+        public List<SkippableTestsRequestScope> SkippableRequestScopes { get; } = [];
+
+        public Task<TestOptimizationClient.SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
+            => Task.FromResult(default(TestOptimizationClient.SettingsResponse));
+
+        public Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync()
+            => Task.FromResult(default(TestOptimizationClient.KnownTestsResponse));
+
+        public Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync()
+            => Task.FromResult(default(TestOptimizationClient.SearchCommitResponse));
+
+        public Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
+        {
+            SkippableRequestScopes.Add(scope);
+            return Task.FromResult(default(TestOptimizationClient.SkippableTestsResponse));
+        }
+
+        public Task<long> SendPackFilesAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
+            => Task.FromResult(0L);
+
+        public Task<long> UploadRepositoryChangesAsync()
+            => Task.FromResult(0L);
+
+        public Task<TestOptimizationClient.TestManagementResponse> GetTestManagementTests()
+            => Task.FromResult(new TestOptimizationClient.TestManagementResponse());
     }
 }

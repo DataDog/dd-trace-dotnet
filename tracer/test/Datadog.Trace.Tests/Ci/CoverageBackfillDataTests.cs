@@ -80,6 +80,36 @@ public class CoverageBackfillDataTests
     }
 
     [Fact]
+    public void MergeOrsOnlyValidPresentCoverageMaps()
+    {
+        var first = CoverageBackfillData.FromBackendCoverage(
+            new Dictionary<string, string>
+            {
+                ["src/Calculator.cs"] = Convert.ToBase64String([0b_1000_0000])
+            });
+        var second = CoverageBackfillData.FromBackendCoverage(
+            new Dictionary<string, string>
+            {
+                ["src/Calculator.cs"] = Convert.ToBase64String([0b_0100_0000]),
+                ["src/Other.cs"] = Convert.ToBase64String([0b_0000_0001])
+            });
+        var invalid = CoverageBackfillData.FromBackendCoverage(
+            new Dictionary<string, string>
+            {
+                ["src/Ignored.cs"] = "not-base64"
+            });
+
+        var merged = CoverageBackfillData.Merge([first, CoverageBackfillData.Missing, invalid, second]);
+
+        merged.IsPresent.Should().BeTrue();
+        merged.IsValid.Should().BeTrue();
+        merged.TotalBitmapBytes.Should().Be(2);
+        merged.ExecutedLinesByRelativePath["src/Calculator.cs"].Should().Equal([0b_1100_0000]);
+        merged.ExecutedLinesByRelativePath["src/Other.cs"].Should().Equal([0b_0000_0001]);
+        merged.ExecutedLinesByRelativePath.Should().NotContainKey("src/Ignored.cs");
+    }
+
+    [Fact]
     public void CoverageBackfillDataRoundTripsThroughJsonCache()
     {
         var coverage = CoverageBackfillData.FromBackendCoverage(
