@@ -2153,6 +2153,7 @@ internal static partial class ThirdPartyModules
         "Microsoft.Azure.Functions.Worker.ApplicationInsights",
         "Microsoft.Azure.Functions.Worker.Core",
         "Microsoft.Azure.Functions.Worker.Extensions.Abstractions",
+        "Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore",
         "Microsoft.Azure.Functions.Worker.Extensions.Http",
         "Microsoft.Azure.Functions.Worker.Extensions.OpenApi",
         "Microsoft.Azure.Functions.Worker.Extensions.Rpc",
