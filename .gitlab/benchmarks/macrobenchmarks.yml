@@ -574,8 +574,6 @@ profiler_cpu_timer_create-arm64:
     RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
 
     # Allows ephemeral instances to read content from benchmarking-platform.
-    # benchmarking-platform is an internal repo on GitHub, so its org tracks
-    # GITHUB_ORG_INTERNAL (see .gitlab-ci.yml variables block).
     DDOCTOSTS_SCOPE: "${GITHUB_ORG_INTERNAL}/benchmarking-platform"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
