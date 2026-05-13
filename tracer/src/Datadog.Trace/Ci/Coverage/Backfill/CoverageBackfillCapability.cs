@@ -229,7 +229,7 @@ internal static class CoverageBackfillCapability
             return false;
         }
 
-        return ContainsAny(commandLine, ".csproj", ".fsproj", ".vbproj", ".sln", ".dll");
+        return ContainsAny(commandLine, ".csproj", ".fsproj", ".vbproj", ".sln");
     }
 
     /// <summary>

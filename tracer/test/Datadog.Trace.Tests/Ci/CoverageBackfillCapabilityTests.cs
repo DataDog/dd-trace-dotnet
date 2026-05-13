@@ -89,6 +89,17 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
     }
 
     [Fact]
+    public void VstestAssemblyPathDoesNotDisableCoverageBackfill()
+    {
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "vstest /tmp/Sample.Tests.dll --collect:\"XPlat Code Coverage\"");
+        var settings = CreateSettings();
+
+        CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
+        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeTrue();
+        reason.Should().BeEmpty();
+    }
+
+    [Fact]
     public void GeneratedXmlReportCanBeBackfilledAfterCommandWhenNoThresholdIsConfigured()
     {
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, "/tmp/generated-cobertura.xml");
