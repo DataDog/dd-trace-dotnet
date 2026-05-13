@@ -8,8 +8,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Backfill;
+using Datadog.Trace.Ci.Coverage.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
@@ -55,31 +57,39 @@ internal static class CoverletCoverageBackfill
     private static int BackfillCoverletDocument(object? classes, byte[] backendBitmap)
     {
         var updatedLines = 0;
-        foreach (DictionaryEntry classEntry in EnumerateDictionary(classes))
+        var backendFileBitmap = new FileBitmap(backendBitmap);
+        try
         {
-            foreach (DictionaryEntry methodEntry in EnumerateDictionary(classEntry.Value))
+            foreach (DictionaryEntry classEntry in EnumerateDictionary(classes))
             {
-                if (!TryGetLineHits(methodEntry.Value, out var lineHits))
+                foreach (DictionaryEntry methodEntry in EnumerateDictionary(classEntry.Value))
                 {
-                    continue;
-                }
-
-                var lineKeys = new object[lineHits.Keys.Count];
-                lineHits.Keys.CopyTo(lineKeys, 0);
-                foreach (var lineKey in lineKeys)
-                {
-                    if (!TryConvertToInt(lineKey, out var line) ||
-                        !IsBackendLineCovered(backendBitmap, line) ||
-                        !TryConvertToInt(lineHits[lineKey], out var hits) ||
-                        hits > 0)
+                    if (!TryGetLineHits(methodEntry.Value, out var lineHits))
                     {
                         continue;
                     }
 
-                    lineHits[lineKey] = 1;
-                    updatedLines++;
+                    var lineKeys = new object[lineHits.Keys.Count];
+                    lineHits.Keys.CopyTo(lineKeys, 0);
+                    foreach (var lineKey in lineKeys)
+                    {
+                        if (!TryConvertToInt(lineKey, out var line) ||
+                            !IsBackendLineCovered(ref backendFileBitmap, line) ||
+                            !TryConvertToInt(lineHits[lineKey], out var hits) ||
+                            hits > 0)
+                        {
+                            continue;
+                        }
+
+                        lineHits[lineKey] = 1;
+                        updatedLines++;
+                    }
                 }
             }
+        }
+        finally
+        {
+            backendFileBitmap.Dispose();
         }
 
         return updatedLines;
@@ -153,39 +163,28 @@ internal static class CoverletCoverageBackfill
         yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
     }
 
-    private static bool IsBackendLineCovered(byte[] bitmap, int line)
+    private static bool IsBackendLineCovered(ref FileBitmap bitmap, int line)
     {
-        if (line <= 0)
-        {
-            return false;
-        }
-
-        var index = line - 1;
-        var byteIndex = index >> 3;
-        if (byteIndex >= bitmap.Length)
-        {
-            return false;
-        }
-
-        var bitMask = (byte)(128 >> (index & 7));
-        return (bitmap[byteIndex] & bitMask) != 0;
+        return line > 0 && line <= bitmap.BitCount && bitmap.Get(line);
     }
 
     private static bool TryConvertToInt(object? value, out int result)
     {
-        switch (value)
+        if (value is null)
         {
-            case int intValue:
-                result = intValue;
-                return true;
-            case long longValue when longValue <= int.MaxValue && longValue >= int.MinValue:
-                result = (int)longValue;
-                return true;
-            case string stringValue:
-                return int.TryParse(stringValue, out result);
-            default:
-                result = 0;
-                return false;
+            result = 0;
+            return false;
+        }
+
+        try
+        {
+            result = Convert.ToInt32(value, CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (Exception ex) when (ex is FormatException || ex is InvalidCastException || ex is OverflowException)
+        {
+            result = 0;
+            return false;
         }
     }
 }
