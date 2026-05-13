@@ -43,7 +43,18 @@ public sealed class TestSession
     private IpcServer? _ipcServer;
     private int _finished;
     private int _ipcMessageCount;
+
+    /// <summary>
+    /// Counts only coverage IPC messages so the finalization barrier does not unblock on unrelated session-tag messages.
+    /// </summary>
+    private int _coverageIpcMessageCount;
+
     private long _lastIpcMessageTicks;
+
+    /// <summary>
+    /// Tracks the last coverage IPC callback for the quiet-period drain before the session closes.
+    /// </summary>
+    private long _lastCoverageIpcMessageTicks;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
@@ -466,15 +477,21 @@ public sealed class TestSession
             return;
         }
 
-        var initialMessageCount = Volatile.Read(ref _ipcMessageCount);
+        var initialMessageCount = waitForFirstMessage ?
+                                      Volatile.Read(ref _coverageIpcMessageCount) :
+                                      Volatile.Read(ref _ipcMessageCount);
         var deadlineTicks = DateTime.UtcNow.Ticks + maxWait.Ticks;
         while (DateTime.UtcNow.Ticks < deadlineTicks)
         {
-            var currentMessageCount = Volatile.Read(ref _ipcMessageCount);
+            var currentMessageCount = waitForFirstMessage ?
+                                          Volatile.Read(ref _coverageIpcMessageCount) :
+                                          Volatile.Read(ref _ipcMessageCount);
             var hasNewMessage = currentMessageCount > initialMessageCount;
             if (!waitForFirstMessage || hasNewMessage)
             {
-                var lastMessageTicks = Volatile.Read(ref _lastIpcMessageTicks);
+                var lastMessageTicks = waitForFirstMessage ?
+                                           Volatile.Read(ref _lastCoverageIpcMessageTicks) :
+                                           Volatile.Read(ref _lastIpcMessageTicks);
                 if (lastMessageTicks == 0 || DateTime.UtcNow.Ticks - lastMessageTicks >= quietPeriod.Ticks)
                 {
                     return;
@@ -536,6 +553,8 @@ public sealed class TestSession
         }
         else if (message is SessionCodeCoverageMessage { Value: >= 0.0 } codeCoverageMessage)
         {
+            Interlocked.Increment(ref _coverageIpcMessageCount);
+            Interlocked.Exchange(ref _lastCoverageIpcMessageTicks, DateTime.UtcNow.Ticks);
             _testOptimization.Log.Information<CodeCoverageReportSource, double, bool>(
                 "TestSession.ReceiveMessage (code coverage): Source={Source}, Value={Value}, Backfilled={Backfilled}",
                 codeCoverageMessage.Source,

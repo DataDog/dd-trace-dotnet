@@ -94,7 +94,13 @@ public sealed class CoverageGetCoverageResultIntegration
                     Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                     using var ipcClient = new IpcClient(name);
                     Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                    if (!ipcClient.TrySendMessage(new SessionCodeCoverageMessage(CodeCoverageReportSource.Coverlet, percentage, backfilled)))
+                    if (!ipcClient.TrySendMessage(
+                            new SessionCodeCoverageMessage(
+                                CodeCoverageReportSource.Coverlet,
+                                percentage,
+                                backfilled,
+                                coverageDetails.Total,
+                                coverageDetails.Covered)))
                     {
                         Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
                         TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
@@ -139,6 +145,19 @@ public sealed class CoverageGetCoverageResultIntegration
     [DuckCopy]
     internal struct CoverageDetails
     {
+        /// <summary>
+        /// Gets the number of line entries Coverlet counted as covered.
+        /// </summary>
+        public double Covered;
+
+        /// <summary>
+        /// Gets the total number of executable line entries Coverlet counted.
+        /// </summary>
+        public int Total;
+
+        /// <summary>
+        /// Gets Coverlet's source-native line coverage percentage after Datadog has optionally backfilled skipped-test coverage.
+        /// </summary>
         public double Percent;
     }
 }

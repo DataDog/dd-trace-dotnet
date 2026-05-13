@@ -40,4 +40,20 @@ public class CodeCoverageResultAggregatorTests
         result.ExecutableLines.Should().Be(4);
         result.CoveredLines.Should().Be(3);
     }
+
+    [Fact]
+    public void MultipleCoverletResultsAreCombinedByCounts()
+    {
+        var aggregator = new CodeCoverageResultAggregator();
+
+        aggregator.Add(CodeCoverageReportSource.Coverlet, percentage: 25, backfilled: false, executableLines: 4, coveredLines: 1, diagnostic: null);
+        aggregator.Add(CodeCoverageReportSource.Coverlet, percentage: 100, backfilled: true, executableLines: 2, coveredLines: 2, diagnostic: null);
+
+        aggregator.TryGetBestResult(out var result).Should().BeTrue();
+        result.Source.Should().Be(CodeCoverageReportSource.Coverlet);
+        result.Percentage.Should().Be(50);
+        result.Backfilled.Should().BeTrue();
+        result.ExecutableLines.Should().Be(6);
+        result.CoveredLines.Should().Be(3);
+    }
 }
