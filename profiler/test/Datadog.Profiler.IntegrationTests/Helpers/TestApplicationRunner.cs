@@ -153,8 +153,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             // Use port 0 so Kestrel binds an OS-assigned free port and avoids the TOCTOU race
-            // of pre-picking a port. The actual bound URL is parsed from stdout after the run.
-            var arguments = $"--timeout {TestDurationInSeconds} --urls http://localhost:0";
+            // of pre-picking a port. Bind to 127.0.0.1 explicitly: Kestrel rejects "localhost:0"
+            // with InvalidOperationException ("Dynamic port binding is not supported when binding
+            // to localhost"). The actual bound URL is parsed from stdout after the run.
+            var arguments = $"--timeout {TestDurationInSeconds} --urls http://127.0.0.1:0";
             if (!string.IsNullOrEmpty(_commandLine))
             {
                 arguments += $" {_commandLine}";
