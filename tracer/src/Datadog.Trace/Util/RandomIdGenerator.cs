@@ -29,6 +29,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Util;
 
@@ -39,7 +40,7 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
 {
     // Evaluated once at class load; avoids a per-call env-var lookup.
     private static readonly bool _secureRandom =
-        EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom) == "true";
+        EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom)?.ToBoolean() == true;
 
     [ThreadStatic]
     private static RandomIdGenerator? _shared;

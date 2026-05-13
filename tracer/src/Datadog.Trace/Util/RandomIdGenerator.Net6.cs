@@ -9,6 +9,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Util;
 
@@ -21,7 +22,7 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     // (reads kernel entropy on every call) instead of Random.Shared (PRNG
     // state that may be duplicated across process copies).
     private static readonly bool _secureRandom =
-        EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom) == "true";
+        EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceSecureRandom)?.ToBoolean() == true;
 
     // On .NET 6+, we delegate to System.Random.Shared which can be safely accessed from
     // multiple threads and implements xoshiro128** or xoshiro256**.

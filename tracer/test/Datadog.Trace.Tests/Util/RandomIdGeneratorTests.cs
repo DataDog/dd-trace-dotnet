@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -413,6 +414,35 @@ public class RandomIdGeneratorTests
         instanceAfter.Should().BeSameAs(instanceBefore);
     }
 #endif
+
+    /// <summary>
+    /// DD_TRACE_SECURE_RANDOM now parses via ToBoolean() instead of == "true",
+    /// so all standard truthy/falsy forms must be recognised consistently with
+    /// every other boolean setting in the tracer.
+    /// </summary>
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("True", true)]
+    [InlineData("TRUE", true)]
+    [InlineData("1", true)]
+    [InlineData("yes", true)]
+    [InlineData("Yes", true)]
+    [InlineData("t", true)]
+    [InlineData("y", true)]
+    [InlineData("false", false)]
+    [InlineData("False", false)]
+    [InlineData("0", false)]
+    [InlineData("no", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void SecureRandom_EnvVar_ParsesBooleanVariants(string envValue, bool expectedResult)
+    {
+        // _secureRandom uses `envValue?.ToBoolean() == true`.
+        // The static readonly field cannot be re-evaluated per-test, so we validate
+        // the parsing expression directly to prove all variants behave correctly.
+        var result = envValue?.ToBoolean() == true;
+        result.Should().Be(expectedResult);
+    }
 
     private static IEnumerable<T> GetValues<T>(Func<T> factory)
     {
