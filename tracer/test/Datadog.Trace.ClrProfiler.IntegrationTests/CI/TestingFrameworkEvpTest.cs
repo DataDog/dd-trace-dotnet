@@ -8,11 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -434,6 +436,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
         runId = Guid.NewGuid().ToString("n");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
+        SetEnvironmentVariable(CoverageBackfillDataStore.RunFolderEnvironmentVariable, Path.Combine(Environment.CurrentDirectory, ".dd", runId));
     }
 
     protected virtual async Task ExecuteTestAsync(string packageVersion, string evpVersionToRemove, bool expectedGzip, TestScenario testScenario)

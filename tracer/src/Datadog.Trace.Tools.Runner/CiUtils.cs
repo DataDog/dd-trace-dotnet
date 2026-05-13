@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -58,6 +59,8 @@ internal static class CiUtils
 
         // We force Test optimization mode on child process
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestOptimizationRunId] = testOptimization.RunId;
+        profilerEnvironmentVariables[CoverageBackfillDataStore.RunFolderEnvironmentVariable] = CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
 
         // We check the settings and merge with the command settings options
         var agentless = testOptimizationSettings.Agentless;

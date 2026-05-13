@@ -579,6 +579,7 @@ public sealed class TestSession
         {
             [ConfigurationKeys.CIVisibility.TestSessionCommand] = tags.Command,
             [ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = tags.WorkingDirectory,
+            [CoverageBackfillDataStore.RunFolderEnvironmentVariable] = CoverageBackfillDataStore.GetOrCreateRunFolder(_testOptimization),
         };
 
 // TODO temporary, this needs to be addressed

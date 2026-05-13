@@ -151,8 +151,14 @@ internal static class CoverageBackfillCapability
 
         if (Path.GetExtension(externalCoveragePathValue).Equals(".xml", StringComparison.OrdinalIgnoreCase))
         {
-            reason = string.Empty;
-            return true;
+            if (IsGeneratedLineCoverageXmlCommand(commandLine))
+            {
+                reason = string.Empty;
+                return true;
+            }
+
+            reason = "External coverage XML report must exist before skipping unless the command declares a supported line-capable XML format.";
+            return false;
         }
 
         if (string.IsNullOrEmpty(reason))
@@ -240,6 +246,16 @@ internal static class CoverageBackfillCapability
     private static bool HasUnsupportedExternalThreshold(string commandLine)
     {
         return ContainsAny(commandLine, "--threshold", "/p:threshold", "threshold=", "threshold%3d", "thresholdtype", "thresholdstat");
+    }
+
+    /// <summary>
+    /// Detects generated XML report modes whose command line explicitly selects a mutable line-capable format.
+    /// </summary>
+    /// <param name="commandLine">Command line to inspect.</param>
+    /// <returns>True when the generated XML format is known to expose line entries that can be rewritten after the command.</returns>
+    private static bool IsGeneratedLineCoverageXmlCommand(string commandLine)
+    {
+        return ContainsAny(commandLine, "cobertura", "opencover");
     }
 
     /// <summary>

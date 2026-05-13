@@ -740,7 +740,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             out _,
             out var runId);
 
-        const string sessionCommand = "dotnet test --collect \"XPlat Code Coverage\"";
+        const string sessionCommand = "dotnet test --collect \"XPlat Code Coverage;IncludeTestAssembly=true\"";
         Output.WriteLine("RunId: {0}", runId);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
 
@@ -829,7 +829,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
-                                      arguments: "--collect:\"XPlat Code Coverage\"",
+                                      arguments: "--collect:\"XPlat Code Coverage;IncludeTestAssembly=true\"",
                                       packageVersion: packageVersion,
                                       expectedExitCode: 1);
 

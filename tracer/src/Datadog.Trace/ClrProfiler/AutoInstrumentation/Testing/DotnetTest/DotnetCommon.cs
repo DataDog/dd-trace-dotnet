@@ -134,6 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
 
                 var session = TestSession.GetOrCreate(commandLine, workingDirectory, null, null, true);
+                CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimization.SkippableFeature?.Enabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, testOptimizationSettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)

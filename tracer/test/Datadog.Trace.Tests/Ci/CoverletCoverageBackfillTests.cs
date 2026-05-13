@@ -83,4 +83,71 @@ public class CoverletCoverageBackfillTests
         updatedLines.Should().Be(0);
         lineHits[2].Should().Be(0);
     }
+
+    [Fact]
+    public void MatchesBackendPathByUnambiguousSuffix()
+    {
+        var lineHits = new Dictionary<int, int>
+        {
+            [1] = 0,
+            [2] = 0
+        };
+        var modules = new Dictionary<string, object>
+        {
+            ["Calculator.dll"] = new Dictionary<string, object>
+            {
+                ["/workspace/repo/src/Calculator.cs"] = new Dictionary<string, object>
+                {
+                    ["Calculator"] = new Dictionary<string, object>
+                    {
+                        ["Add"] = lineHits
+                    }
+                }
+            }
+        };
+        var backfill = CoverageBackfillData.FromBackendCoverage(
+            new Dictionary<string, string>
+            {
+                ["src/Calculator.cs"] = Convert.ToBase64String([0b_0100_0000])
+            });
+
+        CoverletCoverageBackfill.TryApply(modules, backfill, out var updatedLines).Should().BeTrue();
+
+        updatedLines.Should().Be(1);
+        lineHits[1].Should().Be(0);
+        lineHits[2].Should().Be(1);
+    }
+
+    [Fact]
+    public void RejectsAmbiguousSuffixMatches()
+    {
+        var lineHits = new Dictionary<int, int>
+        {
+            [2] = 0
+        };
+        var modules = new Dictionary<string, object>
+        {
+            ["Calculator.dll"] = new Dictionary<string, object>
+            {
+                ["src/Calculator.cs"] = new Dictionary<string, object>
+                {
+                    ["Calculator"] = new Dictionary<string, object>
+                    {
+                        ["Add"] = lineHits
+                    }
+                }
+            }
+        };
+        var backfill = CoverageBackfillData.FromBackendCoverage(
+            new Dictionary<string, string>
+            {
+                ["service-a/src/Calculator.cs"] = Convert.ToBase64String([0b_0100_0000]),
+                ["service-b/src/Calculator.cs"] = Convert.ToBase64String([0b_0100_0000])
+            });
+
+        CoverletCoverageBackfill.TryApply(modules, backfill, out var updatedLines).Should().BeFalse();
+
+        updatedLines.Should().Be(0);
+        lineHits[2].Should().Be(0);
+    }
 }

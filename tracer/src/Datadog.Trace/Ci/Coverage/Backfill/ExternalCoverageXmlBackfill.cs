@@ -513,47 +513,7 @@ internal static class ExternalCoverageXmlBackfill
             return null;
         }
 
-        var matchingBitmap = default(byte[]);
-        foreach (var candidate in GetPathCandidates(sourcePath!, reportPath))
-        {
-            if (!backfillData.ExecutedLinesByRelativePath.TryGetValue(candidate, out var bitmap))
-            {
-                continue;
-            }
-
-            if (matchingBitmap is not null && !ReferenceEquals(matchingBitmap, bitmap))
-            {
-                return null;
-            }
-
-            matchingBitmap = bitmap;
-        }
-
-        return matchingBitmap;
-    }
-
-    /// <summary>
-    /// Produces normalized report path candidates and filters out forms that cannot be compared with backend keys.
-    /// </summary>
-    /// <param name="sourcePath">Source path read from the coverage report.</param>
-    /// <param name="reportPath">Coverage report path used for report-directory-relative source paths.</param>
-    /// <returns>Normalized backend-key candidates for the source path.</returns>
-    private static IEnumerable<string> GetPathCandidates(string sourcePath, string reportPath)
-    {
-        foreach (var candidate in GetRawPathCandidates(sourcePath, reportPath))
-        {
-            string normalized;
-            try
-            {
-                normalized = CoverageBackfillData.NormalizePath(candidate);
-            }
-            catch
-            {
-                continue;
-            }
-
-            yield return normalized;
-        }
+        return CoverageBackfillPathMatcher.GetBackendBitmap(backfillData, GetRawPathCandidates(sourcePath!, reportPath));
     }
 
     /// <summary>

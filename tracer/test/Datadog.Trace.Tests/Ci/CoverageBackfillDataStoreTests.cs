@@ -21,7 +21,8 @@ namespace Datadog.Trace.Tests.Ci;
 [Collection(nameof(EnvironmentVariablesTestCollection))]
 [EnvironmentVariablesCleaner(
     CoverageBackfillDataStore.ActualItrSkipEnvironmentVariable,
-    CoverageBackfillDataStore.BackfillDataPathEnvironmentVariable)]
+    CoverageBackfillDataStore.BackfillDataPathEnvironmentVariable,
+    CoverageBackfillDataStore.RunFolderEnvironmentVariable)]
 public class CoverageBackfillDataStoreTests
 {
     [Fact]
@@ -72,6 +73,37 @@ public class CoverageBackfillDataStoreTests
         finally
         {
             DeleteWorkspacePath(workspacePath);
+        }
+    }
+
+    [Fact]
+    public void TryLoadUsesPropagatedRunFolderAcrossDifferentWorkingDirectories()
+    {
+        var producerWorkspacePath = CreateWorkspacePath();
+        var consumerWorkspacePath = CreateWorkspacePath();
+        var sharedBasePath = CreateWorkspacePath();
+        try
+        {
+            var sharedRunFolder = Path.Combine(sharedBasePath, ".dd", "test-run");
+            Environment.SetEnvironmentVariable(CoverageBackfillDataStore.RunFolderEnvironmentVariable, sharedRunFolder);
+
+            var producer = CreateTestOptimization(producerWorkspacePath);
+            var consumer = CreateTestOptimization(consumerWorkspacePath);
+            var scope = new SkippableTestsRequestScope("Samples.XUnitTests", "scope-a");
+
+            CoverageBackfillDataStore.Persist(producer.Object, scope, CreateCoverage("src/Calculator.cs", 0b_1000_0000));
+            CoverageBackfillDataStore.RecordActualItrSkip(producer.Object, scope);
+
+            CoverageBackfillDataStore.TryLoad(consumer.Object, out var coverageBackfillData).Should().BeTrue();
+
+            coverageBackfillData.IsPresent.Should().BeTrue();
+            coverageBackfillData.ExecutedLinesByRelativePath["src/Calculator.cs"].Should().Equal([0b_1000_0000]);
+        }
+        finally
+        {
+            DeleteWorkspacePath(producerWorkspacePath);
+            DeleteWorkspacePath(consumerWorkspacePath);
+            DeleteWorkspacePath(sharedBasePath);
         }
     }
 

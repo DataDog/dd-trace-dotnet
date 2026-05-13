@@ -112,6 +112,18 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
     }
 
     [Fact]
+    public void UnknownGeneratedXmlReportIsUnsafeUntilLineCapabilityCanBeVerified()
+    {
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, "/tmp/generated-coverage.xml");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "external-coverage --output /tmp/generated-coverage.xml");
+        var settings = CreateSettings();
+
+        CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
+        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeFalse();
+        reason.Should().Contain("must exist before skipping");
+    }
+
+    [Fact]
     public void GeneratedExternalReportMustBeXml()
     {
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, "/tmp/generated-coverage.json");

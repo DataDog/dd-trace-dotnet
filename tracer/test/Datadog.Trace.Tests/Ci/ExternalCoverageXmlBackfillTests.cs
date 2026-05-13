@@ -141,6 +141,44 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
+    public void CoberturaReportMatchesBackendPathByUnambiguousSuffix()
+    {
+        var filePath = WriteTempCoverageFile(
+            """
+            <coverage line-rate="0.5" lines-valid="2" lines-covered="1">
+              <packages>
+                <package name="sample" line-rate="0.5">
+                  <classes>
+                    <class name="Calculator" filename="integrations/Samples.XUnitTests/TestSuite.cs" line-rate="0.5">
+                      <lines>
+                        <line number="23" hits="0" />
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """);
+
+        try
+        {
+            var backfill = BackfillForLine("tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs", line: 23);
+
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+
+            result.Percentage.Should().Be(100);
+            result.CoveredLines.Should().Be(1);
+            result.Backfilled.Should().BeTrue();
+            result.Rewritten.Should().BeTrue();
+            File.ReadAllText(filePath).Should().Contain("""<line number="23" hits="1" />""");
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
     public void MicrosoftLineReportIsRewrittenWithBackendCoveredLines()
     {
         var filePath = WriteTempCoverageFile(

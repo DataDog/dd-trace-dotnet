@@ -139,52 +139,18 @@ internal static class CoverletCoverageBackfill
 
     private static byte[]? GetBackendBitmap(CoverageBackfillData backfillData, string sourcePath)
     {
-        var matchingBitmap = default(byte[]);
-        foreach (var candidate in GetPathCandidates(sourcePath))
-        {
-            if (!backfillData.ExecutedLinesByRelativePath.TryGetValue(candidate, out var bitmap))
-            {
-                continue;
-            }
-
-            if (matchingBitmap is not null && !ReferenceEquals(matchingBitmap, bitmap))
-            {
-                return null;
-            }
-
-            matchingBitmap = bitmap;
-        }
-
-        return matchingBitmap;
+        return CoverageBackfillPathMatcher.GetBackendBitmap(backfillData, GetRawPathCandidates(sourcePath));
     }
 
     /// <summary>
-    /// Produces normalized path candidates for Coverlet document paths without allowing ambiguous backend matches.
+    /// Produces raw path candidates for Coverlet document paths without assuming a stable current directory.
     /// </summary>
     /// <param name="sourcePath">Document path from Coverlet's module model.</param>
-    /// <returns>Normalized backend-key candidates for the document.</returns>
-    private static IEnumerable<string> GetPathCandidates(string sourcePath)
+    /// <returns>Raw absolute and source-root-relative path candidates for the document.</returns>
+    private static IEnumerable<string> GetRawPathCandidates(string sourcePath)
     {
-        var rawCandidates = new[]
-        {
-            sourcePath,
-            CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false)
-        };
-
-        foreach (var candidate in rawCandidates)
-        {
-            string normalized;
-            try
-            {
-                normalized = CoverageBackfillData.NormalizePath(candidate);
-            }
-            catch
-            {
-                continue;
-            }
-
-            yield return normalized;
-        }
+        yield return sourcePath;
+        yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
     }
 
     private static bool IsBackendLineCovered(byte[] bitmap, int line)

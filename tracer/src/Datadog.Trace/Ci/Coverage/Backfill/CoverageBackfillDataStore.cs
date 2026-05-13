@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 
@@ -22,6 +23,11 @@ internal static class CoverageBackfillDataStore
     /// Environment variable that points to the persisted backend coverage map for this test-optimization run.
     /// </summary>
     public const string BackfillDataPathEnvironmentVariable = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_PATH";
+
+    /// <summary>
+    /// Environment variable that pins the shared run folder used by the session process, testhosts, and coverage collectors.
+    /// </summary>
+    public const string RunFolderEnvironmentVariable = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_RUN_FOLDER";
 
     /// <summary>
     /// Environment variable set after the process observes at least one real ITR skip.
@@ -233,6 +239,27 @@ internal static class CoverageBackfillDataStore
     }
 
     /// <summary>
+    /// Gets the run-scoped folder used to exchange ITR coverage backfill files and markers across participating processes.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <returns>Absolute path to the shared run folder.</returns>
+    internal static string GetOrCreateRunFolder(ITestOptimization testOptimization)
+    {
+#pragma warning disable DD0012
+        var runFolder = EnvironmentHelpers.GetEnvironmentVariable(RunFolderEnvironmentVariable);
+#pragma warning restore DD0012
+        if (!StringUtil.IsNullOrEmpty(runFolder))
+        {
+            return runFolder!;
+        }
+
+        var baseDirectory = GetRunFolderBaseDirectory(testOptimization);
+        runFolder = Path.Combine(baseDirectory, ".dd", testOptimization.RunId);
+        EnvironmentHelpers.SetEnvironmentVariable(RunFolderEnvironmentVariable, runFolder);
+        return runFolder;
+    }
+
+    /// <summary>
     /// Builds the deterministic backend coverage file path shared by testhost, coverage collectors, and the parent session.
     /// </summary>
     /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
@@ -376,7 +403,24 @@ internal static class CoverageBackfillDataStore
     /// <returns>Absolute path to the run-scoped folder.</returns>
     private static string GetRunFolder(ITestOptimization testOptimization)
     {
-        var baseDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-        return Path.Combine(baseDirectory, ".dd", testOptimization.RunId);
+        return GetOrCreateRunFolder(testOptimization);
+    }
+
+    /// <summary>
+    /// Selects a stable base directory before falling back to the current process directory.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance.</param>
+    /// <returns>Directory used to create the shared run folder when no explicit run folder was propagated.</returns>
+    private static string GetRunFolderBaseDirectory(ITestOptimization testOptimization)
+    {
+#pragma warning disable DD0012
+        var sessionWorkingDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory);
+#pragma warning restore DD0012
+        if (!StringUtil.IsNullOrEmpty(sessionWorkingDirectory) && Path.IsPathRooted(sessionWorkingDirectory!))
+        {
+            return sessionWorkingDirectory!;
+        }
+
+        return testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
     }
 }

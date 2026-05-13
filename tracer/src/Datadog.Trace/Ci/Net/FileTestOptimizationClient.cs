@@ -42,8 +42,8 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
                 salt = BitConverter.ToString(hash).ToLowerInvariant();
             }
 
-            var workingDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-            cacheFolder = Path.Combine(workingDirectory, ".dd", testOptimization.RunId, salt, "http");
+            var runFolder = CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
+            cacheFolder = Path.Combine(runFolder, salt, "http");
             if (!Directory.Exists(cacheFolder))
             {
                 Directory.CreateDirectory(cacheFolder);
