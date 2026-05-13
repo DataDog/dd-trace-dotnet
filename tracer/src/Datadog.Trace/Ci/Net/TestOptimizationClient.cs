@@ -673,6 +673,10 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         [JsonProperty("coverage")]
         public readonly Dictionary<string, string>? Coverage;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Metadata"/> struct for endpoints that need only the repository URL.
+        /// </summary>
+        /// <param name="repositoryUrl">Repository URL associated with the request.</param>
         public Metadata(string repositoryUrl)
         {
             RepositoryUrl = repositoryUrl;
@@ -680,11 +684,30 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
             Coverage = null;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Metadata"/> struct for cached response metadata that carries a backend correlation id but no coverage map.
+        /// </summary>
+        /// <param name="repositoryUrl">Repository URL associated with the response, when available.</param>
+        /// <param name="correlationId">Backend correlation id for the request.</param>
         public Metadata(string repositoryUrl, string? correlationId)
         {
             RepositoryUrl = repositoryUrl;
             CorrelationId = correlationId;
             Coverage = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Metadata"/> struct from JSON, including the skippable-tests coverage backfill map.
+        /// </summary>
+        /// <param name="repositoryUrl">Repository URL associated with the response, when available.</param>
+        /// <param name="correlationId">Backend correlation id for the request.</param>
+        /// <param name="coverage">Backend line coverage map for tests skipped by Intelligent Test Runner.</param>
+        [JsonConstructor]
+        public Metadata(string repositoryUrl, string? correlationId, Dictionary<string, string>? coverage)
+        {
+            RepositoryUrl = repositoryUrl;
+            CorrelationId = correlationId;
+            Coverage = coverage;
         }
     }
 

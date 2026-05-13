@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
@@ -32,6 +33,16 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     private const string UnSkippableSuiteName = "Samples.XUnitTests.UnSkippableSuite";
     private const int ExpectedTestCount = 16;
 
+    /// <summary>
+    /// Repository-relative source file path used by the XUnit sample and backend coverage payload.
+    /// </summary>
+    private const string XUnitSampleSourcePath = "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs";
+
+    /// <summary>
+    /// MSB-first backend coverage bitmap for line 23 in the XUnit sample source file.
+    /// </summary>
+    private const string SimplePassTestLineCoverageBitmap = "AAAC";
+
     public XUnitEvpTests(ITestOutputHelper output)
         : base("XUnitTests", output)
     {
@@ -45,6 +56,18 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         {
             // EVP version to remove, expects gzip
             yield return version.Concat("evp_proxy/v2", true);
+            yield return version.Concat("evp_proxy/v4", false);
+        }
+    }
+
+    /// <summary>
+    /// Provides a single TCP EVP row for the coverage-backfill integration smoke test.
+    /// </summary>
+    /// <returns>Package version, EVP endpoint version to remove, and expected compression.</returns>
+    public static IEnumerable<object[]> GetDataForCoverageBackfill()
+    {
+        foreach (var version in PackageVersions.XUnit.Take(1))
+        {
             yield return version.Concat("evp_proxy/v4", false);
         }
     }
@@ -694,6 +717,149 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                        .Should()
                        .NotBeEmpty()
                        .And.OnlyContain(x => HasCorrectCompressionTag(x.Tags, expectedGzip));
+    }
+
+    /// <summary>
+    /// Runs the real XUnit sample through ITR and verifies backend coverage is applied to Coverlet IPC coverage.
+    /// </summary>
+    /// <param name="packageVersion">XUnit package version under test.</param>
+    /// <param name="evpVersionToRemove">EVP endpoint version removed from the mock agent to force the target path.</param>
+    /// <param name="expectedGzip">Whether the target EVP path should use gzip.</param>
+    public virtual async Task ItrCoverageBackfillSendsBackfilledCoverletCoverage(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+    {
+        var tests = new List<MockCIVisibilityTest>();
+        var coverageMessages = new List<SessionCodeCoverageMessage>();
+        var evpRequests = new List<string>();
+
+        InjectSession(
+            out var sessionId,
+            out _,
+            out _,
+            out _,
+            out _,
+            out _,
+            out var runId);
+
+        const string sessionCommand = "dotnet test --collect \"XPlat Code Coverage\"";
+        Output.WriteLine("RunId: {0}", runId);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
+
+        var ipcServerName = $"session_{sessionId}";
+        using var ipcServer = new IpcServer(ipcServerName);
+        ipcServer.SetMessageReceivedCallback(
+            message =>
+            {
+                if (message is SessionCodeCoverageMessage coverageMessage)
+                {
+                    lock (coverageMessages)
+                    {
+                        coverageMessages.Add(coverageMessage);
+                    }
+                }
+            });
+
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: !IsMacOS());
+        agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
+
+        const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+        agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+        {
+            lock (evpRequests)
+            {
+                evpRequests.Add($"{e.Value.PathAndQuery} ({e.Value.Headers["Content-Type"] ?? "unknown"})");
+            }
+
+            if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+            {
+                e.Value.Response = new MockTracerResponse("""{"data":{"id":"b5a855bffe6c0b2ae5d150fb6ad674363464c816","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}} """, 200);
+                return;
+            }
+
+            if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
+            {
+                e.Value.Response = new MockTracerResponse(
+                    $$"""
+                      {
+                        "data": [
+                          {
+                            "id": "Samples.XUnitTests.TestSuite.SimplePassTest",
+                            "type": "test_params",
+                            "attributes": {
+                              "suite": "{{TestSuiteName}}",
+                              "name": "SimplePassTest",
+                              "_missing_line_code_coverage": false
+                            }
+                          }
+                        ],
+                        "meta": {
+                          "correlation_id": "{{correlationId}}",
+                          "coverage": {
+                            "{{XUnitSampleSourcePath}}": "{{SimplePassTestLineCoverageBitmap}}"
+                          }
+                        }
+                      }
+                      """,
+                    200);
+                return;
+            }
+
+            if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+            {
+                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                if (payload.Events?.Length > 0)
+                {
+                    foreach (var @event in payload.Events)
+                    {
+                        if (@event.Content.ToString() is not { } eventContent)
+                        {
+                            continue;
+                        }
+
+                        if (@event.Type == SpanTypes.Test)
+                        {
+                            lock (tests)
+                            {
+                                tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                      agent,
+                                      arguments: "--collect:\"XPlat Code Coverage\"",
+                                      packageVersion: packageVersion,
+                                      expectedExitCode: 1);
+
+        MockCIVisibilityTest[] receivedTests;
+        lock (tests)
+        {
+            receivedTests = tests.ToArray();
+        }
+
+        string[] receivedEvpRequests;
+        lock (evpRequests)
+        {
+            receivedEvpRequests = evpRequests.ToArray();
+        }
+
+        var skippedTest = receivedTests.Should().ContainSingle(test => test.Meta[TestTags.Name] == "SimplePassTest", "received EVP requests: {0}", string.Join(", ", receivedEvpRequests)).Subject;
+        skippedTest.Meta[TestTags.Status].Should().Be(TestTags.StatusSkip);
+        skippedTest.Meta[IntelligentTestRunnerTags.SkippedBy].Should().Be("true");
+        skippedTest.Meta[TestTags.SkipReason].Should().Be(IntelligentTestRunnerTags.SkippedByReason);
+
+        SessionCodeCoverageMessage[] receivedCoverageMessages;
+        lock (coverageMessages)
+        {
+            receivedCoverageMessages = coverageMessages.ToArray();
+        }
+
+        var coverageMessage = receivedCoverageMessages.Should().ContainSingle().Subject;
+        coverageMessage.Source.Should().Be(CodeCoverageReportSource.Coverlet);
+        coverageMessage.Backfilled.Should().BeTrue();
+        coverageMessage.Value.Should().BeGreaterThan(0);
     }
 
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)

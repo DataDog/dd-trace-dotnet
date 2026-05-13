@@ -59,6 +59,17 @@ internal sealed partial class TestOptimizationClient
         }
 
         Log.Debug<int>("TestOptimizationClient: Skippable.JSON RS length = {Length}", queryResponse?.Length ?? 0);
+        return ParseSkippableTestsResponse(queryResponse, _customConfigurations);
+    }
+
+    /// <summary>
+    /// Parses the skippable-tests backend response and keeps coverage backfill safety tied to the filtered local test list.
+    /// </summary>
+    /// <param name="queryResponse">Raw JSON response returned by the skippable-tests endpoint.</param>
+    /// <param name="customConfigurations">Local custom test configurations used to filter remote test rows.</param>
+    /// <returns>The skippable tests, correlation id, and decoded coverage backfill data.</returns>
+    internal static SkippableTestsResponse ParseSkippableTestsResponse(string? queryResponse, IReadOnlyDictionary<string, string>? customConfigurations)
+    {
         if (string.IsNullOrEmpty(queryResponse))
         {
             return default;
@@ -85,7 +96,6 @@ internal sealed partial class TestOptimizationClient
         }
 
         var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
-        var customConfigurations = _customConfigurations;
         var filteredOutTests = false;
         for (var i = 0; i < deserializedResult.Data.Length; i++)
         {
