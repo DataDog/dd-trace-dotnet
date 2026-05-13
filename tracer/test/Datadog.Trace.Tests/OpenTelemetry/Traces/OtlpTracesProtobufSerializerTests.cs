@@ -31,6 +31,29 @@ public class OtlpTracesProtobufSerializerTests
     }
 
     [Fact]
+    public void SerializeSpans_TwoChunks_ProducesSingleResourceSpansWithBothSpans()
+    {
+        var chunk1 = TestData.CreateTraceChunkWithSingleSpan("op1", "res1", "svc");
+        var chunk2 = TestData.CreateTraceChunkWithSingleSpan("op2", "res2", "svc");
+
+        var serializer = new OtlpTracesProtobufSerializer();
+        var buffer = new byte[16 * 1024];
+
+        var firstLength = serializer.SerializeSpans(ref buffer, 0, chunk1, spanBufferOffset: 0, maxSize: buffer.Length);
+        var secondLength = serializer.SerializeSpans(ref buffer, firstLength, chunk2, spanBufferOffset: firstLength, maxSize: buffer.Length);
+        var total = firstLength + secondLength;
+        serializer.FinishBody(ref buffer, offset: total, maxSize: buffer.Length);
+
+        var request = OtlpProtoParser.ParseExportTraceServiceRequest(buffer, 0, total);
+
+        request.ResourceSpans.Should().HaveCount(1);
+        request.ResourceSpans[0].ScopeSpans.Should().HaveCount(1);
+        request.ResourceSpans[0].ScopeSpans[0].Spans.Should().HaveCount(2);
+        request.ResourceSpans[0].ScopeSpans[0].Spans[0].Name.Should().Be("res1");
+        request.ResourceSpans[0].ScopeSpans[0].Spans[1].Name.Should().Be("res2");
+    }
+
+    [Fact]
     public void SerializeSpans_SingleChunk_ProducesParsableExportTraceServiceRequest()
     {
         var traceChunk = TestData.CreateTraceChunkWithSingleSpan(
