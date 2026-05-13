@@ -31,6 +31,28 @@ public class OtlpTracesProtobufSerializerTests
     }
 
     [Fact]
+    public void SerializeSpans_PopulatesEventsLinksAndStatus()
+    {
+        var chunk = TestData.CreateTraceChunkWithEventLinkAndStatus();
+
+        var serializer = new OtlpTracesProtobufSerializer();
+        var buffer = new byte[16 * 1024];
+
+        var written = serializer.SerializeSpans(ref buffer, 0, chunk, spanBufferOffset: 0, maxSize: buffer.Length);
+        serializer.FinishBody(ref buffer, offset: written, maxSize: buffer.Length);
+
+        var request = OtlpProtoParser.ParseExportTraceServiceRequest(buffer, 0, written);
+        var span = request.ResourceSpans[0].ScopeSpans[0].Spans[0];
+
+        span.Events.Should().HaveCount(1);
+        span.Events[0].Name.Should().Be("test-event");
+        span.Links.Should().HaveCount(1);
+        span.Status.Should().NotBeNull();
+        span.Status!.Code.Should().Be(2); // STATUS_CODE_ERROR
+        span.Status.Message.Should().Be("oops");
+    }
+
+    [Fact]
     public void SerializeSpans_TwoChunks_ProducesSingleResourceSpansWithBothSpans()
     {
         var chunk1 = TestData.CreateTraceChunkWithSingleSpan("op1", "res1", "svc");
@@ -98,12 +120,33 @@ public class OtlpTracesProtobufSerializerTests
             return new TraceChunkModel(new SpanCollection(new[] { span }));
         }
 
+        internal static TraceChunkModel CreateTraceChunkWithEventLinkAndStatus()
+        {
+            var span = CreateSpan("op", "res", "svc", finishImmediately: false);
+
+            // Add an event
+            span.AddEvent(new SpanEvent("test-event", DateTimeOffset.UtcNow));
+
+            // Add a link: use a fresh context
+            var linkTraceContext = new TraceContext(new StubDatadogTracer());
+            var linkContext = new SpanContext(parent: null, linkTraceContext, serviceName: "linked-service");
+            span.AddLink(new SpanLink(linkContext));
+
+            // Mark as OTel error status; the serializer reads `otel.status_code` and `error.msg` tags
+            span.SetTag("otel.status_code", "STATUS_CODE_ERROR");
+            span.SetTag(Tags.ErrorMsg, "oops");
+
+            span.SetDuration(TimeSpan.FromMilliseconds(1));
+            return new TraceChunkModel(new SpanCollection(new[] { span }));
+        }
+
         internal static Span CreateSpan(
             string operationName,
             string resourceName,
             string serviceName,
             string? environment = null,
-            string? serviceVersion = null)
+            string? serviceVersion = null,
+            bool finishImmediately = true)
         {
             var traceContext = new TraceContext(new StubDatadogTracer());
 
@@ -123,7 +166,11 @@ public class OtlpTracesProtobufSerializerTests
                 OperationName = operationName,
                 ResourceName = resourceName,
             };
-            span.SetDuration(TimeSpan.FromMilliseconds(1));
+            if (finishImmediately)
+            {
+                span.SetDuration(TimeSpan.FromMilliseconds(1));
+            }
+
             return span;
         }
     }
