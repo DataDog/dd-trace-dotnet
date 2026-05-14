@@ -442,8 +442,6 @@ namespace Datadog.Trace
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
-            DebuggerManager.Instance.CodeOrigin?.SetCodeOriginForExitSpan(span);
-
             return span;
         }
     }
