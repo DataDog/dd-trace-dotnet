@@ -11,6 +11,7 @@ using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -71,12 +72,12 @@ internal sealed partial class TestOptimizationClient
     /// <returns>The skippable tests, correlation id, and decoded coverage backfill data.</returns>
     internal static SkippableTestsResponse ParseSkippableTestsResponse(string? queryResponse, IReadOnlyDictionary<string, string>? customConfigurations, SkippableTestsRequestScope scope = default)
     {
-        if (string.IsNullOrEmpty(queryResponse))
+        if (StringUtil.IsNullOrEmpty(queryResponse))
         {
             return default;
         }
 
-        var deserializedResult = JsonHelper.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(queryResponse!);
+        var deserializedResult = JsonHelper.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(queryResponse);
         var coverageBackfillData = CoverageBackfillData.FromBackendCoverage(deserializedResult.Meta?.Coverage);
         if (coverageBackfillData.IsPresent)
         {
