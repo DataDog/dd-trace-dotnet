@@ -123,6 +123,8 @@ namespace Datadog.Trace.Configuration
 
                 if (TracesEncoding == TracesEncoding.DatadogV0_4)
                 {
+                    // Reset to the original transport used to connect to the agent since we're sending Datadog v0.4 traces
+                    TracesTransport = traceSettings.Transport;
                     ValidationWarnings.Add($"Found OTEL_TRACES_EXPORTER=otlp, but calculated OTLP protocol {otlpTraceSettings.OtlpProtocol.ToString()} is not yet supported. Falling back to Datadog v0.4 encoding.");
                 }
             }
