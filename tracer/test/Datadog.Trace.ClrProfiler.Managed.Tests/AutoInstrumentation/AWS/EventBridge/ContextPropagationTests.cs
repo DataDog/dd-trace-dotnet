@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Amazon.EventBridge.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS.EventB
 public class ContextPropagationTests
 {
     private const string DatadogKey = "_datadog";
+    private const string DataStreamsContextKey = "dd-pathway-ctx-base64";
+    private const string DetailType = "test-detail-type";
     private const string StartTimeKey = "x-datadog-start-time";
     private const string ResourceNameKey = "x-datadog-resource-name";
     private const string EventBusName = "test-event-bus";
@@ -44,13 +47,13 @@ public class ContextPropagationTests
     public async Task InjectTracingContext_EmptyDetail_AddsTraceContext()
     {
         var request = GeneratePutEventsRequest([
-            new PutEventsRequestEntry { Detail = "{}", EventBusName = EventBusName }
+            new PutEventsRequestEntry { Detail = "{}", DetailType = DetailType, EventBusName = EventBusName }
         ]);
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -84,7 +87,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -119,7 +122,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -153,7 +156,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -173,7 +176,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(2);
@@ -210,7 +213,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -245,7 +248,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -266,7 +269,7 @@ public class ContextPropagationTests
         var proxy = request.DuckCast<IPutEventsRequest>();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent();
-        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(_spanContext, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope: null, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -280,6 +283,53 @@ public class ContextPropagationTests
 
         var byteSize = Encoding.UTF8.GetByteCount(entry.Detail);
         byteSize.Should().BeLessThan(MaxSizeBytes);
+    }
+
+    [Fact]
+    public async Task InjectTracingContext_WithDsmEnabled_AddsPathwayContext()
+    {
+        var request = GeneratePutEventsRequest([
+            new PutEventsRequestEntry { Detail = "{}", DetailType = DetailType, EventBusName = EventBusName }
+        ]);
+
+        var proxy = request.DuckCast<IPutEventsRequest>();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+
+        await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+        var scope = AwsEventBridgeCommon.CreateScope(tracer, "PutEvents", SpanKinds.Producer, out _);
+
+        try
+        {
+            ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope!.Span.Context, baggage: null));
+
+            var entries = (IList)proxy.Entries.Value!;
+            entries.Count.Should().Be(1);
+            var entry = (PutEventsRequestEntry)entries[0]!;
+
+            var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail);
+            detail.Should().NotBeNull();
+            var detailDictionary = detail!;
+            detailDictionary.Should().ContainKey(DatadogKey);
+
+            var extracted = detailDictionary.TryGetValue(DatadogKey, out var datadogObject);
+            extracted.Should().BeTrue();
+            datadogObject.Should().NotBeNull();
+
+            var jsonString = JsonConvert.SerializeObject(datadogObject);
+            var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var extractedTraceContextDictionary = extractedTraceContext!;
+
+            extractedTraceContextDictionary.Should().ContainKey(DataStreamsContextKey);
+            extractedTraceContextDictionary[DataStreamsContextKey].Should().NotBeNull();
+            var encodedPathway = extractedTraceContextDictionary[DataStreamsContextKey].ToString();
+            encodedPathway.Should().NotBeNullOrEmpty();
+            System.Convert.FromBase64String(encodedPathway!).Should().NotBeEmpty();
+            scope.Span.GetTag("pathway.hash").Should().NotBeNullOrEmpty();
+        }
+        finally
+        {
+            scope?.Dispose();
+        }
     }
 
     private static PutEventsRequest GeneratePutEventsRequest(List<PutEventsRequestEntry> entries)
