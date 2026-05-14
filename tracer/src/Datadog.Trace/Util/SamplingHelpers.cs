@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.Util
 {
@@ -42,16 +41,6 @@ namespace Datadog.Trace.Util
             }
 
             return (id * KnuthFactor) <= (rate * ulong.MaxValue);
-        }
-
-        internal static bool IsKeptBySamplingPriority(in SpanCollection trace)
-        {
-            if (TraceContext.GetTraceContext(in trace)?.SamplingPriority is { } samplingPriority)
-            {
-                return SamplingPriorityValues.IsKeep(samplingPriority);
-            }
-
-            return false;
         }
     }
 }

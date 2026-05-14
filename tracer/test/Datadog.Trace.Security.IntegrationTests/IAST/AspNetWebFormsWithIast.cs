@@ -8,14 +8,13 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.Iast;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
-namespace Datadog.Trace.Security.IntegrationTests.IAST;
+namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 [Collection("IisTests")]
 public class AspNetWebFormsIntegratedWithIast : AspNetWebFormsWithIast
@@ -70,7 +69,8 @@ public abstract class AspNetWebFormsWithIast : AspNetBase, IClassFixture<IisFixt
     {
         var since = DateTime.UtcNow;
         await SendRequestsAsync(url);
-        await VulnerabilityJsonl.VerifyRecordsAsync(VulnerabilityLogPath, "Iast.QueryParameterName.AspNetWebForms", since: since);
+        var file = $"Iast.QueryParameterName.{(_classicMode ? "classic" : string.Empty)}.AspNetWebForms";
+        await VulnerabilityJsonl.VerifyRecordsAsync(VulnerabilityLogPath, file, since: since);
     }
 
     public async Task InitializeAsync()

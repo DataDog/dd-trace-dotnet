@@ -1,0 +1,36 @@
+﻿[
+  {
+    evidence: {
+      valueParts: [
+        {
+          source: 0,
+          value: ClientDatabase
+        }
+      ]
+    },
+    hash: -1368908679,
+    location: {
+      method: Page_Load,
+      path: Iast_Print
+    },
+    request: {
+      method: GET,
+      url: http://localhost:00000/print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1
+    },
+    sources: [
+      {
+        name: ClientDatabase,
+        origin: http.request.parameter.name
+      }
+    ],
+    type: PATH_TRAVERSAL
+  },
+  {
+    hash: -721858374,
+    request: {
+      method: GET,
+      url: http://localhost:00000/print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1
+    },
+    type: XCONTENTTYPE_HEADER_MISSING
+  }
+]

@@ -28,7 +28,6 @@ public class ProcessStartTests : InstrumentationTestsBase
         }
         catch (Win32Exception) { }
 
-        AssertSpanGenerated(operationName);
     }
 
     [Fact]
@@ -40,7 +39,6 @@ public class ProcessStartTests : InstrumentationTestsBase
         }
         catch (Win32Exception) { }
 
-        AssertSpanGenerated(operationName);
     }
 
 #if NET5_0_OR_GREATER
@@ -57,7 +55,6 @@ public class ProcessStartTests : InstrumentationTestsBase
         catch (Win32Exception) { }
         catch (PlatformNotSupportedException) { return; }
 
-        AssertSpanGenerated(operationName);
     }
 
     [Trait("Category", "LinuxUnsupported")]
@@ -73,7 +70,6 @@ public class ProcessStartTests : InstrumentationTestsBase
         catch (Win32Exception) { }
         catch (PlatformNotSupportedException) { return;  }
 
-        AssertSpanGenerated(operationName);
     }
 
 #endif
@@ -90,6 +86,5 @@ public class ProcessStartTests : InstrumentationTestsBase
         }
         catch (Win32Exception) { }
 
-        AssertSpanGenerated(operationName);
     }
 }

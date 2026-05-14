@@ -5,12 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
@@ -36,28 +34,22 @@ namespace Datadog.Trace
             // TODO: If relevant settings have not changed, continue using existing agent writer etc
             var tracer = CreateTracerManager(
                 settings,
-                agentWriter: null,
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
-                logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 dynamicConfigurationManager: null,
-                tracerFlareManager: null,
-                spanEventsManager: null);
+                tracerFlareManager: null);
 
             return tracer;
         }
 
         internal TracerManager CreateTracerManager(
             TracerSettings settings,
-            IAgentWriter agentWriter,
             ITraceSampler sampler,
             IScopeManager scopeManager,
-            DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager,
             ServiceRemappingHash serviceRemappingHash = null)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
@@ -74,28 +66,19 @@ namespace Datadog.Trace
             scopeManager ??= new AsyncLocalScopeManager();
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
-            logSubmissionManager = DirectLogSubmissionManager.Create(
-                settings,
-                settings.LogSubmissionSettings,
-                settings.AzureAppServiceMetadata,
-                gitMetadataTagsProvider);
 
             dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
             tracerFlareManager ??= new NullTracerFlareManager();
-            spanEventsManager ??= new NullSpanEventsManager();
 
             return CreateTracerManagerFrom(
                 settings,
-                agentWriter,
                 scopeManager,
-                logSubmissionManager,
                 telemetry,
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                spanEventsManager,
                 serviceRemappingHash);
         }
 
@@ -109,26 +92,26 @@ namespace Datadog.Trace
 
         protected virtual TracerManager CreateTracerManagerFrom(
             TracerSettings settings,
-            IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager,
             ServiceRemappingHash serviceRemappingHash)
         {
-            return new TracerManager(settings, agentWriter, scopeManager, logSubmissionManager, telemetry, gitMetadataTagsProvider, traceSampler, spanSampler, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, serviceRemappingHash);
+            return new TracerManager(settings, scopeManager, telemetry, gitMetadataTagsProvider, traceSampler, spanSampler, dynamicConfigurationManager, tracerFlareManager, serviceRemappingHash);
         }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
             if (settings.ApmTracingEnabled == false && Iast.Iast.Instance.Settings.Enabled)
             {
-                var samplerStandalone = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
+                // Standalone IAST mode: NullAgentWriter discards all spans, so there is no cost
+                // to keeping all traces. Remove the rate limiter so every request gets a TraceContext
+                // and IastRequestContext is properly initialised for vulnerability detection.
+                var samplerStandalone = new TraceSampler.Builder(null);
                 samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
                 return samplerStandalone.Build();
             }
@@ -144,11 +127,6 @@ namespace Datadog.Trace
             }
 
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
-        }
-
-        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash)
-        {
-            return NullAgentWriter.Instance;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
+// <copyright file="AspNetCoreHttpRequestHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -118,15 +118,6 @@ namespace Datadog.Trace.PlatformHelpers
             resourceName ??= GetDefaultResourceName(request);
             var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
             InferredProxyScopePropagationContext? proxyContext = null;
-
-            if (tracer.Settings.InferredProxySpansEnabled && request.Headers is { } headers)
-            {
-                proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new HeadersCollectionAdapter(headers), extractedContext);
-                if (proxyContext != null)
-                {
-                    extractedContext = proxyContext.Value.Context;
-                }
-            }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);

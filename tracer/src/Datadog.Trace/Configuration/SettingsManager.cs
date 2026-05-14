@@ -1,4 +1,4 @@
-﻿// <copyright file="SettingsManager.cs" company="Datadog">
+// <copyright file="SettingsManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -40,7 +40,6 @@ public sealed partial record TracerSettings
             // We don't re-record error logs, so we just use the built-in for that
             var initialTelemetry = new ConfigurationTelemetry();
             InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, initialTelemetry, errorLog, tracerSettings);
-            InitialExporterSettings = new ExporterSettings(source, initialTelemetry);
             _tracerSettings = tracerSettings;
             _initialTelemetry = initialTelemetry;
             initialTelemetry.CopyTo(telemetry);
@@ -53,13 +52,7 @@ public sealed partial record TracerSettings
         public MutableSettings InitialMutableSettings { get; }
 
         /// <summary>
-        /// Gets the initial <see cref="ExporterSettings"/>. On app startup, these will be the values read from
-        /// static sources. To subscribe to updates to these settings, from code or remote config, call <see cref="SubscribeToChanges"/>.
-        /// </summary>
-        public ExporterSettings InitialExporterSettings { get; }
-
-        /// <summary>
-        /// Subscribe to changes in <see cref="MutableSettings"/> and/or <see cref="ExporterSettings"/>.
+        /// Subscribe to changes in <see cref="MutableSettings"/>.
         /// <paramref name="callback"/> is called whenever these settings change. If the settings have already changed when <see cref="SubscribeToChanges"/>
         /// is called, <paramref name="callback"/> is synchronously invoked immediately with the latest configuration.
         /// Also note that calling <see cref="SubscribeToChanges"/> twice with the same callback
@@ -92,7 +85,7 @@ public sealed partial record TracerSettings
         }
 
         /// <summary>
-        /// Regenerate the application's new <see cref="MutableSettings"/> and <see cref="ExporterSettings"/>
+        /// Regenerate the application's new <see cref="MutableSettings"/>
         /// based on runtime configuration sources.
         /// </summary>
         /// <param name="manualSource">An <see cref="IConfigurationSource"/> containing the new settings created by manual configuration (in code)</param>
@@ -111,7 +104,7 @@ public sealed partial record TracerSettings
         }
 
         /// <summary>
-        /// Regenerate the application's new <see cref="MutableSettings"/> and <see cref="ExporterSettings"/>
+        /// Regenerate the application's new <see cref="MutableSettings"/>
         /// based on runtime configuration sources.
         /// </summary>
         /// <param name="dynamicConfigSource">An <see cref="IConfigurationSource"/> for dynamic config via remote config</param>
@@ -173,7 +166,6 @@ public sealed partial record TracerSettings
 
             var current = _latest;
             var currentMutable = current?.UpdatedMutable ?? current?.PreviousMutable ?? InitialMutableSettings;
-            var currentExporter = current?.UpdatedExporter ?? current?.PreviousExporter ?? InitialExporterSettings;
 
             // we create a temporary ConfigurationTelemetry object to hold the changes to settings
             // if nothing is actually written, and nothing changes compared to the default, then we
@@ -187,24 +179,11 @@ public sealed partial record TracerSettings
                 initialSettings,
                 _tracerSettings,
                 tempTelemetry,
-                overrideErrorLog); // TODO: We'll later report these
-
-            // The only exporter setting we currently _allow_ to change is the AgentUri, but if that does change,
-            // it can mean that _everything_ about the exporter settings changes. To minimize the work to do, and
-            // to simplify comparisons, we try to read the agent url from the manual setting. If it's missing, not
-            // set, or unchanged, there's no need to update the exporter settings.
-            // We only technically need to do this today if _manual_ config changes, not if remote config changes,
-            // but for simplicity we don't distinguish currently.
-            var newRawExporterSettings = ExporterSettings.Raw.CreateUpdatedFromManualConfig(
-                currentExporter.RawSettings,
-                manualSource,
-                tempTelemetry,
-                manualSource.UseDefaultSources);
+                overrideErrorLog);
 
             var isSameMutableSettings = currentMutable.Equals(newMutableSettings);
-            var isSameExporterSettings = currentExporter.RawSettings.Equals(newRawExporterSettings);
 
-            if (isSameMutableSettings && isSameExporterSettings)
+            if (isSameMutableSettings)
             {
                 Log.Debug("No changes detected in the new configuration");
                 return null;
@@ -217,9 +196,8 @@ public sealed partial record TracerSettings
 
             Log.Information("Notifying consumers of new settings");
             var updatedMutableSettings = isSameMutableSettings ? null : newMutableSettings;
-            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, telemetry);
 
-            return new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter);
+            return new SettingChanges(updatedMutableSettings, currentMutable);
         }
 
         [MemberNotNull(nameof(_noDefaultSettingsTelemetry))]
@@ -269,7 +247,7 @@ public sealed partial record TracerSettings
             }
         }
 
-        public sealed class SettingChanges(MutableSettings? updatedMutable, ExporterSettings? updatedExporter, MutableSettings previousMutable, ExporterSettings previousExporter)
+        public sealed class SettingChanges(MutableSettings? updatedMutable, MutableSettings previousMutable)
         {
             /// <summary>
             /// Gets the new <see cref="MutableSettings"/>, if they have changed.
@@ -278,20 +256,9 @@ public sealed partial record TracerSettings
             public MutableSettings? UpdatedMutable { get; } = updatedMutable;
 
             /// <summary>
-            /// Gets the new <see cref="ExporterSettings"/>, if they have changed.
-            /// If there are no changes, returns null.
-            /// </summary>
-            public ExporterSettings? UpdatedExporter { get; } = updatedExporter;
-
-            /// <summary>
             /// Gets the previous <see cref="MutableSettings"/>, prior to this update.
             /// </summary>
             public MutableSettings PreviousMutable { get; } = previousMutable;
-
-            /// <summary>
-            /// Gets the previous <see cref="ExporterSettings"/>, prior to this update.
-            /// </summary>
-            public ExporterSettings PreviousExporter { get; } = previousExporter;
         }
     }
 }

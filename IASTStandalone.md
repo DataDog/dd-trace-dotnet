@@ -539,6 +539,67 @@ Deleted all test helper code that existed solely to support the old span-based v
 | `System.Memory` vendored source | Runtime provides it |
 | `System.Collections.Immutable` vendored source | Runtime provides it |
 
+### DiscoveryService and StatsAggregator removal
+
+Removed the remaining agent-oriented infrastructure now that `NullAgentWriter` renders it inert.
+
+| Change | Details |
+|---|---|
+| Deleted `Agent/DiscoveryService/AgentConfiguration.cs` | Agent capability model (meta-struct support, data streams endpoint, etc.) |
+| Deleted `Agent/DiscoveryService/DiscoveryService.cs` | HTTP polling loop that queried the agent for its capabilities |
+| Deleted `Agent/DiscoveryService/IDiscoveryService.cs` | Interface |
+| Deleted `Agent/DiscoveryService/NullDiscoveryService.cs` | Previous no-op stub (superseded by NullAgentWriter) |
+| Deleted `Agent/StatsAggregator.cs` | APM stats aggregation pipeline |
+| Deleted `Agent/SpanEventsManager.cs` | Span event sampling |
+| Cleaned `Iast.cs` | Removed `IsMetaStructSupported()`, `SubscribeToDiscoveryService()`, `_discoveryService`, `_spanMetaStructs`, `InitAnalyzers()` (empty after HardcodedSecrets removal), and the overloaded constructor that took `IDiscoveryService` |
+| Cleaned `IastRequestContext.AddIastVulnerabilitiesToSpan` | Removed the `IsMetaStructSupported()` branch — always writes JSON tags now (MetaStruct was the agent-side optimization; no longer needed) |
+| Cleaned `TracerManagerFactory` | Removed `GetAgentWriter` method entirely; `CreateTracerManagerFrom` no longer constructs agent writer |
+| Cleaned `TracerManager.cs`, `Tracer.cs`, `Instrumentation.cs` | Removed DiscoveryService wiring |
+| Removed from `.sln` | 27 project/solution lines cleaned up |
+
+### Test helper cleanup (cont.)
+
+| File | Reason |
+|---|---|
+| `EnvironmentRestorerAttribute.cs`, `EnvironmentVariablesCleanerAttribute.cs` | Xunit attributes for restoring env vars — only used in removed test projects |
+| `EventArgs.cs`, `SerializableDictionary.cs`, `SerializableList.cs` | Serialisation helpers for span/telemetry tests |
+
+### Agent transport layer deleted
+
+The entire `Agent/` transport stack (59 files, ~6150 lines) deleted. `NullAgentWriter.Instance` is the only surviving `IAgentWriter` implementation — it's the only one the tracer ever calls now.
+
+**Deleted directories/groups:**
+- `Agent/MessagePack/` — `SpanMessagePackFormatter`, `SpanFormatterResolver`, `SpanModel`, `TraceChunkModel`, `MessagePackStringCache`
+- `Agent/Transports/` — `ApiWebRequest`, `ApiWebRequestFactory`, `ApiWebResponse`, `SocketHandlerRequestFactory`, `SerializationHelpers`
+- `Agent/StreamFactories/` — `NamedPipeClientStreamFactory`, `UnixDomainSocketStreamFactory`
+- `Agent/TraceSamplers/` — `AnalyticsEventsSampler`, `ErrorSampler`, `ITraceChunkSampler`, `PrioritySampler`, `RareSampler`
+
+**Deleted individual files:**
+`AgentWriter.cs`, `Api.cs`, `ManagedApi.cs`, `AgentTransportStrategy.cs`, `IAgentWriter.cs`, `IApi.cs`, `IApiRequest.cs`, `IApiRequestFactory.cs`, `IApiResponse.cs`, `IApiResponseTelemetryExtensions.cs`, `IKeepRateCalculator.cs`, `ISpanBufferSerializer.cs`, `ISpanEventsManager.cs`, `IStatsAggregator.cs`, `IStreamFactory.cs`, `ClientStatsPayload.cs`, `ContentEncodingType.cs`, `MovingAverageKeepRateCalculator.cs`, `MultipartFormItem.cs`, `NullStatsAggregator.cs`, `NullSpanEventsManager.cs`, `SpanBuffer.cs`, `SpanBufferMessagePackSerializer.cs`, `SpanCollection.cs`, `StatsAggregationKey.cs`, `StatsBucket.cs`, `StatsBuffer.cs`, `TracesEncoding.cs`, `TracesTransportStrategy.cs`, `TracesTransportType.cs`
+
+### HttpOverStreams deleted
+
+`HttpOverStreams/` (6 files, ~580 lines) deleted — the socket/pipe HTTP transport to the agent. `HttpMessage.cs` retained (used for HTTP request/response handling by ASP.NET integrations, not agent transport).
+
+**Deleted:** `DatadogHttpClient.cs`, `BufferContent.cs`, `MultipartFormContent.cs`, `PushStreamContent.cs`, `StreamContent.cs`
+
+### Logging/DirectSubmission deleted
+
+The direct log submission pipeline (20 files, ~2036 lines) deleted — this sent application logs to the Datadog backend directly, with no IAST relevance.
+
+**Deleted:** `DirectLogSubmissionManager.cs`, `DirectLogSubmissionSettings.cs`, `DirectSubmissionLogLevel.cs`, `LogFormatter.cs`, `LogsApi.cs`, `BatchingSink.cs`, and 14 related files. `TracerFlare/TracerFlareApi.cs` also deleted.
+
+### Other cleanups (working tree)
+
+| Change | Details |
+|---|---|
+| `Processors/` simplified | `NormalizerTraceProcessor`, `ObfuscatorTraceProcessor`, `TruncatorTraceProcessor` — removed agent-specific fields and dead code paths |
+| `PlatformHelpers/ContainerMetadataHelper.cs` deleted | Reported container metadata to the agent |
+| `Sampling/ManagedTraceSampler.cs` cleaned | Removed agent-sampling-priority propagation |
+| `TraceContext.cs`, `SpanContext.cs`, `Tags.cs` cleaned | Removed unused agent-facing fields |
+| `TracerManager.cs`, `Tracer.cs` cleaned | Removed wiring for deleted components |
+| `supported-configurations.yaml` cleaned | Removed agent/transport config keys |
+
 ### Sample app cleanup
 
 Deleted `Samples.Security.AspNetCoreBare/` — this sample was referenced by no integration test or build file and had no IAST coverage.
@@ -753,9 +814,10 @@ What IAST still relies on from the surrounding tracer. Drives the remaining work
 | **Evidence redaction** (`SensitiveData/`) | Local-only tool — no need to mask data |
 | **AppSec / WAF / RASP** | ✅ Done |
 | **Telemetry to backend** (`Iast/Telemetry/`, `Datadog.Trace/Telemetry/`) | ✅ Iast/Telemetry/ deleted; outer `Telemetry/` neutralized |
-| **Agent discovery service** | ✅ No longer needed — `NullAgentWriter` requires no agent |
+| **Agent discovery service** | ✅ Deleted — `DiscoveryService`, `AgentConfiguration`, `StatsAggregator`, `SpanEventsManager` all gone |
+| **Agent transport layer** | ✅ Deleted — entire `Agent/` (59 files), `HttpOverStreams/` (5 files), `Logging/DirectSubmission/` (20 files) |
 | **Sampling infrastructure** | Pending (no traces to sample once spans are removed) |
-| **Span tags / MetaStruct serialization** | Pending — spans still created but not sent; VulnerabilityBatch still serialises |
+| **Span tags / MetaStruct serialization** | Partial — MetaStruct branch removed; falls back to plain JSON tags. Still pending: remove span tags entirely |
 | **`InstrumentationCategory.IastRasp`** aspects | ✅ Done |
 
 ---
@@ -794,7 +856,12 @@ The native CLR profiler (`Datadog.Tracer.Native`) performs IL rewriting to injec
 - ~~Delete `Iast/Telemetry/` (2 files)~~ ✅ Done
 - ~~Remove all `TelemetryFactory` / metric emissions from IAST code~~ ✅ Done (neutralized)
 - ~~Delete `LibDatadog/`~~ ✅ Done
-- ~~Neutralise agent transport~~ ✅ Done (`NullAgentWriter` — no agent needed at runtime or in tests)
+- ~~Neutralise agent transport~~ ✅ Done (`NullAgentWriter`)
+- ~~Delete `Agent/DiscoveryService/`, `StatsAggregator`, `SpanEventsManager`~~ ✅ Done
+- ~~Delete entire `Agent/` transport layer (59 files)~~ ✅ Done
+- ~~Delete `HttpOverStreams/` (5 files)~~ ✅ Done
+- ~~Delete `Logging/DirectSubmission/` (20 files)~~ ✅ Done
+- ~~Remove `IsMetaStructSupported()` and MetaStruct branch from `IastRequestContext`~~ ✅ Done
 
 ### Phase 5 — Gut non-IAST code (mostly done)
 - ~~Delete DataStreamsMonitoring~~ ✅ Done

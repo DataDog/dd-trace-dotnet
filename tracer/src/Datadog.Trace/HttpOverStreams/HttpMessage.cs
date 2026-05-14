@@ -5,7 +5,6 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -26,7 +25,5 @@ namespace Datadog.Trace.HttpOverStreams
         public int? ContentLength => int.TryParse(Headers.GetValue("Content-Length"), out int length) ? length : (int?)null;
 
         public string ContentType => Headers.GetValue("Content-Type");
-
-        public Encoding GetContentEncoding() => ApiResponseExtensions.GetCharsetEncoding(ContentType);
     }
 }

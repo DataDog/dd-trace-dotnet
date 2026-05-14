@@ -408,7 +408,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
 
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(1, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, notVulnerable ? NotVulnerableSnapshotName : filename, since: since, timeoutMs: notVulnerable ? 1_000 : 5_000);
     }
@@ -423,7 +423,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(2, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since);
     }
@@ -436,7 +436,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(2, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }

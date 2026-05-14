@@ -38,11 +38,6 @@ internal static class InferredProxySpanHelper
         PropagationContext propagationContext)
         where THeadersCollection : struct, IHeadersCollection
     {
-        if (!tracer.Settings.InferredProxySpansEnabled)
-        {
-            return null;
-        }
-
         var accessor = carrier.GetAccessor();
         var proxyName = ParseUtility.ParseString(carrier, accessor, InferredProxyHeaders.Name);
 

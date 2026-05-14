@@ -141,18 +141,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             // extract propagated http headers
                             headers = httpContext.Request.Headers.Wrap();
                             extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
-
-                            if (tracer.Settings.InferredProxySpansEnabled)
-                            {
-                                var proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers.Value, extractedContext);
-
-                                if (proxyContext != null)
-                                {
-                                    SharedItems.PushScope(HttpContext.Current, HttpProxyContextKey, proxyContext.Value.Scope);
-                                    // Update the context to use the proxy span's context
-                                    extractedContext = proxyContext.Value.Context;
-                                }
-                            }
                         }
                         catch (Exception ex)
                         {

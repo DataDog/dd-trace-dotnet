@@ -25,12 +25,10 @@ internal static partial class ConfigKeyAliasesSwitcher
     {
         return mainKey switch
         {
-        "DD_AGENT_HOST" => new string[] {"DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME"},
         "DD_EXCEPTION_REPLAY_ENABLED" => new string[] {"DD_EXCEPTION_DEBUGGING_ENABLED"},
         "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS" => new string[] {"DD_INTERNAL_RCM_POLL_INTERVAL"},
         "DD_SERVICE" => new string[] {"DD_SERVICE_NAME"},
         "DD_TAGS" => new string[] {"DD_TRACE_GLOBAL_TAGS"},
-        "DD_TRACE_AGENT_PORT" => new string[] {"DATADOG_TRACE_AGENT_PORT"},
         "DD_TRACE_CLIENT_IP_HEADER" => new string[] {"DD_APPSEC_IPHEADER"},
         "DD_TRACE_CONFIG_FILE" => new string[] {"DD_DOTNET_TRACER_CONFIG_FILE"},
         "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES" => new string[] {"DD_HTTP_CLIENT_ERROR_STATUSES"},
@@ -54,12 +52,10 @@ internal static partial class ConfigKeyAliasesSwitcher
 #else
     public static string[] GetAliases(string mainKey) => mainKey switch
     {
-            "DD_AGENT_HOST" => ["DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME"],
             "DD_EXCEPTION_REPLAY_ENABLED" => ["DD_EXCEPTION_DEBUGGING_ENABLED"],
             "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS" => ["DD_INTERNAL_RCM_POLL_INTERVAL"],
             "DD_SERVICE" => ["DD_SERVICE_NAME"],
             "DD_TAGS" => ["DD_TRACE_GLOBAL_TAGS"],
-            "DD_TRACE_AGENT_PORT" => ["DATADOG_TRACE_AGENT_PORT"],
             "DD_TRACE_CLIENT_IP_HEADER" => ["DD_APPSEC_IPHEADER"],
             "DD_TRACE_CONFIG_FILE" => ["DD_DOTNET_TRACER_CONFIG_FILE"],
             "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES" => ["DD_HTTP_CLIENT_ERROR_STATUSES"],

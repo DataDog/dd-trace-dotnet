@@ -23,19 +23,6 @@ supportedConfigurations:
     product: AzureAppService
     const_name: AasEnableCustomTracing
     documentation: Used to force the loader to start the trace agent (in case automatic instrumentation is disabled)
-  DD_AGENT_HOST:
-  - implementation: D
-    type: string
-    default: localhost
-    aliases:
-    - DD_TRACE_AGENT_HOSTNAME
-    - DATADOG_TRACE_AGENT_HOSTNAME
-    const_name: AgentHost
-    documentation: |-
-      Configuration key for the Agent host where the Tracer can send traces.
-      Overridden by <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> if present.
-      Default value is "localhost".
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_AGENT_FEATURE_POLLING_ENABLED:
   - implementation: A
     type: boolean
@@ -58,24 +45,6 @@ supportedConfigurations:
     const_name: RareSamplerEnabled
     documentation: |-
       Enables rare trace sampling in the Datadog Agent. When enabled, the Agent can keep a small number of "rare" traces (up to 5 traces per second per Agent) that were not kept by head-based sampling
-  DD_APM_RECEIVER_PORT:
-  - implementation: A
-    type: int
-    default: '8126'
-    const_name: TraceAgentPortKey
-    documentation: |-
-      Used to force a specific port binding for the Trace Agent.
-      Default value is 8126.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
-  DD_APM_RECEIVER_SOCKET:
-  - implementation: A
-    type: string
-    default: null
-    const_name: TracesUnixDomainSocketPath
-    documentation: |-
-      Configuration key for the unix domain socket where the Tracer can send traces.
-      Default value is <c>null</c>.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesUnixDomainSocketPath"/>
   DD_APM_TRACING_ENABLED:
   - implementation: A
     type: boolean
@@ -516,42 +485,6 @@ supportedConfigurations:
     default: null
     const_name: DogStatsDPath
     documentation: Configuration key for when a standalone instance of DogStatsD needs to be started.
-  DD_DOGSTATSD_PIPE_NAME:
-  - implementation: A
-    type: string
-    default: null
-    const_name: MetricsPipeName
-    documentation: |-
-      Configuration key for the named pipe that DogStatsD binds to.
-      Default value is <c>null</c>.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.MetricsPipeName"/>
-  DD_DOGSTATSD_PORT:
-  - implementation: A
-    type: int
-    default: '8125'
-    const_name: DogStatsdPort
-    documentation: |-
-      Configuration key for the DogStatsd port where the Tracer can send metrics.
-      Default value is 8125.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.DogStatsdPort"/>
-  DD_DOGSTATSD_SOCKET:
-  - implementation: A
-    type: string
-    default: null
-    const_name: MetricsUnixDomainSocketPath
-    documentation: |-
-      Configuration key for the unix domain socket that DogStatsD binds to.
-      Default value is <c>null</c>.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.MetricsUnixDomainSocketPath"/>
-  DD_DOGSTATSD_URL:
-  - implementation: B
-    type: string
-    default: udp://127.0.0.1:8125
-    const_name: MetricsUri
-    documentation: |-
-      Configuration key for the location where the Tracer can send DogStatsD metrics.
-      Default value is "udp://127.0.0.1:8125".
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_DOTNET_TRACER_HOME:
   - implementation: A
     type: string
@@ -1073,16 +1006,6 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling internal telemetry.
       Default value is <c>true</c> (enabled).
-  DD_INSTRUMENTATION_TELEMETRY_URL:
-  - implementation: A
-    type: string
-    default: https://instrumentation-telemetry-intake.datadoghq.com/
-    product: Telemetry
-    const_name: Uri
-    documentation: |-
-      Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
-      telemetry is in use (otherwise telemetry is sent to the agent using
-      <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> instead)
   DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE:
   - implementation: A
     type: int
@@ -1650,26 +1573,6 @@ supportedConfigurations:
     default: null
     const_name: TraceAgentPath
     documentation: Configuration key for when a standalone instance of the Trace Agent needs to be started.
-  DD_TRACE_AGENT_PORT:
-  - implementation: C
-    type: int
-    default: '8126'
-    aliases:
-    - DATADOG_TRACE_AGENT_PORT
-    const_name: AgentPort
-    documentation: |-
-      Configuration key for the Agent port where the Tracer can send traces.
-      Default value is 8126.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
-  DD_TRACE_AGENT_URL:
-  - implementation: C
-    type: string
-    default: http://localhost:8126
-    const_name: AgentUri
-    documentation: |-
-      Configuration key for the Agent URL where the Tracer can send traces.
-      Default value is "http://localhost:8126".
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_TRACE_ANALYTICS_ENABLED:
   - implementation: B
     type: boolean
@@ -2145,24 +2048,6 @@ supportedConfigurations:
     documentation: |-
       Configuration key for a map of services to rename.
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.PeerServiceNameMappings"/>
-  DD_TRACE_PIPE_NAME:
-  - implementation: A
-    type: string
-    default: null
-    const_name: TracesPipeName
-    documentation: |-
-      Configuration key for the named pipe where the Tracer can send traces.
-      Default value is <c>null</c>.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesPipeName"/>
-  DD_TRACE_PIPE_TIMEOUT_MS:
-  - implementation: A
-    type: int
-    default: '500'
-    const_name: TracesPipeTimeoutMs
-    documentation: |-
-      Configuration key for setting the timeout in milliseconds for named pipes communication.
-      Default value is <c>0</c>.
-      <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesPipeTimeoutMs"/>
   DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT:
   - implementation: B
     type: string
@@ -2334,17 +2219,6 @@ supportedConfigurations:
     default: 'false'
     const_name: StatsComputationEnabled
     documentation: Configuration key for enabling computation of stats (aka trace metrics) on the tracer side
-  DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'true'
-    product: FeatureFlags
-    const_name: WcfObfuscationEnabled
-    documentation: |-
-      Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes
-      into the <c>resourceName</c> of a span.
-      <para>Note: that this only applies when the WCF action is an empty string.</para>
-      <seealso cref="Datadog.Trace.Configuration.TracerSettings.WcfObfuscationEnabled"/>
   DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED:
   - implementation: A
     type: boolean

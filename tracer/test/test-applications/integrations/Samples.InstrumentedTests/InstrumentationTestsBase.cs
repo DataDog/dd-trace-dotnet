@@ -29,7 +29,6 @@ public class InstrumentationTestsBase : IDisposable
     private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
     private static readonly Type _locationType = Type.GetType("Datadog.Trace.Iast.Location, Datadog.Trace");
     private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
-    private static readonly Type _spanCollectionType = Type.GetType("Datadog.Trace.Agent.SpanCollection, Datadog.Trace");
     private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
     private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
     private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
@@ -43,7 +42,6 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _setSpanTypeProperty = _spanType.GetProperty("Type", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
     private static MethodInfo _traceContextProperty = _spanContextType.GetProperty("TraceContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _iastRequestContextProperty = _traceContextType.GetProperty("IastRequestContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _operationNameProperty = _spanType.GetProperty("OperationName", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _rangesProperty = _taintedObjectType.GetProperty("Ranges", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _startProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
@@ -58,8 +56,6 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static FieldInfo _spanCollectionValuesField = _spanCollectionType.GetField("_values", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceRangesField = _evidenceType.GetField("_ranges", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -155,13 +151,6 @@ public class InstrumentationTestsBase : IDisposable
         SampleHelpers.IsProfilerAttached().Should().BeTrue();
     }
 
-    protected void AssertSpanGenerated(string operationName, int spansGenerated = 1)
-    {
-        var spans = GetGeneratedSpans(_traceContext);
-        spans = spans.Where(x => (string)_operationNameProperty.Invoke(x, Array.Empty<object>()) == operationName).ToList();
-        spans.Count.Should().Be(spansGenerated);
-    }
-
     protected void AssertVulnerable(string expectedType = null, string expectedEvidence = null, bool evidenceTainted = true, short sourceType = -1, int vulnerabilities = 1)
     {
         var vulnerabilityList = GetGeneratedVulnerabilities();
@@ -253,19 +242,6 @@ public class InstrumentationTestsBase : IDisposable
 
         var vulnerabilities = _vulnerabilitiesProperty.Invoke(vulnerabilityBatchField, Array.Empty<object>());
         return ((vulnerabilities as IEnumerable).Cast<object>()).ToList();
-    }
-
-    private List<object> GetGeneratedSpans(object context)
-    {
-        var spans = new List<object>();
-        var spanCollection = _spansField.GetValue(context);
-        var spanCollectionValues = _spanCollectionValuesField.GetValue(spanCollection);
-        return spanCollectionValues switch
-        {
-            null => [],
-            IEnumerable<object> array => [..array],
-            { } span => [span],
-        };
     }
 
     protected object AssertTaintedFormat(object expected, object instrumented)

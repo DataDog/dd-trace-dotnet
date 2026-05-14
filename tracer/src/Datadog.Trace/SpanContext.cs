@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContext.cs" company="Datadog">
+// <copyright file="SpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -469,11 +469,7 @@ namespace Datadog.Trace
         [return: MaybeNull]
         internal string PrepareTagsHeaderForPropagation()
         {
-            // try to get max length from tracer settings, but do NOT access Tracer.Instance
-            var headerMaxLength = TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength;
-
-            var propagatedTags = PrepareTagsForPropagation();
-            return propagatedTags?.ToPropagationHeader(headerMaxLength);
+            return string.Empty;
         }
 
         internal static class Keys

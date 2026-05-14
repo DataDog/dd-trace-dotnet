@@ -1,10 +1,9 @@
-﻿// <copyright file="NormalizerTraceProcessor.cs" company="Datadog">
+// <copyright file="NormalizerTraceProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using Datadog.Trace.Agent;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -32,40 +31,6 @@ namespace Datadog.Trace.Processors
         public NormalizerTraceProcessor()
         {
             Log.Debug("NormalizerTraceProcessor initialized.");
-        }
-
-        public SpanCollection Process(in SpanCollection trace)
-        {
-            /*
-                +----------+--------------------------------------------------------------------------------------------------------+
-                | Property |                                                 Action                                                 |
-                +----------+--------------------------------------------------------------------------------------------------------+
-                | Service  | If empty, it gets set to a default.                                                                    |
-                | Service  | If too long, truncated at 100 characters.                                                              |
-                | Name     | If empty, set it to “unnamed_operation”.                                                               |
-                | Name     | If too long, truncated to 100 characters.                                                              |
-                | Resource | If empty, set to the same value as Name.                                                               |
-                | Duration | If smaller than 0, it is set to 0.                                                                     |
-                | Duration | If larger than math.MaxInt64 - Start, it is set to 0.                                                  |
-                | Start    | If smaller than Y2K, set to now - Duration or 0 if the result is negative.                             |
-                | Type     | If too long, truncated to 100.                                                                         |
-                | Meta     | “http.status_code” key is deleted if it’s an invalid numeric value smaller than 100 or bigger than 600 |
-                +----------+--------------------------------------------------------------------------------------------------------+
-             */
-            foreach (var span in trace)
-            {
-                Process(span);
-            }
-
-            // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
-            var traceContext = trace.FirstSpan?.Context.TraceContext;
-
-            if (!string.IsNullOrEmpty(traceContext?.Environment))
-            {
-                traceContext.Environment = TraceUtil.NormalizeTag(traceContext.Environment);
-            }
-
-            return trace;
         }
 
         public Span Process(Span span)

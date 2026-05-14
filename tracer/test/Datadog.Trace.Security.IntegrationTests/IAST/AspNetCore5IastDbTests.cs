@@ -46,7 +46,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(2, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since, recordSanitizer: ScrubDatabaseParam);
     }
@@ -67,7 +67,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(2, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
@@ -89,7 +89,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(2, new[] { url });
+        await SendRequestsAsync(new[] { url });
 
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, filename, since: since, recordSanitizer: ScrubDatabaseParam);
     }

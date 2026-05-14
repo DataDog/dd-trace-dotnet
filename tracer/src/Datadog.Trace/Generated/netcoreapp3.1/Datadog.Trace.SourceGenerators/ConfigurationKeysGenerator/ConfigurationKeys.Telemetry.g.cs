@@ -68,13 +68,6 @@ internal static partial class ConfigurationKeys
         public const string Enabled = "DD_INSTRUMENTATION_TELEMETRY_ENABLED";
 
         /// <summary>
-        /// Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
-        /// telemetry is in use (otherwise telemetry is sent to the agent using
-        /// <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> instead)
-        /// </summary>
-        public const string Uri = "DD_INSTRUMENTATION_TELEMETRY_URL";
-
-        /// <summary>
         /// Configuration key for whether to enable debug mode of telemetry.
         /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.DebugEnabled"/>
         /// </summary>

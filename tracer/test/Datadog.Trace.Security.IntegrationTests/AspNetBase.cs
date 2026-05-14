@@ -145,13 +145,11 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected virtual string GetTestName() => _testName;
 
-        protected Task SendRequestsAsync(params string[] urls) => SendRequestsAsync(1, urls);
-
-        protected async Task SendRequestsAsync(int count, params string[] urls)
+        protected async Task SendRequestsAsync(params string[] urls)
         {
             foreach (var url in urls)
             {
-                await SendRequestsAsyncNoWaitForSpans(url, null, count);
+                await SendRequestsAsyncNoWaitForSpans(url, null, 1);
             }
         }
 

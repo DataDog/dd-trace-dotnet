@@ -1,4 +1,4 @@
-﻿// <copyright file="TracingHttpModule.cs" company="Datadog">
+// <copyright file="TracingHttpModule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -163,17 +163,6 @@ namespace Datadog.Trace.AspNet
                     {
                         // extract propagated http headers
                         extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
-
-                        // if inferred proxy spans are enabled, try to extract and create the proxy span
-                        if (tracer.Settings.InferredProxySpansEnabled)
-                        {
-                            if (InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers, extractedContext) is { } proxyContext)
-                            {
-                                inferredProxyScope = proxyContext.Scope;
-                                // updates the extracted context with the inferred proxy span context so that it has the inferred context
-                                extractedContext = proxyContext.Context;
-                            }
-                        }
                     }
                     catch (Exception ex)
                     {

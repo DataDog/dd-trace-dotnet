@@ -9,12 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
@@ -210,9 +208,7 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportTimeoutMs)
                             .AsInt32(defaultValue: 7_500);
 
-            var defaultAgentHost = config
-                .WithKeys(ConfigurationKeys.AgentHost)
-                .AsString(defaultValue: "localhost");
+            var defaultAgentHost = "localhost";
 
             OtlpGeneralProtocol = config
                                 .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol)
@@ -439,14 +435,6 @@ namespace Datadog.Trace.Configuration
                                             .WithKeys(ConfigurationKeys.FeatureFlags.WcfWebHttpResourceNamesEnabled)
                                             .AsBool(defaultValue: true);
 
-            WcfObfuscationEnabled = config
-                                   .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
-                                   .AsBool(defaultValue: true);
-
-            InferredProxySpansEnabled = config
-                                      .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
-                                      .AsBool(defaultValue: false);
-
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
                                          .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
@@ -528,18 +516,9 @@ namespace Datadog.Trace.Configuration
                             .AsString(defaultValue: "user.id,session.id,account.id")
                             ?.Split([','], StringSplitOptions.RemoveEmptyEntries) ?? []);
 
-            LogSubmissionSettings = new DirectLogSubmissionSettings(source, telemetry, OpenTelemetryLogsEnabled);
-
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)
                           .AsString(string.Empty);
-
-            OutgoingTagPropagationHeaderMaxLength = config
-                                                   .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
-                                                   .AsInt32(
-                                                        Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength,
-                                                        x => x is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength)
-                                                   .Value;
 
             IpHeader = config
                       .WithKeys(ConfigurationKeys.IpHeader)
@@ -912,19 +891,6 @@ namespace Datadog.Trace.Configuration
         internal bool WcfWebHttpResourceNamesEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether to obfuscate the <c>LocalPath</c> of a WCF request that goes
-        /// into the <c>resourceName</c> of a span.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled"/>
-        internal bool WcfObfuscationEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether to generate an inferred span based on extracted headers from a proxy service.
-        /// </summary>
-        /// <seeaslo cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
-        internal bool InferredProxySpansEnabled { get; }
-
-        /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
         /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
@@ -951,16 +917,6 @@ namespace Datadog.Trace.Configuration
         /// Gets the time interval (in seconds) for sending stats
         /// </summary>
         internal int StatsComputationInterval { get; }
-
-        /// <summary>
-        /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
-        /// when injecting it into downstream service calls.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
-        /// <remarks>
-        /// This value is not used when extracting an incoming propagation header from an upstream service.
-        /// </remarks>
-        internal int OutgoingTagPropagationHeaderMaxLength { get; }
 
         /// <summary>
         /// Gets a value indicating the injection propagation style.
@@ -1060,11 +1016,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled"/>
         internal bool SingleSpanAspNetCoreEnabled { get; }
-
-        /// <summary>
-        /// Gets the direct log submission settings.
-        /// </summary>
-        internal DirectLogSubmissionSettings LogSubmissionSettings { get; }
 
         /// <summary>
         /// Gets a value indicating the trace methods configuration.

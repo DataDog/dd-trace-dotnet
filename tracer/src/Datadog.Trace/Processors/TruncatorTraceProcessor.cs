@@ -1,10 +1,9 @@
-﻿// <copyright file="TruncatorTraceProcessor.cs" company="Datadog">
+// <copyright file="TruncatorTraceProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Processors
@@ -23,16 +22,6 @@ namespace Datadog.Trace.Processors
         public TruncatorTraceProcessor()
         {
             Log.Debug("TruncatorTraceProcessor initialized.");
-        }
-
-        public SpanCollection Process(in SpanCollection trace)
-        {
-            foreach (var span in trace)
-            {
-                Process(span);
-            }
-
-            return trace;
         }
 
         public Span Process(Span span)

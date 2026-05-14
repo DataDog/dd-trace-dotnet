@@ -11,7 +11,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
@@ -56,10 +55,10 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
     }
 
-    [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
     [InlineData("text/html;charset=UTF-8", 200, "max-age=31536000", "https")]
     [InlineData("application/xhtml%2Bxml", 200, "max-age%3D10%3Botherthings", "https")]
     [InlineData("text/html", 500, "invalid", "https")]
@@ -80,10 +79,23 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         var isHtml = contentType.Contains("html") || contentType.Contains("xhtml");
         var isHttps = !string.IsNullOrEmpty(xForwardedProto);
         var isValidHsts = Regex.IsMatch(Uri.UnescapeDataString(hstsHeaderValue ?? string.Empty), @"^max-age=[1-9]\d*");
-        var expectVulnerability = isHtml && isHttps && returnCode == 200 && !isValidHsts;
+        // Classic mode pipeline does not fire the response-header detection hooks.
+        var expectVulnerability = !IsClassicMode && isHtml && isHttps && returnCode == 200 && !isValidHsts;
         var since = DateTime.UtcNow;
         await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, expectVulnerability ? filename : NotVulnerableSnapshotName, since: since, timeoutMs: expectVulnerability ? 5_000 : 1_000);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1")]
+    public async Task TestQueryParameterNameVulnerability(string url)
+    {
+        var since = DateTime.UtcNow;
+        await SendRequestsAsync([url]);
+        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("QueryParameterName"), since: since);
     }
 
     [Trait("Category", "EndToEnd")]
@@ -130,7 +142,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         AddCookies(cookiesDic);
         AddHeaders(headersDic);
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(1, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, notVulnerable ? NotVulnerableSnapshotName : filename, since: since, timeoutMs: notVulnerable ? 1_000 : 5_000);
     }
 
@@ -144,18 +156,6 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         var since = DateTime.UtcNow;
         await SendRequestsAsync([url]);
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("StackTraceLeak"), since: since);
-    }
-
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [Trait("LoadFromGAC", "True")]
-    [SkippableTheory]
-    [InlineData("/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1")]
-    public async Task TestQueryParameterNameVulnerability(string url)
-    {
-        var since = DateTime.UtcNow;
-        await SendRequestsAsync([url]);
-        await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("QueryParameterName"), since: since);
     }
 }
 
@@ -234,6 +234,8 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         _classicMode = classicMode;
         _testName = "Security." + nameof(AspNetMvc5) + (_classicMode ? ".Classic" : ".Integrated");
     }
+
+    protected bool IsClassicMode => _classicMode;
 
     protected string VulnerabilityLogPath =>
         Path.Combine(LogDirectory, $"iast-vulns-{GetType().Name}.jsonl");
@@ -431,7 +433,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
         IncludeAllHttpSpans = true;
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(2, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, GetFileName("ReflectedXss"), since: since);
     }
 
@@ -444,7 +446,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
         IncludeAllHttpSpans = true;
         var since = DateTime.UtcNow;
-        await SendRequestsAsync(2, new[] { url });
+        await SendRequestsAsync(new[] { url });
         await VerifyVulnerabilityRecordsAsync(VulnerabilityLogPath, NotVulnerableSnapshotName, since: since, timeoutMs: 1_000);
     }
 

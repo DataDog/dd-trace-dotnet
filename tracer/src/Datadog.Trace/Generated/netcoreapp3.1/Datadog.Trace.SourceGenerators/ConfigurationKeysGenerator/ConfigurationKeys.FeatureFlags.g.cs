@@ -128,14 +128,6 @@ internal static partial class ConfigurationKeys
         public const string SingleSpanAspNetCoreEnabled = "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED";
 
         /// <summary>
-        /// Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes
-        /// into the <c>resourceName</c> of a span.
-        /// <para>Note: that this only applies when the WCF action is an empty string.</para>
-        /// </summary>
-        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.WcfObfuscationEnabled"/>
-        public const string WcfObfuscationEnabled = "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED";
-
-        /// <summary>
         /// Configuration key to enable or disable improved template-based resource names
         /// when using WCF Web HTTP. Requires <see cref="TracerSettings.DelayWcfInstrumentationEnabled"/> be set
         /// to true. Enabled by default

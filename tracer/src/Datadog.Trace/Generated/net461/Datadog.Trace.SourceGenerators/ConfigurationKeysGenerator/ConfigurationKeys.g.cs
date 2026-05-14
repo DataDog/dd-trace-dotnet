@@ -28,14 +28,6 @@ internal static partial class ConfigurationKeys
     public const string AgentFeaturePollingEnabled = "DD_AGENT_FEATURE_POLLING_ENABLED";
 
     /// <summary>
-    /// Configuration key for the Agent host where the Tracer can send traces.
-    /// Overridden by <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> if present.
-    /// Default value is "localhost".
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
-    public const string AgentHost = "DD_AGENT_HOST";
-
-    /// <summary>
     /// Configuration key for setting the API key, used by the Agent.
     /// </summary>
     public const string ApiKey = "DD_API_KEY";
@@ -44,20 +36,6 @@ internal static partial class ConfigurationKeys
     /// Enables rare trace sampling in the Datadog Agent. When enabled, the Agent can keep a small number of "rare" traces (up to 5 traces per second per Agent) that were not kept by head-based sampling
     /// </summary>
     public const string RareSamplerEnabled = "DD_APM_ENABLE_RARE_SAMPLER";
-
-    /// <summary>
-    /// Used to force a specific port binding for the Trace Agent.
-    /// Default value is 8126.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
-    public const string TraceAgentPortKey = "DD_APM_RECEIVER_PORT";
-
-    /// <summary>
-    /// Configuration key for the unix domain socket where the Tracer can send traces.
-    /// Default value is <c>null</c>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesUnixDomainSocketPath"/>
-    public const string TracesUnixDomainSocketPath = "DD_APM_RECEIVER_SOCKET";
 
     /// <summary>
     /// Configuration key for enabling or disabling the generation of APM traces.
@@ -108,34 +86,6 @@ internal static partial class ConfigurationKeys
     /// Configuration key for when a standalone instance of DogStatsD needs to be started.
     /// </summary>
     public const string DogStatsDPath = "DD_DOGSTATSD_PATH";
-
-    /// <summary>
-    /// Configuration key for the named pipe that DogStatsD binds to.
-    /// Default value is <c>null</c>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.MetricsPipeName"/>
-    public const string MetricsPipeName = "DD_DOGSTATSD_PIPE_NAME";
-
-    /// <summary>
-    /// Configuration key for the DogStatsd port where the Tracer can send metrics.
-    /// Default value is 8125.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.DogStatsdPort"/>
-    public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
-
-    /// <summary>
-    /// Configuration key for the unix domain socket that DogStatsD binds to.
-    /// Default value is <c>null</c>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.MetricsUnixDomainSocketPath"/>
-    public const string MetricsUnixDomainSocketPath = "DD_DOGSTATSD_SOCKET";
-
-    /// <summary>
-    /// Configuration key for the location where the Tracer can send DogStatsD metrics.
-    /// Default value is "udp://127.0.0.1:8125".
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
-    public const string MetricsUri = "DD_DOGSTATSD_URL";
 
     /// <summary>
     /// It indicates the home directory of the Datadog tracer.
@@ -311,20 +261,6 @@ internal static partial class ConfigurationKeys
     /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
     /// </summary>
     public const string TraceAgentPath = "DD_TRACE_AGENT_PATH";
-
-    /// <summary>
-    /// Configuration key for the Agent port where the Tracer can send traces.
-    /// Default value is 8126.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
-    public const string AgentPort = "DD_TRACE_AGENT_PORT";
-
-    /// <summary>
-    /// Configuration key for the Agent URL where the Tracer can send traces.
-    /// Default value is "http://localhost:8126".
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
-    public const string AgentUri = "DD_TRACE_AGENT_URL";
 
     /// <summary>
     /// Configuration key for enabling or disabling default Analytics.
@@ -628,20 +564,6 @@ internal static partial class ConfigurationKeys
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.PeerServiceNameMappings"/>
     public const string PeerServiceNameMappings = "DD_TRACE_PEER_SERVICE_MAPPING";
-
-    /// <summary>
-    /// Configuration key for the named pipe where the Tracer can send traces.
-    /// Default value is <c>null</c>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesPipeName"/>
-    public const string TracesPipeName = "DD_TRACE_PIPE_NAME";
-
-    /// <summary>
-    /// Configuration key for setting the timeout in milliseconds for named pipes communication.
-    /// Default value is <c>0</c>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesPipeTimeoutMs"/>
-    public const string TracesPipeTimeoutMs = "DD_TRACE_PIPE_TIMEOUT_MS";
 
     /// <summary>
     /// Configuration key for setting the header extraction propagation behavior. Accepted values are:

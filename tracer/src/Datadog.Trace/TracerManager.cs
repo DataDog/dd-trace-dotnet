@@ -9,13 +9,11 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
@@ -53,41 +51,23 @@ namespace Datadog.Trace
 
         public TracerManager(
             TracerSettings settings,
-            IAgentWriter agentWriter,
             IScopeManager scopeManager,
-            DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ISpanEventsManager spanEventsManager,
-            ServiceRemappingHash serviceRemappingHash,
-            ITraceProcessor[] traceProcessors = null)
+            ServiceRemappingHash serviceRemappingHash)
         {
             Settings = settings;
-            AgentWriter = agentWriter;
             ScopeManager = scopeManager;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
-            DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
-            TraceProcessors = traceProcessors ?? [];
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
-            var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
-            foreach (var traceProcessor in TraceProcessors)
-            {
-                if (traceProcessor?.GetTagProcessor() is { } tagProcessor)
-                {
-                    lstTagProcessors.Add(tagProcessor);
-                }
-            }
-
-            TagProcessors = lstTagProcessors.ToArray();
 
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
-            SpanEventsManager = spanEventsManager;
 
             ServiceRemappingHash = serviceRemappingHash;
 
@@ -130,14 +110,10 @@ namespace Datadog.Trace
         /// </summary>
         public TracerSettings Settings { get; }
 
-        public IAgentWriter AgentWriter { get; }
-
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
         /// </summary>
         public IScopeManager ScopeManager { get; }
-
-        public DirectLogSubmissionManager DirectLogSubmission { get; }
 
         /// Gets the global <see cref="QueryStringManager"/> instance.
         public QueryStringManager QueryStringManager { get; }
@@ -151,8 +127,6 @@ namespace Datadog.Trace
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
         public ITracerFlareManager TracerFlareManager { get; }
-
-        public ISpanEventsManager SpanEventsManager { get; }
 
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
@@ -206,11 +180,9 @@ namespace Datadog.Trace
         internal void Start()
         {
             // Must be idempotent and thread safe
-            DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
             DynamicConfigurationManager.Start();
             TracerFlareManager.Start();
-            SpanEventsManager.Start();
         }
 
         /// <summary>
@@ -227,11 +199,6 @@ namespace Datadog.Trace
             {
                 oldManager._settingSubscription.Dispose();
                 var agentWriterReplaced = false;
-                if (oldManager.AgentWriter != newManager.AgentWriter && oldManager.AgentWriter is not null)
-                {
-                    agentWriterReplaced = true;
-                    await oldManager.AgentWriter.FlushAndCloseAsync().ConfigureAwait(false);
-                }
 
                 var discoveryReplaced = false;
 
@@ -260,7 +227,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static async Task WriteDiagnosticLog(TracerManager instance, MutableSettings mutableSettings, ExporterSettings exporterSettings)
+        private static async Task WriteDiagnosticLog(TracerManager instance, MutableSettings mutableSettings)
         {
             try
             {
@@ -271,26 +238,6 @@ namespace Datadog.Trace
 
                 string agentError = null;
                 var instanceSettings = instance.Settings;
-
-                // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
-                // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
-                // Also disable if tracing is not enabled (as likely to be in an environment where agent is not available)
-                if (mutableSettings.TraceEnabled && !instanceSettings.IsRunningInAzureAppService)
-                {
-                    try
-                    {
-                        var success = await instance.AgentWriter.Ping().ConfigureAwait(false);
-
-                        if (!success)
-                        {
-                            agentError = "An error occurred while sending traces to the agent";
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        agentError = ex.Message;
-                    }
-                }
 
                 var stringWriter = new StringWriter();
 
@@ -346,12 +293,6 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("service");
                     writer.WriteValue(mutableSettings.DefaultServiceName);
-
-                    writer.WritePropertyName("agent_url");
-                    writer.WriteValue(exporterSettings.TraceAgentUriBase);
-
-                    writer.WritePropertyName("agent_transport");
-                    writer.WriteValue(exporterSettings.TracesTransport.ToString());
 
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Instance.DebugEnabled);
@@ -444,26 +385,10 @@ namespace Datadog.Trace
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();
 
-                    foreach (var integration in instanceSettings.LogSubmissionSettings.EnabledIntegrationNames)
-                    {
-                        writer.WriteValue(integration);
-                    }
-
                     writer.WriteEndArray();
-
-                    writer.WritePropertyName("direct_logs_submission_enabled");
-                    writer.WriteValue(instanceSettings.LogSubmissionSettings.IsEnabled);
-
-                    writer.WritePropertyName("direct_logs_submission_error");
-                    writer.WriteValue(string.Join(", ", instanceSettings.LogSubmissionSettings.ValidationErrors));
 
                     writer.WritePropertyName("exporter_settings_warning");
                     writer.WriteStartArray();
-
-                    foreach (var warning in exporterSettings.ValidationWarnings)
-                    {
-                        writer.WriteValue(warning);
-                    }
 
                     writer.WriteEndArray();
 
@@ -472,9 +397,6 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("activity_listener_enabled");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
-
-                    writer.WritePropertyName("wcf_obfuscation_enabled");
-                    writer.WriteValue(instanceSettings.WcfObfuscationEnabled);
 
                     writer.WritePropertyName("bypass_http_request_url_caching_enabled");
                     writer.WriteValue(instanceSettings.BypassHttpRequestUrlCachingEnabled);
@@ -560,20 +482,6 @@ namespace Datadog.Trace
                 OneTimeSetup(newManager.Settings);
             }
 
-            if (newManager.Settings.Manager is { InitialMutableSettings: { StartupDiagnosticLogEnabled: true } mutable, InitialExporterSettings: { } exporter })
-            {
-                _ = Task.Run(() => WriteDiagnosticLog(newManager, mutable, exporter));
-            }
-
-            newManager.Settings.Manager.SubscribeToChanges(changes =>
-            {
-                var mutable = changes.UpdatedMutable ?? changes.PreviousMutable;
-                if (mutable.StartupDiagnosticLogEnabled)
-                {
-                    _ = Task.Run(() => WriteDiagnosticLog(newManager, mutable, changes.UpdatedExporter ?? changes.PreviousExporter));
-                }
-            });
-
             return newManager;
         }
 
@@ -609,17 +517,6 @@ namespace Datadog.Trace
                     instance.DynamicConfigurationManager.Dispose();
                     Log.Debug("Disposing TracerFlareManager");
                     instance.TracerFlareManager.Dispose();
-                    Log.Debug("Disposing SpanEventsManager");
-                    instance.SpanEventsManager.Dispose();
-
-                    Log.Debug("Disposing AgentWriter.");
-                    var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing DirectLogSubmission.");
-                    var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing DiscoveryService.");
-
-                    Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask).ConfigureAwait(false);
 
                     Log.Debug("Disposing Telemetry");
                     if (instance.Telemetry is { })
@@ -638,31 +535,6 @@ namespace Datadog.Trace
 
         private static void HeartbeatCallback(object state)
         {
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteTrace(in SpanCollection trace)
-        {
-            var chunk = trace;
-            foreach (var processor in TraceProcessors)
-            {
-                if (processor is not null)
-                {
-                    try
-                    {
-                        chunk = processor.Process(in chunk);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
-                    }
-                }
-            }
-
-            if (chunk.Count > 0)
-            {
-                AgentWriter.WriteTrace(in chunk);
-            }
         }
     }
 }

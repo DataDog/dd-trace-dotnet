@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace
@@ -22,7 +21,5 @@ namespace Datadog.Trace
         TracerSettings Settings { get; }
 
         PerTraceSettings PerTraceSettings { get; }
-
-        void Write(in SpanCollection span);
     }
 }

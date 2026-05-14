@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceContext.cs" company="Datadog">
+// <copyright file="TraceContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
@@ -23,14 +22,12 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace
 {
     internal sealed class TraceContext
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
-
-        private SpanCollection _spans;
         private int _openSpans;
 
         private IastRequestContext? _iastRequestContext;
@@ -123,11 +120,6 @@ namespace Datadog.Trace
             }
         }
 
-        internal bool WafExecuted { get; set; }
-
-        internal static TraceContext? GetTraceContext(in SpanCollection spans)
-            => spans.FirstSpan?.Context.TraceContext;
-
         internal void EnableIastInRequest()
         {
             if (Volatile.Read(ref _iastRequestContext) is null)
@@ -149,10 +141,7 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            bool ShouldTriggerPartialFlush() => Tracer.Settings.PartialFlushEnabled && _spans.Count >= Tracer.Settings.PartialFlushMinSpans;
-
-            SpanCollection spansToWrite = default;
-
+            // Propagate the resource name to the profiler for root web spans
             if (span.IsRootSpan)
             {
                 if (span.Type == SpanTypes.Web)
@@ -171,7 +160,10 @@ namespace Datadog.Trace
                         }
                     }
 
-                    _appSecRequestContext?.CloseWebSpan(span);
+                    if (_appSecRequestContext is not null)
+                    {
+                        _appSecRequestContext.CloseWebSpan(span);
+                    }
                 }
             }
 
@@ -180,61 +172,11 @@ namespace Datadog.Trace
             {
                 ExtraServicesProvider.Instance.AddService(span.ServiceName);
             }
-
-            lock (_rootSpan!)
-            {
-                _spans = SpanCollection.Append(in _spans, span);
-                _openSpans--;
-
-                if (_openSpans == 0)
-                {
-                    spansToWrite = _spans;
-                    _spans = default;
-                    TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
-                }
-                else if (ShouldTriggerPartialFlush())
-                {
-                    Log.Debug<ulong, string, int>(
-                        "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
-                        span.SpanId,
-                        span.Context.RawTraceId,
-                        _spans.Count);
-
-                    spansToWrite = _spans;
-
-                    // Making the assumption that, if the number of closed spans was big enough to trigger partial flush,
-                    // the number of remaining spans is probably big as well.
-                    // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
-                    _spans = new SpanCollection(spansToWrite.Count);
-                    TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.LargeTrace);
-                }
-            }
-
-            if (spansToWrite.Count > 0)
-            {
-                GetOrMakeSamplingDecision();
-                RunSpanSampler(in spansToWrite);
-                Tracer.Write(in spansToWrite);
-            }
         }
 
         [TestingOnly]
         internal void WriteClosedSpans()
         {
-            SpanCollection spansToWrite;
-
-            lock (_rootSpan!)
-            {
-                spansToWrite = _spans;
-                _spans = default;
-            }
-
-            if (spansToWrite.Count > 0)
-            {
-                GetOrMakeSamplingDecision();
-                RunSpanSampler(in spansToWrite);
-                Tracer.Write(in spansToWrite);
-            }
         }
 
         public int GetOrMakeSamplingDecision()
@@ -322,22 +264,6 @@ namespace Datadog.Trace
             if (notifyDistributedTracer)
             {
                 DistributedTracer.Instance.SetSamplingPriority(priority);
-            }
-        }
-
-        private void RunSpanSampler(in SpanCollection spans)
-        {
-            if (CurrentTraceSettings?.SpanSampler is null)
-            {
-                return;
-            }
-
-            if (SamplingPriority is { } samplingPriority && SamplingPriorityValues.IsDrop(samplingPriority))
-            {
-                foreach (var span in spans)
-                {
-                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(span);
-                }
             }
         }
     }

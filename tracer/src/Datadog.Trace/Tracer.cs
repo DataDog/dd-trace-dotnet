@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.TracerFlare;
@@ -49,8 +48,8 @@ namespace Datadog.Trace
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, ITelemetryController telemetry = null, ServiceRemappingHash serviceRemappingHash = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null, serviceRemappingHash: serviceRemappingHash))
+        internal Tracer(TracerSettings settings, ITraceSampler sampler, IScopeManager scopeManager, ITelemetryController telemetry = null, ServiceRemappingHash serviceRemappingHash = null)
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, sampler, scopeManager, telemetry: telemetry ?? NullTelemetryController.Instance, dynamicConfigurationManager: null, tracerFlareManager: null, serviceRemappingHash: serviceRemappingHash))
         {
         }
 
@@ -258,25 +257,6 @@ namespace Datadog.Trace
             }
 
             return span;
-        }
-
-        /// <summary>
-        /// Forces the tracer to immediately flush pending traces and send them to the agent.
-        /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
-        /// </summary>
-        /// <returns>Task used to track the async flush operation</returns>
-        public Task FlushAsync() => TracerManager.AgentWriter.FlushTracesAsync();
-
-        /// <summary>
-        /// Writes the specified <see cref="Span"/> collection to the agent writer.
-        /// </summary>
-        /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(in SpanCollection trace)
-        {
-            if (CurrentTraceSettings.Settings.TraceEnabled || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
-            {
-                TracerManager.WriteTrace(in trace);
-            }
         }
 
         /// <summary>

@@ -183,20 +183,6 @@ namespace Datadog.Trace
         internal const string TraceId = "trace.id";
 
         /// <summary>
-        /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
-        /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.
-        /// </summary>
-        internal const string GitCommitSha = "_dd.git.commit.sha";
-
-        /// <summary>
-        /// The git repository URL of the instrumented service. Its value is usually constant for the lifetime of a process,
-        /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitRepositoryUrl"/>.
-        /// </summary>
-        internal const string GitRepositoryUrl = "_dd.git.repository_url";
-
-        /// <summary>
         /// The end point requested
         /// </summary>
         internal const string HttpEndpoint = "http.endpoint";
