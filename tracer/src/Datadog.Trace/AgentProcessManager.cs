@@ -46,6 +46,8 @@ namespace Datadog.Trace
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AgentProcessManager));
 
+        private static readonly Lazy<IntPtr> JobObject = new Lazy<IntPtr>(JobObjectInterop.TryCreate);
+
         internal enum ProcessState
         {
             NeverChecked,
@@ -271,6 +273,12 @@ namespace Datadog.Trace
                                     metadata.Process = Process.Start(startInfo);
                                     var spawnedPid = metadata.Process?.Id ?? -1;
                                     Log.Information("[aas-repro] spawned process={Process} child_pid={ChildPid}", new object[] { path, spawnedPid });
+
+                                    if (metadata.Process is { } proc && !proc.HasExited)
+                                    {
+                                        JobObjectInterop.AssignAndLog(path, proc);
+                                    }
+
                                     var timeout = 2000;
 
                                     while (timeout > 0)
@@ -478,6 +486,153 @@ namespace Datadog.Trace
                 }
 
                 return namedPipeIsBound;
+            }
+        }
+
+        private static class JobObjectInterop
+        {
+            private const uint JobObjectLimitKillOnJobClose = 0x2000;
+            private const int JobObjectExtendedLimitInformationClass = 9;
+
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+            private static extern IntPtr CreateJobObjectW(IntPtr lpJobAttributes, string lpName);
+
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+            [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+            private static extern bool SetInformationJobObject(IntPtr hJob, int jobObjectInfoClass, ref JobObjectExtendedLimitInformation lpJobObjectInfo, int cbJobObjectInfoLength);
+
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+            [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+            private static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
+
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+            [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+            private static extern bool CloseHandle(IntPtr hObject);
+
+            public static IntPtr TryCreate()
+            {
+                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                {
+                    return IntPtr.Zero;
+                }
+
+                try
+                {
+                    var handle = CreateJobObjectW(IntPtr.Zero, null);
+                    if (handle == IntPtr.Zero)
+                    {
+                        var err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                        Log.Warning("[aas-repro] job_object_create_failed step=create win32_error={Err}", new object[] { err });
+                        return IntPtr.Zero;
+                    }
+
+                    var info = default(JobObjectExtendedLimitInformation);
+                    info.BasicLimitInformation.LimitFlags = JobObjectLimitKillOnJobClose;
+
+                    var size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(JobObjectExtendedLimitInformation));
+                    if (!SetInformationJobObject(handle, JobObjectExtendedLimitInformationClass, ref info, size))
+                    {
+                        var err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                        Log.Warning("[aas-repro] job_object_create_failed step=set_info win32_error={Err}", new object[] { err });
+                        CloseHandle(handle);
+                        return IntPtr.Zero;
+                    }
+
+                    Log.Information("[aas-repro] job_object_create handle={Handle} kill_on_close=true", new object[] { handle.ToInt64().ToString("X") });
+                    return handle;
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "[aas-repro] job_object_create_failed step=exception");
+                    return IntPtr.Zero;
+                }
+            }
+
+            public static void AssignAndLog(string path, Process process)
+            {
+                var pid = -1;
+                try
+                {
+                    pid = process.Id;
+                }
+                catch
+                {
+                    // process may already be exiting
+                }
+
+                IntPtr jobHandle;
+                try
+                {
+                    jobHandle = JobObject.Value;
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "[aas-repro] job_object_assign process={Process} child_pid={Pid} result=failed reason=lazy_init_threw", new object[] { path, pid });
+                    return;
+                }
+
+                if (jobHandle == IntPtr.Zero)
+                {
+                    Log.Warning("[aas-repro] job_object_assign process={Process} child_pid={Pid} result=skipped reason=no_job_handle", new object[] { path, pid });
+                    return;
+                }
+
+                IntPtr processHandle;
+                try
+                {
+                    processHandle = process.Handle;
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "[aas-repro] job_object_assign process={Process} child_pid={Pid} result=failed reason=handle_unavailable", new object[] { path, pid });
+                    return;
+                }
+
+                if (AssignProcessToJobObject(jobHandle, processHandle))
+                {
+                    Log.Information("[aas-repro] job_object_assign process={Process} child_pid={Pid} result=success", new object[] { path, pid });
+                }
+                else
+                {
+                    var err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                    Log.Warning("[aas-repro] job_object_assign process={Process} child_pid={Pid} result=failed win32_error={Err}", new object[] { path, pid, err });
+                }
+            }
+
+            [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+            private struct IoCounters
+            {
+                public ulong ReadOperationCount;
+                public ulong WriteOperationCount;
+                public ulong OtherOperationCount;
+                public ulong ReadTransferCount;
+                public ulong WriteTransferCount;
+                public ulong OtherTransferCount;
+            }
+
+            [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+            private struct JobObjectBasicLimitInformation
+            {
+                public long PerProcessUserTimeLimit;
+                public long PerJobUserTimeLimit;
+                public uint LimitFlags;
+                public UIntPtr MinimumWorkingSetSize;
+                public UIntPtr MaximumWorkingSetSize;
+                public uint ActiveProcessLimit;
+                public UIntPtr Affinity;
+                public uint PriorityClass;
+                public uint SchedulingClass;
+            }
+
+            [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+            private struct JobObjectExtendedLimitInformation
+            {
+                public JobObjectBasicLimitInformation BasicLimitInformation;
+                public IoCounters IoInfo;
+                public UIntPtr ProcessMemoryLimit;
+                public UIntPtr JobMemoryLimit;
+                public UIntPtr PeakProcessMemoryUsed;
+                public UIntPtr PeakJobMemoryUsed;
             }
         }
     }
