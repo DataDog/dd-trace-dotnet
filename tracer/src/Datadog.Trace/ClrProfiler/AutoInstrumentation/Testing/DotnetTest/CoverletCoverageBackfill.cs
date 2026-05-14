@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Backfill;
@@ -36,9 +35,19 @@ internal static class CoverletCoverageBackfill
         }
 
         var matchedBackendPath = backfillData.ExecutedLinesByRelativePath.Count == 0;
-        foreach (DictionaryEntry moduleEntry in EnumerateDictionary(modules))
+        if (modules is not IDictionary modulesDictionary)
         {
-            foreach (DictionaryEntry documentEntry in EnumerateDictionary(moduleEntry.Value))
+            return false;
+        }
+
+        foreach (DictionaryEntry moduleEntry in modulesDictionary)
+        {
+            if (moduleEntry.Value is not IDictionary documentsDictionary)
+            {
+                continue;
+            }
+
+            foreach (DictionaryEntry documentEntry in documentsDictionary)
             {
                 if (documentEntry.Key is not string documentPath ||
                     GetBackendBitmap(backfillData, documentPath) is not { } backendBitmap)
@@ -60,9 +69,19 @@ internal static class CoverletCoverageBackfill
         var backendFileBitmap = new FileBitmap(backendBitmap);
         try
         {
-            foreach (DictionaryEntry classEntry in EnumerateDictionary(classes))
+            if (classes is not IDictionary classesDictionary)
             {
-                foreach (DictionaryEntry methodEntry in EnumerateDictionary(classEntry.Value))
+                return 0;
+            }
+
+            foreach (DictionaryEntry classEntry in classesDictionary)
+            {
+                if (classEntry.Value is not IDictionary methodsDictionary)
+                {
+                    continue;
+                }
+
+                foreach (DictionaryEntry methodEntry in methodsDictionary)
                 {
                     if (!TryGetLineHits(methodEntry.Value, out var lineHits))
                     {
@@ -129,38 +148,14 @@ internal static class CoverletCoverageBackfill
         return true;
     }
 
-    private static IEnumerable<DictionaryEntry> EnumerateDictionary(object? value)
-    {
-        if (value is not IDictionary dictionary)
-        {
-            yield break;
-        }
-
-        foreach (var key in dictionary.Keys)
-        {
-            if (key is null)
-            {
-                continue;
-            }
-
-            yield return new DictionaryEntry(key, dictionary[key]);
-        }
-    }
-
     private static byte[]? GetBackendBitmap(CoverageBackfillData backfillData, string sourcePath)
     {
-        return CoverageBackfillPathMatcher.GetBackendBitmap(backfillData, GetRawPathCandidates(sourcePath));
-    }
-
-    /// <summary>
-    /// Produces raw path candidates for Coverlet document paths without assuming a stable current directory.
-    /// </summary>
-    /// <param name="sourcePath">Document path from Coverlet's module model.</param>
-    /// <returns>Raw absolute and source-root-relative path candidates for the document.</returns>
-    private static IEnumerable<string> GetRawPathCandidates(string sourcePath)
-    {
-        yield return sourcePath;
-        yield return CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false);
+        var pathCandidates = new[]
+        {
+            sourcePath,
+            CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(sourcePath, false)
+        };
+        return CoverageBackfillPathMatcher.GetBackendBitmap(backfillData, pathCandidates);
     }
 
     private static bool IsBackendLineCovered(ref FileBitmap bitmap, int line)
