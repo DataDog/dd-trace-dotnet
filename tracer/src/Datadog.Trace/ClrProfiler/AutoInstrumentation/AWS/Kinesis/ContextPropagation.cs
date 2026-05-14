@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     {
         private const string KinesisKey = "_datadog";
         private const int MaxKinesisDataSize = 1024 * 1024; // 1MB
+        private const int MaxKinesisPutRecordsRequestSize = 5 * 1024 * 1024; // 5MB total request size, including partition keys
         private const int MaxDsmHeaderSize = 34;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
@@ -37,21 +38,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return;
             }
 
+            var updatedRequestSize = 0L;
+            var mutatedRecords = new List<(IPutRecordsRequestEntry Record, MemoryStream UpdatedData)>();
             foreach (var requestRecord in request.Records)
             {
-                if (requestRecord.DuckCast<IContainsData>() is { } record)
+                if (requestRecord?.DuckCast<IPutRecordsRequestEntry>() is not { } record)
                 {
-                    InjectTraceIntoData(tracer, record, scope, streamName);
+                    continue;
                 }
+
+                updatedRequestSize += GetPutRecordsRequestEntrySizeBytes(record);
+                if (TryCreateInjectedData(tracer, record, scope, streamName, out var updatedData))
+                {
+                    updatedRequestSize += updatedData.Length - (record.Data?.Length ?? 0);
+                    mutatedRecords.Add((record, updatedData));
+                }
+            }
+
+            if (updatedRequestSize > MaxKinesisPutRecordsRequestSize)
+            {
+                Log.Debug("Kinesis PutRecords batch size too large to pass context");
+                return;
+            }
+
+            foreach (var (record, updatedData) in mutatedRecords)
+            {
+                record.Data = updatedData;
             }
         }
 
         public static void InjectTraceIntoData<TRecordRequest>(Tracer tracer, TRecordRequest record, Scope? scope, string? streamName)
             where TRecordRequest : IContainsData
         {
+            if (TryCreateInjectedData(tracer, record, scope, streamName, out var updatedData))
+            {
+                record.Data = updatedData;
+            }
+        }
+
+        private static bool TryCreateInjectedData<TRecordRequest>(Tracer tracer, TRecordRequest record, Scope? scope, string? streamName, out MemoryStream updatedData)
+            where TRecordRequest : IContainsData
+        {
+            updatedData = null!;
             if (scope is null)
             {
-                return;
+                return false;
             }
 
             Dictionary<string, object>? jsonData = null;
@@ -92,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             if (jsonData is null || jsonData.Count == 0)
             {
-                return;
+                return false;
             }
 
             if (scope.Span.Context is { } context)
@@ -106,16 +137,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                     var memoryStreamData = DictionaryToMemoryStream(jsonData);
                     if (memoryStreamData.Length > MaxKinesisDataSize)
                     {
-                        return;
+                        return false;
                     }
 
-                    record.Data = memoryStreamData;
+                    updatedData = memoryStreamData;
+                    return true;
                 }
                 catch (Exception)
                 {
                     Log.Debug("Unable to inject trace context to Kinesis data.");
                 }
             }
+
+            return false;
+        }
+
+        private static long GetPutRecordsRequestEntrySizeBytes(IPutRecordsRequestEntry record)
+        {
+            return (record.Data?.Length ?? 0)
+                 + GetUtf8Size(record.PartitionKey)
+                 + GetUtf8Size(record.ExplicitHashKey);
+        }
+
+        private static int GetUtf8Size(string? value)
+        {
+            return value is null ? 0 : Encoding.UTF8.GetByteCount(value);
         }
 
         [TestingAndPrivateOnly]
