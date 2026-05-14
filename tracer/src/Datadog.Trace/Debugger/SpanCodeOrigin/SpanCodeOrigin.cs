@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             Log.Information("Initializing Code Origin for Spans");
             Settings = settings;
             _tags = new CodeOriginTags(Settings.CodeOriginMaxUserFrames);
-            _createAnalysisLazy = CreateAnalysisLazy;
+            _createAnalysisLazy = assembly => new Lazy<AssemblyAnalysis>(() => ComputeAnalysis(assembly));
         }
 
         internal DebuggerSettings Settings { get; }
@@ -189,11 +189,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         private AssemblyAnalysis GetOrComputeAnalysis(Assembly assembly)
         {
             return _assemblyCache.GetValue(assembly, _createAnalysisLazy).Value;
-        }
-
-        private Lazy<AssemblyAnalysis> CreateAnalysisLazy(Assembly assembly)
-        {
-            return new Lazy<AssemblyAnalysis>(() => ComputeAnalysis(assembly));
         }
 
         private AssemblyAnalysis ComputeAnalysis(Assembly assembly)
