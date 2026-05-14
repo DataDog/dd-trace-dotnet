@@ -274,6 +274,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
             else
             {
+                // Regression test: When not using DD_AGENT_HOST, set DD_APM_RECEIVER_SOCKET to ensure that OTLP traces
+                // are successfully sent over TCP/IP when the opt-in OTLP export is enabled with an http endpoint
+                SetEnvironmentVariable("DD_APM_RECEIVER_SOCKET", "/var/run/datadog/apm.socket");
                 SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             }
 
