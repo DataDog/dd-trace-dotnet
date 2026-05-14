@@ -27,7 +27,7 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     /// Runs the TCP transport variant for the ITR coverage-backfill integration smoke test.
     /// </summary>
     /// <remarks>
-    /// This smoke test depends on Coverlet's in-process data-collector hook emitting a coverage message; Linux CI lanes currently generate the Cobertura attachment but do not deliver that hook callback.
+    /// This smoke test depends on Coverlet's in-process data-collector hook emitting a coverage message; the runner tests cover the post-command XML fallback used when that callback is unavailable.
     /// </remarks>
     /// <param name="packageVersion">XUnit package version under test.</param>
     /// <param name="evpVersionToRemove">EVP endpoint version removed from the mock agent to force the target path.</param>

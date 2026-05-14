@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Backfill;
@@ -32,6 +33,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
         internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
+
+        /// <summary>
+        /// VSTest result-directory option names accepted by dotnet test and dotnet vstest command lines.
+        /// </summary>
+        private static readonly string[] CoverletResultsDirectoryOptions = ["--results-directory", "--ResultsDirectory", "/ResultsDirectory"];
+
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
 
@@ -239,10 +246,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 TimeSpan.FromMilliseconds(250),
                 TimeSpan.FromMilliseconds(50),
                 waitForFirstMessage: CoverageBackfillCapability.ShouldWaitForCoverageIpc(TestOptimization.Instance.Settings));
+            var processedCoverletXmlReports = TryProcessCoverletCollectorXmlReports(session, recordCoverageResult: !session.HasCodeCoverageResults);
             if (CoverageBackfillDataStore.TryReadCoverageIpcFailure(out var ipcFailure))
             {
-                Log.Warning("RunCiCommand: A selected coverage tool could not deliver its coverage result through IPC: {Reason}", ipcFailure);
-                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                if (!processedCoverletXmlReports && !session.HasCodeCoverageResults)
+                {
+                    Log.Warning("RunCiCommand: A selected coverage tool could not deliver its coverage result through IPC: {Reason}", ipcFailure);
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                }
             }
 
             session.PublishCodeCoverage();
@@ -287,6 +298,256 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             CoverageBackfillData? backfillData = null;
             var shouldBackfill = session is not null && TryGetCoverageBackfillDataForSession(session, out backfillData);
             return ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData, shouldBackfill, out result);
+        }
+
+        /// <summary>
+        /// Locates the VSTest results directory that can contain Coverlet collector Cobertura attachments.
+        /// </summary>
+        /// <param name="commandLine">Test command line used to detect Coverlet and parse result-directory switches.</param>
+        /// <param name="workingDirectory">Command working directory used for relative result directories and VSTest defaults.</param>
+        /// <param name="resultsDirectory">Resolved absolute results directory.</param>
+        /// <returns>True when the command uses the Coverlet collector and a results directory can be resolved.</returns>
+        internal static bool TryGetCoverletCollectorResultsDirectory(string? commandLine, string? workingDirectory, out string resultsDirectory)
+        {
+            resultsDirectory = string.Empty;
+            if (!CoverageBackfillCapability.IsCoverletCoverageCommand(commandLine))
+            {
+                return false;
+            }
+
+            var baseDirectory = GetAbsoluteWorkingDirectory(workingDirectory);
+            if (TryGetCommandOptionValue(commandLine!, CoverletResultsDirectoryOptions, out var configuredResultsDirectory))
+            {
+                return TryResolveDirectoryPath(configuredResultsDirectory, baseDirectory, out resultsDirectory);
+            }
+
+            resultsDirectory = Path.Combine(baseDirectory, "TestResults");
+            return true;
+        }
+
+        /// <summary>
+        /// Rewrites Coverlet collector XML attachments after VSTest exits so report files stay accurate even when IPC is unavailable.
+        /// </summary>
+        /// <param name="session">Current test session.</param>
+        /// <param name="recordCoverageResult">Whether processed XML results should be recorded for session coverage publication.</param>
+        /// <returns>True when at least one Coverlet XML report was processed.</returns>
+        private static bool TryProcessCoverletCollectorXmlReports(TestSession session, bool recordCoverageResult)
+        {
+            if (!TryGetCoverletCollectorResultsDirectory(session.Command, session.WorkingDirectory, out var resultsDirectory) ||
+                !Directory.Exists(resultsDirectory))
+            {
+                return false;
+            }
+
+            var coverageFiles = Directory.EnumerateFiles(resultsDirectory, "coverage.cobertura.xml", SearchOption.AllDirectories)
+                                         .Where(filePath => IsSessionCoverageAttachment(filePath, session.StartTime))
+                                         .ToArray();
+            if (coverageFiles.Length == 0)
+            {
+                return false;
+            }
+
+            var processedReports = 0;
+            foreach (var coverageFile in coverageFiles)
+            {
+                if (!TryProcessCoverageXml(coverageFile, session, out var coverageResult))
+                {
+                    Log.Warning("RunCiCommand: Coverlet collector XML report could not be processed: {Path}", coverageFile);
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    continue;
+                }
+
+                processedReports++;
+                if (recordCoverageResult)
+                {
+                    session.RecordCodeCoverage(
+                        CodeCoverageReportSource.Coverlet,
+                        coverageResult.Percentage,
+                        coverageResult.Backfilled,
+                        coverageResult.ExecutableLines,
+                        coverageResult.CoveredLines,
+                        coverageResult.Diagnostic);
+                }
+            }
+
+            if (processedReports > 0)
+            {
+                Log.Information<int>("RunCiCommand: Coverlet collector XML reports processed. Count={Count}", processedReports);
+            }
+
+            return processedReports > 0;
+        }
+
+        /// <summary>
+        /// Checks whether a Coverlet collector attachment was written during the current test session.
+        /// </summary>
+        /// <param name="filePath">Coverage attachment path.</param>
+        /// <param name="sessionStartTime">Current test session start time.</param>
+        /// <returns>True when the file timestamp is new enough to belong to this session.</returns>
+        private static bool IsSessionCoverageAttachment(string filePath, DateTimeOffset sessionStartTime)
+        {
+            try
+            {
+                return File.GetLastWriteTimeUtc(filePath) >= sessionStartTime.UtcDateTime.AddSeconds(-1);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Resolves a working directory to an absolute path while preserving the propagated command directory when available.
+        /// </summary>
+        /// <param name="workingDirectory">Session working directory, which may have been normalized to a repository-relative path.</param>
+        /// <returns>Absolute directory used as the base for VSTest result paths.</returns>
+        private static string GetAbsoluteWorkingDirectory(string? workingDirectory)
+        {
+            var propagatedWorkingDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory);
+            if (!StringUtil.IsNullOrEmpty(propagatedWorkingDirectory) && Path.IsPathRooted(propagatedWorkingDirectory!))
+            {
+                return propagatedWorkingDirectory!;
+            }
+
+            if (!StringUtil.IsNullOrEmpty(workingDirectory))
+            {
+                if (Path.IsPathRooted(workingDirectory!))
+                {
+                    return Path.GetFullPath(workingDirectory!);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(TestOptimization.Instance.CIValues.WorkspacePath))
+                {
+                    return Path.GetFullPath(Path.Combine(TestOptimization.Instance.CIValues.WorkspacePath!, workingDirectory!));
+                }
+            }
+
+            return Environment.CurrentDirectory;
+        }
+
+        /// <summary>
+        /// Parses a command-line option value from a shell-like command string.
+        /// </summary>
+        /// <param name="commandLine">Command line to parse.</param>
+        /// <param name="optionNames">Supported option spellings.</param>
+        /// <param name="value">Option value when found.</param>
+        /// <returns>True when the option was present and had a value.</returns>
+        private static bool TryGetCommandOptionValue(string commandLine, string[] optionNames, out string value)
+        {
+            value = string.Empty;
+            var arguments = SplitCommandLine(commandLine);
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var argument = arguments[i];
+                foreach (var optionName in optionNames)
+                {
+                    if (argument.Equals(optionName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (i + 1 < arguments.Count && !StringUtil.IsNullOrEmpty(arguments[i + 1]))
+                        {
+                            value = arguments[i + 1];
+                            return true;
+                        }
+
+                        return false;
+                    }
+
+                    if (TryGetInlineOptionValue(argument, optionName, out value))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reads an option value from single-token syntaxes such as <c>--ResultsDirectory:path</c> or <c>--results-directory=path</c>.
+        /// </summary>
+        /// <param name="argument">Command-line argument token.</param>
+        /// <param name="optionName">Option name to match.</param>
+        /// <param name="value">Inline option value when found.</param>
+        /// <returns>True when the argument contains the option value.</returns>
+        private static bool TryGetInlineOptionValue(string argument, string optionName, out string value)
+        {
+            value = string.Empty;
+            if (!argument.StartsWith(optionName, StringComparison.OrdinalIgnoreCase) ||
+                argument.Length <= optionName.Length)
+            {
+                return false;
+            }
+
+            var separator = argument[optionName.Length];
+            if (separator is not ':' and not '=')
+            {
+                return false;
+            }
+
+            value = argument.Substring(optionName.Length + 1);
+            return !StringUtil.IsNullOrEmpty(value);
+        }
+
+        /// <summary>
+        /// Resolves a configured directory path against the command working directory.
+        /// </summary>
+        /// <param name="directoryPath">Directory path from the command line.</param>
+        /// <param name="baseDirectory">Absolute command working directory.</param>
+        /// <param name="resolvedPath">Resolved absolute path.</param>
+        /// <returns>True when the path could be resolved.</returns>
+        private static bool TryResolveDirectoryPath(string directoryPath, string baseDirectory, out string resolvedPath)
+        {
+            resolvedPath = string.Empty;
+            try
+            {
+                resolvedPath = Path.IsPathRooted(directoryPath) ? Path.GetFullPath(directoryPath) : Path.GetFullPath(Path.Combine(baseDirectory, directoryPath));
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Splits a command line into arguments while preserving quoted spaces and removing quote delimiters.
+        /// </summary>
+        /// <param name="commandLine">Command line to split.</param>
+        /// <returns>Parsed argument tokens.</returns>
+        private static List<string> SplitCommandLine(string commandLine)
+        {
+            var arguments = new List<string>();
+            var builder = new StringBuilder();
+            var inQuotes = false;
+            for (var i = 0; i < commandLine.Length; i++)
+            {
+                var character = commandLine[i];
+                if (character == '"')
+                {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+
+                if (char.IsWhiteSpace(character) && !inQuotes)
+                {
+                    if (builder.Length > 0)
+                    {
+                        arguments.Add(builder.ToString());
+                        builder.Clear();
+                    }
+
+                    continue;
+                }
+
+                builder.Append(character);
+            }
+
+            if (builder.Length > 0)
+            {
+                arguments.Add(builder.ToString());
+            }
+
+            return arguments;
         }
 
         /// <summary>

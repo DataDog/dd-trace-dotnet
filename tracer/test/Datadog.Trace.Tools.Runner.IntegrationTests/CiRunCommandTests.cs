@@ -9,6 +9,8 @@ using System.IO;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using Datadog.Trace.TestHelpers;
@@ -42,11 +44,23 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled,
         Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
         Configuration.ConfigurationKeys.CIVisibility.TestOptimizationRunId,
+        Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip,
+        Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillPath,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
         Configuration.ConfigurationKeys.CIVisibility.GitCommitSha,
         Configuration.ConfigurationKeys.CIVisibility.GitRepositoryUrl)]
     public class CiRunCommandTests : BaseRunCommandTests
     {
+        /// <summary>
+        /// Repository-relative source path used by the backend coverage payload in the Coverlet fallback test.
+        /// </summary>
+        private const string XUnitSampleSourcePath = "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs";
+
+        /// <summary>
+        /// Source line covered by the skipped XUnit sample test in the backend coverage payload.
+        /// </summary>
+        private const int SimplePassTestCoveredLine = 23;
+
         public CiRunCommandTests()
             : base("ci run", enableCiVisibilityMode: true)
         {
@@ -163,6 +177,99 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Verifies that the runner finalizer rewrites Coverlet collector XML attachments when the collector cannot report coverage through IPC.
+        /// </summary>
+        [Fact]
+        public void CoverletCollectorXmlCoverageIsBackfilledWhenIpcCoverageIsUnavailable()
+        {
+            PrepareRunnerSettingsInputs();
+            TestOptimization.Instance.Reset();
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.KnownTestsEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "0");
+            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled, "0");
+
+            string command = null;
+            string arguments = null;
+            Dictionary<string, string> environmentVariables = null;
+            bool callbackInvoked = false;
+            MockCIVisibilityTestModule testSession = null;
+
+            using var coverageResultsDirectory = new TemporaryDirectory("dd-ci-coverlet-collector-");
+            string coverageFile = null;
+            EnvironmentHelpers.SetEnvironmentVariable(
+                Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
+                $"dotnet test --collect:\"XPlat Code Coverage\" --ResultsDirectory:\"{coverageResultsDirectory.RootPath}\"");
+
+            Program.CallbackForTests = (c, a, e) =>
+            {
+                var session = DotnetCommon.CreateSession();
+                command = c;
+                arguments = a;
+                environmentVariables = e;
+                callbackInvoked = true;
+
+                coverageFile = WriteCoverletCollectorCoverageFile(coverageResultsDirectory.RootPath);
+                var backfillData = CreateCoverageBackfillData(XUnitSampleSourcePath, SimplePassTestCoveredLine);
+                CoverageBackfillDataStore.Persist(TestOptimization.Instance, backfillData);
+                CoverageBackfillDataStore.RecordActualItrSkip();
+                CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
+                DotnetCommon.FinalizeSession(session, 0, null);
+            };
+
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            agent.EventPlatformProxyPayloadReceived += (sender, args) =>
+            {
+                if (args.Value.Headers["Content-Type"] != "application/msgpack")
+                {
+                    return;
+                }
+
+                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(args.Value.BodyInJson);
+                if (payload.Events?.Length > 0)
+                {
+                    foreach (var @event in payload.Events)
+                    {
+                        if (@event.Type == SpanTypes.TestSession)
+                        {
+                            testSession = JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString());
+                            break;
+                        }
+                    }
+                }
+            };
+
+            var agentUrl = $"http://localhost:{agent.Port}";
+            var commandLine = $"{CommandPrefix} test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+
+            using var console = ConsoleHelper.Redirect();
+
+            var exitCode = Program.Main(commandLine.Split(' '));
+
+            using var scope = new AssertionScope();
+
+            scope.AddReportable("output", console.Output);
+            scope.AddReportable("coverageFile", coverageFile);
+            scope.AddReportable("coverageXml", coverageFile is null ? string.Empty : File.ReadAllText(coverageFile));
+
+            exitCode.Should().Be(0);
+            callbackInvoked.Should().BeTrue();
+            command.Should().Be("test.exe");
+            arguments.Should().BeNullOrEmpty();
+            environmentVariables.Should().NotBeNull();
+
+            coverageFile.Should().NotBeNull();
+            File.ReadAllText(coverageFile).Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
+            testSession.Should().NotBeNull();
+            testSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 100));
+        }
+
         private void RunExternalCoverageTest(string filePath)
         {
             PrepareRunnerSettingsInputs();
@@ -257,11 +364,91 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         /// <summary>
+        /// Creates a minimal Coverlet collector Cobertura attachment with the skipped test line marked as uncovered.
+        /// </summary>
+        /// <param name="resultsDirectory">VSTest results directory where Coverlet writes attachment subdirectories.</param>
+        /// <returns>Absolute path to the generated Cobertura report.</returns>
+        private string WriteCoverletCollectorCoverageFile(string resultsDirectory)
+        {
+            var attachmentDirectory = Path.Combine(resultsDirectory, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(attachmentDirectory);
+            var coverageFile = Path.Combine(attachmentDirectory, "coverage.cobertura.xml");
+            var coverageXml =
+                $"""
+                 <coverage line-rate="0" lines-valid="1" lines-covered="0">
+                   <packages>
+                     <package name="sample" line-rate="0">
+                       <classes>
+                         <class name="Samples.XUnitTests.TestSuite" filename="integrations/Samples.XUnitTests/TestSuite.cs" line-rate="0">
+                           <lines>
+                             <line number="{SimplePassTestCoveredLine}" hits="0" />
+                           </lines>
+                         </class>
+                       </classes>
+                     </package>
+                   </packages>
+                 </coverage>
+                 """;
+            File.WriteAllText(coverageFile, coverageXml);
+            return coverageFile;
+        }
+
+        /// <summary>
+        /// Creates backend coverage data with one covered line encoded using the backend bitmap format.
+        /// </summary>
+        /// <param name="path">Repository-relative source path reported by the backend.</param>
+        /// <param name="line">One-based covered source line.</param>
+        /// <returns>Decoded backend coverage data for the supplied source line.</returns>
+        private CoverageBackfillData CreateCoverageBackfillData(string path, int line)
+        {
+            var bitmap = new byte[(line + 7) / 8];
+            var index = line - 1;
+            bitmap[index >> 3] = (byte)(128 >> (index & 7));
+            return CoverageBackfillData.FromBackendCoverage(
+                new Dictionary<string, string>
+                {
+                    [path] = Convert.ToBase64String(bitmap)
+                });
+        }
+
+        /// <summary>
         /// Updates the cached CI environment used by Test Optimization when another inherited runner test initialized it first.
         /// </summary>
         private void SetCachedCiEnvironmentValue(string propertyName, string value)
         {
             typeof(CIEnvironmentValues).GetProperty(propertyName)?.SetValue(CIEnvironmentValues.Instance, value);
+        }
+
+        /// <summary>
+        /// Owns a temporary directory and removes it when the test finishes.
+        /// </summary>
+        private sealed class TemporaryDirectory : IDisposable
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TemporaryDirectory"/> class.
+            /// </summary>
+            /// <param name="prefix">Directory name prefix used to identify the test artifact.</param>
+            public TemporaryDirectory(string prefix)
+            {
+                RootPath = Path.Combine(Path.GetTempPath(), prefix + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(RootPath);
+            }
+
+            /// <summary>
+            /// Gets the absolute path of the owned temporary directory.
+            /// </summary>
+            public string RootPath { get; }
+
+            /// <summary>
+            /// Deletes the owned temporary directory when it still exists.
+            /// </summary>
+            public void Dispose()
+            {
+                if (Directory.Exists(RootPath))
+                {
+                    Directory.Delete(RootPath, recursive: true);
+                }
+            }
         }
     }
 }

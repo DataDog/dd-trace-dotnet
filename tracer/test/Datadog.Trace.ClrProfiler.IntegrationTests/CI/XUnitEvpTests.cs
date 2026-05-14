@@ -727,7 +727,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     {
         Skip.If(
             EnvironmentTools.IsLinux(),
-            "Coverlet collector writes a Cobertura attachment on Linux under auto instrumentation but does not invoke the in-process callback that this IPC smoke test validates.");
+            "Coverlet collector writes a Cobertura attachment on Linux under auto instrumentation but does not invoke the in-process callback validated by this IPC smoke test.");
 
         var tests = new List<MockCIVisibilityTest>();
         var coverageMessages = new List<SessionCodeCoverageMessage>();
@@ -742,7 +742,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             out _,
             out var runId);
 
-        const string sessionCommand = "dotnet test --collect \"XPlat Code Coverage;IncludeTestAssembly=true\"";
+        const string sessionCommand = "dotnet test --collect:\"XPlat Code Coverage;IncludeTestAssembly=true\"";
         Output.WriteLine("RunId: {0}", runId);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
 

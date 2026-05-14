@@ -113,8 +113,13 @@ internal readonly struct SkippableTestsRequestScope : IEquatable<SkippableTestsR
         Append(builder, Tags.CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
         AppendCustomTestConfigurations(builder, settings.GlobalTags);
 
+        var payload = Encoding.UTF8.GetBytes(builder.ToString());
+#if NET6_0_OR_GREATER
+        var bytes = SHA256.HashData(payload);
+#else
         using HashAlgorithm sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(builder.ToString()));
+        var bytes = sha256.ComputeHash(payload);
+#endif
         return HexString.ToHexString(bytes);
     }
 

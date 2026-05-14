@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.IO;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -207,6 +208,35 @@ public class CodeCoverageAdapterInjectorTests
         yield return [example5, example5Expected];
     }
 
+    /// <summary>
+    /// Provides command lines that cover the VSTest result-directory forms used by Coverlet collector runs.
+    /// </summary>
+    /// <returns>Command line, working directory, and expected resolved results directory.</returns>
+    public static IEnumerable<object[]> CoverletResultsDirectoryData()
+    {
+        var workingDirectory = Path.Combine(Path.GetTempPath(), "dd-coverlet-results");
+        yield return [
+            "dotnet test --collect \"XPlat Code Coverage\"",
+            workingDirectory,
+            Path.Combine(workingDirectory, "TestResults")
+        ];
+        yield return [
+            "dotnet test --collect:\"XPlat Code Coverage\" --results-directory ./coverage-results",
+            workingDirectory,
+            Path.GetFullPath(Path.Combine(workingDirectory, "coverage-results"))
+        ];
+        yield return [
+            "dotnet vstest sample.dll --collect:\"XPlat Code Coverage\" --ResultsDirectory:\"/tmp/coverlet results\"",
+            workingDirectory,
+            Path.GetFullPath("/tmp/coverlet results")
+        ];
+        yield return [
+            "dotnet vstest sample.dll --collect:\"XPlat Code Coverage\" /ResultsDirectory:/tmp/coverlet-results",
+            workingDirectory,
+            Path.GetFullPath("/tmp/coverlet-results")
+        ];
+    }
+
     [Theory]
     [MemberData(nameof(DotnetTestData))]
     public void InjectCodeCoverageCollectorToDotnetTest(string[] args, string[] expectedArgs)
@@ -237,5 +267,32 @@ public class CodeCoverageAdapterInjectorTests
         modifiedArgs.Should().Equal(expectedArgs);
 
         EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath, originalValue);
+    }
+
+    /// <summary>
+    /// Verifies that Coverlet collector result directories are resolved from common dotnet test and vstest command lines.
+    /// </summary>
+    /// <param name="commandLine">Command line to parse.</param>
+    /// <param name="workingDirectory">Command working directory used for relative paths.</param>
+    /// <param name="expectedPath">Expected absolute results directory.</param>
+    [Theory]
+    [MemberData(nameof(CoverletResultsDirectoryData))]
+    public void TryGetCoverletCollectorResultsDirectory(string commandLine, string workingDirectory, string expectedPath)
+    {
+        DotnetCommon.TryGetCoverletCollectorResultsDirectory(commandLine, workingDirectory, out var resultsDirectory)
+                    .Should()
+                    .BeTrue();
+        resultsDirectory.Should().Be(expectedPath);
+    }
+
+    /// <summary>
+    /// Verifies that result-directory resolution is disabled when the command does not enable the Coverlet collector.
+    /// </summary>
+    [Fact]
+    public void TryGetCoverletCollectorResultsDirectoryReturnsFalseWhenCoverletIsNotEnabled()
+    {
+        DotnetCommon.TryGetCoverletCollectorResultsDirectory("dotnet test", "/tmp/work", out _)
+                    .Should()
+                    .BeFalse();
     }
 }
