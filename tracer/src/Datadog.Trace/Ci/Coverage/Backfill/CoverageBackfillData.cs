@@ -187,7 +187,7 @@ internal sealed class CoverageBackfillData
     {
         using var leftBitmap = new FileBitmap(left);
         using var rightBitmap = new FileBitmap(right);
-        var mergedBitmap = FileBitmap.Or(leftBitmap, rightBitmap, reuseBufferFromBitmapA: false);
+        var mergedBitmap = leftBitmap | rightBitmap;
         return mergedBitmap.GetInternalArrayOrToArrayAndDispose();
     }
 }

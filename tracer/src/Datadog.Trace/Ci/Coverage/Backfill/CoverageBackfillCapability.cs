@@ -7,7 +7,6 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
@@ -19,6 +18,26 @@ namespace Datadog.Trace.Ci.Coverage.Backfill;
 /// </summary>
 internal static class CoverageBackfillCapability
 {
+    /// <summary>
+    /// Command-line fragments that identify local test filters which can narrow execution inside a backend coverage scope.
+    /// </summary>
+    private static readonly string[] UnsupportedTestFilterFragments = ["--filter", "/testcasefilter", "--testcasefilter", "/tests:", "--tests:"];
+
+    /// <summary>
+    /// Command-line fragments that identify target-framework selectors which can change the executed code path inside a backend coverage scope.
+    /// </summary>
+    private static readonly string[] UnsupportedFrameworkFilterFragments = ["--framework", "/framework:", " -f "];
+
+    /// <summary>
+    /// Command-line fragments that identify coverage thresholds evaluated before Datadog can rewrite an external report.
+    /// </summary>
+    private static readonly string[] UnsupportedExternalThresholdFragments = ["--threshold", "/p:threshold", "threshold=", "threshold%3d", "thresholdtype", "thresholdstat"];
+
+    /// <summary>
+    /// External XML coverage formats whose line entries can be reconciled after the coverage command finishes.
+    /// </summary>
+    private static readonly string[] GeneratedLineCoverageXmlFormats = ["cobertura", "opencover"];
+
     /// <summary>
     /// Gets whether the current run has any coverage source that would require ITR coverage backfill.
     /// </summary>
@@ -178,13 +197,13 @@ internal static class CoverageBackfillCapability
     /// <returns>True when coverage-active skipping must be disabled for aggregate safety.</returns>
     private static bool HasUnsupportedSelection(string commandLine, out string reason)
     {
-        if (ContainsAny(commandLine, "--filter", "/testcasefilter", "--testcasefilter", "/tests:", "--tests:"))
+        if (ContainsAny(commandLine, UnsupportedTestFilterFragments))
         {
             reason = "A test filter was detected; backend coverage may include candidates outside the executed subset.";
             return true;
         }
 
-        if (ContainsAny(commandLine, "--framework", "/framework:", " -f "))
+        if (ContainsAny(commandLine, UnsupportedFrameworkFilterFragments))
         {
             reason = "A target-framework subset was detected; backend coverage is not scoped to the selected framework.";
             return true;
@@ -226,7 +245,7 @@ internal static class CoverageBackfillCapability
     /// <returns>True when an unsupported external threshold mode was detected.</returns>
     private static bool HasUnsupportedExternalThreshold(string commandLine)
     {
-        return ContainsAny(commandLine, "--threshold", "/p:threshold", "threshold=", "threshold%3d", "thresholdtype", "thresholdstat");
+        return ContainsAny(commandLine, UnsupportedExternalThresholdFragments);
     }
 
     /// <summary>
@@ -236,18 +255,26 @@ internal static class CoverageBackfillCapability
     /// <returns>True when the generated XML format is known to expose line entries that can be rewritten after the command.</returns>
     private static bool IsGeneratedLineCoverageXmlCommand(string commandLine)
     {
-        return ContainsAny(commandLine, "cobertura", "opencover");
+        return ContainsAny(commandLine, GeneratedLineCoverageXmlFormats);
     }
 
     /// <summary>
     /// Checks whether a command line contains any known unsafe selector fragment.
     /// </summary>
     /// <param name="value">Command line to inspect.</param>
-    /// <param name="fragments">Case-insensitive fragments to search for.</param>
+    /// <param name="fragments">Case-insensitive fragments to search for without allocating a per-call params array.</param>
     /// <returns>True when at least one fragment appears in the command line.</returns>
-    private static bool ContainsAny(string value, params string[] fragments)
+    private static bool ContainsAny(string value, ReadOnlySpan<string> fragments)
     {
-        return fragments.Any(fragment => value.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0);
+        foreach (var fragment in fragments)
+        {
+            if (value.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
