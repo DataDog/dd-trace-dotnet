@@ -6,6 +6,8 @@
 using System;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
@@ -30,7 +32,36 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
 
         internal async Task StopSample()
         {
-            using var httpWebResponse = await WebRequest.CreateHttp(_stopUrl).GetResponseAsync();
+            // The sample process may have already exited (e.g., crash or early termination).
+            // In that case, calling /stop will fail with connection refused, masking the real cause.
+            if (Process.HasExited)
+            {
+                _output.WriteLine($"[DebuggerSampleProcessHelper] Process already exited with code {Process.ExitCode} (0x{Process.ExitCode:X}). Skipping /stop request.");
+                _output.WriteLine($"[DebuggerSampleProcessHelper] Standard output:\n{StandardOutput}");
+                _output.WriteLine($"[DebuggerSampleProcessHelper] Error output:\n{ErrorOutput}");
+                ExitCodeException.ThrowIfNonZero(Process.ExitCode);
+                return;
+            }
+
+            try
+            {
+                using var httpWebResponse = await WebRequest.CreateHttp(_stopUrl).GetResponseAsync();
+            }
+            catch (WebException ex) when (ex.InnerException is HttpRequestException or SocketException)
+            {
+                // If the process exited between the HasExited check and the /stop request, surface exit details.
+                if (Process.HasExited)
+                {
+                    _output.WriteLine($"[DebuggerSampleProcessHelper] /stop request failed because the process already exited with code {Process.ExitCode} (0x{Process.ExitCode:X}).");
+                    _output.WriteLine($"[DebuggerSampleProcessHelper] Standard output:\n{StandardOutput}");
+                    _output.WriteLine($"[DebuggerSampleProcessHelper] Error output:\n{ErrorOutput}");
+                    ExitCodeException.ThrowIfNonZero(Process.ExitCode);
+                    return;
+                }
+
+                throw;
+            }
+
             var timeout = 10_000;
             var isExited = Process.WaitForExit(timeout);
 

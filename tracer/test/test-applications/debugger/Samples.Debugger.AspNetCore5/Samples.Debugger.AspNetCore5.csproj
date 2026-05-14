@@ -4,6 +4,12 @@
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 
+  <!-- NETSDK1206 (.NET 8+ only): SQLitePCLRaw.lib.e_sqlite3 transitively declares deprecated alpine-* distribution-specific RIDs.
+       Not actionable from our side; we don't author RID-specific assets in this project. -->
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>None</DebugType>
     <DebugSymbols>false</DebugSymbols>

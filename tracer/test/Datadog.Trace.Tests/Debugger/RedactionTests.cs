@@ -11,6 +11,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger
 {
+    [CollectionDefinition(nameof(RedactionTests), DisableParallelization = true)]
+    [Collection(nameof(RedactionTests))]
     [UsesVerify]
     public class RedactionTests : IDisposable
     {

@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
@@ -186,6 +187,39 @@ public class EncoderUnitTests : WafLibraryRequiredTest
     {
         Encoder.FormatArgs(args).Should().Be(expectedOutput);
         EncoderLegacy.FormatArgs(args).Should().Be(expectedOutput);
+    }
+
+    [SkippableFact]
+    public void JValueScalarsKeepTheirNativeTypes()
+    {
+        var target = JToken.Parse(
+            """
+            {
+              "output": {
+                "attributes": {
+                  "string": { "value": "literal" },
+                  "integer": { "value": 662607015 },
+                  "signed": { "value": -42 },
+                  "double": { "value": 3.14 },
+                  "bool": { "value": true }
+                }
+              }
+            }
+            """);
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode();
+
+        result.Should().BeOfType<Dictionary<string, object>>();
+        var resultDic = (Dictionary<string, object>)result;
+        var output = resultDic["output"].Should().BeOfType<Dictionary<string, object>>().Subject;
+        var attributes = output["attributes"].Should().BeOfType<Dictionary<string, object>>().Subject;
+
+        attributes["string"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", "literal" } });
+        attributes["integer"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", 662607015L } });
+        attributes["signed"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", -42L } });
+        attributes["double"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", 3.14D } });
+        attributes["bool"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", true } });
     }
 
     private static List<object> MakeNestedList(int nestingDepth)

@@ -280,16 +280,33 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
     private void OnFirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
     {
+        if (e.Exception is OutOfMemoryException)
+        {
+            // We have a special path for OOM because we can't allocate
+            // Doing anything here is liable to throw exceptions
+            return;
+        }
+
         if (_handlingFirstChanceException)
         {
             return;
         }
 
-        _handlingFirstChanceException = true;
-        var typeName = e.Exception.GetType().Name;
-        var tag = _exceptionTagCache.GetOrAdd(typeName, static name => new KeyValuePair<string, object?>("error.type", name));
-        _exceptions?.Add(1, tag);
-        _handlingFirstChanceException = false;
+        try
+        {
+            _handlingFirstChanceException = true;
+            var typeName = e.Exception.GetType().Name;
+            var tag = _exceptionTagCache.GetOrAdd(typeName, static name => new KeyValuePair<string, object?>("error.type", name));
+            _exceptions?.Add(1, tag);
+        }
+        catch
+        {
+            // Don't want to escape here
+        }
+        finally
+        {
+            _handlingFirstChanceException = false;
+        }
     }
 }
 #endif
