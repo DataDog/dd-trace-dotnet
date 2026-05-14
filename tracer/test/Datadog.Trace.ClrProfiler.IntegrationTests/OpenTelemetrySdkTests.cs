@@ -252,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => string.Empty
             };
 
-            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD_{protocol.Replace("/", "_")}";
+            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD";
 
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
@@ -413,10 +413,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var @event in tracesRequests.SelectTokens("$..events[*]"))
                 {
-                    if (@event[timeUnixNanoKey] != null)
-                    {
-                        @event[timeUnixNanoKey] = "0";
-                    }
+                    ((JObject)@event).Remove(timeUnixNanoKey);
+                    ((JObject)@event).AddFirst(new JProperty(timeUnixNanoKey, "0"));
                 }
 
                 // For the Datadog SDK, perform more sanitization
@@ -496,6 +494,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpRegex, @"string_value"": ""System.ArgumentException: Example argument exception""");
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpJsonRegex, @"stringValue"": ""System.ArgumentException: Example argument exception""");
+
+                // Add scrubbers only for http/protobuf
+                if (protocol == "http/protobuf")
+                {
+                    // Remap http/protobuf field names to JSON field names
+                    settings.AddSimpleScrubber("\"resource_spans\"", "\"resourceSpans\"");
+                    settings.AddSimpleScrubber("\"scope_spans\"", "\"scopeSpans\"");
+                    settings.AddSimpleScrubber("\"trace_id\"", "\"traceId\"");
+                    settings.AddSimpleScrubber("\"span_id\"", "\"spanId\"");
+                    settings.AddSimpleScrubber("\"parent_span_id\"", "\"parentSpanId\"");
+                    settings.AddSimpleScrubber("\"start_time_unix_nano\"", "\"startTimeUnixNano\"");
+                    settings.AddSimpleScrubber("\"end_time_unix_nano\"", "\"endTimeUnixNano\"");
+                    settings.AddSimpleScrubber("\"time_unix_nano\"", "\"timeUnixNano\"");
+                    settings.AddSimpleScrubber("\"string_value\"", "\"stringValue\"");
+                    settings.AddSimpleScrubber("\"double_value\"", "\"doubleValue\"");
+                    settings.AddSimpleScrubber("\"int_value\"", "\"intValue\"");
+                    settings.AddSimpleScrubber("\"bool_value\"", "\"boolValue\"");
+                    settings.AddSimpleScrubber("\"array_value\"", "\"arrayValue\"");
+
+                    // Remap http/protobuf enum ints to JSON enum names
+                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_INTERNAL\"", "\"kind\": 1");
+                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_SERVER\"", "\"kind\": 2");
+                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_CLIENT\"", "\"kind\": 3");
+                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_PRODUCER\"", "\"kind\": 4");
+                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_CONSUMER\"", "\"kind\": 5");
+                    settings.AddSimpleScrubber("\"code\": \"STATUS_CODE_UNSET\"", "\"code\": 0");
+                    settings.AddSimpleScrubber("\"code\": \"STATUS_CODE_OK\"", "\"code\": 1");
+                    settings.AddSimpleScrubber("\"code\": \"STATUS_CODE_ERROR\"", "\"code\": 2");
+                }
+
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpTraces{snapshotName}";
 
                 await Verifier.Verify(finalJson, settings)
