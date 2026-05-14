@@ -40,15 +40,25 @@ internal static class CoverletCoverageBackfill
             return false;
         }
 
-        foreach (DictionaryEntry moduleEntry in modulesDictionary)
+        foreach (var rawModuleEntry in modulesDictionary)
         {
+            if (rawModuleEntry is not DictionaryEntry moduleEntry)
+            {
+                continue;
+            }
+
             if (moduleEntry.Value is not IDictionary documentsDictionary)
             {
                 continue;
             }
 
-            foreach (DictionaryEntry documentEntry in documentsDictionary)
+            foreach (var rawDocumentEntry in documentsDictionary)
             {
+                if (rawDocumentEntry is not DictionaryEntry documentEntry)
+                {
+                    continue;
+                }
+
                 if (documentEntry.Key is not string documentPath ||
                     GetBackendBitmap(backfillData, documentPath) is not { } backendBitmap)
                 {
@@ -74,15 +84,25 @@ internal static class CoverletCoverageBackfill
                 return 0;
             }
 
-            foreach (DictionaryEntry classEntry in classesDictionary)
+            foreach (var rawClassEntry in classesDictionary)
             {
+                if (rawClassEntry is not DictionaryEntry classEntry)
+                {
+                    continue;
+                }
+
                 if (classEntry.Value is not IDictionary methodsDictionary)
                 {
                     continue;
                 }
 
-                foreach (DictionaryEntry methodEntry in methodsDictionary)
+                foreach (var rawMethodEntry in methodsDictionary)
                 {
+                    if (rawMethodEntry is not DictionaryEntry methodEntry)
+                    {
+                        continue;
+                    }
+
                     if (!TryGetLineHits(methodEntry.Value, out var lineHits))
                     {
                         continue;
