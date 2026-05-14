@@ -249,7 +249,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            return _redactedTypesCache.GetOrAdd(type, CheckForRedactedType);
+            var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+            return _redactedTypesCache.GetOrAdd(effectiveType, CheckForRedactedType);
         }
 
         private bool CheckForRedactedType(Type type)
