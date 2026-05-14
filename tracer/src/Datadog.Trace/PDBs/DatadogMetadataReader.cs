@@ -97,6 +97,9 @@ namespace Datadog.Trace.Pdb
         /// <see cref="GetDocuments"/>. Callers that expect to read IL bodies or local-variable signatures, such as
         /// <see cref="HasMethodBody"/>, <see cref="GetLocalVariableNames(int, int, bool)"/>, and
         /// <see cref="GetLocalSymbols"/>, should prefer <c>metadataOnly: false</c> so the full image is prefetched.
+        /// Callers should always dispose the returned reader promptly. This is especially important when
+        /// <paramref name="metadataOnly"/> is <c>true</c>, because <see cref="PEStreamOptions.Default"/> keeps the PE
+        /// stream open until the reader is disposed.
         /// </param>
         internal static DatadogMetadataReader? CreatePdbReader(Assembly? assembly, bool metadataOnly = false)
         {
