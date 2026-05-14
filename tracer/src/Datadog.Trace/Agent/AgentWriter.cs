@@ -97,9 +97,7 @@ namespace Datadog.Trace.Agent
             ISpanBufferSerializer CreateSpanSerializer() => api.TracesEncoding switch
             {
                 TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
-#if NETCOREAPP3_1_OR_GREATER
                 TracesEncoding.OtlpProtobuf => new OpenTelemetry.Traces.OtlpTracesProtobufSerializer(),
-#endif
                 _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
             };
 

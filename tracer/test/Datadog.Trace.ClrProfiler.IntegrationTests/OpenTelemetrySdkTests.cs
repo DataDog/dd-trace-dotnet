@@ -231,7 +231,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-#if NET6_0_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTracesTestData))]
@@ -531,7 +530,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
-#endif
 
 #if NET6_0_OR_GREATER
         [SkippableTheory]

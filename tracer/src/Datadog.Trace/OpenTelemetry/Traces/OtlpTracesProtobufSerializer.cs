@@ -3,10 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1_OR_GREATER
-
 using System;
-using System.Buffers.Binary;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.OpenTelemetry.Common;
@@ -488,5 +485,3 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         };
     }
 }
-
-#endif

@@ -4,11 +4,9 @@
 //------------------------------------------------------------------------------
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0023, SYSLIB0032
 #nullable enable
-#if NETCOREAPP3_1_OR_GREATER
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 #if NETFRAMEWORK || NETSTANDARD2_0
@@ -20,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -353,5 +350,3 @@ internal static class ProtobufSerializer
         => ref (span.Length != 0) ? ref Unsafe.AsRef(in MemoryMarshal.GetReference(span)) : ref Unsafe.AsRef<T>((void*)1);
 #endif
 }
-
-#endif
