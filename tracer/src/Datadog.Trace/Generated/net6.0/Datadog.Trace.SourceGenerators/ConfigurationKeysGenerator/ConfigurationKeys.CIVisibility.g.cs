@@ -164,6 +164,11 @@ internal static partial class ConfigurationKeys
         public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
 
         /// <summary>
+        /// Jenkins CI environment variable for custom parent ID correlation.
+        /// </summary>
+        public const string CustomParentId = "DD_CUSTOM_PARENT_ID";
+
+        /// <summary>
         /// Jenkins CI environment variable for custom trace ID correlation.
         /// </summary>
         public const string CustomTraceId = "DD_CUSTOM_TRACE_ID";

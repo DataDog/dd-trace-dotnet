@@ -32,6 +32,7 @@ public class ConfigurationTests
                 "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
                 // CIapp extracts  directly from env var, and no reason to think that will change
                 "DD_CUSTOM_TRACE_ID",
+                "DD_CUSTOM_PARENT_ID",
                 "DD_GIT_BRANCH",
                 "DD_GIT_TAG",
                 "DD_GIT_REPOSITORY_URL",
