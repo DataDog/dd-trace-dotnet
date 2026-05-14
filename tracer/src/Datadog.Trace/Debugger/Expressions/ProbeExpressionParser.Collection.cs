@@ -248,23 +248,51 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Call(null, castMethod, source);
     }
 
-    private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out MemberExpression propertyExpression)
+    private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out Expression propertyExpression)
     {
         propertyExpression = null;
 
         if (itParameter.Type == typeof(DictionaryEntry))
         {
-            propertyExpression = Expression.Property(itParameter, propertyName);
+            var property = Expression.Property(itParameter, propertyName);
+            var keyProperty = Expression.Property(itParameter, nameof(DictionaryEntry.Key));
+            propertyExpression = propertyName switch
+            {
+                nameof(KeyValuePair<int, int>.Key) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
+                nameof(KeyValuePair<int, int>.Value) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
+                _ => property,
+            };
             return true;
         }
 
         if (itParameter.Type.IsGenericType && itParameter.Type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
         {
-            propertyExpression = Expression.Property(itParameter, propertyName);
+            var property = Expression.Property(itParameter, propertyName);
+            var keyProperty = Expression.Property(itParameter, nameof(KeyValuePair<int, int>.Key));
+            propertyExpression = propertyName switch
+            {
+                nameof(KeyValuePair<int, int>.Key) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
+                nameof(KeyValuePair<int, int>.Value) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
+                _ => property,
+            };
             return true;
         }
 
         return false;
+    }
+
+    private ConditionalExpression RedactDictionaryValueWhenKeyMatches(Expression valueExpression, Expression keyExpression)
+    {
+        var shouldRedactKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
+        var shouldRedactCall = Expression.Call(Expression.Constant(this), shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
+        return Expression.Condition(shouldRedactCall, RedactedValue(), valueExpression);
+    }
+
+    private bool ShouldRedactDictionaryKey(object key)
+    {
+        var name = key?.ToString();
+        var type = key?.GetType() ?? typeof(object);
+        return Redaction.Instance.ShouldRedact(name, type, out _);
     }
 
     private bool IsSafeCollection(Type type)
