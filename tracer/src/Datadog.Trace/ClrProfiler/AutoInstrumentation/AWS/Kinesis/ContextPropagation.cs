@@ -37,9 +37,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return;
             }
 
-            if (request.Records[0].DuckCast<IContainsData>() is { } record)
+            foreach (var requestRecord in request.Records)
             {
-                InjectTraceIntoData(tracer, record, scope, streamName);
+                if (requestRecord.DuckCast<IContainsData>() is { } record)
+                {
+                    InjectTraceIntoData(tracer, record, scope, streamName);
+                }
             }
         }
 
