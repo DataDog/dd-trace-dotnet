@@ -37,17 +37,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Special attribute that will provide Xunit with the values of ["v0", "v1"] for the metadata schema version.
+        /// Provides Xunit with the metadata schema versions to test.
+        /// <para>Full config (master/release, or PRs that change integration code or churn many
+        /// snapshots; see <c>RequiresThoroughTesting</c> in Build.Steps.cs) runs ["v0", "v1"].
+        /// Other PRs run ["v0"] only.</para>
         /// </summary>
         [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
         public class MetadataSchemaVersionDataAttribute : CombinatorialValuesAttribute
         {
-            /// <summary>
-            /// Initializes a new instance of the <see cref="MetadataSchemaVersionDataAttribute"/> class.
-            /// </summary>
-            /// <param name="values">The values to pass to this parameter.</param>
             public MetadataSchemaVersionDataAttribute()
-                : base(["v0", "v1"])
+                : base(CombinatorialOrPairwiseDataAttribute.UseFullTestConfiguration() ? ["v0", "v1"] : ["v0"])
             {
             }
         }
