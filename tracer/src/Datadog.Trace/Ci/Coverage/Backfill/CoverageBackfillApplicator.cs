@@ -78,7 +78,7 @@ internal static class CoverageBackfillApplicator
         }
 
         using var beforeBitmap = new FileBitmap(before);
-        using var mergedBitmap = FileBitmap.Or(maskedBackendBitmap, beforeBitmap, reuseBufferFromBitmapA: false);
+        using var mergedBitmap = maskedBackendBitmap | beforeBitmap;
         var merged = mergedBitmap.GetInternalArrayOrToArrayAndDispose();
         if (before.AsSpan().SequenceEqual(merged))
         {
