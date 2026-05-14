@@ -92,11 +92,11 @@ namespace Datadog.Trace.Pdb
         /// <param name="assembly">The assembly to open.</param>
         /// <param name="metadataOnly">
         /// When <c>true</c>, the PE image is opened without prefetching (<see cref="PEStreamOptions.Default"/>) to
-        /// avoid reading the whole DLL into memory. The reader can be used for metadata lookups and for PDB-only
-        /// methods such as <see cref="GetMethodSourceLocation"/>, <see cref="GetMethodSequencePoints"/>, and
-        /// <see cref="GetDocuments"/>. It must NOT be used to read IL bodies or local-variable signatures: callers
-        /// of <see cref="HasMethodBody"/>, <see cref="GetLocalVariableNames(int, int, bool)"/>, and
-        /// <see cref="GetLocalSymbols"/> require the full image and must pass <c>metadataOnly: false</c>.
+        /// avoid reading the whole DLL into memory. This is intended for callers that only need metadata lookups and
+        /// PDB-only methods such as <see cref="GetMethodSourceLocation"/>, <see cref="GetMethodSequencePoints"/>, and
+        /// <see cref="GetDocuments"/>. Callers that expect to read IL bodies or local-variable signatures, such as
+        /// <see cref="HasMethodBody"/>, <see cref="GetLocalVariableNames(int, int, bool)"/>, and
+        /// <see cref="GetLocalSymbols"/>, should prefer <c>metadataOnly: false</c> so the full image is prefetched.
         /// </param>
         internal static DatadogMetadataReader? CreatePdbReader(Assembly? assembly, bool metadataOnly = false)
         {
