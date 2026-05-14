@@ -240,7 +240,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error while getting endpoints for {AssemblyName} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                    Log.Warning(ex, "Error while getting endpoints for {AssemblyName} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
                     sequencePoints = null;
                 }
 
