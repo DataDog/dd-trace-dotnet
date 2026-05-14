@@ -113,11 +113,9 @@ internal readonly struct SkippableTestsRequestScope : IEquatable<SkippableTestsR
         Append(builder, Tags.CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
         AppendCustomTestConfigurations(builder, settings.GlobalTags);
 
-#pragma warning disable CA1850, CA1872 // netstandard2.0 does not expose SHA256.HashData or Convert.ToHexString.
-        using var sha256 = SHA256.Create();
+        using HashAlgorithm sha256 = SHA256.Create();
         var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(builder.ToString()));
-        return BitConverter.ToString(bytes).Replace("-", string.Empty).ToLowerInvariant();
-#pragma warning restore CA1850, CA1872
+        return HexString.ToHexString(bytes);
     }
 
     /// <summary>
