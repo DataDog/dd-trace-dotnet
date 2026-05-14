@@ -66,7 +66,12 @@ namespace Samples.Kafka
             // see a topic with zero partitions.
             if (!await WaitForTopicMetadata(topicName, numPartitions, config, TimeSpan.FromSeconds(30)))
             {
-                throw new Exception($"Topic {topicName} metadata did not propagate with {numPartitions} partitions");
+                // Broker metadata propagation timed out — that's an infrastructure
+                // problem, not a tracer bug. Exit with the well-known skip code (13)
+                // so the test harness skips rather than fails this run.
+                Console.WriteLine($"Topic {topicName} metadata did not propagate with {numPartitions} partitions");
+                Console.WriteLine("Exiting with skip code (13)");
+                Environment.Exit(13);
             }
 
             return created.Value;
