@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Configurations;
+using Datadog.Trace.Debugger.Configurations.Models;
 using FluentAssertions;
 using Xunit;
 
@@ -194,6 +195,54 @@ public class ProbeConfigurationFileLoaderTests : IDisposable
         configuration.Should().NotBeNull();
         configuration!.MetricProbes.Should().BeEmpty();
         configuration.LogProbes.Should().ContainSingle().Which.Id.Should().Be("valid-log");
+    }
+
+    [Fact]
+    public async Task LoadAsync_LogProbeWithCaptureExpressions_LoadsExpressionsAndLimits()
+    {
+        var configuration = await ProbeConfigurationFileLoader.LoadAsync(
+            CreateTempProbeFile(
+                """
+                [
+                  {
+                    "id": "capture-expression-log",
+                    "language": "dotnet",
+                    "type": "LOG_PROBE",
+                    "where": { "typeName": "MyClass", "methodName": "MyMethod" },
+                    "captureSnapshot": false,
+                    "captureExpressions": [
+                      {
+                        "name": "inputValue",
+                        "expr": {
+                          "dsl": "inputValue",
+                          "json": { "ref": "inputValue" }
+                        },
+                        "capture": {
+                          "maxReferenceDepth": 1,
+                          "maxCollectionSize": 2,
+                          "maxLength": 3,
+                          "maxFieldCount": 4
+                        }
+                      }
+                    ]
+                  }
+                ]
+                """));
+
+        configuration.Should().NotBeNull();
+        var probe = configuration!.LogProbes.Should().ContainSingle().Subject;
+        probe.CaptureExpressions.Should().ContainSingle();
+        var captureExpression = probe.CaptureExpressions![0];
+        captureExpression.Name.Should().Be("inputValue");
+        captureExpression.Expr!.Dsl.Should().Be("inputValue");
+        captureExpression.Expr.Json!.ToString(Datadog.Trace.Vendors.Newtonsoft.Json.Formatting.None).Should().Be(@"{""ref"":""inputValue""}");
+        captureExpression.Capture.Should().Be(new Capture
+        {
+            MaxReferenceDepth = 1,
+            MaxCollectionSize = 2,
+            MaxLength = 3,
+            MaxFieldCount = 4
+        });
     }
 
     public void Dispose()

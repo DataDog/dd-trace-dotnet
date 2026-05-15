@@ -234,7 +234,6 @@ src/Datadog.Trace/Debugger/Configurations/Trie.cs
 src/Datadog.Trace/Debugger/Expressions/CaptureInfo.cs
 src/Datadog.Trace/Debugger/Expressions/CompiledExpression.cs
 src/Datadog.Trace/Debugger/Expressions/Enums.cs
-src/Datadog.Trace/Debugger/Expressions/ExpressionEvaluationResult.cs
 src/Datadog.Trace/Debugger/Expressions/MethodScopeMembers.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Binary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Collection.cs
