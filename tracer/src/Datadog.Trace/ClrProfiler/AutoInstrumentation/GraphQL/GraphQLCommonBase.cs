@@ -61,18 +61,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         protected static void ConstructErrorLocationsMessage(StringBuilder builder, IEnumerable locations)
         {
             builder.AppendLine($"{Tab + Tab}\"locations\": [");
+            var i = 0;
             foreach (var location in locations)
             {
                 if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                 {
+                    if (i != 0)
+                    {
+                        builder.AppendLine(",");
+                    }
+
                     builder.AppendLine($"{Tab + Tab + Tab}{{");
                     builder.Append($"{Tab + Tab + Tab + Tab}\"line\": ").Append(locationProxy.Line).AppendLine(",");
                     builder.Append($"{Tab + Tab + Tab + Tab}\"column\": ").Append(locationProxy.Column).AppendLine();
-                    builder.AppendLine($"{Tab + Tab + Tab}}},");
+                    builder.Append($"{Tab + Tab + Tab}}}");
+                    i++;
                 }
             }
 
-            builder.AppendLine($"{Tab + Tab}]");
+            builder.AppendLine().AppendLine($"{Tab + Tab}]");
         }
     }
 }
