@@ -137,6 +137,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
+                    if (builder.Length >= TruncatorTagsProcessor.MaxMetaValLen)
+                    {
+                        // Too big, give up
+                        break;
+                    }
+
+                    if (i > 0)
+                    {
+                        builder.Append(',').AppendLine();
+                    }
+
                     var executionError = executionErrors[i];
 
                     builder.AppendLine($"{Tab}{{");
@@ -155,9 +166,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         ConstructErrorLocationsMessage(builder, locations);
                     }
 
-                    builder.AppendLine($"{Tab}}},");
+                    builder.Append($"{Tab}}}");
                 }
 
+                builder.AppendLine();
                 builder.AppendLine("]");
             }
             catch (Exception ex)
