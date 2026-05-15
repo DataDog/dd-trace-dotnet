@@ -177,6 +177,9 @@ namespace Datadog.Trace
                         {
                             if (metadata.SequentialFailures >= MaxFailures)
                             {
+                                Log.Error(
+                                    "[aas-repro] keep_alive_terminating process={Process} reason=max_failures sequential_failures={Count} max={Max} last_exit_code={LastExitCode}",
+                                    new object[] { path, metadata.SequentialFailures, MaxFailures, metadata.LastExitCode?.ToString() ?? "<unknown>" });
                                 Log.Error<string, int>("Maximum retries ({ErrorCount}) reached starting {Process}.", path, MaxFailures);
                                 metadata.ProcessState = ProcessState.Faulted;
                                 return;
@@ -295,6 +298,7 @@ namespace Datadog.Trace
                                         if (metadata.Process == null || metadata.Process.HasExited)
                                         {
                                             var exitCode = metadata.Process?.ExitCode;
+                                            metadata.LastExitCode = exitCode;
                                             Log.Error(
                                                 "[aas-repro] start_failed process={Process} child_pid={ChildPid} exit_code={ExitCode} after_ms={Elapsed}",
                                                 new object[] { path, spawnedPid, exitCode?.ToString() ?? "<unknown>", 2000 - timeout });
@@ -319,8 +323,8 @@ namespace Datadog.Trace
                                 {
                                     metadata.SequentialFailures++;
                                     Log.Warning(
-                                        "[aas-repro] sequential_failure process={Process} count={Count} max={Max}",
-                                        new object[] { path, metadata.SequentialFailures, MaxFailures });
+                                        "[aas-repro] sequential_failure process={Process} count={Count} max={Max} last_exit_code={LastExitCode}",
+                                        new object[] { path, metadata.SequentialFailures, MaxFailures, metadata.LastExitCode?.ToString() ?? "<unknown>" });
                                     await Task.Delay(ExceptionRetryInterval).ConfigureAwait(false);
                                 }
                                 else
@@ -337,6 +341,9 @@ namespace Datadog.Trace
                     }
                     finally
                     {
+                        Log.Warning(
+                            "[aas-repro] keep_alive_dropped process={Process} state={State} sequential_failures={Count} last_exit_code={LastExitCode}",
+                            new object[] { path, metadata.ProcessState, metadata.SequentialFailures, metadata.LastExitCode?.ToString() ?? "<unknown>" });
                         Log.Warning("Keep alive is dropping for {Process}.", path);
                         metadata.IsBeingManaged = false;
                     }
@@ -361,6 +368,8 @@ namespace Datadog.Trace
             public bool IsBeingManaged { get; set; }
 
             public int SequentialFailures { get; set; }
+
+            public int? LastExitCode { get; set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
