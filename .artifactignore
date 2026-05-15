@@ -13,3 +13,7 @@
 !**/obj/**
 !packages/**
 !artifacts/**
+
+# Re-exclude .git/ — the AzDO matcher otherwise re-includes refs whose branch
+# names contain "bin" or "obj" as a substring (e.g. refs/.../andrew/move-bin-and-obj).
+.git/**
