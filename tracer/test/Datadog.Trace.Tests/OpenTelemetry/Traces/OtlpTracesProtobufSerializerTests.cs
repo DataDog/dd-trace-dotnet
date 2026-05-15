@@ -40,15 +40,15 @@ public class OtlpTracesProtobufSerializerTests
         var buffer = new byte[8 * 1024];
 
         // Pick a maxSize tiny enough that any real span overflows.
-        serializer.SerializeSpans(ref buffer, temporaryBufferOffset: 0, Chunk(CreateSpan()), spanBufferOffset: 0, maxSize: 8)
+        serializer.SerializeSpans(ref buffer, temporaryBufferOffset: 0, CreateChunk(CreateSpan()), spanBufferOffset: 0, maxSize: 8)
             .Should().Be(0);
     }
 
     [Fact]
     public void SerializeSpans_TwoChunks_ProducesSingleResourceSpansWithBothSpans()
     {
-        var chunk1 = Chunk(CreateSpan(resourceName: "res1"));
-        var chunk2 = Chunk(CreateSpan(resourceName: "res2"));
+        var chunk1 = CreateChunk(CreateSpan(resourceName: "resource_name1"));
+        var chunk2 = CreateChunk(CreateSpan(resourceName: "resource_name2"));
 
         var serializer = new OtlpTracesProtobufSerializer();
         var buffer = new byte[16 * 1024];
@@ -64,16 +64,16 @@ public class OtlpTracesProtobufSerializerTests
 
         var spans = request.ResourceSpans[0].ScopeSpans[0].Spans;
         spans.Should().HaveCount(2);
-        spans[0].Name.Should().Be("res1");
-        spans[1].Name.Should().Be("res2");
+        spans[0].Name.Should().Be("resource_name1");
+        spans[1].Name.Should().Be("resource_name2");
     }
 
     [Fact]
     public void SerializeSpans_EmitsCanonicalSpanShape()
     {
-        var span = SerializeAndParse(Chunk(CreateSpan()));
+        var span = SerializeAndParse(CreateChunk(CreateSpan()));
 
-        span.Name.Should().Be("res");
+        span.Name.Should().Be("resource_name");
         span.Kind.Should().Be(SpanKindInternal);
         span.TraceId.Should().HaveCount(16);
         span.SpanId.Should().HaveCount(8);
@@ -86,7 +86,7 @@ public class OtlpTracesProtobufSerializerTests
             traceId: new TraceId(0x0102030405060708UL, 0x090A0B0C0D0E0F10UL),
             spanId: 0x1122334455667788UL);
 
-        var span = SerializeAndParse(Chunk(ddSpan));
+        var span = SerializeAndParse(CreateChunk(ddSpan));
 
         span.TraceId.Should().Equal(new byte[]
         {
@@ -99,7 +99,7 @@ public class OtlpTracesProtobufSerializerTests
     [Fact]
     public void SerializeSpans_RootSpan_OmitsParentSpanId()
     {
-        var span = SerializeAndParse(Chunk(CreateSpan()));
+        var span = SerializeAndParse(CreateChunk(CreateSpan()));
 
         // The parser defaults ParentSpanId to an empty array when the field is not present on the wire.
         span.ParentSpanId.Should().BeEmpty();
@@ -110,7 +110,7 @@ public class OtlpTracesProtobufSerializerTests
     {
         var child = CreateSpan(traceId: new TraceId(0, 0xABCDUL), spanId: 0xFEED, parentSpanId: 0x0102030405060708UL);
 
-        var span = SerializeAndParse(Chunk(child));
+        var span = SerializeAndParse(CreateChunk(child));
 
         span.ParentSpanId.Should().Equal(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 });
     }
@@ -124,7 +124,7 @@ public class OtlpTracesProtobufSerializerTests
         ddSpan.SetTag("otel.status_code", "STATUS_CODE_ERROR");
         ddSpan.SetTag(Tags.ErrorMsg, "oops");
 
-        var span = SerializeAndParse(Chunk(ddSpan));
+        var span = SerializeAndParse(CreateChunk(ddSpan));
 
         span.Events.Should().ContainSingle(e => e.Name == "test-event");
         span.Links.Should().HaveCount(1);
@@ -151,7 +151,7 @@ public class OtlpTracesProtobufSerializerTests
         }));
 
         var byKey = new Dictionary<string, OtlpProtoParser.AnyValue>();
-        foreach (var kv in SerializeAndParse(Chunk(ddSpan)).Events[0].Attributes)
+        foreach (var kv in SerializeAndParse(CreateChunk(ddSpan)).Events[0].Attributes)
         {
             byKey[kv.Key] = kv.Value;
         }
@@ -181,7 +181,7 @@ public class OtlpTracesProtobufSerializerTests
     [InlineData(-1, 0u)]  // user-reject
     public void SerializeSpans_SamplingPriority_EmitsSpanFlagsBit0(int samplingPriority, uint expectedFlags)
     {
-        var span = SerializeAndParse(Chunk(CreatePropagatedSpan(samplingPriority)));
+        var span = SerializeAndParse(CreateChunk(CreatePropagatedSpan(samplingPriority)));
 
         span.Flags.Should().Be(expectedFlags);
     }
@@ -193,7 +193,7 @@ public class OtlpTracesProtobufSerializerTests
     [InlineData(-1, 0x80000000u)]
     public void SerializeSpans_LinkSamplingPriority_EmitsLinkFlags(int linkSamplingPriority, uint expectedFlags)
     {
-        var span = SerializeAndParse(Chunk(SpanWithLink(linkSamplingPriority)));
+        var span = SerializeAndParse(CreateChunk(SpanWithLink(linkSamplingPriority)));
 
         span.Links[0].Flags.Should().Be(expectedFlags);
     }
@@ -203,7 +203,7 @@ public class OtlpTracesProtobufSerializerTests
     {
         // "Omitted" and "present with value 0" are observationally identical via the parser default,
         // but the serializer's contract is "omit when null", which we still cover via the keep/drop cases.
-        var span = SerializeAndParse(Chunk(SpanWithLink(linkSamplingPriority: null)));
+        var span = SerializeAndParse(CreateChunk(SpanWithLink(linkSamplingPriority: null)));
 
         span.Links[0].Flags.Should().Be(0u);
     }
@@ -218,7 +218,7 @@ public class OtlpTracesProtobufSerializerTests
             ddSpan.AddEvent(new SpanEvent($"e{i}", DateTimeOffset.UtcNow));
         }
 
-        var span = SerializeAndParse(Chunk(ddSpan));
+        var span = SerializeAndParse(CreateChunk(ddSpan));
 
         span.Events.Should().HaveCount(OtlpTracesProtobufSerializer.EventCountLimit);
         span.DroppedEventsCount.Should().Be((ulong)excess);
@@ -235,7 +235,7 @@ public class OtlpTracesProtobufSerializerTests
             ddSpan.AddLink(new SpanLink(new SpanContext(parent: null, linkTraceContext, serviceName: $"l{i}")));
         }
 
-        var span = SerializeAndParse(Chunk(ddSpan));
+        var span = SerializeAndParse(CreateChunk(ddSpan));
 
         span.Links.Should().HaveCount(OtlpTracesProtobufSerializer.LinkCountLimit);
         span.DroppedLinksCount.Should().Be((ulong)excess);
@@ -248,13 +248,13 @@ public class OtlpTracesProtobufSerializerTests
         var attributes = new List<KeyValuePair<string, object>>();
         for (int i = 0; i < OtlpTracesProtobufSerializer.AttributePerEventCountLimit + excess; i++)
         {
-            attributes.Add(new($"k{i}", $"v{i}"));
+            attributes.Add(new($"key{i}", $"value{i}"));
         }
 
         var ddSpan = CreateSpan();
-        ddSpan.AddEvent(new SpanEvent("e", DateTimeOffset.UtcNow, attributes));
+        ddSpan.AddEvent(new SpanEvent("event-name", DateTimeOffset.UtcNow, attributes));
 
-        var span = SerializeAndParse(Chunk(ddSpan));
+        var span = SerializeAndParse(CreateChunk(ddSpan));
 
         span.Events[0].Attributes.Should().HaveCount(OtlpTracesProtobufSerializer.AttributePerEventCountLimit);
         span.Events[0].DroppedAttributesCount.Should().Be((ulong)excess);
@@ -273,15 +273,15 @@ public class OtlpTracesProtobufSerializerTests
             .ResourceSpans[0].ScopeSpans[0].Spans[0];
     }
 
-    private static TraceChunkModel Chunk(Span span)
+    private static TraceChunkModel CreateChunk(Span span)
         => new TraceChunkModel(new SpanCollection(new[] { span }));
 
     private static Span CreateSpan(
         TraceId traceId = default,
         ulong spanId = 0,
         ulong parentSpanId = 0,
-        string serviceName = "svc",
-        string resourceName = "res")
+        string serviceName = "service_name",
+        string resourceName = "resource_name")
     {
         var traceContext = new TraceContext(new StubDatadogTracer());
         SpanContext? parent = parentSpanId == 0
@@ -290,7 +290,7 @@ public class OtlpTracesProtobufSerializerTests
         var context = new SpanContext(parent: parent, traceContext, serviceName, traceId: traceId, spanId: spanId);
         var span = new Span(context, DateTimeOffset.UtcNow)
         {
-            OperationName = "op",
+            OperationName = "operation_name",
             ResourceName = resourceName,
         };
         span.SetDuration(TimeSpan.FromMilliseconds(1));
@@ -305,12 +305,12 @@ public class OtlpTracesProtobufSerializerTests
             traceId: new TraceId(0, 1),
             spanId: 1,
             samplingPriority: samplingPriority,
-            serviceName: "svc",
+            serviceName: "service_name",
             origin: null);
         var span = new Span(context, DateTimeOffset.UtcNow)
         {
-            OperationName = "op",
-            ResourceName = "res",
+            OperationName = "operation_name",
+            ResourceName = "resource_name",
         };
         span.SetDuration(TimeSpan.FromMilliseconds(1));
         return span;
