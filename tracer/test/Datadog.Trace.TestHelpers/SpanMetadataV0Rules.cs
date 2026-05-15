@@ -701,6 +701,25 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("job.createdat")
                 .IsPresent("job.id"));
 
+        public static Result IsMassTransitV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .MatchesOneOf(Name, "masstransit.produce", "masstransit.consume", "masstransit.send", "masstransit.receive", "masstransit.process")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .Matches("component", "masstransit")
+                .MatchesOneOf("span.kind", "consumer", "producer")
+                .IsPresent("messaging.operation")
+                .IsOptional("messaging.system")
+                .IsOptional("messaging.destination.name")
+                .IsOptional("messaging.masstransit.message_id")
+                .IsOptional("messaging.masstransit.message_types")
+                .IsOptional("messaging.masstransit.destination_address")
+                .IsOptional("messaging.masstransit.input_address")
+                .IsOptional("messaging.masstransit.correlation_id")
+                .IsOptional("messaging.message.conversation_id")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process"));
+
         public static Result IsHotChocolateV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "graphql.execute", "graphql.validate")
