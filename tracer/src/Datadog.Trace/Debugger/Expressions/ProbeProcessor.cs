@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.Expressions
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
-        private ProbeProcessorState _state;
+        private volatile ProbeProcessorState _state;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
@@ -38,8 +38,6 @@ namespace Datadog.Trace.Debugger.Expressions
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
         {
-            // New processors are published through ConcurrentDictionary only after construction;
-            // later state replacements use Volatile.Write and readers use Volatile.Read.
             _state = ProbeProcessorState.Create(probe);
         }
 
@@ -54,7 +52,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
         {
-            Volatile.Write(ref _state, ProbeProcessorState.Create(probe));
+            _state = ProbeProcessorState.Create(probe);
             return this;
         }
 
@@ -100,7 +98,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
-            var state = Volatile.Read(ref _state);
+            var state = _state;
             if (!state.HasCondition && !probeData.Sampler.Sample())
             {
                 snapshotCreator = null;
