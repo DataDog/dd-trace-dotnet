@@ -300,9 +300,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (state.ShouldCaptureExpressions && evaluationResult.IsNull())
             {
-                evaluator ??= state.GetOrCreateEvaluator();
-                evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
-                captureExpressionsEvaluated = true;
+                EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
             }
 
             if (captureExpressionsEvaluated && evaluationResult.IsNull())
@@ -347,11 +345,9 @@ namespace Datadog.Trace.Debugger.Expressions
                     shouldStopCapture = true;
                 }
 
-                if (!shouldStopCapture && state.ShouldCaptureExpressions && !captureExpressionsEvaluated)
+                if (!shouldStopCapture)
                 {
-                    evaluator ??= state.GetOrCreateEvaluator();
-                    evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
-                    captureExpressionsEvaluated = true;
+                    EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
                 }
 
                 return evaluationResult;
@@ -366,14 +362,27 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            if (state.ShouldCaptureExpressions && !captureExpressionsEvaluated)
-            {
-                evaluator ??= state.GetOrCreateEvaluator();
-                evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
-                captureExpressionsEvaluated = true;
-            }
+            EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
 
             return evaluationResult;
+        }
+
+        private static void EvaluateCaptureExpressionsIfNeeded(
+            ProbeProcessorState state,
+            DebuggerSnapshotCreator snapshotCreator,
+            ProbeExpressionsCacheEntry? cacheEntry,
+            ref ProbeExpressionEvaluator? evaluator,
+            ref ExpressionEvaluationResult evaluationResult,
+            ref bool captureExpressionsEvaluated)
+        {
+            if (!state.ShouldCaptureExpressions || captureExpressionsEvaluated)
+            {
+                return;
+            }
+
+            evaluator ??= state.GetOrCreateEvaluator();
+            evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
+            captureExpressionsEvaluated = true;
         }
 
         private void SetSpanDecoration(ProbeProcessorState state, in ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
