@@ -13,6 +13,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpCommonFieldNumberConstants;
+using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpResourceFieldNumberConstants;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpTraceFieldNumberConstants;
 
 #nullable enable
@@ -35,12 +36,6 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     private const int ReserveSizeForLength = 4;
     private const int TraceIdSize = 16;
     private const int SpanIdSize = 8;
-
-    // opentelemetry.proto.resource.v1.Resource.attributes field number.
-    // Shared by traces/logs/metrics; the trace-specific constants file does not redefine it.
-#pragma warning disable SA1310 // Field names should not contain underscore (proto-derived constant name)
-    private const int Resource_Attributes = 1;
-#pragma warning restore SA1310
 
     // Absolute positions of the length placeholders. INVARIANT: these are offsets
     // into the caller's eventual `_buffer` (the destination), NOT into the temporary
@@ -122,6 +117,19 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     {
         if (_resourceSpansLengthPos < 0)
         {
+            return 0;
+        }
+
+        // Edge case (unsure how this would happen): An initial SerializeSpans call succeeded
+        // (returned a non-zero size but the buffer was not large enough and failed on SpanBuffer.EnsureCapacity.
+        //
+        // This would result in the buffer being full buth when this is called, the logic to patch
+        // the resource spans length and scope spans length would result in a negative length.
+        // Skip patching in this case by returning 0, so the resulting data would be empty.
+        if (offset <= _resourceSpansLengthPos + ReserveSizeForLength)
+        {
+            _resourceSpansLengthPos = -1;
+            _scopeSpansLengthPos = -1;
             return 0;
         }
 
@@ -449,31 +457,20 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     private static void WriteHexBytes(byte[] bytes, int writePosition, string hex, int byteCount)
     {
-        // RawTraceId is zero-padded to 32 chars; RawSpanId is zero-padded to 16. If the input is shorter
-        // (defensive), left-pad with zeros so we always emit byteCount bytes.
+        // RawTraceId is zero-padded to 32 chars; RawSpanId is zero-padded to 16. Defensively
+        // normalize any non-canonical input: left-pad with zero nibbles if too short, or take
+        // the lowest-order bytes if too long. Works for both even and odd lengths.
         var span = new Span<byte>(bytes, writePosition, byteCount);
         int expectedChars = byteCount * 2;
-        int leadingZeroBytes = 0;
-        int hexOffset = 0;
-        if (hex.Length < expectedChars)
-        {
-            leadingZeroBytes = (expectedChars - hex.Length) / 2;
-        }
-        else if (hex.Length > expectedChars)
-        {
-            // Take the last byteCount bytes (lowest-order portion)
-            hexOffset = hex.Length - expectedChars;
-        }
+        int shift = expectedChars - hex.Length; // > 0 to pad; < 0 to truncate from the left
 
-        for (int i = 0; i < leadingZeroBytes; i++)
+        for (int i = 0; i < byteCount; i++)
         {
-            span[i] = 0;
-        }
-
-        for (int i = leadingZeroBytes; i < byteCount; i++)
-        {
-            int charPos = hexOffset + ((i - leadingZeroBytes) * 2);
-            span[i] = (byte)((FromHex(hex[charPos]) << 4) | FromHex(hex[charPos + 1]));
+            int highPos = (2 * i) - shift;
+            int lowPos = highPos + 1;
+            int high = highPos < 0 ? 0 : FromHex(hex[highPos]);
+            int low = lowPos < 0 ? 0 : FromHex(hex[lowPos]);
+            span[i] = (byte)((high << 4) | low);
         }
 
         static int FromHex(char c) => c switch

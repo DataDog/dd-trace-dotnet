@@ -76,6 +76,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "network.protocol.name"
         };
 
+        // Single source of truth for translating an OTLP http/protobuf payload (rendered as JSON
+        // by the test agent with snake_case field names and string-form enum values) to the
+        // OTLP http/json shape (camelCase field names, integer enum values). When a new OTLP
+        // field or enum reaches the serializer, add the mapping here.
+        private static readonly (string From, string To)[] ProtobufToJsonFieldNameMappings =
+        {
+            ("\"resource_spans\"",        "\"resourceSpans\""),
+            ("\"scope_spans\"",           "\"scopeSpans\""),
+            ("\"trace_id\"",              "\"traceId\""),
+            ("\"span_id\"",               "\"spanId\""),
+            ("\"parent_span_id\"",        "\"parentSpanId\""),
+            ("\"start_time_unix_nano\"",  "\"startTimeUnixNano\""),
+            ("\"end_time_unix_nano\"",    "\"endTimeUnixNano\""),
+            ("\"time_unix_nano\"",        "\"timeUnixNano\""),
+            ("\"string_value\"",          "\"stringValue\""),
+            ("\"double_value\"",          "\"doubleValue\""),
+            ("\"int_value\"",             "\"intValue\""),
+            ("\"bool_value\"",            "\"boolValue\""),
+            ("\"array_value\"",           "\"arrayValue\""),
+        };
+
+        private static readonly (string From, string To)[] ProtobufToJsonEnumMappings =
+        {
+            ("\"kind\": \"SPAN_KIND_INTERNAL\"", "\"kind\": 1"),
+            ("\"kind\": \"SPAN_KIND_SERVER\"",   "\"kind\": 2"),
+            ("\"kind\": \"SPAN_KIND_CLIENT\"",   "\"kind\": 3"),
+            ("\"kind\": \"SPAN_KIND_PRODUCER\"", "\"kind\": 4"),
+            ("\"kind\": \"SPAN_KIND_CONSUMER\"", "\"kind\": 5"),
+            ("\"code\": \"STATUS_CODE_UNSET\"",  "\"code\": 0"),
+            ("\"code\": \"STATUS_CODE_OK\"",     "\"code\": 1"),
+            ("\"code\": \"STATUS_CODE_ERROR\"",  "\"code\": 2"),
+        };
+
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
@@ -497,30 +530,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Add scrubbers only for http/protobuf
                 if (protocol == "http/protobuf")
                 {
-                    // Remap http/protobuf field names to JSON field names
-                    settings.AddSimpleScrubber("\"resource_spans\"", "\"resourceSpans\"");
-                    settings.AddSimpleScrubber("\"scope_spans\"", "\"scopeSpans\"");
-                    settings.AddSimpleScrubber("\"trace_id\"", "\"traceId\"");
-                    settings.AddSimpleScrubber("\"span_id\"", "\"spanId\"");
-                    settings.AddSimpleScrubber("\"parent_span_id\"", "\"parentSpanId\"");
-                    settings.AddSimpleScrubber("\"start_time_unix_nano\"", "\"startTimeUnixNano\"");
-                    settings.AddSimpleScrubber("\"end_time_unix_nano\"", "\"endTimeUnixNano\"");
-                    settings.AddSimpleScrubber("\"time_unix_nano\"", "\"timeUnixNano\"");
-                    settings.AddSimpleScrubber("\"string_value\"", "\"stringValue\"");
-                    settings.AddSimpleScrubber("\"double_value\"", "\"doubleValue\"");
-                    settings.AddSimpleScrubber("\"int_value\"", "\"intValue\"");
-                    settings.AddSimpleScrubber("\"bool_value\"", "\"boolValue\"");
-                    settings.AddSimpleScrubber("\"array_value\"", "\"arrayValue\"");
-
-                    // Remap http/protobuf enum ints to JSON enum names
-                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_INTERNAL\"", "\"kind\": 1");
-                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_SERVER\"", "\"kind\": 2");
-                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_CLIENT\"", "\"kind\": 3");
-                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_PRODUCER\"", "\"kind\": 4");
-                    settings.AddSimpleScrubber("\"kind\": \"SPAN_KIND_CONSUMER\"", "\"kind\": 5");
-                    settings.AddSimpleScrubber("\"code\": \"STATUS_CODE_UNSET\"", "\"code\": 0");
-                    settings.AddSimpleScrubber("\"code\": \"STATUS_CODE_OK\"", "\"code\": 1");
-                    settings.AddSimpleScrubber("\"code\": \"STATUS_CODE_ERROR\"", "\"code\": 2");
+                    AddProtobufToJsonScrubbers(settings);
                 }
 
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpTraces{snapshotName}";
@@ -953,6 +963,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             return string.Empty;
+        }
+
+        private static void AddProtobufToJsonScrubbers(VerifyTests.VerifySettings settings)
+        {
+            foreach (var (from, to) in ProtobufToJsonFieldNameMappings)
+            {
+                settings.AddSimpleScrubber(from, to);
+            }
+
+            foreach (var (from, to) in ProtobufToJsonEnumMappings)
+            {
+                settings.AddSimpleScrubber(from, to);
+            }
         }
     }
 }

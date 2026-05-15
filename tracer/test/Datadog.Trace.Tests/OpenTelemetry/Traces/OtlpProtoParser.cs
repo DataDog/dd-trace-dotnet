@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1_OR_GREATER
-
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
@@ -16,9 +14,14 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 /// <summary>
 /// Minimal OTLP protobuf decoder used to verify the output of
 /// <see cref="Datadog.Trace.OpenTelemetry.Traces.OtlpTracesProtobufSerializer"/>.
-/// Avoids taking a dependency on a generated protobuf binding library;
-/// instead uses <see cref="Google.Protobuf.CodedInputStream"/> directly to walk the wire format.
 /// </summary>
+/// <remarks>
+/// Intentionally avoids generated .proto bindings: we keep the test surface tiny by
+/// walking the wire format directly via <see cref="Google.Protobuf.CodedInputStream"/>
+/// and <see cref="Google.Protobuf.WireFormat"/>. This sidesteps the need to vendor or
+/// generate `opentelemetry.proto.*` C# types in the test project and keeps drift in this
+/// parser explicit (one switch arm per OTLP field) rather than hidden in generated code.
+/// </remarks>
 internal static class OtlpProtoParser
 {
     public static ExportTraceServiceRequest ParseExportTraceServiceRequest(byte[] buffer, int offset, int length)
@@ -435,5 +438,3 @@ internal static class OtlpProtoParser
     }
 #pragma warning restore SA1402
 }
-
-#endif

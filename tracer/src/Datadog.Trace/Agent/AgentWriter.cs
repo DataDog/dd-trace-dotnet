@@ -97,12 +97,13 @@ namespace Datadog.Trace.Agent
             ISpanBufferSerializer CreateSpanSerializer() => api.TracesEncoding switch
             {
                 TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
-                TracesEncoding.OtlpProtobuf => new OpenTelemetry.Traces.OtlpTracesProtobufSerializer(),
+                TracesEncoding.OtlpProtobuf => new OtlpTracesProtobufSerializer(),
                 _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
             };
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
+            // OtlpTracesProtobufSerializer is stateful, so we need to create a new instance for each buffer.
             _frontBuffer = new SpanBuffer(maxBufferSize, CreateSpanSerializer());
             _backBuffer = new SpanBuffer(maxBufferSize, CreateSpanSerializer());
             _activeBuffer = _frontBuffer;
