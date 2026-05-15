@@ -11,6 +11,9 @@
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "IConfiguration.h"
+#ifdef ARM64
+#include "UnwindingRecorderFactory.h"
+#endif
 
 #include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <sys/types.h>
@@ -25,14 +28,16 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IManagedThreadList* pManagedThreadsList,
     CpuSampleProvider* pProvider,
     MetricsRegistry& metricsRegistry,
-    IUnwinder* pUnwinder) noexcept
+    IUnwinder* pUnwinder,
+    UnwindingRecorderFactory* pUnwindingRecorderFactory) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
     _nbThreadsInSignalHandler{0},
-    _pUnwinder{pUnwinder}
+    _pUnwinder{pUnwinder},
+    _pUnwindingRecorderFactory{pUnwindingRecorderFactory}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -254,9 +259,21 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
-    auto buffer = rawCpuSample->Stack.AsSpan();
-    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size());
-    rawCpuSample->Stack.SetCount(count);
+    std::uintptr_t stackBase = 0;
+    std::uintptr_t stackEnd = 0;
+    std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
+
+    UnwindingRecorder* recorder = nullptr;
+#ifdef ARM64
+    auto scopedTracer = UnwindingRecorderFactory::ScopedTracer(nullptr);
+    if (_pUnwindingRecorderFactory != nullptr)
+    {
+        scopedTracer = _pUnwindingRecorderFactory->GetTracer();
+        recorder = scopedTracer.get();
+    }
+#endif
+
+    auto count = _pUnwinder->Unwind(ctx, rawCpuSample->Stack, stackBase, stackEnd, recorder);
 
     if (count == 0)
     {
