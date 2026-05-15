@@ -242,6 +242,53 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_RedactsSensitiveKeys()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string secret = "TOP_SECRET_VALUE";
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, string>),
+                new Dictionary<string, string>
+                {
+                    { "password", secret },
+                    { "public", "hello" },
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "index": [
+                                        {
+                                          "filter": [
+                                            { "ref": "SafeDictionaryLocal" },
+                                            { "eq": [ { "ref": "@key" }, "password" ] }
+                                          ]
+                                        },
+                                        0
+                                      ]
+                                    },
+                                    "Value"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.NotEqual(secret, result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Equal("The property or field is redacted.", error.Message);
+        }
+
+        [Fact]
         public void ProbeExpressionParser_ConstructedOpenGenericReferenceTypeParameter_CanCompileExpression()
         {
             var scopeMembers = CreateScopeMembers();
