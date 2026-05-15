@@ -144,19 +144,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                const string tab = "    ";
                 builder.AppendLine("errors: [");
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
                     var executionError = executionErrors[i];
 
-                    builder.AppendLine($"{tab}{{");
+                    builder.AppendLine($"{Tab}{{");
 
                     var message = executionError.Message;
                     if (message != null)
                     {
-                        builder.Append($"{tab + tab}\"message\": \"")
+                        builder.Append($"{Tab + Tab}\"message\": \"")
                                .Append(message.Replace("\r", "\\r").Replace("\n", "\\n"))
                                .AppendLine("\",");
                     }
@@ -164,7 +163,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     var paths = executionError.Path;
                     if (paths != null)
                     {
-                        builder.Append($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
+                        builder.Append($"{Tab + Tab}\"path\": \"");
                         var addSeparator = false;
                         foreach (var path in paths)
                         {
@@ -183,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     var code = executionError.Code;
                     if (code != null)
                     {
-                        builder.Append($"{tab + tab}\"code\": \"")
+                        builder.Append($"{Tab + Tab}\"code\": \"")
                                .Append(code)
                                .AppendLine("\",");
                     }
@@ -194,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                         ConstructErrorLocationsMessage(builder, locations);
                     }
 
-                    builder.AppendLine($"{tab}}},");
+                    builder.AppendLine($"{Tab}}},");
                 }
 
                 builder.AppendLine("]");
