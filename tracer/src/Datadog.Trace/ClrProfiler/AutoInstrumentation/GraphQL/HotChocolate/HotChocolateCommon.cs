@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
@@ -120,7 +121,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
         }
 
-        private static string ConstructErrorMessage(List<IError> executionErrors)
+        [TestingAndPrivateOnly]
+        internal static string ConstructErrorMessage(List<IError> executionErrors)
         {
             if (executionErrors == null)
             {

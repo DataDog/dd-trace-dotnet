@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
@@ -134,7 +135,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             }
         }
 
-        private static string ConstructErrorMessage(IExecutionErrors executionErrors)
+        [TestingAndPrivateOnly]
+        internal static string ConstructErrorMessage(IExecutionErrors executionErrors)
         {
             if (executionErrors == null)
             {
