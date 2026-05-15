@@ -163,6 +163,8 @@ internal static class MetricTags
     {
         [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
         [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
+        [Description("truncation_reason:baggage_extract_item_exceeded")]BaggageExtractItemExceeded,
+        [Description("truncation_reason:baggage_extract_byte_exceeded")]BaggageExtractByteExceeded,
     }
 
     public enum ContextHeaderMalformed
