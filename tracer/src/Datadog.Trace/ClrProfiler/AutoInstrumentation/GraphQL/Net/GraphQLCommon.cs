@@ -10,6 +10,7 @@ using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
@@ -161,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var paths = executionError.Path;
-                    if (paths != null)
+                    if (paths != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
                         builder.Append($"{Tab + Tab}\"path\": \"");
                         var addSeparator = false;
@@ -188,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     var locations = executionError.Locations;
-                    if (locations != null)
+                    if (locations != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
                         ConstructErrorLocationsMessage(builder, locations);
                     }
@@ -205,7 +206,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 return "errors: []";
             }
 
-            return Util.StringBuilderCache.GetStringAndRelease(builder);
+            if (builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
+            {
+                return Util.StringBuilderCache.GetStringAndRelease(builder);
+            }
+
+            // pre-truncate if we got too large
+            var result = builder.ToString(startIndex: 0, length: TruncatorTagsProcessor.MaxMetaValLen);
+            Util.StringBuilderCache.Release(builder);
+            return result;
         }
 
         private static List<SpanEvent> ConstructErrorEvents(IExecutionErrors executionErrors)
