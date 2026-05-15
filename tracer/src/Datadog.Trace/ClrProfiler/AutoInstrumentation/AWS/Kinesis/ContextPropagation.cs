@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var updatedRequestSize = 0L;
-            var mutatedRecords = new List<(IPutRecordsRequestEntry Record, MemoryStream UpdatedData)>();
+            var mutatedRecords = new List<PendingRecordUpdate>();
             foreach (var requestRecord in request.Records)
             {
                 if (requestRecord?.DuckCast<IPutRecordsRequestEntry>() is not { } record)
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 if (TryCreateInjectedData(tracer, record, scope, streamName, out var updatedData))
                 {
                     updatedRequestSize += updatedData.Length - (record.Data?.Length ?? 0);
-                    mutatedRecords.Add((record, updatedData));
+                    mutatedRecords.Add(new PendingRecordUpdate(record, updatedData));
                 }
             }
 
@@ -61,9 +61,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return;
             }
 
-            foreach (var (record, updatedData) in mutatedRecords)
+            foreach (var pendingUpdate in mutatedRecords)
             {
-                record.Data = updatedData;
+                pendingUpdate.Record.Data = pendingUpdate.UpdatedData;
             }
         }
 
@@ -207,6 +207,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             // Reset the stream position before using it
             memoryStream.Position = 0;
             return memoryStream;
+        }
+
+        private struct PendingRecordUpdate
+        {
+            public PendingRecordUpdate(IPutRecordsRequestEntry record, MemoryStream updatedData)
+            {
+                Record = record;
+                UpdatedData = updatedData;
+            }
+
+            public IPutRecordsRequestEntry Record { get; }
+
+            public MemoryStream UpdatedData { get; }
         }
     }
 }
