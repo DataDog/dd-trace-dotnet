@@ -47,6 +47,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         /// weight assigned by a plain arithmetic average (= 1/N).
         /// </summary>
         private readonly double _emaAlpha;
+        private readonly object _maintenanceLock = new();
         private int _samplesPerWindow;
 
         private Counts _countsRef;
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
             if (NextDouble() < _probability)
             {
-                return _countsRef.AddSample(_samplesBudget);
+                return _countsRef.AddSample(Volatile.Read(ref _samplesBudget));
             }
 
             return false;
@@ -150,10 +151,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         private void UpdateSamplesPerWindow(int samplesPerWindow)
         {
-            // Plain writes match the rest of the class's relaxed memory model; rate change is
-            // visible "eventually" and self-corrects on the next window roll.
-            _samplesPerWindow = samplesPerWindow;
-            _samplesBudget = samplesPerWindow + ((long)_budgetLookback * samplesPerWindow);
+            lock (_maintenanceLock)
+            {
+                _samplesPerWindow = samplesPerWindow;
+                Volatile.Write(ref _samplesBudget, samplesPerWindow + ((long)_budgetLookback * samplesPerWindow));
+            }
         }
 
         private long CalculateBudgetEma(long sampledCount)
@@ -170,47 +172,54 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             try
             {
-                var counts = _countsSlots[_countsSlotIndex];
+                Action rollWindowCallback;
 
-                // Semi-atomically replace the Counts instance such that sample requests during window maintenance will be
-                // using the newly created counts instead of the ones currently processed by the maintenance routine.
-                // We are ok with slightly racy outcome where totaCount and sampledCount may not be totally in sync
-                // because it allows to avoid contention in the hot-path and the effect on the overall sample rate is minimal
-                // and will get compensated in the long run.
-                // Theoretically, a compensating system might be devised but it will always require introducing a single point
-                // of contention and add a fair amount of complexity. Considering that we are ok with keeping the target sampling
-                // rate within certain error margins and this data race is not breaking the margin it is better to keep the
-                // code simple and reasonably fast.
-                _countsSlotIndex = (_countsSlotIndex + 1) % 2;
-                _countsRef = _countsSlots[_countsSlotIndex];
-                var totalCount = counts.TestCount();
-                var sampledCount = counts.SampleCount();
-
-                _samplesBudget = CalculateBudgetEma(sampledCount);
-
-                if (_totalCountRunningAverage == 0 || _emaAlpha <= 0.0)
+                lock (_maintenanceLock)
                 {
-                    _totalCountRunningAverage = totalCount;
+                    var counts = _countsSlots[_countsSlotIndex];
+
+                    // Semi-atomically replace the Counts instance such that sample requests during window maintenance will be
+                    // using the newly created counts instead of the ones currently processed by the maintenance routine.
+                    // We are ok with slightly racy outcome where totaCount and sampledCount may not be totally in sync
+                    // because it allows to avoid contention in the hot-path and the effect on the overall sample rate is minimal
+                    // and will get compensated in the long run.
+                    // Theoretically, a compensating system might be devised but it will always require introducing a single point
+                    // of contention and add a fair amount of complexity. Considering that we are ok with keeping the target sampling
+                    // rate within certain error margins and this data race is not breaking the margin it is better to keep the
+                    // code simple and reasonably fast.
+                    _countsSlotIndex = (_countsSlotIndex + 1) % 2;
+                    _countsRef = _countsSlots[_countsSlotIndex];
+                    var totalCount = counts.TestCount();
+                    var sampledCount = counts.SampleCount();
+
+                    var samplesBudget = CalculateBudgetEma(sampledCount);
+                    Volatile.Write(ref _samplesBudget, samplesBudget);
+
+                    if (_totalCountRunningAverage == 0 || _emaAlpha <= 0.0)
+                    {
+                        _totalCountRunningAverage = totalCount;
+                    }
+                    else
+                    {
+                        _totalCountRunningAverage = _totalCountRunningAverage + (_emaAlpha * (totalCount - _totalCountRunningAverage));
+                    }
+
+                    if (_totalCountRunningAverage <= 0)
+                    {
+                        _probability = 1;
+                    }
+                    else
+                    {
+                        _probability = Math.Min(samplesBudget / _totalCountRunningAverage, 1.0);
+                    }
+
+                    counts.Reset();
+                    rollWindowCallback = _rollWindowCallback;
                 }
-                else
-                {
-                    _totalCountRunningAverage = _totalCountRunningAverage + (_emaAlpha * (totalCount - _totalCountRunningAverage));
-                }
 
-                if (_totalCountRunningAverage <= 0)
+                if (rollWindowCallback != null)
                 {
-                    _probability = 1;
-                }
-                else
-                {
-                    _probability = Math.Min(_samplesBudget / _totalCountRunningAverage, 1.0);
-                }
-
-                counts.Reset();
-
-                if (_rollWindowCallback != null)
-                {
-                    _rollWindowCallback();
+                    rollWindowCallback();
                 }
             }
             catch (Exception e)
@@ -227,7 +236,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             {
                 TestCount = counts.TestCount(),
                 SampleCount = counts.SampleCount(),
-                Budget = _samplesBudget,
+                Budget = Volatile.Read(ref _samplesBudget),
                 Probability = _probability,
                 TotalAverage = _totalCountRunningAverage
             };
