@@ -38,7 +38,8 @@ namespace Datadog.Trace.Debugger.Expressions
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
         {
-            // The instance is not published until after construction, so a plain assignment is sufficient here.
+            // New processors are published through ConcurrentDictionary only after construction;
+            // later state replacements use Volatile.Write and readers use Volatile.Read.
             _state = ProbeProcessorState.Create(probe);
         }
 
