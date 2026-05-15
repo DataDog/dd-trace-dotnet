@@ -195,6 +195,19 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void IsRedactedType_WithConfiguredNullableWrapperType_Test()
+        {
+            // Arrange
+            Redaction.Instance.SetConfig(
+                new HashSet<string>(),
+                new HashSet<string>(),
+                new HashSet<string> { "System.Nullable*" });
+
+            // Act & Assert
+            Assert.True(Redaction.Instance.IsRedactedType(typeof(Guid?)));
+        }
+
+        [Fact]
         public void IsRedactedType_WithWildcardMatch_Test()
         {
             // Arrange

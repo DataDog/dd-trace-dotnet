@@ -249,11 +249,17 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
-            return _redactedTypesCache.GetOrAdd(effectiveType, CheckForRedactedType);
+            return _redactedTypesCache.GetOrAdd(type, CheckForRedactedType);
         }
 
         private bool CheckForRedactedType(Type type)
+        {
+            return CheckForRedactedTypeCore(type) ||
+                   (Nullable.GetUnderlyingType(type) is { } underlyingType &&
+                    CheckForRedactedTypeCore(underlyingType));
+        }
+
+        private bool CheckForRedactedTypeCore(Type type)
         {
             Type? genericDefinition = null;
             if (type.IsGenericType)
