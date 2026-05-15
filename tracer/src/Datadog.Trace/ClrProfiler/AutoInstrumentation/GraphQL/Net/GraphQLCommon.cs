@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                var tab = "    ";
+                const string tab = "    ";
                 builder.AppendLine("errors: [");
 
                 for (int i = 0; i < executionErrors.Count; i++)
@@ -156,25 +156,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     var message = executionError.Message;
                     if (message != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                        builder.Append($"{tab + tab}\"message\": \"")
+                               .Append(message.Replace("\r", "\\r").Replace("\n", "\\n"))
+                               .AppendLine("\",");
                     }
 
                     var paths = executionError.Path;
                     if (paths != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
+                        builder.Append($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
+                        var addSeparator = false;
+                        foreach (var path in paths)
+                        {
+                            if (addSeparator)
+                            {
+                                builder.Append('.');
+                            }
+
+                            builder.Append(path);
+                            addSeparator = true;
+                        }
+
+                        builder.AppendLine("\",");
                     }
 
                     var code = executionError.Code;
                     if (code != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
+                        builder.Append($"{tab + tab}\"code\": \"")
+                               .Append(code)
+                               .AppendLine("\",");
                     }
 
                     var locations = executionError.Locations;
                     if (locations != null)
                     {
-                        ConstructErrorLocationsMessage(builder, tab, locations);
+                        ConstructErrorLocationsMessage(builder, locations);
                     }
 
                     builder.AppendLine($"{tab}}},");
