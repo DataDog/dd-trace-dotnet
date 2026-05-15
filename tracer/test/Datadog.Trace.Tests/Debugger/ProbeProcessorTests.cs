@@ -377,5 +377,9 @@ public class ProbeProcessorTests
         public bool Drop() => !Sample();
 
         public double NextDouble() => 0;
+
+        public void Dispose()
+        {
+        }
     }
 }
