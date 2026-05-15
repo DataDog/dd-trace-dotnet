@@ -677,7 +677,7 @@ partial class Build : NukeBuild
                 Logger.Information("Debugging...");
                 // Execute whatever you want to debug here
                 var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
-                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
+                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
             });
     //*/
 }

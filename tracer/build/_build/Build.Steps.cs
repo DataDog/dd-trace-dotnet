@@ -46,6 +46,12 @@ partial class Build
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
     AbsolutePath BuildArtifactsDirectory => RootDirectory / "artifacts";
+    AbsolutePath ArtifactsBinDirectory => BuildArtifactsDirectory / "bin";
+
+    // Resolves the bin output directory of a managed tracer project under the UseArtifactsOutput layout
+    // (set in tracer/Directory.Build.props). Pivot is "{config}_{tfm}" lower-cased.
+    AbsolutePath GetProjectBinDirectory(string projectName, string tfm) =>
+        ArtifactsBinDirectory / projectName / $"{BuildConfiguration.ToString().ToLowerInvariant()}_{tfm.ToLowerInvariant()}";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
@@ -485,8 +491,8 @@ partial class Build
             DotnetBuild(toBuild, noDependencies: false);
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
-            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
-            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
         });
 
     Target CompileTracerNativeTestsWindows => _ => _
@@ -735,8 +741,6 @@ partial class Build
                     frameworks = frameworks.Where(x=> x == Framework).ToList();
                 }
 
-                var testBinFolder = testDir / "bin" / BuildConfiguration;
-
                 var (ext, source, libdatadog) = Platform switch
                 {
                     PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}", "datadog_profiling_ffi.dll"),
@@ -753,9 +757,10 @@ partial class Build
 
                 foreach (var framework in frameworks)
                 {
+                    var testBinFolder = GetProjectBinDirectory(project.Name, framework);
                     foreach (var lib in libs)
                     {
-                        var dest = testBinFolder / framework / lib.Item2;
+                        var dest = testBinFolder / lib.Item2;
                         CopyFile(source / lib.Item1, dest, FileExistsPolicy.Overwrite);
                     }
                 }
@@ -769,10 +774,7 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var testDir = project.Directory;
                     var frameworks = project.GetTargetFrameworks();
-
-                    var testBinFolder = testDir / "bin" / BuildConfiguration;
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -788,7 +790,7 @@ partial class Build
                                 var source = MonitoringHomeDirectory / arch;
                                 foreach (var framework in frameworks)
                                 {
-                                    var dest = testBinFolder / framework / arch;
+                                    var dest = GetProjectBinDirectory(project.Name, framework) / arch;
                                     CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
@@ -816,7 +818,7 @@ partial class Build
                                     // - The native tracer must be side-by-side with the running dll
                                     // As this is a managed-only unit test, the native tracer _must_ be in the root folder
                                     // For simplicity, we just copy all the native dlls there
-                                    var dest = testBinFolder / framework;
+                                    var dest = GetProjectBinDirectory(project.Name, framework);
 
                                     // use the files from the monitoring native folder
                                     CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
@@ -2379,7 +2381,7 @@ partial class Build
             List<(string Assembly, string Type)> datadogTraceTypes = new();
             foreach (var tfm in AppTrimmingTFMs)
             {
-                datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
+                datadogTraceTypes.AddRange(GetTypeReferences(GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll"));
             }
 
             // add Datadog projects to the root descriptors file
@@ -2696,8 +2698,7 @@ partial class Build
 
         // Not sure if/why this is necessary, and we can't just point to the correct output location
         var src = MonitoringHomeDirectory;
-        var testProject = Solution.GetProject(project).Directory;
-        var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
+        var dest = GetProjectBinDirectory(project, Framework) / "profiler-lib";
         CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
         // not sure exactly where this is supposed to go, may need to change the original build
