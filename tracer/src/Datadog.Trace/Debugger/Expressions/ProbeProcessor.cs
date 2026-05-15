@@ -265,6 +265,24 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
+        private static void EvaluateCaptureExpressionsIfNeeded(
+            ProbeProcessorState state,
+            DebuggerSnapshotCreator snapshotCreator,
+            ProbeExpressionsCacheEntry? cacheEntry,
+            ref ProbeExpressionEvaluator? evaluator,
+            ref ExpressionEvaluationResult evaluationResult,
+            ref bool captureExpressionsEvaluated)
+        {
+            if (!state.ShouldCaptureExpressions || captureExpressionsEvaluated)
+            {
+                return;
+            }
+
+            evaluator ??= state.GetOrCreateEvaluator();
+            evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
+            captureExpressionsEvaluated = true;
+        }
+
         private ExpressionEvaluationResult Evaluate(ProbeProcessorState state, ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
         {
             ExpressionEvaluationResult evaluationResult = default;
@@ -365,24 +383,6 @@ namespace Datadog.Trace.Debugger.Expressions
             EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
 
             return evaluationResult;
-        }
-
-        private static void EvaluateCaptureExpressionsIfNeeded(
-            ProbeProcessorState state,
-            DebuggerSnapshotCreator snapshotCreator,
-            ProbeExpressionsCacheEntry? cacheEntry,
-            ref ProbeExpressionEvaluator? evaluator,
-            ref ExpressionEvaluationResult evaluationResult,
-            ref bool captureExpressionsEvaluated)
-        {
-            if (!state.ShouldCaptureExpressions || captureExpressionsEvaluated)
-            {
-                return;
-            }
-
-            evaluator ??= state.GetOrCreateEvaluator();
-            evaluator.EvaluateCaptureExpressions(ref evaluationResult, snapshotCreator.MethodScopeMembers!, cacheEntry);
-            captureExpressionsEvaluated = true;
         }
 
         private void SetSpanDecoration(ProbeProcessorState state, in ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
