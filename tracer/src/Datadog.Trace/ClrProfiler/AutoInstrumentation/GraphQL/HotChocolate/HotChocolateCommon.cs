@@ -137,18 +137,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 {
                     var executionError = executionErrors[i];
 
-                    builder.Append(tab).AppendLine("{");
+                    builder.AppendLine($"{tab}{{");
 
                     var message = executionError.Message;
                     if (message != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                        builder.Append($"{tab + tab}\"message\": \"")
+                               .Append(message.Replace("\r", "\\r").Replace("\n", "\\n"))
+                               .AppendLine("\",");
                     }
 
                     var locations = executionError.Locations;
                     if (locations != null)
                     {
-                        ConstructErrorLocationsMessage(builder, tab, locations);
+                        ConstructErrorLocationsMessage(builder, locations);
                     }
 
                     builder.AppendLine($"{tab}}},");
