@@ -254,6 +254,13 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private bool CheckForRedactedType(Type type)
         {
+            return CheckForRedactedTypeCore(type) ||
+                   (Nullable.GetUnderlyingType(type) is { } underlyingType &&
+                    CheckForRedactedTypeCore(underlyingType));
+        }
+
+        private bool CheckForRedactedTypeCore(Type type)
+        {
             Type? genericDefinition = null;
             if (type.IsGenericType)
             {
