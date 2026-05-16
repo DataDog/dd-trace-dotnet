@@ -36,7 +36,6 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
         private const string TestingOnlyAttribute = nameof(TestingOnlyAttribute);
         private const string TestingAndPrivateOnlyAttribute = nameof(TestingAndPrivateOnlyAttribute);
 
-#pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
         private static readonly DiagnosticDescriptor Rule = new(
             DiagnosticId,
             title: "Incorrect usage of internal API",
@@ -45,7 +44,6 @@ namespace Datadog.Trace.Tools.Analyzers.TestingOnlyAnalyzer
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
             description: "This API is only for internal testing and should not be called internally. Use an alternative method.");
-#pragma warning restore RS2008
 
         /// <inheritdoc />
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
