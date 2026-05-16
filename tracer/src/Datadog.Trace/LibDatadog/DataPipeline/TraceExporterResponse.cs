@@ -22,19 +22,21 @@ internal sealed class TraceExporterResponse(IntPtr handle) : SafeHandle(handle, 
 
     protected override bool ReleaseHandle()
     {
-        if (!IsInvalid)
+        if (IsInvalid)
         {
-            try
-            {
-                NativeInterop.Exporter.FreeResponse(handle);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to free TraceExporterResponse handle");
-            }
+            return true;
         }
 
-        return true;
+        try
+        {
+            NativeInterop.Exporter.FreeResponse(handle);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to free TraceExporterResponse handle");
+            return false;
+        }
     }
 
     /// <summary>
@@ -43,7 +45,7 @@ internal sealed class TraceExporterResponse(IntPtr handle) : SafeHandle(handle, 
     /// <returns>The response body as a string, or null if the response is invalid or empty</returns>
     public unsafe string? ReadAsString()
     {
-        if (IsInvalid)
+        if (IsInvalid || IsClosed)
         {
             return null;
         }
