@@ -44,6 +44,11 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     /// </summary>
     private const string SimplePassTestLineCoverageBitmap = "AAAC";
 
+    /// <summary>
+    /// Number of covered lines encoded by <see cref="SimplePassTestLineCoverageBitmap"/>.
+    /// </summary>
+    private const int SimplePassTestBackfilledLineCount = 1;
+
     public XUnitEvpTests(ITestOutputHelper output)
         : base("XUnitTests", output)
     {
@@ -890,7 +895,22 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var coverageMessage = receivedCoverageMessages.Should().ContainSingle().Subject;
         coverageMessage.Source.Should().Be(CodeCoverageReportSource.Coverlet);
         coverageMessage.Backfilled.Should().BeTrue();
-        coverageMessage.Value.Should().BeGreaterThan(0);
+        coverageMessage.ExecutableLines.Should().HaveValue();
+        coverageMessage.CoveredLines.Should().HaveValue();
+
+        var executableLines = coverageMessage.ExecutableLines.GetValueOrDefault();
+        var coveredLines = coverageMessage.CoveredLines.GetValueOrDefault();
+        var coveredLinesWithoutBackfill = coveredLines - SimplePassTestBackfilledLineCount;
+        var rawBackfilledPercentage = coveredLines / executableLines * 100;
+        var rawPercentageWithoutBackfill = coveredLinesWithoutBackfill / executableLines * 100;
+        // Coverlet exposes Percent truncated to two decimals, while the IPC message carries the line counts used to compute it.
+        var expectedBackfilledPercentage = System.Math.Floor(rawBackfilledPercentage * 100) / 100;
+        var expectedPercentageWithoutBackfill = System.Math.Floor(rawPercentageWithoutBackfill * 100) / 100;
+
+        executableLines.Should().BeGreaterThan(0);
+        coveredLinesWithoutBackfill.Should().BeGreaterThanOrEqualTo(0);
+        coverageMessage.Value.Should().BeApproximately(expectedBackfilledPercentage, 0.0001);
+        coverageMessage.Value.Should().BeGreaterThan(expectedPercentageWithoutBackfill);
     }
 
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
