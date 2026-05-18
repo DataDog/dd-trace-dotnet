@@ -6,6 +6,32 @@ include(FetchContent)
 
 set(LIBDATADOG_VERSION "v1.3.3" CACHE STRING "libdatadog version")
 
+# FetchContent only validates URL_HASH on the initial download and skips
+# re-fetching if SOURCE_DIR exists.  On persistent CI workers (e.g. Azure
+# DevOps with build caching) that means bumping LIBDATADOG_VERSION here is
+# silently ignored — validation runs against the old binary.  Use a sibling
+# stamp file to detect version changes and wipe the cached directories.
+function(_libdatadog_invalidate_cache_if_version_changed dir_basename)
+    set(_dir "${CMAKE_CURRENT_BINARY_DIR}/${dir_basename}")
+    set(_stamp "${CMAKE_CURRENT_BINARY_DIR}/${dir_basename}.version")
+    set(_cached "")
+    if(EXISTS "${_stamp}")
+        file(READ "${_stamp}" _cached)
+        string(STRIP "${_cached}" _cached)
+    endif()
+    if(NOT "${_cached}" STREQUAL "${LIBDATADOG_VERSION}")
+        if(EXISTS "${_dir}")
+            message(STATUS "libdatadog version changed (${_cached} -> ${LIBDATADOG_VERSION}); clearing ${_dir}")
+            file(REMOVE_RECURSE "${_dir}")
+        endif()
+        file(WRITE "${_stamp}" "${LIBDATADOG_VERSION}\n")
+    endif()
+endfunction()
+
+_libdatadog_invalidate_cache_if_version_changed(libdatadog-install)
+_libdatadog_invalidate_cache_if_version_changed(libdatadog-install-arm64)
+_libdatadog_invalidate_cache_if_version_changed(libdatadog-install-x86_64)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # For Darwin, we'll download both architectures and combine them
     set(SHA256_LIBDATADOG_ARM64 "f5e6055d93296c87fe62878131550f229d9e91385cb627ae08f4263bf98eb08b" CACHE STRING "libdatadog arm64 sha256")
@@ -13,15 +39,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(FILE_TO_DOWNLOAD_ARM64 libdatadog-aarch64-apple-darwin.tar.gz)
     set(FILE_TO_DOWNLOAD_X86_64 libdatadog-x86_64-apple-darwin.tar.gz)
 
-    # Download ARM64 version.  SOURCE_DIR includes ${LIBDATADOG_VERSION} so
-    # that bumping the version invalidates any cached directory from a
-    # previous run — FetchContent only validates URL_HASH on the initial
-    # download, so a stale dir on persistent CI workers would otherwise
-    # silently use the wrong binary.
+    # Download ARM64 version
     FetchContent_Declare(libdatadog-install-arm64
         URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_ARM64}
         URL_HASH SHA256=${SHA256_LIBDATADOG_ARM64}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-arm64-${LIBDATADOG_VERSION}
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-arm64
     )
     if(NOT libdatadog-install-arm64_POPULATED)
         FetchContent_Populate(libdatadog-install-arm64)
@@ -31,7 +53,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     FetchContent_Declare(libdatadog-install-x86_64
         URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_X86_64}
         URL_HASH SHA256=${SHA256_LIBDATADOG_X86_64}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-x86_64-${LIBDATADOG_VERSION}
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-x86_64
     )
     if(NOT libdatadog-install-x86_64_POPULATED)
         FetchContent_Populate(libdatadog-install-x86_64)
@@ -82,14 +104,10 @@ else()
         endif()
     endif()
 
-    # SOURCE_DIR includes ${LIBDATADOG_VERSION} so that bumping the version
-    # invalidates any cached directory from a previous run — FetchContent
-    # only validates URL_HASH on the initial download, so a stale dir on
-    # persistent CI workers would otherwise silently use the wrong binary.
     FetchContent_Declare(libdatadog-install
         URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
         URL_HASH SHA256=${SHA256_LIBDATADOG}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-${LIBDATADOG_VERSION}
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
     )
     if(NOT libdatadog-install_POPULATED)
         FetchContent_Populate(libdatadog-install)
