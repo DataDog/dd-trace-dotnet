@@ -22,9 +22,19 @@ namespace Datadog.Trace.OpenTelemetry;
 
 internal static class OtlpMapper
 {
+    internal delegate void KeyValueWriter<TState>(ref TState state, KeyValue keyValue);
+
     public static void EmitResourceAttributesFromTraceChunk(in TraceChunkModel traceChunk, Action<KeyValue> writeKeyValue)
     {
-        writeKeyValue(new KeyValue("service.name", traceChunk.DefaultServiceName ?? "unknown_service:dotnet"));
+        EmitResourceAttributesFromTraceChunk(
+            in traceChunk,
+            ref writeKeyValue,
+            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
+    }
+
+    public static void EmitResourceAttributesFromTraceChunk<TState>(in TraceChunkModel traceChunk, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    {
+        writeKeyValue(ref state, new KeyValue("service.name", traceChunk.DefaultServiceName ?? "unknown_service:dotnet"));
 
         // Breaking change: We are now sending the service version as a resource attribute.
         // This means we're adding version tags to all spans, not just those whose service name is the default service name
@@ -32,32 +42,32 @@ internal static class OtlpMapper
         {
             // Note: The `service.version` resource attribute gets written as both a `service.version` span tag
             // and a `version` span tag
-            writeKeyValue(new KeyValue("service.version", version));
+            writeKeyValue(ref state, new KeyValue("service.version", version));
         }
 
         if (traceChunk.Environment is string environment)
         {
             // Note: The `deployment.environment.name` resource attribute gets written as both a `deployment.environment.name` span tag
             // and a `env` span tag
-            writeKeyValue(new KeyValue("deployment.environment.name", environment));
+            writeKeyValue(ref state, new KeyValue("deployment.environment.name", environment));
         }
 
         // Write telemetry SDK attributes
-        writeKeyValue(new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
-        writeKeyValue(new KeyValue("telemetry.sdk.language", TracerConstants.Language));
-        writeKeyValue(new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.language", TracerConstants.Language));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
 
         if (traceChunk.GitCommitSha is string gitCommitSha)
         {
-            writeKeyValue(new KeyValue("git.commit.sha", gitCommitSha));
+            writeKeyValue(ref state, new KeyValue("git.commit.sha", gitCommitSha));
         }
 
         if (traceChunk.GitRepositoryUrl is string gitRepositoryUrl)
         {
-            writeKeyValue(new KeyValue("git.repository_url", gitRepositoryUrl));
+            writeKeyValue(ref state, new KeyValue("git.repository_url", gitRepositoryUrl));
         }
 
-        writeKeyValue(new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+        writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
     }
 
     public static bool IsHandledResourceAttribute(string tagKey)
