@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tools.Runner
             var arguments = Utils.GetArgumentsAsString(initResults.Arguments);
             var command = $"{program} {arguments}".Trim();
 
-            // Propagate original test command and working directory
+            // Propagate the final child test command and working directory so session finalization can resolve coverage artifacts.
             if (initResults.ProfilerEnvironmentVariables is { } profilerEnvironmentVariables)
             {
                 profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionCommand] = command;

@@ -43,6 +43,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled,
         Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled,
         Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
+        Configuration.ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory,
         Configuration.ConfigurationKeys.CIVisibility.TestOptimizationRunId,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillPath,
@@ -318,6 +319,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             string command = null;
             string arguments = null;
             Dictionary<string, string> environmentVariables = null;
+            Dictionary<string, string> originalEnvironmentVariables = null;
             bool callbackInvoked = false;
             MockCIVisibilityTestModule testSession = null;
 
@@ -338,8 +340,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                     arguments = a;
                     environmentVariables = e;
                     callbackInvoked = true;
+                    originalEnvironmentVariables = new Dictionary<string, string>();
                     foreach (var environmentVariable in e)
                     {
+                        originalEnvironmentVariables[environmentVariable.Key] = EnvironmentHelpers.GetEnvironmentVariable(environmentVariable.Key);
                         EnvironmentHelpers.SetEnvironmentVariable(environmentVariable.Key, environmentVariable.Value);
                     }
 
@@ -406,6 +410,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
             finally
             {
+                if (originalEnvironmentVariables is not null)
+                {
+                    foreach (var environmentVariable in originalEnvironmentVariables)
+                    {
+                        EnvironmentHelpers.SetEnvironmentVariable(environmentVariable.Key, environmentVariable.Value);
+                    }
+                }
+
                 Program.CallbackForTests = null;
                 TestOptimization.Instance.Reset();
             }
