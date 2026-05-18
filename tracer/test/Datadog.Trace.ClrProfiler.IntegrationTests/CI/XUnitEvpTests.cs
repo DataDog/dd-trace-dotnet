@@ -886,6 +886,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             receivedCoverageMessages = coverageMessages.ToArray();
         }
 
+        // This target uses an injected out-of-process session, so the testhost proves coverage backfill through the IPC message consumed by the parent session.
         var coverageMessage = receivedCoverageMessages.Should().ContainSingle().Subject;
         coverageMessage.Source.Should().Be(CodeCoverageReportSource.Coverlet);
         coverageMessage.Backfilled.Should().BeTrue();
