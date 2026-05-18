@@ -23,8 +23,6 @@ internal static class PropagationModuleImpl
     {
         try
         {
-            IastModule.OnExecutedSourceTelemetry((IastSourceType)source.Origin);
-
             if (StringUtil.IsNullOrEmpty(input))
             {
                 return;
@@ -60,7 +58,6 @@ internal static class PropagationModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (result is null || target is null)
             {
                 return result;
@@ -96,7 +93,6 @@ internal static class PropagationModuleImpl
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryPropagateWholeResult(string? result, object? input, out TaintedObjects? taintedObjects)
     {
-        IastModule.OnExecutedPropagationTelemetry();
         if (input is null || StringUtil.IsNullOrEmpty(result))
         {
             taintedObjects = null;
@@ -276,7 +272,6 @@ internal static class PropagationModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (!(results?.Length > 0) || input is null)
             {
                 return results;
@@ -312,15 +307,10 @@ internal static class PropagationModuleImpl
         return results;
     }
 
-    public static object? PropagateTaint(object? input, object? result, int offset = 0, bool addTelemetry = true)
+    public static object? PropagateTaint(object? input, object? result, int offset = 0)
     {
         try
         {
-            if (addTelemetry)
-            {
-                IastModule.OnExecutedPropagationTelemetry();
-            }
-
             if (result is null || input is null)
             {
                 return result;
@@ -369,16 +359,10 @@ internal static class PropagationModuleImpl
     /// <param name="beginIndex"> start index </param>
     /// <param name="result"> the substring result </param>
     /// <param name="resultLength"> Result's length </param>
-    /// <param name="addTelemetry"> true to add a telemetry instrumentation point </param>
-    public static void OnStringSubSequence(object self, int beginIndex, object result, int resultLength, bool addTelemetry = true)
+    public static void OnStringSubSequence(object self, int beginIndex, object result, int resultLength)
     {
         try
         {
-            if (addTelemetry)
-            {
-                IastModule.OnExecutedPropagationTelemetry();
-            }
-
             var iastContext = IastModule.GetIastContext();
             if (iastContext == null)
             {

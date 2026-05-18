@@ -33,8 +33,6 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
-
             if (input is null)
             {
                 return;
@@ -84,8 +82,6 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
-
             if (result is null || input is null)
             {
                 return result;

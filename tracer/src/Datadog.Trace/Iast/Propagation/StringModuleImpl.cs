@@ -29,8 +29,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
-
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -41,7 +39,7 @@ internal static class StringModuleImpl
             {
 #if NETFRAMEWORK
                 // In .net462 (not in netcore or netstandard), the method creates in this case a new string with the same value but a different reference, so we need to taint it
-                PropagationModuleImpl.PropagateTaint(target, result, addTelemetry: false);
+                PropagationModuleImpl.PropagateTaint(target, result);
 #endif
                 return result;
             }
@@ -93,14 +91,10 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
-
             if (result is null || result.Length == 0)
             {
                 return result;
             }
-
-            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length, false);
         }
         catch (Exception err)
         {
@@ -114,23 +108,15 @@ internal static class StringModuleImpl
     /// <param name="self"> original string </param>
     /// <param name="beginIndex"> start index </param>
     /// <param name="result"> Result </param>
-    /// <param name="addTelemetry"> true to add a telemetry instrumentation point </param>
     /// <returns> result </returns>
-    public static string OnStringSubSequence(string self, int beginIndex, string result, bool addTelemetry = true)
+    public static string OnStringSubSequence(string self, int beginIndex, string result)
     {
         try
         {
-            if (addTelemetry)
-            {
-                IastModule.OnExecutedPropagationTelemetry();
-            }
-
             if (string.IsNullOrEmpty(result) || self == result)
             {
                 return result;
             }
-
-            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length, false);
         }
         catch (Exception err)
         {
@@ -144,7 +130,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -193,7 +178,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -305,7 +289,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result) || ReferenceEquals(self, result))
             {
                 return result;
@@ -313,11 +296,11 @@ internal static class StringModuleImpl
 
             if (left && !right)
             {
-                return OnStringSubSequence(self, self.Length - result.Length, result, addTelemetry: false);
+                return OnStringSubSequence(self, self.Length - result.Length, result);
             }
             else if (!left && right)
             {
-                return OnStringSubSequence(self, 0, result, addTelemetry: false);
+                return OnStringSubSequence(self, 0, result);
             }
             else
             {
@@ -328,7 +311,7 @@ internal static class StringModuleImpl
                     indexLeft++;
                 }
 
-                return OnStringSubSequence(self, indexLeft, result, addTelemetry: false);
+                return OnStringSubSequence(self, indexLeft, result);
             }
         }
         catch (Exception err)
@@ -349,7 +332,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -357,11 +339,11 @@ internal static class StringModuleImpl
 
             if (left && !right)
             {
-                return OnStringSubSequence(self, self.Length - result.Length, result, addTelemetry: false);
+                return OnStringSubSequence(self, self.Length - result.Length, result);
             }
             else if (!left && right)
             {
-                return OnStringSubSequence(self, 0, result, addTelemetry: false);
+                return OnStringSubSequence(self, 0, result);
             }
             else
             {
@@ -383,7 +365,7 @@ internal static class StringModuleImpl
                 }
                 while (found && indexLeft < self.Length);
 
-                return OnStringSubSequence(self, indexLeft, result, addTelemetry: false);
+                return OnStringSubSequence(self, indexLeft, result);
             }
         }
         catch (Exception err)
@@ -404,7 +386,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right) || string.IsNullOrEmpty(result))
             {
                 return result;
@@ -457,7 +438,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result) || !parameters.CanBeTainted())
             {
                 return result;
@@ -527,7 +507,6 @@ internal static class StringModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;

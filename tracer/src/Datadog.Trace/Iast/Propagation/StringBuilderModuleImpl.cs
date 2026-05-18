@@ -20,7 +20,6 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (appendValue == null)
             {
                 return builder;
@@ -82,13 +81,12 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (result == null || string.IsNullOrEmpty(originalString))
             {
                 return result;
             }
 
-            PropagationModuleImpl.OnStringSubSequence(originalString!, beginIndex, result, length, addTelemetry: false);
+            PropagationModuleImpl.OnStringSubSequence(originalString!, beginIndex, result, length);
         }
         catch (Exception err)
         {
@@ -111,7 +109,6 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (valueToInsert is null)
             {
                 return target;
@@ -183,7 +180,6 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (target == null || target.Length == 0)
             {
                 return;
@@ -246,7 +242,6 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
             if (targetLength == 0)
             {
                 return;

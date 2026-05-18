@@ -69,7 +69,6 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.HeaderInjection);
             var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
             var iastRequestContext = currentSpan?.Context?.TraceContext?.IastRequestContext;
 
@@ -196,8 +195,6 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.XContentTypeHeaderMissing);
-
             if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
             {
                 return;
@@ -227,8 +224,6 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.HstsHeaderMissing);
-
             if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
             {
                 return;
@@ -335,8 +330,6 @@ internal static class ReturnedHeadersAnalyzer
     {
         try
         {
-            IastModule.OnExecutedSinkTelemetry(IastVulnerabilityType.UnvalidatedRedirect);
-
             var location = responseHeaders[Location];
             if (!string.IsNullOrEmpty(location))
             {
