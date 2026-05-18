@@ -152,11 +152,11 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     private static int WriteResourceAttributes(byte[] bytes, int writePosition, in TraceChunkModel traceChunk)
     {
-        var state = (Bytes: bytes, Position: writePosition);
+        var state = new WriteResourceState(bytes, writePosition);
         OtlpMapper.EmitResourceAttributesFromTraceChunk(
             in traceChunk,
             ref state,
-            static (ref (byte[] Bytes, int Position) s, KeyValue kv) =>
+            static (ref WriteResourceState s, KeyValue kv) =>
                 s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Resource_Attributes, kv));
         return state.Position;
     }
@@ -485,5 +485,17 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             >= 'A' and <= 'F' => 10 + (c - 'A'),
             _ => 0,
         };
+    }
+
+    private struct WriteResourceState
+    {
+        public byte[] Bytes;
+        public int Position;
+
+        public WriteResourceState(byte[] bytes, int position)
+        {
+            Bytes = bytes;
+            Position = position;
+        }
     }
 }
