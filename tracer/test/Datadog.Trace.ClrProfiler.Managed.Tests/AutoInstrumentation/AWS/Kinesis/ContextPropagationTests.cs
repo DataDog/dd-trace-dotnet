@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon.Kinesis.Model;
@@ -25,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS.Kinesi
 public class ContextPropagationTests
 {
     private const string DatadogKey = "_datadog";
+    private const int MaxKinesisDataSize = 1024 * 1024;
+    private const int MaxKinesisPutRecordsRequestSize = 5 * 1024 * 1024;
     private const string StreamName = "MyStreamName";
 
     private static readonly Dictionary<string, object> PersonDictionary = new() { { "name", "Jordan" }, { "lastname", "Gonzalez" }, { "city", "NYC" }, { "age", 24 } };
@@ -66,6 +69,61 @@ public class ContextPropagationTests
         }
 
         return request;
+    }
+
+    [Fact]
+    public async Task InjectTraceIntoRecords_WithBatchNearRequestLimit_SkipsAddingTraceContextToAllRecords()
+    {
+        const string partitionKey = "pk";
+        var injectedSizeDeltas = new List<int>();
+
+        await using var probeTracer = GetTracer();
+        var probeScope = AwsKinesisCommon.CreateScope(probeTracer, "PutRecords", SpanKinds.Producer, null, out _);
+
+        for (var i = 0; i < 5; i++)
+        {
+            var probeRecord = new PutRecordRequest
+            {
+                StreamName = StreamName,
+                Data = CreateJsonPayloadOfLength(MaxKinesisDataSize - 512)
+            }.DuckCast<IPutRecordRequest>();
+
+            var originalProbeSize = probeRecord.Data.Length;
+            ContextPropagation.InjectTraceIntoData(probeTracer, probeRecord, probeScope, "streamname");
+            var injectedSizeDelta = (int)(probeRecord.Data.Length - originalProbeSize);
+            injectedSizeDelta.Should().BePositive();
+            injectedSizeDeltas.Add(injectedSizeDelta);
+        }
+
+        var request = new PutRecordsRequest
+        {
+            StreamName = StreamName,
+            Records = new List<PutRecordsRequestEntry>()
+        };
+
+        foreach (var injectedSizeDelta in injectedSizeDeltas)
+        {
+            request.Records.Add(new PutRecordsRequestEntry
+            {
+                Data = CreateJsonPayloadOfLength(MaxKinesisDataSize - injectedSizeDelta),
+                PartitionKey = partitionKey
+            });
+        }
+
+        var originalTotalSize = request.Records.Sum(r => r.Data.Length + Encoding.UTF8.GetByteCount(r.PartitionKey));
+        originalTotalSize.Should().BeLessThan(MaxKinesisPutRecordsRequestSize);
+
+        var proxy = request.DuckCast<IPutRecordsRequest>();
+        await using var tracer = GetTracer();
+        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out _);
+        ContextPropagation.InjectTraceIntoRecords(tracer, proxy, scope, "streamname");
+
+        foreach (var requestEntry in request.Records)
+        {
+            var jsonString = Encoding.UTF8.GetString(requestEntry.Data.ToArray());
+            var dataDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            dataDictionary.Should().NotContainKey(DatadogKey);
+        }
     }
 
     [Fact]
@@ -134,20 +192,25 @@ public class ContextPropagationTests
         var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
         ContextPropagation.InjectTraceIntoRecords(tracer, proxy, scope, "streamname");
 
-        var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
+        var records = proxy.Records!;
+        records.Count.Should().Be(2);
+        foreach (var putRecordsRequestEntry in records)
+        {
+            var record = putRecordsRequestEntry!.DuckCast<IContainsData>();
 
-        // Naively deserialize in order to not use tracer extraction logic
-        var jsonString = Encoding.UTF8.GetString(firstRecord.Data.ToArray());
-        var dataDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
-        var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
-        extracted.Should().BeTrue();
+            // Naively deserialize in order to not use tracer extraction logic
+            var jsonString = Encoding.UTF8.GetString(record.Data.ToArray());
+            var dataDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
+            extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, object> so we can read it properly
-        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(datadogDictionary?.ToString() ?? string.Empty);
+            // Cast into a Dictionary<string, object> so we can read it properly
+            var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(datadogDictionary?.ToString() ?? string.Empty);
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
-        extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
+            extractedTraceContext["x-datadog-parent-id"].Should().Be(scope?.Span.SpanId.ToString());
+            extractedTraceContext["x-datadog-trace-id"].Should().Be(scope?.Span.TraceId.ToString());
+            extractedTraceContext["dd-pathway-ctx-base64"].As<Newtonsoft.Json.Linq.JArray>().Should().HaveCount(1);
+        }
     }
 
     [Fact]
@@ -264,6 +327,15 @@ public class ContextPropagationTests
         personMemoryStream.Should().NotBeNull();
 
         personMemoryStream.ToArray().Should().BeEquivalentTo(PersonJsonStringBytes);
+    }
+
+    private static MemoryStream CreateJsonPayloadOfLength(int targetLength)
+    {
+        var emptyPayloadLength = ContextPropagation.DictionaryToMemoryStream(new Dictionary<string, object> { { "blob", string.Empty } }).Length;
+        return ContextPropagation.DictionaryToMemoryStream(new Dictionary<string, object>
+        {
+            { "blob", new string('x', targetLength - (int)emptyPayloadLength) }
+        });
     }
 
     private static ScopedTracer GetTracer(string schemaVersion = "v1")
