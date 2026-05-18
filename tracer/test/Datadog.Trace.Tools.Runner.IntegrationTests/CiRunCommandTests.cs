@@ -210,6 +210,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             result.InitialXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
             result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
+            result.FinalXml.Should().Contain("lines-covered=\"1\"");
+            result.FinalXml.Should().Contain("line-rate=\"1\"");
             result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 100));
             result.TestSession.Meta.Should().Contain(CodeCoverageTags.Backfilled, "true");
         }
@@ -241,6 +243,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             result.InitialXml.Should().Contain($"""<line number="{otherCoveredLine}" hits="0" />""");
             result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
             result.FinalXml.Should().Contain($"""<line number="{otherCoveredLine}" hits="0" />""");
+            result.FinalXml.Should().Contain("lines-covered=\"1\"");
+            result.FinalXml.Should().Contain("line-rate=\"0.5\"");
             result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 50));
             result.TestSession.Meta.Should().Contain(CodeCoverageTags.Backfilled, "true");
         }
@@ -261,6 +265,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             using var scopeAssertions = new AssertionScope();
 
             result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
+            result.FinalXml.Should().Contain("lines-covered=\"0\"");
             result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 0));
             result.TestSession.Meta.Should().NotContainKey(CodeCoverageTags.Backfilled);
         }
@@ -284,6 +289,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             using var scopeAssertions = new AssertionScope();
 
             result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
+            result.FinalXml.Should().Contain("lines-covered=\"0\"");
+            result.TestSession.Metrics.Should().NotContainKey(CodeCoverageTags.PercentageOfTotalLines);
             result.TestSession.Meta.Should().NotContainKey(CodeCoverageTags.Backfilled);
         }
 
@@ -383,7 +390,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 initialXml.Should().NotBeNull();
                 testSession.Should().NotBeNull();
 
-                return new CoverletCollectorXmlCoverageScenarioResult(coverageFile, initialXml, finalXml, testSession);
+                return new CoverletCollectorXmlCoverageScenarioResult(initialXml, finalXml, testSession);
             }
             finally
             {
@@ -557,22 +564,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             /// <summary>
             /// Initializes a new instance of the <see cref="CoverletCollectorXmlCoverageScenarioResult"/> struct.
             /// </summary>
-            /// <param name="coverageFile">Absolute path to the generated Coverlet Cobertura XML attachment.</param>
             /// <param name="initialXml">XML contents before the runner finalizer applies coverage backfill.</param>
             /// <param name="finalXml">XML contents after the runner command completes.</param>
             /// <param name="testSession">Captured CI Visibility test-session event.</param>
-            public CoverletCollectorXmlCoverageScenarioResult(string coverageFile, string initialXml, string finalXml, MockCIVisibilityTestModule testSession)
+            public CoverletCollectorXmlCoverageScenarioResult(string initialXml, string finalXml, MockCIVisibilityTestModule testSession)
             {
-                CoverageFile = coverageFile;
                 InitialXml = initialXml;
                 FinalXml = finalXml;
                 TestSession = testSession;
             }
-
-            /// <summary>
-            /// Gets the absolute path to the generated Coverlet Cobertura XML attachment.
-            /// </summary>
-            public string CoverageFile { get; }
 
             /// <summary>
             /// Gets the XML contents before the runner finalizer applies coverage backfill.
