@@ -259,6 +259,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 () =>
                 {
                     CoverageBackfillDataStore.Persist(TestOptimization.Instance, CreateCoverageBackfillData(XUnitSampleSourcePath, SimplePassTestCoveredLine));
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
                 },
                 SimplePassTestCoveredLine);
 
@@ -323,6 +324,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             using var coverageResultsDirectory = new TemporaryDirectory("dd-ci-coverlet-collector-");
             string coverageFile = null;
             string initialXml = null;
+            EnvironmentHelpers.SetEnvironmentVariable(
+                Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
+                Path.Combine(coverageResultsDirectory.RootPath, ".dd-backfill"));
             EnvironmentHelpers.SetEnvironmentVariable(
                 Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
                 $"dotnet test --collect:\"XPlat Code Coverage\" --ResultsDirectory:\"{coverageResultsDirectory.RootPath}\"");
