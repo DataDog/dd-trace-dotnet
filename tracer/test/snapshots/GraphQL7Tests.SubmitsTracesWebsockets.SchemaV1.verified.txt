@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -173,15 +173,15 @@
 errors: [
 {
 "message": "This API purposely throws a NotImplementedException",
-"path": "System.Object[]",
+"path": "throwNotImplementedException",
 "code": "NOT_IMPLEMENTED",
 "locations": [
 {
 "line": 1,
-"column": 32
+"column": 32,
 },
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.ExecutionError,
@@ -215,7 +215,7 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 24
+"column": 24,
 },
 ]
 },
@@ -225,10 +225,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 35
+"column": 35,
 },
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,

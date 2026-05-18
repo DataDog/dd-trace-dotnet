@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -325,7 +325,7 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 24
+"column": 24,
 },
 ]
 },
@@ -335,10 +335,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 35
+"column": 35,
 },
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
@@ -383,15 +383,15 @@ errors: [
 errors: [
 {
 "message": "Error trying to resolve throwNotImplementedException.",
-"path": "System.String[]",
+"path": "throwNotImplementedException",
 "code": "NOT_IMPLEMENTED",
 "locations": [
 {
 "line": 1,
-"column": 32
+"column": 32,
 },
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.ExecutionError,
