@@ -346,9 +346,9 @@ namespace UpdateVendors
             
             Add(
                 libraryName: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
-                version: "core-1.13.1",
-                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.13.1.zip",
-                pathToSrc: new[] { "opentelemetry-dotnet-core-1.13.1", "src", "OpenTelemetry.Exporter.OpenTelemetryProtocol" },
+                version: "core-1.15.3",
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.15.3.zip",
+                pathToSrc: new[] { "opentelemetry-dotnet-core-1.15.3", "src", "OpenTelemetry.Exporter.OpenTelemetryProtocol" },
                 transform: filePath => RewriteCsFileWithStandardTransform(
                     filePath,
                     originalNamespace: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
