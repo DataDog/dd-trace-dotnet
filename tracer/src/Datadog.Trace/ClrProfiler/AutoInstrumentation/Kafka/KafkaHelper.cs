@@ -262,9 +262,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
                 {
-                    var consumeTime = span.StartTime.UtcDateTime;
-                    var produceTime = message.Timestamp.UtcDateTime;
-                    tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    try
+                    {
+                        var consumeTime = span.StartTime.UtcDateTime;
+                        var produceTime = message.Timestamp.UtcDateTime;
+                        tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    }
+                    catch (OverflowException)
+                    {
+                        // The stored timestamp resulted in an out-of-range value when converting to DateTime;
+                        // likely due to an invalid timestamp. Skip the tag rather than abort the whole scope.
+                    }
                 }
 
                 if (message?.Instance is not null && message.Value is null)
