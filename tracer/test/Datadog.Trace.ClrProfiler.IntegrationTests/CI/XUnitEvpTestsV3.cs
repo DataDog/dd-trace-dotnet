@@ -426,8 +426,6 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
                 // Remove tags validated outside the per-span checklist
                 Assert.True(targetTest.Meta.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
-                targetTest.Meta.Remove("repo.name");
-                targetTest.Meta.Remove("repo.owner");
 
                 // check the name
                 Assert.Equal("xunit.v3.test", targetTest.Name);
