@@ -79,10 +79,78 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 ## Build & Development
 
-**Quick start:**
-- Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
-- Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
-- Integration tests: `BuildAndRunIntegrationTests`
+The build system has two layers:
+- **Managed code** (C# tracer): `./tracer/build.sh` / `.\tracer\build.cmd` — works on all platforms, no Docker needed.
+- **Native code** (C++ tracer, profiler, native loader, Linux API wrapper): `./tracer/build_in_docker.sh` on Linux — all native targets use this wrapper; direct `cmake` invocation does not work (wrong compiler, missing module path, dep fetching). On macOS/Windows, native tracer uses CMake/Visual Studio directly.
+
+Both wrappers invoke **Nuke targets** in `tracer/build/_build/`. You can pass one or more targets in a single call.
+
+**Managed (cross-platform):**
+```bash
+./tracer/build.sh BuildTracerHome          # managed tracer + monitoring home
+./tracer/build.sh BuildAndRunManagedUnitTests
+./tracer/build.sh BuildAndRunIntegrationTests
+```
+
+**Native — Linux (via Docker):**
+```bash
+# High-level combined targets (most common)
+./tracer/build_in_docker.sh BuildTracerHome        # full tracer: managed + native tracer .so + monitoring home
+./tracer/build_in_docker.sh BuildProfilerHome      # profiler native .so
+./tracer/build_in_docker.sh BuildNativeLoader      # Datadog.Trace.ClrProfiler.Native.so (native loader)
+./tracer/build_in_docker.sh BuildNativeWrapper     # Datadog.Linux.ApiWrapper.x64.so
+
+# To run profiler integration tests you need all four:
+./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
+
+# Testing
+./tracer/build_in_docker.sh BuildAndRunProfilerIntegrationTests --filter "Category=Smoke"
+./tracer/build_in_docker.sh CompileProfilerNativeTestsLinux    # build GoogleTest suite (no .NET needed)
+./tracer/build_in_docker.sh RunProfilerNativeUnitTestsLinux    # run GoogleTest suite
+./tracer/build_in_docker.sh BuildAndRunIntegrationTests        # tracer integration tests
+```
+
+**Manually running a profiler scenario** (e.g. to observe logs or measure timing):
+```bash
+# Build everything needed
+./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
+
+# The docker image dd-trace-dotnet/alpine-base is created by the above.
+# Use -it for interactive use; drop -i if running non-interactively (SSH without TTY).
+# Mount source must be an absolute path visible to the Docker daemon — on some Linux setups
+# only paths under the repo root work (git worktrees in /tmp or ~ may not be visible).
+docker run -it --rm \
+  --mount type=bind,source="$(pwd)",target=/project \
+  --env NugetPackageDirectory=/project/packages \
+  --env artifacts=/project/tracer/bin/artifacts \
+  --env MonitoringHomeDirectory=/project/shared/bin/monitoring-home \
+  --env IsAlpine=true \
+  dd-trace-dotnet/alpine-base \
+  dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests \
+    --filter "FullyQualifiedName~CheckSimpleChainScenario"
+```
+
+To run a sample directly with full profiler loading (requires all four native components built above):
+```bash
+docker run -it --rm \
+  --mount type=bind,source="$(pwd)",target=/project \
+  --env CORECLR_ENABLE_PROFILING=1 \
+  --env "CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" \
+  --env CORECLR_PROFILER_PATH=/project/shared/bin/monitoring-home/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so \
+  --env DD_NATIVELOADER_CONFIGFILE=/project/shared/bin/monitoring-home/linux-musl-x64/loader.conf \
+  --env DD_DOTNET_TRACER_HOME=/project/shared/bin/monitoring-home \
+  --env LD_PRELOAD=/project/shared/bin/monitoring-home/linux-musl-x64/Datadog.Linux.ApiWrapper.x64.so \
+  --env DD_PROFILING_ENABLED=1 \
+  --env DD_PROFILING_MANAGED_ACTIVATION_ENABLED=0 \
+  --env DD_TRACE_DEBUG=1 \
+  --env DD_TRACE_LOG_DIRECTORY=/tmp/logs \
+  --env DD_TRACE_AGENT_URL=http://localhost:8126 \
+  dd-trace-dotnet/alpine-base \
+  bash -c 'mkdir -p /tmp/logs && dotnet /project/profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net10.0/Samples.Computer01.dll --timeout 30 --scenario 31 --param 1'
+# --scenario takes the integer enum value (not string). 31 = ReferenceChain.
+# See profiler/src/Demos/Samples.Computer01/Program.cs Scenario enum for all values.
+# Logs: /tmp/logs/DD-DotNet-Profiler-Native-*.log
+```
 
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
