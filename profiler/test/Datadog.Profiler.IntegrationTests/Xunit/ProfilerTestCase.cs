@@ -37,7 +37,7 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
             ExceptionAggregator aggregator,
             CancellationTokenSource cancellationTokenSource)
         {
-            byte attemptsRemaining = 1;
+            int attemptsRemaining = 1;
             var retryReason = string.Empty;
 
             try
