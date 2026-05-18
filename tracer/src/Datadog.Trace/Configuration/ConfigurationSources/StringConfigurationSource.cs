@@ -114,11 +114,9 @@ namespace Datadog.Trace.Configuration
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, recordValue, Origin);
                 return ConfigurationResult<string>.Valid(value);
             }
 
-            telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<string>.Invalid(value);
         }
 
@@ -136,15 +134,12 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(result))
                 {
-                    telemetry.Record(key, result, Origin);
                     return ConfigurationResult<int>.Valid(result);
                 }
 
-                telemetry.Record(key, result, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<int>.Invalid(result);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingInt32Error);
             return ConfigurationResult<int>.ParseFailure();
         }
 
@@ -162,15 +157,12 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(result))
                 {
-                    telemetry.Record(key, result, Origin);
                     return ConfigurationResult<double>.Valid(result);
                 }
 
-                telemetry.Record(key, result, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<double>.Invalid(result);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingDoubleError);
             return ConfigurationResult<double>.ParseFailure();
         }
 
@@ -189,15 +181,12 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(result.Value))
                 {
-                    telemetry.Record(key, result.Value, Origin);
                     return ConfigurationResult<bool>.Valid(result.Value);
                 }
 
-                telemetry.Record(key, result.Value, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<bool>.Invalid(result.Value);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingBooleanError);
             return ConfigurationResult<bool>.ParseFailure();
         }
 
@@ -216,15 +205,12 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(result.Result))
                 {
-                    telemetry.Record(key, value, recordValue, Origin);
                     return ConfigurationResult<T>.Valid(result.Result, value);
                 }
 
-                telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<T>.Invalid(result.Result);
             }
 
-            telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
             return ConfigurationResult<T>.ParseFailure();
         }
 
@@ -249,11 +235,9 @@ namespace Datadog.Trace.Configuration
 
             if (validator is null || validator(result))
             {
-                telemetry.Record(key, value, recordValue: true, Origin);
                 return ConfigurationResult<IDictionary<string, string>>.Valid(result, value);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
         }
 
@@ -274,11 +258,9 @@ namespace Datadog.Trace.Configuration
 
             if (validator is null || validator(result))
             {
-                telemetry.Record(key, value, recordValue: true, Origin);
                 return ConfigurationResult<IDictionary<string, string>>.Valid(result, value);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
         }
     }

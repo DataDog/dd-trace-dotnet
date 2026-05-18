@@ -947,7 +947,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
         {
-            telemetry.Record(ConfigurationKeys.TraceEnabled, false, ConfigurationOrigins.Calculated);
             traceEnabled = false;
         }
 
@@ -1000,7 +999,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
         if (globalSamplingRate is null)
         {
-            telemetry.Record(ConfigurationKeys.GlobalSamplingRate, 1.0, ConfigurationOrigins.Default);
         }
 
         var startupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
@@ -1120,7 +1118,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         }
 
         var value = sb is null ? null : StringBuilderCache.GetStringAndRelease(sb);
-        telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
     private static double? BuildSampleRate(OverrideErrorLog log, in ConfigurationBuilder config)
@@ -1219,7 +1216,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             result = explicitSetting!.Trim();
             if (result != explicitSetting)
             {
-                telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
         else
@@ -1228,7 +1224,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             if (!string.IsNullOrWhiteSpace(version))
             {
                 result = version.Trim();
-                telemetry.Record(telemetryKey, result, recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
 

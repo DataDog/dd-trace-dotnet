@@ -110,7 +110,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             // pre-record the default value, so it's in the "correct" place in the stack
             if (defaultValue is not null)
             {
-                Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
             }
 
             var result = GetStringResult(validator, converter: null, recordValue);
@@ -122,7 +121,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             if (defaultValue is not null && result.IsPresent)
             {
                 // re-record telemetry because we found an invalid value in sources which clobbered it
-                Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
             }
 
             return defaultValue;
@@ -144,7 +142,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
             return defaultValue;
         }
 
@@ -165,7 +162,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return ddResult;
             }
 
-            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
             return defaultValue.Result;
         }
 
@@ -180,7 +176,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
             return defaultValue.Result;
         }
 
@@ -220,7 +215,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             // pre-record the default value, so it's in the "correct" place in the stack
             if (defaultValue.HasValue)
             {
-                Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
             }
 
             var result = GetBoolResult(validator, converter: null);
@@ -231,7 +225,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
             if (defaultValue is { } value && result.IsPresent)
             {
-                Telemetry.Record(Key, value, ConfigurationOrigins.Default);
             }
 
             return defaultValue;
@@ -253,7 +246,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue, ConfigurationOrigins.Default);
             return defaultValue;
         }
 
@@ -276,7 +268,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             // pre-record the default value, so it's in the "correct" place in the stack
             if (defaultValue.HasValue)
             {
-                Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
             }
 
             var result = GetInt32Result(validator, converter);
@@ -287,7 +278,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
             if (defaultValue is { } value && result.IsPresent)
             {
-                Telemetry.Record(Key, value, ConfigurationOrigins.Default);
             }
 
             return defaultValue;
@@ -312,7 +302,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             // pre-record the default value, so it's in the "correct" place in the stack
             if (defaultValue.HasValue)
             {
-                Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
             }
 
             var result = GetDoubleResult(validator, converter);
@@ -323,7 +312,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
             if (defaultValue is { } value && result.IsPresent)
             {
-                Telemetry.Record(Key, value, ConfigurationOrigins.Default);
             }
 
             return defaultValue;
@@ -362,7 +350,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return null;
             }
 
-            Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
             return value;
         }
 
@@ -375,7 +362,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             // pre-record the default value, so it's in the "correct" place in the stack
             if (defaultValue is not null)
             {
-                Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
             }
 
             var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
@@ -386,7 +372,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
             if (result.IsPresent)
             {
-                Telemetry.Record(Key, defaultValueForTelemetry, recordValue: true, ConfigurationOrigins.Default);
             }
 
             return defaultValue;
@@ -638,13 +623,10 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 case null:
                     break;
                 case int intVal:
-                    Telemetry.Record(Key, intVal, ConfigurationOrigins.Default);
                     break;
                 case double doubleVal:
-                    Telemetry.Record(Key, doubleVal, ConfigurationOrigins.Default);
                     break;
                 case bool boolVal:
-                    Telemetry.Record(Key, boolVal, ConfigurationOrigins.Default);
                     break;
             }
         }
@@ -665,7 +647,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return ddResult;
             }
 
-            Telemetry.Record(Key, defaultValue.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
             return defaultValue.Result;
         }
 
@@ -688,7 +669,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
             return defaultValue.Result;
         }
 
@@ -710,7 +690,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
                 return null;
             }
 
-            Telemetry.Record(Key, defaultValue.Value.TelemetryValue, RecordValue, ConfigurationOrigins.Default);
             return defaultValue.Value.Result;
         }
     }

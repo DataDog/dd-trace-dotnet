@@ -85,7 +85,6 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, recordValue, origin);
             }
 
             return result;
@@ -117,7 +116,6 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, origin);
             }
 
             return result;
@@ -149,7 +147,6 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, origin);
             }
 
             return result;
@@ -181,7 +178,6 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.Result, origin);
             }
 
             return result;
@@ -238,7 +234,6 @@ namespace Datadog.Trace.Configuration
             if (result.IsValid && !isLastFound)
             {
                 // there should always be a telemetry override by convention, so just record a sentinel for now if there's not for some reason
-                telemetry.Record(key, result.TelemetryOverride ?? "<MISSING>", recordValue: true, origin);
             }
 
             return result;
@@ -270,7 +265,6 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
             }
 
             return result;

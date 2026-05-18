@@ -124,7 +124,6 @@ namespace Datadog.Trace.Telemetry
             {
                 // disable metrics by default in serverless, because we can't guarantee the correctness
                 metricsEnabled = false;
-                telemetry.Record(ConfigurationKeys.Telemetry.MetricsEnabled, false, ConfigurationOrigins.Default);
             }
             else
             {

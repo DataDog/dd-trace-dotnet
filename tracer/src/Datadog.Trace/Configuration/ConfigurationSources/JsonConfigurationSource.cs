@@ -108,17 +108,14 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value))
                     {
-                        telemetry.Record(key, value, recordValue, Origin);
                         return ConfigurationResult<string>.Valid(value);
                     }
 
-                    telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<string>.Invalid(value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Existing behaviour
             }
 
@@ -137,17 +134,14 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value.Value))
                     {
-                        telemetry.Record(key, value.Value, Origin);
                         return ConfigurationResult<int>.Valid(value.Value);
                     }
 
-                    telemetry.Record(key, value.Value, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<int>.Invalid(value.Value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonInt32Error);
                 throw; // Exising behaviour
             }
 
@@ -166,17 +160,14 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value.Value))
                     {
-                        telemetry.Record(key, value.Value, Origin);
                         return ConfigurationResult<double>.Valid(value.Value);
                     }
 
-                    telemetry.Record(key, value.Value, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<double>.Invalid(value.Value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonDoubleError);
                 throw; // Exising behaviour
             }
 
@@ -195,17 +186,14 @@ namespace Datadog.Trace.Configuration
                 {
                     if (validator is null || validator(value.Value))
                     {
-                        telemetry.Record(key, value.Value, Origin);
                         return ConfigurationResult<bool>.Valid(value.Value);
                     }
 
-                    telemetry.Record(key, value.Value, Origin, TelemetryErrorCode.FailedValidation);
                     return ConfigurationResult<bool>.Invalid(value.Value);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue: true, Origin, TelemetryErrorCode.JsonBooleanError);
                 throw; // Exising behaviour
             }
 
@@ -228,20 +216,15 @@ namespace Datadog.Trace.Configuration
                     {
                         if (validator is null || validator(value.Result))
                         {
-                            telemetry.Record(key, valueAsString, recordValue, Origin);
                             return ConfigurationResult<T>.Valid(value.Result, valueAsString);
                         }
 
-                        telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                         return ConfigurationResult<T>.Invalid(value.Result);
                     }
-
-                    telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
                 }
             }
             catch (Exception)
             {
-                telemetry.Record(key, token?.ToString(), recordValue, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Exising behaviour
             }
 
@@ -301,7 +284,6 @@ namespace Datadog.Trace.Configuration
                     catch (Exception e)
                     {
                         Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
-                        telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                         return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
                     }
                 }
@@ -311,7 +293,6 @@ namespace Datadog.Trace.Configuration
             }
             catch (InvalidCastException)
             {
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Exising behaviour
             }
 
@@ -319,11 +300,9 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(dictionary))
                 {
-                    telemetry.Record(key, tokenAsString, recordValue: true, Origin);
                     return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
                 }
 
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
             }
         }
@@ -363,7 +342,6 @@ namespace Datadog.Trace.Configuration
                     catch (Exception e)
                     {
                         Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
-                        telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                         return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
                     }
                 }
@@ -373,7 +351,6 @@ namespace Datadog.Trace.Configuration
             }
             catch (InvalidCastException)
             {
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Exising behaviour
             }
 
@@ -381,11 +358,9 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(dictionary))
                 {
-                    telemetry.Record(key, tokenAsString, recordValue: true, Origin);
                     return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
                 }
 
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
             }
         }

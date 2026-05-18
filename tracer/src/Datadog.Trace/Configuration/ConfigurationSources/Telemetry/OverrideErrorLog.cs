@@ -1,4 +1,4 @@
-﻿// <copyright file="OverrideErrorLog.cs" company="Datadog">
+// <copyright file="OverrideErrorLog.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -77,8 +77,6 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
                     "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
                     datadogKey,
                     otelKey);
-                OpenTelemetryHelpers.GetConfigurationMetricTags(otelKey, out var openTelemetryConfig, out var datadogConfig);
-                metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
             });
     }
 
@@ -88,8 +86,6 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
             (log, metrics) =>
             {
                 log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", otelKey);
-                OpenTelemetryHelpers.GetConfigurationMetricTags(otelKey, out var openTelemetryConfig, out var datadogConfig);
-                metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
             });
     }
 

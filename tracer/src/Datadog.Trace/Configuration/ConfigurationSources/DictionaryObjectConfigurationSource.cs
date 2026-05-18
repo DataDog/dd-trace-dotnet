@@ -39,17 +39,14 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         {
             if (objValue is not string value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<string>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, recordValue, Origin);
                 return ConfigurationResult<string>.Valid(value);
             }
 
-            telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<string>.Invalid(value);
         }
 
@@ -62,17 +59,14 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         {
             if (objValue is not int value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<int>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, Origin);
                 return ConfigurationResult<int>.Valid(value);
             }
 
-            telemetry.Record(key, value, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<int>.Invalid(value);
         }
 
@@ -85,17 +79,14 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         {
             if (objValue is not double value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<double>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, Origin);
                 return ConfigurationResult<double>.Valid(value);
             }
 
-            telemetry.Record(key, value, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<double>.Invalid(value);
         }
 
@@ -108,17 +99,14 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         {
             if (objValue is not bool value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<bool>.ParseFailure();
             }
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, value, Origin);
                 return ConfigurationResult<bool>.Valid(value);
             }
 
-            telemetry.Record(key, value, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<bool>.Invalid(value);
         }
 
@@ -134,7 +122,6 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         {
             if (objValue is not IDictionary<string, string> value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
             }
 
@@ -157,11 +144,9 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, dictAsString, recordValue: true, Origin);
                 return ConfigurationResult<IDictionary<string, string>>.Valid(value, dictAsString);
             }
 
-            telemetry.Record(key, dictAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<IDictionary<string, string>>.Invalid(value);
         }
 
@@ -188,15 +173,12 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
             {
                 if (validator is null || validator(result.Result))
                 {
-                    telemetry.Record(key, valueAsString, recordValue, Origin);
                     return ConfigurationResult<T>.Valid(result.Result, valueAsString);
                 }
 
-                telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<T>.Invalid(result.Result);
             }
 
-            telemetry.Record(key, valueAsString, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
             return ConfigurationResult<T>.ParseFailure();
         }
 

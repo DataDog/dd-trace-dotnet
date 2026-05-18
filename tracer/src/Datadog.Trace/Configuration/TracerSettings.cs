@@ -194,7 +194,6 @@ namespace Datadog.Trace.Configuration
             {
                 Log.Warning(
                     $"{ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled} was enabled, but System.Diagnostics.Metrics is only available on .NET 6+. Using standard runtime metrics collector.");
-                telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, false, ConfigurationOrigins.Calculated);
 
                 RuntimeMetricsDiagnosticsMetricsApiEnabled = false;
             }
@@ -371,14 +370,6 @@ namespace Datadog.Trace.Configuration
                                                        return normalizedFormat;
                                                    },
                                                    validator: null);
-
-            // record final value of CustomSamplingRulesFormat in telemetry
-            telemetry.Record(
-                    key: ConfigurationKeys.CustomSamplingRulesFormat,
-                    value: CustomSamplingRulesFormat,
-                    recordValue: true,
-                    origin: ConfigurationOrigins.Calculated);
-
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
             TraceBufferSize = config
@@ -407,7 +398,6 @@ namespace Datadog.Trace.Configuration
                 SingleSpanAspNetCoreEnabled = false;
                 Log.Warning(
                     $"{ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled} is set to true, but is only supported in .NET 6+. Using false instead.");
-                telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, false, ConfigurationOrigins.Calculated);
             }
 #endif
 
@@ -539,7 +529,6 @@ namespace Datadog.Trace.Configuration
             if (StatsComputationEnabled && !ApmTracingEnabled)
             {
                 // if APM is not enabled, disable stats computation (override user config)
-                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, value: false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
             }
 
@@ -621,13 +610,8 @@ namespace Datadog.Trace.Configuration
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
-            telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
-            telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
-            telemetry.Record(ConfigTelemetryData.ManagedTracerTfm, value: ConfigTelemetryData.ManagedTracerTfmValue, recordValue: true, ConfigurationOrigins.Default);
 
             // these are SSI variables that would be useful for correlation purposes
-            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed), recordValue: true, ConfigurationOrigins.EnvVars);
-            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InjectForce), recordValue: true, ConfigurationOrigins.EnvVars);
 
             var installType = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.InstrumentationInstallType);
 
@@ -641,21 +625,15 @@ namespace Datadog.Trace.Configuration
                 _ => "manual" // everything else
             };
 
-            telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
 #if NET6_0_OR_GREATER
             var trimState = TrimmingDetector.DetectedTrimmingState;
             var invalidTrimming = trimState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile;
             var isTrimmed = invalidTrimming || trimState == TrimmingDetector.TrimState.TrimmedAppUsingTrimmingFile;
 
-            telemetry.Record(ConfigTelemetryData.TrimmedAppDetected, isTrimmed, ConfigurationOrigins.Calculated);
-            telemetry.Record(ConfigTelemetryData.TrimmedAppMissingTrimmingFile, invalidTrimming, ConfigurationOrigins.Calculated);
 #endif
 
             if (AzureAppServiceMetadata is not null)
             {
-                telemetry.Record(ConfigTelemetryData.AasConfigurationError, AzureAppServiceMetadata.IsUnsafeToTrace, ConfigurationOrigins.Default);
-                telemetry.Record(ConfigTelemetryData.CloudHosting, "Azure", recordValue: true, ConfigurationOrigins.Default);
-                telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
 
             PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
