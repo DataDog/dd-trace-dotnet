@@ -328,20 +328,22 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             EnvironmentHelpers.SetEnvironmentVariable(
                 Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
                 backfillRunFolder);
-            EnvironmentHelpers.SetEnvironmentVariable(
-                Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
-                $"dotnet test --collect:\"XPlat Code Coverage\" --ResultsDirectory:\"{coverageResultsDirectory.RootPath}\"");
+            var testSessionCommandPrefix = $"dotnet test --collect:coverlet.collector --ResultsDirectory:{coverageResultsDirectory.RootPath}";
 
             try
             {
                 Program.CallbackForTests = (c, a, e) =>
                 {
-                    var session = DotnetCommon.CreateSession();
                     command = c;
                     arguments = a;
                     environmentVariables = e;
                     callbackInvoked = true;
+                    foreach (var environmentVariable in e)
+                    {
+                        EnvironmentHelpers.SetEnvironmentVariable(environmentVariable.Key, environmentVariable.Value);
+                    }
 
+                    var session = DotnetCommon.CreateSession();
                     coverageFile = WriteCoverletCollectorCoverageFile(coverageResultsDirectory.RootPath, uncoveredLines);
                     initialXml = File.ReadAllText(coverageFile);
                     configureBackfill();
@@ -371,7 +373,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 };
 
                 var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"{CommandPrefix} test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+                var commandLine = $"{CommandPrefix} {testSessionCommandPrefix} --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
 
                 using var console = ConsoleHelper.Redirect();
 
@@ -387,12 +389,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
                 exitCode.Should().Be(0);
                 callbackInvoked.Should().BeTrue();
-                command.Should().Be("test.exe");
-                arguments.Should().BeNullOrEmpty();
+                command.Should().Be("dotnet");
+                arguments.Should().StartWith($"test --collect:coverlet.collector --ResultsDirectory:{coverageResultsDirectory.RootPath}");
+                arguments.Should().Contain("--collect DatadogCoverage");
                 environmentVariables.Should().NotBeNull();
                 environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, backfillRunFolder);
-                environmentVariables.Should().ContainKey(Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand)
-                                    .WhoseValue.Should().NotBeNullOrWhiteSpace();
+                environmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand].Should().StartWith(testSessionCommandPrefix);
+                environmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand].Should().Contain("--collect DatadogCoverage");
                 environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, Environment.CurrentDirectory);
 
                 coverageFile.Should().NotBeNull();
