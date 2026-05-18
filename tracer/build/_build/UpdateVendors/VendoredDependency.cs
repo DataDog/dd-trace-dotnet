@@ -355,47 +355,22 @@ namespace UpdateVendors
                     AddIfNetcoreapp31OrGreater,
                     AddNullableDirectiveTransform,
                     AddOpenTelemetryUsings),
-                relativePathsToExclude: new[]
+                onlyIncludePaths: new[]
                 {
                     // Vendor gRPC and HTTP export clients for logs and metrics
                     // Vendor low-level protobuf utilities: ProtobufSerializer, ProtobufWireType
                     // Vendor ONLY field constants we actually use (Logs and Common)
                     // EXCLUDE high-level serializers that depend on OpenTelemetry SDK types
-                    ".publicApi/",
-                    "Builder/",
-                    "PersistentStorage/",
-                    "Implementation/Serializer/ProtobufOtlpLogSerializer.cs",          
-                    "Implementation/Serializer/ProtobufOtlpMetricSerializer.cs",        
-                    "Implementation/Serializer/ProtobufOtlpTraceSerializer.cs",        
-                    "Implementation/Serializer/ProtobufOtlpResourceSerializer.cs",     
-                    "Implementation/Serializer/ProtobufOtlpTagWriter.cs",              
-                    "Implementation/Serializer/ProtobufOtlpMetricFieldNumberConstants.cs",  // Not used - metrics has own FieldNumbers ATM
-                    "Implementation/Serializer/ProtobufOtlpTraceFieldNumberConstants.cs",
-                    "Implementation/Transmission/",
-                    "Implementation/ActivityExtensions.cs",
-                    "Implementation/ExperimentalOptions.cs",
-                    "Implementation/SdkLimitOptions.cs",
-                    "Implementation/TelemetryType.cs",
-                    "Implementation/OpenTelemetryProtocolExporterEventSource.cs",
-                    "Implementation/OtlpServiceCollectionExtensions.cs",
-                    "Implementation/OtlpExporterOptionsConfigurationType.cs",
-                    "Implementation/OtlpSpecConfigDefinitions.cs",
-                    "Implementation/TimestampHelpers.cs",
+                    "Implementation/ExportClient/",
+                    "Implementation/Serializer/ProtobufOtlpCommonFieldNumberConstants.cs",
+                    "Implementation/Serializer/ProtobufOtlpLogFieldNumberConstants.cs",
+                    "Implementation/Serializer/ProtobufSerializer.cs",
+                    "Implementation/Serializer/ProtobufWireType.cs",
+                    "OpenTelemetry.Exporter.OpenTelemetryProtocol",
+                },
+                relativePathsToExclude: new[]
+                {
                     "Implementation/ExportClient/OtlpRetry.cs",
-                    "CHANGELOG.md",
-                    "README.md",
-                    "IOtlpExporterOptions.cs",
-                    "OtlpExporterOptions.cs",
-                    "OtlpExporterOptionsExtensions.cs",
-                    "OtlpExportProtocol.cs",  // In parent namespace OpenTelemetry.Exporter; keep in stub instead
-                    "OtlpExportProtocolParser.cs",
-                    "OtlpLogExporter.cs",
-                    "OtlpLogExporterHelperExtensions.cs",
-                    "OtlpMetricExporter.cs",
-                    "OtlpMetricExporterExtensions.cs",
-                    "OtlpSignalType.cs",
-                    "OtlpTraceExporter.cs",
-                    "OtlpTraceExporterHelperExtensions.cs"
                 });
 
             Add(
