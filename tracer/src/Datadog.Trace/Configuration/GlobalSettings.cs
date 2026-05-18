@@ -10,7 +10,6 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using LogEventLevel = Datadog.Trace.Vendors.Serilog.Events.LogEventLevel;
 
@@ -26,14 +25,12 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <param name="telemetry">Records the origin of telemetry values</param>
         /// <param name="overrideHandler">Records any errors </param>
         internal GlobalSettings(
             IConfigurationSource source,
-            IConfigurationTelemetry telemetry,
             IConfigurationOverrideHandler overrideHandler)
         {
-            var builder = new ConfigurationBuilder(source, telemetry);
+            var builder = new ConfigurationBuilder(source);
 
             var otelConfig = builder
                             .WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel)
@@ -93,6 +90,6 @@ namespace Datadog.Trace.Configuration
         }
 
         private static GlobalSettings CreateFromDefaultSources()
-            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, OverrideErrorLog.Instance);
+            => new(GlobalConfigurationSource.Instance, OverrideErrorLog.Instance);
     }
 }

@@ -58,7 +58,7 @@ namespace Datadog.Trace.Configuration
         IEnumerator IEnumerable.GetEnumerator() => _sources.GetEnumerator();
 
         /// <inheritdoc />
-        public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator, bool recordValue)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Configuration
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetString(key, telemetry, validator, recordValue);
+                var value = source.GetString(key, validator, recordValue);
                 if (value.IsValid)
                 {
                     result = value;
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        public ConfigurationResult<int> GetInt32(string key, Func<int, bool>? validator)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Configuration
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetInt32(key, telemetry, validator);
+                var value = source.GetInt32(key, validator);
                 if (value.IsValid)
                 {
                     result = value;
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        public ConfigurationResult<double> GetDouble(string key, Func<double, bool>? validator)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -132,7 +132,7 @@ namespace Datadog.Trace.Configuration
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetDouble(key, telemetry, validator);
+                var value = source.GetDouble(key, validator);
                 if (value.IsValid)
                 {
                     result = value;
@@ -153,7 +153,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        public ConfigurationResult<bool> GetBool(string key, Func<bool, bool>? validator)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -163,7 +163,7 @@ namespace Datadog.Trace.Configuration
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetBool(key, telemetry, validator);
+                var value = source.GetBool(key, validator);
                 if (value.IsValid)
                 {
                     result = value;
@@ -184,18 +184,18 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-            => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings: false, separator: null);
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator)
+            => GetDictionary(key, validator, parser: null, allowOptionalMappings: false, separator: null);
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-            => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings, separator);
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+            => GetDictionary(key, validator, parser: null, allowOptionalMappings, separator);
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
-            => GetDictionary(key, telemetry, validator, parser, allowOptionalMappings: false, separator: null);
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+            => GetDictionary(key, validator, parser, allowOptionalMappings: false, separator: null);
 
-        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>>? parser, bool allowOptionalMappings, char? separator)
+        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>>? parser, bool allowOptionalMappings, char? separator)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -208,15 +208,15 @@ namespace Datadog.Trace.Configuration
                 ConfigurationResult<IDictionary<string, string>> value;
                 if (parser is not null)
                 {
-                    value = source.GetDictionary(key, telemetry, validator, parser);
+                    value = source.GetDictionary(key, validator, parser);
                 }
                 else if (separator.HasValue)
                 {
-                    value = source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator.Value);
+                    value = source.GetDictionary(key, validator, allowOptionalMappings, separator.Value);
                 }
                 else
                 {
-                    value = source.GetDictionary(key, telemetry, validator);
+                    value = source.GetDictionary(key, validator);
                 }
 
                 if (value.IsValid)
@@ -240,7 +240,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -250,7 +250,7 @@ namespace Datadog.Trace.Configuration
             for (var i = _sources.Count - 1; i >= 0; i--)
             {
                 var source = _sources[i];
-                var value = source.GetAs(key, telemetry, converter, validator, recordValue);
+                var value = source.GetAs(key, converter, validator, recordValue);
                 if (value.IsValid)
                 {
                     result = value;

@@ -56,7 +56,7 @@ namespace Datadog.Trace.TestHelpers
 
         public bool SecurityEnabled { get; private set; }
 
-        protected virtual string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
+        protected virtual string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetType().Name}Logs");
 
         protected EnvironmentHelper EnvironmentHelper { get; }
 

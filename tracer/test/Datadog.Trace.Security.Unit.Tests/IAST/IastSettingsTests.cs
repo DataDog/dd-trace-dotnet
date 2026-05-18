@@ -22,7 +22,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.RequestSampling, 50 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(50, iastSettings.RequestSampling);
     }
 
@@ -33,7 +33,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.RequestSampling, 150 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(IastSettings.RequestSamplingDefault, iastSettings.RequestSampling);
     }
 
@@ -44,7 +44,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.RequestSampling, -1 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(IastSettings.RequestSamplingDefault, iastSettings.RequestSampling);
     }
 
@@ -55,7 +55,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.MaxConcurrentRequests, 5 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(IastSettings.RequestSamplingDefault, iastSettings.RequestSampling);
     }
 
@@ -66,7 +66,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.MaxConcurrentRequests, -1 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(IastSettings.MaxConcurrentRequestDefault, iastSettings.MaxConcurrentRequests);
     }
 
@@ -77,7 +77,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.MaxRangeCount, 5 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(5, iastSettings.MaxRangeCount);
     }
 
@@ -88,7 +88,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.MaxRangeCount, -1 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(IastSettings.MaxRangeCountDefault, iastSettings.MaxRangeCount);
     }
 
@@ -99,7 +99,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.MaxRangeCount, 0 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(IastSettings.MaxRangeCountDefault, iastSettings.MaxRangeCount);
     }
 
@@ -110,7 +110,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.VulnerabilitiesPerRequest, 5 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(5, iastSettings.VulnerabilitiesPerRequest);
     }
 
@@ -121,7 +121,7 @@ public class IastSettingsTests : SettingsTestsBase
         {
             { ConfigurationKeys.Iast.VulnerabilitiesPerRequest, -1 }
         });
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
         Assert.Equal(IastSettings.VulnerabilitiesPerRequestDefault, iastSettings.VulnerabilitiesPerRequest);
     }
 
@@ -130,7 +130,7 @@ public class IastSettingsTests : SettingsTestsBase
     public void WeakCipherAlgorithms(string value, string expected)
     {
         var source = CreateConfigurationSource((ConfigurationKeys.Iast.WeakCipherAlgorithms, value));
-        var settings = new IastSettings(source, NullConfigurationTelemetry.Instance);
+        var settings = new IastSettings(source);
 
         settings.WeakCipherAlgorithms.Should().Be(expected);
         settings.WeakCipherAlgorithmsArray.Should().BeEquivalentTo(expected.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
@@ -141,7 +141,7 @@ public class IastSettingsTests : SettingsTestsBase
     public void WeakHashAlgorithms(string value, string expected)
     {
         var source = CreateConfigurationSource((ConfigurationKeys.Iast.WeakHashAlgorithms, value));
-        var settings = new IastSettings(source, NullConfigurationTelemetry.Instance);
+        var settings = new IastSettings(source);
 
         settings.WeakHashAlgorithms.Should().Be(expected);
         settings.WeakHashAlgorithmsArray.Should().BeEquivalentTo(expected.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
@@ -157,7 +157,7 @@ public class IastSettingsTests : SettingsTestsBase
     public void DataBaseRowsToTaint(string value, int expected)
     {
         var source = CreateConfigurationSource((ConfigurationKeys.Iast.DataBaseRowsToTaint, value));
-        var settings = new IastSettings(source, NullConfigurationTelemetry.Instance);
+        var settings = new IastSettings(source);
 
         settings.DataBaseRowsToTaint.Should().Be(expected);
     }

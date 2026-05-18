@@ -17,7 +17,6 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
@@ -35,13 +34,13 @@ namespace Datadog.Trace.Configuration
 
         [TestingOnly]
         internal TracerSettings()
-            : this(null, new ConfigurationTelemetry(), new OverrideErrorLog())
+            : this(null, new OverrideErrorLog())
         {
         }
 
         [TestingOnly]
-        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry? telemetry = null)
-        : this(source, telemetry ?? new ConfigurationTelemetry(), new OverrideErrorLog())
+        internal TracerSettings(IConfigurationSource? source)
+        : this(source, new OverrideErrorLog())
         {
         }
 
@@ -50,14 +49,13 @@ namespace Datadog.Trace.Configuration
         /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
         /// </summary>
         /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
-        /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
         /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
-        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
+        internal TracerSettings(IConfigurationSource? source, OverrideErrorLog errorLog)
         {
             var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
             ErrorLog = errorLog;
-            var config = new ConfigurationBuilder(source, telemetry);
+            var config = new ConfigurationBuilder(source);
 
             ExperimentalFeaturesEnabled = config
                     .WithKeys(ConfigurationKeys.ExperimentalFeaturesEnabled)
@@ -72,12 +70,12 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.PropagateProcessTags)
                                        .AsBool(true);
 
-            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, telemetry);
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
-            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry))
+            if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source))
             {
-                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, telemetry);
+                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source);
             }
 
             GitMetadataEnabled = config
@@ -648,7 +646,7 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            Manager = new(source, this, telemetry, errorLog);
+            Manager = new(source, this, errorLog);
         }
 
         internal HashSet<string> ExperimentalFeaturesEnabled { get; }
@@ -1148,7 +1146,7 @@ namespace Datadog.Trace.Configuration
             !IsRunningInGCPFunctions;
 
         internal static TracerSettings FromDefaultSourcesInternal()
-            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, new());
+            => new(GlobalConfigurationSource.Instance, new OverrideErrorLog());
 
         internal static ReadOnlyDictionary<string, string>? TrimConfigKeysValues(ConfigurationBuilder.HasKeys key)
         {

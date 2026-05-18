@@ -43,7 +43,7 @@ namespace Datadog.Trace.TestHelpers
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             MonitoringHome = GetMonitoringHomePath();
-            LogDirectory = DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
+            LogDirectory = DatadogLoggingFactory.GetLogDirectory();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];

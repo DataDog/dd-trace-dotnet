@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -65,7 +64,7 @@ namespace Datadog.Trace
                 }
 
                 // This is run from the loader, so no point recording telemetry as we're not going to send it anyway
-                var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+                var azureAppServiceSettings = new ImmutableAzureAppServiceSettings(GlobalConfigurationSource.Instance);
                 if (azureAppServiceSettings.IsUnsafeToTrace)
                 {
                     Log.ErrorSkipTelemetry("The Azure Site Extension doesn't have the required parameters to work. The API_KEY is likely missing. The trace_agent and dogstatsd process will not be started. Check your app configuration and restart the app service to try again.");

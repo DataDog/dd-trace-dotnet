@@ -17,10 +17,10 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal sealed class ImmutableGCPFunctionSettings
     {
-        public ImmutableGCPFunctionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        public ImmutableGCPFunctionSettings(IConfigurationSource? source)
         {
             source ??= NullConfigurationSource.Instance;
-            var config = new ConfigurationBuilder(source, telemetry);
+            var config = new ConfigurationBuilder(source);
 
             var deprecatedFunctionKey = config.WithKeys(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey).AsString();
             var deprecatedProjectKey = config.WithKeys(PlatformKeys.GcpFunction.DeprecatedProjectKey).AsString();

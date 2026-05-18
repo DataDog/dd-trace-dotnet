@@ -6,7 +6,6 @@
 #nullable enable
 
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Util;
 
@@ -40,9 +39,9 @@ internal sealed class IastSettings
     /// </summary>
     internal const string DefaultCookieFilterRegex = @".*";
 
-    public IastSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    public IastSettings(IConfigurationSource source)
     {
-        var config = new ConfigurationBuilder(source, telemetry);
+        var config = new ConfigurationBuilder(source);
         WeakCipherAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakCipherAlgorithms).AsString(WeakCipherAlgorithmsDefault);
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(Separators.Comma, System.StringSplitOptions.RemoveEmptyEntries);
         WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
@@ -155,6 +154,6 @@ internal sealed class IastSettings
 
     public static IastSettings FromDefaultSources()
     {
-        return new IastSettings(GlobalConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+        return new IastSettings(GlobalConfigurationSource.Instance);
     }
 }

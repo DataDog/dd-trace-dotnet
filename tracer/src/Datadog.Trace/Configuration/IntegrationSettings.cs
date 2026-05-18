@@ -50,7 +50,7 @@ namespace Datadog.Trace.Configuration
             IntegrationName = integrationName;
 
             // We don't record these in telemetry, because they're blocked anyway
-            var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+            var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance);
             Enabled = isExplicitlyDisabled
                           ? false
                           : config

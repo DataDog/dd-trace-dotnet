@@ -26,7 +26,7 @@ public class DbRecordManagerTests
             { ConfigurationKeys.Iast.Enabled, true },
             { ConfigurationKeys.Iast.DataBaseRowsToTaint, rowLimit }
         });
-        var recordsManager = new IastModule.DbRecordManager(new IastSettings(settings, NullConfigurationTelemetry.Instance));
+        var recordsManager = new IastModule.DbRecordManager(new IastSettings(settings));
 
         object instance = new object();
         for (int row = 0; row < 10; row++)

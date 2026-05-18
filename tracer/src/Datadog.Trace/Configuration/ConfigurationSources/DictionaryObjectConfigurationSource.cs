@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration;
@@ -33,7 +32,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
     protected virtual bool TryGetValue(string key, out object? value)
         => Dictionary.TryGetValue(key, out value);
 
-    public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+    public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator, bool recordValue)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
@@ -53,7 +52,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         return ConfigurationResult<string>.NotFound();
     }
 
-    public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+    public ConfigurationResult<int> GetInt32(string key, Func<int, bool>? validator)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
@@ -73,7 +72,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         return ConfigurationResult<int>.NotFound();
     }
 
-    public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+    public ConfigurationResult<double> GetDouble(string key, Func<double, bool>? validator)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
@@ -93,7 +92,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         return ConfigurationResult<double>.NotFound();
     }
 
-    public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+    public ConfigurationResult<bool> GetBool(string key, Func<bool, bool>? validator)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
@@ -113,10 +112,10 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         return ConfigurationResult<bool>.NotFound();
     }
 
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-        => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator)
+        => GetDictionary(key, validator, allowOptionalMappings: false, separator: ':');
 
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
@@ -153,10 +152,10 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         return ConfigurationResult<IDictionary<string, string>>.NotFound();
     }
 
-    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
-        => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        => GetDictionary(key, validator, allowOptionalMappings: false, separator: ':');
 
-    public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+    public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {

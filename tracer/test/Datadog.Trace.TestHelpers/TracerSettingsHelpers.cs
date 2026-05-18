@@ -20,7 +20,6 @@ internal static class TracerSettingsHelpers
         public static TracerSettings Create(Dictionary<string, object> settings) =>
             new(
                 new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => FormattableString.Invariant($"{x.Value}"))),
-                new ConfigurationTelemetry(),
                 new OverrideErrorLog());
     }
 }

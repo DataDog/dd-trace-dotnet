@@ -63,13 +63,13 @@ namespace Datadog.Trace.Telemetry
 
         public string CompressionMethod { get; }
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, TracerSettings tracerSettings, bool? isAgentAvailable)
-            => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.IsRunningInAzureFunctions || tracerSettings.IsRunningInGCPFunctions);
+        public static TelemetrySettings FromSource(IConfigurationSource source, TracerSettings tracerSettings, bool? isAgentAvailable)
+            => FromSource(source, isAgentAvailable, isServerless: tracerSettings.IsRunningInAzureFunctions || tracerSettings.IsRunningInGCPFunctions);
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, bool? isAgentAvailable, bool isServerless)
+        public static TelemetrySettings FromSource(IConfigurationSource source, bool? isAgentAvailable, bool isServerless)
         {
             string? configurationError = null;
-            var config = new ConfigurationBuilder(source, telemetry);
+            var config = new ConfigurationBuilder(source);
 
             // TODO: we already fetch this, so this will overwrite the telemetry.... Need a solution to that...
             var apiKey = config

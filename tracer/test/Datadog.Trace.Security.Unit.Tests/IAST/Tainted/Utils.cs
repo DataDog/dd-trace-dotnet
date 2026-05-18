@@ -31,7 +31,7 @@ internal static class Utils
 
         var settings = new CustomSettingsForTests(settingsDictionary);
 
-        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+        var iastSettings = new IastSettings(settings);
 
         var evidenceRedactor = IastModule.CreateRedactor(iastSettings);
         Assert.NotNull(evidenceRedactor);

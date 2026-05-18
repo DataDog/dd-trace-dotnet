@@ -11,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
@@ -20,7 +19,6 @@ public sealed partial record TracerSettings
     internal sealed class SettingsManager
     {
         private readonly TracerSettings _tracerSettings;
-        private readonly ConfigurationTelemetry _initialTelemetry;
         private readonly List<SettingChangeSubscription> _subscribers = [];
 
         private IConfigurationSource _dynamicConfigurationSource = NullConfigurationSource.Instance;
@@ -28,21 +26,14 @@ public sealed partial record TracerSettings
             new ManualInstrumentationConfigurationSource(new Dictionary<string, object?>(), useDefaultSources: true);
 
         // We delay creating these, as we likely won't need them
-        private ConfigurationTelemetry? _noDefaultSettingsTelemetry;
         private MutableSettings? _noDefaultSourcesSettings;
 
         private SettingChanges? _latest;
 
-        public SettingsManager(IConfigurationSource source, TracerSettings tracerSettings, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
+        public SettingsManager(IConfigurationSource source, TracerSettings tracerSettings, OverrideErrorLog errorLog)
         {
-            // We record the telemetry for the initial settings in a dedicated ConfigurationTelemetry,
-            // because we need to be able to reapply this configuration on dynamic config updates
-            // We don't re-record error logs, so we just use the built-in for that
-            var initialTelemetry = new ConfigurationTelemetry();
-            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, initialTelemetry, errorLog, tracerSettings);
+            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, errorLog, tracerSettings);
             _tracerSettings = tracerSettings;
-            _initialTelemetry = initialTelemetry;
-            initialTelemetry.CopyTo(telemetry);
         }
 
         /// <summary>
@@ -89,17 +80,15 @@ public sealed partial record TracerSettings
         /// based on runtime configuration sources.
         /// </summary>
         /// <param name="manualSource">An <see cref="IConfigurationSource"/> containing the new settings created by manual configuration (in code)</param>
-        /// <param name="centralTelemetry">The central <see cref="IConfigurationTelemetry"/> to report config telemetry updates to</param>
         /// <returns>True if changes were detected and consumers were updated, false otherwise</returns>
         public bool UpdateManualConfigurationSettings(
-            ManualInstrumentationConfigurationSourceBase manualSource,
-            IConfigurationTelemetry centralTelemetry)
+            ManualInstrumentationConfigurationSourceBase manualSource)
         {
             // we lock this whole method so that we can't conflict with UpdateDynamicConfigurationSettings calls too
             lock (_subscribers)
             {
                 _manualConfigurationSource = manualSource;
-                return UpdateSettings(_dynamicConfigurationSource, manualSource, centralTelemetry);
+                return UpdateSettings(_dynamicConfigurationSource, manualSource);
             }
         }
 
@@ -108,25 +97,22 @@ public sealed partial record TracerSettings
         /// based on runtime configuration sources.
         /// </summary>
         /// <param name="dynamicConfigSource">An <see cref="IConfigurationSource"/> for dynamic config via remote config</param>
-        /// <param name="centralTelemetry">The central <see cref="IConfigurationTelemetry"/> to report config telemetry updates to</param>
         /// <returns>True if changes were detected and consumers were updated, false otherwise</returns>
         public bool UpdateDynamicConfigurationSettings(
-            IConfigurationSource dynamicConfigSource,
-            IConfigurationTelemetry centralTelemetry)
+            IConfigurationSource dynamicConfigSource)
         {
             lock (_subscribers)
             {
                 _dynamicConfigurationSource = dynamicConfigSource;
-                return UpdateSettings(dynamicConfigSource, _manualConfigurationSource, centralTelemetry);
+                return UpdateSettings(dynamicConfigSource, _manualConfigurationSource);
             }
         }
 
         private bool UpdateSettings(
             IConfigurationSource dynamicConfigSource,
-            ManualInstrumentationConfigurationSourceBase manualSource,
-            IConfigurationTelemetry centralTelemetry)
+            ManualInstrumentationConfigurationSourceBase manualSource)
         {
-            if (BuildNewSettings(dynamicConfigSource, manualSource, centralTelemetry) is { } newSettings)
+            if (BuildNewSettings(dynamicConfigSource, manualSource) is { } newSettings)
             {
                 NotifySubscribers(newSettings);
                 return true;
@@ -138,16 +124,12 @@ public sealed partial record TracerSettings
         // Internal for testing
         internal SettingChanges? BuildNewSettings(
             IConfigurationSource dynamicConfigSource,
-            ManualInstrumentationConfigurationSourceBase manualSource,
-            IConfigurationTelemetry telemetry)
+            ManualInstrumentationConfigurationSourceBase manualSource)
         {
-            // Set the correct default telemetry and initial settings depending
-            // on whether the manual config source explicitly disables using the default sources
-            ConfigurationTelemetry defaultTelemetry;
+            // Set the correct initial settings depending on whether the manual config source explicitly disables using the default sources
             MutableSettings initialSettings;
             if (manualSource.UseDefaultSources)
             {
-                defaultTelemetry = _initialTelemetry;
                 initialSettings = InitialMutableSettings;
             }
             else
@@ -155,22 +137,16 @@ public sealed partial record TracerSettings
                 // We only need to initialize the "no default sources" settings once
                 // and we don't want to initialize them if we don't _need_ to
                 // so lazy-initialize here
-                if (_noDefaultSourcesSettings is null || _noDefaultSettingsTelemetry is null)
+                if (_noDefaultSourcesSettings is null)
                 {
                     InitialiseNoDefaultSourceSettings();
                 }
 
-                defaultTelemetry = _noDefaultSettingsTelemetry;
                 initialSettings = _noDefaultSourcesSettings;
             }
 
             var current = _latest;
             var currentMutable = current?.UpdatedMutable ?? current?.PreviousMutable ?? InitialMutableSettings;
-
-            // we create a temporary ConfigurationTelemetry object to hold the changes to settings
-            // if nothing is actually written, and nothing changes compared to the default, then we
-            // don't need to report it to the provided telemetry
-            var tempTelemetry = new ConfigurationTelemetry();
 
             var overrideErrorLog = new OverrideErrorLog();
             var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
@@ -178,7 +154,6 @@ public sealed partial record TracerSettings
                 manualSource,
                 initialSettings,
                 _tracerSettings,
-                tempTelemetry,
                 overrideErrorLog);
 
             var isSameMutableSettings = currentMutable.Equals(newMutableSettings);
@@ -189,30 +164,21 @@ public sealed partial record TracerSettings
                 return null;
             }
 
-            // we have changes, so we need to report them
-            // First record the "default"/fallback values, then record the "new" values
-            defaultTelemetry.CopyTo(telemetry);
-            tempTelemetry.CopyTo(telemetry);
-
             Log.Information("Notifying consumers of new settings");
             var updatedMutableSettings = isSameMutableSettings ? null : newMutableSettings;
 
             return new SettingChanges(updatedMutableSettings, currentMutable);
         }
 
-        [MemberNotNull(nameof(_noDefaultSettingsTelemetry))]
         [MemberNotNull(nameof(_noDefaultSourcesSettings))]
         private void InitialiseNoDefaultSourceSettings()
         {
-            if (_noDefaultSourcesSettings is not null
-             && _noDefaultSettingsTelemetry is not null)
+            if (_noDefaultSourcesSettings is not null)
             {
                 return;
             }
 
-            var telemetry = new ConfigurationTelemetry();
-            _noDefaultSettingsTelemetry = telemetry;
-            _noDefaultSourcesSettings = MutableSettings.CreateWithoutDefaultSources(_tracerSettings, telemetry);
+            _noDefaultSourcesSettings = MutableSettings.CreateWithoutDefaultSources(_tracerSettings);
         }
 
         private void NotifySubscribers(SettingChanges settings)

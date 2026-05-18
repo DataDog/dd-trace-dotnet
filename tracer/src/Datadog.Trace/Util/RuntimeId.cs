@@ -42,7 +42,7 @@ namespace Datadog.Trace.Util
 
         private static string GetRootSessionIdImpl()
         {
-            var config = new ConfigurationBuilder(new EnvironmentConfigurationSource(), TelemetryFactory.Config);
+            var config = new ConfigurationBuilder(new EnvironmentConfigurationSource());
             var inherited = config.WithKeys(ConfigurationKeys.Telemetry.RootSessionId).AsString();
             if (!string.IsNullOrEmpty(inherited))
             {

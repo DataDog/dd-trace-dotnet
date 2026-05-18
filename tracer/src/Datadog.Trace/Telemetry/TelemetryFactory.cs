@@ -4,14 +4,12 @@
 // </copyright>
 #nullable enable
 using System.Threading;
-using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Telemetry
 {
     internal sealed class TelemetryFactory
     {
         private static IMetricsTelemetryCollector _metrics = NullMetricsTelemetryCollector.Instance;
-        private static IConfigurationTelemetry _configuration = NullConfigurationTelemetry.Instance;
 
         private TelemetryFactory()
         {
@@ -21,13 +19,8 @@ namespace Datadog.Trace.Telemetry
 
         public static IMetricsTelemetryCollector Metrics => Volatile.Read(ref _metrics);
 
-        internal static IConfigurationTelemetry Config => Volatile.Read(ref _configuration);
-
         internal static IMetricsTelemetryCollector SetMetricsForTesting(IMetricsTelemetryCollector telemetry)
             => Interlocked.Exchange(ref _metrics, telemetry);
-
-        internal static IConfigurationTelemetry SetConfigForTesting(IConfigurationTelemetry telemetry)
-            => Interlocked.Exchange(ref _configuration, telemetry);
 
         public ITelemetryController CreateTelemetryController()
             => NullTelemetryController.Instance;

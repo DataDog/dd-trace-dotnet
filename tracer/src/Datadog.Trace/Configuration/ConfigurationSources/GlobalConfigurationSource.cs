@@ -10,7 +10,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
@@ -55,10 +54,8 @@ internal static class GlobalConfigurationSource
     {
         try
         {
-            var telemetry = TelemetryFactory.Config;
-
             // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
+            var configurationFileName = new ConfigurationBuilder(configurationSource)
                                        .WithKeys(ConfigurationKeys.ConfigurationFileName)
                                        .AsString(
                                             getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),

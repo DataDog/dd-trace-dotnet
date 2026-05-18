@@ -46,12 +46,11 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <param name="telemetry"><see cref="IConfigurationTelemetry"/> instance for recording telemetry</param>
-        public ImmutableAzureAppServiceSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        public ImmutableAzureAppServiceSettings(IConfigurationSource? source)
         {
             source ??= NullConfigurationSource.Instance;
             // TODO: This is retrieved from other places too... need to work out how to not replace config
-            var config = new ConfigurationBuilder(source, telemetry);
+            var config = new ConfigurationBuilder(source);
             var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
 
             if (string.IsNullOrEmpty(apiKey))
@@ -60,7 +59,7 @@ namespace Datadog.Trace.Configuration
                 IsUnsafeToTrace = true;
             }
 
-            SubscriptionId = GetSubscriptionId(source, telemetry);
+            SubscriptionId = GetSubscriptionId(source);
             ResourceGroup = config.WithKeys(PlatformKeys.AzureAppService.ResourceGroupKey).AsString();
             SiteName = config.WithKeys(PlatformKeys.AzureAppService.SiteNameKey).AsString();
             ResourceId = CompileResourceId(subscriptionId: SubscriptionId, siteName: SiteName, resourceGroup: ResourceGroup);
@@ -161,9 +160,9 @@ namespace Datadog.Trace.Configuration
             return $"/subscriptions/{subscriptionId}/resourcegroups/{resourceGroup}/providers/microsoft.web/sites/{siteName}".ToLowerInvariant();
         }
 
-        private static string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        private static string? GetSubscriptionId(IConfigurationSource source)
         {
-            var websiteOwner = new ConfigurationBuilder(source, telemetry)
+            var websiteOwner = new ConfigurationBuilder(source)
                               .WithKeys(PlatformKeys.AzureAppService.WebsiteOwnerNameKey)
                               .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
 
@@ -183,9 +182,9 @@ namespace Datadog.Trace.Configuration
         /// Returns <c>true</c> if the app is running in Azure App Services.
         /// Checks for the presence of "WEBSITE_SITE_NAME" in the configuration.
         /// </summary>
-        public static bool IsRunningInAzureAppServices(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public static bool IsRunningInAzureAppServices(IConfigurationSource source)
         {
-            var siteName = new ConfigurationBuilder(source, telemetry)
+            var siteName = new ConfigurationBuilder(source)
                            .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
                            .AsString();
 
@@ -197,19 +196,19 @@ namespace Datadog.Trace.Configuration
         /// Checks for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME",
         /// and "FUNCTIONS_EXTENSION_VERSION" in the configuration.
         /// </summary>
-        public static bool IsRunningInAzureFunctions(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public static bool IsRunningInAzureFunctions(IConfigurationSource source)
         {
-            var siteName = new ConfigurationBuilder(source, telemetry)
+            var siteName = new ConfigurationBuilder(source)
                            .WithKeys(PlatformKeys.AzureAppService.SiteNameKey)
                            .AsString();
 
             // "dotnet", "dotnet-isolated"
-            var workerRuntime = new ConfigurationBuilder(source, telemetry)
+            var workerRuntime = new ConfigurationBuilder(source)
                            .WithKeys(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime)
                            .AsString();
 
             // "~4", "~1"
-            var extensionVersion = new ConfigurationBuilder(source, telemetry)
+            var extensionVersion = new ConfigurationBuilder(source)
                            .WithKeys(PlatformKeys.AzureFunctions.FunctionsExtensionVersion)
                            .AsString();
 
@@ -222,9 +221,9 @@ namespace Datadog.Trace.Configuration
         /// Returns <c>true</c> if the app is instrumented using the Azure App Services Site Extension.
         /// Checks for the presence of "DD_AZURE_APP_SERVICES=1".
         /// </summary>
-        public static bool IsUsingAzureAppServicesSiteExtension(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public static bool IsUsingAzureAppServicesSiteExtension(IConfigurationSource source)
         {
-            return new ConfigurationBuilder(source, telemetry)
+            return new ConfigurationBuilder(source)
                    .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
                    .AsString() == "1";
         }

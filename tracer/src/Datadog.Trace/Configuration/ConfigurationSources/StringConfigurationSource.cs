@@ -11,8 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration
 {
@@ -103,7 +101,7 @@ namespace Datadog.Trace.Configuration
         protected abstract string? GetString(string key);
 
         /// <inheritdoc />
-        public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString(string key, Func<string, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
@@ -121,7 +119,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        public ConfigurationResult<int> GetInt32(string key, Func<int, bool>? validator)
         {
             var value = GetString(key);
 
@@ -144,7 +142,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        public ConfigurationResult<double> GetDouble(string key, Func<double, bool>? validator)
         {
             var value = GetString(key);
 
@@ -167,7 +165,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        public ConfigurationResult<bool> GetBool(string key, Func<bool, bool>? validator)
         {
             var value = GetString(key);
 
@@ -191,7 +189,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<T>(string key, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
@@ -215,11 +213,11 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator)
+            => GetDictionary(key, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var value = GetString(key);
 
@@ -242,7 +240,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
         {
             var value = GetString(key);
 

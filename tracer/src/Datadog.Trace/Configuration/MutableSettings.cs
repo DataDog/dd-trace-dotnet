@@ -11,7 +11,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -574,7 +573,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// <param name="manualSource">The <see cref="IConfigurationSource"/> for manual configuration</param>
     /// <param name="initialSettings">The initial mutable settings created from static sources </param>
     /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
-    /// <param name="telemetry">The <see cref="IConfigurationTelemetry"/> for recording telemetry updates</param>
     /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
     /// <returns>The <see cref="MutableSettings"/> updated images</returns>
     public static MutableSettings CreateUpdatedMutableSettings(
@@ -582,11 +580,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ManualInstrumentationConfigurationSourceBase manualSource,
         MutableSettings initialSettings, // Might be the "real" initial mutable settings or the "null" version
         TracerSettings tracerSettings,
-        IConfigurationTelemetry telemetry,
         OverrideErrorLog errorLog)
     {
         // For most configs we can do "combined" config where dynamic config has higher precedence
-        var config = new ConfigurationBuilder(new CompositeConfigurationSource([dynamicSource, manualSource]), telemetry);
+        var config = new ConfigurationBuilder(new CompositeConfigurationSource([dynamicSource, manualSource]));
 
         var traceEnabled = GetResult(
             config.WithKeys(ConfigurationKeys.TraceEnabled).AsBoolResult().ConfigurationResult,
@@ -686,8 +683,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         // These behave differently depending on which source the telemetry came from, so inspect them separately
         // Reading the manual value first is important to ensure correct telemetry
-        var manualConfig = new ConfigurationBuilder(manualSource, telemetry);
-        var dynamicConfig = new ConfigurationBuilder(dynamicSource, telemetry);
+        var manualConfig = new ConfigurationBuilder(manualSource);
+        var dynamicConfig = new ConfigurationBuilder(dynamicSource);
         var manualCustomSamplingRules = manualConfig.WithKeys(ConfigurationKeys.CustomSamplingRules).AsStringResult();
         // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
         // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
@@ -799,17 +796,15 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// Create an instance of <see cref="MutableSettings"/> based on static source
     /// </summary>
     /// <param name="source">The global, static, <see cref="IConfigurationSource"/></param>
-    /// <param name="telemetry">The <see cref="IConfigurationTelemetry"/> for recording telemetry updates</param>
     /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
     /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
     /// <returns>The initial, static settings. These are fixed for the lifetime of the application</returns>
     public static MutableSettings CreateInitialMutableSettings(
         IConfigurationSource source,
-        IConfigurationTelemetry telemetry,
         OverrideErrorLog errorLog,
         TracerSettings tracerSettings)
     {
-        var config = new ConfigurationBuilder(source, telemetry);
+        var config = new ConfigurationBuilder(source);
 
         var logsInjectionEnabled = config
                                   .WithKeys(ConfigurationKeys.LogsInjectionEnabled)
@@ -901,7 +896,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                          .AsString();
 
         // DD_ENV has precedence over DD_TAGS
-        environment = GetExplicitSettingOrTag(environment, globalTags, Tags.Env, ConfigurationKeys.Environment, telemetry);
+        environment = GetExplicitSettingOrTag(environment, globalTags, Tags.Env);
 
         var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
         var serviceName = config
@@ -910,28 +905,28 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                          .OverrideWith(in otelServiceName, errorLog);
 
         // DD_SERVICE has precedence over DD_TAGS
-        serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName, telemetry);
+        serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service);
 
         var serviceVersion = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
                             .AsString();
 
         // DD_VERSION has precedence over DD_TAGS
-        serviceVersion = GetExplicitSettingOrTag(serviceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion, telemetry);
+        serviceVersion = GetExplicitSettingOrTag(serviceVersion, globalTags, Tags.Version);
 
         var gitCommitSha = config
                           .WithKeys(ConfigurationKeys.CIVisibility.GitCommitSha)
                           .AsString();
 
         // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, "git.commit.sha", ConfigurationKeys.CIVisibility.GitCommitSha, telemetry);
+        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, "git.commit.sha");
 
         var gitRepositoryUrl = config
                               .WithKeys(ConfigurationKeys.CIVisibility.GitRepositoryUrl)
                               .AsString();
 
         // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, "git.repository_url", ConfigurationKeys.CIVisibility.GitRepositoryUrl, telemetry);
+        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, "git.repository_url");
 
         var otelTraceEnabled = config
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
@@ -960,7 +955,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                            : new HashSet<string>([..disabledIntegrationNamesArray, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
 
         var integrations = new IntegrationSettingsCollection(source, disabledIntegrationNames);
-        RecordDisabledIntegrationsTelemetry(integrations, telemetry);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
         var analyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
@@ -1059,17 +1053,15 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// by excluding all the default sources. Effectively gives all the settings their default
     /// values. Should only be used with the manual instrumentation source
     /// </summary>
-    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings, IConfigurationTelemetry telemetry)
+    public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings)
         => CreateInitialMutableSettings(
             NullConfigurationSource.Instance,
-            telemetry,
             new OverrideErrorLog(),
             tracerSettings);
 
     public static MutableSettings CreateForTesting(TracerSettings tracerSettings, Dictionary<string, object?> settings)
         => CreateInitialMutableSettings(
             new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
-            NullConfigurationTelemetry.Instance,
             new OverrideErrorLog(),
             tracerSettings);
 
@@ -1099,25 +1091,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         }
 
         return original;
-    }
-
-    private static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
-    {
-        // Record the final disabled settings values in the telemetry, we can't quite get this information
-        // through the IntegrationTelemetryCollector currently so record it here instead
-        StringBuilder? sb = null;
-
-        foreach (var setting in integrations.Settings)
-        {
-            if (setting.Enabled == false)
-            {
-                sb ??= StringBuilderCache.Acquire();
-                sb.Append(setting.IntegrationName);
-                sb.Append(';');
-            }
-        }
-
-        var value = sb is null ? null : StringBuilderCache.GetStringAndRelease(sb);
     }
 
     private static double? BuildSampleRate(OverrideErrorLog log, in ConfigurationBuilder config)
@@ -1206,9 +1179,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     private static string? GetExplicitSettingOrTag(
         string? explicitSetting,
         Dictionary<string, string> globalTags,
-        string tag,
-        string telemetryKey,
-        IConfigurationTelemetry telemetry)
+        string tag)
     {
         string? result = null;
         if (!string.IsNullOrWhiteSpace(explicitSetting))

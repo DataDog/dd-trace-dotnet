@@ -32,22 +32,22 @@ internal static class DatadogLoggingFactory
 
     internal const int DefaultConsoleQueueLimit = 1024;
 
-    public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source)
     {
-        var logSinkOptions = new ConfigurationBuilder(source, telemetry)
+        var logSinkOptions = new ConfigurationBuilder(source)
                              .WithKeys(ConfigurationKeys.LogSinks)
                              .AsString("file")
                              .Split([','], StringSplitOptions.RemoveEmptyEntries);
 
         var fileConfig = Contains(logSinkOptions, LogSinkOptions.File) ?
-            GetFileLoggingConfiguration(source, telemetry) :
+            GetFileLoggingConfiguration(source) :
             null;
 
         var consoleConfig = Contains(logSinkOptions, LogSinkOptions.Console) ?
             GetConsoleLoggingConfiguration(source) :
             (ConsoleLoggingConfiguration?)null;
 
-        var rateLimit = new ConfigurationBuilder(source, telemetry)
+        var rateLimit = new ConfigurationBuilder(source)
                        .WithKeys(ConfigurationKeys.LogRateLimit)
                        .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
@@ -152,11 +152,11 @@ internal static class DatadogLoggingFactory
     }
 
     [TestingOnly]
-    internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
-        => GetLogDirectory(GlobalConfigurationSource.Instance, telemetry);
+    internal static string GetLogDirectory()
+        => GetLogDirectory(GlobalConfigurationSource.Instance);
 
     [TestingAndPrivateOnly]
-    internal static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    internal static string GetLogDirectory(IConfigurationSource source)
     {
         // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
         // because of the following API calls
@@ -166,7 +166,7 @@ internal static class DatadogLoggingFactory
         // - Path.GetTempPath
 
         // try reading from DD_TRACE_LOG_DIRECTORY
-        var configurationBuilder = new ConfigurationBuilder(source, telemetry);
+        var configurationBuilder = new ConfigurationBuilder(source);
         var logDirectory = configurationBuilder.WithKeys(ConfigurationKeys.LogDirectory).AsString();
 
         if (StringUtil.IsNullOrEmpty(logDirectory))
@@ -187,7 +187,7 @@ internal static class DatadogLoggingFactory
         if (StringUtil.IsNullOrEmpty(logDirectory))
         {
             // fallback #2: use the default log directory
-            logDirectory = GetDefaultLogDirectory(source, telemetry);
+            logDirectory = GetDefaultLogDirectory(source);
         }
 
         // try creating the directory if it doesn't exist
@@ -201,12 +201,12 @@ internal static class DatadogLoggingFactory
     }
 
     [TestingAndPrivateOnly]
-    internal static string GetDefaultLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    internal static string GetDefaultLogDirectory(IConfigurationSource source)
     {
         var isWindows = FrameworkDescription.Instance.IsWindows();
 
-        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source, telemetry) ||
-            ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source, telemetry))
+        if (ImmutableAzureAppServiceSettings.IsRunningInAzureAppServices(source) ||
+            ImmutableAzureAppServiceSettings.IsRunningInAzureFunctions(source))
         {
             return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
         }
@@ -266,13 +266,13 @@ internal static class DatadogLoggingFactory
         }
     }
 
-    private static FileLoggingConfiguration? GetFileLoggingConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    private static FileLoggingConfiguration? GetFileLoggingConfiguration(IConfigurationSource source)
     {
         string? logDirectory = null;
 
         try
         {
-            logDirectory = GetLogDirectory(source, telemetry);
+            logDirectory = GetLogDirectory(source);
         }
         catch
         {
@@ -285,7 +285,7 @@ internal static class DatadogLoggingFactory
         }
 
         // get file details
-        var maxLogFileSize = new ConfigurationBuilder(source, telemetry)
+        var maxLogFileSize = new ConfigurationBuilder(source)
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
                             .GetAs(
                                  defaultValue: new(DefaultMaxLogFileSize, DefaultMaxLogFileSize.ToString(CultureInfo.InvariantCulture)),
@@ -294,7 +294,7 @@ internal static class DatadogLoggingFactory
                                                      : ParsingResult<long>.Failure(),
                                  validator: x => x >= 0);
 
-        var logFileRetentionDays = new ConfigurationBuilder(source, telemetry)
+        var logFileRetentionDays = new ConfigurationBuilder(source)
                                   .WithKeys(ConfigurationKeys.LogFileRetentionDays)
                                   .AsInt32(32, x => x >= 0)
                                   .Value;

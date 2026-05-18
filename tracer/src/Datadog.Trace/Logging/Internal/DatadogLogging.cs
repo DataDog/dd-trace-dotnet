@@ -9,7 +9,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -37,7 +36,7 @@ namespace Datadog.Trace.Logging
                     LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }
 
-                var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+                var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance);
 
                 if (config.File is { } fileConfig)
                 {
