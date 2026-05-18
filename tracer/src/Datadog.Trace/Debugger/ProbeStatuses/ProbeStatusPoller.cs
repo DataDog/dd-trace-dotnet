@@ -152,11 +152,16 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             foreach (var probeStatus in probeStatuses)
             {
                 var probeVersion = _probes.SingleOrDefault(p => p.ProbeId == probeStatus.ProbeId)?.ProbeVersion ?? 0;
-                // Normalize `INSTRUMENTED` status to `INSTALLED`. The `INSTRUMENTED` status is not recognized by the backend,
-                // it was added to satisfy Exception Debugging to better distinguish between RequestReJIT (INSTALLED) and actual instrumentation (INSTRUMENTED).
-                var status = probeStatus.Status == Status.INSTRUMENTED ? Status.INSTALLED : probeStatus.Status;
-                _diagnosticsSink.AddProbeStatus(probeStatus.ProbeId, status, probeVersion, errorMessage: probeStatus.ErrorMessage);
+                AddProbeStatus(probeStatus, probeVersion);
             }
+        }
+
+        private void AddProbeStatus(PInvoke.ProbeStatus probeStatus, int probeVersion)
+        {
+            // Normalize `INSTRUMENTED` status to `INSTALLED`. The `INSTRUMENTED` status is not recognized by the backend,
+            // it was added to satisfy Exception Debugging to better distinguish between RequestReJIT (INSTALLED) and actual instrumentation (INSTRUMENTED).
+            var status = probeStatus.Status == Status.INSTRUMENTED ? Status.INSTALLED : probeStatus.Status;
+            _diagnosticsSink.AddProbeStatus(probeStatus.ProbeId, status, probeVersion, errorMessage: probeStatus.ErrorMessage);
         }
 
         public void StartPolling()
@@ -192,8 +197,29 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                     return;
                 }
 
-                _probes.UnionWith(newProbes);
-                ScheduleNextPollInOneSecond();
+                AddProbesLocked(newProbes);
+            }
+        }
+
+        private void AddProbesLocked(FetchProbeStatus[] newProbes)
+        {
+            _probes.UnionWith(newProbes);
+            EmitKnownStatuses(newProbes);
+            ScheduleNextPollInOneSecond();
+        }
+
+        private void EmitKnownStatuses(FetchProbeStatus[] probes)
+        {
+            // Explicit statuses are already known, so emit them without waiting for the delayed native status poll.
+            // Default/fetchable statuses still rely on ScheduleNextPollInOneSecond() to query the native status.
+            foreach (var probe in probes)
+            {
+                if (probe.ShouldFetch())
+                {
+                    continue;
+                }
+
+                AddProbeStatus(probe.ProbeStatus, probe.ProbeVersion);
             }
         }
 
@@ -245,8 +271,23 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
             lock (_locker)
             {
-                RemoveProbes(probeIds);
-                AddProbes(newProbeStatuses);
+                if (_isDisposed)
+                {
+                    return;
+                }
+
+                _probes.RemoveWhere(p => probeIds.Contains(p.ProbeId));
+                ResetProbeDiagnostics(probeIds);
+                AddProbesLocked(newProbeStatuses);
+            }
+        }
+
+        private void ResetProbeDiagnostics(string[] probeIds)
+        {
+            foreach (var probeId in probeIds)
+            {
+                // Calling DiagnosticsSink.Remove preserves a not-yet-returned EMITTING once before the probe entry is dropped.
+                _diagnosticsSink.Remove(probeId);
             }
         }
 
