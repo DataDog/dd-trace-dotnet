@@ -286,6 +286,14 @@ public class ContextPropagationTests
     }
 
     [Fact]
+    public void GetPayloadSizeBytes_UsesUtf8Encoding()
+    {
+        const string detail = "{\"name\":\"Jørdan\",\"emoji\":\"🙂\"}";
+
+        ContextPropagation.GetPayloadSizeBytes(detail).Should().Be(Encoding.UTF8.GetByteCount(detail));
+    }
+
+    [Fact]
     public async Task InjectTracingContext_WithDsmEnabled_AddsPathwayContext()
     {
         var request = GeneratePutEventsRequest([
@@ -325,6 +333,36 @@ public class ContextPropagationTests
             encodedPathway.Should().NotBeNullOrEmpty();
             System.Convert.FromBase64String(encodedPathway!).Should().NotBeEmpty();
             scope.Span.GetTag("pathway.hash").Should().NotBeNullOrEmpty();
+        }
+        finally
+        {
+            scope?.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task InjectTracingContext_WithDsmEnabled_AndInvalidDetail_DoesNotCreatePathwayContext()
+    {
+        var request = GeneratePutEventsRequest([
+            new PutEventsRequestEntry { Detail = "{invalid json", DetailType = DetailType, EventBusName = EventBusName }
+        ]);
+
+        var proxy = request.DuckCast<IPutEventsRequest>();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+
+        await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+        var scope = AwsEventBridgeCommon.CreateScope(tracer, "PutEvents", SpanKinds.Producer, out _);
+
+        try
+        {
+            ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope!.Span.Context, baggage: null));
+
+            var entries = (IList)proxy.Entries.Value!;
+            entries.Count.Should().Be(1);
+            var entry = (PutEventsRequestEntry)entries[0]!;
+
+            entry.Detail.Should().Be("{invalid json");
+            scope.Span.GetTag("pathway.hash").Should().BeNull();
         }
         finally
         {

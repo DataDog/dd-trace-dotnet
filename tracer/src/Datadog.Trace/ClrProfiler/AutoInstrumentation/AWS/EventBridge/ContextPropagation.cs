@@ -12,6 +12,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
@@ -48,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         // `detail` is a string, so we have to manually modify it using a StringBuilder.
         private static void InjectHeadersIntoDetail(Tracer tracer, IPutEventsRequestEntry entry, Scope? scope, PropagationContext context)
         {
-            var pathwayContext = SetDataStreamsCheckpoint(tracer, scope, entry.DetailType, entry.EventBusName);
             var detail = entry.Detail?.Trim() ?? "{}";
             if (!detail.EndsWith("}"))
             {
@@ -56,6 +56,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 Log.Debug("Unable to parse detail string. Not injecting trace context.");
                 return;
             }
+
+            var payloadSizeBytes = GetPayloadSizeBytes(detail);
+            var pathwayContext = SetDataStreamsCheckpoint(tracer, scope, entry.DetailType, entry.EventBusName, payloadSizeBytes);
 
             var detailBuilder = Util.StringBuilderCache.Acquire().Append(detail);
             detailBuilder.Remove(detail.Length - 1, 1); // Remove last bracket
@@ -106,7 +109,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             return Util.StringBuilderCache.GetStringAndRelease(jsonBuilder);
         }
 
-        private static PathwayContext? SetDataStreamsCheckpoint(Tracer tracer, Scope? scope, string? detailType, string? eventBusName)
+        [TestingAndPrivateOnly]
+        internal static int GetPayloadSizeBytes(string detail)
+        {
+            return Encoding.UTF8.GetByteCount(detail);
+        }
+
+        private static PathwayContext? SetDataStreamsCheckpoint(Tracer tracer, Scope? scope, string? detailType, string? eventBusName, long payloadSizeBytes)
         {
             if (scope is null || StringUtil.IsNullOrEmpty(eventBusName))
             {
@@ -123,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 new EventBridgeEdgeTagCacheKey(detailType ?? string.Empty, eventBusName!),
                 static k => ["direction:out", $"topic:{k.DetailType}", $"type:eventbridge:{k.EventBusName}"]);
 
-            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes, timeInQueueMs: 0);
             return scope.Span.Context.PathwayContext;
         }
 
