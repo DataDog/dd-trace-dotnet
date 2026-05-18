@@ -48,6 +48,11 @@ internal partial class ProbeExpressionParser<T>
                 return (T)(object)true;
             }
 
+            if (typeof(T) == typeof(object))
+            {
+                return (T)(object)Expressions.UndefinedValue.Instance;
+            }
+
             return default;
         };
     }

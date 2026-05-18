@@ -330,7 +330,7 @@ namespace Datadog.Trace.Debugger
                     ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
                     break;
                 case LogProbe logProbe:
-                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot || logProbe.CaptureExpressions is { Length: > 0 } ? 1 : 5000);
                     break;
                 case SpanDecorationProbe or MetricProbe:
                     ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
@@ -520,12 +520,20 @@ namespace Datadog.Trace.Debugger
                 {
                     Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: noLongerUnboundProbes.Count);
 
-                    DebuggerNativeMethods.InstrumentProbes([], lineProbes.ToArray(), [], []);
-
+                    // Register processors and samplers BEFORE the native call makes the IL live:
+                    // otherwise a probe hit between InstrumentProbes returning and SetRateLimit
+                    // running would insert a default-rate sampler via GerOrAddSampler, and the
+                    // configured rate would never take effect for that probe.
                     foreach (var boundProbe in noLongerUnboundProbes)
                     {
                         ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe);
                         SetRateLimit(boundProbe);
+                    }
+
+                    DebuggerNativeMethods.InstrumentProbes([], lineProbes.ToArray(), [], []);
+
+                    foreach (var boundProbe in noLongerUnboundProbes)
+                    {
                         _unboundProbes.Remove(boundProbe);
                     }
 
