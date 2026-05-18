@@ -391,6 +391,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 arguments.Should().BeNullOrEmpty();
                 environmentVariables.Should().NotBeNull();
                 environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, backfillRunFolder);
+                environmentVariables.Should().ContainKey(Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand)
+                                    .WhoseValue.Should().NotBeNullOrWhiteSpace();
+                environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, Environment.CurrentDirectory);
 
                 coverageFile.Should().NotBeNull();
                 initialXml.Should().NotBeNull();
