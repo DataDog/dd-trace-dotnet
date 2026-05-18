@@ -69,6 +69,29 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
     }
 
     [Fact]
+    public void CommandLineIsCachedBetweenCapabilityChecks()
+    {
+        try
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --collect \"XPlat Code Coverage\"");
+            var settings = CreateSettings();
+
+            CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
+
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test");
+
+            CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
+
+            CoverageBackfillCapability.ResetCommandLineCacheForTests();
+            CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeFalse();
+        }
+        finally
+        {
+            CoverageBackfillCapability.ResetCommandLineCacheForTests();
+        }
+    }
+
+    [Fact]
     public void TestFilterMakesAggregateCoverageUnsafe()
     {
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --filter FullyQualifiedName~Smoke");
@@ -225,6 +248,8 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
 
     private static TestOptimizationSettings CreateSettingsWithSkipping(bool testsSkippingEnabled, params (string Key, string Value)[] values)
     {
+        CoverageBackfillCapability.ResetCommandLineCacheForTests();
+
         var allValues = new (string Key, string Value)[values.Length + 1];
         allValues[0] = (ConfigurationKeys.CIVisibility.TestsSkippingEnabled, testsSkippingEnabled ? "1" : "0");
         Array.Copy(values, 0, allValues, 1, values.Length);

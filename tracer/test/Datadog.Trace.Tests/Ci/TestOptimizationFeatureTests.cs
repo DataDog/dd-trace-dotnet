@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -95,7 +96,10 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     private static TestOptimizationSettings CreateSettings(params (string Key, string Value)[] values)
-        => new(CreateConfigurationSource(values), NullConfigurationTelemetry.Instance);
+    {
+        CoverageBackfillCapability.ResetCommandLineCacheForTests();
+        return new TestOptimizationSettings(CreateConfigurationSource(values), NullConfigurationTelemetry.Instance);
+    }
 
     private static TestOptimizationClient.SettingsResponse CreateRemoteSettingsResponse(bool? testsSkippingEnabled)
         => new(

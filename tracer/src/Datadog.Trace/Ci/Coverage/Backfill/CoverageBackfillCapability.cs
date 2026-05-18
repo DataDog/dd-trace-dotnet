@@ -19,24 +19,34 @@ namespace Datadog.Trace.Ci.Coverage.Backfill;
 internal static class CoverageBackfillCapability
 {
     /// <summary>
-    /// Command-line fragments that identify local test filters which can narrow execution inside a backend coverage scope.
+    /// Known command-line fragments that identify local test filters which can narrow execution inside a backend coverage scope.
     /// </summary>
     private static readonly string[] UnsupportedTestFilterFragments = ["--filter", "/testcasefilter", "--testcasefilter", "/tests:", "--tests:"];
 
     /// <summary>
-    /// Command-line fragments that identify target-framework selectors which can change the executed code path inside a backend coverage scope.
+    /// Known command-line fragments that identify target-framework selectors which can change the executed code path inside a backend coverage scope.
     /// </summary>
     private static readonly string[] UnsupportedFrameworkFilterFragments = ["--framework", "/framework:", " -f "];
 
     /// <summary>
-    /// Command-line fragments that identify coverage thresholds evaluated before Datadog can rewrite an external report.
+    /// Known command-line fragments that identify coverage thresholds evaluated before Datadog can rewrite an external report.
     /// </summary>
     private static readonly string[] UnsupportedExternalThresholdFragments = ["--threshold", "/p:threshold", "threshold=", "threshold%3d", "thresholdtype", "thresholdstat"];
 
     /// <summary>
-    /// External XML coverage formats whose line entries can be reconciled after the coverage command finishes.
+    /// Known external XML coverage formats whose line entries can be reconciled after the coverage command finishes.
     /// </summary>
     private static readonly string[] GeneratedLineCoverageXmlFormats = ["cobertura", "opencover"];
+
+    /// <summary>
+    /// Synchronizes lazy command-line resolution so all capability checks in a process use one stable command.
+    /// </summary>
+    private static readonly object CommandLineLock = new();
+
+    /// <summary>
+    /// Cached command line used for coverage capability decisions in the current process.
+    /// </summary>
+    private static string? _cachedCommandLine;
 
     /// <summary>
     /// Gets whether the current run has any coverage source that would require ITR coverage backfill.
@@ -127,6 +137,17 @@ internal static class CoverageBackfillCapability
         var commandLineValue = commandLine!;
         return commandLineValue.IndexOf("code coverage", StringComparison.OrdinalIgnoreCase) >= 0 &&
                commandLineValue.IndexOf("xplat code coverage", StringComparison.OrdinalIgnoreCase) < 0;
+    }
+
+    /// <summary>
+    /// Clears the cached command line so tests that mutate command-line environment variables remain isolated.
+    /// </summary>
+    internal static void ResetCommandLineCacheForTests()
+    {
+        lock (CommandLineLock)
+        {
+            _cachedCommandLine = null;
+        }
     }
 
     /// <summary>
@@ -283,8 +304,18 @@ internal static class CoverageBackfillCapability
     /// <returns>Command line used for coverage capability decisions.</returns>
     private static string GetCommandLine()
     {
-        return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand) ??
-               EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand) ??
-               Environment.CommandLine;
+        var commandLine = _cachedCommandLine;
+        if (commandLine is not null)
+        {
+            return commandLine;
+        }
+
+        lock (CommandLineLock)
+        {
+            _cachedCommandLine ??= EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand) ??
+                                   EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand) ??
+                                   Environment.CommandLine;
+            return _cachedCommandLine;
+        }
     }
 }
