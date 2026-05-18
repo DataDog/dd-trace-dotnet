@@ -324,9 +324,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             using var coverageResultsDirectory = new TemporaryDirectory("dd-ci-coverlet-collector-");
             string coverageFile = null;
             string initialXml = null;
+            var backfillRunFolder = Path.Combine(coverageResultsDirectory.RootPath, ".dd-backfill");
             EnvironmentHelpers.SetEnvironmentVariable(
                 Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
-                Path.Combine(coverageResultsDirectory.RootPath, ".dd-backfill"));
+                backfillRunFolder);
             EnvironmentHelpers.SetEnvironmentVariable(
                 Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
                 $"dotnet test --collect:\"XPlat Code Coverage\" --ResultsDirectory:\"{coverageResultsDirectory.RootPath}\"");
@@ -389,6 +390,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 command.Should().Be("test.exe");
                 arguments.Should().BeNullOrEmpty();
                 environmentVariables.Should().NotBeNull();
+                environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, backfillRunFolder);
 
                 coverageFile.Should().NotBeNull();
                 initialXml.Should().NotBeNull();
