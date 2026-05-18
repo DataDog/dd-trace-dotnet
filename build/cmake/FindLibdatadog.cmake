@@ -13,11 +13,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(FILE_TO_DOWNLOAD_ARM64 libdatadog-aarch64-apple-darwin.tar.gz)
     set(FILE_TO_DOWNLOAD_X86_64 libdatadog-x86_64-apple-darwin.tar.gz)
 
-    # Download ARM64 version
+    # Download ARM64 version.  SOURCE_DIR includes ${LIBDATADOG_VERSION} so
+    # that bumping the version invalidates any cached directory from a
+    # previous run — FetchContent only validates URL_HASH on the initial
+    # download, so a stale dir on persistent CI workers would otherwise
+    # silently use the wrong binary.
     FetchContent_Declare(libdatadog-install-arm64
         URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_ARM64}
         URL_HASH SHA256=${SHA256_LIBDATADOG_ARM64}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-arm64
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-arm64-${LIBDATADOG_VERSION}
     )
     if(NOT libdatadog-install-arm64_POPULATED)
         FetchContent_Populate(libdatadog-install-arm64)
@@ -27,7 +31,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     FetchContent_Declare(libdatadog-install-x86_64
         URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_X86_64}
         URL_HASH SHA256=${SHA256_LIBDATADOG_X86_64}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-x86_64
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-x86_64-${LIBDATADOG_VERSION}
     )
     if(NOT libdatadog-install-x86_64_POPULATED)
         FetchContent_Populate(libdatadog-install-x86_64)
@@ -78,10 +82,14 @@ else()
         endif()
     endif()
 
+    # SOURCE_DIR includes ${LIBDATADOG_VERSION} so that bumping the version
+    # invalidates any cached directory from a previous run — FetchContent
+    # only validates URL_HASH on the initial download, so a stale dir on
+    # persistent CI workers would otherwise silently use the wrong binary.
     FetchContent_Declare(libdatadog-install
         URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
         URL_HASH SHA256=${SHA256_LIBDATADOG}
-        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-${LIBDATADOG_VERSION}
     )
     if(NOT libdatadog-install_POPULATED)
         FetchContent_Populate(libdatadog-install)
