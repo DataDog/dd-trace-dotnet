@@ -268,10 +268,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         var produceTime = message.Timestamp.UtcDateTime;
                         tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
                     }
-                    catch (OverflowException)
+                    catch (Exception)
                     {
                         // The stored timestamp resulted in an out-of-range value when converting to DateTime;
                         // likely due to an invalid timestamp. Skip the tag rather than abort the whole scope.
+                        // Using Exception here, because the method could throw ArgumentOutOfRangeException or OverflowException
                     }
                 }
 
