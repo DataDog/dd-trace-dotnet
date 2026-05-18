@@ -38,6 +38,15 @@ namespace Datadog.Trace.Tagging
         // CodeOriginFrameTypeBytes = MessagePack.Serialize("_dd.code_origin.frames.0.type");
         private static ReadOnlySpan<byte> CodeOriginFrameTypeBytes => [189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101];
 
+        // CodeOriginFrameFileBytes = MessagePack.Serialize("_dd.code_origin.frames.0.file");
+        private static ReadOnlySpan<byte> CodeOriginFrameFileBytes => [189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 102, 105, 108, 101];
+
+        // CodeOriginFrameLineBytes = MessagePack.Serialize("_dd.code_origin.frames.0.line");
+        private static ReadOnlySpan<byte> CodeOriginFrameLineBytes => [189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 108, 105, 110, 101];
+
+        // CodeOriginFrameColumnBytes = MessagePack.Serialize("_dd.code_origin.frames.0.column");
+        private static ReadOnlySpan<byte> CodeOriginFrameColumnBytes => [191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 99, 111, 108, 117, 109, 110];
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -50,6 +59,9 @@ namespace Datadog.Trace.Tagging
                 "_dd.code_origin.frames.0.index" => CodeOriginFrameIndex,
                 "_dd.code_origin.frames.0.method" => CodeOriginFrameMethod,
                 "_dd.code_origin.frames.0.type" => CodeOriginFrameType,
+                "_dd.code_origin.frames.0.file" => CodeOriginFrameFile,
+                "_dd.code_origin.frames.0.line" => CodeOriginFrameLine,
+                "_dd.code_origin.frames.0.column" => CodeOriginFrameColumn,
                 _ => base.GetTag(key),
             };
         }
@@ -75,6 +87,15 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "_dd.code_origin.frames.0.type": 
                     CodeOriginFrameType = value;
+                    break;
+                case "_dd.code_origin.frames.0.file": 
+                    CodeOriginFrameFile = value;
+                    break;
+                case "_dd.code_origin.frames.0.line": 
+                    CodeOriginFrameLine = value;
+                    break;
+                case "_dd.code_origin.frames.0.column": 
+                    CodeOriginFrameColumn = value;
                     break;
                 case "component": 
                 case "http.route": 
@@ -126,6 +147,21 @@ namespace Datadog.Trace.Tagging
             if (CodeOriginFrameType is not null)
             {
                 processor.Process(new TagItem<string>("_dd.code_origin.frames.0.type", CodeOriginFrameType, CodeOriginFrameTypeBytes));
+            }
+
+            if (CodeOriginFrameFile is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.file", CodeOriginFrameFile, CodeOriginFrameFileBytes));
+            }
+
+            if (CodeOriginFrameLine is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.line", CodeOriginFrameLine, CodeOriginFrameLineBytes));
+            }
+
+            if (CodeOriginFrameColumn is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.column", CodeOriginFrameColumn, CodeOriginFrameColumnBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -186,6 +222,27 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("_dd.code_origin.frames.0.type (tag):")
                   .Append(CodeOriginFrameType)
+                  .Append(',');
+            }
+
+            if (CodeOriginFrameFile is not null)
+            {
+                sb.Append("_dd.code_origin.frames.0.file (tag):")
+                  .Append(CodeOriginFrameFile)
+                  .Append(',');
+            }
+
+            if (CodeOriginFrameLine is not null)
+            {
+                sb.Append("_dd.code_origin.frames.0.line (tag):")
+                  .Append(CodeOriginFrameLine)
+                  .Append(',');
+            }
+
+            if (CodeOriginFrameColumn is not null)
+            {
+                sb.Append("_dd.code_origin.frames.0.column (tag):")
+                  .Append(CodeOriginFrameColumn)
                   .Append(',');
             }
 

@@ -138,10 +138,9 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     if (sp.HasValue)
                     {
                         var cached = sp.Value;
-                        aspNetCoreTags.SetTags(
-                            new(_tags.File[0], cached.Url),
-                            new(_tags.Line[0], cached.Line),
-                            new(_tags.Column[0], cached.Column));
+                        aspNetCoreTags.CodeOriginFrameFile = cached.Url;
+                        aspNetCoreTags.CodeOriginFrameLine = cached.Line;
+                        aspNetCoreTags.CodeOriginFrameColumn = cached.Column;
                     }
 
                     return;
@@ -157,10 +156,9 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     if (sp.HasValue)
                     {
                         var cached = sp.Value;
-                        aspNetCoreSingleSpanTags.SetTags(
-                            new(_tags.File[0], cached.Url),
-                            new(_tags.Line[0], cached.Line),
-                            new(_tags.Column[0], cached.Column));
+                        aspNetCoreSingleSpanTags.CodeOriginFrameFile = cached.Url;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameLine = cached.Line;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameColumn = cached.Column;
                     }
 
                     return;

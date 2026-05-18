@@ -37,4 +37,13 @@ internal sealed partial class AspNetCoreSingleSpanTags : WebTags
 
     [Tag(Tags.CodeOriginFrameType)]
     public string? CodeOriginFrameType { get; set; }
+
+    [Tag(Tags.CodeOriginFrameFile)]
+    public string? CodeOriginFrameFile { get; set; }
+
+    [Tag(Tags.CodeOriginFrameLine)]
+    public string? CodeOriginFrameLine { get; set; }
+
+    [Tag(Tags.CodeOriginFrameColumn)]
+    public string? CodeOriginFrameColumn { get; set; }
 }
