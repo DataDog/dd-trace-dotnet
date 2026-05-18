@@ -366,12 +366,29 @@ namespace UpdateVendors
                     "Implementation/Serializer/ProtobufOtlpLogFieldNumberConstants.cs",
                     "Implementation/Serializer/ProtobufSerializer.cs",
                     "Implementation/Serializer/ProtobufWireType.cs",
-                    "OpenTelemetry.Exporter.OpenTelemetryProtocol",
                 },
                 relativePathsToExclude: new[]
                 {
                     "Implementation/ExportClient/OtlpRetry.cs",
                 });
+
+            Add(
+                libraryName: "OpenTelemetry",
+                version: "core-1.15.3", // Keep this in sync with above code
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.15.3.zip",
+                pathToSrc: new[] { "opentelemetry-dotnet-core-1.15.3", "src", "Shared" },
+                transform: filePath => RewriteCsFileWithStandardTransform(
+                    filePath,
+                    originalNamespace: "",
+                    AddIfNetcoreapp31OrGreater,
+                    AddNullableDirectiveTransform,
+                    AddOpenTelemetryUsings),
+                onlyIncludePaths: new[]
+                {
+                    // Used by OpenTelemetry.Exporter.OpenTelemetryProtocol
+                    "HttpClientHelpers.cs",
+                },
+                isNuGetPackage: false);
 
             Add(
                 libraryName: "spdlog",
