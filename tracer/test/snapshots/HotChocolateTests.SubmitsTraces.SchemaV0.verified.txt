@@ -294,9 +294,9 @@ errors: [
 {
 "line": 1,
 "column": 2
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,
@@ -338,7 +338,7 @@ errors: [
 errors: [
 {
 "message": "Unexpected Execution Error",
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,
@@ -376,7 +376,7 @@ query ErrorQuery {
 errors: [
 {
 "message": "Unexpected Execution Error",
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,

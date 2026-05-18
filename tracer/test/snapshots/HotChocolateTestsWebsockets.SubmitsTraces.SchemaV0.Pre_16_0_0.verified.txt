@@ -199,9 +199,9 @@ errors: [
 {
 "line": 1,
 "column": 18
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,
@@ -243,9 +243,9 @@ errors: [
 {
 "line": 1,
 "column": 2
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,
