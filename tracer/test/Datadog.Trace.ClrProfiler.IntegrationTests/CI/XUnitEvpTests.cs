@@ -18,6 +18,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -732,6 +733,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var tests = new List<MockCIVisibilityTest>();
         var coverageMessages = new List<SessionCodeCoverageMessage>();
         var evpRequests = new List<string>();
+        var skippableRequestBodies = new List<string>();
 
         InjectSession(
             out var sessionId,
@@ -779,6 +781,11 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
             if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
             {
+                lock (skippableRequestBodies)
+                {
+                    skippableRequestBodies.Add(e.Value.BodyInJson);
+                }
+
                 e.Value.Response = new MockTracerResponse(
                     $$"""
                       {
@@ -846,6 +853,27 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         {
             receivedEvpRequests = evpRequests.ToArray();
         }
+
+        string[] receivedSkippableRequestBodies;
+        lock (skippableRequestBodies)
+        {
+            receivedSkippableRequestBodies = skippableRequestBodies.ToArray();
+        }
+
+        var skippableRequestBody = receivedSkippableRequestBodies.Should().ContainSingle("received EVP requests: {0}", string.Join(", ", receivedEvpRequests)).Subject;
+        var skippableRequest = JObject.Parse(skippableRequestBody);
+        var skippableRequestAttributes = skippableRequest["data"]?["attributes"];
+        skippableRequestAttributes.Should().NotBeNull("skippable request body: {0}", skippableRequestBody);
+        skippableRequestAttributes!["test_level"]?.Value<string>().Should().Be("test");
+        var configurations = skippableRequestAttributes["configurations"];
+        configurations.Should().NotBeNull("skippable request body: {0}", skippableRequestBody);
+        configurations![TestTags.Bundle]?.Value<string>().Should().Be(TestBundleName);
+        configurations["os.platform"]?.Value<string>().Should().NotBeNullOrWhiteSpace();
+        configurations["os.version"]?.Value<string>().Should().NotBeNullOrWhiteSpace();
+        configurations["os.architecture"]?.Value<string>().Should().NotBeNullOrWhiteSpace();
+        configurations["runtime.name"]?.Value<string>().Should().NotBeNullOrWhiteSpace();
+        configurations["runtime.version"]?.Value<string>().Should().NotBeNullOrWhiteSpace();
+        configurations["runtime.architecture"]?.Value<string>().Should().NotBeNullOrWhiteSpace();
 
         var skippedTest = receivedTests.Should().ContainSingle(test => test.Meta[TestTags.Name] == "SimplePassTest", "received EVP requests: {0}", string.Join(", ", receivedEvpRequests)).Subject;
         skippedTest.Meta[TestTags.Status].Should().Be(TestTags.StatusSkip);

@@ -180,8 +180,120 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         /// <summary>
         /// Verifies that the runner finalizer rewrites Coverlet collector XML attachments when the collector cannot report coverage through IPC.
         /// </summary>
+        /// <param name="useScopedBackfill">Whether the backend coverage and actual-skip marker should be scoped like a testhost request.</param>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CoverletCollectorXmlCoverageIsBackfilledWhenIpcCoverageIsUnavailable(bool useScopedBackfill)
+        {
+            var scope = new SkippableTestsRequestScope("Samples.XUnitTests", "scope-a");
+            var result = RunCoverletCollectorXmlCoverageScenario(
+                () =>
+                {
+                    var backfillData = CreateCoverageBackfillData(XUnitSampleSourcePath, SimplePassTestCoveredLine);
+                    if (useScopedBackfill)
+                    {
+                        CoverageBackfillDataStore.Persist(TestOptimization.Instance, scope, backfillData);
+                        CoverageBackfillDataStore.RecordActualItrSkip(scope);
+                    }
+                    else
+                    {
+                        CoverageBackfillDataStore.Persist(TestOptimization.Instance, backfillData);
+                        CoverageBackfillDataStore.RecordActualItrSkip();
+                    }
+
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
+                },
+                SimplePassTestCoveredLine);
+
+            using var scopeAssertions = new AssertionScope();
+
+            result.InitialXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
+            result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
+            result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 100));
+            result.TestSession.Meta.Should().Contain(CodeCoverageTags.Backfilled, "true");
+        }
+
+        /// <summary>
+        /// Verifies that the runner only loads scoped backend coverage for scopes that actually skipped tests by ITR.
+        /// </summary>
         [Fact]
-        public void CoverletCollectorXmlCoverageIsBackfilledWhenIpcCoverageIsUnavailable()
+        public void CoverletCollectorXmlCoverageBackfillsOnlyScopesWithActualItrSkips()
+        {
+            var skippedScope = new SkippableTestsRequestScope("Samples.XUnitTests", "scope-a");
+            var unskippedScope = new SkippableTestsRequestScope("Samples.XUnitTests", "scope-b");
+            var otherCoveredLine = 26;
+
+            var result = RunCoverletCollectorXmlCoverageScenario(
+                () =>
+                {
+                    CoverageBackfillDataStore.Persist(TestOptimization.Instance, skippedScope, CreateCoverageBackfillData(XUnitSampleSourcePath, SimplePassTestCoveredLine));
+                    CoverageBackfillDataStore.Persist(TestOptimization.Instance, unskippedScope, CreateCoverageBackfillData(XUnitSampleSourcePath, otherCoveredLine));
+                    CoverageBackfillDataStore.RecordActualItrSkip(skippedScope);
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
+                },
+                SimplePassTestCoveredLine,
+                otherCoveredLine);
+
+            using var scopeAssertions = new AssertionScope();
+
+            result.InitialXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
+            result.InitialXml.Should().Contain($"""<line number="{otherCoveredLine}" hits="0" />""");
+            result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
+            result.FinalXml.Should().Contain($"""<line number="{otherCoveredLine}" hits="0" />""");
+            result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 50));
+            result.TestSession.Meta.Should().Contain(CodeCoverageTags.Backfilled, "true");
+        }
+
+        /// <summary>
+        /// Verifies that backend coverage data is ignored when no test was actually skipped by ITR.
+        /// </summary>
+        [Fact]
+        public void CoverletCollectorXmlCoverageDoesNotBackfillWithoutActualItrSkip()
+        {
+            var result = RunCoverletCollectorXmlCoverageScenario(
+                () =>
+                {
+                    CoverageBackfillDataStore.Persist(TestOptimization.Instance, CreateCoverageBackfillData(XUnitSampleSourcePath, SimplePassTestCoveredLine));
+                },
+                SimplePassTestCoveredLine);
+
+            using var scopeAssertions = new AssertionScope();
+
+            result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
+            result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 0));
+            result.TestSession.Meta.Should().NotContainKey(CodeCoverageTags.Backfilled);
+        }
+
+        /// <summary>
+        /// Verifies that the runner fails closed when skipped-test backend coverage cannot be matched to the Coverlet XML source path.
+        /// </summary>
+        [Fact]
+        public void CoverletCollectorXmlCoverageFailsClosedWhenBackendPathDoesNotMatch()
+        {
+            var result = RunCoverletCollectorXmlCoverageScenario(
+                () =>
+                {
+                    var backfillData = CreateCoverageBackfillData("src/Other.cs", SimplePassTestCoveredLine);
+                    CoverageBackfillDataStore.Persist(TestOptimization.Instance, backfillData);
+                    CoverageBackfillDataStore.RecordActualItrSkip();
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
+                },
+                SimplePassTestCoveredLine);
+
+            using var scopeAssertions = new AssertionScope();
+
+            result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
+            result.TestSession.Meta.Should().NotContainKey(CodeCoverageTags.Backfilled);
+        }
+
+        /// <summary>
+        /// Runs one synthetic Coverlet collector fallback scenario through the runner finalizer.
+        /// </summary>
+        /// <param name="configureBackfill">Callback that persists backend coverage and actual-skip state before session finalization.</param>
+        /// <param name="uncoveredLines">One-based source lines emitted as uncovered executable lines in the synthetic Coverlet XML attachment.</param>
+        /// <returns>Captured XML contents and CI Visibility session data from the completed runner command.</returns>
+        private CoverletCollectorXmlCoverageScenarioResult RunCoverletCollectorXmlCoverageScenario(Action configureBackfill, params int[] uncoveredLines)
         {
             PrepareRunnerSettingsInputs();
             TestOptimization.Instance.Reset();
@@ -203,71 +315,81 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             using var coverageResultsDirectory = new TemporaryDirectory("dd-ci-coverlet-collector-");
             string coverageFile = null;
+            string initialXml = null;
             EnvironmentHelpers.SetEnvironmentVariable(
                 Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand,
                 $"dotnet test --collect:\"XPlat Code Coverage\" --ResultsDirectory:\"{coverageResultsDirectory.RootPath}\"");
 
-            Program.CallbackForTests = (c, a, e) =>
+            try
             {
-                var session = DotnetCommon.CreateSession();
-                command = c;
-                arguments = a;
-                environmentVariables = e;
-                callbackInvoked = true;
-
-                coverageFile = WriteCoverletCollectorCoverageFile(coverageResultsDirectory.RootPath);
-                var backfillData = CreateCoverageBackfillData(XUnitSampleSourcePath, SimplePassTestCoveredLine);
-                CoverageBackfillDataStore.Persist(TestOptimization.Instance, backfillData);
-                CoverageBackfillDataStore.RecordActualItrSkip();
-                CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
-                DotnetCommon.FinalizeSession(session, 0, null);
-            };
-
-            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
-            agent.EventPlatformProxyPayloadReceived += (sender, args) =>
-            {
-                if (args.Value.Headers["Content-Type"] != "application/msgpack")
+                Program.CallbackForTests = (c, a, e) =>
                 {
-                    return;
-                }
+                    var session = DotnetCommon.CreateSession();
+                    command = c;
+                    arguments = a;
+                    environmentVariables = e;
+                    callbackInvoked = true;
 
-                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(args.Value.BodyInJson);
-                if (payload.Events?.Length > 0)
+                    coverageFile = WriteCoverletCollectorCoverageFile(coverageResultsDirectory.RootPath, uncoveredLines);
+                    initialXml = File.ReadAllText(coverageFile);
+                    configureBackfill();
+                    DotnetCommon.FinalizeSession(session, 0, null);
+                };
+
+                using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+                agent.EventPlatformProxyPayloadReceived += (sender, args) =>
                 {
-                    foreach (var @event in payload.Events)
+                    if (args.Value.Headers["Content-Type"] != "application/msgpack")
                     {
-                        if (@event.Type == SpanTypes.TestSession)
+                        return;
+                    }
+
+                    var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(args.Value.BodyInJson);
+                    if (payload.Events?.Length > 0)
+                    {
+                        foreach (var @event in payload.Events)
                         {
-                            testSession = JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString());
-                            break;
+                            if (@event.Type == SpanTypes.TestSession)
+                            {
+                                testSession = JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString());
+                                break;
+                            }
                         }
                     }
-                }
-            };
+                };
 
-            var agentUrl = $"http://localhost:{agent.Port}";
-            var commandLine = $"{CommandPrefix} test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+                var agentUrl = $"http://localhost:{agent.Port}";
+                var commandLine = $"{CommandPrefix} test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
 
-            using var console = ConsoleHelper.Redirect();
+                using var console = ConsoleHelper.Redirect();
 
-            var exitCode = Program.Main(commandLine.Split(' '));
+                var exitCode = Program.Main(commandLine.Split(' '));
+                var finalXml = coverageFile is null ? string.Empty : File.ReadAllText(coverageFile);
 
-            using var scope = new AssertionScope();
+                using var scope = new AssertionScope();
 
-            scope.AddReportable("output", console.Output);
-            scope.AddReportable("coverageFile", coverageFile);
-            scope.AddReportable("coverageXml", coverageFile is null ? string.Empty : File.ReadAllText(coverageFile));
+                scope.AddReportable("output", console.Output);
+                scope.AddReportable("coverageFile", coverageFile);
+                scope.AddReportable("initialCoverageXml", initialXml ?? string.Empty);
+                scope.AddReportable("finalCoverageXml", finalXml);
 
-            exitCode.Should().Be(0);
-            callbackInvoked.Should().BeTrue();
-            command.Should().Be("test.exe");
-            arguments.Should().BeNullOrEmpty();
-            environmentVariables.Should().NotBeNull();
+                exitCode.Should().Be(0);
+                callbackInvoked.Should().BeTrue();
+                command.Should().Be("test.exe");
+                arguments.Should().BeNullOrEmpty();
+                environmentVariables.Should().NotBeNull();
 
-            coverageFile.Should().NotBeNull();
-            File.ReadAllText(coverageFile).Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
-            testSession.Should().NotBeNull();
-            testSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 100));
+                coverageFile.Should().NotBeNull();
+                initialXml.Should().NotBeNull();
+                testSession.Should().NotBeNull();
+
+                return new CoverletCollectorXmlCoverageScenarioResult(coverageFile, initialXml, finalXml, testSession);
+            }
+            finally
+            {
+                Program.CallbackForTests = null;
+                TestOptimization.Instance.Reset();
+            }
         }
 
         private void RunExternalCoverageTest(string filePath)
@@ -367,21 +489,29 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         /// Creates a minimal Coverlet collector Cobertura attachment with the skipped test line marked as uncovered.
         /// </summary>
         /// <param name="resultsDirectory">VSTest results directory where Coverlet writes attachment subdirectories.</param>
+        /// <param name="uncoveredLines">One-based source lines that the report should expose as executable but uncovered.</param>
         /// <returns>Absolute path to the generated Cobertura report.</returns>
-        private string WriteCoverletCollectorCoverageFile(string resultsDirectory)
+        private string WriteCoverletCollectorCoverageFile(string resultsDirectory, int[] uncoveredLines)
         {
             var attachmentDirectory = Path.Combine(resultsDirectory, Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(attachmentDirectory);
             var coverageFile = Path.Combine(attachmentDirectory, "coverage.cobertura.xml");
+            var lineEntries = new List<string>();
+            foreach (var line in uncoveredLines)
+            {
+                lineEntries.Add($"""                            <line number="{line}" hits="0" />""");
+            }
+
+            var lineCount = uncoveredLines.Length;
             var coverageXml =
                 $"""
-                 <coverage line-rate="0" lines-valid="1" lines-covered="0">
+                 <coverage line-rate="0" lines-valid="{lineCount}" lines-covered="0">
                    <packages>
                      <package name="sample" line-rate="0">
                        <classes>
                          <class name="Samples.XUnitTests.TestSuite" filename="integrations/Samples.XUnitTests/TestSuite.cs" line-rate="0">
                            <lines>
-                             <line number="{SimplePassTestCoveredLine}" hits="0" />
+                 {string.Join(Environment.NewLine, lineEntries)}
                            </lines>
                          </class>
                        </classes>
@@ -417,6 +547,47 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         private void SetCachedCiEnvironmentValue(string propertyName, string value)
         {
             typeof(CIEnvironmentValues).GetProperty(propertyName)?.SetValue(CIEnvironmentValues.Instance, value);
+        }
+
+        /// <summary>
+        /// Captures the observable output from one Coverlet collector XML fallback scenario.
+        /// </summary>
+        private readonly struct CoverletCollectorXmlCoverageScenarioResult
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="CoverletCollectorXmlCoverageScenarioResult"/> struct.
+            /// </summary>
+            /// <param name="coverageFile">Absolute path to the generated Coverlet Cobertura XML attachment.</param>
+            /// <param name="initialXml">XML contents before the runner finalizer applies coverage backfill.</param>
+            /// <param name="finalXml">XML contents after the runner command completes.</param>
+            /// <param name="testSession">Captured CI Visibility test-session event.</param>
+            public CoverletCollectorXmlCoverageScenarioResult(string coverageFile, string initialXml, string finalXml, MockCIVisibilityTestModule testSession)
+            {
+                CoverageFile = coverageFile;
+                InitialXml = initialXml;
+                FinalXml = finalXml;
+                TestSession = testSession;
+            }
+
+            /// <summary>
+            /// Gets the absolute path to the generated Coverlet Cobertura XML attachment.
+            /// </summary>
+            public string CoverageFile { get; }
+
+            /// <summary>
+            /// Gets the XML contents before the runner finalizer applies coverage backfill.
+            /// </summary>
+            public string InitialXml { get; }
+
+            /// <summary>
+            /// Gets the XML contents after the runner command completes.
+            /// </summary>
+            public string FinalXml { get; }
+
+            /// <summary>
+            /// Gets the captured CI Visibility test-session event.
+            /// </summary>
+            public MockCIVisibilityTestModule TestSession { get; }
         }
 
         /// <summary>
