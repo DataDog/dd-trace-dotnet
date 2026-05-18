@@ -25,6 +25,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
     [EnvironmentVariablesCleaner(
+        Configuration.ConfigurationKeys.DebugEnabled,
         Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
         Configuration.ConfigurationKeys.AgentUri,
         Configuration.ConfigurationKeys.AgentHost,
