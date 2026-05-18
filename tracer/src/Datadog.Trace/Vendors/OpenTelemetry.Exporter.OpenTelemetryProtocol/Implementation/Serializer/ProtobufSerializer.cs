@@ -172,6 +172,10 @@ internal static class ProtobufSerializer
         return writePosition;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int WriteDouble(byte[] buffer, int writePosition, double value)
+        => WriteFixed64LittleEndianFormat(buffer, writePosition, (ulong)BitConverter.DoubleToInt64Bits(value));
+
     /// <summary>
     /// Computes the number of bytes required to encode a 64-bit unsigned integer in Protocol Buffers' varint format.
     /// </summary>
@@ -275,7 +279,7 @@ internal static class ProtobufSerializer
             }
         }
 #else
-        int numberOfUtf8CharsInString = Utf8Encoding.GetByteCount(value);
+        var numberOfUtf8CharsInString = Utf8Encoding.GetByteCount(value);
 #endif
         return numberOfUtf8CharsInString;
     }

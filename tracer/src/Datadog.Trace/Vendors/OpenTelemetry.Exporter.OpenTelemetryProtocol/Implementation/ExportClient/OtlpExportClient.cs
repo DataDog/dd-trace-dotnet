@@ -71,6 +71,8 @@ internal abstract class OtlpExportClient : IExportClient
 
     internal virtual bool RequireHttp2 => false;
 
+    internal virtual HttpCompletionOption CompletionOption => HttpCompletionOption.ResponseHeadersRead;
+
     public abstract ExportClientResponse SendExportRequest(byte[] buffer, int contentLength, DateTime deadlineUtc, CancellationToken cancellationToken = default);
 
     /// <inheritdoc/>
@@ -80,28 +82,8 @@ internal abstract class OtlpExportClient : IExportClient
         return true;
     }
 
-    protected static string? TryGetResponseBody(HttpResponseMessage? httpResponse, CancellationToken cancellationToken)
-    {
-        if (httpResponse?.Content == null)
-        {
-            return null;
-        }
-
-        try
-        {
-#if NET
-            var stream = httpResponse.Content.ReadAsStream(cancellationToken);
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
-#else
-            return httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-#endif
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
+    protected internal static string? TryGetResponseBody(HttpResponseMessage? httpResponse, CancellationToken cancellationToken) =>
+        HttpClientHelpers.TryGetResponseBodyAsString(httpResponse, cancellationToken);
 
     protected HttpRequestMessage CreateHttpRequest(byte[] buffer, int contentLength)
     {
@@ -111,7 +93,7 @@ internal abstract class OtlpExportClient : IExportClient
         {
             request.Version = Http2RequestVersion;
 
-#if NET6_0_OR_GREATER
+#if NET
             request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
 #endif
         }
@@ -129,18 +111,16 @@ internal abstract class OtlpExportClient : IExportClient
         return request;
     }
 
-    protected HttpResponseMessage SendHttpRequest(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
+    protected HttpResponseMessage SendHttpRequest(HttpRequestMessage request, CancellationToken cancellationToken) =>
 #if NET
         // Note: SendAsync must be used with HTTP/2 because synchronous send is
         // not supported.
-        return this.RequireHttp2 || !SynchronousSendSupportedByCurrentPlatform
-            ? this.HttpClient.SendAsync(request, cancellationToken).GetAwaiter().GetResult()
-            : this.HttpClient.Send(request, cancellationToken);
+        this.RequireHttp2 || !SynchronousSendSupportedByCurrentPlatform
+            ? this.HttpClient.SendAsync(request, this.CompletionOption, cancellationToken).GetAwaiter().GetResult()
+            : this.HttpClient.Send(request, this.CompletionOption, cancellationToken);
 #else
-        return this.HttpClient.SendAsync(request, cancellationToken).GetAwaiter().GetResult();
+        this.HttpClient.SendAsync(request, this.CompletionOption, cancellationToken).GetAwaiter().GetResult();
 #endif
-    }
 }
 
 #endif

@@ -11,6 +11,7 @@
 #if NETFRAMEWORK
 using System.Net.Http;
 #endif
+using System.Diagnostics.Tracing;
 using System.Net.Http.Headers;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.Grpc;
 
@@ -48,6 +49,9 @@ internal sealed class OtlpGrpcExportClient : OtlpExportClient
 
     internal override bool RequireHttp2 => true;
 
+    // We need the entire response content to ensure that the response trailers are received
+    internal override HttpCompletionOption CompletionOption => HttpCompletionOption.ResponseContentRead;
+
     /// <inheritdoc/>
     public override ExportClientResponse SendExportRequest(byte[] buffer, int contentLength, DateTime deadlineUtc, CancellationToken cancellationToken = default)
     {
@@ -66,7 +70,7 @@ internal sealed class OtlpGrpcExportClient : OtlpExportClient
             httpResponse.EnsureSuccessStatusCode();
 
             var trailingHeaders = httpResponse.TrailingHeaders();
-            Status status = GrpcProtocolHelpers.GetResponseStatus(httpResponse, trailingHeaders);
+            var status = GrpcProtocolHelpers.GetResponseStatus(httpResponse, trailingHeaders);
 
             if (status.Detail.Equals(Status.NoReplyDetailMessage, StringComparison.Ordinal))
             {
@@ -75,7 +79,7 @@ internal sealed class OtlpGrpcExportClient : OtlpExportClient
 #else
                 using var responseStream = httpResponse.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
 #endif
-                int firstByte = responseStream.ReadByte();
+                var firstByte = responseStream.ReadByte();
 
                 if (firstByte == -1)
                 {
@@ -110,7 +114,7 @@ internal sealed class OtlpGrpcExportClient : OtlpExportClient
             }
 
             string? grpcStatusDetailsHeader = null;
-            if (status.StatusCode == StatusCode.ResourceExhausted || status.StatusCode == StatusCode.Unavailable)
+            if (status.StatusCode is StatusCode.ResourceExhausted or StatusCode.Unavailable)
             {
                 grpcStatusDetailsHeader = GrpcProtocolHelpers.GetHeaderValue(trailingHeaders, GrpcStatusDetailsHeader);
             }
@@ -138,8 +142,12 @@ internal sealed class OtlpGrpcExportClient : OtlpExportClient
         catch (HttpRequestException ex)
         {
             // Handle non-retryable HTTP errors.
-            var response = TryGetResponseBody(httpResponse, cancellationToken);
-            OpenTelemetryProtocolExporterEventSource.Log.HttpRequestFailed(this.Endpoint, response, ex);
+            if (OpenTelemetryProtocolExporterEventSource.Log.IsEnabled(EventLevel.Error, EventKeywords.All))
+            {
+                var response = TryGetResponseBody(httpResponse, cancellationToken);
+                OpenTelemetryProtocolExporterEventSource.Log.HttpRequestFailed(this.Endpoint, response, ex);
+            }
+
             return new ExportClientGrpcResponse(
                 success: false,
                 deadlineUtc: deadlineUtc,
@@ -180,14 +188,12 @@ internal sealed class OtlpGrpcExportClient : OtlpExportClient
         }
     }
 
-    private static bool IsTransientNetworkError(HttpRequestException ex)
-    {
-        return ex.InnerException is System.Net.Sockets.SocketException socketEx
-            && (socketEx.SocketErrorCode == System.Net.Sockets.SocketError.TimedOut
-                || socketEx.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionReset
-                || socketEx.SocketErrorCode == System.Net.Sockets.SocketError.HostUnreachable
-                || socketEx.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionRefused);
-    }
+    private static bool IsTransientNetworkError(HttpRequestException ex) =>
+        ex.InnerException is System.Net.Sockets.SocketException socketEx
+        && (socketEx.SocketErrorCode == System.Net.Sockets.SocketError.TimedOut
+            || socketEx.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionReset
+            || socketEx.SocketErrorCode == System.Net.Sockets.SocketError.HostUnreachable
+            || socketEx.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionRefused);
 }
 
 #endif
