@@ -23,6 +23,9 @@ namespace Datadog.Trace.OpenTelemetry.Traces;
 /// <summary>
 /// OTLP protobuf serializer producing payloads compliant with
 /// opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest.
+/// This is done manually to avoid allocating intermediate objects when
+/// serializing Datadog's data model into the protobuf wire format to
+/// avoid any assembly references to Google.Protobuf.
 /// See: https://github.com/open-telemetry/opentelemetry-proto/blob/v1.2.0/opentelemetry/proto/trace/v1/trace.proto.
 /// </summary>
 internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
