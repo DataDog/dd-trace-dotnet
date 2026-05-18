@@ -283,7 +283,7 @@ namespace Datadog.Trace.Debugger.Sink
 
                 var probeStatusList = new List<ProbeStatus>();
                 var counter = 0;
-                while (_queue.Count > 0 && counter <= _batchSize)
+                while (_queue.Count > 0 && counter < _batchSize)
                 {
                     var timedMessage = _queue.Dequeue();
                     var probe = timedMessage.Message;

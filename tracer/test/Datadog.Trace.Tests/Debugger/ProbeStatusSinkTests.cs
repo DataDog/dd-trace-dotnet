@@ -418,6 +418,18 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void GetDiagnosticsReturnsAtMostUploadBatchSize()
+        {
+            for (var i = 0; i <= _settings.UploadBatchSize; i++)
+            {
+                var probeId = $"probe-{i}";
+                _sink.AddProbeStatus(probeId, Status.RECEIVED);
+            }
+
+            _sink.GetDiagnostics().Should().HaveCount(_settings.UploadBatchSize);
+        }
+
+        [Fact]
         public void DoNotReemitWhenStillQueuedAfterInterval()
         {
             _timeLord.StopTime();
