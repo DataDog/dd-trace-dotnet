@@ -7,6 +7,7 @@ using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -151,10 +152,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 throw new Exception($"Unable to find executing assembly at {applicationPath}");
             }
 
-            // Look for a free open port to pass to the ASP.NET Core applications
-            // that accept --urls on their command line
-            _appListenerPort = $"http://localhost:{TcpPortProvider.GetOpenPort()}";
-            var arguments = $"--timeout {TestDurationInSeconds} --urls {_appListenerPort}";
+            // Use port 0 so Kestrel binds an OS-assigned free port and avoids the TOCTOU race
+            // of pre-picking a port. Bind to 127.0.0.1 explicitly: Kestrel rejects "localhost:0"
+            // with InvalidOperationException ("Dynamic port binding is not supported when binding
+            // to localhost"). The actual bound URL is parsed from stdout after the run.
+            var arguments = $"--timeout {TestDurationInSeconds} --urls http://127.0.0.1:0";
             if (!string.IsNullOrEmpty(_commandLine))
             {
                 arguments += $" {_commandLine}";
@@ -195,6 +197,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
             ProcessOutput = standardOutput;
+            _appListenerPort = ExtractListeningUrl(standardOutput);
 
             if (!ranToCompletion)
             {
@@ -250,6 +253,19 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
         {
             Environment.PopulateEnvironmentVariables(environmentVariables, agent, ProfilingExportsIntervalInSeconds, ServiceName);
+        }
+
+        // Matches BuggyBits ("Listening to http://...") and ASP.NET Core's default Kestrel
+        // startup log ("Now listening on: http://..."). Returns null if neither is found.
+        private static string ExtractListeningUrl(string output)
+        {
+            if (string.IsNullOrEmpty(output))
+            {
+                return null;
+            }
+
+            var match = Regex.Match(output, @"(?:Listening to|Now listening on:)\s+(http://\S+)");
+            return match.Success ? match.Groups[1].Value.TrimEnd('/') : null;
         }
     }
 }
