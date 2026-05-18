@@ -19,6 +19,7 @@ namespace Datadog.Trace.Tests.Ci;
 [EnvironmentVariablesCleaner(
     ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
     ConfigurationKeys.CIVisibility.TestSessionCommand,
+    ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand,
     ConfigurationKeys.VstestTestCaseFilter)]
 public class CoverageBackfillCapabilityTests : SettingsTestsBase
 {
@@ -48,6 +49,18 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
     {
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, "/tmp/missing-coverage.xml");
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --collect \"XPlat Code Coverage\"");
+        var settings = CreateSettings();
+
+        CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
+        CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeTrue();
+        reason.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void InternalCoverageBackfillCommandTakesPrecedenceOverPublicSessionCommand()
+    {
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dd-trace ci run -- dotnet test --filter FullyQualifiedName~Smoke");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand, "dotnet test --collect \"XPlat Code Coverage\"");
         var settings = CreateSettings();
 
         CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();

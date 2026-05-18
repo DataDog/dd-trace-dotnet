@@ -47,6 +47,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         Configuration.ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory,
         Configuration.ConfigurationKeys.CIVisibility.TestOptimizationRunId,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip,
+        Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillPath,
         Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder,
         Configuration.ConfigurationKeys.CIVisibility.GitCommitSha,
@@ -399,9 +400,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 arguments.Should().Contain("--collect DatadogCoverage");
                 environmentVariables.Should().NotBeNull();
                 environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, backfillRunFolder);
-                environmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand].Should().StartWith(testSessionCommandPrefix);
-                environmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand].Should().Contain("--collect DatadogCoverage");
+                environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibility.TestSessionCommand, Environment.CommandLine);
                 environmentVariables.Should().Contain(Configuration.ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, Environment.CurrentDirectory);
+                environmentVariables[Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand].Should().StartWith(testSessionCommandPrefix);
+                environmentVariables[Configuration.ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand].Should().Contain("--collect DatadogCoverage");
 
                 coverageFile.Should().NotBeNull();
                 initialXml.Should().NotBeNull();

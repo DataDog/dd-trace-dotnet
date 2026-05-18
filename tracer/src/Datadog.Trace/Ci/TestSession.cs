@@ -588,6 +588,12 @@ public sealed class TestSession
             environmentVariables[ConfigurationKeys.CIVisibilityItrCoverageBackfillPath] = currentBackfillDataPath;
         }
 
+        var currentBackfillCommand = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand);
+        if (currentBackfillCommand is { Length: > 0 })
+        {
+            environmentVariables[ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand] = currentBackfillCommand;
+        }
+
         if (CoverageBackfillDataStore.HasActualItrSkip())
         {
             environmentVariables[ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip] = "1";

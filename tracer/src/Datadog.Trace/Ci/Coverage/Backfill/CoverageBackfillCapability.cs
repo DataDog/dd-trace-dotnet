@@ -278,12 +278,13 @@ internal static class CoverageBackfillCapability
     }
 
     /// <summary>
-    /// Gets the propagated test-session command line, falling back to the current process command line.
+    /// Gets the coverage backfill command line, falling back to the public test-session command and then the current process command line.
     /// </summary>
     /// <returns>Command line used for coverage capability decisions.</returns>
     private static string GetCommandLine()
     {
-        return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand) ??
+        return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand) ??
+               EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand) ??
                Environment.CommandLine;
     }
 }

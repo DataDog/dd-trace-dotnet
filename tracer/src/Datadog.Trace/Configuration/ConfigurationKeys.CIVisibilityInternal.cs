@@ -25,6 +25,11 @@ internal static partial class ConfigurationKeys
     public const string CIVisibilityItrCoverageBackfillRunFolder = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_RUN_FOLDER";
 
     /// <summary>
+    /// Internal environment variable containing the normalized child test command used by coverage backfill capability checks and report discovery.
+    /// </summary>
+    public const string CIVisibilityItrCoverageBackfillCommand = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_COMMAND";
+
+    /// <summary>
     /// VSTest environment variable used to pass a testcase filter to child testhost processes.
     /// </summary>
     public const string VstestTestCaseFilter = "VSTEST_TESTCASEFILTER";

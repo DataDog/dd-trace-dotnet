@@ -333,7 +333,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         /// <returns>True when at least one Coverlet XML report was processed.</returns>
         private static bool TryProcessCoverletCollectorXmlReports(TestSession session, bool recordCoverageResult)
         {
-            if (!TryGetCoverletCollectorResultsDirectory(session.Command, session.WorkingDirectory, out var resultsDirectory) ||
+            if (!TryGetCoverletCollectorResultsDirectory(GetCoverageBackfillCommandLine(session.Command), session.WorkingDirectory, out var resultsDirectory) ||
                 !Directory.Exists(resultsDirectory))
             {
                 return false;
@@ -423,6 +423,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             return Environment.CurrentDirectory;
+        }
+
+        /// <summary>
+        /// Gets the normalized child test command used for coverage backfill internals without changing the public test session command tag.
+        /// </summary>
+        /// <param name="fallbackCommandLine">Public test session command used when no internal command was propagated.</param>
+        /// <returns>Command line used to discover coverage tool outputs.</returns>
+        private static string? GetCoverageBackfillCommandLine(string? fallbackCommandLine)
+        {
+            return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand) ?? fallbackCommandLine;
         }
 
         /// <summary>
