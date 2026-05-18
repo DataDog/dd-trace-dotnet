@@ -158,7 +158,7 @@ experiments:
             *RedisBenchmark*
             *SpanBenchmark*
             *TraceAnnotationsBenchmark*
-          cpus_per_item: 1
+          cpus_per_item: 2
 
         env:
           BATCH_PREFIX: "trace"
@@ -187,7 +187,7 @@ experiments:
             *Log4netBenchmark*
             *SerilogBenchmark*
             *StringAspectsBenchmark*
-          cpus_per_item: 1
+          cpus_per_item: 2
 
         env:
           BATCH_PREFIX: "trace-unstable"
@@ -202,14 +202,14 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "0,0xE00000"
+        cpus: "0,0x3F000000"
         parallelize:
-          # OpenTelemetry InstrumentedApi benchmarks (CPUs 21-23 on NUMA node 0)
+          # OpenTelemetry InstrumentedApi benchmarks (CPUs 24-29 on NUMA node 0)
           items: >-
             *ActivityBenchmark*
             *TelemetrySpanBenchmark*
             *TracerBenchmark*
-          cpus_per_item: 1
+          cpus_per_item: 2
 
         env:
           BATCH_PREFIX: "otel-instr-api"
@@ -230,14 +230,14 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0xE00000"
+        cpus: "1,0x3F000000"
         parallelize:
-          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA node 1, skipped on PRs since Nuke doesn't build them)
+          # OpenTelemetry Api benchmarks (CPUs 24-29 on NUMA node 1, skipped on PRs since Nuke doesn't build them)
           items: >-
             *ActivityBenchmark*
             *TelemetrySpanBenchmark*
             *TracerBenchmark*
-          cpus_per_item: 1
+          cpus_per_item: 2
 
         env:
           BATCH_PREFIX: "otel-api"
