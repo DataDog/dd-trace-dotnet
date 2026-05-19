@@ -27,11 +27,7 @@
       http.url: http://localhost:00000/api/badrequest,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.code_origin.frames.0.index: 0,
-      _dd.code_origin.frames.0.method: InvokeFunctionAsync,
-      _dd.code_origin.frames.0.type: Microsoft.AspNetCore.Http.FunctionsHttpContextExtensions,
-      _dd.code_origin.type: entry
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -104,11 +100,7 @@
       http.url: http://localhost:00000/api/error,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.code_origin.frames.0.index: 0,
-      _dd.code_origin.frames.0.method: InvokeFunctionAsync,
-      _dd.code_origin.frames.0.type: Microsoft.AspNetCore.Http.FunctionsHttpContextExtensions,
-      _dd.code_origin.type: entry
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -185,11 +177,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req)
       http.url: http://localhost:00000/api/exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.code_origin.frames.0.index: 0,
-      _dd.code_origin.frames.0.method: InvokeFunctionAsync,
-      _dd.code_origin.frames.0.type: Microsoft.AspNetCore.Http.FunctionsHttpContextExtensions,
-      _dd.code_origin.type: entry
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -266,11 +254,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req)
       http.url: http://localhost:00000/api/simple,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.code_origin.frames.0.index: 0,
-      _dd.code_origin.frames.0.method: InvokeFunctionAsync,
-      _dd.code_origin.frames.0.type: Microsoft.AspNetCore.Http.FunctionsHttpContextExtensions,
-      _dd.code_origin.type: entry
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
@@ -341,11 +325,7 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req)
       http.url: http://localhost:00000/api/trigger,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server,
-      _dd.code_origin.frames.0.index: 0,
-      _dd.code_origin.frames.0.method: InvokeFunctionAsync,
-      _dd.code_origin.frames.0.type: Microsoft.AspNetCore.Http.FunctionsHttpContextExtensions,
-      _dd.code_origin.type: entry
+      span.kind: server
     },
     Metrics: {
       process_id: 0,
