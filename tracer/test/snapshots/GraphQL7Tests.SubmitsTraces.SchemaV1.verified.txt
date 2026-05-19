@@ -289,10 +289,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 1
+"column": 1,
 },
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
@@ -324,7 +324,7 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 24
+"column": 24,
 },
 ]
 },
@@ -334,10 +334,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 35
+"column": 35,
 },
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
@@ -369,10 +369,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 1
+"column": 1,
 },
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
