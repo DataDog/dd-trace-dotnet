@@ -61,8 +61,8 @@ internal static class HttpMocks
         return response;
     }
 
-    public static HttpContent CreateMockContent(string body, string contentType, long? length = null)
-        => new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType, length);
+    public static HttpContent CreateMockContent(string body, string contentType, long? length = null, bool nonSeekable = false)
+        => new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType, length, nonSeekable);
 
     /// <summary>
     /// Creates an HttpContent that exceeds the size limit but has no Content-Length header.
@@ -103,10 +103,12 @@ internal static class HttpMocks
     private sealed class ChunkedContent : HttpContent
     {
         private readonly byte[] _data;
+        private readonly bool _nonSeekable;
 
-        public ChunkedContent(byte[] data, string contentType, long? length = null)
+        public ChunkedContent(byte[] data, string contentType, long? length = null, bool nonSeekable = false)
         {
             _data = data;
+            _nonSeekable = nonSeekable;
             Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
             if (length is > 0)
@@ -118,6 +120,9 @@ internal static class HttpMocks
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
             => stream.WriteAsync(_data, 0, _data.Length);
 
+        protected override Task<Stream> CreateContentReadStreamAsync()
+            => Task.FromResult<Stream>(_nonSeekable ? new NonSeekableMemoryStream(_data) : new MemoryStream(_data, writable: false));
+
         protected override bool TryComputeLength(out long length)
         {
             // Return false to prevent the framework from computing or caching ContentLength,
@@ -125,6 +130,11 @@ internal static class HttpMocks
             length = 0;
             return false;
         }
+    }
+
+    private sealed class NonSeekableMemoryStream(byte[] buffer) : MemoryStream(buffer)
+    {
+        public override bool CanSeek => false;
     }
 
     // Concrete subclass to allow adding any header without category restrictions

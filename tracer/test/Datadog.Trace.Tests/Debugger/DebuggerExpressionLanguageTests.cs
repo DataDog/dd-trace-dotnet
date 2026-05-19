@@ -17,6 +17,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -242,6 +243,59 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressions_EvaluatesObjectValues()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition("inputValue", new DebuggerExpression(string.Empty, @"{""ref"":""StringArg""}", null), default),
+                    new CaptureExpressionDefinition("collection_first_element", new DebuggerExpression(string.Empty, @"{""index"":[{""ref"":""CollectionLocal""},0]}", null), default),
+                    new CaptureExpressionDefinition("dictionary_value", new DebuggerExpression(string.Empty, @"{""index"":[{""ref"":""DictionaryLocal""},""goodbye""]}", null), default),
+                    new CaptureExpressionDefinition("nested_field", new DebuggerExpression(string.Empty, @"{""getmember"":[{""ref"":""NestedObjectLocal""},""NestedString""]}", null), default)
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(4);
+            result.CaptureExpressions.Should().HaveCountGreaterThanOrEqualTo(result.CaptureExpressionCount);
+            result.CaptureExpressions[0].Name.Should().Be("inputValue");
+            result.CaptureExpressions[0].Value.Should().Be("Hello world!");
+            result.CaptureExpressions[0].Type.Should().Be(typeof(string));
+            result.CaptureExpressions[1].Value.Should().Be("hello");
+            result.CaptureExpressions[2].Value.Should().Be("moon");
+            result.CaptureExpressions[3].Value.Should().Be("Hello from nested object");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressions_DoesNotCaptureParseFailures()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition("invalid", new DebuggerExpression(string.Empty, @"{""gt"":[{""ref"":""StringArg""},2]}", null), default)
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(0);
+            result.CaptureExpressions.Should().BeNull();
+            result.Errors.Should().NotBeNullOrEmpty();
+        }
+
+        [Fact]
         public void ProbeExpressionParser_ConstructedOpenGenericReferenceTypeParameter_CanCompileExpression()
         {
             var scopeMembers = CreateScopeMembers();
@@ -315,7 +369,7 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.Exception,
                 scopeMembers.Members);
 
-            Assert.Null(result);
+            Assert.Same(UndefinedValue.Instance, result);
             var error = Assert.Single(compiled.Errors);
             Assert.Contains("generic value type parameter", error.Message);
         }
@@ -340,7 +394,7 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.Exception,
                 scopeMembers.Members);
 
-            Assert.Null(result);
+            Assert.Same(UndefinedValue.Instance, result);
             var error = Assert.Single(compiled.Errors);
             Assert.Contains("recursive generic parameter constraints", error.Message);
         }
@@ -514,6 +568,31 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_NonGenericDictionaryDump_AllowsNullValues()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var holder = new HashtableHolder();
+            scopeMembers.AddMember(new ScopeMember("HashtableHolderLocal", typeof(HashtableHolder), holder, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "ref": "HashtableHolderLocal"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("{[hello, ], }", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         private async Task Test(string expressionTestFilePath)
         {
             // Arrange
@@ -558,7 +637,7 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new Exception($"{nameof(DebuggerExpressionLanguageTests)}.{nameof(GetEvaluator)}: Incorrect folder name");
             }
 
-            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations), scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations, captureExpressions: null), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -877,6 +956,14 @@ namespace Datadog.Trace.Tests.Debugger
         internal class RecursiveGenericConstraintTarget<T>
             where T : IComparable<T>
         {
+        }
+
+        private class HashtableHolder
+        {
+            private readonly Hashtable dictionary = new()
+            {
+                { "hello", null },
+            };
         }
     }
 }

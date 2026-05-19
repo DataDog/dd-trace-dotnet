@@ -191,15 +191,22 @@ internal sealed partial class SecurityReporter
 
         AttackerFingerprintHelper.AddSpanTags(_span, result);
 
-        if (result.ShouldReportSecurityResult)
+        AddWafSpanAttributes(result.WafSpanAttributes);
+
+        if (result.Keep)
+        {
+            Security.Instance?.SetTraceSamplingPriority(_span);
+        }
+
+        var hasSecurityEvents = result.Data is { Count: > 0 };
+
+        if (hasSecurityEvents || blocked)
         {
             _span.SetTag(Tags.AppSecEvent, "true");
             if (blocked)
             {
                 _span.SetTag(Tags.AppSecBlocked, "true");
             }
-
-            Security.Instance?.SetTraceSamplingPriority(_span);
 
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
@@ -274,6 +281,48 @@ internal sealed partial class SecurityReporter
             {
                 Security.Instance?.SetTraceSamplingPriority(_span, false); // Avoid downstream propagation in Standalone mode
             }
+        }
+    }
+
+    private void AddWafSpanAttributes(Dictionary<string, object?>? attributes)
+    {
+        if (attributes is null || attributes.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var kv in attributes)
+        {
+            SetWafSpanAttribute(kv.Key, kv.Value);
+        }
+    }
+
+    private void SetWafSpanAttribute(string key, object? value)
+    {
+        switch (value)
+        {
+            case string s:
+                _span.SetTag(key, s);
+                break;
+            case bool b:
+                _span.SetMetric(key, b ? 1d : 0d);
+                break;
+            case long l:
+                _span.SetMetric(key, l);
+                break;
+            case ulong u:
+                _span.SetMetric(key, u);
+                break;
+            case double d:
+                _span.SetMetric(key, d);
+                break;
+            default:
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Unsupported WAF span attribute type {Type} for key {Key}", value?.GetType(), key);
+                }
+
+                break;
         }
     }
 

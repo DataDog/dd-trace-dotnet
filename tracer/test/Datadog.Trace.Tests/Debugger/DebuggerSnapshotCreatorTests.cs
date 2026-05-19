@@ -167,9 +167,116 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void CaptureExpressions_AreWrittenWithoutArgumentsOrLocals()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult
+            {
+                CaptureExpressionCount = 2,
+                CaptureExpressions =
+                [
+                    new ExpressionEvaluationResult.CaptureExpressionResult("inputValue", "testValue", typeof(string), captureLimitInfo),
+                    new ExpressionEvaluationResult.CaptureExpressionResult("localValue", 9, typeof(int), captureLimitInfo)
+                ]
+            };
+
+            snapshotCreator.StartReturn();
+            snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
+            snapshotCreator.EndReturn();
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            var captureExpressions = snapshot.SelectToken("debugger.snapshot.captures.return.captureExpressions");
+            Assert.NotNull(captureExpressions);
+            Assert.Equal("testValue", captureExpressions!["inputValue"]?["value"]?.Value<string>());
+            Assert.Equal("9", captureExpressions["localValue"]?["value"]?.Value<string>());
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return.locals"));
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return.arguments"));
+        }
+
+        [Fact]
+        public void CaptureExpressions_AreSkippedWhenNoValuesWereCaptured()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult();
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return"));
+        }
+
+        [Fact]
         public async Task SpecialType_StringBuilder()
         {
             await ValidateSingleValue(new StringBuilder("hi from stringbuilder"));
+        }
+
+        [Fact]
+        public void SpecialType_NullableSafeToStringTypes_DoNotRecurseIntoFields()
+        {
+            var expectedDate = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var expectedDuration = TimeSpan.FromSeconds(3);
+            var snapshot = JObject.Parse(SnapshotHelper.GenerateSnapshot(new NullableSafeToStringHolder(), prettify: false));
+
+            var dateToken = snapshot.SelectToken("debugger.snapshot.captures.return.locals.local0.fields.Date");
+            Assert.NotNull(dateToken);
+            Assert.Equal("Nullable`1", dateToken["type"]?.Value<string>());
+            Assert.Equal(expectedDate.ToString(), dateToken["value"]?.Value<string>());
+            Assert.Null(dateToken["fields"]);
+
+            var durationToken = snapshot.SelectToken("debugger.snapshot.captures.return.locals.local0.fields.Duration");
+            Assert.NotNull(durationToken);
+            Assert.Equal("Nullable`1", durationToken["type"]?.Value<string>());
+            Assert.Equal(expectedDuration.ToString(), durationToken["value"]?.Value<string>());
+            Assert.Null(durationToken["fields"]);
+
+            Assert.Equal("Bar", snapshot.SelectToken("logger.name")?.Value<string>());
+            Assert.Equal("Foo", snapshot.SelectToken("logger.method")?.Value<string>());
         }
 
         [Fact]
@@ -1218,6 +1325,13 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly int _numField998 = 998;
             private readonly int _numField999 = 999;
             private readonly int _numField1000 = 1000;
+        }
+
+        private class NullableSafeToStringHolder
+        {
+            public DateTime? Date { get; } = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            public TimeSpan? Duration { get; } = TimeSpan.FromSeconds(3);
         }
 
         private class CollectionAtMaxDepth
