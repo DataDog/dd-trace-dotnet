@@ -808,7 +808,7 @@ stages:
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
         retryCountForRunCommand: 1
 
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/profiler-build
       displayName: Uploading linux profiler output build folder
       artifact: linux-profiler-binaries-$(artifactSuffix)
 

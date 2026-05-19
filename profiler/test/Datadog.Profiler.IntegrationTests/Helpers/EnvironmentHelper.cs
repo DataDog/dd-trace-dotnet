@@ -294,7 +294,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private static string GetRootOutputDir()
         {
-            return Path.Combine(GetSolutionDirectory(), "profiler", "_build");
+            return Path.Combine(GetSolutionDirectory(), "artifacts", "profiler-build");
         }
 
         /// <summary>
