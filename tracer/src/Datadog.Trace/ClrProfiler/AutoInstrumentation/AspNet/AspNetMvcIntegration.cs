@@ -97,11 +97,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
 
                     string routeUrl = route?.Url;
+                    string httpRouteValue = routeUrl;
                     string areaName;
                     string controllerName;
                     string actionName;
                     if ((wasAttributeRouted || newResourceNamesEnabled) && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
                     {
+                        var expandRouteTemplates = newResourceNamesEnabled && tracer.Settings.ExpandRouteTemplatesEnabled;
                         resourceName = AspNetResourceNameHelper.CalculateResourceName(
                             httpMethod: httpMethod,
                             routeTemplate: routeUrl,
@@ -110,7 +112,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             out areaName,
                             out controllerName,
                             out actionName,
-                            expandRouteTemplates: newResourceNamesEnabled && tracer.Settings.ExpandRouteTemplatesEnabled);
+                            expandRouteTemplates: expandRouteTemplates);
+
+                        // When route templates are expanded, the http.route tag should
+                        // reflect the expanded route to stay consistent with resource_name.
+                        // Extract the route path from the resource name (strip the HTTP method prefix).
+                        if (expandRouteTemplates && resourceName != null)
+                        {
+                            var spaceIndex = resourceName.IndexOf(' ');
+                            if (spaceIndex >= 0 && spaceIndex + 1 < resourceName.Length)
+                            {
+                                httpRouteValue = resourceName.Substring(spaceIndex + 1);
+                            }
+                        }
                     }
                     else
                     {
@@ -201,12 +215,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         if (string.IsNullOrEmpty(rootAspNetTags.HttpRoute))
                         {
-                            rootAspNetTags.HttpRoute = routeUrl;
+                            rootAspNetTags.HttpRoute = httpRouteValue;
                         }
                     }
                     else if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
                     {
-                        span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                        span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, httpRouteValue);
                     }
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
