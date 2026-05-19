@@ -3,6 +3,14 @@
   <PropertyGroup>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Control the location of OTLP proto generated files -->
+    <GeneratedFolder>Generated_Code\$(TargetFramework)</GeneratedFolder>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsOSX)' == 'true'">
+    <!-- If OSX we force the x64 version (protoc is only available in x64) -->
+    <Protobuf_ToolsCpu>x64</Protobuf_ToolsCpu>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,6 +49,12 @@
     <PackageReference Include="System.Reactive.Core" Version="3.1.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.7" />
+    <PackageReference Include="Google.Protobuf" Version="3.27.0" />
+    <!-- 2.63.0 won't install on arm64, so we pin to earlier here -->
+    <PackageReference Include="Grpc.Tools" Version="2.62.0" Condition="'$(TargetFramework)' != 'netcoreapp3.0' AND '$(TargetFramework)' != 'netcoreapp3.1' AND '$(TargetFramework)' != 'net5.0'" />
+    <!-- 2.56.0 is highest that supports <.NET 6-->
+    <PackageReference Include="Grpc.Tools" Version="2.56.0" Condition="'$(TargetFramework)' == 'netcoreapp3.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net5.0'" />
+
     <ProjectReference Include="..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" Aliases="DatadogTraceManual" />
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
@@ -68,6 +82,15 @@
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="Helpers\VerifyHelper.cs" />
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OTLP proto files vendored from open-telemetry/opentelemetry-proto@v1.10.0. Compiled by Grpc.Tools at build time
+         so the OTLP serializer tests can decode the wire bytes via the official C# bindings (Google.Protobuf parsers). -->
+    <Protobuf Include="OpenTelemetry\Traces\proto\opentelemetry\proto\common\v1\common.proto" ProtoRoot="OpenTelemetry\Traces\proto" GrpcServices="None" />
+    <Protobuf Include="OpenTelemetry\Traces\proto\opentelemetry\proto\resource\v1\resource.proto" ProtoRoot="OpenTelemetry\Traces\proto" GrpcServices="None" />
+    <Protobuf Include="OpenTelemetry\Traces\proto\opentelemetry\proto\trace\v1\trace.proto" ProtoRoot="OpenTelemetry\Traces\proto" GrpcServices="None" />
+    <Protobuf Include="OpenTelemetry\Traces\proto\opentelemetry\proto\collector\trace\v1\trace_service.proto" ProtoRoot="OpenTelemetry\Traces\proto" GrpcServices="None" />
   </ItemGroup>
 
   <ItemGroup>
