@@ -9,5 +9,6 @@ namespace Datadog.Trace.Debugger.Models
         LiveProbeResolveStatus Status,
         LineProbeResolveReason Reason = LineProbeResolveReason.None,
         string Message = null,
-        LineProbeResolutionDiagnostics Diagnostics = null);
+        LineProbeResolutionDiagnostics Diagnostics = null,
+        bool ReportError = false);
 }
