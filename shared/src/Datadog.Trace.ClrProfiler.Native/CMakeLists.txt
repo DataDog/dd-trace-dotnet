@@ -96,8 +96,8 @@ endif()
 # Output folders
 # ******************************************************
 
-# Set output folders
-SET(OUTPUT_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+# Set output folders. Don't use CACHE as variable name is reused across projects.
+SET(OUTPUT_BIN_DIR "${CMAKE_SOURCE_DIR}/artifacts/native-bin/Datadog.Trace.ClrProfiler.Native")
 SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
 SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_BIN_DIR})
