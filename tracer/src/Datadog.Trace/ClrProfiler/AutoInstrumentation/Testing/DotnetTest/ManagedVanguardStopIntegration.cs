@@ -8,11 +8,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
@@ -45,10 +48,26 @@ public sealed class ManagedVanguardStopIntegration
                     continue;
                 }
 
-                if (Path.GetExtension(file).Equals(".xml", StringComparison.OrdinalIgnoreCase) &&
-                    DotnetCommon.TryGetCoveragePercentageFromXml(file, out var percentage))
+                if (!Path.GetExtension(file).Equals(".xml", StringComparison.OrdinalIgnoreCase))
                 {
-                    DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", percentage);
+                    continue;
+                }
+
+                var shouldBackfill = DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(out var backfillData);
+                if (!ExternalCoverageXmlBackfill.TryProcess(file, shouldBackfill ? backfillData : null, shouldBackfill, out var coverageResult))
+                {
+                    if (shouldBackfill)
+                    {
+                        DotnetCommon.Log.Warning("MicrosoftCodeCoverage: XML report could not be backfilled, so no stale coverage percentage will be sent.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
+                    }
+
+                    continue;
+                }
+
+                {
+                    DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", coverageResult.Percentage);
 
                     // Extract session variables (from out of process sessions)
                     var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
@@ -62,13 +81,33 @@ public sealed class ManagedVanguardStopIntegration
                             var name = $"session_{sessionContext.SpanId}";
                             Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                             using var ipcClient = new IpcClient(name);
-                            Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                            ipcClient.TrySendMessage(new SessionCodeCoverageMessage(percentage));
+                            Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", coverageResult.Percentage);
+                            if (!ipcClient.TrySendMessage(
+                                    new SessionCodeCoverageMessage(
+                                        CodeCoverageReportSource.MicrosoftCodeCoverage,
+                                        coverageResult.Percentage,
+                                        coverageResult.Backfilled,
+                                        coverageResult.ExecutableLines,
+                                        coverageResult.CoveredLines,
+                                        coverageResult.Diagnostic)))
+                            {
+                                Common.Log.Warning("ManagedVanguardStopIntegration: Could not send Microsoft CodeCoverage IPC message.");
+                                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                                CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
+                            }
                         }
                         catch (Exception ex)
                         {
                             Common.Log.Error(ex, "Error enabling IPC client and sending coverage data");
+                            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                            CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
                         }
+                    }
+                    else
+                    {
+                        Common.Log.Warning("ManagedVanguardStopIntegration: Could not find the parent test session context for Microsoft CodeCoverage IPC.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
                     }
                 }
             }

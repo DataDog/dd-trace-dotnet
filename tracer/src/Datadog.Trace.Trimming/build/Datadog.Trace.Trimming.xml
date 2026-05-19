@@ -807,6 +807,7 @@
       <type fullname="System.OperatingSystem" />
       <type fullname="System.OperationCanceledException" />
       <type fullname="System.OutOfMemoryException" />
+      <type fullname="System.OverflowException" />
       <type fullname="System.ParamArrayAttribute" />
       <type fullname="System.PlatformID" />
       <type fullname="System.PlatformNotSupportedException" />

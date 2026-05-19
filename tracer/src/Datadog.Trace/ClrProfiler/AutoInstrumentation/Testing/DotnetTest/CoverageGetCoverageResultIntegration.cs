@@ -5,11 +5,14 @@
 #nullable enable
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
@@ -59,6 +62,21 @@ public sealed class CoverageGetCoverageResultIntegration
             instance?.GetType().Assembly() is { } assembly &&
             assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
         {
+            var backfilled = false;
+            if (DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(out var backfillData))
+            {
+                if (!CoverletCoverageBackfill.TryApply(modules, backfillData, out var updatedLines))
+                {
+                    DotnetCommon.Log.Warning("CoverageGetCoverageResult: Coverlet modules could not be matched to backend coverage, so no stale coverage percentage will be sent.");
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
+                    return new CallTargetReturn<TReturn>(returnValue);
+                }
+
+                backfilled = true;
+                DotnetCommon.Log.Information<int>("CoverageGetCoverageResult.BackfilledLines: {Value}", updatedLines);
+            }
+
             var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
             var coverageDetails = coverageSummary!.CalculateLineCoverage(modules);
             var percentage = coverageDetails.Percent;
@@ -76,12 +94,31 @@ public sealed class CoverageGetCoverageResultIntegration
                     Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                     using var ipcClient = new IpcClient(name);
                     Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                    ipcClient.TrySendMessage(new SessionCodeCoverageMessage(percentage));
+                    if (!ipcClient.TrySendMessage(
+                            new SessionCodeCoverageMessage(
+                                CodeCoverageReportSource.Coverlet,
+                                percentage,
+                                backfilled,
+                                coverageDetails.Total,
+                                coverageDetails.Covered)))
+                    {
+                        Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
+                    }
                 }
                 catch (Exception ex)
                 {
                     Common.Log.Error(ex, "Error enabling IPC client and sending coverage data");
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
                 }
+            }
+            else
+            {
+                Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not find the parent test session context for Coverlet coverage IPC.");
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                CoverageBackfillDataStore.RecordCoverageIpcFailure(nameof(CodeCoverageReportSource.Coverlet));
             }
         }
 
@@ -108,6 +145,19 @@ public sealed class CoverageGetCoverageResultIntegration
     [DuckCopy]
     internal struct CoverageDetails
     {
+        /// <summary>
+        /// Gets the number of line entries Coverlet counted as covered.
+        /// </summary>
+        public double Covered;
+
+        /// <summary>
+        /// Gets the total number of executable line entries Coverlet counted.
+        /// </summary>
+        public int Total;
+
+        /// <summary>
+        /// Gets Coverlet's source-native line coverage percentage after Datadog has optionally backfilled skipped-test coverage.
+        /// </summary>
         public double Percent;
     }
 }

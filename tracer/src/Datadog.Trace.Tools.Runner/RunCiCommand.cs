@@ -51,11 +51,12 @@ namespace Datadog.Trace.Tools.Runner
             var arguments = Utils.GetArgumentsAsString(initResults.Arguments);
             var command = $"{program} {arguments}".Trim();
 
-            // Propagate original test command and working directory
+            // Keep the public test session command unchanged while propagating the normalized child command for coverage backfill internals.
             if (initResults.ProfilerEnvironmentVariables is { } profilerEnvironmentVariables)
             {
                 profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionCommand] = Environment.CommandLine;
                 profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = Environment.CurrentDirectory;
+                profilerEnvironmentVariables[ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand] = command;
             }
 
             // Run child process

@@ -8,17 +8,21 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Xml;
+using System.Text;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
+using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
@@ -29,6 +33,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
         internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
+
+        /// <summary>
+        /// VSTest result-directory option names accepted by dotnet test and dotnet vstest command lines.
+        /// </summary>
+        private static readonly string[] CoverletResultsDirectoryOptions = ["--results-directory", "--ResultsDirectory", "/ResultsDirectory"];
+
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
 
@@ -131,6 +141,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
 
                 var session = TestSession.GetOrCreate(commandLine, workingDirectory, null, null, true);
+                CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimization.SkippableFeature?.Enabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, testOptimizationSettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
@@ -176,149 +187,442 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
             if (!string.IsNullOrEmpty(codeCoveragePath))
             {
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
-                {
-                    Log.Warning("DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH was ignored because DD_CIVISIBILITY_CODE_COVERAGE_ENABLED is set.");
-                }
-
                 var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
                 if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage) &&
                     globalCoverage is not null)
                 {
+                    var backfillResult = TryApplyItrCoverageBackfill(session, globalCoverage);
+                    if (backfillResult.Applied)
+                    {
+                        File.WriteAllText(outputPath, JsonHelper.SerializeObject(globalCoverage));
+                    }
+
                     // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
                     if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
                     {
-                        // Adds the global code coverage percentage to the session
-                        session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                        var data = globalCoverage.Data;
+                        session.RecordCodeCoverage(
+                            CodeCoverageReportSource.DatadogInternal,
+                            globalCoverage.GetTotalPercentage(),
+                            backfillResult.Applied,
+                            executableLines: data[1],
+                            coveredLines: data[2]);
                     }
                 }
             }
-            else
+
+            try
             {
-                try
+                if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath)
                 {
-                    if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
-                        File.Exists(extCodeCoverageFilePath))
+                    if (!File.Exists(extCodeCoverageFilePath))
                     {
-                        if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
-                        {
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                        }
-                        else
-                        {
-                            Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
-                        }
+                        Log.Warning("RunCiCommand: The configured external code coverage file was not found: {Path}", extCodeCoverageFilePath);
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    }
+                    else if (TryProcessCoverageXml(extCodeCoverageFilePath, session, out var coverageResult))
+                    {
+                        session.RecordCodeCoverage(
+                            CodeCoverageReportSource.ExternalXml,
+                            coverageResult.Percentage,
+                            coverageResult.Backfilled,
+                            coverageResult.ExecutableLines,
+                            coverageResult.CoveredLines,
+                            coverageResult.Diagnostic);
+                    }
+                    else
+                    {
+                        Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
                     }
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "RunCiCommand: Error while reading the external file code coverage.");
+            }
+
+            session.DrainIpcMessages(
+                TimeSpan.FromMilliseconds(250),
+                TimeSpan.FromMilliseconds(50),
+                waitForFirstMessage: CoverageBackfillCapability.ShouldWaitForCoverageIpc(TestOptimization.Instance.Settings));
+            var processedCoverletXmlReports = TryProcessCoverletCollectorXmlReports(session, recordCoverageResult: !session.HasCodeCoverageResults);
+            if (CoverageBackfillDataStore.TryReadCoverageIpcFailure(out var ipcFailure))
+            {
+                if (!processedCoverletXmlReports && !session.HasCodeCoverageResults)
                 {
-                    Log.Warning(ex, "RunCiCommand: Error while reading the external file code coverage.");
+                    Log.Warning("RunCiCommand: A selected coverage tool could not deliver its coverage result through IPC: {Reason}", ipcFailure);
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
                 }
             }
+
+            session.PublishCodeCoverage();
 
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
         }
 
-        internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)
+        /// <summary>
+        /// Merges backend skipped-test coverage into Datadog internal global coverage when the session actually skipped tests by ITR.
+        /// </summary>
+        /// <param name="session">The test session that will publish the coverage result.</param>
+        /// <param name="globalCoverage">The local global coverage model collected from executed tests.</param>
+        /// <returns>Result of the backfill merge operation.</returns>
+        internal static CoverageBackfillResult TryApplyItrCoverageBackfill(TestSession session, GlobalCoverageInfo globalCoverage)
         {
-            percentage = 0;
-            if (!File.Exists(filePath))
+            if (!TryGetCoverageBackfillDataForSession(session, out var backfillData))
+            {
+                return new CoverageBackfillResult(applied: false, matchedFiles: 0, updatedFiles: 0);
+            }
+
+            var result = CoverageBackfillApplicator.ApplyToGlobalCoverage(globalCoverage, backfillData);
+            if (result.Applied)
+            {
+                Log.Information<int, int>(
+                    "RunCiCommand: ITR coverage backfill applied to internal coverage. MatchedFiles={MatchedFiles}, UpdatedFiles={UpdatedFiles}",
+                    result.MatchedFiles,
+                    result.UpdatedFiles);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reads and optionally backfills an external XML coverage report for the supplied session.
+        /// </summary>
+        /// <param name="filePath">Coverage XML report path.</param>
+        /// <param name="session">Test session that may publish the result.</param>
+        /// <param name="result">Coverage result after optional backfill.</param>
+        /// <returns>True if the XML report was parsed successfully.</returns>
+        internal static bool TryProcessCoverageXml(string filePath, TestSession? session, out ExternalCoverageXmlResult result)
+        {
+            CoverageBackfillData? backfillData = null;
+            var shouldBackfill = session is not null && TryGetCoverageBackfillDataForSession(session, out backfillData);
+            return ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData, shouldBackfill, out result);
+        }
+
+        /// <summary>
+        /// Locates the VSTest results directory that can contain Coverlet collector Cobertura attachments.
+        /// </summary>
+        /// <param name="commandLine">Test command line used to detect Coverlet and parse result-directory switches.</param>
+        /// <param name="workingDirectory">Command working directory used for relative result directories and VSTest defaults.</param>
+        /// <param name="resultsDirectory">Resolved absolute results directory.</param>
+        /// <returns>True when the command uses the Coverlet collector and a results directory can be resolved.</returns>
+        internal static bool TryGetCoverletCollectorResultsDirectory(string? commandLine, string? workingDirectory, out string resultsDirectory)
+        {
+            resultsDirectory = string.Empty;
+            if (!CoverageBackfillCapability.IsCoverletCoverageCommand(commandLine))
             {
                 return false;
             }
 
-            // Load Code Coverage from the file.
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(filePath);
-
-            if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
-                double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
+            var baseDirectory = GetAbsoluteWorkingDirectory(workingDirectory);
+            if (TryGetCommandOptionValue(commandLine!, CoverletResultsDirectoryOptions, out var configuredResultsDirectory))
             {
-                // Found using the OpenCover format.
-                percentage = Math.Round(seqCovValue, 2).ToValidPercentage();
-                Log.Debug("TryGetCoveragePercentageFromXml: OpenCover code coverage was reported: {Value}", seqCovValue);
+                return TryResolveDirectoryPath(configuredResultsDirectory, baseDirectory, out resultsDirectory);
+            }
+
+            resultsDirectory = Path.Combine(baseDirectory, "TestResults");
+            return true;
+        }
+
+        /// <summary>
+        /// Rewrites Coverlet collector XML attachments after VSTest exits so report files stay accurate even when IPC is unavailable.
+        /// </summary>
+        /// <param name="session">Current test session.</param>
+        /// <param name="recordCoverageResult">Whether processed XML results should be recorded for session coverage publication.</param>
+        /// <returns>True when at least one Coverlet XML report was processed.</returns>
+        private static bool TryProcessCoverletCollectorXmlReports(TestSession session, bool recordCoverageResult)
+        {
+            if (!TryGetCoverletCollectorResultsDirectory(GetCoverageBackfillCommandLine(session.Command), session.WorkingDirectory, out var resultsDirectory) ||
+                !Directory.Exists(resultsDirectory))
+            {
+                return false;
+            }
+
+            var coverageFiles = Directory.EnumerateFiles(resultsDirectory, "coverage.cobertura.xml", SearchOption.AllDirectories)
+                                         .Where(filePath => IsSessionCoverageAttachment(filePath, session.StartTime))
+                                         .ToArray();
+            if (coverageFiles.Length == 0)
+            {
+                return false;
+            }
+
+            var processedReports = 0;
+            foreach (var coverageFile in coverageFiles)
+            {
+                if (!TryProcessCoverageXml(coverageFile, session, out var coverageResult))
+                {
+                    Log.Warning("RunCiCommand: Coverlet collector XML report could not be processed: {Path}", coverageFile);
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    continue;
+                }
+
+                processedReports++;
+                if (recordCoverageResult)
+                {
+                    session.RecordCodeCoverage(
+                        CodeCoverageReportSource.Coverlet,
+                        coverageResult.Percentage,
+                        coverageResult.Backfilled,
+                        coverageResult.ExecutableLines,
+                        coverageResult.CoveredLines,
+                        coverageResult.Diagnostic);
+                }
+            }
+
+            if (processedReports > 0)
+            {
+                Log.Information<int>("RunCiCommand: Coverlet collector XML reports processed. Count={Count}", processedReports);
+            }
+
+            return processedReports > 0;
+        }
+
+        /// <summary>
+        /// Checks whether a Coverlet collector attachment was written during the current test session.
+        /// </summary>
+        /// <param name="filePath">Coverage attachment path.</param>
+        /// <param name="sessionStartTime">Current test session start time.</param>
+        /// <returns>True when the file timestamp is new enough to belong to this session.</returns>
+        private static bool IsSessionCoverageAttachment(string filePath, DateTimeOffset sessionStartTime)
+        {
+            try
+            {
+                return File.GetLastWriteTimeUtc(filePath) >= sessionStartTime.UtcDateTime.AddSeconds(-1);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Resolves a working directory to an absolute path while preserving the propagated command directory when available.
+        /// </summary>
+        /// <param name="workingDirectory">Session working directory, which may have been normalized to a repository-relative path.</param>
+        /// <returns>Absolute directory used as the base for VSTest result paths.</returns>
+        private static string GetAbsoluteWorkingDirectory(string? workingDirectory)
+        {
+            var propagatedWorkingDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory);
+            if (!StringUtil.IsNullOrEmpty(propagatedWorkingDirectory) && Path.IsPathRooted(propagatedWorkingDirectory!))
+            {
+                return propagatedWorkingDirectory!;
+            }
+
+            if (!StringUtil.IsNullOrEmpty(workingDirectory))
+            {
+                if (Path.IsPathRooted(workingDirectory!))
+                {
+                    return Path.GetFullPath(workingDirectory!);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(TestOptimization.Instance.CIValues.WorkspacePath))
+                {
+                    return Path.GetFullPath(Path.Combine(TestOptimization.Instance.CIValues.WorkspacePath!, workingDirectory!));
+                }
+            }
+
+            return Environment.CurrentDirectory;
+        }
+
+        /// <summary>
+        /// Gets the normalized child test command used for coverage backfill internals without changing the public test session command tag.
+        /// </summary>
+        /// <param name="fallbackCommandLine">Public test session command used when no internal command was propagated.</param>
+        /// <returns>Command line used to discover coverage tool outputs.</returns>
+        private static string? GetCoverageBackfillCommandLine(string? fallbackCommandLine)
+        {
+            return EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand) ?? fallbackCommandLine;
+        }
+
+        /// <summary>
+        /// Parses a command-line option value from a shell-like command string.
+        /// </summary>
+        /// <param name="commandLine">Command line to parse.</param>
+        /// <param name="optionNames">Supported option spellings.</param>
+        /// <param name="value">Option value when found.</param>
+        /// <returns>True when the option was present and had a value.</returns>
+        private static bool TryGetCommandOptionValue(string commandLine, string[] optionNames, out string value)
+        {
+            value = string.Empty;
+            var arguments = SplitCommandLine(commandLine);
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var argument = arguments[i];
+                foreach (var optionName in optionNames)
+                {
+                    if (argument.Equals(optionName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (i + 1 < arguments.Count && !StringUtil.IsNullOrEmpty(arguments[i + 1]))
+                        {
+                            value = arguments[i + 1];
+                            return true;
+                        }
+
+                        return false;
+                    }
+
+                    if (TryGetInlineOptionValue(argument, optionName, out value))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reads an option value from single-token syntaxes such as <c>--ResultsDirectory:path</c> or <c>--results-directory=path</c>.
+        /// </summary>
+        /// <param name="argument">Command-line argument token.</param>
+        /// <param name="optionName">Option name to match.</param>
+        /// <param name="value">Inline option value when found.</param>
+        /// <returns>True when the argument contains the option value.</returns>
+        private static bool TryGetInlineOptionValue(string argument, string optionName, out string value)
+        {
+            value = string.Empty;
+            if (!argument.StartsWith(optionName, StringComparison.OrdinalIgnoreCase) ||
+                argument.Length <= optionName.Length)
+            {
+                return false;
+            }
+
+            var separator = argument[optionName.Length];
+            if (separator is not ':' and not '=')
+            {
+                return false;
+            }
+
+            value = argument.Substring(optionName.Length + 1);
+            return !StringUtil.IsNullOrEmpty(value);
+        }
+
+        /// <summary>
+        /// Resolves a configured directory path against the command working directory.
+        /// </summary>
+        /// <param name="directoryPath">Directory path from the command line.</param>
+        /// <param name="baseDirectory">Absolute command working directory.</param>
+        /// <param name="resolvedPath">Resolved absolute path.</param>
+        /// <returns>True when the path could be resolved.</returns>
+        private static bool TryResolveDirectoryPath(string directoryPath, string baseDirectory, out string resolvedPath)
+        {
+            resolvedPath = string.Empty;
+            try
+            {
+                resolvedPath = Path.IsPathRooted(directoryPath) ? Path.GetFullPath(directoryPath) : Path.GetFullPath(Path.Combine(baseDirectory, directoryPath));
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Splits a command line into arguments while preserving quoted spaces and removing quote delimiters.
+        /// </summary>
+        /// <param name="commandLine">Command line to split.</param>
+        /// <returns>Parsed argument tokens.</returns>
+        private static List<string> SplitCommandLine(string commandLine)
+        {
+            var arguments = new List<string>();
+            var builder = new StringBuilder();
+            var inQuotes = false;
+            for (var i = 0; i < commandLine.Length; i++)
+            {
+                var character = commandLine[i];
+                if (character == '"')
+                {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+
+                if (char.IsWhiteSpace(character) && !inQuotes)
+                {
+                    if (builder.Length > 0)
+                    {
+                        arguments.Add(builder.ToString());
+                        builder.Clear();
+                    }
+
+                    continue;
+                }
+
+                builder.Append(character);
+            }
+
+            if (builder.Length > 0)
+            {
+                arguments.Add(builder.ToString());
+            }
+
+            return arguments;
+        }
+
+        /// <summary>
+        /// Gets backend ITR coverage data when the current process has actually applied ITR skips.
+        /// </summary>
+        /// <param name="backfillData">Backend coverage data returned by the skippable-tests endpoint.</param>
+        /// <returns>True when backfill data can be safely used by an in-process coverage tool adapter.</returns>
+        internal static bool TryGetCoverageBackfillDataForCurrentProcess(out CoverageBackfillData backfillData)
+        {
+            backfillData = CoverageBackfillData.Missing;
+            if (!CoverageBackfillDataStore.HasActualItrSkip())
+            {
+                return false;
+            }
+
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
+            if (skippableFeature?.IsCoverageBackfillRequired() == true && skippableFeature.IsCoverageBackfillSafe())
+            {
+                backfillData = skippableFeature.GetCoverageBackfillData();
+                return backfillData is { IsPresent: true, IsValid: true };
+            }
+
+            return CoverageBackfillDataStore.TryLoad(out backfillData);
+        }
+
+        private static bool HasActualItrSkips(TestSession session, ITestOptimizationSkippableFeature skippableFeature)
+        {
+            return skippableFeature.HasSkippedTestsByItr() ||
+                   CoverageBackfillDataStore.HasActualItrSkip() ||
+                   string.Equals(session.Tags.TestsSkipped, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryGetCoverageBackfillDataForSession(TestSession session, out CoverageBackfillData backfillData)
+        {
+            backfillData = CoverageBackfillData.Missing;
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
+            if (skippableFeature?.IsCoverageBackfillRequired() != true ||
+                !HasActualItrSkips(session, skippableFeature))
+            {
+                return false;
+            }
+
+            if (skippableFeature.IsCoverageBackfillSafe())
+            {
+                backfillData = skippableFeature.GetCoverageBackfillData();
+                if (backfillData is { IsPresent: true, IsValid: true })
+                {
+                    return true;
+                }
+            }
+
+            return CoverageBackfillDataStore.TryLoad(out backfillData);
+        }
+
+        internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)
+        {
+            if (File.Exists(filePath) &&
+                ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData: null, applyBackfill: false, out var result))
+            {
+                percentage = result.Percentage;
+                Log.Debug("TryGetCoveragePercentageFromXml: {Diagnostic} code coverage was reported: {Value}", result.Diagnostic, result.Percentage);
                 return true;
             }
 
-            if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
-                double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
-            {
-                // Found using the Cobertura format.
-                percentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
-                Log.Debug("TryGetCoveragePercentageFromXml: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
-                return true;
-            }
-
-            var linesCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_covered");
-            var linesPartiallyCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_partially_covered");
-            var linesNotCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_not_covered");
-
-            if (linesCovered != null && linesPartiallyCovered != null && linesNotCovered != null &&
-                linesCovered.Count == linesPartiallyCovered.Count && linesCovered.Count == linesNotCovered.Count)
-            {
-                // Found using Microsoft.CodeCoverage xml format
-                var modulesCount = linesCovered.Count;
-
-                var totalLinesCovered = 0d;
-                foreach (XmlNode? lineCovered in linesCovered)
-                {
-                    if (lineCovered is null)
-                    {
-                        continue;
-                    }
-
-                    if (double.TryParse(lineCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
-                    {
-                        totalLinesCovered += value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                var totalLinesPartiallyCovered = 0d;
-                foreach (XmlNode? linePartiallyCovered in linesPartiallyCovered)
-                {
-                    if (linePartiallyCovered is null)
-                    {
-                        continue;
-                    }
-
-                    if (double.TryParse(linePartiallyCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
-                    {
-                        totalLinesPartiallyCovered += value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                var totalLinesNotCovered = 0d;
-                foreach (XmlNode? lineNotCovered in linesNotCovered)
-                {
-                    if (lineNotCovered is null)
-                    {
-                        continue;
-                    }
-
-                    if (double.TryParse(lineNotCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
-                    {
-                        totalLinesNotCovered += value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                var totalLines = totalLinesCovered + totalLinesPartiallyCovered + totalLinesNotCovered;
-                percentage = Math.Round((totalLinesCovered / totalLines) * 100, 2).ToValidPercentage();
-                Log.Debug("TryGetCoveragePercentageFromXml: Microsoft.CodeCoverage code coverage was reported: {Value}", percentage);
-                return true;
-            }
-
+            percentage = 0;
             return false;
         }
 

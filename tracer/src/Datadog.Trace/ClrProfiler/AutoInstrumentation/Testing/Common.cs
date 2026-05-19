@@ -80,7 +80,8 @@ internal static class Common
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            var skippableTests = TestOptimization.Instance.SkippableFeature?.GetSkippableTestsFromSuiteAndName(testSuite, testName) ?? [];
+            var moduleName = TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+            var skippableTests = TestOptimization.Instance.SkippableFeature?.GetSkippableTestsFromSuiteAndName(testSuite, testName, moduleName) ?? [];
             if (skippableTests.Count > 0)
             {
                 foreach (var skippableTest in skippableTests)
@@ -91,7 +92,7 @@ internal static class Common
                     if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
                         (testMethodArguments is null || testMethodArguments.Length == 0))
                     {
-                        return true;
+                        return CanSkipForCoverage(skippableTest, moduleName);
                     }
 
                     if (parameters?.Arguments is not null &&
@@ -127,7 +128,7 @@ internal static class Common
 
                         if (matchSignature)
                         {
-                            return true;
+                            return CanSkipForCoverage(skippableTest, moduleName);
                         }
                     }
                 }
@@ -139,6 +140,29 @@ internal static class Common
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Checks whether an ITR candidate can be skipped without making the active coverage report inaccurate.
+    /// </summary>
+    /// <param name="skippableTest">Backend skippable candidate matched to the current framework test.</param>
+    /// <param name="moduleName">Local test module or bundle that is about to skip the test.</param>
+    /// <returns>True when the test can be skipped safely.</returns>
+    private static bool CanSkipForCoverage(SkippableTest skippableTest, string? moduleName)
+    {
+        var skippableFeature = TestOptimization.Instance.SkippableFeature;
+        if (skippableFeature?.IsCoverageBackfillRequired() != true)
+        {
+            return true;
+        }
+
+        if (!skippableFeature.CanSkipWithCoverageBackfill(skippableTest, moduleName, out var reason))
+        {
+            Log.Debug("Common: Test cannot be skipped because coverage backfill is required but unsafe: {Reason}", reason);
+            return false;
+        }
+
+        return true;
     }
 
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)

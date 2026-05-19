@@ -175,8 +175,8 @@ public sealed class TestModule
             }
         }
 
-        // Check if Intelligent Test Runner has skippable tests and set the flag according to that
-        tags.TestsSkipped = _testOptimization.SkippableFeature?.HasSkippableTests() == true ? "true" : "false";
+        // The final skipped flag is based on actual ITR skips and is updated when the module closes.
+        tags.TestsSkipped = "false";
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
@@ -452,13 +452,7 @@ public sealed class TestModule
         }
         else
         {
-            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, _testOptimization.SkippableFeature?.HasSkippableTests() == true ? "true" : "false");
-            if (_testOptimization.SkippableFeature?.HasSkippableTests() == true)
-            {
-                // If we detect a module with tests being skipped, we ensure we also have the session tag set
-                // if not we don't affect the session tag (other modules could have skipped tests)
-                TrySetSessionTag(IntelligentTestRunnerTags.TestsSkipped, "true");
-            }
+            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
         }
 
         if (_testOptimization.Settings.CodeCoverageEnabled.HasValue)
