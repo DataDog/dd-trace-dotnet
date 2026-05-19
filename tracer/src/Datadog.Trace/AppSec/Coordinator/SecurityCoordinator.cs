@@ -216,7 +216,7 @@ internal readonly partial struct SecurityCoordinator
     }
 
 #pragma warning disable CA1859 // Use concrete types where possible for improved performance - It's not actually possible here
-    private static Dictionary<string, object>? ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
+    private static Dictionary<string, object>? ExtractHeaders(ICollection<string> keys, object collection, Func<object, string, object> getHeaderValue)
 #pragma warning restore CA1859
     {
         if (keys.Count > 0)
@@ -228,7 +228,7 @@ internal readonly partial struct SecurityCoordinator
                 if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
                 {
                     currentKey = currentKey.ToLowerInvariant();
-                    var value = getHeaderValue(currentKey);
+                    var value = getHeaderValue(collection, currentKey);
 #if NETCOREAPP
                     if (!headersDic.TryAdd(currentKey, value))
                     {
