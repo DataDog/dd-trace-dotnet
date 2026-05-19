@@ -229,16 +229,15 @@ namespace Datadog.Trace.Debugger
                     var closestPathMatch = lookup.GetClosestPathBySuffix(probePathQuery, MinTrailingSegmentsForFallbackMatch);
                     TrackClosestPathMatch(
                         candidateAssembly,
-                        closestPathMatch,
+                        in closestPathMatch,
                         includeDetailedDiagnostics,
                         ref sameFileNameMatchCount,
                         ref bestMatchingTrailingSegments,
                         ref sameFileNameMatches);
 
-                    // Only bind when exactly one fallback candidate qualifies across the currently loaded,
-                    // symbolicated assemblies. Assemblies with internally ambiguous fallback matches must
-                    // still participate in that global ambiguity check.
-                    bestFallbackMatchSelection.Track(candidateAssembly, closestPathMatch);
+                    // Only bind when a single global fallback candidate has the strictly best score.
+                    // Assemblies with internally ambiguous fallback matches must still participate in that global tie.
+                    bestFallbackMatchSelection.Track(candidateAssembly, in closestPathMatch);
                 }
 
                 if (bestFallbackMatchSelection.BestMatch is { } bestMatch)
@@ -374,13 +373,13 @@ namespace Datadog.Trace.Debugger
             private int _bestMatchingTrailingSegments;
             private int _qualifiedMatchCount;
 
-            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch || _qualifiedMatchCount != 1 ? null : _bestMatch;
+            public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch ? null : _bestMatch;
 
             public bool HasAmbiguousBestMatch { get; private set; }
 
             public int QualifiedMatchCount => _qualifiedMatchCount;
 
-            public void Track(Assembly assembly, ClosestPathBySuffixResult result)
+            public void Track(Assembly assembly, in ClosestPathBySuffixResult result)
             {
                 if (result.QualifiedMatchCount == 0)
                 {

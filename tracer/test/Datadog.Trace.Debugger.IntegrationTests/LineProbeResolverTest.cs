@@ -277,7 +277,7 @@ public class LineProbeResolverTest
     }
 
     [Fact]
-    public void BestFallbackMatchSelectionReturnsMatchWhenExactlyOneQualifiedCandidateExists()
+    public void BestFallbackMatchSelectionBindsWhenSingleQualifiedCandidateIsTracked()
     {
         var selection = new LineProbeResolver.BestFallbackMatchSelection();
 
@@ -290,15 +290,33 @@ public class LineProbeResolverTest
     }
 
     [Fact]
-    public void BestFallbackMatchSelectionRejectsHigherUniqueScoreWhenMultipleQualifiedCandidatesExist()
+    public void BestFallbackMatchSelectionAllowsHigherUniqueScoreToOverrideEarlierAmbiguity()
     {
         var selection = new LineProbeResolver.BestFallbackMatchSelection();
 
         selection.Track(typeof(string).Assembly, CreateClosestPathBySuffixResult(@"/a/src/Shared/Feature/MyFile.cs", matchingTrailingSegments: 4, isAmbiguous: true));
         selection.Track(typeof(LineProbeResolverTest).Assembly, CreateClosestPathBySuffixResult(@"/b/src/One/Shared/Feature/MyFile.cs", matchingTrailingSegments: 5, isAmbiguous: false));
 
+        selection.HasAmbiguousBestMatch.Should().BeFalse();
         selection.QualifiedMatchCount.Should().Be(3);
-        selection.BestMatch.Should().BeNull();
+        selection.BestMatch.Should().NotBeNull();
+        selection.BestMatch!.Value.Path.Should().Be(@"/b/src/One/Shared/Feature/MyFile.cs");
+        selection.BestMatch!.Value.MatchingTrailingSegments.Should().Be(5);
+    }
+
+    [Fact]
+    public void BestFallbackMatchSelectionBindsHighestScoreOverIncidentalLowScoringCandidates()
+    {
+        var selection = new LineProbeResolver.BestFallbackMatchSelection();
+
+        selection.Track(typeof(LineProbeResolverTest).Assembly, CreateClosestPathBySuffixResult(@"/a/src/MyProject/Controllers/HomeController.cs", matchingTrailingSegments: 6, isAmbiguous: false));
+        selection.Track(typeof(string).Assembly, CreateClosestPathBySuffixResult(@"/vendor/Controllers/HomeController.cs", matchingTrailingSegments: 2, isAmbiguous: false));
+
+        selection.HasAmbiguousBestMatch.Should().BeFalse();
+        selection.QualifiedMatchCount.Should().Be(2);
+        selection.BestMatch.Should().NotBeNull();
+        selection.BestMatch!.Value.Path.Should().Be(@"/a/src/MyProject/Controllers/HomeController.cs");
+        selection.BestMatch!.Value.MatchingTrailingSegments.Should().Be(6);
     }
 
     [Fact]
