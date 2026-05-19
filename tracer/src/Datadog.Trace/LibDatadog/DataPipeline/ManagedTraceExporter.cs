@@ -143,11 +143,15 @@ internal sealed class ManagedTraceExporter : IApi, IDisposable
         // so we disable telemetry in this case
         if (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null)
         {
+            var sessionId = Tracer.RuntimeId;
             telemetryClientConfiguration = new TelemetryClientConfiguration
             {
                 Interval = (ulong)telemetrySettings.HeartbeatInterval.TotalMilliseconds,
-                RuntimeId = new CharSlice(Tracer.RuntimeId),
-                DebugEnabled = telemetrySettings.DebugEnabled
+                RuntimeId = new CharSlice(sessionId),
+                DebugEnabled = telemetrySettings.DebugEnabled,
+                SessionId = new CharSlice(sessionId),
+                RootSessionId = new CharSlice(Datadog.Trace.Util.RuntimeId.GetRootSessionId()),
+                ParentSessionId = new CharSlice(null),
             };
         }
 

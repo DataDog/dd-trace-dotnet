@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -21,6 +22,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -187,6 +189,47 @@ public class TraceExporterTests
 #endif
                 _ => throw new InvalidOperationException("Unsupported transport type " + transport),
             };
+    }
+
+    [Fact]
+    public async Task EmitsSessionIdHeadersOnTelemetryUsingDataPipeline()
+    {
+        using var agent = MockTracerAgent.Create(null);
+        var settings = new Dictionary<string, object>
+        {
+            { ConfigurationKeys.AgentPort, ((MockTracerAgent.TcpUdpAgent)agent).Port },
+            { ConfigurationKeys.ServiceName, "default-service" },
+            { ConfigurationKeys.Environment, "test" },
+            { ConfigurationKeys.TraceDataPipelineEnabled, "true" },
+        };
+        var tracerSettings = TracerSettings.Create(settings, isLibDatadogAvailable: new LibDatadogAvailableResult(true));
+        tracerSettings.DataPipelineEnabled.Should().BeTrue();
+
+        // Shorten the heartbeat so libdatadog's telemetry worker ticks within the test window
+        var telemetryConfig = new NameValueConfigurationSource(new NameValueCollection
+        {
+            { ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1" },
+        });
+
+        ManagedTraceExporter.TryCreateTraceExporter(
+            tracerSettings,
+            _ => { },
+            TelemetrySettings.FromSource(telemetryConfig, new ConfigurationTelemetry(), tracerSettings, isAgentAvailable: true),
+            out var exporter).Should().BeTrue();
+        exporter.Should().NotBeNull();
+
+        await agent.WaitForLatestTelemetryAsync(_ => true, timeoutInMilliseconds: 10_000);
+        agent.TelemetryRequestHeaders.Should().NotBeEmpty();
+
+        var sessionId = RuntimeId.Get();
+        foreach (var headers in agent.TelemetryRequestHeaders)
+        {
+            headers[TelemetryConstants.SessionIdHeader].Should().Be(sessionId);
+            if (RuntimeId.GetRootSessionId() == sessionId)
+            {
+                headers.AllKeys.Should().NotContain(TelemetryConstants.RootSessionIdHeader);
+            }
+        }
     }
 
     internal class TestMetaStruct
