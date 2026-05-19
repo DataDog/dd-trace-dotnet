@@ -34,7 +34,7 @@ internal sealed class ManagedApiOtlp : IApi
         [MemberNotNull(nameof(_api))]
         void UpdateApi(TracerSettings settings, ExporterSettings exporterSettings)
         {
-            var apiRequestFactory = TracesTransportStrategy.Get(exporterSettings);
+            var apiRequestFactory = OtlpTransportStrategy.GetTraces(exporterSettings);
             var api = new ApiOtlp(apiRequestFactory, settings, exporterSettings);
             Interlocked.Exchange(ref _api!, api);
         }

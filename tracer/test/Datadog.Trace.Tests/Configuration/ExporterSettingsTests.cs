@@ -310,7 +310,7 @@ namespace Datadog.Trace.Tests.Configuration
                     $"DD_TRACE_AGENT_PORT:{port}"),
                 NoFile());
 
-            settings.TracesTransport.Should().Be(TracesTransportType.Default);
+            settings.TracesTransport.Should().Be(AgentTransportType.Default);
             settings.TraceAgentUriBase.Should().Be(settings.AgentUri.ToString());
         }
 
@@ -327,7 +327,7 @@ namespace Datadog.Trace.Tests.Configuration
                     $"DD_APM_RECEIVER_SOCKET:{apmReceiverSocket}"),
                 NoFile());
 
-            settings.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+            settings.TracesTransport.Should().Be(AgentTransportType.UnixDomainSocket);
             settings.TraceAgentUriBase.Should().Be(settings.AgentUri.ToString());
         }
 #endif
@@ -338,7 +338,7 @@ namespace Datadog.Trace.Tests.Configuration
             var pipeName = "something";
             var settings = Setup("DD_TRACE_PIPE_NAME", pipeName);
 
-            settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
+            settings.TracesTransport.Should().Be(AgentTransportType.WindowsNamedPipe);
             settings.TraceAgentUriBase.Should().Be(@"\\.\pipe\" + pipeName);
         }
 

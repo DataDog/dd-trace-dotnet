@@ -94,6 +94,8 @@ namespace Datadog.Trace.Configuration
                 agentPort: rawSettings.TraceAgentPort,
                 tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
 
+            AgentTransport = traceSettings.Transport;
+
             TracesEncoding = TracesEncoding.DatadogV0_4;
             TracesTransport = traceSettings.Transport;
             TracesPipeName = traceSettings.PipeName;
@@ -110,6 +112,7 @@ namespace Datadog.Trace.Configuration
 
             if (rawSettings.OtelTracesExporter == "otlp")
             {
+                TracesTransport = otlpTraceSettings.Transport;
                 TracesEncoding = otlpTraceSettings.OtlpProtocol switch
                 {
                     OtlpProtocol.Grpc => TracesEncoding.DatadogV0_4,
@@ -120,6 +123,8 @@ namespace Datadog.Trace.Configuration
 
                 if (TracesEncoding == TracesEncoding.DatadogV0_4)
                 {
+                    // Reset to the original transport used to connect to the agent since we're sending Datadog v0.4 traces
+                    TracesTransport = traceSettings.Transport;
                     ValidationWarnings.Add($"Found OTEL_TRACES_EXPORTER=otlp, but calculated OTLP protocol {otlpTraceSettings.OtlpProtocol.ToString()} is not yet supported. Falling back to Datadog v0.4 encoding.");
                 }
             }
@@ -172,7 +177,7 @@ namespace Datadog.Trace.Configuration
             // 1. That's not a valid Uri - we would need to use a custom Uri scheme (e.g. npipe://) and also
             //    use / instead of \, i.e. @$"npipe:////./pipe/{TracesPipeName}"
             // 2. AgentUri is exposed publicly, so we can't change it without potentially breaking behaviour
-            TracesTransportType.WindowsNamedPipe => $@"\\.\pipe\{TracesPipeName}",
+            AgentTransportType.WindowsNamedPipe => $@"\\.\pipe\{TracesPipeName}",
             _ => AgentUri.ToString()
         };
 
@@ -258,9 +263,14 @@ namespace Datadog.Trace.Configuration
         internal TracesEncoding TracesEncoding { get; }
 
         /// <summary>
+        /// Gets the transport used to send requests to the Agent.
+        /// </summary>
+        internal AgentTransportType AgentTransport { get; }
+
+        /// <summary>
         /// Gets the transport used to send traces to the Agent.
         /// </summary>
-        internal TracesTransportType TracesTransport { get; }
+        internal AgentTransportType TracesTransport { get; }
 
         /// <summary>
         /// Gets the transport used to connect to the DogStatsD.

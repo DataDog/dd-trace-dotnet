@@ -160,7 +160,7 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
     {
         IApiRequestFactory? factory;
         var exporterSettings = tracerSettings.Manager.InitialExporterSettings;
-        if (exporterSettings.TracesTransport != TracesTransportType.Default)
+        if (exporterSettings.AgentTransport != AgentTransportType.Default)
         {
             factory = AgentTransportStrategy.Get(
                 exporterSettings,

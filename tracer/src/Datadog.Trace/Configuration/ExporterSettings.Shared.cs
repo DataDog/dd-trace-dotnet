@@ -71,7 +71,7 @@ namespace Datadog.Trace.Configuration
 
             if (!string.IsNullOrEmpty(tracesPipeName))
             {
-                RecordTraceTransport(nameof(TracesTransportType.WindowsNamedPipe), origin);
+                RecordTraceTransport(nameof(AgentTransportType.WindowsNamedPipe), origin);
 
                 // The Uri isn't needed anymore in that case, just populating it for retro compatibility.
                 if (!Uri.TryCreate($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}", UriKind.Absolute, out var uri))
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Configuration
                 }
 
                 return new TraceTransportSettings(
-                    TracesTransportType.WindowsNamedPipe,
+                    AgentTransportType.WindowsNamedPipe,
                     GetAgentUriReplacingLocalhost(uri, origin),
                     PipeName: tracesPipeName);
             }
@@ -207,12 +207,12 @@ namespace Datadog.Trace.Configuration
 
         private TraceTransportSettings GetAgentUriAndTransport(Uri uri, ConfigurationOrigins origin)
         {
-            TracesTransportType transport;
+            AgentTransportType transport;
             string? udsPath;
             if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
             {
 #if NETCOREAPP3_1_OR_GREATER
-                transport = TracesTransportType.UnixDomainSocket;
+                transport = AgentTransportType.UnixDomainSocket;
                 udsPath = uri.PathAndQuery;
 
                 var absoluteUri = uri.AbsoluteUri.Replace(UnixDomainSocketPrefix, string.Empty);
@@ -231,7 +231,7 @@ namespace Datadog.Trace.Configuration
                     ValidationWarnings.Add($"The socket provided {uri.PathAndQuery} cannot be found. The tracer will still rely on this socket to send traces.");
                 }
 
-                RecordTraceTransport(nameof(TracesTransportType.UnixDomainSocket), origin);
+                RecordTraceTransport(nameof(AgentTransportType.UnixDomainSocket), origin);
                 _telemetry.Record(
                     ConfigurationKeys.TracesUnixDomainSocketPath,
                     TracesUnixDomainSocketPath,
@@ -253,9 +253,9 @@ namespace Datadog.Trace.Configuration
             }
             else
             {
-                transport = TracesTransportType.Default;
+                transport = AgentTransportType.Default;
                 udsPath = null;
-                RecordTraceTransport(nameof(TracesTransportType.Default), origin);
+                RecordTraceTransport(nameof(AgentTransportType.Default), origin);
             }
 
             var agentUri = GetAgentUriReplacingLocalhost(uri, origin);
@@ -288,8 +288,12 @@ namespace Datadog.Trace.Configuration
             }
 
 #endif
+            var transport = uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase)
+                                ? AgentTransportType.UnixDomainSocket
+                                : AgentTransportType.Default;
+
             // TODO: Record OTLP transport telemetry
-            return new(uri, OtlpProtocol: otlpProtocol);
+            return new(transport, uri, OtlpProtocol: otlpProtocol);
         }
 
         private Uri GetAgentUriReplacingLocalhost(Uri uri, ConfigurationOrigins origin)
@@ -328,8 +332,8 @@ namespace Datadog.Trace.Configuration
             };
         }
 
-        private readonly record struct TraceTransportSettings(TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null);
+        private readonly record struct TraceTransportSettings(AgentTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null);
 
-        private readonly record struct OtlpTransportSettings(Uri OtlpSignalEndpoint, OtlpProtocol OtlpProtocol = OtlpProtocol.HttpProtobuf);
+        private readonly record struct OtlpTransportSettings(AgentTransportType Transport, Uri OtlpSignalEndpoint, OtlpProtocol OtlpProtocol = OtlpProtocol.HttpProtobuf);
     }
 }

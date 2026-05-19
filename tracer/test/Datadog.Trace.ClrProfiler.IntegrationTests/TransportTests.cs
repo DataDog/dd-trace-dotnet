@@ -52,26 +52,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("Named pipes is flaky", maxRetries: 3)]
         public async Task TransportsWorkCorrectly(TestTransports transport, bool dataPipelineEnabled)
         {
-            var transportType = TracesTransportTypeFromTestTransport(transport);
+            var transportType = AgentTransportTypeFromTestTransport(transport);
             await RunTest(transportType, dataPipelineEnabled);
         }
 
-        private TracesTransportType TracesTransportTypeFromTestTransport(TestTransports transport)
+        private AgentTransportType AgentTransportTypeFromTestTransport(TestTransports transport)
         {
             return transport switch
             {
-                TestTransports.Tcp => TracesTransportType.Default,
-                TestTransports.WindowsNamedPipe => TracesTransportType.WindowsNamedPipe,
-                TestTransports.Uds => TracesTransportType.UnixDomainSocket,
+                TestTransports.Tcp => AgentTransportType.Default,
+                TestTransports.WindowsNamedPipe => AgentTransportType.WindowsNamedPipe,
+                TestTransports.Uds => AgentTransportType.UnixDomainSocket,
                 _ => throw new InvalidOperationException($"Unknown transport {transport}"),
             };
         }
 
-        private async Task RunTest(TracesTransportType transportType, bool dataPipelineEnabled)
+        private async Task RunTest(AgentTransportType transportType, bool dataPipelineEnabled)
         {
             const int expectedSpanCount = 1;
 
-            if (transportType == TracesTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
+            if (transportType == AgentTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
                 throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
@@ -99,24 +99,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             await telemetry.AssertConfigurationAsync(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
-            MockTracerAgent GetAgent(TracesTransportType type, bool canUseDogStatsd)
+            MockTracerAgent GetAgent(AgentTransportType type, bool canUseDogStatsd)
                 => type switch
                 {
-                    TracesTransportType.Default => MockTracerAgent.Create(Output, useStatsd: canUseDogStatsd),
-                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(Output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = canUseDogStatsd }),
+                    AgentTransportType.Default => MockTracerAgent.Create(Output, useStatsd: canUseDogStatsd),
+                    AgentTransportType.WindowsNamedPipe => MockTracerAgent.Create(Output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = canUseDogStatsd }),
 #if NETCOREAPP3_1_OR_GREATER
-                    TracesTransportType.UnixDomainSocket
+                    AgentTransportType.UnixDomainSocket
                         => MockTracerAgent.Create(Output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), canUseDogStatsd ? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()) : null) { UseDogstatsD = canUseDogStatsd }),
 #endif
                     _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };
 
-            TestTransports GetTransport(TracesTransportType type)
+            TestTransports GetTransport(AgentTransportType type)
                 => type switch
                 {
-                    TracesTransportType.Default => TestTransports.Tcp,
-                    TracesTransportType.UnixDomainSocket => TestTransports.Uds,
-                    TracesTransportType.WindowsNamedPipe => TestTransports.WindowsNamedPipe,
+                    AgentTransportType.Default => TestTransports.Tcp,
+                    AgentTransportType.UnixDomainSocket => TestTransports.Uds,
+                    AgentTransportType.WindowsNamedPipe => TestTransports.WindowsNamedPipe,
                     _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };
         }

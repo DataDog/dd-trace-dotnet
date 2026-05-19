@@ -37,7 +37,8 @@ namespace Datadog.Trace.Tests.Configuration
             if (expectedPipeName is not null)
             {
                 settings.TracesPipeName.Should().Be(expectedPipeName);
-                settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
+                settings.TracesTransport.Should().Be(AgentTransportType.WindowsNamedPipe);
+                settings.AgentTransport.Should().Be(AgentTransportType.WindowsNamedPipe);
             }
             else
             {
@@ -102,7 +103,8 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ExporterSettings(raw, _ => false, telemetry, pipeNames);
 
             settings.TracesPipeName.Should().Be(expected);
-            settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
+            settings.TracesTransport.Should().Be(AgentTransportType.WindowsNamedPipe);
+            settings.AgentTransport.Should().Be(AgentTransportType.WindowsNamedPipe);
         }
 
         [Theory]
