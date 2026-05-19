@@ -6,6 +6,33 @@ include(FetchContent)
 
 set(LIBDATADOG_VERSION "v32.0.0" CACHE STRING "libdatadog version")
 
+# FetchContent only validates URL_HASH on the initial download and skips
+# re-fetching whenever SOURCE_DIR already exists.  On persistent CI workers
+# (e.g. Azure DevOps with build caching) that means bumping LIBDATADOG_VERSION
+# here can be silently ignored — the cached binary from a previous run keeps
+# being used.  Use a sibling stamp file to detect version changes and wipe
+# the cached directory so FetchContent re-downloads and re-validates.
+function(_libdatadog_invalidate_cache_if_version_changed dir_basename)
+    set(_dir "${CMAKE_CURRENT_BINARY_DIR}/${dir_basename}")
+    set(_stamp "${CMAKE_CURRENT_BINARY_DIR}/${dir_basename}.version")
+    set(_cached "")
+    if(EXISTS "${_stamp}")
+        file(READ "${_stamp}" _cached)
+        string(STRIP "${_cached}" _cached)
+    endif()
+    if(NOT "${_cached}" STREQUAL "${LIBDATADOG_VERSION}")
+        if(EXISTS "${_dir}")
+            message(STATUS "libdatadog version changed (${_cached} -> ${LIBDATADOG_VERSION}); clearing ${_dir}")
+            file(REMOVE_RECURSE "${_dir}")
+        endif()
+        file(WRITE "${_stamp}" "${LIBDATADOG_VERSION}\n")
+    endif()
+endfunction()
+
+_libdatadog_invalidate_cache_if_version_changed(libdatadog-install)
+_libdatadog_invalidate_cache_if_version_changed(libdatadog-install-arm64)
+_libdatadog_invalidate_cache_if_version_changed(libdatadog-install-x86_64)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # For Darwin, we'll download both architectures and combine them
     set(SHA256_LIBDATADOG_ARM64 "3f87294f613290c4946899f02a3944f75d6b6077f156d105bb1a90bbbfeffa9d" CACHE STRING "libdatadog arm64 sha256")
