@@ -65,7 +65,7 @@ partial class Build
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
-    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (BuildArtifactsDirectory / "monitoring-home");
 
     [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;

@@ -78,7 +78,7 @@ variables:
   windowsX64Pool: azure-managed-windows-x64-2
 
   relativeArtifacts: /tracer/src/bin/artifacts
-  monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+  monitoringHome: $(System.DefaultWorkingDirectory)/artifacts/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   outputDir: $(System.DefaultWorkingDirectory)/artifacts
   symbols: $(System.DefaultWorkingDirectory)/artifacts/symbols

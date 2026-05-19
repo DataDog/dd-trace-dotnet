@@ -29,7 +29,7 @@ runs:
         docker run --rm \
             --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
             --env NugetPackageDirectory=/project/packages \
-            --env tracerHome=/project/shared/bin/monitoring-home/tracer \
+            --env tracerHome=/project/artifacts/monitoring-home/tracer \
             --env artifacts=/project/tracer/src/bin/artifacts \
             --env DD_CLR_ENABLE_NGEN=1 \
             --env Verify_DisableClipboard=true \
