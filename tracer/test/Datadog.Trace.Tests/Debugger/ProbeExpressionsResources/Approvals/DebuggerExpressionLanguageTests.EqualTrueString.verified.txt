@@ -49,4 +49,4 @@ Expression: (
 }
 Result: True
 Errors:
-EvaluationError { Expression = BooleanValue == "true", Message = The binary operator Equal is not defined for the types 'System.Boolean' and 'System.String'. }
+EvaluationError { Expression = BooleanValue == "true", Message = A reference type cannot be compared to a not nullable value type. }

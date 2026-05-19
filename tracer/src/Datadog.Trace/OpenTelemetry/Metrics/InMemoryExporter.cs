@@ -46,7 +46,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return Task.FromResult(result);
         }
 
-        public override bool Shutdown(int timeoutMilliseconds)
+        public override bool Shutdown()
         {
             return true;
         }

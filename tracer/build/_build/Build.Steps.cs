@@ -1546,18 +1546,26 @@ partial class Build
         .Executes(() =>
         {
             // Compile the dependent samples.
-            if (!Framework.ToString().StartsWith("net4"))
+            if (IsWin && !Framework.ToString().StartsWith("net4"))
             {
                 DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
             }
 
             var projects = TracerDirectory
-                    .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
+                    .GlobFiles("test/*.IntegrationTests/*.csproj")
                     .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
-                ;
+                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
 
-            DotnetBuild(projects, framework: Framework);
+            if (!IsWin)
+            {
+                projects = projects.Where(path => !((string)path).Contains(Projects.FleetInstallerTests))
+                                   .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
+            }
+
+            DotnetBuild(projects, framework: Framework, noRestore: IsWin);
+
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
     Target CompileSamples => _ => _
@@ -1805,8 +1813,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
-        .After(BuildWindowsIntegrationTests)
-        .After(CompileLinuxOrOsxIntegrationTests)
+        .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
@@ -1944,7 +1951,7 @@ partial class Build
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileAzureFunctionsSamplesWindows)
-        .After(BuildWindowsIntegrationTests)
+        .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
         .Requires(() => Framework)
@@ -2113,33 +2120,11 @@ partial class Build
             ProjectModelTasks.Initialize();
         });
 
-    Target CompileLinuxOrOsxIntegrationTests => _ => _
-        .Unlisted()
-        .After(CompileManagedSrc)
-        .After(CompileManagedTestHelpers)
-        .After(BuildRunnerTool)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            // Build the actual integration test projects for Any CPU
-            var integrationTestProjects =
-                TracerDirectory
-                   .GlobFiles("test/*.IntegrationTests/*.csproj")
-                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                   .Where(path => !((string)path).Contains(Projects.FleetInstallerTests))
-                   .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
-
-            DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
-
-            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
-            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
-        });
-
     Target CompileLinuxDdDotnetIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
+        .OnlyWhenStatic(() => IsLinux)
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
@@ -2147,10 +2132,10 @@ partial class Build
         });
 
     Target RunLinuxDdDotnetIntegrationTests => _ => _
-        .After(CompileLinuxOrOsxIntegrationTests)
+        .After(CompileIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Description("Runs the linux dd-dotnet integration tests")
-        .Requires(() => !IsWin)
+        .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
@@ -2402,6 +2387,14 @@ partial class Build
             datadogTraceTypes.Add(new("System.Resources.Writer", "System.Resources.ResourceWriter"));
             datadogTraceTypes.Add(new("System.IO.IsolatedStorage", "System.IO.IsolatedStorage.IsolatedStorageScope"));
 
+            // ObservableUpDownCounter<T> is created via reflection in
+            // tracer/src/Datadog.Trace/RuntimeMetrics/MeterObservableUpDownCounterReflection.cs
+            // (the API isn't in the net6.0 ref assembly we compile against, so we resolve it from
+            // System.Diagnostics.DiagnosticSource 7.0+ at runtime). The type is never named in IL,
+            // so Mono.Cecil can't see it during TypeRef extraction -- we add it explicitly so
+            // trimmed/AOT customer apps that use OTLP runtime metrics don't strip it away.
+            datadogTraceTypes.Add(new("System.Diagnostics.DiagnosticSource", "System.Diagnostics.Metrics.ObservableUpDownCounter`1"));
+
             var types = loaderTypes
                        .Concat(datadogTraceTypes)
                        .Distinct()
@@ -2578,12 +2571,6 @@ partial class Build
                knownPatterns.Add(new(@".*'dddlopen' dddlerror returned: Library linux-vdso\.so\.1 is not already loaded", RegexOptions.Compiled));
            }
 
-           if (IsArm64)
-           {
-               // Profiler is not yet supported on Arm64
-               knownPatterns.Add(new(@".*Profiler is deactivated because it runs on an unsupported architecture", RegexOptions.Compiled));
-           }
-
            var isAzureFunctionsScenario = SmokeTestCategory is SmokeTests.SmokeTestCategory.LinuxAzureFunctionsNuGet or SmokeTests.SmokeTestCategory.WindowsAzureFunctionsNuGet;
            if (isAzureFunctionsScenario)
            {
@@ -2690,6 +2677,11 @@ partial class Build
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxOrOsxProfilerDirFudge(string project)
     {
+        if (!IsLinux && !IsOsx)
+        {
+            return;
+        }
+
         // Not sure if/why this is necessary, and we can't just point to the correct output location
         var src = MonitoringHomeDirectory;
         var testProject = Solution.GetProject(project).Directory;

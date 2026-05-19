@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -20,15 +21,21 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// <summary>
 /// OpenFeature V2.0.0+ Provider for Datadog
 /// </summary>
-public sealed class DatadogProvider : global::OpenFeature.FeatureProvider
+public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisposable
 {
     private static Action? _onNewConfig = null;
-    private Metadata _metadata = new Metadata("datadog-openfeature-provider");
+    private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
+#if NET6_0_OR_GREATER
+    private readonly FlagEvalMetricsHook _metricsHook;
+#endif
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
     {
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
+#if NET6_0_OR_GREATER
+        _metricsHook = new FlagEvalMetricsHook();
+#endif
     }
 
     /// <summary> Gets a value indicating whether the Datadog's provider is instrumented and available  </summary>
@@ -125,5 +132,24 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider
         cancellationToken.ThrowIfCancellationRequested();
         var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context);
         return Task.FromResult(res);
+    }
+
+    /// <summary> Gets provider hooks for flag evaluation metrics tracking. </summary>
+    /// <returns> Returns the list of provider hooks. </returns>
+    public override IImmutableList<Hook> GetProviderHooks()
+    {
+#if NET6_0_OR_GREATER
+        return ImmutableList.Create<Hook>(_metricsHook);
+#else
+        return ImmutableList<Hook>.Empty;
+#endif
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+#if NET6_0_OR_GREATER
+        _metricsHook.Dispose();
+#endif
     }
 }

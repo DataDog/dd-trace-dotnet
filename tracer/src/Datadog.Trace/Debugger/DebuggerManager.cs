@@ -13,6 +13,7 @@ using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -46,17 +47,17 @@ namespace Datadog.Trace.Debugger
         private string _serviceName;
         private volatile bool _isDebuggerEndpointAvailable;
         private int _initialized;
-        private int _symDbInitialized;
+        private volatile int _snapshotPipelineConfigured;
         private volatile TaskCompletionSource<bool>? _diDebounceGate;
         private volatile DynamicInstrumentation? _dynamicInstrumentation;
         private int _diState; // 0 = disabled, 1 = initializing, 2 = initialized
         private TracerSettings.SettingsManager? _subscribedSettingsManager;
         private IDisposable? _tracerSettingsSubscription;
+        private SymDbRemoteConfig? _symDbRemoteConfig;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
-            _symDbInitialized = 0;
             _isDebuggerEndpointAvailable = false;
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
@@ -89,6 +90,11 @@ namespace Datadog.Trace.Debugger
 
         internal ExceptionReplay? ExceptionReplay { get; private set; }
 
+        // Best-effort hint used by the serialized RC update path to avoid skipping explicit
+        // disable updates after an empty payload leaves a debugger product running.
+        internal bool HasActiveDynamicDebuggerProduct =>
+            DynamicInstrumentation is not null || CodeOrigin is not null || ExceptionReplay is not null || Volatile.Read(ref _diState) == 1;
+
         internal string ServiceName
         {
             get => Volatile.Read(ref _serviceName);
@@ -99,6 +105,19 @@ namespace Datadog.Trace.Debugger
         {
             get => Volatile.Read(ref field);
             private set => Volatile.Write(ref field, value);
+        }
+
+        // Decides whether any debugger product should be brought up given the effective settings (env + already-applied dynamic settings).
+        // Note: at startup `DynamicSettings` is the default and those branches are no-ops.
+        internal static bool ShouldInitialize(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool exceptionReplayEnabled)
+        {
+            return debuggerSettings.DynamicInstrumentationEnabled
+                || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true
+                || debuggerSettings.CodeOriginForSpansEnabled
+                || debuggerSettings.DynamicSettings.CodeOriginEnabled == true
+                || exceptionReplayEnabled
+                || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true
+                || (debuggerSettings.SymbolDatabaseUploadEnabled && tracerSettings.IsRemoteConfigurationAvailable);
         }
 
         private string GetServiceName(MutableSettings mutableSettings)
@@ -155,14 +174,45 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetGeneralConfig(TracerSettings tracerSettings, DebuggerSettings settings)
+        private void SetGeneralConfig(TracerSettings tracerSettings)
         {
-            DebuggerSnapshotSerializer.SetConfig(settings);
-            Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
             ServiceName = GetServiceName(tracerSettings.Manager.InitialMutableSettings);
             ProcessTags = tracerSettings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
         }
 
+        // The snapshot serializer and redaction caches are only used by Dynamic Instrumentation and
+        // Exception Replay. SymDB and Code Origin do not capture variable values, so they don't need
+        // them. Redaction inputs (RedactedIdentifiers/Types) come from environment configuration and
+        // are immutable for the lifetime of DebuggerSettings, so configuring exactly once on first
+        // activation is sufficient. A plain CompareExchange guard would publish "configured" before
+        // the mutable Redaction state is ready, and a 3-state CAS/spin protocol is unnecessary for
+        // this warm startup path. The lock keeps the mutation exactly-once and makes concurrent
+        // callers wait until fully configured state is visible.
+        private void EnsureSnapshotPipelineConfigured(DebuggerSettings settings)
+        {
+            if (_snapshotPipelineConfigured != 0)
+            {
+                return;
+            }
+
+            lock (_syncLock)
+            {
+                if (_snapshotPipelineConfigured != 0)
+                {
+                    return;
+                }
+
+                DebuggerSnapshotSerializer.SetConfig(settings);
+                Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
+                _snapshotPipelineConfigured = 1;
+            }
+        }
+
+        // Callers are expected to gate on ShouldInitialize / ShouldApplyDynamicDebuggerConfig
+        // before invoking this method, so we don't allocate Task/ContinueWith continuations
+        // for no-op updates. The two callers today are:
+        //   - Instrumentation.InitializeDebugger (gates with ShouldInitialize)
+        //   - DynamicConfigurationManager.OnConfigurationChanged (gates with ShouldApplyDynamicDebuggerConfig)
         internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
         {
             return UpdateProductsState(tracerSettings, newDebuggerSettings ?? DebuggerSettings);
@@ -178,7 +228,7 @@ namespace Datadog.Trace.Debugger
             OneTimeSetup(tracerSettings);
             EnsureTracerSettingsSubscription(tracerSettings);
 
-            InitializeSymbolUploaderIfNeeded(tracerSettings, newDebuggerSettings);
+            SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(tracerSettings, newDebuggerSettings);
 
             lock (_syncLock)
             {
@@ -203,7 +253,7 @@ namespace Datadog.Trace.Debugger
             }
 
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
-            SetGeneralConfig(tracerSettings, DebuggerSettings);
+            SetGeneralConfig(tracerSettings);
             if (tracerSettings.Manager.InitialMutableSettings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(WriteStartupDebuggerDiagnosticLog);
@@ -263,60 +313,159 @@ namespace Datadog.Trace.Debugger
             // requirement.
         }
 
-        private void InitializeSymbolUploaderIfNeeded(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
+        private void SubscribeToSymbolDatabaseRemoteConfigurationIfNeeded(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
         {
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            if (ExceptionReplaySettings.AgentlessEnabled)
+            {
+                Log.Information("Exception Replay agentless mode enabled; skipping symbol uploader initialization because it requires the Datadog Agent and Remote Configuration.");
+                return;
+            }
+
+            if (!newDebuggerSettings.SymbolDatabaseUploadEnabled)
+            {
+                // explicitly disabled via local env var
+                return;
+            }
+
+            if (!tracerSettings.IsRemoteConfigurationAvailable)
+            {
+                Log.Debug("Remote configuration is not available in this environment, so we don't upload symbols.");
+                return;
+            }
+
+            SymDbRemoteConfig? symDbRemoteConfig = null;
             try
             {
+                symDbRemoteConfig = new SymDbRemoteConfig(
+                    RcmSubscriptionManager.Instance,
+                    uploadSymbols => OnSymbolDatabaseRemoteConfiguration(tracerSettings, newDebuggerSettings, uploadSymbols));
+
+                if (Interlocked.CompareExchange(ref _symDbRemoteConfig, symDbRemoteConfig, null) is not null)
+                {
+                    return;
+                }
+
                 if (_processExit.Task.IsCompleted)
                 {
                     return;
                 }
 
-                if (ExceptionReplaySettings.AgentlessEnabled)
-                {
-                    Log.Information("Exception Replay agentless mode enabled; skipping symbol uploader initialization because it requires the Datadog Agent and Remote Configuration.");
-                    return;
-                }
+                symDbRemoteConfig.Subscribe();
 
-                if (Interlocked.CompareExchange(ref _symDbInitialized, 1, 0) != 0)
-                {
-                    // Once created, the symbol uploader persists even if DI is later disabled
-                    return;
-                }
-
-                if (!DebuggerSettings.SymbolDatabaseUploadEnabled
-                 || !newDebuggerSettings.DynamicInstrumentationCanBeEnabled)
-                {
-                    // explicitly disabled via local env var or DI can not be enabled
-                    return;
-                }
-
-                if (!tracerSettings.IsRemoteConfigurationAvailable)
-                {
-                    Log.Debug("Remote configuration is not available in this environment, so we don't upload symbols.");
-                    return;
-                }
-
-                if (!newDebuggerSettings.DynamicInstrumentationEnabled
-                 && newDebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled != true)
+                if (_processExit.Task.IsCompleted)
                 {
                     return;
                 }
 
-                // Initialize symbol database uploader only if DI is enabled locally or remotely.
-                var tracerManager = TracerManager.Instance;
-                this.SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, () => ServiceName, tracerSettings, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-                _ = this.SymbolsUploader.StartFlushingAsync()
-                        .ContinueWith(
-                             t => Log.Error(t?.Exception, "Failed to initialize symbol uploader"),
-                             CancellationToken.None,
-                             TaskContinuationOptions.OnlyOnFaulted,
-                             TaskScheduler.Default);
+                symDbRemoteConfig = null; // ownership transferred to the field
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Error initializing Symbol Database remote configuration subscription.");
+            }
+            finally
+            {
+                if (symDbRemoteConfig is not null)
+                {
+                    // The try block threw or returned early (shutdown). Dispose the partially-
+                    // initialized instance and clear the field if it still references our instance,
+                    // so a future call can retry from a clean slate.
+                    SafeDisposal.TryDispose(symDbRemoteConfig);
+                    Interlocked.CompareExchange(ref _symDbRemoteConfig, null, symDbRemoteConfig);
+                }
+            }
+        }
+
+        private void OnSymbolDatabaseRemoteConfiguration(TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool uploadSymbols)
+        {
+            if (uploadSymbols)
+            {
+                InitializeSymbolUploaderIfNeeded(tracerSettings, debuggerSettings);
+            }
+            else
+            {
+                DisableSymbolUploader();
+            }
+        }
+
+        private void InitializeSymbolUploaderIfNeeded(TracerSettings tracerSettings, DebuggerSettings debuggerSettings)
+        {
+            IDebuggerUploader? symbolsUploader = null;
+            try
+            {
+                if (_processExit.Task.IsCompleted || SymbolsUploader is not null)
+                {
+                    return;
+                }
+
+                Log.Information("Initializing Symbol Database uploader.");
+                var tracerManager = TracerManager.Instance;
+                symbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, () => ServiceName, tracerSettings, debuggerSettings, tracerManager.GitMetadataTagsProvider);
+
+                // RCM updates are serialized, but shutdown can run concurrently with this path.
+                lock (_syncLock)
+                {
+                    if (_processExit.Task.IsCompleted || SymbolsUploader is not null)
+                    {
+                        return;
+                    }
+
+                    SymbolsUploader = symbolsUploader;
+                }
+
+                var publishedUploader = symbolsUploader!;
+                _ = publishedUploader.StartFlushingAsync()
+                                     .ContinueWith(
+                                          t => HandleSymbolUploaderStartFailure(publishedUploader, t.Exception),
+                                          CancellationToken.None,
+                                          TaskContinuationOptions.OnlyOnFaulted,
+                                          TaskScheduler.Default);
+
+                // Ownership transferred to SymbolsUploader; avoid disposing it in finally.
+                symbolsUploader = null;
+            }
+            catch (Exception ex)
+            {
+                DisableSymbolUploader();
                 Log.Error(ex, "Error initializing Symbol Database.");
             }
+            finally
+            {
+                SafeDisposal.TryDispose(symbolsUploader);
+            }
+        }
+
+        private void HandleSymbolUploaderStartFailure(IDebuggerUploader failedUploader, Exception? exception)
+        {
+            IDebuggerUploader? symbolsUploader = null;
+            lock (_syncLock)
+            {
+                if (ReferenceEquals(SymbolsUploader, failedUploader))
+                {
+                    symbolsUploader = SymbolsUploader;
+                    SymbolsUploader = null;
+                }
+            }
+
+            SafeDisposal.TryDispose(symbolsUploader);
+            Log.Error(exception, "Failed to initialize symbol uploader");
+        }
+
+        private void DisableSymbolUploader()
+        {
+            IDebuggerUploader? symbolsUploader;
+            lock (_syncLock)
+            {
+                symbolsUploader = SymbolsUploader;
+                SymbolsUploader = null;
+            }
+
+            SafeDisposal.TryDispose(symbolsUploader);
         }
 
         private void SetCodeOriginState(DebuggerSettings debuggerSettings)
@@ -395,6 +544,7 @@ namespace Datadog.Trace.Debugger
 
                 if (ExceptionReplaySettings.Enabled || debuggerSettings.DynamicSettings.ExceptionReplayEnabled == true)
                 {
+                    EnsureSnapshotPipelineConfigured(debuggerSettings);
                     var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
                     exceptionReplay.Initialize();
                     ExceptionReplay = exceptionReplay;
@@ -420,7 +570,10 @@ namespace Datadog.Trace.Debugger
                     Log.Warning("Remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
                 }
 
-                return;
+                if (string.IsNullOrEmpty(debuggerSettings.ProbeFile))
+                {
+                    return;
+                }
             }
 
             var requestedDiState = debuggerSettings.DynamicInstrumentationEnabled || debuggerSettings.DynamicSettings.DynamicInstrumentationEnabled == true;
@@ -575,6 +728,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                EnsureSnapshotPipelineConfigured(DebuggerSettings);
                 di.Initialize();
 
                 lock (_syncLock)
@@ -685,6 +839,7 @@ namespace Datadog.Trace.Debugger
 
             _processExit.TrySetResult(true);
             Volatile.Write(ref _diState, 0);
+            DisableSymbolUploader();
 
             if (ex != null)
             {
@@ -693,9 +848,9 @@ namespace Datadog.Trace.Debugger
 
             SafeDisposal.New()
                         .Add(_tracerSettingsSubscription)
+                        .Add(Volatile.Read(ref _symDbRemoteConfig))
                         .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
-                        .Add(SymbolsUploader)
                         .DisposeAll();
         }
     }

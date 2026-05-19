@@ -1903,7 +1903,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, int size, UINT32 enabledCategories, UINT32 platform)
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, size_t size, UINT32 enabledCategories, UINT32 platform)
 {
     long numReJITs = 0;
     long enabledTargets = 0;
@@ -1922,7 +1922,7 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
     {
         std::vector<IntegrationDefinition> integrationDefinitions;
 
-        for (int i = 0; i < size; i++)
+        for (size_t i = 0; i < size; i++)
         {
             const auto& current = items[i];
 
@@ -2074,7 +2074,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
     return numReverts;
 }
 
-int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, size_t aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     auto definitions = definitions_ids.Get(); // Synchronize Aspects loading
@@ -2092,7 +2092,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
         Logger::Info("Registering Callsite Aspects.");
         dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
         _dataflow = dataflow;
-        return aspectsLength;
+        return static_cast<int>(aspectsLength);
     }
     else
     {
@@ -3573,13 +3573,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Create a string representing "An error occured in the managed loader: "
+    // Create a string representing "An error occurred in the managed loader: "
 
 #ifdef _WIN32
-    LPCWSTR error_str = L"An error occured in the managed loader: ";
+    LPCWSTR error_str = L"An error occurred in the managed loader: ";
     auto error_str_size = wcslen(error_str);
 #else
-    char16_t error_str[] = u"An error occured in the managed loader: ";
+    char16_t error_str[] = u"An error occurred in the managed loader: ";
     auto error_str_size = std::char_traits<char16_t>::length(error_str);
 #endif
 
@@ -3777,7 +3777,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // Catch block
         // catch (Exception ex)
         // {
-        //      var message = "An error occured in the managed loader: " + ex.ToString();
+        //      var message = "An error occurred in the managed loader: " + ex.ToString();
         //      var chars = message.ToCharArray();
         //
         //      fixed (char* p = chars)

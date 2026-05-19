@@ -459,6 +459,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+            var knownTestsPageIndex = 0;
             agent.EventPlatformProxyPayloadReceived += (sender, e) =>
             {
                 if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
@@ -469,7 +470,27 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
                 if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
                 {
-                    e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.TestsJson) ? new MockTracerResponse(string.Empty, 404) : new MockTracerResponse(testScenario.MockData.TestsJson, 200);
+                    if (testScenario.MockData.KnownTestsJsonPages is { Length: > 0 } pages)
+                    {
+                        // Serve paginated responses sequentially
+                        var idx = knownTestsPageIndex++;
+                        if (idx < pages.Length)
+                        {
+                            e.Value.Response = new MockTracerResponse(pages[idx], 200);
+                        }
+                        else
+                        {
+                            // The mock HTTP transports cannot emit an empty response body.
+                            // Use an invalid payload instead to simulate a missing continuation page
+                            // while still exercising the Known Tests invalid-payload handling path.
+                            e.Value.Response = new MockTracerResponse("{\"data\":null}", 404);
+                        }
+                    }
+                    else
+                    {
+                        e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.TestsJson) ? new MockTracerResponse(string.Empty, 404) : new MockTracerResponse(testScenario.MockData.TestsJson, 200);
+                    }
+
                     return;
                 }
 
@@ -576,11 +597,27 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly string TestsJson;
         public readonly string TestManagementTestsJson;
 
+        /// <summary>
+        /// Optional paginated known tests responses. When non-null, the handler returns these
+        /// raw page bodies sequentially instead of <see cref="TestsJson"/>. Negative-path tests
+        /// may intentionally omit fields such as attributes or page_info.
+        /// </summary>
+        public readonly string[]? KnownTestsJsonPages;
+
         public MockData(string settingsJson, string testsJson, string testManagementTestsJson)
         {
             SettingsJson = settingsJson;
             TestsJson = testsJson;
             TestManagementTestsJson = testManagementTestsJson;
+            KnownTestsJsonPages = null;
+        }
+
+        public MockData(string settingsJson, string[] knownTestsJsonPages, string testManagementTestsJson)
+        {
+            SettingsJson = settingsJson;
+            TestsJson = string.Empty;
+            TestManagementTestsJson = testManagementTestsJson;
+            KnownTestsJsonPages = knownTestsJsonPages;
         }
 
         public override string ToString()

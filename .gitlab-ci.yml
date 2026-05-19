@@ -5,18 +5,74 @@ stages:
   - shared-pipeline
   - publish
   - benchmarks
+  # These benchmarks are running in parallel with the legacy ones
+  - dotnet-aspnet-realworld-parallel
+  - dotnet-aspnet-realworld-parallel-slo
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
+  - project: 'DataDog/apm-reliability/apm-sdks-benchmarks'
+    file: '.gitlab/ci-dotnet-aspnet-realworld-parallel.yml'
+    ref: 'main'
 
 variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
-  CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
+  # GitLab org for internal cross-repo references - parameterized for org migration resilience
+  GITLAB_GROUP: DataDog
+  # GitLab group path for OSS projects in CI - may differ from GITLAB_GROUP after org split
+  GITLAB_GROUP_OSS: DataDog
+  # GitHub org for internal repos (used in git insteadOf redirects) - update to new org after the split
+  GITHUB_ORG_INTERNAL: DataDog
+  CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.6.3/ci-identities-gitlab-job-client-windows-amd64.exe
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
-  OCI_PACKAGE_MAX_SIZE_BYTES: 40000000
-  LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 40000000
+  OCI_PACKAGE_MAX_SIZE_BYTES: 43000000
+  LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
+  SLS_CI_BRANCH: v1.3.0
+  WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
+
+build-windows-ci-image:
+  stage: build
+  timeout: 2h
+  tags: ["windows-v2:2022"]
+  when: manual
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $base = $env:WINDOWS_BUILD_IMAGE_BASE
+      $image = "${base}:${hash}"
+      Write-Output "Target image: $image"
+
+      docker manifest inspect $image
+      if ($LASTEXITCODE -eq 0) {
+        Write-Output "Image $image already exists in the registry - skipping rebuild."
+        exit 0
+      }
+      Write-Output "Image does not exist yet - building."
+
+      docker pull "${base}:latest"
+      docker build --cache-from "${base}:latest" `
+        -f tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile `
+        --tag $image `
+        --tag "${base}:latest" `
+        tracer/build/_build/docker/gitlab
+      if ($LASTEXITCODE -ne 0) { throw "docker build failed" }
+
+      docker push $image
+      if ($LASTEXITCODE -ne 0) { throw "docker push $image failed" }
+
+      docker push "${base}:latest"
+      if ($LASTEXITCODE -ne 0) { throw "docker push ${base}:latest failed" }
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
 
 build:
   except:
@@ -25,13 +81,28 @@ build:
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
   timeout: 2h
-  tags: ["windows-v2:2019"]
+  tags: ["windows-v2:2022"]
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
+
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
+        Write-Host "The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed."
+        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
+        exit 1
+      }
     - |
       docker run --rm -m 10240M `
         -v "$(Get-Location):c:\mnt" `
@@ -43,7 +114,8 @@ build:
         -e NUGET_CERT_REVOCATION_MODE=offline `
         -e CI_IDENTITIES_GITLAB_ID_TOKEN `
         -e CI_PROJECT_NAME `
-        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:ci-identities `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
@@ -69,7 +141,7 @@ publish:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
-  tags: ["windows-v2:2019"]
+  tags: ["windows-v2:2022"]
   dependencies:
     - build
   hooks:
@@ -181,7 +253,7 @@ aws-lambda-layer:
   needs: [download-serverless-artifacts]
   when: manual
   trigger:
-    project: DataDog/dd-trace-dotnet-aws-lambda-layer
+    project: ${GITLAB_GROUP_OSS}/dd-trace-dotnet-aws-lambda-layer
     strategy: depend
   variables:
     UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
@@ -203,9 +275,9 @@ benchmark-serverless:
     - >-
       BTI_RESPONSE=$(curl --silent --request GET \
         --header "$BTI_CI_API_TOKEN" \  --header "Content-Type: application/vnd.api+json" \
-        "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=DataDog&repository=serverless-tools")
+        "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=${GITLAB_GROUP}&repository=serverless-tools")
     - GITLAB_TOKEN=$(echo "$BTI_RESPONSE" | jq -r '.token // empty')
-    - git clone https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools
+    - git clone https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/serverless-tools.git ./serverless-tools
     - cd ./serverless-tools
     - ./ci/check_trigger_status.sh
 
@@ -213,7 +285,8 @@ benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
   trigger:
-    project: DataDog/serverless-tools
+    project: ${GITLAB_GROUP}/serverless-tools
+    branch: $SLS_CI_BRANCH
     strategy: depend
   allow_failure: true
   variables:
@@ -226,6 +299,9 @@ benchmark-serverless-trigger:
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     UPSTREAM_GITLAB_USER_LOGIN: $GITLAB_USER_LOGIN
     UPSTREAM_GITLAB_USER_EMAIL: $GITLAB_USER_EMAIL
+    # only available on Merge Requests
+    UPSTREAM_MERGE_TARGET_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    DD_TAGS: "SLS_CI_BRANCH:$SLS_CI_BRANCH"
 
 macrobenchmarks:
   stage: benchmarks
@@ -247,6 +323,10 @@ microbenchmarks:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
   allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - when: always
 
 dsm_throughput:
   stage: benchmarks

@@ -190,7 +190,7 @@ Dataflow::~Dataflow()
     REL(_profiler);
 }
 
-void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
+void Dataflow::LoadAspects(WCHAR** aspects, size_t aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     CSGUARD(_cs);
 
@@ -206,7 +206,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
         }
 
         DataflowAspectClass* aspectClass = nullptr;
-        for (int x = 0; x < aspectsLength; x++)
+        for (size_t x = 0; x < aspectsLength; x++)
         {
             WSTRING line = aspects[x];
             if (BeginsWith(line, WStr("[AspectClass(")))

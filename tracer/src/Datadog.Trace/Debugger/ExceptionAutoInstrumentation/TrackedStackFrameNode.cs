@@ -10,7 +10,6 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -54,7 +53,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             get
             {
-                return Fnv1aHash.Combine(EnterSequenceHash, LeaveSequenceHash);
+                return SimpleHash.Combine(EnterSequenceHash, LeaveSequenceHash);
             }
         }
 
@@ -222,7 +221,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         protected virtual int ComputeEnterSequenceHash()
         {
-            return Fnv1aHash.Combine(Method.MetadataToken, _parent?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias);
+            return SimpleHash.Combine(Method.MetadataToken, _parent?.EnterSequenceHash ?? SimpleHash.FnvOffsetBias);
         }
 
         /// <summary>
@@ -237,10 +236,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 if (ActiveChildNodes?.Count > 0)
                 {
                     var firstChild = ActiveChildNodes.First();
-                    return Fnv1aHash.Combine(Method.MetadataToken, firstChild.LeaveSequenceHash);
+                    return SimpleHash.Combine(Method.MetadataToken, firstChild.LeaveSequenceHash);
                 }
 
-                return Fnv1aHash.Combine(Method.MetadataToken, Fnv1aHash.FnvOffsetBias);
+                return SimpleHash.Combine(Method.MetadataToken, SimpleHash.FnvOffsetBias);
             }
         }
 

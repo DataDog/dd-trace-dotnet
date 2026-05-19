@@ -526,6 +526,12 @@ supportedConfigurations:
     default: null
     product: CIVisibility
     documentation: Jenkins CI environment variable for custom trace ID correlation.
+  DD_CUSTOM_PARENT_ID:
+  - implementation: A
+    type: string
+    default: null
+    product: CIVisibility
+    documentation: Jenkins CI environment variable for custom parent ID correlation.
   DD_DATA_STREAMS_ENABLED:
   - implementation: B
     type: boolean
@@ -664,6 +670,13 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling Dynamic Instrumentation.
       Default value is false (disabled).
+  DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE:
+  - implementation: B
+    type: string
+    default: null
+    product: Debugger
+    const_name: DynamicInstrumentationProbeFile
+    documentation: Configuration key for loading Dynamic Instrumentation probe definitions from a local JSON file.
   DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE:
   - implementation: A
     type: int
@@ -1172,6 +1185,15 @@ supportedConfigurations:
       This variable is set by the native loader after trying to load the profiler.
       It means the profiler is _there_ though it may not be _loaded_. This only works
       on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
+  DD_INTERNAL_PROFILING_ENABLED_ARM64:
+  - implementation: A
+    type: string
+    default: 'false'
+    product: ContinuousProfiler
+    const_name: InternalProfilingEnabledArm64
+    documentation: |-
+      Internal gate: on Linux ARM64, the continuous profiler is only considered enabled in managed settings
+      when this is set to <c>true</c>. Must match the native profiler <c>DD_INTERNAL_PROFILING_ENABLED_ARM64</c> check.
   DD_INTERNAL_TELEMETRY_DEBUG_ENABLED:
   - implementation: A
     type: boolean
@@ -1507,6 +1529,15 @@ supportedConfigurations:
       Match all spans that start with "cart" without any limits and any operation name.
           "[{"service": "cart*"}]"
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.SpanSamplingRules"/>
+  DD_SERVERLESS_COMPAT_PATH:
+  - implementation: A
+    type: string
+    default: null
+    const_name: ServerlessCompatPath
+    documentation: |-
+      Overrides the default path to the serverless compatibility layer binary.
+      Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
+      Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.
   DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES:
   - implementation: A
     type: int

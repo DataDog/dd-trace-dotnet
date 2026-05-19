@@ -40,7 +40,21 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public IAdaptiveSampler GerOrAddSampler(string probeId)
         {
-            return _samplers.GetOrAdd(probeId, _ => CreateSampler(1));
+            // Avoid ConcurrentDictionary.GetOrAdd(factory): its factory can run more than once
+            // under contention, leaking the losing sampler's Timer (rooted by the runtime).
+            if (_samplers.TryGetValue(probeId, out var sampler))
+            {
+                return sampler;
+            }
+
+            var candidate = CreateSampler();
+            sampler = _samplers.GetOrAdd(probeId, candidate);
+            if (!ReferenceEquals(sampler, candidate))
+            {
+                candidate.Dispose();
+            }
+
+            return sampler;
         }
 
         public bool TryAddSampler(string probeId, IAdaptiveSampler sampler)
@@ -50,24 +64,47 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public void SetRate(string probeId, int samplesPerSecond)
         {
-            // We currently don't support updating the probe rate limit, and that is fine
-            // since the functionality in the UI is not exposed yet.
-            if (_samplers.TryGetValue(probeId, out _))
+            if (_samplers.TryGetValue(probeId, out var existing))
             {
-                Log.Information("Adaptive sampler already exist for {ProbeID}", probeId);
+                UpdateExistingRate(probeId, existing, samplesPerSecond);
                 return;
             }
 
-            var adaptiveSampler = CreateSampler(samplesPerSecond);
-            if (!_samplers.TryAdd(probeId, adaptiveSampler))
+            var candidate = CreateSampler(samplesPerSecond);
+            if (_samplers.TryAdd(probeId, candidate))
             {
-                Log.Information("Adaptive sampler already exist for {ProbeID}", probeId);
+                return;
             }
+
+            // Lost the insert race - apply the new rate to the winner and dispose our candidate.
+            if (_samplers.TryGetValue(probeId, out existing))
+            {
+                UpdateExistingRate(probeId, existing, samplesPerSecond);
+            }
+
+            candidate.Dispose();
         }
 
         public void ResetRate(string probeId)
         {
-            _samplers.TryRemove(probeId, out _);
+            // Must dispose: AdaptiveSampler's Timer is rooted by the runtime until disposed.
+            if (_samplers.TryRemove(probeId, out var removed))
+            {
+                removed.Dispose();
+            }
+        }
+
+        private static void UpdateExistingRate(string probeId, IAdaptiveSampler existing, int samplesPerSecond)
+        {
+            if (existing is AdaptiveSampler adaptive)
+            {
+                adaptive.SetRate(samplesPerSecond);
+            }
+            else
+            {
+                // NopAdaptiveSampler entries (span decoration / metric probes) don't honor a rate.
+                Log.Information("Adaptive sampler for {ProbeID} cannot be updated", probeId);
+            }
         }
     }
 }

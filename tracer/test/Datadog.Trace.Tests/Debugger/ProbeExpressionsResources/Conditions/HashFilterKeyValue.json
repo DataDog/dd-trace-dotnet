@@ -1,0 +1,24 @@
+{
+  "dsl": "any(filter(ref DictionaryLocal, { @key == 'hello' }), { @value == 'world' })",
+  "any": [
+    {
+      "filter": [
+        {
+          "ref": "DictionaryLocal"
+        },
+        {
+          "eq": [
+            "@key",
+            "hello"
+          ]
+        }
+      ]
+    },
+    {
+      "eq": [
+        "@value",
+        "world"
+      ]
+    }
+  ]
+}

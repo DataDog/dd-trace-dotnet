@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# Uploads converted benchmark results to the Benchmarking Platform UI service.
-#
-# Required environment variables:
-#   CI_PROJECT_NAME - GitLab/GitHub project name
-#
-# Optional:
-#   ARTIFACTS_DIR - Directory containing converted results (default: ./artifacts)
 
 set -e
 
@@ -25,20 +18,76 @@ if [ ${#converted_files[@]} -eq 0 ]; then
     exit 1
 fi
 
-for CONVERTED_JSON in "${converted_files[@]}"; do
-    echo "Uploading $(basename "$CONVERTED_JSON") to Benchmarking Platform..."
+result_dir=$(mktemp -d)
+trap 'rm -rf "$result_dir"' EXIT
 
-    STATUS_CODE=$(curl --retry 3 --retry-max-time 300 \
-        -s -o /dev/null -w "%{http_code}" \
-        --form file=@"$CONVERTED_JSON" \
-        "https://benchmarking-service.us1.prod.dog/benchmarks/upload/$CI_PROJECT_NAME?baseline_commit_sha=${BASELINE_CI_COMMIT_SHORT_SHA:-}&baseline_ci_pipeline_id=${BASELINE_CI_PIPELINE_ID:-}")
+upload_one() {
+    local file="$1" result_file="$2"
+    local basename
+    basename=$(basename "$file")
 
-    if [ "$STATUS_CODE" -ne 200 ]; then
-        echo "ERROR: Upload failed with status code $STATUS_CODE"
-        exit 1
+    echo "Uploading $basename to Benchmarking Platform..."
+
+    local response status_code response_body curl_exit=0
+    response=$(curl --retry 3 --retry-all-errors --retry-max-time 300 \
+        -s -w "\n%{http_code}" \
+        --form file=@"$file" \
+        "https://benchmarking-service.us1.prod.dog/benchmarks/upload/$CI_PROJECT_NAME?baseline_commit_sha=${BASELINE_CI_COMMIT_SHORT_SHA:-}&baseline_ci_pipeline_id=${BASELINE_CI_PIPELINE_ID:-}") || curl_exit=$?
+
+    status_code=$(echo "$response" | tail -n1)
+    response_body=$(echo "$response" | head -n-1)
+
+    if [ $curl_exit -ne 0 ]; then
+        echo "WARNING: curl failed (exit $curl_exit) while uploading $basename"
+        echo "fail" > "$result_file"
+        return
     fi
 
-    echo "  Uploaded successfully!"
+    if [ "$status_code" -ne 200 ]; then
+        echo "WARNING: Upload of $basename failed with status $status_code"
+        if [ -n "$response_body" ]; then
+            echo "  Response: $response_body"
+        fi
+        echo "fail" > "$result_file"
+        return
+    fi
+
+    echo "Uploaded $basename successfully."
+    echo "ok" > "$result_file"
+}
+
+MAX_PARALLEL=4
+
+pids=()
+for CONVERTED_JSON in "${converted_files[@]}"; do
+    result_file="$result_dir/$(basename "$CONVERTED_JSON").result"
+    upload_one "$CONVERTED_JSON" "$result_file" &
+    pids+=($!)
+
+    if (( ${#pids[@]} >= MAX_PARALLEL )); then
+        wait "${pids[0]}" || true
+        pids=("${pids[@]:1}")
+    fi
 done
 
-echo "All uploads complete!"
+for pid in "${pids[@]}"; do
+    wait "$pid" || true
+done
+
+upload_failed=false
+for result_file in "$result_dir"/*.result; do
+    if [ "$(cat "$result_file" 2>/dev/null)" != "ok" ]; then
+        upload_failed=true
+        break
+    fi
+done
+
+if [ "$upload_failed" = true ]; then
+    echo ""
+    echo "WARNING: One or more uploads failed. Benchmark results were not fully recorded in the Benchmarking Platform UI."
+    echo "This does not affect benchmark correctness. The CI job will continue."
+else
+    echo "All uploads complete."
+fi
+
+exit 0

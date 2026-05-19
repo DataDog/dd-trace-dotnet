@@ -7,6 +7,9 @@ M:System.Environment.GetEnvironmentVariable(System.String);Use EnvironmentHelper
 M:System.Environment.GetEnvironmentVariable(System.String,System.EnvironmentVariableTarget);Use EnvironmentHelpers.GetEnvironmentVariable instead to ensure proper configuration handling
 M:System.Environment.GetEnvironmentVariables();Avoid using this alltogether and get precise env vars through ConfigurationBuilder
 
+# Ban System.Environment.Version - allocates a new Version on every call; use the cached copy instead
+P:System.Environment.Version;Use FrameworkDescription.Instance.RuntimeVersion instead - Environment.Version allocates a new Version object on every call
+
 # Ban JsonConvert.SerializeObject - use JsonHelper in Datadog.Trace.Util.Json instead
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
 M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.Formatting);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required

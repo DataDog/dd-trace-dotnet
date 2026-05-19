@@ -250,10 +250,17 @@ namespace Datadog.Trace.Configuration
                                     },
                                     validator: null);
 
+            var otlpGeneralProtocolName = OtlpGeneralProtocol switch
+            {
+                OtlpProtocol.Grpc => "grpc",
+                OtlpProtocol.HttpProtobuf => "http/protobuf",
+                _ => "grpc",
+            };
+
             OtlpMetricsProtocol = config
                                  .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol)
                                  .GetAs(
-                                      defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                      defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
                                       converter: x => x switch
                                       {
                                           not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -312,7 +319,7 @@ namespace Datadog.Trace.Configuration
             OtlpLogsProtocol = config
                              .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol)
                              .GetAs(
-                                  defaultValue: new(OtlpProtocol.Grpc, "grpc"),
+                                  defaultValue: new(OtlpGeneralProtocol, otlpGeneralProtocolName),
                                   converter: x => x switch
                                   {
                                       not null when string.Equals(x, "grpc", StringComparison.OrdinalIgnoreCase) => OtlpProtocol.Grpc,
@@ -695,6 +702,13 @@ namespace Datadog.Trace.Configuration
             OpenTelemetryMeterNames = !string.IsNullOrEmpty(enabledMeters)
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
+
+#if NET6_0_OR_GREATER
+            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
+#else
+            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
+            OtlpRuntimeMetricsEnabled = false;
+#endif
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
@@ -1144,6 +1158,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
         internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether runtime metrics should be collected in OTEL format and exported via OTLP.
+        /// True when runtime metrics are enabled AND (DD_METRICS_OTEL_ENABLED=true AND OTEL_METRICS_EXPORTER=otlp).
+        /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
+        /// </summary>
+        internal bool OtlpRuntimeMetricsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether libdatadog data pipeline

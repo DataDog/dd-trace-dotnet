@@ -10,15 +10,15 @@ Both scripts share common functions via the `AzureDevOpsHelpers.psm1` module (au
 
 **Location:** `tracer/tools/AzureDevOpsHelpers.psm1`
 
-**Purpose:** Shared module providing common Azure DevOps API functions used by both analysis and retry scripts.
+**Purpose:** Shared module providing common Azure DevOps API functions used by both analysis and retry scripts. Uses CLI tools (`az`, `gh`) when available, with automatic HTTP fallback for read-only operations against public projects/repos.
 
 ### Exported Functions
 
 | Function | Description |
 |----------|-------------|
-| `Invoke-AzDevOpsApi` | Calls Azure DevOps REST API via `az devops invoke`. Supports GET/PATCH/POST/PUT, JSON request bodies, and configurable API versions. |
-| `Get-BuildIdFromPR` | Resolves an Azure DevOps build ID from a GitHub PR number using `gh pr checks`. |
-| `Resolve-BuildId` | Unified build ID resolution: accepts `ByBuildId` (passthrough), `ByPullRequest`, or `ByCurrentBranch` (auto-detect via `gh pr view`). Checks CLI prerequisites. |
+| `Invoke-AzDevOpsApi` | Calls Azure DevOps REST API. Tries `az devops invoke` first; falls back to direct HTTP (`Invoke-RestMethod`) for GET requests. PATCH/POST/PUT require `az`. |
+| `Get-BuildIdFromPR` | Resolves an Azure DevOps build ID from a GitHub PR number. Tries `gh pr checks` first; falls back to GitHub REST API (PR → commit statuses). |
+| `Resolve-BuildId` | Unified build ID resolution: accepts `ByBuildId` (passthrough), `ByPullRequest`, or `ByCurrentBranch`. Uses `gh` or GitHub REST API for PR/branch resolution. |
 
 ### `Invoke-AzDevOpsApi` Parameters
 
@@ -60,20 +60,22 @@ $buildId = Resolve-BuildId -ParameterSetName 'ByPullRequest' -PullRequest 8172
 
 ### Prerequisites
 
-- **PowerShell 7+** (`pwsh`) — recommended; minimum PowerShell 5.1 (`powershell.exe`, Windows only)
+- **PowerShell 5.1+** — Minimum required. PowerShell 7+ (`pwsh`) preferred; PowerShell 5.1 (`powershell.exe`, Windows only) is supported.
   - Verify: `pwsh -Version`
   - Install: `winget install Microsoft.PowerShell` (Windows) · `brew install powershell/tap/powershell` (macOS)
   - Docs: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
-- **Azure CLI** (`az`) with `azure-devops` extension — used for build/timeline API queries
+- **Azure CLI** (`az`) with `azure-devops` extension — **optional** for read-only analysis (HTTP fallback for public projects); **required** for stage retry
   - Verify: `az version` (check that `azure-devops` appears under "extensions")
   - Install: `winget install Microsoft.AzureCLI` (Windows) · `brew install azure-cli` (macOS), then `az extension add --name azure-devops`
   - Docs: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
-- **GitHub CLI** (`gh`) — authenticated; only needed for `-PullRequest` parameter or auto-detect mode
+- **GitHub CLI** (`gh`) — **optional** for PR/branch resolution (HTTP fallback for public repos, rate-limited to 60 req/hour)
   - Verify: `gh auth status`
   - Install: `winget install GitHub.cli` (Windows) · `brew install gh` (macOS)
   - Docs: https://cli.github.com/
 
-**Note**: This script uses PowerShell-specific features (e.g., `-notin` operator, `HashSet<T>`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
+**Note**: This script uses PowerShell-specific features (e.g., `HashSet<T>`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
+
+**HTTP Fallback**: When `az` or `gh` are not available (or fail), the module falls back to direct HTTP requests via `Invoke-RestMethod`. No authentication is needed for GET requests against the public `dd-trace-dotnet` project and repo. The fallback emits warnings indicating degraded mode. Stage retry (PATCH) has no HTTP fallback and requires a working `az` CLI.
 
 ### Parameters
 
@@ -281,7 +283,7 @@ Use `-Verbose` to see:
 
 ### Prerequisites
 
-Same as `Get-AzureDevOpsBuildAnalysis.ps1` (PowerShell 7+, Azure CLI, GitHub CLI for PR modes).
+Same as `Get-AzureDevOpsBuildAnalysis.ps1` (PowerShell 5.1+, Azure CLI and GitHub CLI optional for read-only operations). **Note**: Stage retry requires a working Azure CLI with authentication — there is no HTTP fallback for PATCH operations.
 
 ### Parameters
 

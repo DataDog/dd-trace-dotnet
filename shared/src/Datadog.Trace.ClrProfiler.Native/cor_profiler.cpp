@@ -195,7 +195,7 @@ namespace datadog::shared::nativeloader
                         // so we check the arguments to see if any of them are an invocation of one of the dlls we want to ignore.
                         // We don't just check the second argument because the command could set additional flags
                         // for the exec function
-                        for (int i = 2; i < token_count; ++i)
+                        for (size_t i = 2; i < token_count; ++i)
                         {
                             const auto current_token = tokenized_command_line[i];
                             if(!current_token.empty() &&

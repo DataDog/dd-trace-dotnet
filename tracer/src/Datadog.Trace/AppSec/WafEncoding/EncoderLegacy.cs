@@ -58,7 +58,7 @@ internal sealed class EncoderLegacy : IEncoder
             {
                 null => CreateNativeNull(wafLibraryInvoker),
                 string s => CreateNativeString(s, applyLimits, wafLibraryInvoker),
-                JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty, applyLimits, wafLibraryInvoker),
+                JValue jv => EncodeInternal(jv.Value, remainingDepth, applyLimits, wafLibraryInvoker),
                 int i => CreateNativeLong(i, wafLibraryInvoker),
                 uint i => CreateNativeUlong(i, wafLibraryInvoker),
                 long i => CreateNativeLong(i, wafLibraryInvoker),

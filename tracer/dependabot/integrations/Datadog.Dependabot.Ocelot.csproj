@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: Ocelot -->
+    <!--    Assembly: Ocelot -->
+    <!-- Latest package https://www.nuget.org/packages/Ocelot/24.1.0 -->
+    <PackageReference Include="Ocelot" Version="24.1.0" />
+  </ItemGroup>
+
+</Project>

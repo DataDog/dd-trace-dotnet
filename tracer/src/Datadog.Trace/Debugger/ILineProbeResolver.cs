@@ -16,6 +16,6 @@ namespace Datadog.Trace.Debugger
     /// </summary>
     internal interface ILineProbeResolver
     {
-        LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation? location);
+        LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation? location, LineProbeDiagnosticLevel diagnosticLevel = LineProbeDiagnosticLevel.Full);
     }
 }

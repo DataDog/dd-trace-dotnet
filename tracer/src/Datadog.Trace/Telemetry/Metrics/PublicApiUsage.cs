@@ -40,6 +40,8 @@ internal enum PublicApiUsage
     [Description("name:spanextensions_settag")] SpanExtensions_SetTag,
     [Description("name:spanextensions_settracesamplingpriority")] SpanExtensions_SetTraceSamplingPriority,
 
+    [Description("name:datastreams_tracktransaction")] DataStreams_TrackTransaction,
+
     [Description("name:tracer_configure")] Tracer_Configure,
     [Description("name:tracer_forceflushasync")] Tracer_ForceFlushAsync,
     [Description("name:tracer_startactive")] Tracer_StartActive,

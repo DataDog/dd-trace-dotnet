@@ -81,6 +81,7 @@ internal static class MetricTags
         [Description("reason:overfull_buffer")] OverfullBuffer,
         [Description("reason:serialization_error")] SerializationError,
         [Description("reason:api_error")] ApiError,
+        [Description("reason:trace_filter")] TraceFilter,
     }
 
     internal enum StatusCode
@@ -162,6 +163,8 @@ internal static class MetricTags
     {
         [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
         [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
+        [Description("truncation_reason:baggage_extract_item_exceeded")]BaggageExtractItemExceeded,
+        [Description("truncation_reason:baggage_extract_byte_exceeded")]BaggageExtractByteExceeded,
     }
 
     public enum ContextHeaderMalformed
@@ -277,7 +280,8 @@ internal static class MetricTags
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
         [Description("integration_name:protobuf")] Protobuf,
-        [Description("integration_name:hangfire")] Hangfire
+        [Description("integration_name:hangfire")] Hangfire,
+        [Description("integration_name:serverlesscompat")] ServerlessCompat
     }
 
     public enum InstrumentationError

@@ -88,6 +88,14 @@ variables:
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+  # True when the build is for the automated smoke-test docker image bump PR.
+  # OR'd into the installer-test conditions so the updated digests are exercised
+  # before a human merges. Kept as a distinct variable (rather than redefining
+  # run_all_installer_tests in YAML) because defining run_all_installer_tests here
+  # would block queue-time overrides from the UI — YAML takes precedence and the
+  # "settable at queue time" UI value would be ignored. The branch name matches
+  # .github/workflows/auto_bump_smoke_test_docker_images.yml — keep both in sync.
+  isDockerImageBumpPr: $[eq(variables['System.PullRequest.SourceBranch'], 'bot/smoke-test-docker-image-bump')]
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
   CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
@@ -146,7 +154,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.42.0
+  ToolVersion: 3.45.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -1703,7 +1711,7 @@ stages:
 #      displayName: Start test agent
 #      retryCountOnTaskFailure: 3
 
-    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd CompileTrimmingSamples BuildIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Build integration tests
       retryCountOnTaskFailure: 3
       env:
@@ -2140,7 +2148,7 @@ stages:
         patterns: '**/*-$(targetPlatform).msi'
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
-      displayName: BuildWindowsIntegrationTests
+      displayName: BuildAspNetIntegrationTests
       retryCountOnTaskFailure: 3
 
     - template: steps/ensure-docker-ready.yml
@@ -2215,8 +2223,8 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildWindowsIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: BuildWindowsIntegrationTests
+    - script: tracer\build.cmd BuildIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: BuildIntegrationTests
       retryCountOnTaskFailure: 3
 
     - script: tracer\build.cmd RunIntegrationTests -filter FleetInstaller=True -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
@@ -2287,7 +2295,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+        command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apikey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2390,7 +2398,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+        command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2512,7 +2520,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
+        command: "BuildIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2520,7 +2528,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
+        command: "BuildIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2907,6 +2915,106 @@ stages:
         testResultsFiles: profiler/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: profiler_integration_tests_arm64
+  condition: >
+    and(
+      succeeded(),
+      or(
+        eq(variables.isMainOrReleaseBranch, true),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+      )
+    )
+  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        arm64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-arm64
+
+    variables:
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    pool:
+      name: $(linuxArm64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-$(artifactSuffix)-working-directory
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: linux-monitoring-home-$(artifactSuffix)
+        path: $(monitoringHome)
+
+    - template: steps/download-artifact.yml
+      parameters:
+        artifact: linux-profiler-symbols-$(artifactSuffix)
+        path: $(monitoringHome)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildProfilerSamples"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "BuildAndRunProfilerCpuLimitTests"
+        extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "BuildAndRunProfilerCpuLimitTests"
+        extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --rm \
+          -e baseImage=$(baseImage) \
+          ProfilerIntegrationTests
+      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
+
+    - publish: profiler/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: profiler/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: asan_profiler_tests
   #address sanitizer tests
   condition: >
@@ -2989,6 +3097,114 @@ stages:
     - publish: profiler/build_data
       displayName: Uploading Address sanitizer test results
       artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: always()
+      continueOnError: false
+
+- stage: asan_arm64_profiler_tests
+  #address sanitizer tests on arm64
+  condition: >
+    and(
+      succeeded(),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 60
+
+    pool:
+      name: $(linuxArm64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildProfilerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: debian
+        command: "RunSampleWithProfilerAsan -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: profiler/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: always()
+      continueOnError: false
+
+- stage: ubsan_arm64_profiler_tests
+  #undefined behavior sanitizer tests on arm64
+  condition: >
+    and(
+      succeeded(),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 60
+
+    pool:
+      name: $(linuxArm64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: debian
+        command: "RunSampleWithProfilerUbsan -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: profiler/build_data
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
       continueOnError: false
 
@@ -3140,7 +3356,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+            command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
 
@@ -3210,7 +3426,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+            command: "BuildIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
 
@@ -4320,7 +4536,7 @@ stages:
       - checkout: none
       - template: steps/create-github-app-token.yml
       - bash: |
-          REF=$(Build.SourceBranch)
+          REF="$(Build.SourceBranch)"
           BRANCH_NAME="latest_snapshot"
           if [ "$(Build.Reason)" = "PullRequest" ]; then
             LABELS=$(curl -s $(CURL_RETRY_FLAGS) \
@@ -4329,7 +4545,8 @@ stages:
             | jq -r '.labels[].name')
 
             if echo "$LABELS" | grep -q "docker_image_artifacts"; then
-              BRANCH_NAME="$(System.PullRequest.SourceBranch)"
+              BRANCH_NAME="$PR_SOURCE_BRANCH"
+              BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
               REF="refs/heads/$BRANCH_NAME"
             else
               echo "Label 'docker_image_artifacts' not found in PR — skipping Docker image build"
@@ -4358,6 +4575,7 @@ stages:
           )
         env:
           GITHUB_TOKEN: $(retrieve_github_token.GITHUB_APP_TOKEN)
+          PR_SOURCE_BRANCH: $(System.PullRequest.SourceBranch)
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['runCodeCoverage'], 'True'))
@@ -5040,7 +5258,7 @@ stages:
 
 # NuGet x64 (LinuxNuGet)
 - stage: smoke_x64_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5054,7 +5272,7 @@ stages:
 
 # NuGet arm64 (LinuxNuGetArm64)
 - stage: smoke_arm64_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5068,7 +5286,7 @@ stages:
 
   # AzureFunctions Nuget x64 (LinuxAzureFunctionsNuGet)
 - stage: smoke_x64_azurefunctions_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5082,7 +5300,7 @@ stages:
 
 # DotnetTool x64 (LinuxDotnetTool)
 - stage: smoke_x64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5095,7 +5313,7 @@ stages:
 
 # DotnetTool arm64 (LinuxDotnetToolArm64)
 - stage: smoke_arm64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5108,7 +5326,7 @@ stages:
 
 # DotnetToolNuget (LinuxDotnetToolNuget)
 - stage: smoke_x64_tool_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5121,7 +5339,7 @@ stages:
 
 # DotnetTool musl x64 (LinuxMuslDotnetTool)
 - stage: smoke_musl_x64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5134,7 +5352,7 @@ stages:
 
 # DotnetTool musl arm64 (LinuxMuslDotnetToolArm64)
 - stage: smoke_musl_arm64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5173,7 +5391,7 @@ stages:
 
 # Self-instrument (LinuxSelfInstrument)
 - stage: smoke_x64_self_instrument_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [package_linux, dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5187,7 +5405,7 @@ stages:
 
 # Windows MSI (WindowsMsi)
 - stage: smoke_win_msi_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5200,7 +5418,7 @@ stages:
 
 # Windows NuGet (WindowsNuGet)
 - stage: smoke_win_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5214,7 +5432,7 @@ stages:
 
 # Windows Azure Functions NuGet (WindowsAzureFunctionsNuGet)
 - stage: smoke_win_azurefunctions_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5228,7 +5446,7 @@ stages:
 
 # Windows DotnetTool (WindowsDotnetTool)
 - stage: smoke_win_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
@@ -5266,7 +5484,7 @@ stages:
         - fleet-installer-telemetry-forwarder
 
 - stage: smoke_macos_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]

@@ -15,6 +15,12 @@ internal static class PathwayContextEncoder
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PathwayContextEncoder));
 
+    /// <summary>Maximum byte length produced by EncodeInto: 8 (hash) + 9 (pathway ms) + 9 (edge ms).</summary>
+    internal const int MaxEncodedSize = 26;
+
+    /// <summary>Maximum byte length of the Base64 encoding of <see cref="MaxEncodedSize"/> bytes: ceil(26/3)*4 = 36.</summary>
+    internal const int MaxBase64EncodedSize = 36;
+
     /// <summary>
     /// Encodes a <see cref="PathwayContext"/> as a series of bytes
     /// NOTE: the encoding is lossy, in that we convert <see cref="PathwayContext.PathwayStart"/>
@@ -37,6 +43,25 @@ internal static class PathwayContextEncoder
         VarEncodingHelper.WriteVarLongZigZag(bytes, offset: 8 + pathwayBytes, edgeStartMs);
         return bytes;
     }
+
+#if NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// Zero-allocation alternative to <see cref="Encode"/>: writes the encoded pathway directly into
+    /// a caller-supplied <paramref name="buffer"/> (must be at least <see cref="MaxEncodedSize"/> bytes).
+    /// </summary>
+    /// <returns>Number of bytes written into <paramref name="buffer"/>.</returns>
+    public static int EncodeInto(PathwayContext pathway, Span<byte> buffer)
+    {
+        var pathwayStartMs = ToMilliseconds(pathway.PathwayStart);
+        var edgeStartMs = ToMilliseconds(pathway.EdgeStart);
+
+        BinaryPrimitivesHelper.WriteUInt64LittleEndian(buffer, pathway.Hash.Value);
+        var pathwayBytes = VarEncodingHelper.WriteVarLongZigZag(buffer.Slice(8), pathwayStartMs);
+        var edgeBytes = VarEncodingHelper.WriteVarLongZigZag(buffer.Slice(8 + pathwayBytes), edgeStartMs);
+
+        return 8 + pathwayBytes + edgeBytes;
+    }
+#endif
 
     /// <summary>
     /// Tries to decode a <see cref="PathwayContext"/> from a <c>byte[]</c>.
@@ -86,6 +111,50 @@ internal static class PathwayContextEncoder
         // Pathway context values are in ns
         return new PathwayContext(new PathwayHash(hash), pathwayStartNs, edgeStartNs);
     }
+
+#if NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// Zero-allocation alternative to <see cref="Decode(byte[])"/>: decodes directly from a
+    /// caller-supplied <paramref name="bytes"/> span (e.g. a stackalloc buffer).
+    /// </summary>
+    public static PathwayContext? Decode(Span<byte> bytes)
+    {
+        if (bytes.Length < 10)
+        {
+            Log.Warning<int>("Error decoding Data Stream PathwayContext from bytes: insufficient bytes ({ByteCount})", bytes.Length);
+            return null;
+        }
+
+        var hash = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
+
+        var pathwayStartMs = VarEncodingHelper.ReadVarLongZigZag(bytes.Slice(8), out var bytesRead);
+        if (pathwayStartMs is null)
+        {
+            Log.Warning("Error decoding Data Stream PathwayContext from bytes: invalid pathway start");
+            return null;
+        }
+
+        var edgeStartMs = VarEncodingHelper.ReadVarLongZigZag(bytes.Slice(8 + bytesRead), out _);
+        if (edgeStartMs is null)
+        {
+            Log.Warning("Error decoding Data Stream PathwayContext from bytes: invalid edge start");
+            return null;
+        }
+
+        var pathwayStartNs = ToNanoseconds(pathwayStartMs.Value);
+        var edgeStartNs = ToNanoseconds(edgeStartMs.Value);
+        if (pathwayStartMs > pathwayStartNs || edgeStartMs.Value > edgeStartNs)
+        {
+            Log.Warning(
+                "Overflow detected in Data Stream PathwayContext from bytes: invalid pathway {PathwayMs}ms or edge {EdgeMs}ms",
+                pathwayStartMs,
+                edgeStartMs);
+            return null;
+        }
+
+        return new PathwayContext(new PathwayHash(hash), pathwayStartNs, edgeStartNs);
+    }
+#endif
 
     private static long ToNanoseconds(long milliseconds)
         => milliseconds * 1_000_000;

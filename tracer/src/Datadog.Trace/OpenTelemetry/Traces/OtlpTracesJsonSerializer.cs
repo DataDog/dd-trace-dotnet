@@ -33,7 +33,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     internal const int AttributePerLinkCountLimit = 128;
 
     // Cache several strings required for encoding OTLP JSON
-    private readonly byte[] _closingTracesBytes = EncodingHelpers.Utf8NoBom.GetBytes("]}]}]}");
+    private static ReadOnlySpan<byte> ClosingTracesBytes => "]}]}]}"u8;
 
     public int HeaderSize => 0;
 
@@ -605,10 +605,10 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // jsonWriter.WriteEndObject(); // Close ResourceSpans message
         // jsonWriter.WriteEndArray(); // Close repeated ResourceSpans field
         // jsonWriter.WriteEndObject(); // Close ExportTraceServiceRequest message
-        var buffer = _closingTracesBytes;
+        ReadOnlySpan<byte> closingBytes = ClosingTracesBytes;
 
         // Get the length of the written JSON
-        var length = buffer.Length;
+        var length = closingBytes.Length;
 
         if (length + offset - HeaderSize >= maxSize)
         {
@@ -618,7 +618,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         // Ensure the target buffer has enough space
         MessagePackBinary.EnsureCapacity(ref bytes, offset, length);
-        Array.Copy(buffer, 0, bytes, offset, length);
+        closingBytes.CopyTo(bytes.AsSpan(offset, length));
         return length;
     }
 

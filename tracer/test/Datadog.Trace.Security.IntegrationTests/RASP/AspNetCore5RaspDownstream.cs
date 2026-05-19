@@ -8,9 +8,12 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -67,6 +70,22 @@ public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTes
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(testName, string.Empty, string.Empty);
         await VerifySpans(spansFiltered, settings, orderSpans: OrderSpans);
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestDownstreamResponseBodyReadableAfterAnalysis()
+    {
+        await TryStartApp();
+
+        var response = await SubmitRequest("/Rasp/DownstreamToSelf", null, "application/json");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(response.ResponseText);
+        var root = document.RootElement;
+        root.TryGetProperty("error", out _).Should().BeFalse(response.ResponseText);
+        root.GetProperty("statusCode").GetInt32().Should().Be((int)HttpStatusCode.OK);
+        root.GetProperty("body").GetString().Should().Contain("defaultBody");
     }
 
     private static IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -27,9 +28,24 @@ namespace Datadog.Trace.Agent
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
 
-        public DateTimeOffset StartTime { get; private set; }
-
         public long Start { get; private set; }
+
+        /// <summary>
+        /// Returns true if any bucket has received hits in the current interval.
+        /// Buckets with zero hits are retained for sketch reuse but should not trigger a flush.
+        /// </summary>
+        public bool HasHits()
+        {
+            foreach (var bucket in Buckets.Values)
+            {
+                if (bucket.Hits != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public void Reset()
         {
@@ -55,18 +71,25 @@ namespace Datadog.Trace.Agent
 
             _keysToRemove.Clear();
 
-            StartTime = DateTimeOffset.UtcNow;
-            Start = StartTime.ToUnixTimeNanoseconds();
+            // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
+            var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            Start = nowNs - (nowNs % 10_000_000_000);
         }
 
         public void Serialize(Stream stream, long bucketDuration)
         {
-            var count = 8;
+            var count = 9; // Base: Hostname, Env, Version, Stats, Lang, TracerVersion, RuntimeID, Sequence, Service
             var details = _header.Details;
 
             var serializedTags = details.ProcessTags?.SerializedTags;
             var writeTags = !StringUtil.IsNullOrEmpty(serializedTags);
             if (writeTags)
+            {
+                count++;
+            }
+
+            var writeGitCommitSha = !StringUtil.IsNullOrEmpty(details.GitCommitSha);
+            if (writeGitCommitSha)
             {
                 count++;
             }
@@ -77,7 +100,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Env");
-            MessagePackBinary.WriteString(stream, details.Environment ?? string.Empty);
+            MessagePackBinary.WriteString(stream, StringUtil.IsNullOrEmpty(details.Environment) ? "unknown-env" : details.Environment);
 
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
@@ -103,22 +126,36 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Sequence");
             MessagePackBinary.WriteInt64(stream, _header.GetSequenceNumber());
+
+            MessagePackBinary.WriteString(stream, "Service");
+            MessagePackBinary.WriteString(stream, details.DefaultServiceName ?? string.Empty);
+
+            if (writeGitCommitSha)
+            {
+                MessagePackBinary.WriteString(stream, "GitCommitSha");
+                MessagePackBinary.WriteString(stream, details.GitCommitSha);
+            }
         }
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
-            var hasServiceSource = !string.IsNullOrEmpty(bucket.Key.ServiceSource);
-            var mapSize = hasServiceSource ? 13 : 12;
-            MessagePackBinary.WriteMapHeader(stream, mapSize);
+            var fieldCount = 18;
+            if (bucket.PeerTags.Count != 0)
+            {
+                fieldCount++;
+            }
 
+            MessagePackBinary.WriteMapHeader(stream, fieldCount);
+
+            // TODO: precompute the string constants in this file
             MessagePackBinary.WriteString(stream, "Service");
-            MessagePackBinary.WriteString(stream, bucket.Key.Service ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.Service);
 
             MessagePackBinary.WriteString(stream, "Name");
-            MessagePackBinary.WriteString(stream, bucket.Key.OperationName ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.OperationName);
 
             MessagePackBinary.WriteString(stream, "Resource");
-            MessagePackBinary.WriteString(stream, bucket.Key.Resource ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.Resource);
 
             MessagePackBinary.WriteString(stream, "Synthetics");
             MessagePackBinary.WriteBoolean(stream, bucket.Key.IsSyntheticsRequest);
@@ -127,22 +164,19 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteInt32(stream, bucket.Key.HttpStatusCode);
 
             MessagePackBinary.WriteString(stream, "Type");
-            MessagePackBinary.WriteString(stream, bucket.Key.Type ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.Type);
 
-            if (hasServiceSource)
-            {
-                MessagePackBinary.WriteString(stream, "srv_src");
-                MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
-            }
-
+            // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/weight.go
+            // Hits, Errors, TopLevelHits are weighted by 1/sampling_rate.
+            // Use stochastic rounding to convert to int64 to prevent systematic bias.
             MessagePackBinary.WriteString(stream, "Hits");
-            MessagePackBinary.WriteInt64(stream, bucket.Hits);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.Hits));
 
             MessagePackBinary.WriteString(stream, "Errors");
-            MessagePackBinary.WriteInt64(stream, bucket.Errors);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.Errors));
 
             MessagePackBinary.WriteString(stream, "Duration");
-            MessagePackBinary.WriteInt64(stream, bucket.Duration);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.Duration));
 
             MessagePackBinary.WriteString(stream, "OkSummary");
             SerializeSketch(stream, bucket.OkSummary);
@@ -151,7 +185,39 @@ namespace Datadog.Trace.Agent
             SerializeSketch(stream, bucket.ErrorSummary);
 
             MessagePackBinary.WriteString(stream, "TopLevelHits");
-            MessagePackBinary.WriteInt64(stream, bucket.TopLevelHits);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.TopLevelHits));
+
+            // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/aggregation.go
+            MessagePackBinary.WriteString(stream, "SpanKind");
+            MessagePackBinary.WriteString(stream, bucket.Key.SpanKind);
+
+            // Spec defines Trilean: NOT_SET=0, TRUE=1, FALSE=2
+            MessagePackBinary.WriteString(stream, "IsTraceRoot");
+            MessagePackBinary.WriteInt32(stream, bucket.Key.IsTraceRoot ? 1 : 2);
+
+            MessagePackBinary.WriteString(stream, "HTTPMethod");
+            MessagePackBinary.WriteString(stream, bucket.Key.HttpMethod);
+
+            MessagePackBinary.WriteString(stream, "HTTPEndpoint");
+            MessagePackBinary.WriteString(stream, bucket.Key.HttpEndpoint);
+
+            MessagePackBinary.WriteString(stream, "GRPCStatusCode");
+            MessagePackBinary.WriteString(stream, bucket.Key.GrpcStatusCode);
+
+            // Wire name is "srv_src" per the Go agent's generated msgpack code
+            MessagePackBinary.WriteString(stream, "srv_src");
+            MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
+
+            // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/span_concentrator.go#L53-L99
+            if (bucket.PeerTags.Count != 0)
+            {
+                MessagePackBinary.WriteString(stream, "PeerTags");
+                MessagePackBinary.WriteArrayHeader(stream, bucket.PeerTags.Count);
+                foreach (var tag in bucket.PeerTags)
+                {
+                    MessagePackBinary.WriteStringBytes(stream, tag);
+                }
+            }
         }
 
         private static void SerializeSketch(Stream stream, DDSketch sketch)
@@ -165,6 +231,22 @@ namespace Datadog.Trace.Agent
             stream.WriteByte((byte)size);
 
             sketch.Serialize(stream);
+        }
+
+        /// <summary>
+        /// Converts a floating-point value to long using stochastic rounding.
+        /// The fractional part is used as a probability of rounding up, preventing
+        /// systematic bias that occurs with simple truncation.
+        /// </summary>
+        private static long StochasticRound(double value)
+        {
+            var truncated = (long)value;
+            if (ThreadSafeRandom.Shared.NextDouble() < value - truncated)
+            {
+                return truncated + 1;
+            }
+
+            return truncated;
         }
 
         private void SerializeBuckets(Stream stream, long bucketDuration)

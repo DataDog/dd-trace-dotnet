@@ -429,7 +429,7 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
                     }
                     else
                     {
-                        Logger::Info("Removed from the method handler Probe Id: ", probeIdToRemove);
+                        Logger::Debug("Removed from the method handler Probe Id: ", probeIdToRemove);
                     }
 
                     revertRequests.emplace(method);
@@ -771,7 +771,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
     // to be called from managed land.
     if (!revertRequests.empty())
     {
-        Logger::Info("About to RequestRevert for ", revertRequests.size(), " methods.");
+        Logger::Debug("About to RequestRevert for ", revertRequests.size(), " methods.");
 
         // RequestRevert
         std::vector<MethodIdentifier> requests(revertRequests.size());
@@ -785,7 +785,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
 
     if (!rejitRequests.empty())
     {
-        Logger::Info("About to RequestRejit for ", rejitRequests.size(), " methods.");
+        Logger::Debug("About to RequestRejit for ", rejitRequests.size(), " methods.");
 
         // RequestRejit
         auto promise = std::make_shared<std::promise<void>>();
@@ -806,7 +806,7 @@ int DebuggerProbesInstrumentationRequester::GetProbesStatuses(WCHAR** probeIds, 
         return 0;
     }
 
-    Logger::Info("Received ", probeIdsLength, " probes (ids) from managed side for status.");
+    Logger::Debug("Received ", probeIdsLength, " probes (ids) from managed side for status.");
 
     if (probeIdsLength <= 0)
     {
@@ -969,7 +969,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
         if (typeInfo.isGeneric)
         {
-            Logger::Info(
+            Logger::Debug(
                 "Skipping IsFirstEntry field addition as we don't support generic async methods yet. [ModuleId=",
                 moduleInfo.id, ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
                 ", IsValueType=", typeInfo.valueType, "]");
@@ -978,9 +978,9 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
         if (typeInfo.IsStaticClass())
         {
-            Logger::Info("skipping IsFirstEntry field addition as we encountered a static class. [ModuleId=",
-                         moduleInfo.id, ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
-                         ", IsValueType=", typeInfo.valueType, "]");
+            Logger::Debug("skipping IsFirstEntry field addition as we encountered a static class. [ModuleId=",
+                          moduleInfo.id, ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
+                          ", IsValueType=", typeInfo.valueType, "]");
             continue;
         }
 
@@ -1061,7 +1061,7 @@ HRESULT DebuggerProbesInstrumentationRequester::NotifyReJITError(ModuleID module
         Logger::Info("Marking ", probeIds.size(), " probes as failed due to ReJITError notification.");
         for (const auto& probeId : probeIds)
         {
-            Logger::Info("Marking ", probeId, " as Error.");
+            Logger::Debug("Marking ", probeId, " as Error.");
             ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probeId,
                                                                    GetGenericErrorMessageWithHr(hrStatus));
         }

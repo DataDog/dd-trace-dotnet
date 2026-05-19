@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.Models;
 
@@ -10,29 +13,59 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal ref struct ExpressionEvaluationResult
 {
-    internal string Template { get; set; }
+    internal string? Template { get; set; }
 
     internal bool? Condition { get; set; }
 
     internal double? Metric { get; set; }
 
-    internal DecorationResult[] Decorations { get; set; }
+    internal DecorationResult[]? Decorations { get; set; }
 
-    internal List<EvaluationError> Errors { get; set; }
+    internal CaptureExpressionResult[]? CaptureExpressions { get; set; }
+
+    internal int CaptureExpressionCount { get; set; }
+
+    internal List<EvaluationError>? Errors { get; set; }
 
     internal readonly bool HasError => Errors is { Count: > 0 };
 
+    internal readonly bool HasCaptureExpressions => CaptureExpressionCount > 0;
+
     internal readonly bool IsNull()
     {
-        return Template == null && Condition == null && Metric == null && Decorations?.Length == 0 && Errors == null;
+        return Template == null
+            && Condition == null
+            && Metric == null
+            && (Decorations == null || Decorations.Length == 0)
+            && CaptureExpressionCount == 0
+            && Errors == null;
     }
 
     internal struct DecorationResult
     {
-        internal string TagName { get; set; }
+        internal string? TagName { get; set; }
 
-        internal string Value { get; set; }
+        internal string? Value { get; set; }
 
-        internal EvaluationError[] Errors { get; set; }
+        internal EvaluationError[]? Errors { get; set; }
+    }
+
+    internal readonly struct CaptureExpressionResult
+    {
+        internal CaptureExpressionResult(string name, object? value, Type type, CaptureLimitInfo captureLimitInfo)
+        {
+            Name = name;
+            Value = value;
+            Type = type;
+            CaptureLimitInfo = captureLimitInfo;
+        }
+
+        internal string Name { get; }
+
+        internal object? Value { get; }
+
+        internal Type Type { get; }
+
+        internal CaptureLimitInfo CaptureLimitInfo { get; }
     }
 }

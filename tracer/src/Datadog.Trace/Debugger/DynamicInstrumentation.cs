@@ -49,6 +49,8 @@ namespace Datadog.Trace.Debugger
         private readonly DebuggerSettings _settings;
         private readonly object _instanceLock = new();
         private int _disposeState;
+        private int _initializationState;
+        private Task? _initializationTask;
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -73,6 +75,7 @@ namespace Datadog.Trace.Debugger
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
+            _configurationUpdater.SetProbeInstrumentationHandlers(UpdateAddedProbeInstrumentations, UpdateRemovedProbeInstrumentations);
             _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
             _subscription = new Subscription(
@@ -87,33 +90,72 @@ namespace Datadog.Trace.Debugger
 
         public bool IsDisposed => Volatile.Read(ref _disposeState) != 0;
 
-        public bool IsInitialized { get; private set; }
+        public bool IsInitialized => Volatile.Read(ref _initializationState) == 2;
 
         internal void Initialize()
         {
-            if (!_settings.DynamicInstrumentationEnabled)
+            if (!_settings.DynamicInstrumentationEnabled || IsDisposed)
             {
                 return;
             }
 
-            _ = InitializeAsync();
+            if (Interlocked.CompareExchange(ref _initializationState, 1, 0) != 0)
+            {
+                return;
+            }
+
+            _initializationTask = InitializeAsync();
         }
+
+        /// <summary>
+        /// Returns the task representing in-flight initialization (or a completed
+        /// task if <see cref="Initialize"/> has not been called yet). DI enablement
+        /// is serialized by the owning initialization flow, so callers are expected
+        /// to request this task after invoking <see cref="Initialize"/>.
+        /// </summary>
+        internal Task GetInitializationTask() => _initializationTask ?? Task.CompletedTask;
 
         private async Task InitializeAsync()
         {
             try
             {
-                var isRcmAvailable = await WaitForRcmAvailabilityAsync().ConfigureAwait(false);
-                if (!isRcmAvailable)
+                // Start loading probes from file and checking RCM availability in parallel
+                var fileProbesTask = ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile);
+                var rcmAvailabilityTask = WaitForRcmAvailabilityAsync();
+
+                var hasFileProbes = false;
+
+                // Always attempt to load probes from file, even if RCM is unavailable
+                var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
+                if (probeConfiguration != null)
                 {
-                    return;
+                    hasFileProbes = _configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration);
+                    if (hasFileProbes)
+                    {
+                        StartRuntimeIfNeeded();
+                    }
+
+                    _configurationUpdater.AcceptFile(probeConfiguration);
                 }
 
-                _subscriptionManager.SubscribeToChanges(_subscription);
-                AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
-                StartBackgroundProcess();
-                IsInitialized = true;
-                Log.Information("Dynamic Instrumentation initialization completed successfully");
+                var isRcmAvailable = await rcmAvailabilityTask.ConfigureAwait(false);
+                if (isRcmAvailable)
+                {
+                    StartRuntimeIfNeeded();
+                    _subscriptionManager.SubscribeToChanges(_subscription);
+                }
+
+                // Start background processing and register the assembly load callback if either:
+                // - RCM is available
+                // - There are probes from file
+                if (IsInitialized)
+                {
+                    Log.Information("Dynamic Instrumentation initialization completed successfully");
+                }
+                else
+                {
+                    Log.Information("Dynamic Instrumentation not initialized because RCM isn't available and no valid probes have loaded from file");
+                }
             }
             catch (OperationCanceledException e)
             {
@@ -123,6 +165,22 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Error(e, "Dynamic Instrumentation initialization failed");
             }
+            finally
+            {
+                Interlocked.CompareExchange(ref _initializationState, 0, 1);
+            }
+        }
+
+        private void StartRuntimeIfNeeded()
+        {
+            if (IsInitialized || IsDisposed)
+            {
+                return;
+            }
+
+            AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
+            StartBackgroundProcess();
+            Volatile.Write(ref _initializationState, 2);
         }
 
         private void StartBackgroundProcess()
@@ -175,6 +233,7 @@ namespace Datadog.Trace.Debugger
                     var spanProbes = new List<NativeSpanProbeDefinition>();
 
                     var fetchProbeStatus = new List<FetchProbeStatus>();
+                    var lineProbeDiagnosticLevel = Log.IsEnabled(LogEventLevel.Debug) ? LineProbeDiagnosticLevel.Full : LineProbeDiagnosticLevel.Minimal;
 
                     foreach (var addedProbe in addedProbes)
                     {
@@ -184,7 +243,7 @@ namespace Datadog.Trace.Debugger
                             {
                                 case ProbeLocationType.Line:
                                     {
-                                        var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location);
+                                        var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location, lineProbeDiagnosticLevel);
                                         var status = lineProbeResult.Status;
 
                                         LogLineProbeResolution(addedProbe.Id, lineProbeResult, "initial resolution");
@@ -247,7 +306,10 @@ namespace Datadog.Trace.Debugger
 
                     using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
                     using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
-                    DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                    if (methodProbes.Count != 0 || lineProbes.Count != 0 || spanProbes.Count != 0)
+                    {
+                        DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                    }
 
                     var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
                     _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
@@ -268,7 +330,7 @@ namespace Datadog.Trace.Debugger
                     ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
                     break;
                 case LogProbe logProbe:
-                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot || logProbe.CaptureExpressions is { Length: > 0 } ? 1 : 5000);
                     break;
                 case SpanDecorationProbe or MetricProbe:
                     ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
@@ -281,19 +343,11 @@ namespace Datadog.Trace.Debugger
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }
 
-        internal void UpdateRemovedProbeInstrumentations(List<RemoteConfigurationPath> paths)
+        internal void UpdateRemovedProbeInstrumentations(string[] removedProbesIds)
         {
             if (IsDisposed)
             {
                 return;
-            }
-
-            var removedProbesIds = paths
-                                  .Select(TrimProbeTypeFromPath)
-                                  .ToArray();
-            string TrimProbeTypeFromPath(RemoteConfigurationPath path)
-            {
-                return path.Id.Split('_').Last();
             }
 
             if (removedProbesIds.Length == 0)
@@ -379,7 +433,7 @@ namespace Datadog.Trace.Debugger
             }
 
             Log.Debug(
-                "Finished resolving line probe for ProbeID {ProbeID} during {Phase}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} AssemblyName={AssemblyName} AssemblyLocation={AssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
+                "Finished resolving line probe for ProbeID {ProbeID} during {Phase}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} PathMatchType={PathMatchType} MatchingTrailingSegments={MatchingTrailingSegments} FallbackFailureReason={FallbackFailureReason} QualifiedFallbackMatches={QualifiedFallbackMatches} AssemblyName={AssemblyName} AssemblyLocation={AssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
                 [
                     probeId,
                     phase,
@@ -390,6 +444,10 @@ namespace Datadog.Trace.Debugger
                     diagnostics.ProbeLine,
                     diagnostics.RawLines,
                     diagnostics.ResolvedSourceFile,
+                    diagnostics.PathMatchType,
+                    diagnostics.MatchingTrailingSegments,
+                    diagnostics.FallbackFailureReason,
+                    diagnostics.QualifiedFallbackMatchCount,
                     diagnostics.AssemblyName,
                     diagnostics.AssemblyLocation,
                     diagnostics.ModuleVersionId,
@@ -414,10 +472,11 @@ namespace Datadog.Trace.Debugger
                 // Initialize these lists only when there is at least one unbound probe that becomes bound, to reduce unnecessary allocations.
                 List<NativeLineProbeDefinition>? lineProbes = null;
                 List<ProbeDefinition>? noLongerUnboundProbes = null;
+                var diagnosticLevel = Log.IsEnabled(LogEventLevel.Debug) ? LineProbeDiagnosticLevel.Full : LineProbeDiagnosticLevel.Minimal;
 
                 foreach (var unboundProbe in _unboundProbes)
                 {
-                    var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var location);
+                    var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var location, diagnosticLevel);
                     if (result.Status == LiveProbeResolveStatus.Bound)
                     {
                         lineProbes ??= new List<NativeLineProbeDefinition>();
@@ -430,7 +489,7 @@ namespace Datadog.Trace.Debugger
                     {
                         var diagnostics = result.Diagnostics;
                         Log.Debug(
-                            "Rechecked unbound line probe for ProbeID {ProbeId} after assembly load {AssemblyName}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} AssemblyName={ResolvedAssemblyName} AssemblyLocation={ResolvedAssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
+                            "Rechecked unbound line probe for ProbeID {ProbeId} after assembly load {AssemblyName}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} PathMatchType={PathMatchType} MatchingTrailingSegments={MatchingTrailingSegments} FallbackFailureReason={FallbackFailureReason} QualifiedFallbackMatches={QualifiedFallbackMatches} AssemblyName={ResolvedAssemblyName} AssemblyLocation={ResolvedAssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
                             [
                                 unboundProbe.Id,
                                 args.LoadedAssembly.GetName().Name,
@@ -441,6 +500,10 @@ namespace Datadog.Trace.Debugger
                                 diagnostics?.ProbeLine,
                                 diagnostics?.RawLines,
                                 diagnostics?.ResolvedSourceFile,
+                                diagnostics?.PathMatchType,
+                                diagnostics?.MatchingTrailingSegments,
+                                diagnostics?.FallbackFailureReason,
+                                diagnostics?.QualifiedFallbackMatchCount,
                                 diagnostics?.AssemblyName,
                                 diagnostics?.AssemblyLocation,
                                 diagnostics?.ModuleVersionId,
@@ -457,12 +520,20 @@ namespace Datadog.Trace.Debugger
                 {
                     Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: noLongerUnboundProbes.Count);
 
-                    DebuggerNativeMethods.InstrumentProbes([], lineProbes.ToArray(), [], []);
-
+                    // Register processors and samplers BEFORE the native call makes the IL live:
+                    // otherwise a probe hit between InstrumentProbes returning and SetRateLimit
+                    // running would insert a default-rate sampler via GerOrAddSampler, and the
+                    // configured rate would never take effect for that probe.
                     foreach (var boundProbe in noLongerUnboundProbes)
                     {
                         ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe);
                         SetRateLimit(boundProbe);
+                    }
+
+                    DebuggerNativeMethods.InstrumentProbes([], lineProbes.ToArray(), [], []);
+
+                    foreach (var boundProbe in noLongerUnboundProbes)
+                    {
                         _unboundProbes.Remove(boundProbe);
                     }
 
@@ -546,21 +617,21 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            var probeConfiguration = new ProbeConfiguration()
+            var rcmUpdate = new ProbeConfiguration()
             {
                 ServiceConfiguration = serviceConfig,
-                MetricProbes = metrics.ToArray(),
-                SpanDecorationProbes = spanDecoration.ToArray(),
                 LogProbes = logs.ToArray(),
-                SpanProbes = spans.ToArray()
+                MetricProbes = metrics.ToArray(),
+                SpanProbes = spans.ToArray(),
+                SpanDecorationProbes = spanDecoration.ToArray()
             };
 
             try
             {
-                var updateResults = _configurationUpdater.AcceptAdded(probeConfiguration);
+                var updateResults = _configurationUpdater.AcceptAdded(rcmUpdate);
                 foreach (var updateResult in updateResults)
                 {
-                    var config = configs.FirstOrDefault(c => c.Path.Id == updateResult.Id);
+                    var config = configs.FirstOrDefault(c => ProbeConfigurationUtils.IsProbeId(c.Path, updateResult.Id));
                     if (config != null)
                     {
                         result.Add(

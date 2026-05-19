@@ -754,6 +754,14 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         return EnablementStatus::Standby;
     }
 
+#ifdef ARM64
+    if (!GetEnvironmentValue(EnvironmentVariables::EnableProfilerArchitectureArm64, false))
+    {
+        Log::Info("Continuous Profiler is not enabled for ARM64 architecture. If you want to use it, set the environment variable DD_INTERNAL_PROFILING_ENABLED_ARM64 to 1.");
+        return EnablementStatus::ManuallyDisabled;
+    }
+#endif
+
     // kill switch for local environment variables
     if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {

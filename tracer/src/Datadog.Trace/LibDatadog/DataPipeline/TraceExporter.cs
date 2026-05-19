@@ -1,4 +1,4 @@
-// <copyright file="TraceExporter.cs" company="Datadog">
+﻿// <copyright file="TraceExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -91,7 +91,7 @@ internal sealed class TraceExporter : SafeHandle, IApi
         }
     }
 
-    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
     {
         _log.Debug("No-op: stats computation happens in the data pipeline.");
         return Task.FromResult(true);

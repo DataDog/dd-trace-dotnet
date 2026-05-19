@@ -17,7 +17,7 @@ HRESULT datadog::shared::DynamicCOMLibrary::DllGetClassObject(REFCLSID clsid, RE
         return _dllGetClassObjectFn(clsid, iid, ptr);
     }
 
-    _logger->Warn("DynamicCOMLibrary::DllGetClassObject: cannot call to DllGetClassObject. An issue might have occured "
+    _logger->Warn("DynamicCOMLibrary::DllGetClassObject: cannot call to DllGetClassObject. An issue might have occurred "
                   "and we were enable to get a pointer to this function");
     return E_FAIL;
 }
@@ -29,7 +29,7 @@ HRESULT datadog::shared::DynamicCOMLibrary::DllCanUnloadNow()
         return _dllCanUnloadNowFn();
     }
 
-    _logger->Warn("DynamicCOMLibrary::DllCanUnloadNow: cannot call to DllCanUnloadNow. An issue might have occured "
+    _logger->Warn("DynamicCOMLibrary::DllCanUnloadNow: cannot call to DllCanUnloadNow. An issue might have occurred "
                   "and we were enable to get a pointer to this function");
     return E_FAIL;
 }

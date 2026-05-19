@@ -1,6 +1,7 @@
+extern alias DatadogTrace;
 using System;
 using System.Text;
-using Datadog.Trace.ClrProfiler;
+using DatadogTrace::Datadog.Trace.ClrProfiler;
 
 namespace CallTargetNativeTest;
 

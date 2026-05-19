@@ -13,12 +13,6 @@ using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 using Datadog.Trace.Util;
 
-#if NETCOREAPP3_1_OR_GREATER
-using System.Buffers;
-#else
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-#endif
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 
 /// <summary>
