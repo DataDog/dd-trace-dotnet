@@ -166,7 +166,7 @@ internal sealed class EncoderLegacy : IEncoder
         foreach (var o in objDictEnumerator)
         {
             var name = o.Key;
-            if (name != null)
+            if (!StringUtil.IsNullOrEmpty(name))
             {
                 var value = EncodeInternal(o.Value, remainingDepth, applyLimits, wafLibraryInvoker);
                 wafLibraryInvoker.ObjectMapAdd(ref mapNat, name, Convert.ToUInt64(name.Length), ref value);
