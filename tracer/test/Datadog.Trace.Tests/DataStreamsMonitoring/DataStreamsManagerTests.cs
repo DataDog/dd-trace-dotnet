@@ -538,7 +538,7 @@ public class DataStreamsManagerTests
     public void GetOrCreateEdgeTags_ServiceBus_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var key = new ServiceBusEdgeTagCacheKey("my-entity");
+        var key = new ServiceBusEdgeTagCacheKey("my-entity", IsConsume: true);
 
         var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
         var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);

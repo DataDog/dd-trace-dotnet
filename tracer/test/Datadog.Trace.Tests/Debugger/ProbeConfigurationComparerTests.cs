@@ -8,6 +8,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using FluentAssertions;
 using Xunit;
+using DebuggerTags = Datadog.Trace.Debugger.Configurations.Models.Tags;
 
 namespace Datadog.Trace.Tests.Debugger;
 
@@ -168,6 +169,43 @@ public class ProbeConfigurationComparerTests
     }
 
     [Fact]
+    public void CurrentSnapshotsCaptureExpressionChanged_ProbeRelatedChanged()
+    {
+        var current = new ProbeConfiguration
+        {
+            LogProbes = new LogProbe[]
+            {
+                new()
+                {
+                    Id = "probe",
+                    CaptureExpressions =
+                    [
+                        new CaptureExpression { Name = "value", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""value""}", null) }
+                    ]
+                }
+            }
+        };
+        var incoming = new ProbeConfiguration
+        {
+            LogProbes = new LogProbe[]
+            {
+                new()
+                {
+                    Id = "probe",
+                    CaptureExpressions =
+                    [
+                        new CaptureExpression { Name = "value", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""otherValue""}", null) }
+                    ]
+                }
+            }
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeTrue();
+    }
+
+    [Fact]
     public void CurrentSnaphotsWhereValue_IncomingSnapshotsWhereSameValue_ProbeRelatedChanged()
     {
         var current = new ProbeConfiguration { LogProbes = new LogProbe[] { new LogProbe() { Where = new Where() { Lines = new[] { "56" }, SourceFile = "c:/temp/temp.log" } } } };
@@ -271,6 +309,169 @@ public class ProbeConfigurationComparerTests
     {
         var current = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new SnapshotSegment { Dsl = "Some" } } } };
         var incoming = new ProbeConfiguration { MetricProbes = new MetricProbe[] { new() { Value = new SnapshotSegment { Dsl = "Some" } } } };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeFalse();
+        comparer.HasRateLimitChanged.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentSnapshotsReparsedJsonContent_ProbeRelatedNotChanged()
+    {
+        // Reproduces the RCM re-apply scenario: two LogProbe instances that are content-
+        // identical but whose SnapshotSegment.Json fields are independently parsed JObject
+        // instances (different references, same content) - which is exactly what
+        // DynamicInstrumentation.Deserialize<LogProbe> produces on every RCM poll.
+        // Without content-based equality on SnapshotSegment, the comparer would treat
+        // the probe as added every cycle and trigger unnecessary IL re-instrumentation.
+        const string whenJson = @"{""ne"":[{""ref"":""x""},null]}";
+        const string refJson = @"{""ref"":""x""}";
+
+        var current = new ProbeConfiguration
+        {
+            LogProbes = new[]
+            {
+                new LogProbe
+                {
+                    Id = "probe-1",
+                    When = new SnapshotSegment("x != null", whenJson, string.Empty),
+                    Segments = new[]
+                    {
+                        new SnapshotSegment(string.Empty, null, "x="),
+                        new SnapshotSegment("x", refJson, string.Empty),
+                    },
+                },
+            },
+        };
+        var incoming = new ProbeConfiguration
+        {
+            LogProbes = new[]
+            {
+                new LogProbe
+                {
+                    Id = "probe-1",
+                    When = new SnapshotSegment("x != null", whenJson, string.Empty),
+                    Segments = new[]
+                    {
+                        new SnapshotSegment(string.Empty, null, "x="),
+                        new SnapshotSegment("x", refJson, string.Empty),
+                    },
+                },
+            },
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeFalse();
+        comparer.HasRateLimitChanged.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentMetricsReparsedJsonContent_ProbeRelatedNotChanged()
+    {
+        const string valueJson = @"{""ref"":""duration""}";
+
+        var current = new ProbeConfiguration
+        {
+            MetricProbes = new[]
+            {
+                new MetricProbe
+                {
+                    Id = "probe-1",
+                    MetricName = "method.duration",
+                    Value = new SnapshotSegment("duration", valueJson, string.Empty),
+                },
+            },
+        };
+        var incoming = new ProbeConfiguration
+        {
+            MetricProbes = new[]
+            {
+                new MetricProbe
+                {
+                    Id = "probe-1",
+                    MetricName = "method.duration",
+                    Value = new SnapshotSegment("duration", valueJson, string.Empty),
+                },
+            },
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeFalse();
+        comparer.HasRateLimitChanged.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentSpanDecorationsReparsedJsonContent_ProbeRelatedNotChanged()
+    {
+        const string whenJson = @"{""eq"":[{""ref"":""http.status_code""},500]}";
+        const string tagValueJson = @"{""ref"":""error.message""}";
+
+        var current = new ProbeConfiguration
+        {
+            SpanDecorationProbes = new[]
+            {
+                new SpanDecorationProbe
+                {
+                    Id = "probe-1",
+                    Decorations = new[]
+                    {
+                        new Decoration
+                        {
+                            When = new SnapshotSegment("http.status_code == 500", whenJson, string.Empty),
+                            Tags = new[]
+                            {
+                                new DebuggerTags
+                                {
+                                    Name = "error.message",
+                                    Value = new TagValue
+                                    {
+                                        Template = "error={error.message}",
+                                        Segments = new[]
+                                        {
+                                            new SnapshotSegment(string.Empty, null, "error="),
+                                            new SnapshotSegment("error.message", tagValueJson, string.Empty),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        };
+        var incoming = new ProbeConfiguration
+        {
+            SpanDecorationProbes = new[]
+            {
+                new SpanDecorationProbe
+                {
+                    Id = "probe-1",
+                    Decorations = new[]
+                    {
+                        new Decoration
+                        {
+                            When = new SnapshotSegment("http.status_code == 500", whenJson, string.Empty),
+                            Tags = new[]
+                            {
+                                new DebuggerTags
+                                {
+                                    Name = "error.message",
+                                    Value = new TagValue
+                                    {
+                                        Template = "error={error.message}",
+                                        Segments = new[]
+                                        {
+                                            new SnapshotSegment(string.Empty, null, "error="),
+                                            new SnapshotSegment("error.message", tagValueJson, string.Empty),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();

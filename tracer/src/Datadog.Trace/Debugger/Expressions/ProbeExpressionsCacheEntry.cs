@@ -14,14 +14,18 @@ internal sealed class ProbeExpressionsCacheEntry
 {
     private readonly object _compileLock;
     private int _compiledInitialized; // 0 = not compiled, 1 = compiled
+    private int _captureExpressionsCompiledInitialized; // 0 = not compiled, 1 = compiled
     private CompiledProbeExpressions _compiled;
+    private CompiledExpression<object>[]? _captureExpressions;
 
     public ProbeExpressionsCacheEntry(Type?[] memberRuntimeTypes)
     {
         MemberRuntimeTypes = memberRuntimeTypes;
         _compileLock = new object();
         _compiledInitialized = 0;
+        _captureExpressionsCompiledInitialized = 0;
         _compiled = default;
+        _captureExpressions = null;
     }
 
     public Type?[] MemberRuntimeTypes { get; }
@@ -55,6 +59,25 @@ internal sealed class ProbeExpressionsCacheEntry
         }
 
         return _compiled;
+    }
+
+    public CompiledExpression<object>[]? GetOrCompileCaptureExpressions(ProbeExpressionEvaluator evaluator, MethodScopeMembers scopeMembers)
+    {
+        if (Volatile.Read(ref _captureExpressionsCompiledInitialized) == 1)
+        {
+            return _captureExpressions;
+        }
+
+        lock (_compileLock)
+        {
+            if (_captureExpressionsCompiledInitialized == 0)
+            {
+                _captureExpressions = evaluator.CompileCaptureExpressions(scopeMembers);
+                Volatile.Write(ref _captureExpressionsCompiledInitialized, 1);
+            }
+        }
+
+        return _captureExpressions;
     }
 
     public bool Matches(ScopeMember[] members, int memberCount)

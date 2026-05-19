@@ -4,9 +4,11 @@
 // </copyright>
 
 #nullable enable
+using System;
+
 namespace Datadog.Trace.Debugger.RateLimiting
 {
-    internal interface IAdaptiveSampler
+    internal interface IAdaptiveSampler : IDisposable
     {
         bool Sample();
 
