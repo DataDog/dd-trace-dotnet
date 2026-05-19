@@ -18,6 +18,11 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.HttpOverStreams;
 
+// Reads RuntimeId.GetRootSessionId() (via TelemetryAgentHttpHeaderHelper.DefaultHeaders) and the lazy-cached
+// TelemetryHttpHeaderNames._httpSerializedDefaultAgentHeaders. Must serialize with RuntimeIdTests, which
+// transiently mutates _rootSessionId — otherwise the fresh DefaultHeaders read and the cached serialized
+// headers can disagree on whether DD-Root-Session-ID is present.
+[Collection(nameof(EnvironmentVariablesTestCollection))]
 public class HttpHeaderHelperTests
 {
     [Fact]
