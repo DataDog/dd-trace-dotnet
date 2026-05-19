@@ -54,29 +54,29 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native.Tests\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native.Tests\$(Configuration)\x86\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native.Tests\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native.Tests\$(Configuration)\x86\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</IntDir>
     <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native.Tests\$(Configuration)\$(Platform)\</IntDir>
     <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup>

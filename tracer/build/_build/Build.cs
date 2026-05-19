@@ -167,8 +167,7 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
-            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
+            EnsureCleanDirectory(NativeArtifactsDirectory);
             EnsureCleanDirectory(BuildDataDirectory);
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);

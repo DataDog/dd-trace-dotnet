@@ -53,6 +53,11 @@ partial class Build
     AbsolutePath GetProjectBinDirectory(string projectName, string tfm) =>
         ArtifactsBinDirectory / projectName / $"{BuildConfiguration.ToString().ToLowerInvariant()}_{tfm.ToLowerInvariant()}";
 
+    AbsolutePath NativeArtifactsDirectory => BuildArtifactsDirectory / "native";
+    // Resolves the output directory of a native (CMake or vcxproj) project. CMake outputs land flat under
+    // <project>/, vcxproj outputs land under <project>/<Config>/<Arch>/.
+    AbsolutePath GetNativeOutputDirectory(string projectName) => NativeArtifactsDirectory / projectName;
+
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
@@ -361,7 +366,7 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            DeleteDirectory(NativeTracerProject.Directory / "build");
+            DeleteDirectory(GetNativeOutputDirectory(NativeTracerProject.Name));
 
             var finalArchs = string.Join(';', OsxArchs);
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
@@ -397,7 +402,7 @@ partial class Build
                 arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
                 environmentVariables: envVariables);
 
-            var sourceFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
+            var sourceFile = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.dylib";
 
             // Check section with the manager loader
             var output = OTool.Value(arguments: $"-s binary dll {sourceFile}", logOutput: false);
@@ -895,7 +900,7 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
-               var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+               var source = GetNativeOutputDirectory(NativeTracerProject.Name) / BuildConfiguration / architecture.ToString() /
                             $"{NativeTracerProject.Name}.pdb";
                var dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
                CopyFile(source, dest, FileExistsPolicy.Overwrite);
@@ -922,7 +927,7 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
                 // Copy native tracer assets
-                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                var source = GetNativeOutputDirectory(NativeTracerProject.Name) / BuildConfiguration / architecture.ToString() /
                              $"{NativeTracerProject.Name}.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
@@ -939,7 +944,7 @@ partial class Build
 
             // Copy Native file
             CopyFileToDirectory(
-                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
+                GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
 
@@ -953,7 +958,7 @@ partial class Build
         {
             // Copy the universal binary to the output folder
             CopyFileToDirectory(
-                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib",
+                GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.dylib",
                 MonitoringHomeDirectory / "osx",
                 FileExistsPolicy.Overwrite,
                 true);
@@ -1487,7 +1492,7 @@ partial class Build
         {
             foreach (var platform in ArchitecturesForPlatformForTracer)
             {
-                var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / platform;
+                var workingDirectory = GetNativeOutputDirectory(NativeTracerTestsProject.Name) / BuildConfiguration.ToString() / platform;
                 var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
 
                 var testsResultFile = BuildDataDirectory / "tests" / $"Datadog.Tracer.Native.Tests.Results.{BuildConfiguration}.{platform}.xml";
@@ -1502,7 +1507,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / FileNames.NativeTracerTests / "bin";
+            var workingDirectory = GetNativeOutputDirectory(FileNames.NativeTracerTests);
             EnsureExistingDirectory(workingDirectory);
 
             var exePath = workingDirectory / FileNames.NativeTracerTests;

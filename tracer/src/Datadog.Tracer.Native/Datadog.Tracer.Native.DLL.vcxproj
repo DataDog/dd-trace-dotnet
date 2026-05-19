@@ -102,38 +102,38 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64' OR '$(Configuration)|$(Platform)'=='Debug|ARM64EC'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64' OR '$(Configuration)|$(Platform)'=='Release|ARM64EC'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
