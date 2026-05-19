@@ -81,7 +81,7 @@ variables:
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   outputDir: $(System.DefaultWorkingDirectory)/artifacts
-  symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
+  symbols: $(System.DefaultWorkingDirectory)/artifacts/symbols
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)

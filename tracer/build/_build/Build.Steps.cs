@@ -54,7 +54,7 @@ partial class Build
         ArtifactsBinDirectory / projectName / $"{BuildConfiguration.ToString().ToLowerInvariant()}_{tfm.ToLowerInvariant()}";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
-    AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
+    AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
