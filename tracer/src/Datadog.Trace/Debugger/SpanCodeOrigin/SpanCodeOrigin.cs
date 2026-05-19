@@ -64,7 +64,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return;
             }
 
-            if (span.GetTag(_tags.Type) != null)
+            if (HasCodeOrigin(span))
             {
                 Log.Debug("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
@@ -102,7 +102,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal bool HasCodeOrigin(Span? span)
         {
-            return span?.GetTag(_tags.Type) != null;
+            return span?.Tags switch
+            {
+                AspNetCoreTags { CodeOriginType: not null } => true,
+                AspNetCoreSingleSpanTags { CodeOriginType: not null } => true,
+                { } tags => tags.GetTag(_tags.Type) is not null,
+                _ => false,
+            };
         }
 
         private void AddEntrySpanTags(Span span, Type type, MethodInfo method)
