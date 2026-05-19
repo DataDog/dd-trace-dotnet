@@ -1,0 +1,122 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
+#pragma once
+
+#include "cor.h"
+#include "corprof.h"
+#include "ClassLayoutCache.h"
+#include "TypeReferenceTree.h"
+#include "VisitedObjectSet.h"
+#include "ReferenceChainTypes.h"
+#include <chrono>
+#include <string>
+#include <vector>
+
+// Forward declarations
+class IFrameStore;
+
+// Traversal engine for building type-level reference chains.
+//
+// IMPORTANT: GetClassFromObject/GetObjectSize2/GetArrayObjectInfo can only be called
+// from within ICorProfilerCallback methods (i.e. during GC dump events).
+// They cannot be called from another thread or after the GC ends.
+// Therefore, traversal MUST happen inside the OnBulkRoot* event handlers.
+class ReferenceChainTraverser
+{
+public:
+    struct TraversalFrame
+    {
+        uintptr_t objectAddress;
+        TypeTreeNode* treeNode;
+        uint32_t depth;
+        ClassID classID;
+        SIZE_T objectSize;
+    };
+
+    ReferenceChainTraverser(
+        ICorProfilerInfo12* pCorProfilerInfo,
+        IFrameStore* pFrameStore,
+        TypeReferenceTree& tree,
+        ClassLayoutCache& layoutCache,
+        size_t visitedSetInitialCapacity = 512);
+
+    // Traverse from a single root (called from OnBulkRoot* event handlers).
+    // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
+    void TraverseFromSingleRoot(const RootInfo& root);
+
+    void LogStats() const;
+
+    size_t GetVisitedHighWatermark() const { return _visited.GetBucketCount(); }
+    size_t GetVisitedPeakEntryCount() const { return _visited.GetPeakEntryCount(); }
+
+private:
+    // Iterative object graph traversal using an explicit stack.
+    // Look at reference type fields, add them to the stack and iterate until empty.
+    void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth,
+                             ClassID rootClassID, SIZE_T rootObjectSize);
+
+    // Enqueue array element children onto _traversalStack.
+    // Handles reference type arrays, value type arrays with reference fields,
+    // jagged arrays, and multi-dimensional arrays.
+    void EnqueueArrayChildren(
+        uintptr_t arrayAddress,
+        ClassID arrayClassID,
+        const ClassLayoutCache::ClassLayoutData& layout,
+        TypeTreeNode* currentNode,
+        uint32_t depth);
+
+    // Enqueue reference fields from inline value type array elements onto _traversalStack.
+    void EnqueueValueTypeArrayChildren(
+        BYTE* pData,
+        uint64_t totalElements,
+        const ClassLayoutCache::ClassLayoutData& elementLayout,
+        TypeTreeNode* currentNode,
+        uint32_t depth);
+
+    // Follow reference fields inside an inline value type field within a heap object.
+    // Used for structs embedded in classes (e.g., the async state machine struct inside
+    // AsyncStateMachineBox<TStateMachine>). Recurses into nested inline value types.
+    void EnqueueInlineValueTypeReferences(
+        uintptr_t objectAddress,
+        ULONG baseOffset,
+        const ClassLayoutCache::ClassLayoutData& vtLayout,
+        SIZE_T objectSize,
+        TypeTreeNode* currentNode,
+        uint32_t depth);
+
+    bool IsValidObjectAddress(uintptr_t address) const;
+    std::string GetClassName(ClassID classID) const;
+
+    // Read a reference from an object's field.
+    // objectAddress: ObjectID (points to the MethodTable pointer at offset 0)
+    // fieldOffset: byte offset from GetClassLayout (relative to objectAddress, includes MethodTable*)
+    // objectSize: total object size from GetObjectSize2 (for bounds checking)
+    // Returns the ObjectID stored in the field, or 0 if the read is invalid.
+    uintptr_t ReadFieldReference(uintptr_t objectAddress, ULONG fieldOffset, SIZE_T objectSize) const;
+
+    ICorProfilerInfo12* _pCorProfilerInfo;
+    IFrameStore* _pFrameStore;
+    TypeReferenceTree& _tree;
+
+    // Persisted across heap traversal.
+    // class layouts don't change over time and no dynamic types are expected.
+    ClassLayoutCache& _layoutCache;
+
+    // Per-root cycle detection.
+    // Cleared between roots to avoid reallocating the bucket array.
+    VisitedObjectSet _visited;
+
+    // Used to keep track of all objects to visit when starting from a root.
+    // Reused across roots to avoid repeated heap allocations.
+    std::vector<TraversalFrame> _traversalStack;
+
+    // Statistics
+    uint64_t _objectsTraversed;
+    uint64_t _rootsProcessed;
+    uint64_t _rootCategoryCounts[RootCategoryCount] = {};
+    std::chrono::nanoseconds _totalTraversalDuration{0};
+
+    static constexpr size_t MinStackReserve = 64;
+    size_t _traversalStackHighWatermark = MinStackReserve;
+};

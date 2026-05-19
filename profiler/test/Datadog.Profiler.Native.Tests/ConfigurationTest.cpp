@@ -1437,6 +1437,26 @@ TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
 }
 
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), false);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotSkipTraversal, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), true);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotSkipTraversal, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), false);
+}
+
 TEST_F(ConfigurationTest, CheckHeapHandleLimitIfNoValue)
 {
     auto configuration = Configuration{};

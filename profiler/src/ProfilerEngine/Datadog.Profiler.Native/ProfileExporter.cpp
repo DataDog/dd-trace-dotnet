@@ -74,6 +74,8 @@ std::string const ProfileExporter::AllocationsExtension = ".balloc";
 
 std::string const ProfileExporter::ClassHistogramFilename = "histogram.json";
 
+std::string const ProfileExporter::ReferenceTreeFilename = "reference_tree.json";
+
 std::string const ProfileExporter::StartTime = OsSpecificApi::GetProcessStartTime();
 
 ProfileExporter::ProfileExporter(
@@ -616,6 +618,7 @@ bool ProfileExporter::Export(bool lastCall)
     // additional content to be sent along the .pprof
     auto metricsFileContent = CreateMetricsFileContent();
     auto classHistogramContent = CreateClassHistogramContent();
+    auto referenceTreeContent = CreateReferenceTreeContent();
 
     for (auto& runtimeId : keys)
     {
@@ -695,6 +698,12 @@ bool ProfileExporter::Export(bool lastCall)
             additionalTags.Add("profile_has_class_histogram", "true");
         }
 
+        if (!referenceTreeContent.empty())
+        {
+            filesToSend.emplace_back(ReferenceTreeFilename, std::move(referenceTreeContent));
+            additionalTags.Add("profile_has_reference_tree", "true");
+        }
+
         std::string metadataJson = GetMetadataJson();
         std::string infoJson = GetInfoJson(runtimeIdString);
         std::string processTags = applicationInfo.ProcessTags;
@@ -758,6 +767,22 @@ std::string ProfileExporter::CreateClassHistogramContent() const
         std::stringstream builder;
         builder << heapSnapshot;
         return builder.str();
+    }
+
+    return "";
+}
+
+std::string ProfileExporter::CreateReferenceTreeContent() const
+{
+    if (_heapSnapshotManager == nullptr)
+    {
+        return "";
+    }
+
+    auto referenceTreeJson = _heapSnapshotManager->GetAndClearReferenceTreeJson();
+    if (!referenceTreeJson.empty() && referenceTreeJson != "{}")
+    {
+        return referenceTreeJson;
     }
 
     return "";

@@ -44,6 +44,7 @@ namespace Samples.Computer01
         SyncOverAsyncWithResult,
         SyncOverAsyncWithGetAwaiterGetResult,
         AppDomainCrash,
+        ReferenceChain,  // parameter = scenario number (1-7)
     }
 
     public class Program
@@ -103,6 +104,9 @@ namespace Samples.Computer01
             //  - as a service
             //  - interactively for debugging
             var computerService = new ComputerService();
+
+            // Console.WriteLine("Press ENTER to start...");
+            // Console.ReadLine();
 
             if (runAsService)
             {

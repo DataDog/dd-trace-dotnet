@@ -464,13 +464,20 @@ void CorProfilerCallback::InitializeServices()
         }
 
         // TODO: add new CLR events-based providers to the event parser
+        IGCDumpListener* pGCDumpListener = _pHeapSnapshotManager;
+        if (_pConfiguration->IsHeapSnapshotSkipTraversal())
+        {
+            Log::Info("Heap snapshot skip-traversal is enabled: BulkXxx events will not be processed");
+            pGCDumpListener = nullptr;
+        }
+
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
             _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
             _pNetworkProvider,
-            _pHeapSnapshotManager
+            pGCDumpListener
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -2059,6 +2066,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
         _pExceptionsProvider->OnModuleLoaded(moduleId);
+    }
+
+    if (_pHeapSnapshotManager != nullptr)
+    {
+        _pHeapSnapshotManager->OnModuleLoaded(moduleId);
     }
 
     if (_managedCodeCache != nullptr)

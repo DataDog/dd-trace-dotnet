@@ -16,12 +16,16 @@
 #include "ServiceBase.h"
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
+#include "ClassLayoutCache.h"
 
 #include "corprof.h"
 
 // forward declarations
 class IThreadsCpuManager;
 class INativeThreadList;
+class TypeReferenceTree;
+class ReferenceChainTraverser;
+struct RootInfo;
 
 using namespace std::chrono_literals;
 
@@ -59,12 +63,19 @@ public:
         MetricsRegistry& metricsRegistry,
         INativeThreadList* pNativeThreadList);
 
+    // Called from CorProfilerCallback::ModuleLoadFinished to detect mscorlib
+    // and eagerly resolve well-known ClassIDs (e.g. System.String).
+    void OnModuleLoaded(ModuleID moduleId);
+
     // Inherited via IHeapSnapshotManager
     void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) override;
     std::string GetAndClearHeapSnapshotText() override;
 
     // used for debugging purpose
     std::string GetHeapSnapshotText();
+
+    // Reference tree output (separate from histogram)
+    std::string GetAndClearReferenceTreeJson() override;
 
     ~HeapSnapshotManager();
 
@@ -109,6 +120,13 @@ protected:
         uint32_t index,
         uint32_t count,
         GCBulkEdgeValue* pEdges) override;
+    void OnBulkRootEdges(
+        uint32_t index,
+        uint32_t count,
+        GCBulkRootEdgeValue* pRoots) override;
+    void OnBulkRootStaticVar(
+        const GCBulkRootStaticVarValue& root,
+        const WCHAR* fieldName) override;
 
     // Inherited via ServiceBase
     bool StartImpl() override;
@@ -143,9 +161,10 @@ private:
     void StartAsyncSnapshotIfNeeded();
 
 private:
-    std::chrono::minutes _heapDumpInterval;
+    std::chrono::seconds _heapDumpInterval;
     std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
+    bool _delayFirstSnapshot;
     uint64_t _runtimeSessionKeywords;
     uint32_t _runtimeSessionVerbosity;
 
@@ -194,6 +213,19 @@ private:
     std::unordered_map<ClassID, ClassHistogramEntry> _classHistogram;
     // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
     mutable std::recursive_mutex _histogramLock;
+
+    // Reference chain tracking
+    std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
+    std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
+
+    // Persisted across heap dumps to avoid rebuilding class layouts via COM calls.
+    std::unique_ptr<ClassLayoutCache> _pClassLayoutCache;
+
+    // Resolved once via OnModuleLoaded when mscorlib is detected.
+    ClassID _stringClassID = 0;
+
+    // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
+    size_t _visitedSetHighWatermark = 512;
 
     std::chrono::nanoseconds _startTimestamp;
 
