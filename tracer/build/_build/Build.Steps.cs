@@ -58,16 +58,18 @@ partial class Build
     // <project>/, vcxproj outputs land under <project>/<Config>/<Arch>/.
     AbsolutePath GetNativeOutputDirectory(string projectName) => NativeArtifactsDirectory / projectName;
 
+    // Scratch space used by the release-tooling targets in Build.GitHub.cs to download
+    // upstream Azure DevOps / GitLab artifacts. Not a build output destination.
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "symbols";
-    AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
+    AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "output");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
     AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
     AbsolutePath MsbuildDebugPath => TestLogsDirectory / "msbuild";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
-    AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
+    AbsolutePath ToolSourceDirectory => ToolSource ?? (ArtifactsDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (BuildArtifactsDirectory / "monitoring-home");

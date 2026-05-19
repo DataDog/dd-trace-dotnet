@@ -77,13 +77,13 @@ variables:
   linuxArm64Pool: azure-managed-linux-arm64-1
   windowsX64Pool: azure-managed-windows-x64-2
 
-  relativeArtifacts: /tracer/src/bin/artifacts
+  relativeArtifacts: /artifacts/output
   monitoringHome: $(System.DefaultWorkingDirectory)/artifacts/monitoring-home
-  artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  artifacts: $(System.DefaultWorkingDirectory)/artifacts/output
   outputDir: $(System.DefaultWorkingDirectory)/artifacts
   symbols: $(System.DefaultWorkingDirectory)/artifacts/symbols
-  relativeRunnerTool: tracer/src/bin/runnerTool
-  relativeRunnerStandalone: tracer/src/bin/runnerStandalone
+  relativeRunnerTool: artifacts/output/runnerTool
+  relativeRunnerStandalone: artifacts/output/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
