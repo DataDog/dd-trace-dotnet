@@ -7,9 +7,12 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
@@ -23,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private const int MaxSizeBytes = 256 * 1024; // 256 KB
 
         // Loops through all entries of the EventBridge event and tries to inject Datadog context into each.
-        public static void InjectContext<TPutEventsRequest>(Tracer tracer, TPutEventsRequest request, PropagationContext context)
+        public static void InjectContext<TPutEventsRequest>(Tracer tracer, TPutEventsRequest request, Scope? scope, PropagationContext context)
             where TPutEventsRequest : IPutEventsRequest, IDuckType
         {
             var entries = request.Entries.Value;
@@ -37,14 +40,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 var duckEntry = entry.DuckCast<IPutEventsRequestEntry>();
                 if (duckEntry != null)
                 {
-                    InjectHeadersIntoDetail(tracer, duckEntry, context);
+                    InjectHeadersIntoDetail(tracer, duckEntry, scope, context);
                 }
             }
         }
 
         // Tries to add Datadog trace context under the `_datadog` key at the top level of the `detail` field.
         // `detail` is a string, so we have to manually modify it using a StringBuilder.
-        private static void InjectHeadersIntoDetail(Tracer tracer, IPutEventsRequestEntry entry, PropagationContext context)
+        private static void InjectHeadersIntoDetail(Tracer tracer, IPutEventsRequestEntry entry, Scope? scope, PropagationContext context)
         {
             var detail = entry.Detail?.Trim() ?? "{}";
             if (!detail.EndsWith("}"))
@@ -54,6 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 return;
             }
 
+            var payloadSizeBytes = GetPayloadSizeBytes(detail);
+            var pathwayContext = SetDataStreamsCheckpoint(tracer, scope, entry.DetailType, entry.EventBusName, payloadSizeBytes);
+
             var detailBuilder = Util.StringBuilderCache.Acquire().Append(detail);
             detailBuilder.Remove(detail.Length - 1, 1); // Remove last bracket
             if (detail.Length > 2)
@@ -61,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 detailBuilder.Append(','); // Add comma if the original detail is not empty
             }
 
-            var traceContext = BuildContextJson(tracer, context, entry.EventBusName);
+            var traceContext = BuildContextJson(tracer, context, entry.EventBusName, pathwayContext);
             detailBuilder.Append($"\"{DatadogKey}\":{traceContext}").Append('}');
 
             // Check new detail size
@@ -77,13 +83,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         }
 
         // Builds a JSON string containing Datadog trace context
-        private static string BuildContextJson(Tracer tracer, PropagationContext context, string? eventBusName)
+        private static string BuildContextJson(Tracer tracer, PropagationContext context, string? eventBusName, PathwayContext? pathwayContext)
         {
             // Inject trace context
             var jsonBuilder = Util.StringBuilderCache.Acquire();
             jsonBuilder.Append('{');
 
             tracer.TracerManager.SpanContextPropagator.Inject(context, jsonBuilder, new StringBuilderCarrierSetter());
+            if (pathwayContext is not null)
+            {
+                tracer.TracerManager.DataStreamsManager.InjectPathwayContextAsBase64String(
+                    pathwayContext,
+                    new CarrierWithDelegate<StringBuilder>(jsonBuilder, setter: static (carrier, key, value) => AppendJsonProperty(carrier, key, value)));
+            }
 
             // Inject start time and bus name
             var startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -97,11 +109,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             return Util.StringBuilderCache.GetStringAndRelease(jsonBuilder);
         }
 
+        [TestingAndPrivateOnly]
+        internal static int GetPayloadSizeBytes(string detail)
+        {
+            return Encoding.UTF8.GetByteCount(detail);
+        }
+
+        private static PathwayContext? SetDataStreamsCheckpoint(Tracer tracer, Scope? scope, string? detailType, string? eventBusName, long payloadSizeBytes)
+        {
+            if (scope is null || StringUtil.IsNullOrEmpty(eventBusName))
+            {
+                return null;
+            }
+
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (!dataStreamsManager.IsEnabled)
+            {
+                return null;
+            }
+
+            var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
+                new EventBridgeEdgeTagCacheKey(detailType ?? string.Empty, eventBusName!),
+                static k => ["direction:out", $"topic:{k.DetailType}", $"type:eventbridge:{k.EventBusName}"]);
+
+            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes, timeInQueueMs: 0);
+            return scope.Span.Context.PathwayContext;
+        }
+
+        private static void AppendJsonProperty(StringBuilder carrier, string key, string value)
+        {
+            carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+        }
+
         private struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
         {
             public void Set(StringBuilder carrier, string key, string value)
             {
-                carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+                AppendJsonProperty(carrier, key, value);
             }
         }
     }
