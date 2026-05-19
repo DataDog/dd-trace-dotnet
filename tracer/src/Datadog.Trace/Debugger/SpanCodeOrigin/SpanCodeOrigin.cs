@@ -214,10 +214,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 bool shouldSkip;
                 try
                 {
+                    // Single-file assemblies have no Assembly.Location. We still want the
+                    // reflection-derived tags; PDB-backed file/line/column tags will be absent.
                     shouldSkip = AssemblyFilter.ShouldSkipAssembly(
                         assembly,
                         Settings.ThirdPartyDetectionExcludes,
-                        Settings.ThirdPartyDetectionIncludes);
+                        Settings.ThirdPartyDetectionIncludes,
+                        requireAssemblyLocation: false);
                 }
                 catch (Exception ex)
                 {
@@ -403,12 +406,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                             return;
                         }
 
-                        // Precompute string representations once during per-assembly cache population (stored per endpoint token)
-                        // to avoid per-span allocations (ToString()) for line/column.
+                        // Precompute per-assembly string values to avoid per-span ToString() allocations.
+                        // Normalize paths to the same forward-slash form used by Dynamic Instrumentation.
+                        var url = sp.URL.IndexOf('\\') >= 0 ? sp.URL.Replace('\\', '/') : sp.URL;
                         _sequencePoints.Add(
                             token,
                             new CachedSequencePoint(
-                                sp.URL,
+                                url,
                                 sp.StartLine.ToString(CultureInfo.InvariantCulture),
                                 sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
                     }
