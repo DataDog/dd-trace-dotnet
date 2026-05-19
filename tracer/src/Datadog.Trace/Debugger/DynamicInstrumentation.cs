@@ -589,6 +589,7 @@ namespace Datadog.Trace.Debugger
                     }
                     else if (result.Status == LiveProbeResolveStatus.Error)
                     {
+                        Log.Debug("ProbeID {ProbeID} error resolving during retry. Error: {Error}", unboundProbe.Id, result.Message);
                         probesToRemoveFromRetry ??= new List<ProbeDefinition>();
                         probesToRemoveFromRetry.Add(unboundProbe);
                         _lastReportedUnboundProbeErrors.Remove(unboundProbe.Id);
@@ -605,9 +606,7 @@ namespace Datadog.Trace.Debugger
                 {
                     Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: boundProbes.Count);
 
-                    _instrumentProbes([], lineProbes.ToArray(), [], []);
-
-					// Register processors and samplers BEFORE the native call makes the IL live:
+                    // Register processors and samplers BEFORE the native call makes the IL live:
                     // otherwise a probe hit between InstrumentProbes returning and SetRateLimit
                     // running would insert a default-rate sampler via GerOrAddSampler, and the
                     // configured rate would never take effect for that probe.
@@ -616,6 +615,8 @@ namespace Datadog.Trace.Debugger
                         ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe);
                         SetRateLimit(boundProbe);
                     }
+
+                    _instrumentProbes([], lineProbes.ToArray(), [], []);
 
                     var probeIds = new string[lineProbes.Count];
                     var newProbeStatuses = new FetchProbeStatus[boundProbes.Count];
