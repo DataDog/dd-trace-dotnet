@@ -86,32 +86,32 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\x86\static\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Tracer.Native\$(Configuration)\x86\static\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\x86\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\x86\static\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Tracer.Native\$(Configuration)\x86\static\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\x86\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64' OR '$(Configuration)|$(Platform)'=='Debug|ARM64EC'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64' OR '$(Configuration)|$(Platform)'=='Release|ARM64EC'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\..\artifacts\native\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Tracer.Native\$(Configuration)\$(Platform)\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='ARM64EC'">

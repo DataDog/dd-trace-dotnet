@@ -53,7 +53,7 @@ partial class Build
     AbsolutePath GetProjectBinDirectory(string projectName, string tfm) =>
         ArtifactsBinDirectory / projectName / $"{BuildConfiguration.ToString().ToLowerInvariant()}_{tfm.ToLowerInvariant()}";
 
-    AbsolutePath NativeArtifactsDirectory => BuildArtifactsDirectory / "native";
+    AbsolutePath NativeArtifactsDirectory => BuildArtifactsDirectory / "native-bin";
     // Resolves the output directory of a native (CMake or vcxproj) project. CMake outputs land flat under
     // <project>/, vcxproj outputs land under <project>/<Config>/<Arch>/.
     AbsolutePath GetNativeOutputDirectory(string projectName) => NativeArtifactsDirectory / projectName;

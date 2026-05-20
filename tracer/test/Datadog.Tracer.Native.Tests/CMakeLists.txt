@@ -30,7 +30,7 @@ endif()
 
 SET(TEST_EXECUTABLE_NAME "Datadog.Tracer.Native.Tests")
 # Set output folders. Don't use CACHE as variable name is reused across projects.
-SET(OUTPUT_BIN_DIR "${CMAKE_SOURCE_DIR}/artifacts/native/Datadog.Tracer.Native.Tests")
+SET(OUTPUT_BIN_DIR "${CMAKE_SOURCE_DIR}/artifacts/native-bin/Datadog.Tracer.Native.Tests")
 
 SET(TEST_OUTPUT_DIR ${OUTPUT_BIN_DIR}/)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})

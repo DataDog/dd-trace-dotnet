@@ -51,7 +51,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>..\..\..\artifacts\native\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -62,7 +62,7 @@
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>..\..\..\artifacts\native\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -72,7 +72,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>..\..\..\artifacts\native\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -83,7 +83,7 @@
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>..\..\..\artifacts\native\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -93,7 +93,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>..\..\..\artifacts\native\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -104,7 +104,7 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>..\..\..\artifacts\native\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
