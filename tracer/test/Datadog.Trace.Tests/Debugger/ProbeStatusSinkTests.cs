@@ -10,6 +10,7 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 using NativeProbeStatus = Datadog.Trace.Debugger.PInvoke.ProbeStatus;
@@ -105,6 +106,23 @@ namespace Datadog.Trace.Tests.Debugger
             probe.DebuggerDiagnostics.Diagnostics.Exception.Type.Should().Be(exception.GetType().Name);
             probe.DebuggerDiagnostics.Diagnostics.Exception.Message.Should().Be(exception.Message);
             probe.DebuggerDiagnostics.Diagnostics.Exception.StackTrace.Should().Be(exception.StackTrace);
+        }
+
+        [Fact]
+        public void AddError_WithOnlyMessage_OmitsStackTrace()
+        {
+            var probeId = Guid.NewGuid().ToString();
+            var errorMessage = $"Test error at ${nameof(AddError_WithOnlyMessage_OmitsStackTrace)}";
+
+            _sink.AddProbeStatus(probeId, Status.ERROR, errorMessage: errorMessage);
+
+            var probe = _sink.GetDiagnostics().Should().ContainSingle().Subject;
+            probe.DebuggerDiagnostics.Diagnostics.Status.Should().Be(Status.ERROR);
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Should().NotBeNull();
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Type.Should().Be("NO_TYPE");
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Message.Should().Be(errorMessage);
+            probe.DebuggerDiagnostics.Diagnostics.Exception.StackTrace.Should().BeNull();
+            JsonConvert.SerializeObject(probe).Should().NotContain("stacktrace");
         }
 
         [Fact]

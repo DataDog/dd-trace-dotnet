@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Sink.Models
         [JsonProperty("message")]
         public string Message { get; set; }
 
-        [JsonProperty("stacktrace")]
+        [JsonProperty("stacktrace", NullValueHandling = NullValueHandling.Ignore)]
         public string StackTrace { get; set; }
     }
 }
