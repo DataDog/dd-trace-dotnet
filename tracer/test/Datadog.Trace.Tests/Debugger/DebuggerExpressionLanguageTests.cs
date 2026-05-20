@@ -80,6 +80,46 @@ namespace Datadog.Trace.Tests.Debugger
             yield return [new Hashtable { { "password", secret }, { "public", "hello" } }];
         }
 
+        public static IEnumerable<object[]> SensitiveDictionaryValueOperations()
+        {
+            yield return
+            [
+                """
+                { "contains": [ "@value", "TOP_SECRET" ] }
+                """
+            ];
+            yield return
+            [
+                """
+                { "startsWith": [ "@value", "TOP" ] }
+                """
+            ];
+            yield return
+            [
+                """
+                { "endsWith": [ "@value", "VALUE" ] }
+                """
+            ];
+            yield return
+            [
+                """
+                { "matches": [ "@value", "TOP_.*" ] }
+                """
+            ];
+            yield return
+            [
+                """
+                { "eq": [ { "substring": [ "@value", 0, 10 ] }, "TOP_SECRET" ] }
+                """
+            ];
+            yield return
+            [
+                """
+                { "gt": [ { "len": "@value" }, 10 ] }
+                """
+            ];
+        }
+
         public static IEnumerable<object[]> TemplatesResources()
         {
             var sourceFilePath = GetSourceFilePath();
@@ -662,6 +702,72 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.Members);
 
             Assert.Equal(publicValue, publicResult);
+        }
+
+        [Theory]
+        [MemberData(nameof(SensitiveDictionaryValueOperations))]
+        public void ProbeExpressionParser_DictionaryIteratorValue_RedactsSensitiveKeysBeforeDerivedOperations(string operationJson)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, string>),
+                new Dictionary<string, string>
+                {
+                    { "password", "TOP_SECRET_VALUE" },
+                    { "public", "TOP_SECRET_VALUE" },
+                },
+                ScopeMemberKind.Local));
+
+            var publicJson = $$"""
+                               {
+                                 "any": [
+                                   {
+                                     "filter": [
+                                       { "ref": "SafeDictionaryLocal" },
+                                       { "eq": [ { "ref": "@key" }, "public" ] }
+                                     ]
+                                   },
+                                   {{operationJson}}
+                                 ]
+                               }
+                               """;
+
+            var sensitiveJson = $$"""
+                                  {
+                                    "any": [
+                                      {
+                                        "filter": [
+                                          { "ref": "SafeDictionaryLocal" },
+                                          { "eq": [ { "ref": "@key" }, "password" ] }
+                                        ]
+                                      },
+                                      {{operationJson}}
+                                    ]
+                                  }
+                                  """;
+
+            var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
+            var publicResult = publicCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(publicResult);
+            Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
+
+            var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
+            var sensitiveResult = sensitiveCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(sensitiveResult);
+            Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
         }
 
         [Fact]

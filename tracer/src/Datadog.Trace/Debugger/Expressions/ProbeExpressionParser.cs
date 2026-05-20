@@ -625,6 +625,7 @@ internal partial class ProbeExpressionParser<T>
             body = body.ReduceAndCheck();
         }
 
+        _redactedDictionaryValues = null;
         return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, durationParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression);
     }
 

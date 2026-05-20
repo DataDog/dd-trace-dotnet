@@ -20,6 +20,32 @@ internal partial class ProbeExpressionParser<T>
 {
     private Dictionary<Expression, RedactedDictionaryValueExpression> _redactedDictionaryValues;
 
+    private static bool ShouldRedactDictionaryKey(object key)
+    {
+        var type = key?.GetType() ?? typeof(object);
+        var name = key switch
+        {
+            string stringKey => stringKey,
+            null => null,
+            _ when Redaction.IsSafeToCallToString(type) => key.ToString(),
+            _ => null
+        };
+
+        return Redaction.Instance.ShouldRedact(name, type, out _);
+    }
+
+    private static Expression RedactedDictionaryOperationDefault(Type type)
+    {
+        if (type == typeof(bool))
+        {
+            return Expression.Constant(false);
+        }
+
+        return type == typeof(string)
+                   ? Expression.Constant("{REDACTED}")
+                   : Expression.Default(type);
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters)
     {
         var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
@@ -180,7 +206,7 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
-            return CollectionAndStringLengthExpression(source);
+            return RedactDictionaryOperation(source, CollectionAndStringLengthExpression(source));
         }
         catch (Exception e)
         {
@@ -301,7 +327,7 @@ internal partial class ProbeExpressionParser<T>
     private MemberExpression TrackRedactedDictionaryValue(MemberExpression valueExpression, MemberExpression keyExpression)
     {
         var shouldRedactKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
-        var shouldRedactCall = Expression.Call(Expression.Constant(this), shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
+        var shouldRedactCall = Expression.Call(null, shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
         (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
            .Add(valueExpression, new RedactedDictionaryValueExpression(shouldRedactCall, valueExpression));
         return valueExpression;
@@ -347,9 +373,27 @@ internal partial class ProbeExpressionParser<T>
                                : Expression.OrElse(shouldRedact, rightRedactedDictionaryValue.ShouldRedactExpression);
         }
 
-        return shouldRedact == null
-                   ? comparison
-                   : Expression.Condition(shouldRedact, Expression.Constant(false), comparison);
+        return RedactDictionaryOperationWithGuard(shouldRedact, comparison);
+    }
+
+    private Expression RedactDictionaryOperation(Expression source, Expression operation)
+    {
+        return TryGetRedactedDictionaryValue(source, out var redactedDictionaryValue)
+                   ? RedactDictionaryOperationWithGuard(redactedDictionaryValue.ShouldRedactExpression, operation)
+                   : operation;
+    }
+
+    private Expression RedactDictionaryOperationWithGuard(Expression shouldRedact, Expression operation)
+    {
+        if (shouldRedact == null)
+        {
+            return operation;
+        }
+
+        var redactedOperation = Expression.Condition(shouldRedact, RedactedDictionaryOperationDefault(operation.Type), operation);
+        (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
+           .Add(redactedOperation, new RedactedDictionaryValueExpression(shouldRedact, redactedOperation));
+        return redactedOperation;
     }
 
     private Expression RedactDictionaryValueForReturn(RedactedDictionaryValueExpression redactedDictionaryValue, Expression finalExpr, List<ParameterExpression> scopeMembers)
@@ -382,20 +426,6 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return finalExpr;
-    }
-
-    private bool ShouldRedactDictionaryKey(object key)
-    {
-        var type = key?.GetType() ?? typeof(object);
-        var name = key switch
-        {
-            string stringKey => stringKey,
-            null => null,
-            _ when Redaction.IsSafeToCallToString(type) => key.ToString(),
-            _ => null
-        };
-
-        return Redaction.Instance.ShouldRedact(name, type, out _);
     }
 
     private bool IsSafeCollection(Type type)
