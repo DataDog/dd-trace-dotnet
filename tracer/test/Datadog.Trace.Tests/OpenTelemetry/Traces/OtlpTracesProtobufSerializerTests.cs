@@ -39,8 +39,30 @@ public class OtlpTracesProtobufSerializerTests
         var buffer = new byte[8 * 1024];
 
         // Pick a maxSize tiny enough that any real span overflows.
+        // The buffer is large enough that no write throws; overflow is detected by the
+        // post-write byte count check.
         serializer.SerializeSpans(ref buffer, temporaryBufferOffset: 0, CreateChunk(CreateSpan()), spanBufferOffset: 0, maxSize: 8)
             .Should().Be(0);
+    }
+
+    [Fact]
+    public void SerializeSpans_ReturnsZero_WhenWritesExceedBufferCapacity()
+    {
+        var serializer = new OtlpTracesProtobufSerializer();
+
+        // Buffer is smaller than a single span's serialized form, so per-field writes
+        // will throw IndexOutOfRangeException mid-serialization. The catch must roll
+        // back and return 0 rather than letting the exception escape.
+        var buffer = new byte[8];
+
+        serializer.SerializeSpans(ref buffer, temporaryBufferOffset: 0, CreateChunk(CreateSpan()), spanBufferOffset: 0, maxSize: 8)
+            .Should().Be(0);
+
+        // After a failed serialize, retrying into a fresh buffer should succeed —
+        // proves the length-position fields were rolled back.
+        var fresh = new byte[16 * 1024];
+        var written = serializer.SerializeSpans(ref fresh, temporaryBufferOffset: 0, CreateChunk(CreateSpan()), spanBufferOffset: 0, maxSize: fresh.Length);
+        written.Should().BeGreaterThan(0);
     }
 
     [Fact]

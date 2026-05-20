@@ -248,17 +248,16 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
 
         // status (optional)
-        var errorMsg = spanModel.Span.GetTag(Tags.ErrorMsg);
-        SpanStatus? spanStatus = spanModel.Span.GetTag("otel.status_code") switch
+        StatusCode? statusCode = spanModel.Span.GetTag("otel.status_code") switch
         {
-            "STATUS_CODE_OK" => new SpanStatus(StatusCode.Ok, errorMsg),
-            "STATUS_CODE_ERROR" => new SpanStatus(StatusCode.Error, errorMsg),
+            "STATUS_CODE_OK" => StatusCode.Ok,
+            "STATUS_CODE_ERROR" => StatusCode.Error,
             _ => null,
         };
-        if (spanStatus is not null)
+        if (statusCode is not null)
         {
             writer.WritePropertyName("status");
-            WriteSpanStatus(writer, spanStatus.Value);
+            WriteSpanStatus(writer, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
         }
 
         writer.WriteEndObject();
@@ -345,22 +344,22 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteEndObject();
     }
 
-    internal static void WriteSpanStatus(JsonTextWriter writer, SpanStatus status)
+    internal static void WriteSpanStatus(JsonTextWriter writer, StatusCode statusCode, string? errorMsg)
     {
         writer.WriteStartObject();
 
         // message (optional)
-        if (!string.IsNullOrEmpty(status.Message))
+        if (!string.IsNullOrEmpty(errorMsg))
         {
             writer.WritePropertyName("message");
-            writer.WriteValue(status.Message);
+            writer.WriteValue(errorMsg);
         }
 
         // code (optional, default is STATUS_CODE_UNSET)
-        if (status.Code != StatusCode.Unset)
+        if (statusCode != StatusCode.Unset)
         {
             writer.WritePropertyName("code");
-            writer.WriteValue((int)status.Code);
+            writer.WriteValue((int)statusCode);
         }
 
         writer.WriteEndObject();

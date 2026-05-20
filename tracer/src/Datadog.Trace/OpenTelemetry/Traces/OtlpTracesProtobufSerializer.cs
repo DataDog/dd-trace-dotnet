@@ -59,61 +59,76 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     public int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
     {
-        // Grow the caller's buffer up-front so per-field writes can't IndexOutOfRangeException.
-        // Conservative upper bound: this single call won't write more than `maxSize` bytes;
-        // if it does, we'll detect the overflow at the end and return 0.
+        // Grow the caller's buffer up-front so per-field writes don't have to bounds-check.
+        // If the trace chunk's serialized form exceeds `maxSize`, a write will throw
+        // IndexOutOfRangeException (or ArgumentException from a Span<byte> ctor on a too-short
+        // range); the catch below treats that as overflow and returns 0.
+        // TODO: Follow the OpenTelemetry SDK approach to grow the buffer only as necessary.
         MessagePackBinary.EnsureCapacity(ref bytes, temporaryBufferOffset, maxSize);
-
-        int writePosition = temporaryBufferOffset;
 
         // Snapshot length-position fields before mutating them, so we can roll back on overflow.
         int savedResourceSpansLengthPos = _resourceSpansLengthPos;
         int savedScopeSpansLengthPos = _scopeSpansLengthPos;
 
-        if (spanBufferOffset == HeaderSize)
+        try
         {
-            // Open ExportTraceServiceRequest -> ResourceSpans (field 1, LEN)
-            writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, TracesData_Resource_Spans, ProtobufWireType.LEN);
-            // Convert the absolute position in the temporary buffer to an absolute position in `_buffer`.
-            _resourceSpansLengthPos = (writePosition - temporaryBufferOffset) + spanBufferOffset;
-            writePosition += ReserveSizeForLength;
+            int writePosition = temporaryBufferOffset;
 
-            // ResourceSpans.resource (field 1, LEN)
-            writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ResourceSpans_Resource, ProtobufWireType.LEN);
-            int resourceLengthPos = writePosition;
-            writePosition += ReserveSizeForLength;
+            if (spanBufferOffset == HeaderSize)
+            {
+                // Open ExportTraceServiceRequest -> ResourceSpans (field 1, LEN)
+                writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, TracesData_Resource_Spans, ProtobufWireType.LEN);
+                // Convert the absolute position in the temporary buffer to an absolute position in `_buffer`.
+                _resourceSpansLengthPos = (writePosition - temporaryBufferOffset) + spanBufferOffset;
+                writePosition += ReserveSizeForLength;
 
-            writePosition = WriteResourceAttributes(bytes, writePosition, in traceChunk);
+                // ResourceSpans.resource (field 1, LEN)
+                writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ResourceSpans_Resource, ProtobufWireType.LEN);
+                int resourceLengthPos = writePosition;
+                writePosition += ReserveSizeForLength;
 
-            ProtobufSerializer.WriteReservedLength(bytes, resourceLengthPos, writePosition - (resourceLengthPos + ReserveSizeForLength));
+                writePosition = WriteResourceAttributes(bytes, writePosition, in traceChunk);
 
-            // ResourceSpans.scope_spans (field 2, LEN)
-            writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ResourceSpans_Scope_Spans, ProtobufWireType.LEN);
-            // Convert the absolute position in the temporary buffer to an absolute position in `_buffer`.
-            _scopeSpansLengthPos = (writePosition - temporaryBufferOffset) + spanBufferOffset;
-            writePosition += ReserveSizeForLength;
+                ProtobufSerializer.WriteReservedLength(bytes, resourceLengthPos, writePosition - (resourceLengthPos + ReserveSizeForLength));
 
-            // Note: we intentionally skip emitting ScopeSpans.scope (instrumentation scope) to match the JSON serializer's behavior.
+                // ResourceSpans.scope_spans (field 2, LEN)
+                writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ResourceSpans_Scope_Spans, ProtobufWireType.LEN);
+                // Convert the absolute position in the temporary buffer to an absolute position in `_buffer`.
+                _scopeSpansLengthPos = (writePosition - temporaryBufferOffset) + spanBufferOffset;
+                writePosition += ReserveSizeForLength;
+
+                // Note: we intentionally skip emitting ScopeSpans.scope (instrumentation scope) to match the JSON serializer's behavior.
+            }
+
+            for (var i = 0; i < traceChunk.SpanCount; i++)
+            {
+                var spanModel = traceChunk.GetSpanModel(i);
+                writePosition = WriteSpan(bytes, writePosition, in spanModel);
+            }
+
+            var bytesWritten = writePosition - temporaryBufferOffset;
+
+            if (bytesWritten > maxSize)
+            {
+                // Defensive: writes wrote past the contract's maxSize without throwing.
+                // This only happens when the temporary buffer was pre-grown larger than
+                // maxSize (e.g. from a previous flush cycle). Roll back and signal overflow.
+                _resourceSpansLengthPos = savedResourceSpansLengthPos;
+                _scopeSpansLengthPos = savedScopeSpansLengthPos;
+                return 0;
+            }
+
+            return bytesWritten;
         }
-
-        for (var i = 0; i < traceChunk.SpanCount; i++)
+        catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentException)
         {
-            var spanModel = traceChunk.GetSpanModel(i);
-            writePosition = WriteSpan(bytes, writePosition, in spanModel);
-        }
-
-        var bytesWritten = writePosition - temporaryBufferOffset;
-
-        if (bytesWritten >= maxSize)
-        {
-            // We've reached or exceeded the maximum size; signal overflow to the caller.
-            // Roll back length-position fields so a retry into a fresh buffer is unaffected.
+            // A write exceeded the temporary buffer's headroom (maxSize bytes from
+            // temporaryBufferOffset). Roll back length-position fields so a retry into
+            // a fresh buffer is unaffected.
             _resourceSpansLengthPos = savedResourceSpansLengthPos;
             _scopeSpansLengthPos = savedScopeSpansLengthPos;
             return 0;
         }
-
-        return bytesWritten;
     }
 
     public int FinishBody(ref byte[] bytes, int offset, int maxSize)
@@ -126,7 +141,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         // Edge case (unsure how this would happen): An initial SerializeSpans call succeeded
         // (returned a non-zero size but the buffer was not large enough and failed on SpanBuffer.EnsureCapacity.
         //
-        // This would result in the buffer being full buth when this is called, the logic to patch
+        // This would result in the buffer being full but when this is called, the logic to patch
         // the resource spans length and scope spans length would result in a negative length.
         // Skip patching in this case by returning 0, so the resulting data would be empty.
         if (offset <= _resourceSpansLengthPos + ReserveSizeForLength)
@@ -263,7 +278,6 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         }
 
         // status (field 15)
-        var errorMsg = spanModel.Span.GetTag(Tags.ErrorMsg);
         int? statusCode = spanModel.Span.GetTag("otel.status_code") switch
         {
             "STATUS_CODE_OK" => Status_Code_Ok,
@@ -272,7 +286,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         };
         if (statusCode is not null)
         {
-            writePosition = WriteSpanStatus(bytes, writePosition, statusCode.Value, errorMsg);
+            writePosition = WriteSpanStatus(bytes, writePosition, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
         }
 
         // flags (field 16, fixed32) — only when sampling priority is known
@@ -338,7 +352,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(link.Context);
             if (!StringUtil.IsNullOrEmpty(traceState))
             {
-                writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Link_Trace_State, traceState!);
+                writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Link_Trace_State, traceState);
             }
         }
 
@@ -390,7 +404,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
         if (!StringUtil.IsNullOrEmpty(message))
         {
-            writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Status_Message, message!);
+            writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Status_Message, message);
         }
 
         writePosition = ProtobufSerializer.WriteEnumWithTag(bytes, writePosition, Status_Code, statusCode);
