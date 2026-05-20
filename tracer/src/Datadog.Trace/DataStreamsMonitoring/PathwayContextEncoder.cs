@@ -22,6 +22,12 @@ internal static class PathwayContextEncoder
     internal const int MaxBase64EncodedSize = 36;
 
     /// <summary>
+    /// Tolerance (in nanoseconds) applied when validating that decoded pathway/edge timestamps
+    /// are not in the future. Allows for normal clock drift between hosts.
+    /// </summary>
+    internal const long MaxClockSkewNs = 60L * 1_000_000_000L;
+
+    /// <summary>
     /// Encodes a <see cref="PathwayContext"/> as a series of bytes
     /// NOTE: the encoding is lossy, in that we convert <see cref="PathwayContext.PathwayStart"/>
     /// and <see cref="PathwayContext.EdgeStart"/> from ns to ms
@@ -108,8 +114,8 @@ internal static class PathwayContextEncoder
             return null;
         }
 
-        var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-        if (pathwayStartNs > nowNs || edgeStartNs > nowNs)
+        var maxAllowedNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() + MaxClockSkewNs;
+        if (pathwayStartNs > maxAllowedNs || edgeStartNs > maxAllowedNs)
         {
             Log.Warning(
                 "Error decoding Data Stream PathwayContext from bytes {Base64EncodedBytes}: pathway or edge start is in the future",
@@ -161,8 +167,8 @@ internal static class PathwayContextEncoder
             return null;
         }
 
-        var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-        if (pathwayStartNs > nowNs || edgeStartNs > nowNs)
+        var maxAllowedNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() + MaxClockSkewNs;
+        if (pathwayStartNs > maxAllowedNs || edgeStartNs > maxAllowedNs)
         {
             Log.Warning("Error decoding Data Stream PathwayContext from bytes: pathway or edge start is in the future");
             return null;
