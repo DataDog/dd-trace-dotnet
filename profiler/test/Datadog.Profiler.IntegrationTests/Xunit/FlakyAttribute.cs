@@ -11,7 +11,7 @@ namespace Datadog.Profiler.IntegrationTests.Xunit;
 /// Marks a test as flaky, so that it is automatically retried by <see cref="ProfilerTestCase"/>.
 /// </summary>
 /// <param name="reason">The reason that this test was marked flaky.</param>
-/// <param name="maxRetries">The maximum number of times a test should be retried (default 10).</param>
+/// <param name="maxRetries">The maximum number of times a test should be retried (default 5).</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class FlakyAttribute(string reason, byte maxRetries = 5) : Attribute
 {
