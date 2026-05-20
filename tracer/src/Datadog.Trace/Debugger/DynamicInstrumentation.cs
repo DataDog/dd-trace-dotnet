@@ -400,8 +400,8 @@ namespace Datadog.Trace.Debugger
         private bool ShouldReportUnboundProbeError(string probeId, LineProbeResolveResult result)
         {
             var errorKey = GetLineProbeResolveErrorKey(result);
-            if (_lastReportedUnboundProbeErrors.TryGetValue(probeId, out var lastErrorMessage) &&
-                lastErrorMessage == errorKey)
+            if (_lastReportedUnboundProbeErrors.TryGetValue(probeId, out var lastErrorKey) &&
+                lastErrorKey == errorKey)
             {
                 return false;
             }
@@ -428,6 +428,8 @@ namespace Datadog.Trace.Debugger
             {
                 var boundedProbes = _probeStatusPoller.GetBoundedProbes();
                 var probesToRemoveFromNative = new List<string>();
+                _probeStatusPoller.RemoveProbes(removedProbesIds);
+
                 for (var i = 0; i < removedProbesIds.Length; i++)
                 {
                     var id = removedProbesIds[i];
@@ -435,8 +437,6 @@ namespace Datadog.Trace.Debugger
                     {
                         _unboundProbes.RemoveAll(pd => pd.Id == id);
                         _lastReportedUnboundProbeErrors.Remove(id);
-
-                        _probeStatusPoller.RemoveProbes(removedProbesIds);
 
                         ProbeRateLimiter.Instance.ResetRate(id);
                         ProbeExpressionsProcessor.Instance.Remove(id);
