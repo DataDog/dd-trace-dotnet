@@ -281,17 +281,39 @@ internal partial class ProbeExpressionParser<T>
         return false;
     }
 
-    private ConditionalExpression RedactDictionaryValueWhenKeyMatches(Expression valueExpression, Expression keyExpression)
+    private ConditionalExpression RedactDictionaryValueWhenKeyMatches(MemberExpression valueExpression, Expression keyExpression)
     {
         var shouldRedactKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
         var shouldRedactCall = Expression.Call(Expression.Constant(this), shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
-        return Expression.Condition(shouldRedactCall, RedactedValue(), valueExpression);
+        return Expression.Condition(shouldRedactCall, RedactedDictionaryValue(valueExpression.Type), valueExpression);
+    }
+
+    private Expression RedactedDictionaryValue(Type valueType)
+    {
+        if (valueType == typeof(string))
+        {
+            return RedactedValue();
+        }
+
+        if (valueType == typeof(object))
+        {
+            return Expression.Convert(RedactedValue(), typeof(object));
+        }
+
+        return Expression.Default(valueType);
     }
 
     private bool ShouldRedactDictionaryKey(object key)
     {
-        var name = key?.ToString();
         var type = key?.GetType() ?? typeof(object);
+        var name = key switch
+        {
+            string stringKey => stringKey,
+            null => null,
+            _ when Redaction.IsSafeToCallToString(type) => key.ToString(),
+            _ => null
+        };
+
         return Redaction.Instance.ShouldRedact(name, type, out _);
     }
 

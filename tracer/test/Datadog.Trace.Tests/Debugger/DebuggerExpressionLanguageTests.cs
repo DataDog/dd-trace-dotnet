@@ -336,6 +336,79 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_RedactsSensitiveKeysWithoutChangingValueType()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, int>),
+                new Dictionary<string, int>
+                {
+                    { "password", 42 },
+                    { "public", 10 }
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "any": [
+                                    { "ref": "SafeDictionaryLocal" },
+                                    {
+                                      "eq": [ { "ref": "@value" }, 10 ]
+                                    }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_DoesNotCallUnsafeKeyToString()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<ThrowsOnToStringKey, string>),
+                new Dictionary<ThrowsOnToStringKey, string>
+                {
+                    { new ThrowsOnToStringKey(), "visible" }
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "any": [
+                                    { "ref": "SafeDictionaryLocal" },
+                                    {
+                                      "eq": [ { "ref": "@value" }, "visible" ]
+                                    }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
         public void ProbeExpressionParser_ConstructedOpenGenericReferenceTypeParameter_CanCompileExpression()
         {
             var scopeMembers = CreateScopeMembers();
@@ -1004,6 +1077,14 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 { "hello", null },
             };
+        }
+
+        private sealed class ThrowsOnToStringKey
+        {
+            public override string ToString()
+            {
+                throw new InvalidOperationException("Dictionary key ToString should not be called.");
+            }
         }
     }
 }
