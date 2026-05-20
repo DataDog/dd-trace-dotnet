@@ -82,6 +82,34 @@ public class DebuggerGlobalRateLimiterTests
     }
 
     [Fact]
+    public void SetRate_AfterDispose_DoesNotCreateNewSamplers()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+
+        limiter.Dispose();
+        limiter.SetRate(42);
+
+        Assert.Equal(
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond],
+            factory.RequestedRates);
+    }
+
+    [Fact]
+    public void Initialize_AfterDispose_RecreatesDefaultSamplers()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+
+        limiter.Dispose();
+        limiter.Initialize();
+
+        Assert.Equal(
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond],
+            factory.RequestedRates);
+    }
+
+    [Fact]
     public void SnapshotProbesShareOneGlobalBudget()
     {
         var factory = new RecordingSamplerFactory();

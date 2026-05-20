@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Logging;
 
@@ -23,9 +24,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         private readonly Func<int, IAdaptiveSampler> _samplerFactory;
         private readonly ILogRateLimiter _logRateLimiter;
+        private readonly object _lifetimeLock = new();
 
         private IAdaptiveSampler _snapshotSampler;
         private IAdaptiveSampler _logSampler;
+        private bool _disposed;
 
         internal DebuggerGlobalRateLimiter()
             : this(AdaptiveSamplerLifetime.Create, new LogRateLimiter(LogCooldownSeconds))
@@ -47,8 +50,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             var sampler = probeType switch
             {
-                ProbeType.Snapshot => _snapshotSampler,
-                ProbeType.Log => _logSampler,
+                ProbeType.Snapshot => Volatile.Read(ref _snapshotSampler),
+                ProbeType.Log => Volatile.Read(ref _logSampler),
                 _ => null
             };
 
@@ -61,27 +64,61 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return false;
         }
 
+        public void Initialize()
+        {
+            lock (_lifetimeLock)
+            {
+                _disposed = false;
+                ReplaceSamplers(DefaultSnapshotSamplesPerSecond, DefaultLogSamplesPerSecond);
+            }
+        }
+
         public void SetRate(double? samplesPerSecond)
         {
-            if (!samplesPerSecond.HasValue)
+            lock (_lifetimeLock)
             {
-                ResetRate();
-                return;
-            }
+                if (_disposed)
+                {
+                    return;
+                }
 
-            var configuredRate = Math.Max((int)samplesPerSecond.Value, 0);
-            ReplaceSamplers(configuredRate, configuredRate);
+                if (!samplesPerSecond.HasValue)
+                {
+                    ReplaceSamplers(DefaultSnapshotSamplesPerSecond, DefaultLogSamplesPerSecond);
+                    return;
+                }
+
+                var configuredRate = Math.Max((int)samplesPerSecond.Value, 0);
+                ReplaceSamplers(configuredRate, configuredRate);
+            }
         }
 
         public void ResetRate()
         {
-            ReplaceSamplers(DefaultSnapshotSamplesPerSecond, DefaultLogSamplesPerSecond);
+            lock (_lifetimeLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                ReplaceSamplers(DefaultSnapshotSamplesPerSecond, DefaultLogSamplesPerSecond);
+            }
         }
 
         public void Dispose()
         {
-            AdaptiveSamplerLifetime.Dispose(ref _snapshotSampler);
-            AdaptiveSamplerLifetime.Dispose(ref _logSampler);
+            lock (_lifetimeLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                AdaptiveSamplerLifetime.Dispose(ref _snapshotSampler);
+                AdaptiveSamplerLifetime.Dispose(ref _logSampler);
+            }
         }
 
         private void ReplaceSamplers(int snapshotSamplesPerSecond, int logSamplesPerSecond)

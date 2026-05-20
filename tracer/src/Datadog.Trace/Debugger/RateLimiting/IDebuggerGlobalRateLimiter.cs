@@ -14,6 +14,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
     {
         bool ShouldSample(ProbeType probeType, string probeId);
 
+        void Initialize();
+
         void SetRate(double? samplesPerSecond);
 
         void ResetRate();

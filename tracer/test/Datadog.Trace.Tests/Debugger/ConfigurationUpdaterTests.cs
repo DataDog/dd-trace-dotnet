@@ -288,6 +288,10 @@ public class ConfigurationUpdaterTests
 
         public bool ShouldSample(ProbeType probeType, string probeId) => true;
 
+        public void Initialize()
+        {
+        }
+
         public void SetRate(double? samplesPerSecond)
         {
             SetRateCallCount++;

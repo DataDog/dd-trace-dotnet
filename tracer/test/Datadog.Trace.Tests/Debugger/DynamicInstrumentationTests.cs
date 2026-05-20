@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -26,6 +27,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
+using DebuggerSampling = Datadog.Trace.Debugger.Configurations.Models.Sampling;
 
 #nullable enable
 
@@ -55,7 +57,7 @@ public class DynamicInstrumentationTests
             NoOpStatsd.Instance,
             globalRateLimiter);
 
-        globalRateLimiter.ResetRateCallCount.Should().Be(1);
+        globalRateLimiter.InitializeCallCount.Should().Be(1);
     }
 
     [Fact]
@@ -66,13 +68,14 @@ public class DynamicInstrumentationTests
             NullConfigurationTelemetry.Instance);
 
         var globalRateLimiter = new GlobalRateLimiterMock();
+        var logUploader = new LogUploaderMock();
         var debugger = new DynamicInstrumentation(
             settings,
             new DiscoveryServiceMock(),
             new RcmSubscriptionManagerMock(),
             new LineProbeResolverMock(),
             new SnapshotUploaderMock(),
-            new LogUploaderMock(),
+            logUploader,
             new UploaderMock(),
             new ProbeStatusPollerMock(),
             ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
@@ -82,6 +85,99 @@ public class DynamicInstrumentationTests
         debugger.Dispose();
 
         globalRateLimiter.DisposeCallCount.Should().Be(1);
+        logUploader.DisposeCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DynamicInstrumentation_IgnoresAddedConfigurationAfterDispose()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            subscriptionManager,
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            updater,
+            NoOpStatsd.Instance,
+            globalRateLimiter);
+
+        debugger.Dispose();
+        subscriptionManager.LastSubscription.Should().NotBeNull();
+        var subscription = subscriptionManager.LastSubscription!;
+
+        await subscription.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                ["service-config"] =
+                [
+                    CreateRemoteConfiguration(
+                        "datadog/123/LIVE_DEBUGGING/serviceConfig_/config",
+                        """{"service_configuration":{"sampling":{"snapshots_per_second":42}}}""")
+                ]
+            },
+            null);
+
+        globalRateLimiter.SetRateCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task DynamicInstrumentation_IgnoresRemovedConfigurationAfterDispose()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            subscriptionManager,
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            updater,
+            NoOpStatsd.Instance,
+            globalRateLimiter);
+
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                }
+            });
+        globalRateLimiter.ResetCounters();
+
+        debugger.Dispose();
+        subscriptionManager.LastSubscription.Should().NotBeNull();
+        var subscription = subscriptionManager.LastSubscription!;
+
+        await subscription.Invoke(
+            [],
+            new Dictionary<string, List<RemoteConfigurationPath>>
+            {
+                ["service-config"] =
+                [
+                    RemoteConfigurationPath.FromPath("datadog/123/LIVE_DEBUGGING/serviceConfig_/config")
+                ]
+            });
+
+        globalRateLimiter.SetRateCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -202,6 +298,12 @@ public class DynamicInstrumentationTests
         {
             await Task.Delay(50);
         }
+    }
+
+    private static RemoteConfiguration CreateRemoteConfiguration(string path, string json)
+    {
+        var content = Encoding.UTF8.GetBytes(json);
+        return new RemoteConfiguration(RemoteConfigurationPath.FromPath(path), content, content.Length, [], version: 1);
     }
 
     public class ProbeFileLoadingTests : IDisposable
@@ -1212,6 +1314,7 @@ public class DynamicInstrumentationTests
 
         public void Unsubscribe(ISubscription subscription)
         {
+            LastSubscription = subscription;
             foreach (var productKey in subscription.ProductKeys)
             {
                 ProductKeys.Remove(productKey);
@@ -1274,6 +1377,8 @@ public class DynamicInstrumentationTests
     {
         internal bool Called { get; private set; }
 
+        internal int DisposeCallCount { get; private set; }
+
         public Task StartFlushingAsync()
         {
             Called = true;
@@ -1282,6 +1387,7 @@ public class DynamicInstrumentationTests
 
         public void Dispose()
         {
+            DisposeCallCount++;
         }
     }
 
@@ -1347,19 +1453,35 @@ public class DynamicInstrumentationTests
 
     private class GlobalRateLimiterMock : IDebuggerGlobalRateLimiter
     {
+        internal int InitializeCallCount { get; private set; }
+
         internal int DisposeCallCount { get; private set; }
 
         internal int ResetRateCallCount { get; private set; }
 
+        internal int SetRateCallCount { get; private set; }
+
         public bool ShouldSample(ProbeType probeType, string probeId) => true;
+
+        public void Initialize()
+        {
+            InitializeCallCount++;
+        }
 
         public void SetRate(double? samplesPerSecond)
         {
+            SetRateCallCount++;
         }
 
         public void ResetRate()
         {
             ResetRateCallCount++;
+        }
+
+        public void ResetCounters()
+        {
+            SetRateCallCount = 0;
+            ResetRateCallCount = 0;
         }
 
         public void Dispose()
