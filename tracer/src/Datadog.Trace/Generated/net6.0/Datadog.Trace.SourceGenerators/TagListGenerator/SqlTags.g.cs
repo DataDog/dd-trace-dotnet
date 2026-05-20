@@ -32,6 +32,9 @@ namespace Datadog.Trace.Tagging
         // OutHostBytes = MessagePack.Serialize("out.host");
         private static ReadOnlySpan<byte> OutHostBytes => [168, 111, 117, 116, 46, 104, 111, 115, 116];
 
+        // BatchSizeBytes = MessagePack.Serialize("db.operation.batch.size");
+        private static ReadOnlySpan<byte> BatchSizeBytes => [183, 100, 98, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 97, 116, 99, 104, 46, 115, 105, 122, 101];
+
         // DbmTraceInjectedBytes = MessagePack.Serialize("_dd.dbm_trace_injected");
         private static ReadOnlySpan<byte> DbmTraceInjectedBytes => [182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100];
 
@@ -48,6 +51,7 @@ namespace Datadog.Trace.Tagging
                 "db.name" => DbName,
                 "db.user" => DbUser,
                 "out.host" => OutHost,
+                "db.operation.batch.size" => BatchSize,
                 "_dd.dbm_trace_injected" => DbmTraceInjected,
                 "_dd.propagated_hash" => BaseHash,
                 _ => base.GetTag(key),
@@ -72,6 +76,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "out.host": 
                     OutHost = value;
+                    break;
+                case "db.operation.batch.size": 
+                    BatchSize = value;
                     break;
                 case "_dd.dbm_trace_injected": 
                     DbmTraceInjected = value;
@@ -118,6 +125,11 @@ namespace Datadog.Trace.Tagging
             if (OutHost is not null)
             {
                 processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
+            }
+
+            if (BatchSize is not null)
+            {
+                processor.Process(new TagItem<string>("db.operation.batch.size", BatchSize, BatchSizeBytes));
             }
 
             if (DbmTraceInjected is not null)
@@ -174,6 +186,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("out.host (tag):")
                   .Append(OutHost)
+                  .Append(',');
+            }
+
+            if (BatchSize is not null)
+            {
+                sb.Append("db.operation.batch.size (tag):")
+                  .Append(BatchSize)
                   .Append(',');
             }
 

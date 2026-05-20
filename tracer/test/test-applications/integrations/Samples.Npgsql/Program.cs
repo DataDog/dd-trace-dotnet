@@ -19,6 +19,15 @@ namespace Samples.Npgsql
             using (var connection = OpenConnection(typeof(NpgsqlConnection)))
             {
                 await RelationalDatabaseTestHarness.RunAllAsync<NpgsqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+#if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
+                var batchCommandHandler = new NpgsqlBatchCommandHandler();
+                await RelationalDatabaseTestHarness.RunBatchAsync(
+                    connection,
+                    commandFactory,
+                    batchCommandHandler,
+                    cts.Token);
+#endif
             }
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
