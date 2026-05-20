@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -254,8 +254,10 @@
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
-    <ClInclude Include="ClassLayoutCache.h" />
+    <ClInclude Include="GCDescReader.h" />
+    <ClInclude Include="InlineVTCache.h" />
     <ClInclude Include="HeapSnapshotManager.h" />
+    <ClInclude Include="SnapshotCooldown.h" />
     <ClInclude Include="IGCDumpListener.h" />
     <ClInclude Include="ReferenceChainTraverser.h" />
     <ClInclude Include="ReferenceChainTypes.h" />
@@ -421,7 +423,7 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
-    <ClCompile Include="ClassLayoutCache.cpp" />
+    <ClCompile Include="InlineVTCache.cpp" />
     <ClCompile Include="HeapSnapshotManager.cpp" />
     <ClCompile Include="ReferenceChainTraverser.cpp" />
     <ClCompile Include="TypeReferenceTreeJsonSerializer.cpp" />

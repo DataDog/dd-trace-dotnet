@@ -8,6 +8,12 @@
 #include "cor.h"
 #include "corprof.h"
 
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
+#define DD_VISITED_STATS(statement) statement
+#else
+#define DD_VISITED_STATS(statement)
+#endif
+
 // Open-addressing hash map for visited object addresses.
 // Uses linear probing with a power-of-2 table and 0 as the empty sentinel
 // (valid because no real object lives at address 0).
@@ -43,6 +49,7 @@ private:
     size_t _count = 0;
     size_t _peakCount = 0;
     size_t _growCount = 0;
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
     size_t _tryInsertCalls = 0;
     size_t _tryInsertInserted = 0;
     size_t _tryInsertAlreadyPresent = 0;
@@ -53,6 +60,7 @@ private:
     size_t _markVisitedAndStoreAlreadyPresent = 0;
     size_t _markVisitedAndStoreProbes = 0;
     size_t _markVisitedAndStoreMaxProbes = 0;
+#endif
     size_t _mask = 0;
 
     static constexpr size_t DefaultCapacity = 512;
@@ -144,7 +152,7 @@ public:
     // Callers write classID directly into the returned entry.
     InsertResult TryInsert(uintptr_t address, VisitedEntry*& outEntry)
     {
-        _tryInsertCalls++;
+        DD_VISITED_STATS(_tryInsertCalls++);
 
         if (NeedsGrow())
         {
@@ -152,17 +160,16 @@ public:
         }
 
         size_t idx = HashAddress(address) & _mask;
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         size_t probes = 1;
+#endif
         while (true)
         {
             if (_addresses[idx] == address)
             {
-                _tryInsertAlreadyPresent++;
-                _tryInsertProbes += probes;
-                if (probes > _tryInsertMaxProbes)
-                {
-                    _tryInsertMaxProbes = probes;
-                }
+                DD_VISITED_STATS(_tryInsertAlreadyPresent++);
+                DD_VISITED_STATS(_tryInsertProbes += probes);
+                DD_VISITED_STATS(if (probes > _tryInsertMaxProbes) { _tryInsertMaxProbes = probes; });
                 outEntry = &_entries[idx];
                 return InsertResult::AlreadyPresent;
             }
@@ -172,17 +179,14 @@ public:
                 _entries[idx] = {};
                 _dirtyIndices.push_back(static_cast<uint32_t>(idx));
                 _count++;
-                _tryInsertInserted++;
-                _tryInsertProbes += probes;
-                if (probes > _tryInsertMaxProbes)
-                {
-                    _tryInsertMaxProbes = probes;
-                }
+                DD_VISITED_STATS(_tryInsertInserted++);
+                DD_VISITED_STATS(_tryInsertProbes += probes);
+                DD_VISITED_STATS(if (probes > _tryInsertMaxProbes) { _tryInsertMaxProbes = probes; });
                 outEntry = &_entries[idx];
                 return InsertResult::Inserted;
             }
             idx = (idx + 1) & _mask;
-            probes++;
+            DD_VISITED_STATS(probes++);
         }
     }
 
@@ -191,7 +195,7 @@ public:
     // caller already knows the classID.
     void MarkVisitedAndStore(uintptr_t address, ClassID classID)
     {
-        _markVisitedAndStoreCalls++;
+        DD_VISITED_STATS(_markVisitedAndStoreCalls++);
 
         if (NeedsGrow())
         {
@@ -199,7 +203,9 @@ public:
         }
 
         size_t idx = HashAddress(address) & _mask;
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         size_t probes = 1;
+#endif
         while (true)
         {
             if (_addresses[idx] == 0)
@@ -208,27 +214,21 @@ public:
                 _entries[idx].classID = classID;
                 _dirtyIndices.push_back(static_cast<uint32_t>(idx));
                 _count++;
-                _markVisitedAndStoreInserted++;
-                _markVisitedAndStoreProbes += probes;
-                if (probes > _markVisitedAndStoreMaxProbes)
-                {
-                    _markVisitedAndStoreMaxProbes = probes;
-                }
+                DD_VISITED_STATS(_markVisitedAndStoreInserted++);
+                DD_VISITED_STATS(_markVisitedAndStoreProbes += probes);
+                DD_VISITED_STATS(if (probes > _markVisitedAndStoreMaxProbes) { _markVisitedAndStoreMaxProbes = probes; });
                 return;
             }
             if (_addresses[idx] == address)
             {
                 _entries[idx].classID = classID;
-                _markVisitedAndStoreAlreadyPresent++;
-                _markVisitedAndStoreProbes += probes;
-                if (probes > _markVisitedAndStoreMaxProbes)
-                {
-                    _markVisitedAndStoreMaxProbes = probes;
-                }
+                DD_VISITED_STATS(_markVisitedAndStoreAlreadyPresent++);
+                DD_VISITED_STATS(_markVisitedAndStoreProbes += probes);
+                DD_VISITED_STATS(if (probes > _markVisitedAndStoreMaxProbes) { _markVisitedAndStoreMaxProbes = probes; });
                 return;
             }
             idx = (idx + 1) & _mask;
-            probes++;
+            DD_VISITED_STATS(probes++);
         }
     }
 
@@ -325,54 +325,103 @@ public:
         return _growCount;
     }
 
+    static constexpr bool AreDetailedStatsEnabled()
+    {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
+        return true;
+#else
+        return false;
+#endif
+    }
+
     size_t GetTryInsertCalls() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _tryInsertCalls;
+#else
+        return 0;
+#endif
     }
 
     size_t GetTryInsertInsertedCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _tryInsertInserted;
+#else
+        return 0;
+#endif
     }
 
     size_t GetTryInsertAlreadyPresentCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _tryInsertAlreadyPresent;
+#else
+        return 0;
+#endif
     }
 
     size_t GetTryInsertProbeCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _tryInsertProbes;
+#else
+        return 0;
+#endif
     }
 
     size_t GetTryInsertMaxProbeCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _tryInsertMaxProbes;
+#else
+        return 0;
+#endif
     }
 
     size_t GetMarkVisitedAndStoreCalls() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _markVisitedAndStoreCalls;
+#else
+        return 0;
+#endif
     }
 
     size_t GetMarkVisitedAndStoreInsertedCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _markVisitedAndStoreInserted;
+#else
+        return 0;
+#endif
     }
 
     size_t GetMarkVisitedAndStoreAlreadyPresentCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _markVisitedAndStoreAlreadyPresent;
+#else
+        return 0;
+#endif
     }
 
     size_t GetMarkVisitedAndStoreProbeCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _markVisitedAndStoreProbes;
+#else
+        return 0;
+#endif
     }
 
     size_t GetMarkVisitedAndStoreMaxProbeCount() const
     {
+#ifdef DD_HEAPSNAPSHOT_VISITED_STATS
         return _markVisitedAndStoreMaxProbes;
+#else
+        return 0;
+#endif
     }
 
     size_t GetAddressesMemorySize() const
@@ -390,3 +439,5 @@ public:
         return _dirtyIndices.capacity() * sizeof(uint32_t);
     }
 };
+
+#undef DD_VISITED_STATS

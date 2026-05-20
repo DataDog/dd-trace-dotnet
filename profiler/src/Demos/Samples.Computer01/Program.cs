@@ -105,9 +105,6 @@ namespace Samples.Computer01
             //  - interactively for debugging
             var computerService = new ComputerService();
 
-            // Console.WriteLine("Press ENTER to start...");
-            // Console.ReadLine();
-
             if (runAsService)
             {
                 computerService.RunAsService(timeout, scenario, parameter);

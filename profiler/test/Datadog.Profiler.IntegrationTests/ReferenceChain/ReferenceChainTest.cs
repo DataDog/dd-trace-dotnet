@@ -539,18 +539,126 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            // The inline VT traversal should find both:
+            // The inline VT traversal via GCDesc + InlineVTCache should find both:
             // - NestedVtTarget (referenced by InnerStruct.ShallowRef, 1 level deep)
             // - DeepVtTarget (referenced by NestedInnerStruct.DeepRef inside InnerStruct.Nested, 2 levels deep)
-            // TODO: find a way to deal with this struct-based scenario without impacting too much
-            //       the memory consumption and the CPU usage
-            //      V-- should be true at some point
-            Assert.False(
+            Assert.True(
                 trees.Any(tree =>
                     TypeExistsInTree(tree, "OuterHolder") &&
                     TypeExistsInTree(tree, "NestedVtTarget") &&
                     TypeExistsInTree(tree, "DeepVtTarget")),
                 "Expected at least one snapshot to contain OuterHolder, NestedVtTarget, and DeepVtTarget types");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckInheritanceMultiSeriesScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 21: Inheritance with mixed ref/non-ref fields.
+            // DerivedAfterGap inherits from BaseWithGap which has a ref + non-ref field.
+            // This produces multiple GCDesc series, validating that GCDesc correctly
+            // discovers refs across series without MergeParentLayout.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 21");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inheritance multi-series scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            // Both Ref1 and Ref2 targets should appear under DerivedAfterGap,
+            // even though they are in separate GCDesc series (gap from NonRef field).
+            Assert.True(
+                trees.Any(tree =>
+                    TypeExistsInTree(tree, "DerivedAfterGap") &&
+                    TypeExistsInTree(tree, "RefTarget")),
+                "Expected at least one snapshot to contain DerivedAfterGap and RefTarget types");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckVtArrayWithRefsScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 22: Value type array with reference fields.
+            // VtArrayElement[] where each element struct has a reference field.
+            // Tests GCDesc negative series count (ValSerieItem encoding).
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 22");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for VT array scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    TypeExistsInTree(tree, "VtArrayTarget")),
+                "Expected at least one snapshot to contain VtArrayTarget type (reachable via VT array element refs)");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckInlineVtNonGenericScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 23: Non-generic inline VT with reference field.
+            // HolderWithInlineVt has an embedded EmbeddedStruct (ELEMENT_TYPE_VALUETYPE)
+            // that contains a reference field. Tests InlineVTCache detection of non-generic VTs.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 23");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inline VT non-generic scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    TypeExistsInTree(tree, "HolderWithInlineVt") &&
+                    TypeExistsInTree(tree, "InlineVtTarget")),
+                "Expected at least one snapshot to contain HolderWithInlineVt and InlineVtTarget types");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckInlineVtGenericWithPrimitivesScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 24: Generic inline VT with primitive type arguments.
+            // HolderWithGenericVt embeds GenericVtWithPrimitiveArgs<int, string> whose
+            // ELEMENT_TYPE_GENERICINST signature contains primitive args (ELEMENT_TYPE_I4,
+            // ELEMENT_TYPE_STRING). Tests InlineVTCache primitive type arg resolution.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 24");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for inline VT generic with primitives scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    TypeExistsInTree(tree, "HolderWithGenericVt") &&
+                    TypeExistsInTree(tree, "GenericVtTarget")),
+                "Expected at least one snapshot to contain HolderWithGenericVt and GenericVtTarget types");
         }
 
         // ====================================================================

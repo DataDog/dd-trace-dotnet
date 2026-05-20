@@ -463,7 +463,6 @@ void CorProfilerCallback::InitializeServices()
             }
         }
 
-        // TODO: add new CLR events-based providers to the event parser
         IGCDumpListener* pGCDumpListener = _pHeapSnapshotManager;
         if (_pConfiguration->IsHeapSnapshotSkipTraversal())
         {
@@ -471,6 +470,7 @@ void CorProfilerCallback::InitializeServices()
             pGCDumpListener = nullptr;
         }
 
+        // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
             _pCorProfilerInfoEvents,
             _pAllocationsProvider,
@@ -1825,7 +1825,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
-    
+
 #ifdef LINUX
 if (_pCpuProfiler != nullptr)
 {

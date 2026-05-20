@@ -5,26 +5,16 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
-// CLR object layout:
-//   ObjectID + 0              : MethodTable* (the "reference points to the MethodTable")
-//   ObjectID + sizeof(void*)  : first instance field
-//   ...
-//
-// ICorProfilerInfo::GetClassLayout returns field offsets that are relative to the ObjectID
-// and already include the MethodTable pointer size (sizeof(void*)).
-// So the minimum valid field offset is sizeof(void*).
-static constexpr ULONG MinFieldOffset = sizeof(void*);
-
 ReferenceChainTraverser::ReferenceChainTraverser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
     TypeReferenceTree& tree,
-    ClassLayoutCache& layoutCache,
+    InlineVTCache& inlineVTCache,
     size_t visitedSetInitialCapacity)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
-      _layoutCache(layoutCache),
+      _inlineVTCache(inlineVTCache),
       _visited(visitedSetInitialCapacity),
       _objectsTraversed(0),
       _rootsProcessed(0)
@@ -36,18 +26,10 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
     auto startTime = OpSysTools::GetHighPrecisionTimestamp();
     _rootCategoryCounts[static_cast<int>(root.category)]++;
 
-    // Add the root to the tree and get the tree node to navigate from
     TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize, root.fieldName);
 
-    // Clear visited set for this root: detects cycles within this root's graph
-    // while allowing the same object to be reached from different roots.
-    // Reusing the member set avoids reallocating the bucket array for each root.
     _visited.Clear();
 
-    // Traverse the object graph from this root iteratively.
-    // rootNode is the tree position; children will be added under it.
-    // Depth starts at 1 (the root itself).
-    // Pass the pre-resolved classID/size so the first frame skips redundant profiler calls.
     TraverseObjectGraph(root.address, rootNode, 1, root.classID, root.objectSize);
 
     if (_traversalStack.capacity() > _traversalStackHighWatermark)
@@ -78,27 +60,34 @@ void ReferenceChainTraverser::LogStats() const
               "entries: ", _visited.GetEntriesMemorySize() / 1024, " KB, ",
               "dirty: ", _visited.GetDirtyIndicesMemorySize() / 1024, " KB)");
 
-    size_t tryInsertCalls = _visited.GetTryInsertCalls();
-    size_t tryInsertAverageProbesX100 = tryInsertCalls == 0 ? 0 : (_visited.GetTryInsertProbeCount() * 100) / tryInsertCalls;
-    Log::Debug("  VisitedObjectSet TryInsert: ",
-              tryInsertCalls, " calls, ",
-              _visited.GetTryInsertInsertedCount(), " inserted, ",
-              _visited.GetTryInsertAlreadyPresentCount(), " already present, ",
-              _visited.GetTryInsertProbeCount(), " probes, avg ",
-              tryInsertAverageProbesX100 / 100, ".",
-              tryInsertAverageProbesX100 % 100, ", max ",
-              _visited.GetTryInsertMaxProbeCount());
+    if constexpr (VisitedObjectSet::AreDetailedStatsEnabled())
+    {
+        size_t tryInsertCalls = _visited.GetTryInsertCalls();
+        size_t tryInsertAverageProbesX100 = tryInsertCalls == 0 ? 0 : (_visited.GetTryInsertProbeCount() * 100) / tryInsertCalls;
+        Log::Debug("  VisitedObjectSet TryInsert: ",
+                  tryInsertCalls, " calls, ",
+                  _visited.GetTryInsertInsertedCount(), " inserted, ",
+                  _visited.GetTryInsertAlreadyPresentCount(), " already present, ",
+                  _visited.GetTryInsertProbeCount(), " probes, avg ",
+                  tryInsertAverageProbesX100 / 100, ".",
+                  tryInsertAverageProbesX100 % 100, ", max ",
+                  _visited.GetTryInsertMaxProbeCount());
 
-    size_t markCalls = _visited.GetMarkVisitedAndStoreCalls();
-    size_t markAverageProbesX100 = markCalls == 0 ? 0 : (_visited.GetMarkVisitedAndStoreProbeCount() * 100) / markCalls;
-    Log::Debug("  VisitedObjectSet MarkVisitedAndStore: ",
-              markCalls, " calls, ",
-              _visited.GetMarkVisitedAndStoreInsertedCount(), " inserted, ",
-              _visited.GetMarkVisitedAndStoreAlreadyPresentCount(), " already present, ",
-              _visited.GetMarkVisitedAndStoreProbeCount(), " probes, avg ",
-              markAverageProbesX100 / 100, ".",
-              markAverageProbesX100 % 100, ", max ",
-              _visited.GetMarkVisitedAndStoreMaxProbeCount());
+        size_t markCalls = _visited.GetMarkVisitedAndStoreCalls();
+        size_t markAverageProbesX100 = markCalls == 0 ? 0 : (_visited.GetMarkVisitedAndStoreProbeCount() * 100) / markCalls;
+        Log::Debug("  VisitedObjectSet MarkVisitedAndStore: ",
+                  markCalls, " calls, ",
+                  _visited.GetMarkVisitedAndStoreInsertedCount(), " inserted, ",
+                  _visited.GetMarkVisitedAndStoreAlreadyPresentCount(), " already present, ",
+                  _visited.GetMarkVisitedAndStoreProbeCount(), " probes, avg ",
+                  markAverageProbesX100 / 100, ".",
+                  markAverageProbesX100 % 100, ", max ",
+                  _visited.GetMarkVisitedAndStoreMaxProbeCount());
+    }
+    else
+    {
+        Log::Debug("  VisitedObjectSet detailed probe stats: disabled");
+    }
 
     for (int i = 0; i < static_cast<int>(RootCategoryCount); i++)
     {
@@ -120,12 +109,8 @@ void ReferenceChainTraverser::TraverseObjectGraph(
     _traversalStack.clear();
     _traversalStack.reserve(_traversalStackHighWatermark);
 
-    // Mark-on-push: objects are marked when discovered (before pushing),
-    // not when processed (after popping). Single-probe MarkVisitedAndStore
-    // inserts + writes classID in one hash walk; child edges use
-    // TryInsert to combine MarkIfAbsent + classID caching into one probe.
     _visited.MarkVisitedAndStore(objectAddress, rootClassID);
-    _traversalStack.push_back({objectAddress, currentNode, depth, rootClassID, rootObjectSize});
+    PushTraversalFrameIfScannable(objectAddress, currentNode, depth, rootClassID, rootObjectSize);
 
     while (!_traversalStack.empty())
     {
@@ -139,122 +124,85 @@ void ReferenceChainTraverser::TraverseObjectGraph(
 
         _objectsTraversed++;
 
-        // classID and objectSize were pre-resolved before pushing:
-        //  - root frame: from HeapSnapshotManager (GetClassFromObject + GetObjectSize2)
-        //  - child frames: from the discovery site that called GetClassFromObject + GetObjectSize2
         ClassID classID = frame.classID;
         SIZE_T objectSize = frame.objectSize;
 
-        const ClassLayoutCache::ClassLayoutData* layout = _layoutCache.GetLayout(classID);
-        if (layout == nullptr)
+        if (!GCDesc::ContainsGCPointers(classID))
         {
             continue;
         }
 
-        if (layout->isArray)
+        ptrdiff_t seriesCount = GCDesc::GetSeriesCount(classID);
+        if (seriesCount < 0)
         {
-            EnqueueArrayChildren(frame.objectAddress, classID, *layout, frame.treeNode, frame.depth);
+            EnqueueValueTypeArrayChildren(frame.objectAddress, classID, frame.treeNode, frame.depth);
             continue;
         }
 
-        for (ULONG off : layout->refFieldOffsets)
+        if (seriesCount == 0)
         {
-            uintptr_t fieldValue = ReadFieldReference(frame.objectAddress, off, objectSize);
-            if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
-            {
-                continue;
-            }
-
-            VisitedObjectSet::VisitedEntry* slot = nullptr;
-            if (_visited.TryInsert(fieldValue, slot) == VisitedObjectSet::InsertResult::Inserted)
-            {
-                ClassID targetClassID = 0;
-                HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
-                if (FAILED(hr) || targetClassID == 0)
-                {
-                    continue;
-                }
-
-                SIZE_T targetSize = 0;
-                hr = _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
-                if (FAILED(hr) || targetSize == 0)
-                {
-                    continue;
-                }
-
-                slot->classID = targetClassID;
-
-                TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(targetClassID);
-                childNode->AddInstance(targetSize);
-                _traversalStack.push_back({fieldValue, childNode, frame.depth + 1, targetClassID, targetSize});
-            }
-            else if (slot->classID != 0)
-            {
-                SIZE_T revisitSize = 0;
-                _pCorProfilerInfo->GetObjectSize2(fieldValue, &revisitSize);
-                TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(slot->classID);
-                childNode->AddInstance(revisitSize);
-            }
+            continue;
         }
 
-        for (const auto& [vtOffset, vtClassID] : layout->inlineVtFields)
+        // FAST PATH: Read positive GCDesc series directly from the MethodTable.
+        // This handles both regular objects and reference arrays, matching the GC scanner.
+        // Check if this type has inline VTs (slow path needed for tree attribution).
+        const InlineVTCache::InlineVTInfo* vtInfo = _inlineVTCache.GetInlineVTInfo(classID);
+
+        if (vtInfo == nullptr)
         {
-            const ClassLayoutCache::ClassLayoutData* vtLayout = _layoutCache.GetLayout(vtClassID);
-            if (vtLayout != nullptr)
-            {
-                TypeTreeNode* vtNode = frame.treeNode->GetOrCreateChild(vtClassID);
-                vtNode->AddInstance(0);
-                EnqueueInlineValueTypeReferences(
-                    frame.objectAddress, vtOffset, *vtLayout,
-                    objectSize, vtNode, frame.depth + 1);
-            }
+            // Common case: no inline VTs. All GCDesc refs belong to direct fields.
+            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, objectSize,
+                [&](const uintptr_t* /*slot*/, uintptr_t refAddr, ULONG /*offset*/)
+                {
+                    if (IsValidObjectAddress(refAddr))
+                    {
+                        ProcessDiscoveredRef(refAddr, frame.treeNode, frame.depth);
+                    }
+                });
+        }
+        else
+        {
+            // Rare case: type has inline VTs. Still enumerate refs from the parent
+            // object's GCDesc, then use InlineVTCache only to attribute refs to
+            // the deepest inline VT range that owns their offset.
+            AddInlineValueTypeInstances(frame.treeNode, *vtInfo);
+            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, objectSize,
+                [&](const uintptr_t* /*slot*/, uintptr_t refAddr, ULONG offset)
+                {
+                    if (!IsValidObjectAddress(refAddr))
+                    {
+                        return;
+                    }
+
+                    InlineVTOwner owner = GetInlineValueTypeOwner(frame.treeNode, frame.depth, offset, *vtInfo);
+                    ProcessDiscoveredRef(refAddr, owner.node, owner.depth);
+                });
         }
     }
 }
 
-void ReferenceChainTraverser::EnqueueArrayChildren(
+void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
     uintptr_t arrayAddress,
     ClassID arrayClassID,
-    const ClassLayoutCache::ClassLayoutData& layout,
     TypeTreeNode* currentNode,
     uint32_t depth)
 {
-    bool isReferenceTypeArray =
-        layout.arrayElementType == ELEMENT_TYPE_CLASS ||
-        layout.arrayElementType == ELEMENT_TYPE_STRING ||
-        layout.arrayElementType == ELEMENT_TYPE_OBJECT ||
-        layout.arrayElementType == ELEMENT_TYPE_SZARRAY ||
-        layout.arrayElementType == ELEMENT_TYPE_ARRAY;
-
-    bool isValueTypeArray = (layout.arrayElementType == ELEMENT_TYPE_VALUETYPE);
-
-    if (!isReferenceTypeArray && !isValueTypeArray)
+    CorElementType elementType;
+    ClassID elementClassID;
+    ULONG rank = 0;
+    HRESULT hr = _pCorProfilerInfo->IsArrayClass(arrayClassID, &elementType, &elementClassID, &rank);
+    if (hr != S_OK || rank == 0 || elementType != ELEMENT_TYPE_VALUETYPE)
     {
         return;
     }
 
-    const ClassLayoutCache::ClassLayoutData* elementLayout = nullptr;
-    if (isValueTypeArray)
-    {
-        elementLayout = _layoutCache.GetLayout(layout.arrayElementClassID);
-        if (elementLayout == nullptr || elementLayout->classSize == 0)
-        {
-            return;
-        }
-
-        if (!elementLayout->elementHasReferenceFields)
-        {
-            return;
-        }
-    }
-
-    ULONG32 rank = layout.arrayRank;
-    if (rank == 0)
+    if (elementClassID == 0 || !GCDesc::ContainsGCPointers(elementClassID))
     {
         return;
     }
 
-    // Stack-allocate for rank 1 (99%+ of .NET arrays); heap-allocate only for multi-dimensional.
+    // Stack-allocate for rank 1; heap-allocate only for multi-dimensional.
     ULONG32 dimSize1;
     int dimBound1;
     ULONG32* dimensionSizes;
@@ -275,8 +223,7 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
     }
 
     BYTE* pData = nullptr;
-
-    HRESULT hr = _pCorProfilerInfo->GetArrayObjectInfo(
+    hr = _pCorProfilerInfo->GetArrayObjectInfo(
         static_cast<ObjectID>(arrayAddress),
         rank,
         dimensionSizes,
@@ -299,226 +246,148 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
         return;
     }
 
-    if (isValueTypeArray)
-    {
-        EnqueueValueTypeArrayChildren(pData, totalElements, *elementLayout, currentNode, depth);
-        return;
-    }
-
-    // Reference type array: each element is a pointer-sized reference.
-    uintptr_t* pElements = reinterpret_cast<uintptr_t*>(pData);
-
-    // For string arrays, runtime type is always System.String — skip GetClassFromObject.
-    bool isStringArray = (layout.arrayElementType == ELEMENT_TYPE_STRING);
-    ClassID stringClassID = isStringArray ? _layoutCache.GetStringClassID() : 0;
-
-    // Cache the last resolved childNode: typed arrays (Order[], string[], ...)
-    // often have all elements of the same runtime type, so GetOrCreateChild
-    // returns the same node repeatedly.
-    ClassID lastChildClassID = 0;
-    TypeTreeNode* lastChildNode = nullptr;
-
-    for (uint64_t i = 0; i < totalElements; i++)
-    {
-        uintptr_t elementAddress = pElements[i];
-
-        if (elementAddress == 0 || !IsValidObjectAddress(elementAddress))
+    GCDesc::EnumerateVTArrayRefs(arrayClassID, arrayAddress, totalElements,
+        [&](const uintptr_t* /*slot*/, uintptr_t refAddr, ULONG /*offset*/)
         {
-            continue;
-        }
-
-        VisitedObjectSet::VisitedEntry* slot = nullptr;
-        if (_visited.TryInsert(elementAddress, slot) == VisitedObjectSet::InsertResult::Inserted)
-        {
-            ClassID elementClassID;
-            if (isStringArray && stringClassID != 0)
+            if (refAddr == 0 || !IsValidObjectAddress(refAddr))
             {
-                elementClassID = stringClassID;
-            }
-            else
-            {
-                elementClassID = 0;
-                hr = _pCorProfilerInfo->GetClassFromObject(elementAddress, &elementClassID);
-                if (FAILED(hr) || elementClassID == 0)
-                {
-                    continue;
-                }
-            }
-
-            SIZE_T elementSizeBytes = 0;
-            hr = _pCorProfilerInfo->GetObjectSize2(elementAddress, &elementSizeBytes);
-            if (FAILED(hr) || elementSizeBytes == 0)
-            {
-                continue;
-            }
-
-            slot->classID = elementClassID;
-
-            TypeTreeNode* childNode;
-            if (elementClassID == lastChildClassID)
-            {
-                childNode = lastChildNode;
-            }
-            else
-            {
-                childNode = currentNode->GetOrCreateChild(elementClassID);
-                lastChildClassID = elementClassID;
-                lastChildNode = childNode;
-            }
-            childNode->AddInstance(elementSizeBytes);
-            _traversalStack.push_back({elementAddress, childNode, depth + 1, elementClassID, elementSizeBytes});
-        }
-        else if (slot->classID != 0)
-        {
-            SIZE_T revisitSize = 0;
-            _pCorProfilerInfo->GetObjectSize2(elementAddress, &revisitSize);
-
-            TypeTreeNode* childNode;
-            if (slot->classID == lastChildClassID)
-            {
-                childNode = lastChildNode;
-            }
-            else
-            {
-                childNode = currentNode->GetOrCreateChild(slot->classID);
-                lastChildClassID = slot->classID;
-                lastChildNode = childNode;
-            }
-            childNode->AddInstance(revisitSize);
-        }
-    }
-}
-
-void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
-    BYTE* pData,
-    uint64_t totalElements,
-    const ClassLayoutCache::ClassLayoutData& elementLayout,
-    TypeTreeNode* currentNode,
-    uint32_t depth)
-{
-    ULONG elementSize = elementLayout.classSize;
-
-    for (uint64_t i = 0; i < totalElements; i++)
-    {
-        uintptr_t elementBase = reinterpret_cast<uintptr_t>(pData) + i * elementSize;
-
-        for (ULONG fieldOffset : elementLayout.refFieldOffsets)
-        {
-            if (static_cast<SIZE_T>(fieldOffset) + sizeof(uintptr_t) > elementSize)
-            {
-                continue;
-            }
-
-            uintptr_t* pField = reinterpret_cast<uintptr_t*>(elementBase + fieldOffset);
-            uintptr_t fieldValue = *pField;
-
-            if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
-            {
-                continue;
+                return;
             }
 
             VisitedObjectSet::VisitedEntry* slot = nullptr;
-            if (_visited.TryInsert(fieldValue, slot) == VisitedObjectSet::InsertResult::Inserted)
+            if (_visited.TryInsert(refAddr, slot) == VisitedObjectSet::InsertResult::Inserted)
             {
                 ClassID targetClassID = 0;
-                HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
+                HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddr, &targetClassID);
                 if (FAILED(hr) || targetClassID == 0)
                 {
-                    continue;
+                    return;
                 }
 
                 SIZE_T targetSize = 0;
-                hr = _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
+                hr = _pCorProfilerInfo->GetObjectSize2(refAddr, &targetSize);
                 if (FAILED(hr) || targetSize == 0)
                 {
-                    continue;
+                    return;
                 }
 
                 slot->classID = targetClassID;
 
                 TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
                 childNode->AddInstance(targetSize);
-                _traversalStack.push_back({fieldValue, childNode, depth + 1, targetClassID, targetSize});
+                PushTraversalFrameIfScannable(refAddr, childNode, depth + 1, targetClassID, targetSize);
             }
             else if (slot->classID != 0)
             {
                 SIZE_T revisitSize = 0;
-                _pCorProfilerInfo->GetObjectSize2(fieldValue, &revisitSize);
+                _pCorProfilerInfo->GetObjectSize2(refAddr, &revisitSize);
                 TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
                 childNode->AddInstance(revisitSize);
             }
+        });
+}
+
+void ReferenceChainTraverser::AddInlineValueTypeInstances(TypeTreeNode* currentNode, const InlineVTCache::InlineVTInfo& vtInfo)
+{
+    for (const auto& field : vtInfo.fields)
+    {
+        ClassID vtClassID = field.second;
+        TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
+        vtNode->AddInstance(0);
+
+        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(vtClassID);
+        if (nestedInfo != nullptr)
+        {
+            AddInlineValueTypeInstances(vtNode, *nestedInfo);
         }
     }
 }
 
-void ReferenceChainTraverser::EnqueueInlineValueTypeReferences(
-    uintptr_t objectAddress,
-    ULONG baseOffset,
-    const ClassLayoutCache::ClassLayoutData& vtLayout,
-    SIZE_T objectSize,
+ReferenceChainTraverser::InlineVTOwner ReferenceChainTraverser::GetInlineValueTypeOwner(
     TypeTreeNode* currentNode,
-    uint32_t depth)
+    uint32_t depth,
+    ULONG refOffset,
+    const InlineVTCache::InlineVTInfo& vtInfo,
+    ULONG baseOffset)
 {
-    for (ULONG off : vtLayout.refFieldOffsets)
+    for (const auto& [vtOffset, vtClassID] : vtInfo.fields)
     {
-        ULONG absoluteOffset = baseOffset + off;
-
-        if (static_cast<SIZE_T>(absoluteOffset) + sizeof(uintptr_t) > objectSize)
+        ULONG vtStart = baseOffset + vtOffset;
+        ULONG fieldCount = 0;
+        ULONG vtSize = 0;
+        HRESULT hr = _pCorProfilerInfo->GetClassLayout(vtClassID, nullptr, 0, &fieldCount, &vtSize);
+        if (FAILED(hr) || vtSize == 0)
         {
             continue;
         }
 
-        uintptr_t fieldValue = ReadFieldReference(objectAddress, absoluteOffset, objectSize);
-        if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
+        if (refOffset < vtStart || refOffset >= vtStart + vtSize)
         {
             continue;
         }
 
-        VisitedObjectSet::VisitedEntry* slot = nullptr;
-        if (_visited.TryInsert(fieldValue, slot) == VisitedObjectSet::InsertResult::Inserted)
+        TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
+
+        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(vtClassID);
+        if (nestedInfo != nullptr)
         {
-            ClassID targetClassID = 0;
-            HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
-            if (FAILED(hr) || targetClassID == 0)
-            {
-                continue;
-            }
-
-            SIZE_T targetSize = 0;
-            hr = _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
-            if (FAILED(hr) || targetSize == 0)
-            {
-                continue;
-            }
-
-            slot->classID = targetClassID;
-
-            TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
-            childNode->AddInstance(targetSize);
-            _traversalStack.push_back({fieldValue, childNode, depth + 1, targetClassID, targetSize});
+            return GetInlineValueTypeOwner(vtNode, depth + 1, refOffset, *nestedInfo, vtStart);
         }
-        else if (slot->classID != 0)
-        {
-            SIZE_T revisitSize = 0;
-            _pCorProfilerInfo->GetObjectSize2(fieldValue, &revisitSize);
-            TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
-            childNode->AddInstance(revisitSize);
-        }
+
+        return {vtNode, depth + 1};
     }
 
-    for (const auto& [vtOff, nestedVtClassID] : vtLayout.inlineVtFields)
-    {
-        ULONG absoluteOffset = baseOffset + vtOff;
+    return {currentNode, depth};
+}
 
-        const ClassLayoutCache::ClassLayoutData* nestedLayout = _layoutCache.GetLayout(nestedVtClassID);
-        if (nestedLayout != nullptr)
+bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth)
+{
+    VisitedObjectSet::VisitedEntry* slot = nullptr;
+    if (_visited.TryInsert(refAddress, slot) == VisitedObjectSet::InsertResult::Inserted)
+    {
+        ClassID targetClassID = 0;
+        HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddress, &targetClassID);
+        if (FAILED(hr) || targetClassID == 0)
         {
-            TypeTreeNode* nestedVtNode = currentNode->GetOrCreateChild(nestedVtClassID);
-            nestedVtNode->AddInstance(0);
-            EnqueueInlineValueTypeReferences(
-                objectAddress, absoluteOffset, *nestedLayout,
-                objectSize, nestedVtNode, depth + 1);
+            return false;
         }
+
+        SIZE_T targetSize = 0;
+        hr = _pCorProfilerInfo->GetObjectSize2(refAddress, &targetSize);
+        if (FAILED(hr) || targetSize == 0)
+        {
+            return false;
+        }
+
+        slot->classID = targetClassID;
+
+        TypeTreeNode* childNode = parentNode->GetOrCreateChild(targetClassID);
+        childNode->AddInstance(targetSize);
+        PushTraversalFrameIfScannable(refAddress, childNode, depth + 1, targetClassID, targetSize);
+        return true;
+    }
+
+    if (slot->classID != 0)
+    {
+        SIZE_T revisitSize = 0;
+        _pCorProfilerInfo->GetObjectSize2(refAddress, &revisitSize);
+        TypeTreeNode* childNode = parentNode->GetOrCreateChild(slot->classID);
+        childNode->AddInstance(revisitSize);
+    }
+
+    return false;
+}
+
+void ReferenceChainTraverser::PushTraversalFrameIfScannable(
+    uintptr_t objectAddress,
+    TypeTreeNode* treeNode,
+    uint32_t depth,
+    ClassID classID,
+    SIZE_T objectSize)
+{
+    if (GCDesc::ContainsGCPointers(classID))
+    {
+        _traversalStack.push_back({objectAddress, treeNode, depth, classID, objectSize});
     }
 }
 
@@ -534,49 +403,15 @@ std::string ReferenceChainTraverser::GetClassName(ClassID classID) const
 
 bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address) const
 {
-    // Basic validation - check if address is in reasonable range
     if (address == 0 || address < 0x10000)
     {
-        return false;  // Null or too small
+        return false;
     }
 
-    // Check alignment (objects are typically pointer-aligned)
     if ((address % sizeof(void*)) != 0)
     {
         return false;
     }
 
     return true;
-}
-
-uintptr_t ReferenceChainTraverser::ReadFieldReference(uintptr_t objectAddress, ULONG fieldOffset, SIZE_T objectSize) const
-{
-    // CLR object layout:
-    //   objectAddress + 0              = MethodTable* (NOT a field!)
-    //   objectAddress + sizeof(void*)  = first instance field
-    //
-    // GetClassLayout should return offsets relative to objectAddress, including
-    // the MethodTable pointer size (sizeof(void*)). However, in practice,
-    // offset 0 has been observed during debugging (e.g., for boxed value types
-    // where GetClassLayout may return offsets relative to the value type's field
-    // area rather than the ObjectID). Reading at offset 0 would dereference the
-    // MethodTable pointer as an ObjectID, causing a crash.
-    //
-    // When offset is 0, adjust to MinFieldOffset (= sizeof(void*)) to skip past
-    // the MethodTable pointer and reach the actual first field.
-
-    if (fieldOffset < MinFieldOffset)
-    {
-        fieldOffset = MinFieldOffset;
-    }
-
-    // Guard: field value (a pointer-sized reference) must fit within the object
-    if (static_cast<SIZE_T>(fieldOffset) + sizeof(uintptr_t) > objectSize)
-    {
-        return 0;
-    }
-
-    // Read the reference stored at the field offset.
-    uintptr_t* pField = reinterpret_cast<uintptr_t*>(objectAddress + fieldOffset);
-    return *pField;
 }

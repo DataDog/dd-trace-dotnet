@@ -16,7 +16,8 @@
 #include "ServiceBase.h"
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
-#include "ClassLayoutCache.h"
+#include "InlineVTCache.h"
+#include "SnapshotCooldown.h"
 
 #include "corprof.h"
 
@@ -218,11 +219,8 @@ private:
     std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
     std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
 
-    // Persisted across heap dumps to avoid rebuilding class layouts via COM calls.
-    std::unique_ptr<ClassLayoutCache> _pClassLayoutCache;
-
-    // Resolved once via OnModuleLoaded when mscorlib is detected.
-    ClassID _stringClassID = 0;
+    // Persisted across heap dumps to avoid re-inspecting types for inline VT fields.
+    std::unique_ptr<InlineVTCache> _pInlineVTCache;
 
     // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
     size_t _visitedSetHighWatermark = 512;
@@ -231,6 +229,8 @@ private:
 
     // timestamp of the last heap snapshot
     std::chrono::nanoseconds _lastTimestamp;
+
+    SnapshotCooldown _snapshotCooldown;
 
     // TODO: see if we should also try to detect old heap size growth before triggering a heap snapshot
     uint64_t _lastOldHeapSize; // gen2 + loh + poh

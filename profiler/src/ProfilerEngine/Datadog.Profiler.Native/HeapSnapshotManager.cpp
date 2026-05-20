@@ -9,8 +9,6 @@
 #include "ReferenceChainTraverser.h"
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "ReferenceChainTypes.h"
-#include "FrameStore.h"
-#include "shared/src/native-src/com_ptr.h"
 
 #include "Log.h"
 
@@ -43,7 +41,8 @@ HeapSnapshotManager::HeapSnapshotManager(
     _objectCount(0),
     _totalSize(0),
     _duration(0),
-    _cachedItemsSize(0)
+    _cachedItemsSize(0),
+    _snapshotCooldown(0ns)
 {
     _isHeapDumpInProgress.store(false),
     _inducedGCNumber.store(-1);
@@ -63,6 +62,8 @@ HeapSnapshotManager::HeapSnapshotManager(
         _heapDumpInterval = std::chrono::duration_cast<std::chrono::seconds>(pConfiguration->GetHeapSnapshotInterval());
     }
 
+    _snapshotCooldown = SnapshotCooldown(_heapDumpInterval);
+
     _heapSnapshotDurationMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_heapsnapshot_duration", [this]() {
         return static_cast<double>(_duration);
     });
@@ -78,9 +79,9 @@ HeapSnapshotManager::HeapSnapshotManager(
 
     _pCorProfilerInfo->AddRef();
 
-    // Initialize reference tree and class layout cache (persisted across dumps)
+    // Initialize reference tree and inline VT cache (persisted across dumps)
     _typeReferenceTree = std::make_unique<TypeReferenceTree>();
-    _pClassLayoutCache = std::make_unique<ClassLayoutCache>(pCorProfilerInfo, pFrameStore);
+    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pFrameStore);
 }
 
 HeapSnapshotManager::~HeapSnapshotManager()
@@ -509,10 +510,15 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
 //  - wait for the configured interval since the previous one
 void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
 {
-    // DEBUG: we cannot start a gcdump: it breaks in the CLR because it is not allowed to start a GC during another GC
+    // Cannot start a GC dump while one is in progress, pending start, or pending cleanup.
+    if (_session != 0 || _shouldStartHeapDump.load() || _shouldCleanupHeapDumpSession.load())
+    {
+        return;
+    }
 
-    // already set so no need to check again
-    if (_shouldStartHeapDump.load() || _shouldCleanupHeapDumpSession.load())
+    auto now = OpSysTools::GetHighPrecisionTimestamp();
+
+    if (!_snapshotCooldown.IsAllowed(now))
     {
         return;
     }
@@ -527,7 +533,6 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
         }
     }
 
-    auto now = OpSysTools::GetHighPrecisionTimestamp();
     if (_lastTimestamp == 0ns)
     {
         if (_memPressureThreshold == 0)
@@ -552,43 +557,9 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
     }
 }
 
-void HeapSnapshotManager::OnModuleLoaded(ModuleID moduleId)
+void HeapSnapshotManager::OnModuleLoaded(ModuleID /*moduleId*/)
 {
-    if (_stringClassID != 0)
-    {
-        return;
-    }
-
-    std::string assemblyName;
-    if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
-    {
-        return;
-    }
-    if (assemblyName != "System.Private.CoreLib" && assemblyName != "mscorlib")
-    {
-        return;
-    }
-
-    ComPtr<IMetaDataImport> metadataImport;
-    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport,
-                     reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf()));
-    if (FAILED(hr))
-    {
-        return;
-    }
-
-    mdTypeDef stringTypeDef;
-    hr = metadataImport->FindTypeDefByName(WStr("System.String"), mdTokenNil, &stringTypeDef);
-    if (FAILED(hr))
-    {
-        return;
-    }
-
-    hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(moduleId, stringTypeDef, 0, nullptr, &_stringClassID);
-    if (FAILED(hr))
-    {
-        _stringClassID = 0;
-    }
+    // No longer needed: GCDesc reads reference fields directly from the MethodTable.
 }
 
 void HeapSnapshotManager::StartGCDump()
@@ -608,14 +579,11 @@ void HeapSnapshotManager::StartGCDump()
             _typeReferenceTree->Clear();
         }
 
-        // Pin System.String in the layout cache (resolved via OnModuleLoaded).
-        _pClassLayoutCache->SetStringClassID(_stringClassID);
-
         // Create/reset the traverser so it is ready to process roots during GC callbacks.
-        // ClassLayoutCache is persisted across dumps to avoid rebuilding class layouts.
+        // InlineVTCache is persisted across dumps to avoid re-inspecting types for inline VTs.
         // Visited set is pre-sized from the previous dump's high-water-mark to avoid Grow() storms.
         _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
-            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pClassLayoutCache,
+            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
             _visitedSetHighWatermark);
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
@@ -676,11 +644,13 @@ void HeapSnapshotManager::OnEndGCDump()
                    " buckets (peak entries this dump: ", peakEntries, ")");
     }
 
-    if (_pClassLayoutCache)
+    if (_pInlineVTCache)
     {
-        Log::Debug("ClassLayoutCache memory: ", _pClassLayoutCache->GetMemorySize(), " bytes (",
-                   _pClassLayoutCache->GetEntryCount(), " types)");
+        Log::Debug("InlineVTCache memory: ", _pInlineVTCache->GetMemorySize(), " bytes (",
+                   _pInlineVTCache->GetEntryCount(), " types with inline VTs)");
     }
+
+    _snapshotCooldown.OnDumpEnd(_lastTimestamp);
 
     // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity
     //        because it could deadlock the GC
@@ -698,6 +668,8 @@ void HeapSnapshotManager::CleanupSession()
     {
         // TODO: could this happen if the dedicated thread is scheduled BEFORE the GC End callback returns?
     }
+
+    _snapshotCooldown.OnCleanupDone(OpSysTools::GetHighPrecisionTimestamp());
 
     // Before the fix of https://github.com/dotnet/runtime/issues/121462, it is needed to start
     // and stop a session JUST to reset the keywords/verbosity of the Microsoft-Windows-DotNETRuntime provider

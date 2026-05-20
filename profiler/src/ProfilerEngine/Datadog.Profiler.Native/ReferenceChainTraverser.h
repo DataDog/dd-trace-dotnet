@@ -5,7 +5,8 @@
 
 #include "cor.h"
 #include "corprof.h"
-#include "ClassLayoutCache.h"
+#include "InlineVTCache.h"
+#include "GCDescReader.h"
 #include "TypeReferenceTree.h"
 #include "VisitedObjectSet.h"
 #include "ReferenceChainTypes.h"
@@ -22,6 +23,9 @@ class IFrameStore;
 // from within ICorProfilerCallback methods (i.e. during GC dump events).
 // They cannot be called from another thread or after the GC ends.
 // Therefore, traversal MUST happen inside the OnBulkRoot* event handlers.
+//
+// Reference enumeration uses the GCDesc (fast path, no cache) for all objects.
+// Inline value type tree attribution uses InlineVTCache (slow path, rare).
 class ReferenceChainTraverser
 {
 public:
@@ -38,7 +42,7 @@ public:
         ICorProfilerInfo12* pCorProfilerInfo,
         IFrameStore* pFrameStore,
         TypeReferenceTree& tree,
-        ClassLayoutCache& layoutCache,
+        InlineVTCache& inlineVTCache,
         size_t visitedSetInitialCapacity = 512);
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
@@ -52,56 +56,56 @@ public:
 
 private:
     // Iterative object graph traversal using an explicit stack.
-    // Look at reference type fields, add them to the stack and iterate until empty.
+    // Uses GCDesc to enumerate reference fields directly from the MethodTable (fast path).
+    // Consults InlineVTCache for inline VT tree attribution (slow path, rare).
     void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth,
                              ClassID rootClassID, SIZE_T rootObjectSize);
 
-    // Enqueue array element children onto _traversalStack.
-    // Handles reference type arrays, value type arrays with reference fields,
-    // jagged arrays, and multi-dimensional arrays.
-    void EnqueueArrayChildren(
+    // Enqueue reference fields from inline value type array elements via GCDesc negative series.
+    void EnqueueValueTypeArrayChildren(
         uintptr_t arrayAddress,
         ClassID arrayClassID,
-        const ClassLayoutCache::ClassLayoutData& layout,
         TypeTreeNode* currentNode,
         uint32_t depth);
 
-    // Enqueue reference fields from inline value type array elements onto _traversalStack.
-    void EnqueueValueTypeArrayChildren(
-        BYTE* pData,
-        uint64_t totalElements,
-        const ClassLayoutCache::ClassLayoutData& elementLayout,
-        TypeTreeNode* currentNode,
-        uint32_t depth);
+    struct InlineVTOwner
+    {
+        TypeTreeNode* node;
+        uint32_t depth;
+    };
 
-    // Follow reference fields inside an inline value type field within a heap object.
-    // Used for structs embedded in classes (e.g., the async state machine struct inside
-    // AsyncStateMachineBox<TStateMachine>). Recurses into nested inline value types.
-    void EnqueueInlineValueTypeReferences(
+    // Materialize inline VT nodes once per containing object so instance counts
+    // do not depend on how many reference slots the value type contains.
+    void AddInlineValueTypeInstances(TypeTreeNode* currentNode, const InlineVTCache::InlineVTInfo& vtInfo);
+
+    // Map a parent-object GCDesc ref offset to the deepest inline VT node that owns it.
+    // Reference discovery remains driven by the parent object's GCDesc, matching CoreCLR's
+    // scanner; InlineVTCache only supplies tree attribution ranges.
+    InlineVTOwner GetInlineValueTypeOwner(
+        TypeTreeNode* currentNode,
+        uint32_t depth,
+        ULONG refOffset,
+        const InlineVTCache::InlineVTInfo& vtInfo,
+        ULONG baseOffset = 0);
+
+    // Process a discovered reference: insert into visited set, resolve class/size, build tree.
+    // Returns true if the reference was newly inserted and pushed onto the stack.
+    bool ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth);
+
+    void PushTraversalFrameIfScannable(
         uintptr_t objectAddress,
-        ULONG baseOffset,
-        const ClassLayoutCache::ClassLayoutData& vtLayout,
-        SIZE_T objectSize,
-        TypeTreeNode* currentNode,
-        uint32_t depth);
+        TypeTreeNode* treeNode,
+        uint32_t depth,
+        ClassID classID,
+        SIZE_T objectSize);
 
     bool IsValidObjectAddress(uintptr_t address) const;
     std::string GetClassName(ClassID classID) const;
 
-    // Read a reference from an object's field.
-    // objectAddress: ObjectID (points to the MethodTable pointer at offset 0)
-    // fieldOffset: byte offset from GetClassLayout (relative to objectAddress, includes MethodTable*)
-    // objectSize: total object size from GetObjectSize2 (for bounds checking)
-    // Returns the ObjectID stored in the field, or 0 if the read is invalid.
-    uintptr_t ReadFieldReference(uintptr_t objectAddress, ULONG fieldOffset, SIZE_T objectSize) const;
-
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
     TypeReferenceTree& _tree;
-
-    // Persisted across heap traversal.
-    // class layouts don't change over time and no dynamic types are expected.
-    ClassLayoutCache& _layoutCache;
+    InlineVTCache& _inlineVTCache;
 
     // Per-root cycle detection.
     // Cleared between roots to avoid reallocating the bucket array.

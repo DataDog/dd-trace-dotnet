@@ -306,6 +306,77 @@ namespace Samples.Computer01
         public string Label { get; set; }
     }
 
+    // Scenario 21: Inheritance with mixed ref/non-ref fields.
+    // DerivedAfterGap inherits from BaseWithGap which has a ref + non-ref field,
+    // creating multiple GCDesc series separated by the non-ref gap.
+    public class RefTarget
+    {
+        public byte[] Payload { get; } = new byte[128];
+    }
+
+    public class BaseWithGap
+    {
+        public RefTarget Ref1 { get; set; }
+        public long NonRef { get; set; }
+    }
+
+    public class DerivedAfterGap : BaseWithGap
+    {
+        public RefTarget Ref2 { get; set; }
+    }
+
+    // Scenario 22: Value type array with reference fields.
+    // Tests GCDesc negative series count (ValSerieItem encoding).
+    public class VtArrayTarget
+    {
+        public byte[] Data { get; } = new byte[64];
+    }
+
+    public struct VtArrayElement
+    {
+        public VtArrayTarget Target { get; set; }
+        public int Padding { get; set; }
+    }
+
+    // Scenario 23: Non-generic inline VT with reference field (ELEMENT_TYPE_VALUETYPE).
+    public class InlineVtTarget
+    {
+        public byte[] Data { get; } = new byte[128];
+    }
+
+    public struct EmbeddedStruct
+    {
+        public InlineVtTarget Inner { get; set; }
+        public int Id { get; set; }
+    }
+
+    public class HolderWithInlineVt
+    {
+        public EmbeddedStruct Embedded { get; set; }
+        public string Label { get; set; }
+    }
+
+    // Scenario 24: Generic inline VT with primitive type arguments.
+    // Tests ELEMENT_TYPE_GENERICINST resolution when generic arguments are
+    // primitive types (ELEMENT_TYPE_I4) or reference types (ELEMENT_TYPE_STRING/OBJECT).
+    public class GenericVtTarget
+    {
+        public byte[] Data { get; } = new byte[96];
+    }
+
+    public struct GenericVtWithPrimitiveArgs<T1, T2>
+    {
+        public T1 First { get; set; }
+        public T2 Second { get; set; }
+        public GenericVtTarget Ref { get; set; }
+    }
+
+    public class HolderWithGenericVt
+    {
+        public GenericVtWithPrimitiveArgs<int, string> Pair { get; set; }
+        public string Tag { get; set; }
+    }
+
     /// <summary>
     /// Reference chain test scenarios for heap snapshot testing.
     /// Each scenario creates specific object graph patterns to validate
@@ -338,6 +409,12 @@ namespace Samples.Computer01
         private List<GCHandle> _pinnedHandles;
         private AsyncLeakSource _asyncLeakSource;
         private List<OuterHolder<InnerStruct>> _nestedVtHolders;
+
+        // Scenarios 21-24: GCDesc-specific patterns
+        private List<DerivedAfterGap> _derivedAfterGapObjects;
+        private VtArrayElement[] _vtArrayElements;
+        private List<HolderWithInlineVt> _holdersWithInlineVt;
+        private List<HolderWithGenericVt> _holdersWithGenericVt;
 
         public ReferenceChainScenarios(int scenarioNumber)
         {
@@ -404,6 +481,18 @@ namespace Samples.Computer01
                     break;
                 case 20:
                     RunNestedValueType();
+                    break;
+                case 21:
+                    RunInheritanceMultiSeries();
+                    break;
+                case 22:
+                    RunVtArrayWithRefs();
+                    break;
+                case 23:
+                    RunInlineVtNonGeneric();
+                    break;
+                case 24:
+                    RunInlineVtGenericWithPrimitives();
                     break;
                 default:
                     RunSimpleChain();
@@ -1054,6 +1143,103 @@ namespace Samples.Computer01
             }
 
             _nestedVtHolders = holders;
+        }
+
+        /// <summary>
+        /// Scenario 21: Inheritance with mixed ref/non-ref fields.
+        /// DerivedAfterGap inherits from BaseWithGap (ref + long gap + ref).
+        /// Produces multiple GCDesc series, validating cross-series ref discovery.
+        /// </summary>
+        private void RunInheritanceMultiSeries()
+        {
+            Console.WriteLine("ReferenceChain Scenario 21: Inheritance Multi-Series");
+            var objects = new List<DerivedAfterGap>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                objects.Add(new DerivedAfterGap
+                {
+                    Ref1 = new RefTarget(),
+                    NonRef = i,
+                    Ref2 = new RefTarget()
+                });
+            }
+
+            _derivedAfterGapObjects = objects;
+        }
+
+        /// <summary>
+        /// Scenario 22: Value type array with reference fields.
+        /// VtArrayElement[] where each element struct has a reference field.
+        /// Tests GCDesc negative series count (ValSerieItem encoding).
+        /// </summary>
+        private void RunVtArrayWithRefs()
+        {
+            Console.WriteLine("ReferenceChain Scenario 22: VT Array with Refs");
+            _vtArrayElements = new VtArrayElement[100];
+
+            for (int i = 0; i < _vtArrayElements.Length; i++)
+            {
+                _vtArrayElements[i] = new VtArrayElement
+                {
+                    Target = new VtArrayTarget(),
+                    Padding = i
+                };
+            }
+        }
+
+        /// <summary>
+        /// Scenario 23: Non-generic inline VT with reference field.
+        /// HolderWithInlineVt has an embedded EmbeddedStruct (ELEMENT_TYPE_VALUETYPE)
+        /// containing a reference field. Tests InlineVTCache ELEMENT_TYPE_VALUETYPE handling.
+        /// </summary>
+        private void RunInlineVtNonGeneric()
+        {
+            Console.WriteLine("ReferenceChain Scenario 23: Inline VT Non-Generic");
+            var holders = new List<HolderWithInlineVt>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                holders.Add(new HolderWithInlineVt
+                {
+                    Embedded = new EmbeddedStruct
+                    {
+                        Inner = new InlineVtTarget(),
+                        Id = i
+                    },
+                    Label = $"holder-{i}"
+                });
+            }
+
+            _holdersWithInlineVt = holders;
+        }
+
+        /// <summary>
+        /// Scenario 24: Generic inline VT with primitive type arguments.
+        /// HolderWithGenericVt has an embedded GenericVtWithPrimitiveArgs&lt;int, string&gt;
+        /// whose signature is ELEMENT_TYPE_GENERICINST with ELEMENT_TYPE_I4 and
+        /// ELEMENT_TYPE_STRING as arguments. Tests InlineVTCache primitive type arg resolution.
+        /// </summary>
+        private void RunInlineVtGenericWithPrimitives()
+        {
+            Console.WriteLine("ReferenceChain Scenario 24: Inline VT Generic with Primitives");
+            var holders = new List<HolderWithGenericVt>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                holders.Add(new HolderWithGenericVt
+                {
+                    Pair = new GenericVtWithPrimitiveArgs<int, string>
+                    {
+                        First = i,
+                        Second = $"item-{i}",
+                        Ref = new GenericVtTarget()
+                    },
+                    Tag = $"tag-{i}"
+                });
+            }
+
+            _holdersWithGenericVt = holders;
         }
     }
 }
