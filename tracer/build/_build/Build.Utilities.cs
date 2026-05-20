@@ -176,7 +176,8 @@ partial class Build
             envVars.Add("DD_PROFILER_EXCLUDE_PROCESSES", "dotnet.exe");
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
-            string project = Solution.GetProject(SampleName)?.Path;
+            // SampleName may resolve to a standalone sample (in SamplesSolution) or an aspnet/test-helper sample (in Solution).
+            string project = (SamplesSolution.GetProject(SampleName) ?? Solution.GetProject(SampleName))?.Path;
             if (project is not null)
             {
                 Logger.Information($"Running sample '{SampleName}'");
@@ -273,7 +274,9 @@ partial class Build
            // Pipeline A: generate .g.props/.g.cs files
            Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
            var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, getCooldownMode, effectiveCooldownDays);
-           var testedVersions = await versionGenerator.GenerateVersions(Solution);
+           // Entries in the package versions JSON reference standalone sample projects, so they live in
+           // SamplesSolution (the default Solution = Datadog.Trace.Build.g.sln excludes samples).
+           var testedVersions = await versionGenerator.GenerateVersions(SamplesSolution);
 
            // Log version changes: bumps, unchanged, and overridden
            var queriedVersions = versionGenerator.QueriedVersions;
@@ -545,22 +548,40 @@ partial class Build
                         return;
                     }
                     
-                    // Create a copy of the "full solution"
-                    var sln = ProjectModelTasks.CreateSolution(
+                    // Create a copy of the "full solution" containing only the standalone test-application projects
+                    var samplesSln = ProjectModelTasks.CreateSolution(
                         fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
-                        solutions: new[] { Solution },
+                        solutions: new[] { FullSolution },
                         randomizeProjectIds: false);
 
-                    // Remove everything except the standalone test-application projects
-                    sln.AllProjects
+                    samplesSln.AllProjects
                        .Where(x => !IsTestApplication(x))
                        .ForEach(x =>
                         {
-                            Logger.Information("Removing project '{Name}'", x.Name);
-                            sln.RemoveProject(x);
+                            Logger.Information("Samples sln: removing project '{Name}'", x.Name);
+                            samplesSln.RemoveProject(x);
                         });
 
-                    sln.Save();
+                    samplesSln.Save();
+
+                    // Create a copy of the "full solution" containing everything EXCEPT the standalone test-application projects.
+                    // This is the inverse of Samples.g.sln; together they cover the full project graph with zero overlap.
+                    // It is the default Nuke Solution used by CI/build targets — restoring it does not pull in sample-only NuGet
+                    // dependencies (MongoDB, Elasticsearch, etc.), which dominate the local packages folder shipped via working-directory artifacts.
+                    var buildSln = ProjectModelTasks.CreateSolution(
+                        fileName: RootDirectory / "Datadog.Trace.Build.g.sln",
+                        solutions: new[] { FullSolution },
+                        randomizeProjectIds: false);
+
+                    buildSln.AllProjects
+                       .Where(IsTestApplication)
+                       .ForEach(x =>
+                        {
+                            Logger.Information("Build sln: removing project '{Name}'", x.Name);
+                            buildSln.RemoveProject(x);
+                        });
+
+                    buildSln.Save();
 
                     bool IsTestApplication(Project x)
                     {
@@ -568,6 +589,13 @@ partial class Build
                         // 1. They're a pain to build
                         // 2. They aren't actually run in the CI (something we should address in the future)
                         if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject" or "_build")
+                        {
+                            return false;
+                        }
+
+                        // These library projects are directly referenced via <ProjectReference> by Datadog.Tracer.Native.Tests.vcxproj,
+                        // so they must live in the build solution, not the samples solution.
+                        if (x.Name is "Samples.ExampleLibrary" or "Samples.ExampleLibraryTracer")
                         {
                             return false;
                         }
