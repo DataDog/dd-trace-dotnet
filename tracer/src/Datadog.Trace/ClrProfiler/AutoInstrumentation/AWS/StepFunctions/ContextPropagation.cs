@@ -7,6 +7,7 @@
 
 using System.Text;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 {
@@ -56,7 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         {
             public void Set(StringBuilder carrier, string key, string value)
             {
-                carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+                carrier.Append('"').Append(key).Append("\":\"");
+                JsonHelper.WriteEscapedJavaScriptString(carrier, value);
+                carrier.Append("\",");
             }
         }
     }
