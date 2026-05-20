@@ -394,6 +394,14 @@ public class LineProbeResolverTest
         result.Diagnostics.FallbackFailureReason.Should().Be(LineProbeFallbackFailureReason.NoQualifiedSuffixMatch);
         result.Diagnostics.MatchingTrailingSegments.Should().Be(1);
         result.Diagnostics.QualifiedFallbackMatchCount.Should().Be(0);
+        result.ErrorKey.Should().Be(new LineProbeResolveErrorKey(
+            LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+            LineProbeFallbackFailureReason.NoQualifiedSuffixMatch));
+        result.ErrorDetails.Should().Be(new LineProbeResolveErrorDetails(
+            result.ErrorKey,
+            BestMatchingTrailingSegments: 1,
+            QualifiedFallbackMatchCount: 0,
+            result.Diagnostics.SameFileNameMatchCount));
         result.Message.Should().Contain("did not uniquely match the PDB document path");
         result.Message.Should().Contain("loaded, symbolicated assembly with the same file name");
         result.Message.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
@@ -479,7 +487,15 @@ public class LineProbeResolverTest
         result.Diagnostics.MatchingTrailingSegments.Should().BeNull();
         result.Diagnostics.FallbackFailureReason.Should().BeNull();
         result.Diagnostics.SameFileNameExamples.Should().BeNull();
-        result.Message.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
+        result.ErrorKey.Should().Be(new LineProbeResolveErrorKey(
+            LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+            LineProbeFallbackFailureReason.NoQualifiedSuffixMatch));
+        result.ErrorDetails.Should().Be(new LineProbeResolveErrorDetails(
+            result.ErrorKey,
+            BestMatchingTrailingSegments: 1,
+            QualifiedFallbackMatchCount: 0,
+            SameFileNameMatchCount: 1));
+        result.Message.Should().BeNull();
         loc.Should().BeNull();
     }
 

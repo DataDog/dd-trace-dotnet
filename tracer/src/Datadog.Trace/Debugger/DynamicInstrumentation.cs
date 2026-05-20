@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger
         private readonly IDebuggerUploader _diagnosticsUploader;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
-        private readonly Dictionary<string, string> _lastReportedUnboundProbeErrors;
+        private readonly Dictionary<string, LineProbeResolveErrorKey> _lastReportedUnboundProbeErrors;
         private readonly IProbeStatusPoller _probeStatusPoller;
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger
             _dogStats = dogStats;
             _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
-            _lastReportedUnboundProbeErrors = new Dictionary<string, string>();
+            _lastReportedUnboundProbeErrors = new Dictionary<string, LineProbeResolveErrorKey>();
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -274,7 +274,7 @@ namespace Datadog.Trace.Debugger
                                                 Log.Information("ProbeID {ProbeID} is unbound. It will be retried when new assemblies are loaded.", addedProbe.Id);
                                                 _unboundProbes.Add(addedProbe);
                                                 var unboundProbeStatus = lineProbeResult.ReportError
-                                                                             ? new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: lineProbeResult.Message)
+                                                                             ? new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: GetLineProbeResolveMessage(lineProbeResult))
                                                                              : new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null);
                                                 UpdateLastReportedUnboundProbeError(addedProbe.Id, lineProbeResult);
                                                 fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, unboundProbeStatus));
@@ -358,6 +358,28 @@ namespace Datadog.Trace.Debugger
             }
         }
 
+        private static LineProbeResolveErrorKey GetLineProbeResolveErrorKey(LineProbeResolveResult result)
+        {
+            return result.ErrorKey.IsEmpty ? new LineProbeResolveErrorKey(result.Reason) : result.ErrorKey;
+        }
+
+        private static string? GetLineProbeResolveMessage(LineProbeResolveResult result)
+        {
+            if (result.Message is not null)
+            {
+                return result.Message;
+            }
+
+            return result.Reason == LineProbeResolveReason.LoadedAssemblySourceFileMismatch
+                       ? LineProbeResolver.BuildLoadedAssemblySourceFileMismatchMessage(GetLineProbeResolveErrorDetails(result))
+                       : null;
+        }
+
+        private static LineProbeResolveErrorDetails GetLineProbeResolveErrorDetails(LineProbeResolveResult result)
+        {
+            return result.ErrorDetails.IsEmpty ? new LineProbeResolveErrorDetails(GetLineProbeResolveErrorKey(result)) : result.ErrorDetails;
+        }
+
         private static string? JoinLogValues(string[]? values)
         {
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
@@ -367,7 +389,7 @@ namespace Datadog.Trace.Debugger
         {
             if (result.ReportError)
             {
-                _lastReportedUnboundProbeErrors[probeId] = result.Message ?? string.Empty;
+                _lastReportedUnboundProbeErrors[probeId] = GetLineProbeResolveErrorKey(result);
             }
             else
             {
@@ -375,16 +397,16 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private bool ShouldReportUnboundProbeError(string probeId, string? message)
+        private bool ShouldReportUnboundProbeError(string probeId, LineProbeResolveResult result)
         {
-            var errorMessage = message ?? string.Empty;
+            var errorKey = GetLineProbeResolveErrorKey(result);
             if (_lastReportedUnboundProbeErrors.TryGetValue(probeId, out var lastErrorMessage) &&
-                string.Equals(lastErrorMessage, errorMessage, StringComparison.Ordinal))
+                lastErrorMessage == errorKey)
             {
                 return false;
             }
 
-            _lastReportedUnboundProbeErrors[probeId] = errorMessage;
+            _lastReportedUnboundProbeErrors[probeId] = errorKey;
             return true;
         }
 
@@ -573,14 +595,15 @@ namespace Datadog.Trace.Debugger
                     }
                     else if (result.Status == LiveProbeResolveStatus.Unbound)
                     {
-                        if (result.ReportError && ShouldReportUnboundProbeError(unboundProbe.Id, result.Message))
+                        if (result.ReportError && ShouldReportUnboundProbeError(unboundProbe.Id, result))
                         {
+                            var errorMessage = GetLineProbeResolveMessage(result);
                             _probeStatusPoller.UpdateProbe(
                                 unboundProbe.Id,
                                 new FetchProbeStatus(
                                     unboundProbe.Id,
                                     unboundProbe.Version ?? 0,
-                                    new ProbeStatus(unboundProbe.Id, Sink.Models.Status.ERROR, errorMessage: result.Message)));
+                                    new ProbeStatus(unboundProbe.Id, Sink.Models.Status.ERROR, errorMessage: errorMessage)));
                         }
                         else if (!result.ReportError)
                         {

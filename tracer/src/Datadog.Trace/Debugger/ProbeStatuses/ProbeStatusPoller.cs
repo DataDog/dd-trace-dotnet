@@ -135,16 +135,14 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                                .Select(p => p.ProbeId)
                                .ToArray();
 
-            var probeStatuses = _probes.Where(p => !p.ShouldFetch())
-                                       .Select(p => p.ProbeStatus)
-                                       .ToList();
+            PInvoke.ProbeStatus[] probeStatuses = null;
 
             if (probesToFetch.Length != 0)
             {
-                probeStatuses.AddRange(DebuggerNativeMethods.GetProbesStatuses(probesToFetch));
+                probeStatuses = DebuggerNativeMethods.GetProbesStatuses(probesToFetch);
             }
 
-            if (probeStatuses.Count == 0)
+            if (probeStatuses is null || probeStatuses.Length == 0)
             {
                 return;
             }

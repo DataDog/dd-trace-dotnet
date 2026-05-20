@@ -63,18 +63,18 @@ namespace Datadog.Trace.Debugger
             return separatorIndex >= 0 ? span.Slice(separatorIndex + 1).ToString() : span.ToString();
         }
 
-        private static string BuildLoadedAssemblySourceFileMismatchMessage(AssemblySearchDiagnostics diagnostics)
+        internal static string BuildLoadedAssemblySourceFileMismatchMessage(LineProbeResolveErrorDetails details)
         {
             var builder = StringBuilderCache.Acquire();
             builder.Append("Source file location for probe did not uniquely match the PDB document path of a loaded, symbolicated assembly with the same file name.");
             builder.Append(" Fallback failure reason: ");
-            builder.Append(diagnostics.FallbackFailureReason);
+            builder.Append(details.Key.FallbackFailureReason);
             builder.Append(". Best matching trailing segments: ");
-            builder.Append(diagnostics.BestMatchingTrailingSegments);
+            builder.Append(details.BestMatchingTrailingSegments);
             builder.Append(". Qualified fallback matches: ");
-            builder.Append(diagnostics.QualifiedFallbackMatchCount);
+            builder.Append(details.QualifiedFallbackMatchCount);
             builder.Append(". Same file name matches: ");
-            builder.Append(diagnostics.SameFileNameMatchCount);
+            builder.Append(details.SameFileNameMatchCount);
             builder.Append('.');
             return StringBuilderCache.GetStringAndRelease(builder);
         }
@@ -313,18 +313,22 @@ namespace Datadog.Trace.Debugger
                     var reason = isSourceFileMismatch
                                      ? LineProbeResolveReason.LoadedAssemblySourceFileMismatch
                                      : LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable;
-                    var message = isSourceFileMismatch && searchDiagnostics is not null
-                                      ? BuildLoadedAssemblySourceFileMismatchMessage(searchDiagnostics)
-                                      : BuildAssemblyNotLoadedOrSymbolsUnavailableMessage();
+                    var errorKey = searchDiagnostics?.ToErrorKey(reason) ?? new LineProbeResolveErrorKey(reason);
+                    var errorDetails = searchDiagnostics?.ToErrorDetails(errorKey) ?? new LineProbeResolveErrorDetails(errorKey);
                     var unresolvedDiagnostics = diagnosticLevel == LineProbeDiagnosticLevel.Full
                                                     ? searchDiagnostics?.ToDiagnostics(lineNum, probe.Id) ?? BuildMinimalDiagnostics(sourceFile, lineNum, probe.Id)
                                                     : BuildMinimalDiagnostics(sourceFile, lineNum, probe.Id);
+                    var message = isSourceFileMismatch
+                                      ? diagnosticLevel == LineProbeDiagnosticLevel.Full ? BuildLoadedAssemblySourceFileMismatchMessage(errorDetails) : null
+                                      : BuildAssemblyNotLoadedOrSymbolsUnavailableMessage();
 
                     return new LineProbeResolveResult(
                         LiveProbeResolveStatus.Unbound,
                         reason,
                         message,
                         unresolvedDiagnostics,
+                        errorKey,
+                        errorDetails,
                         ReportError: isSourceFileMismatch);
                 }
 
@@ -788,6 +792,22 @@ namespace Datadog.Trace.Debugger
                     SymbolicatedAssemblyCount: SymbolicatedAssemblyCount,
                     SameFileNameMatchCount: SameFileNameMatchCount,
                     SameFileNameExamples: SameFileNameExamples);
+            }
+
+            public LineProbeResolveErrorKey ToErrorKey(LineProbeResolveReason reason)
+            {
+                return new LineProbeResolveErrorKey(
+                    reason,
+                    FallbackFailureReason);
+            }
+
+            public LineProbeResolveErrorDetails ToErrorDetails(LineProbeResolveErrorKey key)
+            {
+                return new LineProbeResolveErrorDetails(
+                    key,
+                    BestMatchingTrailingSegments,
+                    QualifiedFallbackMatchCount,
+                    SameFileNameMatchCount);
             }
         }
 

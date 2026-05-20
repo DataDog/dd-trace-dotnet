@@ -542,6 +542,27 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void PollerDoesNotReplayExplicitErrorStatusOnPoll()
+        {
+            _timeLord.StopTime();
+            var probeId = Guid.NewGuid().ToString();
+            using var poller = ProbeStatusPoller.Create(_sink, _settings);
+            var fetchProbeStatus = new FetchProbeStatus(probeId, 1, new NativeProbeStatus(probeId, Status.ERROR, "error"));
+
+            poller.UpdateProbe(probeId, fetchProbeStatus);
+            _sink.GetDiagnostics().Should().Equal(new[]
+            {
+                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, probeVersion: 1, errorMessage: "error")
+            });
+
+            poller.GetType()
+                  .GetMethod("OnProbeStatusesPoll", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                  .Invoke(poller, []);
+
+            _sink.GetDiagnostics().Should().BeEmpty();
+        }
+
+        [Fact]
         public void PollerDropsQueuedExplicitStatusWhenUpdatingToNewExplicitVersion()
         {
             var probeId = Guid.NewGuid().ToString();
