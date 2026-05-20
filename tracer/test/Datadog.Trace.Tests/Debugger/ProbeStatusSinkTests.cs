@@ -10,6 +10,7 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -123,6 +124,7 @@ namespace Datadog.Trace.Tests.Debugger
             probe.DebuggerDiagnostics.Diagnostics.Exception.Message.Should().Be(errorMessage);
             probe.DebuggerDiagnostics.Diagnostics.Exception.StackTrace.Should().BeNull();
             JsonConvert.SerializeObject(probe).Should().NotContain("stacktrace");
+            JsonHelper.SerializeObject(probe).Should().NotContain("stacktrace");
         }
 
         [Fact]
