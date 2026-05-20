@@ -413,7 +413,7 @@ public class DynamicInstrumentationTests
 
             probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
             probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
-            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Should().Be(ProbeStatus.Default);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Should().Be(global::Datadog.Trace.Debugger.PInvoke.ProbeStatus.Default);
         }
 
         [Fact]
