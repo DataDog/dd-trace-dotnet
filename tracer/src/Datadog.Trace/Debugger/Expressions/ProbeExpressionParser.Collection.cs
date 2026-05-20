@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Type = System.Type;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
+    private Dictionary<Expression, RedactedDictionaryValueExpression> _redactedDictionaryValues;
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters)
     {
         var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
@@ -255,11 +258,10 @@ internal partial class ProbeExpressionParser<T>
         if (itParameter.Type == typeof(DictionaryEntry))
         {
             var property = Expression.Property(itParameter, propertyName);
-            var keyProperty = Expression.Property(itParameter, nameof(DictionaryEntry.Key));
             propertyExpression = propertyName switch
             {
-                nameof(KeyValuePair<int, int>.Key) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
-                nameof(KeyValuePair<int, int>.Value) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
+                nameof(KeyValuePair<int, int>.Key) => property,
+                nameof(KeyValuePair<int, int>.Value) when TryRedactDictionaryValueMember(itParameter, out var redactedValue) => redactedValue,
                 _ => property,
             };
             return true;
@@ -268,11 +270,10 @@ internal partial class ProbeExpressionParser<T>
         if (itParameter.Type.IsGenericType && itParameter.Type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
         {
             var property = Expression.Property(itParameter, propertyName);
-            var keyProperty = Expression.Property(itParameter, nameof(KeyValuePair<int, int>.Key));
             propertyExpression = propertyName switch
             {
-                nameof(KeyValuePair<int, int>.Key) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
-                nameof(KeyValuePair<int, int>.Value) => RedactDictionaryValueWhenKeyMatches(property, keyProperty),
+                nameof(KeyValuePair<int, int>.Key) => property,
+                nameof(KeyValuePair<int, int>.Value) when TryRedactDictionaryValueMember(itParameter, out var redactedValue) => redactedValue,
                 _ => property,
             };
             return true;
@@ -281,26 +282,106 @@ internal partial class ProbeExpressionParser<T>
         return false;
     }
 
-    private ConditionalExpression RedactDictionaryValueWhenKeyMatches(MemberExpression valueExpression, Expression keyExpression)
+    private bool TryRedactDictionaryValueMember(Expression dictionaryEntryExpression, out Expression redactedValue)
+    {
+        redactedValue = null;
+
+        if (dictionaryEntryExpression.Type != typeof(DictionaryEntry) &&
+            (!dictionaryEntryExpression.Type.IsGenericType || dictionaryEntryExpression.Type.GetGenericTypeDefinition() != typeof(KeyValuePair<,>)))
+        {
+            return false;
+        }
+
+        var valueExpression = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Value));
+        var keyExpression = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Key));
+        redactedValue = TrackRedactedDictionaryValue(valueExpression, keyExpression);
+        return true;
+    }
+
+    private MemberExpression TrackRedactedDictionaryValue(MemberExpression valueExpression, MemberExpression keyExpression)
     {
         var shouldRedactKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
         var shouldRedactCall = Expression.Call(Expression.Constant(this), shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
-        return Expression.Condition(shouldRedactCall, RedactedDictionaryValue(valueExpression.Type), valueExpression);
+        (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
+           .Add(valueExpression, new RedactedDictionaryValueExpression(shouldRedactCall, valueExpression));
+        return valueExpression;
     }
 
-    private Expression RedactedDictionaryValue(Type valueType)
+    private bool TryGetRedactedDictionaryValue(Expression expression, out RedactedDictionaryValueExpression redactedDictionaryValue)
     {
-        if (valueType == typeof(string))
+        while (expression is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } unaryExpression)
         {
-            return RedactedValue();
+            expression = unaryExpression.Operand;
         }
 
-        if (valueType == typeof(object))
+        if (_redactedDictionaryValues != null && _redactedDictionaryValues.TryGetValue(expression, out redactedDictionaryValue))
         {
-            return Expression.Convert(RedactedValue(), typeof(object));
+            return true;
         }
 
-        return Expression.Default(valueType);
+        redactedDictionaryValue = default;
+        return false;
+    }
+
+    private MemberExpression RedactedDictionaryValueMember(RedactedDictionaryValueExpression redactedDictionaryValue, string propertyOrFieldValue)
+    {
+        var valueExpression = redactedDictionaryValue.ValueExpression;
+        var memberExpression = Expression.PropertyOrField(valueExpression, propertyOrFieldValue);
+        (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
+           .Add(memberExpression, new RedactedDictionaryValueExpression(redactedDictionaryValue.ShouldRedactExpression, memberExpression));
+        return memberExpression;
+    }
+
+    private Expression RedactDictionaryBinaryOperation(Expression left, Expression right, Expression comparison)
+    {
+        Expression shouldRedact = null;
+        if (TryGetRedactedDictionaryValue(left, out var leftRedactedDictionaryValue))
+        {
+            shouldRedact = leftRedactedDictionaryValue.ShouldRedactExpression;
+        }
+
+        if (TryGetRedactedDictionaryValue(right, out var rightRedactedDictionaryValue))
+        {
+            shouldRedact = shouldRedact == null
+                               ? rightRedactedDictionaryValue.ShouldRedactExpression
+                               : Expression.OrElse(shouldRedact, rightRedactedDictionaryValue.ShouldRedactExpression);
+        }
+
+        return shouldRedact == null
+                   ? comparison
+                   : Expression.Condition(shouldRedact, Expression.Constant(false), comparison);
+    }
+
+    private Expression RedactDictionaryValueForReturn(RedactedDictionaryValueExpression redactedDictionaryValue, Expression finalExpr, List<ParameterExpression> scopeMembers)
+    {
+        var redactedValue = RedactedValue();
+        if (typeof(T) == typeof(object))
+        {
+            return Expression.Condition(
+                redactedDictionaryValue.ShouldRedactExpression,
+                Expression.Convert(redactedValue, typeof(object)),
+                Expression.Convert(finalExpr, typeof(object)));
+        }
+
+        if (typeof(T) == typeof(string))
+        {
+            var valueAsString = finalExpr.Type == typeof(string)
+                                    ? finalExpr
+                                    : DumpExpression(finalExpr, scopeMembers);
+            return Expression.Condition(redactedDictionaryValue.ShouldRedactExpression, redactedValue, valueAsString);
+        }
+
+        if (typeof(T) == typeof(bool) && finalExpr.Type == typeof(bool))
+        {
+            return Expression.Condition(redactedDictionaryValue.ShouldRedactExpression, Expression.Constant(false), finalExpr);
+        }
+
+        if (typeof(T).IsNumeric() && TryConvertToNumericType<T>(finalExpr, out var numericResult))
+        {
+            return Expression.Condition(redactedDictionaryValue.ShouldRedactExpression, Expression.Constant(default(T), typeof(T)), numericResult);
+        }
+
+        return finalExpr;
     }
 
     private bool ShouldRedactDictionaryKey(object key)
@@ -384,5 +465,12 @@ internal partial class ProbeExpressionParser<T>
 
         assignableFrom = null;
         return false;
+    }
+
+    private readonly struct RedactedDictionaryValueExpression(Expression shouldRedactExpression, Expression valueExpression)
+    {
+        internal Expression ShouldRedactExpression { get; } = shouldRedactExpression;
+
+        internal Expression ValueExpression { get; } = valueExpression;
     }
 }

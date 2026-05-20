@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -69,6 +70,15 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         internal TestStruct TestObject { get; set; }
+
+        public static IEnumerable<object[]> SupportedSensitiveDictionaries()
+        {
+            const string secret = "TOP_SECRET_VALUE";
+            yield return [new Dictionary<string, string> { { "password", secret }, { "public", "hello" } }];
+            yield return [new SortedDictionary<string, string> { { "password", secret }, { "public", "hello" } }];
+            yield return [new ConcurrentDictionary<string, string>(new[] { new KeyValuePair<string, string>("password", secret), new KeyValuePair<string, string>("public", "hello") })];
+            yield return [new Hashtable { { "password", secret }, { "public", "hello" } }];
+        }
 
         public static IEnumerable<object[]> TemplatesResources()
         {
@@ -295,35 +305,38 @@ namespace Datadog.Trace.Tests.Debugger
             result.Errors.Should().NotBeNullOrEmpty();
         }
 
-        [Fact]
-        public void ProbeExpressionParser_DictionaryIteratorKeyAndValue_RedactsSensitiveKeys()
+        [Theory]
+        [MemberData(nameof(SupportedSensitiveDictionaries))]
+        public void ProbeExpressionParser_DictionaryIteratorValue_RedactsSensitiveKeys(object dictionary)
         {
             var scopeMembers = CreateScopeMembers();
             const string secret = "TOP_SECRET_VALUE";
             scopeMembers.AddMember(new ScopeMember(
                 "SafeDictionaryLocal",
-                typeof(Dictionary<string, string>),
-                new Dictionary<string, string>
-                {
-                    { "password", secret }
-                },
+                dictionary.GetType(),
+                dictionary,
                 ScopeMemberKind.Local));
 
             const string json = """
                                 {
-                                  "any": [
-                                    { "ref": "SafeDictionaryLocal" },
+                                  "getmember": [
                                     {
-                                      "and": [
-                                        { "eq": [ { "ref": "@key" }, "{REDACTED}" ] },
-                                        { "eq": [ { "ref": "@value" }, "{REDACTED}" ] }
+                                      "index": [
+                                        {
+                                          "filter": [
+                                            { "ref": "SafeDictionaryLocal" },
+                                            { "eq": [ { "ref": "@key" }, "password" ] }
+                                          ]
+                                        },
+                                        0
                                       ]
-                                    }
+                                    },
+                                    "Value"
                                   ]
                                 }
                                 """;
 
-            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
             var result = compiled.Delegate(
                 scopeMembers.InvocationTarget,
                 scopeMembers.Return,
@@ -331,44 +344,8 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.Exception,
                 scopeMembers.Members);
 
-            Assert.True(result);
-            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
-        }
-
-        [Fact]
-        public void ProbeExpressionParser_DictionaryIteratorValue_RedactsSensitiveKeysWithoutChangingValueType()
-        {
-            var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember(
-                "SafeDictionaryLocal",
-                typeof(Dictionary<string, int>),
-                new Dictionary<string, int>
-                {
-                    { "password", 42 },
-                    { "public", 10 }
-                },
-                ScopeMemberKind.Local));
-
-            const string json = """
-                                {
-                                  "any": [
-                                    { "ref": "SafeDictionaryLocal" },
-                                    {
-                                      "eq": [ { "ref": "@value" }, 10 ]
-                                    }
-                                  ]
-                                }
-                                """;
-
-            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
-
-            Assert.True(result);
+            Assert.NotEqual(secret, result);
+            Assert.Equal("{REDACTED}", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
@@ -381,7 +358,7 @@ namespace Datadog.Trace.Tests.Debugger
                 typeof(Dictionary<ThrowsOnToStringKey, string>),
                 new Dictionary<ThrowsOnToStringKey, string>
                 {
-                    { new ThrowsOnToStringKey(), "visible" }
+                    { new ThrowsOnToStringKey(), "hello" },
                 },
                 ScopeMemberKind.Local));
 
@@ -389,9 +366,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 {
                                   "any": [
                                     { "ref": "SafeDictionaryLocal" },
-                                    {
-                                      "eq": [ { "ref": "@value" }, "visible" ]
-                                    }
+                                    { "eq": [ "@value", "hello" ] }
                                   ]
                                 }
                                 """;
@@ -406,6 +381,287 @@ namespace Datadog.Trace.Tests.Debugger
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_RedactsStringPredicatesWithSensitiveKeys()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, string>),
+                new Dictionary<string, string>
+                {
+                    { "password", "hello" },
+                    { "public", "hello" },
+                },
+                ScopeMemberKind.Local));
+
+            const string publicJson = """
+                                      {
+                                        "any": [
+                                          {
+                                            "filter": [
+                                              { "ref": "SafeDictionaryLocal" },
+                                              { "eq": [ { "ref": "@key" }, "public" ] }
+                                            ]
+                                          },
+                                          { "eq": [ "@value", "hello" ] }
+                                        ]
+                                      }
+                                      """;
+
+            const string sensitiveJson = """
+                                         {
+                                           "any": [
+                                             {
+                                               "filter": [
+                                                 { "ref": "SafeDictionaryLocal" },
+                                                 { "eq": [ { "ref": "@key" }, "password" ] }
+                                               ]
+                                             },
+                                             { "eq": [ "@value", "hello" ] }
+                                           ]
+                                         }
+                                         """;
+
+            var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
+            var publicResult = publicCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(publicResult);
+            Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
+
+            var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
+            var sensitiveResult = sensitiveCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(sensitiveResult);
+            Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_PreservesNumericValueTypeForComparisons()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, int>),
+                new Dictionary<string, int>
+                {
+                    { "password", 42 },
+                    { "public", 42 },
+                },
+                ScopeMemberKind.Local));
+
+            const string publicJson = """
+                                      {
+                                        "any": [
+                                          {
+                                            "filter": [
+                                              { "ref": "SafeDictionaryLocal" },
+                                              { "eq": [ { "ref": "@key" }, "public" ] }
+                                            ]
+                                          },
+                                          { "gt": [ "@value", 10 ] }
+                                        ]
+                                      }
+                                      """;
+
+            const string sensitiveJson = """
+                                         {
+                                           "any": [
+                                             {
+                                               "filter": [
+                                                 { "ref": "SafeDictionaryLocal" },
+                                                 { "eq": [ { "ref": "@key" }, "password" ] }
+                                               ]
+                                             },
+                                             { "gt": [ "@value", 10 ] }
+                                           ]
+                                         }
+                                         """;
+
+            var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
+            var publicResult = publicCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(publicResult);
+            Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
+
+            var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
+            var sensitiveResult = sensitiveCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(sensitiveResult);
+            Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_PreservesRedactionAfterNumericConversion()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, int>),
+                new Dictionary<string, int>
+                {
+                    { "password", 42 },
+                    { "public", 42 },
+                },
+                ScopeMemberKind.Local));
+
+            const string publicJson = """
+                                      {
+                                        "any": [
+                                          {
+                                            "filter": [
+                                              { "ref": "SafeDictionaryLocal" },
+                                              { "eq": [ { "ref": "@key" }, "public" ] }
+                                            ]
+                                          },
+                                          { "gt": [ "@value", 10.5 ] }
+                                        ]
+                                      }
+                                      """;
+
+            const string sensitiveJson = """
+                                         {
+                                           "any": [
+                                             {
+                                               "filter": [
+                                                 { "ref": "SafeDictionaryLocal" },
+                                                 { "eq": [ { "ref": "@key" }, "password" ] }
+                                               ]
+                                             },
+                                             { "gt": [ "@value", 10.5 ] }
+                                           ]
+                                         }
+                                         """;
+
+            var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
+            var publicResult = publicCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(publicResult);
+            Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
+
+            var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
+            var sensitiveResult = sensitiveCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(sensitiveResult);
+            Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_RedactsNestedValuesBeforeMemberAccess()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string secret = "TOP_SECRET_VALUE";
+            const string publicValue = "hello";
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, SensitiveValueHolder>),
+                new Dictionary<string, SensitiveValueHolder>
+                {
+                    { "password", new SensitiveValueHolder { Data = secret } },
+                    { "public", new SensitiveValueHolder { Data = publicValue } },
+                },
+                ScopeMemberKind.Local));
+
+            const string sensitiveJson = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "getmember": [
+                                        {
+                                          "index": [
+                                            {
+                                              "filter": [
+                                                { "ref": "SafeDictionaryLocal" },
+                                                { "eq": [ { "ref": "@key" }, "password" ] }
+                                              ]
+                                            },
+                                            0
+                                          ]
+                                        },
+                                        "Value"
+                                      ]
+                                    },
+                                    "Data"
+                                  ]
+                                }
+                                """;
+
+            const string publicJson = """
+                                      {
+                                        "getmember": [
+                                          {
+                                            "getmember": [
+                                              {
+                                                "index": [
+                                                  {
+                                                    "filter": [
+                                                      { "ref": "SafeDictionaryLocal" },
+                                                      { "eq": [ { "ref": "@key" }, "public" ] }
+                                                    ]
+                                                  },
+                                                  0
+                                                ]
+                                              },
+                                              "Value"
+                                            ]
+                                          },
+                                          "Data"
+                                        ]
+                                      }
+                                      """;
+
+            var sensitiveCompiled = ProbeExpressionParser<object>.ParseExpression(sensitiveJson, scopeMembers);
+            var sensitiveResult = sensitiveCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.NotEqual(secret, sensitiveResult);
+            Assert.Equal("{REDACTED}", sensitiveResult);
+
+            var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
+            var publicResult = publicCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal(publicValue, publicResult);
         }
 
         [Fact]
@@ -1085,6 +1341,11 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 throw new InvalidOperationException("Dictionary key ToString should not be called.");
             }
+        }
+
+        private class SensitiveValueHolder
+        {
+            public string Data { get; set; }
         }
     }
 }

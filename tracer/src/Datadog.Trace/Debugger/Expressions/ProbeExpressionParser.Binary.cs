@@ -62,14 +62,14 @@ internal sealed partial class ProbeExpressionParser<T>
 
             if (left.Type == typeof(string) && right.Type == typeof(string))
             {
-                return StringLexicographicComparison(left, right, operand);
+                return RedactDictionaryBinaryOperation(left, right, StringLexicographicComparison(left, right, operand));
             }
 
             HandleDurationBinaryOperation(ref left, ref right);
 
             NumericImplicitConversion(ref left, ref right);
 
-            return operand switch
+            var comparison = operand switch
             {
                 ">" => Expression.GreaterThan(left, right),
                 ">=" => Expression.GreaterThanOrEqual(left, right),
@@ -78,6 +78,7 @@ internal sealed partial class ProbeExpressionParser<T>
                 "==" or "!=" => EqualExpression(),
                 _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
             };
+            return RedactDictionaryBinaryOperation(left, right, comparison);
         }
         catch (Exception e)
         {
@@ -126,6 +127,17 @@ internal sealed partial class ProbeExpressionParser<T>
                 return operand == "=="
                     ? Expression.ReferenceEqual(Expression.Constant(null, typeof(object)), rightAsObject)
                     : Expression.Not(Expression.ReferenceEqual(Expression.Constant(null, typeof(object)), rightAsObject));
+            }
+
+            if (left.Type == typeof(object) || right.Type == typeof(object))
+            {
+                var leftAsObject = left.Type == typeof(object) ? left : Expression.Convert(left, typeof(object));
+                var rightAsObject = right.Type == typeof(object) ? right : Expression.Convert(right, typeof(object));
+                var objectEquals = Expression.Call(
+                    ProbeExpressionParserHelper.GetMethodByReflection(typeof(object), nameof(object.Equals), new[] { typeof(object), typeof(object) }),
+                    leftAsObject,
+                    rightAsObject);
+                return operand == "==" ? objectEquals : Expression.Not(objectEquals);
             }
 
             return operand == "==" ? Expression.Equal(left, right) : Expression.NotEqual(left, right);

@@ -353,6 +353,17 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
+            if (propertyOrFieldValue == nameof(KeyValuePair<int, int>.Value) &&
+                TryRedactDictionaryValueMember(expression, out var redactedValue))
+            {
+                return redactedValue;
+            }
+
+            if (TryGetRedactedDictionaryValue(expression, out var redactedDictionaryValue))
+            {
+                return RedactedDictionaryValueMember(redactedDictionaryValue, propertyOrFieldValue);
+            }
+
             var memberInfo = expression.Type.GetMember(propertyOrFieldValue, GetMemberFlags).FirstOrDefault();
 
             if (memberInfo == null)
