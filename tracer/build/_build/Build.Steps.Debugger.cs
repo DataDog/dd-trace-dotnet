@@ -23,13 +23,13 @@ partial class Build
 
     Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
 
-    Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
+    Project DebuggerSamples => SamplesSolution.GetProject(Projects.DebuggerSamples);
 
-    Project ExceptionReplaySamples => Solution.GetProject(Projects.ExceptionReplaySamples);
+    Project ExceptionReplaySamples => SamplesSolution.GetProject(Projects.ExceptionReplaySamples);
 
-    Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
+    Project DebuggerSamplesTestRuns => SamplesSolution.GetProject(Projects.DebuggerSamplesTestRuns);
 
-    Project DebuggerUnreferencedExternal => Solution.GetProject(Projects.DebuggerUnreferencedExternal);
+    Project DebuggerUnreferencedExternal => SamplesSolution.GetProject(Projects.DebuggerUnreferencedExternal);
 
     Target BuildAndRunDebuggerIntegrationTests => _ => _
         .Description("Builds and runs the debugger integration tests")
@@ -62,8 +62,9 @@ partial class Build
         .Requires(() => DebugType != null)
         .Executes(() =>
         {
-            DotnetBuild(DebuggerUnreferencedExternal, framework: Framework, noDependencies: false);
-            DotnetBuild(DebuggerSamplesTestRuns, framework: Framework, noDependencies: false);
+            // Samples are not in the build-stage Restore (which is scoped to Build.g.sln); restore on demand.
+            DotnetBuild(DebuggerUnreferencedExternal, framework: Framework, noRestore: false, noDependencies: false);
+            DotnetBuild(DebuggerSamplesTestRuns, framework: Framework, noRestore: false, noDependencies: false);
         });
 
     Target CompileDebuggerIntegrationTestsSamples => _ => _
@@ -76,11 +77,12 @@ partial class Build
         .Requires(() => DebugType != null)
         .Executes(() =>
         {
-            DotnetBuild(DebuggerSamples, framework: Framework);
+            // Samples are not in the build-stage Restore (which is scoped to Build.g.sln); restore on demand.
+            DotnetBuild(DebuggerSamples, framework: Framework, noRestore: false);
 
             if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
             {
-                DotnetBuild(ExceptionReplaySamples, framework: Framework);
+                DotnetBuild(ExceptionReplaySamples, framework: Framework, noRestore: false);
             }
 
             if (!IsWin)

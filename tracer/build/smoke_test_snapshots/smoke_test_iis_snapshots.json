@@ -133,7 +133,7 @@
         "_dd.code_origin.frames.0.index": "0",
         "_dd.code_origin.frames.0.method": "Get",
         "_dd.code_origin.frames.0.type": "AspNetCoreSmokeTest.ValuesController",
-        "_dd.code_origin.frames.0.file": "C:\\src\\ValuesController.cs",
+        "_dd.code_origin.frames.0.file": "/src/ValuesController.cs",
         "_dd.code_origin.frames.0.line": "19",
         "_dd.code_origin.frames.0.column": "13"
       },
