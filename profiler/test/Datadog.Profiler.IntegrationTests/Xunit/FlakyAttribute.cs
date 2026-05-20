@@ -13,7 +13,7 @@ namespace Datadog.Profiler.IntegrationTests.Xunit;
 /// <param name="reason">The reason that this test was marked flaky.</param>
 /// <param name="maxRetries">The maximum number of times a test should be retried (default 10).</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-public class FlakyAttribute(string reason, byte maxRetries = 10) : Attribute
+public class FlakyAttribute(string reason, byte maxRetries = 5) : Attribute
 {
     public string Reason { get; } = reason;
 
