@@ -389,6 +389,45 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Theory]
+        [MemberData(nameof(SupportedSensitiveDictionaries))]
+        public void ProbeExpressionParser_DictionaryIteratorEntry_RedactsSensitiveKeys(object dictionary)
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string secret = "TOP_SECRET_VALUE";
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                dictionary.GetType(),
+                dictionary,
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    {
+                                      "filter": [
+                                        { "ref": "SafeDictionaryLocal" },
+                                        { "eq": [ { "ref": "@key" }, "password" ] }
+                                      ]
+                                    },
+                                    0
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.NotEqual(secret, result);
+            Assert.Equal("{REDACTED}", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         [Fact]
         public void ProbeExpressionParser_DictionaryIteratorValue_DoesNotCallUnsafeKeyToString()
         {
@@ -421,6 +460,74 @@ namespace Datadog.Trace.Tests.Debugger
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_UsesSafeObjectEquality()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Hashtable),
+                new Hashtable
+                {
+                    { "public", "hello" },
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "any": [
+                                    { "ref": "SafeDictionaryLocal" },
+                                    { "eq": [ "@value", "hello" ] }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValue_DoesNotCallUnsafeObjectEquals()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Hashtable),
+                new Hashtable
+                {
+                    { "public", new ThrowsOnEqualsValue() },
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "any": [
+                                    { "ref": "SafeDictionaryLocal" },
+                                    { "eq": [ "@value", "public" ] }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0, string.Join(Environment.NewLine, compiled.Errors?.Select(e => $"{e.Expression}: {e.Message}") ?? []));
+            Assert.False(result);
         }
 
         [Fact]
@@ -1446,6 +1553,19 @@ namespace Datadog.Trace.Tests.Debugger
             public override string ToString()
             {
                 throw new InvalidOperationException("Dictionary key ToString should not be called.");
+            }
+        }
+
+        private sealed class ThrowsOnEqualsValue
+        {
+            public override bool Equals(object obj)
+            {
+                throw new InvalidOperationException("Dictionary value Equals should not be called.");
+            }
+
+            public override int GetHashCode()
+            {
+                return 0;
             }
         }
 

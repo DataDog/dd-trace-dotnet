@@ -46,6 +46,12 @@ internal partial class ProbeExpressionParser<T>
                    : Expression.Default(type);
     }
 
+    private static bool IsDictionaryEntryType(Type type)
+    {
+        return type == typeof(DictionaryEntry) ||
+               (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>));
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters)
     {
         var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
@@ -187,12 +193,19 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var getItemCall = Expression.Call(source, getItemMethod, indexOrKey);
+        Expression result;
         if (getItemCall.Type == convertToType)
         {
-            return getItemCall;
+            result = getItemCall;
+        }
+        else
+        {
+            result = Expression.Convert(getItemCall, convertToType);
         }
 
-        return Expression.Convert(getItemCall, convertToType);
+        return IsDictionaryEntryType(result.Type)
+                   ? TrackRedactedDictionaryEntry(result)
+                   : result;
     }
 
     private Expression Length(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -312,8 +325,7 @@ internal partial class ProbeExpressionParser<T>
     {
         redactedValue = null;
 
-        if (dictionaryEntryExpression.Type != typeof(DictionaryEntry) &&
-            (!dictionaryEntryExpression.Type.IsGenericType || dictionaryEntryExpression.Type.GetGenericTypeDefinition() != typeof(KeyValuePair<,>)))
+        if (!IsDictionaryEntryType(dictionaryEntryExpression.Type))
         {
             return false;
         }
@@ -324,25 +336,42 @@ internal partial class ProbeExpressionParser<T>
         return true;
     }
 
+    private Expression TrackRedactedDictionaryEntry(Expression dictionaryEntryExpression)
+    {
+        var keyExpression = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Key));
+        TrackRedactedDictionaryExpression(dictionaryEntryExpression, keyExpression);
+        return dictionaryEntryExpression;
+    }
+
     private MemberExpression TrackRedactedDictionaryValue(MemberExpression valueExpression, MemberExpression keyExpression)
+    {
+        TrackRedactedDictionaryExpression(valueExpression, keyExpression);
+        return valueExpression;
+    }
+
+    private void TrackRedactedDictionaryExpression(Expression expression, Expression keyExpression)
     {
         var shouldRedactKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
         var shouldRedactCall = Expression.Call(null, shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
         (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
-           .Add(valueExpression, new RedactedDictionaryValueExpression(shouldRedactCall, valueExpression));
-        return valueExpression;
+           .Add(expression, new RedactedDictionaryValueExpression(shouldRedactCall, expression));
     }
 
     private bool TryGetRedactedDictionaryValue(Expression expression, out RedactedDictionaryValueExpression redactedDictionaryValue)
     {
-        while (expression is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } unaryExpression)
+        while (expression != null)
         {
-            expression = unaryExpression.Operand;
-        }
+            if (_redactedDictionaryValues != null && _redactedDictionaryValues.TryGetValue(expression, out redactedDictionaryValue))
+            {
+                return true;
+            }
 
-        if (_redactedDictionaryValues != null && _redactedDictionaryValues.TryGetValue(expression, out redactedDictionaryValue))
-        {
-            return true;
+            if (expression is not UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } unaryExpression)
+            {
+                break;
+            }
+
+            expression = unaryExpression.Operand;
         }
 
         redactedDictionaryValue = default;
