@@ -1,17 +1,8 @@
-# Strategy: default-deny. Mirror the download filter in
-# .azure-pipelines/steps/restore-working-directory.yml. Every consumer runs
-# clone-repo.yml first to re-clone source from git, so the artifact only needs
-# build outputs.
-
-# Default: ignore everything
+# Default-deny; only ship what restore-working-directory.yml downstream restores.
 **
 
-# Re-include the NuGet restore cache and the consolidated artifacts/ tree
-# (every managed/native build output now lands here).
+!artifacts/bin/**
+!artifacts/obj/**
+!artifacts/monitoring-home/**
+!artifacts/output/**
 !packages/**
-!artifacts/**
-
-# Datadog.Trace.Tools.Runner is the lone remaining carve-out: it has an
-# explicit <OutputPath> for the dd-trace tool's Console/Tool sub-layout
-# consumed by BuildStandaloneTool packaging, so its bin/ stays per-project.
-!tracer/src/Datadog.Trace.Tools.Runner/bin/**
