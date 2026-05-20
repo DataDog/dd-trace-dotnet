@@ -25,7 +25,12 @@
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 
+#include "IUnwinder.h"
+#ifdef ARM64
+#include "HybridUnwinder.h"
+#else
 #include "Backtrace2Unwinder.h"
+#endif
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
 #include "LinuxStackFramesCollector.h"
@@ -46,6 +51,18 @@ using namespace std::chrono_literals;
 // not change during the lifetime of the process.
 static auto ticks_per_second = sysconf(_SC_CLK_TCK);
 
+static IUnwinder* s_pUnwinder = nullptr;
+
+void InitializeUnwinder(ManagedCodeCache* managedCodeCache)
+{
+#ifdef ARM64
+    static auto unwinder = std::make_unique<HybridUnwinder>(managedCodeCache);
+#else
+    static auto unwinder = std::make_unique<Backtrace2Unwinder>();
+#endif
+    s_pUnwinder = unwinder.get();
+}
+
 std::pair<DWORD, std::string> GetLastErrorMessage()
 {
     DWORD errorCode = errno;
@@ -64,9 +81,8 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     CallstackProvider* callstackProvider,
     MetricsRegistry& metricsRegistry)
 {
-    static auto pUnwinder = std::make_unique<Backtrace2Unwinder>();
     return std::make_unique<LinuxStackFramesCollector>(
-        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry, pUnwinder.get());
+        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry, s_pUnwinder);
 }
 
 // https://linux.die.net/man/5/proc
