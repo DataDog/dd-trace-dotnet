@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -29,6 +30,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             _output = output;
         }
 
+        [Flaky("Flaky on ARM64")]
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallel(string appName, string framework, string appAssembly)
         {
@@ -145,6 +147,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
         }
     
+        [Flaky("Flaky on ARM64")]
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
         {
@@ -262,6 +265,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
         }
 
+        [Flaky("Flaky on ARM64")]
         [Trait("Category", "LinuxOnly")]
         [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ThrowExceptionsInParallelWithNewCpuProfiler(string appName, string framework, string appAssembly)
@@ -374,6 +378,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             exceptionCounts.Should().ContainKey("System.InvalidOperationException").WhoseValue.Should().Be(1);
         }
 
+        [Flaky("Flaky on ARM64")]
         [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void GetExceptionSamplesWithTimestamp(string appName, string framework, string appAssembly)
         {
@@ -385,6 +390,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             CheckExceptionProfiles(runner, true);
         }
 
+        [Flaky("Flaky on ARM64")]
         [TestAppFact("Samples.ExceptionGenerator", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void GetExceptionSamplesWithoutTimestamp(string appName, string framework, string appAssembly)
         {

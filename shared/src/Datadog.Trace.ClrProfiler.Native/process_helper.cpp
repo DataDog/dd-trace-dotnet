@@ -32,10 +32,13 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
 {
 #if _WIN32
     // For windows we combine the processPath and args into a single, space separated, string
-    // and pass null for the application name
-    // We assume that all the required escaping has been done etc
-
-    std::string combined = processPath;
+    // and pass null for the application name. The processPath is wrapped in quotes so that
+    // Windows' first-token parsing in lpCommandLine treats paths containing spaces as a single
+    // token (otherwise e.g. "C:\Program Files\foo.exe" could resolve to "C:\Program.exe").
+    // If the caller has already quoted the path, we leave it alone (assumption: starts with a
+    // quote => ends with a quote). Callers are responsible for any escaping required for args.
+    const bool alreadyQuoted = !processPath.empty() && processPath.front() == '"';
+    std::string combined = alreadyQuoted ? processPath : "\"" + processPath + "\"";
     for(const auto &arg: args)
     {
         combined += " " + arg;
