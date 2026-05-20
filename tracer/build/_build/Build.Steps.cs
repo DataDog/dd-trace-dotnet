@@ -1199,9 +1199,13 @@ partial class Build
 
                 if (isTar)
                 {
-                    var includeMuslArtifacts = !IsAlpine;
+                    // On x64 we package the linux-musl-x64 target as well, to simplify onboarding
+                    // (see comment in PrepareMonitoringHomeLinuxForPackaging). The documented
+                    // intent is "we don't need this on arm64 (currently)" -- and on arm64 (notably
+                    // local macOS arm64 builds) the matching musl monitoring-home directory isn't
+                    // produced, so attempting to package it makes the hard-link step fail.
+                    var includeMuslArtifacts = !IsAlpine && !IsArm64;
 
-                    // On x64, for tar only, we package the linux-musl-x64 target as well, to simplify onboarding
                     PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts);
 
                     // technically we don't need these scripts, but we've been including them in the tar, so keep doing that
