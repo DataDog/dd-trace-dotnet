@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
-
 using System;
 using System.Collections.Specialized;
 using Datadog.Trace.Agent;
@@ -18,6 +16,7 @@ namespace Datadog.Trace.Tests.Agent;
 
 public class ManagedApiOtlpTests
 {
+#if NETCOREAPP3_1_OR_GREATER
     [Fact]
     public void CreateOtlpRequestFactory_WhenApmUsesUnixDomainSocket_UsesDefaultOtlpEndpoint()
     {
@@ -37,6 +36,7 @@ public class ManagedApiOtlpTests
         factory.Should().BeOfType<HttpClientRequestFactory>();
     }
 
+#endif
     [Theory]
     [InlineData("http://localhost:4318", "http://localhost:4318/v1/traces")]
     [InlineData("http://otel-collector:4318", "http://otel-collector:4318/v1/traces")]
@@ -72,7 +72,11 @@ public class ManagedApiOtlpTests
 
         var factory = OtlpTransportStrategy.GetTraces(exporterSettings);
 
+#if NETCOREAPP3_1_OR_GREATER
         factory.Should().BeOfType<HttpClientRequestFactory>();
+#else
+        factory.Should().BeOfType<ApiWebRequestFactory>();
+#endif
         factory.Info(exporterSettings.OtlpTracesEndpoint).Should().Be("http://traces-endpoint:4318/v1/traces");
     }
 
@@ -89,5 +93,3 @@ public class ManagedApiOtlpTests
         return new NameValueConfigurationSource(configNameValues);
     }
 }
-
-#endif
