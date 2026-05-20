@@ -791,7 +791,7 @@ namespace Datadog.Trace.Configuration
                 // and so we allow and enable the datapipeline. Later, they could configure the app in code to send over UDS.
                 // This is a problem, as we currently don't support toggling the data pipeline at runtime, so we explicitly block
                 // this scenario in the public API.
-                if (Manager.InitialExporterSettings.TracesTransport == AgentTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                if (Manager.InitialExporterSettings.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
                 {
                     DataPipelineEnabled = false;
                     Log.Warning(

@@ -179,8 +179,8 @@ internal sealed class ManagedTraceExporter : IApi, IDisposable
         static string GetUrl(ExporterSettings exporterSettings) =>
             exporterSettings.TracesTransport switch
             {
-                AgentTransportType.WindowsNamedPipe => $"windows://./pipe/{exporterSettings.TracesPipeName}",
-                AgentTransportType.UnixDomainSocket => $"unix://{exporterSettings.TracesUnixDomainSocketPath}",
+                TracesTransportType.WindowsNamedPipe => $"windows://./pipe/{exporterSettings.TracesPipeName}",
+                TracesTransportType.UnixDomainSocket => $"unix://{exporterSettings.TracesUnixDomainSocketPath}",
                 _ => exporterSettings.AgentUri.ToString()
             };
     }

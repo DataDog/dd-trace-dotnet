@@ -20,15 +20,15 @@ internal static class OtlpTransportStrategy
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpTransportStrategy));
     private static readonly Uri Localhost = new Uri("http://localhost");
+    internal const string UnixDomainSocketPrefix = "unix://";
 
     public static IApiRequestFactory GetTraces(
         ExporterSettings settings)
     {
-        return Get(settings.TracesTransport, settings.OtlpTracesEndpoint, settings.OtlpTracesHeaders ?? [], settings.OtlpTracesTimeoutMs, "traces");
+        return Get(settings.OtlpTracesEndpoint, settings.OtlpTracesHeaders ?? [], settings.OtlpTracesTimeoutMs, "traces");
     }
 
     private static IApiRequestFactory Get(
-        AgentTransportType strategy,
         Uri signalEndpoint,
         KeyValuePair<string, string>[] signalHeaders,
         int timeoutMs,
@@ -36,29 +36,23 @@ internal static class OtlpTransportStrategy
     {
         var httpHeaderHelper = new OtlpHeaderHelper(signalHeaders);
 
-        switch (strategy)
+        if (signalEndpoint.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            case AgentTransportType.WindowsNamedPipe:
-                Log.Information<string, string?, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for {ProductName} transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", productName, signalEndpoint.ToString(), timeoutMs);
-                return new HttpStreamRequestFactory(
-                    new NamedPipeClientStreamFactory(signalEndpoint.ToString(), timeoutMs),
-                    new DatadogHttpClient(httpHeaderHelper),
-                    Localhost);
-
-            case AgentTransportType.UnixDomainSocket:
-                Log.Information("Using " + nameof(SocketHandlerRequestFactory) + " for {ProductName} transport, with UDS path {Path}.", productName, signalEndpoint.ToString());
-                // use http://localhost as base endpoint
-                return new SocketHandlerRequestFactory(
-                    new UnixDomainSocketStreamFactory(signalEndpoint.ToString()),
-                    httpHeaderHelper.DefaultHeaders,
-                    Localhost);
-            case AgentTransportType.Default:
-            default:
-                Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
-                return new HttpClientRequestFactory(
-                    signalEndpoint,
-                    httpHeaderHelper.DefaultHeaders,
-                    timeout: TimeSpan.FromMilliseconds(timeoutMs));
+            Log.Information("Using " + nameof(SocketHandlerRequestFactory) + " for {ProductName} transport, with UDS path {Path}.", productName, signalEndpoint.ToString());
+            // use http://localhost as base endpoint
+            return new SocketHandlerRequestFactory(
+                new UnixDomainSocketStreamFactory(signalEndpoint.ToString()),
+                httpHeaderHelper.DefaultHeaders,
+                Localhost,
+                timeout: TimeSpan.FromMilliseconds(timeoutMs));
+        }
+        else
+        {
+            Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
+            return new HttpClientRequestFactory(
+                signalEndpoint,
+                httpHeaderHelper.DefaultHeaders,
+                timeout: TimeSpan.FromMilliseconds(timeoutMs));
         }
     }
 }

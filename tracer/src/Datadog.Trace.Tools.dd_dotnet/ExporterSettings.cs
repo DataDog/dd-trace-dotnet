@@ -54,7 +54,6 @@ public partial class ExporterSettings
         TracesPipeName = traceSettings.PipeName;
         TracesUnixDomainSocketPath = traceSettings.UdsPath;
         AgentUri = traceSettings.AgentUri;
-        AgentTransport = traceSettings.Transport;
     }
 
     /// <summary>
@@ -69,7 +68,6 @@ public partial class ExporterSettings
         TracesPipeName = traceSettings.PipeName;
         TracesUnixDomainSocketPath = traceSettings.UdsPath;
         AgentUri = traceSettings.AgentUri;
-        AgentTransport = traceSettings.Transport;
     }
 
     internal enum TelemetryErrorCode
@@ -79,11 +77,9 @@ public partial class ExporterSettings
 
     internal Uri AgentUri { get; }
 
-    internal AgentTransportType AgentTransport { get;  }
-
     internal List<string> ValidationWarnings { get; } = new();
 
-    internal AgentTransportType TracesTransport { get;  }
+    internal TracesTransportType TracesTransport { get;  }
 
     internal string? TracesPipeName { get; }
 

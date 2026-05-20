@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             var baseEndpoint = settings.AgentUri;
 
-            if (settings.AgentTransport is AgentTransportType.WindowsNamedPipe or AgentTransportType.UnixDomainSocket)
+            if (settings.TracesTransport is TracesTransportType.WindowsNamedPipe or TracesTransportType.UnixDomainSocket)
             {
                 baseEndpoint = new Uri("http://localhost");
             }
@@ -98,12 +98,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         private static HttpClient CreateHttpClient(ExporterSettings settings)
         {
-            switch (settings.AgentTransport)
+            switch (settings.TracesTransport)
             {
-                case AgentTransportType.Default:
+                case TracesTransportType.Default:
                     return new HttpClient();
 
-                case AgentTransportType.UnixDomainSocket:
+                case TracesTransportType.UnixDomainSocket:
                     {
                         var handler = new SocketsHttpHandler
                         {
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                         return new HttpClient(handler);
                     }
 
-                case AgentTransportType.WindowsNamedPipe:
+                case TracesTransportType.WindowsNamedPipe:
                     {
                         var handler = new SocketsHttpHandler
                         {
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     }
 
                 default:
-                    throw new InvalidOperationException("Unexpected transport type: " + settings.AgentTransport);
+                    throw new InvalidOperationException("Unexpected transport type: " + settings.TracesTransport);
             }
         }
 
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             string transport;
             string endpoint;
 
-            if (settings.AgentTransport == AgentTransportType.UnixDomainSocket)
+            if (settings.TracesTransport == TracesTransportType.UnixDomainSocket)
             {
                 transport = "domain sockets";
                 endpoint = settings.TracesUnixDomainSocketPath ?? "<not set>";

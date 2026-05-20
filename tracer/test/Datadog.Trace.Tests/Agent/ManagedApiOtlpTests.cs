@@ -28,7 +28,7 @@ public class ManagedApiOtlpTests
         var exporterSettings = new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);
 
         // Verify the APM transport is UDS (this is the precondition that caused the bug)
-        exporterSettings.TracesTransport.Should().Be(AgentTransportType.Default);
+        exporterSettings.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
 
         var factory = OtlpTransportStrategy.GetTraces(exporterSettings);
 

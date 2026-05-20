@@ -38,18 +38,18 @@ internal static class AgentTransportStrategy
         HttpHeaderHelperBase httpHeaderHelper,
         Func<Uri, Uri>? getBaseEndpoint = null)
     {
-        var strategy = settings.AgentTransport;
+        var strategy = settings.TracesTransport;
 
         switch (strategy)
         {
-            case AgentTransportType.WindowsNamedPipe:
+            case TracesTransportType.WindowsNamedPipe:
                 Log.Information<string, string?, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for {ProductName} transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesPipeName, settings.TracesPipeTimeoutMs);
                 return new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs),
                     new DatadogHttpClient(httpHeaderHelper),
                     getBaseEndpoint?.Invoke(Localhost) ?? Localhost);
 
-            case AgentTransportType.UnixDomainSocket:
+            case TracesTransportType.UnixDomainSocket:
 #if NET5_0_OR_GREATER
                 Log.Information("Using " + nameof(SocketHandlerRequestFactory) + " for {ProductName} transport, with UDS path {Path}.", productName, settings.TracesUnixDomainSocketPath);
                 // use http://localhost as base endpoint
@@ -65,9 +65,9 @@ internal static class AgentTransportStrategy
                     getBaseEndpoint?.Invoke(Localhost) ?? Localhost);
 #else
                 Log.Error("Using Unix Domain Sockets for {ProductName} transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.", productName);
-                goto case AgentTransportType.Default;
+                goto case TracesTransportType.Default;
 #endif
-            case AgentTransportType.Default:
+            case TracesTransportType.Default:
             default:
 #if NETCOREAPP
                 Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);

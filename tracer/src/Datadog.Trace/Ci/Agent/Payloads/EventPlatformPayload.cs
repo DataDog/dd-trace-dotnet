@@ -153,13 +153,13 @@ internal abstract class EventPlatformPayload
             // Use Agent EVP Proxy
             // CI Visibility doesn't allow re-configuration, so only need to use the "initial" settings
             var exporterSettings = _settings.TracerSettings.Manager.InitialExporterSettings;
-            switch (exporterSettings.AgentTransport)
+            switch (exporterSettings.TracesTransport)
             {
-                case AgentTransportType.WindowsNamedPipe:
-                case AgentTransportType.UnixDomainSocket:
+                case TracesTransportType.WindowsNamedPipe:
+                case TracesTransportType.UnixDomainSocket:
                     builder = new UriBuilder("http://localhost");
                     break;
-                case AgentTransportType.Default:
+                case TracesTransportType.Default:
                 default:
                     builder = new UriBuilder(exporterSettings.AgentUri);
                     break;
