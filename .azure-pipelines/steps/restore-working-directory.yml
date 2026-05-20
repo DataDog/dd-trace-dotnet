@@ -7,11 +7,5 @@ steps:
 - template: download-artifact.yml
   parameters:
     artifact: ${{ parameters.artifact }}
-    patterns: |
-      artifacts/bin/**
-      artifacts/obj/**
-      artifacts/monitoring-home/**
-      artifacts/output/**
-      packages/**
     path: $(System.DefaultWorkingDirectory)
     retryCountOnTaskFailure: 5

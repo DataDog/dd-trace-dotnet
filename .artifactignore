@@ -4,5 +4,5 @@
 !artifacts/bin/**
 !artifacts/obj/**
 !artifacts/monitoring-home/**
-!artifacts/output/**
+!artifacts/ProfilerResources/**
 !packages/**
