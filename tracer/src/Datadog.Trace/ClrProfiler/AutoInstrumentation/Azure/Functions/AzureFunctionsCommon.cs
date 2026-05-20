@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -22,6 +23,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 
@@ -248,6 +250,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub",        // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos",          // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+                        _ when type.Equals("orchestrationTrigger", StringComparison.OrdinalIgnoreCase) => "DurableOrchestration", // Microsoft.Azure.Functions.Worker.Extensions.DurableTask
+                        _ when type.Equals("activityTrigger", StringComparison.OrdinalIgnoreCase) => "DurableActivity",
+                        _ when type.Equals("entityTrigger", StringComparison.OrdinalIgnoreCase) => "DurableEntity",
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
@@ -270,6 +275,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = functionContext.FunctionDefinition.Name;
+                if (triggerType is "DurableOrchestration" or "DurableActivity")
+                {
+                    LogDurableInvocationTraceContext(functionContext, functionName ?? "unknown", triggerType, tracer);
+                }
+
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
@@ -457,6 +467,141 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
+        }
+
+        /// <summary>
+        /// Logs worker, Activity, active-scope, and trigger-metadata trace context for Durable orchestrator/activity
+        /// invocations. Enable with <c>DD_TRACE_DEBUG=1</c>.
+        /// </summary>
+        private static void LogDurableInvocationTraceContext<T>(T functionContext, string functionName, string triggerType, Tracer tracer)
+            where T : IFunctionContext
+        {
+            if (!Log.IsEnabled(LogEventLevel.Debug))
+            {
+                return;
+            }
+
+            try
+            {
+                TryGetWorkerTraceContextHeaders(functionContext, out var workerTraceParent, out var workerTraceState);
+
+                var activityId = "(none)";
+                var activityTraceId = "(none)";
+                var activitySpanId = "(none)";
+                var activityParentSpanId = "(none)";
+                var activityTraceState = "(none)";
+
+                var activity = global::System.Diagnostics.Activity.Current;
+                if (activity is not null)
+                {
+                    activityId = activity.Id ?? "(null)";
+                    if (activity.TryDuckCast<IW3CActivity>(out var w3cActivity))
+                    {
+                        activityTraceId = w3cActivity.TraceId ?? "(null)";
+                        activitySpanId = w3cActivity.SpanId ?? "(null)";
+                        activityParentSpanId = w3cActivity.RawParentSpanId ?? "(null)";
+                        activityTraceState = w3cActivity.TraceStateString ?? "(null)";
+                    }
+                }
+
+                var activeScopeTraceId = "(none)";
+                var activeScopeSpanId = "(none)";
+                if (tracer.InternalActiveScope?.Span.Context is SpanContext activeContext)
+                {
+                    activeScopeTraceId = activeContext.RawTraceId;
+                    activeScopeSpanId = activeContext.RawSpanId;
+                }
+
+                var activitySummary =
+                    $"Id={activityId}, TraceId={activityTraceId}, SpanId={activitySpanId}, ParentSpanId={activityParentSpanId}, TraceState={activityTraceState}";
+                var triggerMetadataTraceContext = GetDurableTriggerMetadataTraceContextSummary(functionContext);
+
+                Log.Debug(
+                    "Durable Functions trace context [{TriggerType} {FunctionName}] worker: TraceParent={WorkerTraceParent}, TraceState={WorkerTraceState}",
+                    triggerType,
+                    functionName,
+                    workerTraceParent,
+                    workerTraceState);
+
+                Log.Debug(
+                    "Durable Functions trace context [{TriggerType} {FunctionName}] {ActivitySummary}; active scope TraceId={ActiveScopeTraceId}, SpanId={ActiveScopeSpanId}",
+                    triggerType,
+                    functionName,
+                    activitySummary,
+                    activeScopeTraceId,
+                    activeScopeSpanId);
+
+                Log.Debug(
+                    "Durable Functions trace context [{TriggerType} {FunctionName}] trigger metadata: {TriggerMetadataTraceContext}",
+                    triggerType,
+                    functionName,
+                    triggerMetadataTraceContext);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error logging Durable Functions trace context for {FunctionName}", functionName);
+            }
+        }
+
+        private static void TryGetWorkerTraceContextHeaders<T>(T functionContext, out string traceParent, out string traceState)
+            where T : IFunctionContext
+        {
+            traceParent = "(null)";
+            traceState = "(null)";
+
+            if (functionContext.TraceContext is null)
+            {
+                return;
+            }
+
+            if (functionContext.TraceContext.TryDuckCast<IWorkerTraceContext>(out var traceCtx))
+            {
+                traceParent = traceCtx.TraceParent ?? "(null)";
+                traceState = traceCtx.TraceState ?? "(null)";
+            }
+        }
+
+        private static string GetDurableTriggerMetadataTraceContextSummary<T>(T functionContext)
+            where T : IFunctionContext
+        {
+            var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(
+                functionContext,
+                "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
+
+            if (!bindingsFeature.HasValue)
+            {
+                return "(bindings feature unavailable)";
+            }
+
+            var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
+            if (triggerMetadata is null)
+            {
+                return "(trigger metadata null)";
+            }
+
+            foreach (var key in new[] { "traceparent", "TraceParent", "ParentTraceContext", "parentTraceContext", "distributedTraceContext" })
+            {
+                if (triggerMetadata.TryGetValue(key, out var value) && value is not null)
+                {
+                    return $"{key}={FormatTraceContextLogValue(value)}";
+                }
+            }
+
+            return "(no trace context keys in trigger metadata)";
+        }
+
+        private static string FormatTraceContextLogValue(object value)
+        {
+            var text = value.ToString() ?? string.Empty;
+            const int maxLength = 512;
+            if (text.Length <= maxLength)
+            {
+                return text;
+            }
+
+#pragma warning disable CA1845 // Substring required for netstandard2.0
+            return text.Substring(0, maxLength) + "...";
+#pragma warning restore CA1845
         }
 
         private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
