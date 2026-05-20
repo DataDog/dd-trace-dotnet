@@ -108,6 +108,15 @@ internal static class PathwayContextEncoder
             return null;
         }
 
+        var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+        if (pathwayStartNs > nowNs || edgeStartNs > nowNs)
+        {
+            Log.Warning(
+                "Error decoding Data Stream PathwayContext from bytes {Base64EncodedBytes}: pathway or edge start is in the future",
+                Convert.ToBase64String(bytes));
+            return null;
+        }
+
         // Pathway context values are in ns
         return new PathwayContext(new PathwayHash(hash), pathwayStartNs, edgeStartNs);
     }
@@ -149,6 +158,13 @@ internal static class PathwayContextEncoder
                 "Overflow detected in Data Stream PathwayContext from bytes: invalid pathway {PathwayMs}ms or edge {EdgeMs}ms",
                 pathwayStartMs,
                 edgeStartMs);
+            return null;
+        }
+
+        var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+        if (pathwayStartNs > nowNs || edgeStartNs > nowNs)
+        {
+            Log.Warning("Error decoding Data Stream PathwayContext from bytes: pathway or edge start is in the future");
             return null;
         }
 

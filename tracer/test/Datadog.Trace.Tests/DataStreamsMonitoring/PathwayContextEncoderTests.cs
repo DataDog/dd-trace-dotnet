@@ -18,15 +18,15 @@ public class PathwayContextEncoderTests
     [Fact]
     public void TestRandomValues()
     {
+        var nowNs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000;
         for (var i = 0; i < 1000; i++)
         {
-            EncodeTest(unchecked((ulong)GetLong()), Math.Abs(GetLong()), Math.Abs(GetLong()));
+            EncodeTest(unchecked((ulong)GetLong()), Math.Abs(GetLong()) % nowNs, Math.Abs(GetLong()) % nowNs);
         }
     }
 
     [Theory]
     [InlineData(0, 0, 0)]
-    [InlineData(ulong.MaxValue, long.MaxValue, long.MaxValue)]
     public void TestEdgeCases(ulong hash, long pathwayStartNs, long edgeStartNs)
         => EncodeTest(hash, pathwayStartNs, edgeStartNs);
 
@@ -102,6 +102,18 @@ public class PathwayContextEncoderTests
         }
 
         var decoded = PathwayContextEncoder.Decode(bytes);
+        decoded.Should().BeNull();
+    }
+
+    [Fact]
+    public void DecoderFailure_FutureTimestamps()
+    {
+        var futureNs = DateTimeOffset.UtcNow.AddMinutes(1).ToUnixTimeMilliseconds() * 1_000_000;
+        var pathway = new PathwayContext(new PathwayHash(123), pathwayStartNs: futureNs, edgeStartNs: futureNs);
+
+        var bytes = PathwayContextEncoder.Encode(pathway);
+        var decoded = PathwayContextEncoder.Decode(bytes);
+
         decoded.Should().BeNull();
     }
 
