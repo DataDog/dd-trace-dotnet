@@ -20,6 +20,17 @@ namespace Datadog.Trace.TestHelpers;
 
 public static class ErrorHelpers
 {
+    public static bool IsRuntime127957Race(int exitCode, string standardError)
+    {
+        // Fingerprint of dotnet/runtime#127957: a SIGABRT carrying a TypeLoadException whose
+        // message is the "Undefined resource string ID" fallback. The fallback only fires when
+        // the runtime asks the localization layer for a string ID that doesn't exist, which
+        // happens when corrupted metadata bytes flow into the throw site.
+        return exitCode == 134
+            && standardError?.Contains("System.TypeLoadException") == true
+            && standardError?.Contains("Undefined resource string ID") == true;
+    }
+
     public static void CheckForKnownSkipConditions(ITestOutputHelper output, int exitCode, string standardError, EnvironmentHelper environmentHelper)
     {
 #if NETCOREAPP2_1
@@ -35,6 +46,16 @@ public static class ErrorHelpers
         {
             // Coverlet occasionally throws AbandonedMutexException during clean up
             throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
+        }
+
+        if (IsRuntime127957Race(exitCode, standardError))
+        {
+            // dotnet/runtime#127957 — race in MDInternalRW where ExpandTables() invalidates
+            // pointers returned by unlocked metadata readers while the profiler emits tokens.
+            // Manifests as a TypeLoadException with no localized message (unlocalized HRESULT).
+            // Reached here only if retries were exhausted (see RunSampleAndWaitForExit).
+            SendMetric(output, "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957", environmentHelper).ConfigureAwait(false).GetAwaiter().GetResult();
+            throw new SkipException("TypeLoadException due to dotnet/runtime#127957 (MDInternalRW race)");
         }
 
 #if NETCOREAPP2_1

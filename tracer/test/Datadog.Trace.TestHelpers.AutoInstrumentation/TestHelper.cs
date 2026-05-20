@@ -168,52 +168,39 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
-            var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
-            using var helper = new ProcessHelper(process);
+            // Allow a single retry when the sample crashes with the dotnet/runtime#127957 fingerprint.
+            // The race fires during runtime startup before user code runs, so a clean restart almost
+            // always succeeds. If it crashes the same way twice, fall through to the standard validation,
+            // which will skip the test via ErrorHelpers.CheckForKnownSkipConditions as a last resort.
+            const int maxAttempts = 2;
 
-            return WaitForProcessResult(helper);
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
+                using var helper = new ProcessHelper(process);
+                var result = WaitForProcessResultCore(helper);
+
+                if (attempt < maxAttempts && ErrorHelpers.IsRuntime127957Race(result.ExitCode, result.StandardError))
+                {
+                    Output.WriteLine($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
+                    await ErrorHelpers.SendMetric(Output, "dd_trace_dotnet.ci.tests.retried_due_to_runtime_127957", EnvironmentHelper);
+                    continue;
+                }
+
+                ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+                ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode: 0, result.StandardError);
+                return result;
+            }
+
+            throw new InvalidOperationException("Retry loop exited without returning a result.");
         }
 
         public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false)
         {
-            // this is _way_ too long, but we want to be v. safe
-            // the goal is just to make sure we kill the test before
-            // the whole CI run times out
-            var process = helper.Process;
-            var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
-            var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
-
-            var standardOutput = helper.StandardOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardOutput))
-            {
-                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-            }
-
-            var standardError = helper.ErrorOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardError))
-            {
-                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-            }
-
-            if (!ranToCompletion && !process.HasExited)
-            {
-                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, includeChildProcesses: dumpChildProcesses);
-                process.Kill();
-                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
-            }
-
-            var exitCode = process.ExitCode;
-
-            Output.WriteLine($"ProcessId: " + process.Id);
-            Output.WriteLine($"Exit Code: " + exitCode);
-
-            ErrorHelpers.CheckForKnownSkipConditions(Output, exitCode, standardError, EnvironmentHelper);
-
-            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode, standardError);
-
-            return new ProcessResult(process, standardOutput, standardError, exitCode);
+            var result = WaitForProcessResultCore(helper, dumpChildProcesses);
+            ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+            ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
+            return result;
         }
 
         public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(
@@ -686,6 +673,44 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+        }
+
+        private ProcessResult WaitForProcessResultCore(ProcessHelper helper, bool dumpChildProcesses = false)
+        {
+            // this is _way_ too long, but we want to be v. safe
+            // the goal is just to make sure we kill the test before
+            // the whole CI run times out
+            var process = helper.Process;
+            var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
+
+            var standardOutput = helper.StandardOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            var standardError = helper.ErrorOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            if (!ranToCompletion && !process.HasExited)
+            {
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, includeChildProcesses: dumpChildProcesses);
+                process.Kill();
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
+            }
+
+            var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
+
+            return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
         private bool IsServerSpan(MockSpan span) =>
