@@ -22,13 +22,35 @@ public static class ErrorHelpers
 {
     public static bool IsRuntime127957Race(int exitCode, string standardError)
     {
-        // Fingerprint of dotnet/runtime#127957: a SIGABRT carrying a TypeLoadException whose
-        // message is the "Undefined resource string ID" fallback. The fallback only fires when
-        // the runtime asks the localization layer for a string ID that doesn't exist, which
-        // happens when corrupted metadata bytes flow into the throw site.
-        return exitCode == 134
-            && standardError?.Contains("System.TypeLoadException") == true
-            && standardError?.Contains("Undefined resource string ID") == true;
+        // Both fingerprints of dotnet/runtime#127957 surface as a SIGABRT (exit 134) caused by
+        // an unhandled exception on a runtime worker thread that read corrupted metadata.
+        if (exitCode != 134 || standardError is null)
+        {
+            return false;
+        }
+
+        // Fingerprint A — TypeLoadException with the "Undefined resource string ID" fallback:
+        // garbage flowed into the IDS_* argument of the throw site, so the localization
+        // layer was asked for a string ID that doesn't exist.
+        if (standardError.Contains("System.TypeLoadException")
+            && standardError.Contains("Undefined resource string ID"))
+        {
+            return true;
+        }
+
+        // Fingerprint B — MissingMethodException for ConcurrentDictionary.TryGetValue:
+        // the canonical example in the runtime issue. A method signature read returns
+        // garbage from a freed metadata buffer, so the runtime concludes the method
+        // doesn't exist. Commonly hit during ASP.NET HostBuilder.Build() via
+        // Microsoft.Extensions.FileProviders.Physical.PhysicalFilesWatcher.
+        if (standardError.Contains("System.MissingMethodException: Method not found:")
+            && standardError.Contains("ConcurrentDictionary")
+            && standardError.Contains("TryGetValue"))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     public static void CheckForKnownSkipConditions(ITestOutputHelper output, int exitCode, string standardError, EnvironmentHelper environmentHelper)
@@ -52,10 +74,10 @@ public static class ErrorHelpers
         {
             // dotnet/runtime#127957 — race in MDInternalRW where ExpandTables() invalidates
             // pointers returned by unlocked metadata readers while the profiler emits tokens.
-            // Manifests as a TypeLoadException with no localized message (unlocalized HRESULT).
-            // Reached here only if retries were exhausted (see RunSampleAndWaitForExit).
+            // See IsRuntime127957Race for the supported fingerprints.
+            // Reached here only if retries were exhausted (see RunSampleAndWaitForExit / AspNetCoreTestFixture.TryStartApp).
             SendMetric(output, "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957", environmentHelper).ConfigureAwait(false).GetAwaiter().GetResult();
-            throw new SkipException("TypeLoadException due to dotnet/runtime#127957 (MDInternalRW race)");
+            throw new SkipException("Crash matching dotnet/runtime#127957 fingerprint (MDInternalRW race)");
         }
 
 #if NETCOREAPP2_1

@@ -203,6 +203,10 @@ namespace Datadog.Trace.TestHelpers
             return result;
         }
 
+        // Exposes ErrorHelpers.SendMetric to callers that don't have access to EnvironmentHelper
+        // (which is protected). Used by AspNetCoreTestFixture for runtime#127957 retry telemetry.
+        public Task SendCIMetricAsync(string metricName) => ErrorHelpers.SendMetric(Output, metricName, EnvironmentHelper);
+
         public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(
             MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath, bool usePartialTrust, bool useLegacyCasModel)
         {

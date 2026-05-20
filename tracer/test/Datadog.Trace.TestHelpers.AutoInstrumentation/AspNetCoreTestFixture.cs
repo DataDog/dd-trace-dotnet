@@ -11,8 +11,10 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -78,8 +80,14 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
-            if (Process is null)
+            // Allow one retry if startup crashes with the dotnet/runtime#127957 fingerprint.
+            // The race fires during runtime startup before user code, so a fresh launch
+            // almost always succeeds. If it crashes the same way twice, skip the test.
+            const int maxAttempts = 2;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
+                var capturedStderr = new StringBuilder();
                 var initialAgentPort = TcpPortProvider.GetOpenPort();
 
                 Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort, agentConfiguration: agentConfiguration, useTelemetry: useTelemetry);
@@ -118,6 +126,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     if (args.Data != null)
                     {
+                        capturedStderr.AppendLine(args.Data);
                         WriteToOutput($"[webserver][stderr] {args.Data}");
                     }
                 };
@@ -130,14 +139,49 @@ namespace Datadog.Trace.TestHelpers
                     WriteToOutput("Timeout while waiting for the proces to start");
                 }
 
-                if (port == null)
+                if (port != null)
                 {
-                    WriteToOutput("Unable to determine port application is listening on");
-                    throw new Exception("Unable to determine port application is listening on");
+                    HttpPort = port.Value;
+                    WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
+                    break;
                 }
 
-                HttpPort = port.Value;
-                WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
+                var exitCode = Process.HasExited ? Process.ExitCode : -1;
+                var isRuntime127957Race = ErrorHelpers.IsRuntime127957Race(exitCode, capturedStderr.ToString());
+
+                if (isRuntime127957Race && attempt < maxAttempts)
+                {
+                    WriteToOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
+                    await helper.SendCIMetricAsync("dd_trace_dotnet.ci.tests.retried_due_to_runtime_127957");
+
+                    try
+                    {
+                        if (!Process.HasExited)
+                        {
+                            Process.Kill();
+                        }
+                    }
+                    catch
+                    {
+                        // best-effort cleanup
+                    }
+
+                    Process.Dispose();
+                    Process = null;
+                    Agent.Dispose();
+                    Agent = null;
+                    continue;
+                }
+
+                if (isRuntime127957Race)
+                {
+                    // Race persisted through retry — skip as last resort.
+                    await helper.SendCIMetricAsync("dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957");
+                    throw new SkipException("Crash matching dotnet/runtime#127957 fingerprint (MDInternalRW race)");
+                }
+
+                WriteToOutput("Unable to determine port application is listening on");
+                throw new Exception("Unable to determine port application is listening on");
             }
 
             await EnsureServerStarted(sendHealthCheck);
