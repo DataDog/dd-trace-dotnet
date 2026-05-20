@@ -103,14 +103,16 @@ namespace Datadog.Trace.Coverage.Collector
                     return;
                 }
 
-                // Open the assembly
-                var customResolver = new CustomResolver(_logger, _assemblyFilePath);
-                customResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
+                // The target assembly stays open for in-place rewriting, so hold the per-path write lock
+                // until Cecil has disposed the target file stream.
+                using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(_assemblyFilePath);
+                using var assemblyResolver = new CoverageAssemblyResolver(_logger, _assemblyFilePath);
+                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
                 using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
                 {
                     ReadSymbols = true,
                     ReadWrite = true,
-                    AssemblyResolver = customResolver,
+                    AssemblyResolver = assemblyResolver,
                 });
 
                 var hasInternalsVisibleAttribute = false;
@@ -191,7 +193,10 @@ namespace Datadog.Trace.Coverage.Collector
 
                 // We open the exact datadog assembly to be copied to the target, this is because the AssemblyReference lists
                 // differs depends on the target runtime. (netstandard, .NET 5.0 or .NET 4.6.2)
-                using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget));
+                using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget), new ReaderParameters
+                {
+                    InMemory = true
+                });
 
                 var isDirty = false;
                 var fileMetadataIndex = 0;
@@ -727,7 +732,7 @@ namespace Datadog.Trace.Coverage.Collector
 
                     // Create backup for dll and pdb and copy the Datadog.Trace assembly
                     var tracerAssemblyLocation = CopyRequiredAssemblies(assemblyDefinition, tracerTarget);
-                    customResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
+                    assemblyResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
                     assemblyDefinition.Write(new WriterParameters
                     {
@@ -947,126 +952,6 @@ namespace Datadog.Trace.Coverage.Collector
 
             _logger.Debug("GetTracerTarget: Returning TracerTarget.Net461");
             return TracerTarget.Net461;
-        }
-
-        private class CustomResolver : BaseAssemblyResolver
-        {
-            private readonly ICollectorLogger _logger;
-            private DefaultAssemblyResolver _defaultResolver;
-            private string _tracerAssemblyLocation;
-            private string _assemblyFilePath;
-
-            public CustomResolver(ICollectorLogger logger, string assemblyFilePath)
-            {
-                _tracerAssemblyLocation = string.Empty;
-                _logger = logger;
-                _assemblyFilePath = assemblyFilePath;
-                _defaultResolver = new DefaultAssemblyResolver();
-            }
-
-            public override AssemblyDefinition? Resolve(AssemblyNameReference name)
-            {
-                AssemblyDefinition? assembly = null;
-                try
-                {
-                    assembly = _defaultResolver.Resolve(name);
-                }
-                catch (AssemblyResolutionException arEx)
-                {
-                    var tracerAssemblyName = TracerAssembly.GetName();
-                    if (name.Name == tracerAssemblyName.Name && name.Version == tracerAssemblyName.Version)
-                    {
-                        var cAssemblyLocation = !string.IsNullOrEmpty(_tracerAssemblyLocation) ? _tracerAssemblyLocation : TracerAssembly.Location;
-                        try
-                        {
-                            assembly = AssemblyDefinition.ReadAssembly(cAssemblyLocation);
-                        }
-                        catch (Exception innerAssemblyException)
-                        {
-                            _logger.Error(innerAssemblyException, $"Error reading the tracer assembly: {cAssemblyLocation}");
-                            throw;
-                        }
-                    }
-                    else
-                    {
-                        var folder = Path.GetDirectoryName(_assemblyFilePath);
-                        var pathTest = Path.Combine(folder ?? string.Empty, name.Name + ".dll");
-                        _logger.Debug($"Looking for: {pathTest}");
-                        if (File.Exists(pathTest))
-                        {
-                            try
-                            {
-                                return AssemblyDefinition.ReadAssembly(pathTest);
-                            }
-                            catch (Exception innerAssemblyException)
-                            {
-                                _logger.Error(innerAssemblyException, $"Error reading the assembly: {pathTest}");
-                                throw;
-                            }
-                        }
-
-                        if (name.Name == "mscorlib")
-                        {
-                            var path = GetMscorlibBasePath(name.Version);
-                            var file = Path.Combine(path, "mscorlib.dll");
-                            if (File.Exists(file))
-                            {
-                                return AssemblyDefinition.ReadAssembly(file);
-                            }
-                        }
-
-                        _logger.Error(arEx, $"Error in the Custom Resolver processing '{_assemblyFilePath}' for: {name.FullName}");
-                        throw;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, $"Error in the custom resolver when trying to resolve assembly: {name.FullName}");
-                }
-
-                return assembly;
-            }
-
-            public void SetTracerAssemblyLocation(string assemblyLocation)
-            {
-                _tracerAssemblyLocation = assemblyLocation;
-            }
-
-            private string GetMscorlibBasePath(Version version)
-            {
-                string? GetSubFolderForVersion()
-                    => version.Major switch
-                    {
-                        1 when version.MajorRevision == 3300 => "v1.0.3705",
-                        1 => "v1.1.4322",
-                        2 => "v2.0.50727",
-                        4 => "v4.0.30319",
-                        _ => throw new NotSupportedException("Version not supported: " + version),
-                    };
-
-                var rootPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Microsoft.NET");
-                string[] frameworkPaths =
-                [
-                    Path.Combine(rootPath, "Framework"),
-                    Path.Combine(rootPath, "Framework64")
-                ];
-
-                var folder = GetSubFolderForVersion();
-
-                if (folder != null)
-                {
-                    foreach (var path in frameworkPaths)
-                    {
-                        var basePath = Path.Combine(path, folder);
-                        if (Directory.Exists(basePath))
-                        {
-                            return basePath;
-                        }
-                    }
-                }
-
-                throw new NotSupportedException("Version not supported: " + version);
-            }
         }
 
 #pragma warning disable SA1201
