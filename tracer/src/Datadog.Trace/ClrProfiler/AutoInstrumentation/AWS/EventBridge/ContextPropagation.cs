@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             jsonBuilder.Append('}');
         }
 
-        private struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
+        private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
         {
             public void Set(StringBuilder carrier, string key, string value)
             {
