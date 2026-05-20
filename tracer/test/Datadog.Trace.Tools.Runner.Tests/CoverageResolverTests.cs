@@ -160,6 +160,51 @@ public class CoverageResolverTests
     }
 
     /// <summary>
+    /// Verifies that target reads load the assembly into memory and release the path lock before processing continues.
+    /// </summary>
+    [Fact]
+    public void ReadTargetAssemblyDoesNotHoldPathLockAfterRead()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var assemblyPath = CopyCoverageFixture(directory.Path);
+        using var resolver = CreateResolver(directory.Path);
+
+        using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
+
+        using var writeLock = CoverageAssemblyPathLock.EnterWrite(assemblyPath, TimeSpan.FromMilliseconds(20));
+        assembly.Name.Name.Should().Be("CoverageRewriterAssembly");
+    }
+
+    /// <summary>
+    /// Verifies that target writes still exclude concurrent dependency reads of the same assembly path.
+    /// </summary>
+    [Fact]
+    public async Task WriteTargetAssemblyWaitsForDependencyReadLock()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var assemblyPath = CopyCoverageFixture(directory.Path);
+        using var resolver = CreateResolver(directory.Path);
+        using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
+        var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, TimeSpan.FromSeconds(1));
+
+        try
+        {
+            var writeTask = Task.Run(() => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null));
+
+            Thread.Sleep(TimeSpan.FromMilliseconds(100));
+            writeTask.IsCompleted.Should().BeFalse();
+            readLock.Dispose();
+            var completedTask = await Task.WhenAny(writeTask, Task.Delay(TimeSpan.FromSeconds(5)));
+            completedTask.Should().BeSameAs(writeTask);
+            await writeTask;
+        }
+        finally
+        {
+            readLock.Dispose();
+        }
+    }
+
+    /// <summary>
     /// Verifies that multiple dependency reads for the same path can proceed together.
     /// </summary>
     [Fact]
@@ -218,6 +263,7 @@ public class CoverageResolverTests
     {
         var targetPath = Path.Combine(directory, fileName);
         File.Copy("CoverageRewriterAssembly.dll", targetPath, overwrite: true);
+        File.Copy("CoverageRewriterAssembly.pdb", Path.ChangeExtension(targetPath, ".pdb"), overwrite: true);
         return targetPath;
     }
 

@@ -103,17 +103,9 @@ namespace Datadog.Trace.Coverage.Collector
                     return;
                 }
 
-                // The target assembly stays open for in-place rewriting, so hold the per-path write lock
-                // until Cecil has disposed the target file stream.
-                using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(_assemblyFilePath);
                 using var assemblyResolver = new CoverageAssemblyResolver(_logger, _assemblyFilePath);
                 assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
-                using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
-                {
-                    ReadSymbols = true,
-                    ReadWrite = true,
-                    AssemblyResolver = assemblyResolver,
-                });
+                using var assemblyDefinition = ReadTargetAssembly(_assemblyFilePath, assemblyResolver);
 
                 var hasInternalsVisibleAttribute = false;
                 foreach (var cAttr in assemblyDefinition.CustomAttributes)
@@ -734,11 +726,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var tracerAssemblyLocation = CopyRequiredAssemblies(assemblyDefinition, tracerTarget);
                     assemblyResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
-                    assemblyDefinition.Write(new WriterParameters
-                    {
-                        WriteSymbols = true,
-                        StrongNameKeyBlob = _strongNameKeyBlob
-                    });
+                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob);
                 }
 
                 _logger.Debug($"Done: {_assemblyFilePath} [Modified:{isDirty}]");
@@ -751,6 +739,39 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
+        }
+
+        /// <summary>
+        /// Reads the target assembly into memory while holding only the target-path read lock.
+        /// </summary>
+        /// <param name="assemblyFilePath">The assembly path to read.</param>
+        /// <param name="assemblyResolver">The resolver used for Cecil metadata resolution.</param>
+        /// <returns>The in-memory assembly definition to rewrite.</returns>
+        internal static AssemblyDefinition ReadTargetAssembly(string assemblyFilePath, IAssemblyResolver assemblyResolver)
+        {
+            using var assemblyLock = CoverageAssemblyPathLock.EnterRead(assemblyFilePath);
+            return AssemblyDefinition.ReadAssembly(assemblyFilePath, new ReaderParameters
+            {
+                ReadSymbols = true,
+                InMemory = true,
+                AssemblyResolver = assemblyResolver,
+            });
+        }
+
+        /// <summary>
+        /// Writes the rewritten target assembly while holding the target-path write lock.
+        /// </summary>
+        /// <param name="assemblyDefinition">The rewritten assembly definition.</param>
+        /// <param name="assemblyFilePath">The assembly path to overwrite.</param>
+        /// <param name="strongNameKeyBlob">The optional strong-name key used when rewriting signed assemblies.</param>
+        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob)
+        {
+            using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(assemblyFilePath);
+            assemblyDefinition.Write(assemblyFilePath, new WriterParameters
+            {
+                WriteSymbols = true,
+                StrongNameKeyBlob = strongNameKeyBlob
+            });
         }
 
         private static void RemoveShortOpCodes(Instruction instruction)
