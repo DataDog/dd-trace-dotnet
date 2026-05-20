@@ -168,7 +168,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         writePosition += ReserveSizeForLength;
 
         // trace_id (field 1, LEN, 16 bytes)
-        writePosition = WriteTraceIdField(bytes, writePosition, Span_Trace_Id, spanModel.Span.Context.RawTraceId);
+        writePosition = WriteTraceIdField(bytes, writePosition, Span_Trace_Id, spanModel.Span.TraceId128);
 
         // span_id (field 2, LEN, 8 bytes)
         writePosition = WriteSpanIdField(bytes, writePosition, Span_Span_Id, spanModel.Span.SpanId);
@@ -330,7 +330,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         int lengthPos = writePosition;
         writePosition += ReserveSizeForLength;
 
-        writePosition = WriteTraceIdField(bytes, writePosition, Link_Trace_Id, link.Context.RawTraceId);
+        writePosition = WriteTraceIdField(bytes, writePosition, Link_Trace_Id, link.Context.TraceId128);
         writePosition = WriteSpanIdField(bytes, writePosition, Link_Span_Id, link.Context.SpanId);
 
         if (link.Context.IsRemote)
@@ -444,11 +444,12 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         }
     }
 
-    private static int WriteTraceIdField(byte[] bytes, int writePosition, int fieldNumber, string rawTraceIdHex)
+    private static int WriteTraceIdField(byte[] bytes, int writePosition, int fieldNumber, TraceId traceId)
     {
         writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, fieldNumber, ProtobufWireType.LEN);
         writePosition = ProtobufSerializer.WriteLength(bytes, writePosition, TraceIdSize);
-        WriteHexBytes(bytes, writePosition, rawTraceIdHex, TraceIdSize);
+        BinaryPrimitives.WriteUInt64BigEndian(new Span<byte>(bytes, writePosition, 8), traceId.Upper);
+        BinaryPrimitives.WriteUInt64BigEndian(new Span<byte>(bytes, writePosition + 8, 8), traceId.Lower);
         return writePosition + TraceIdSize;
     }
 
@@ -458,33 +459,6 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         writePosition = ProtobufSerializer.WriteLength(bytes, writePosition, SpanIdSize);
         BinaryPrimitives.WriteUInt64BigEndian(new Span<byte>(bytes, writePosition, SpanIdSize), spanId);
         return writePosition + SpanIdSize;
-    }
-
-    private static void WriteHexBytes(byte[] bytes, int writePosition, string hex, int byteCount)
-    {
-        // RawTraceId is zero-padded to 32 chars; RawSpanId is zero-padded to 16. Defensively
-        // normalize any non-canonical input: left-pad with zero nibbles if too short, or take
-        // the lowest-order bytes if too long. Works for both even and odd lengths.
-        var span = new Span<byte>(bytes, writePosition, byteCount);
-        int expectedChars = byteCount * 2;
-        int shift = expectedChars - hex.Length; // > 0 to pad; < 0 to truncate from the left
-
-        for (int i = 0; i < byteCount; i++)
-        {
-            int highPos = (2 * i) - shift;
-            int lowPos = highPos + 1;
-            int high = highPos < 0 ? 0 : FromHex(hex[highPos]);
-            int low = lowPos < 0 ? 0 : FromHex(hex[lowPos]);
-            span[i] = (byte)((high << 4) | low);
-        }
-
-        static int FromHex(char c) => c switch
-        {
-            >= '0' and <= '9' => c - '0',
-            >= 'a' and <= 'f' => 10 + (c - 'a'),
-            >= 'A' and <= 'F' => 10 + (c - 'A'),
-            _ => 0,
-        };
     }
 
     private struct WriteResourceState
