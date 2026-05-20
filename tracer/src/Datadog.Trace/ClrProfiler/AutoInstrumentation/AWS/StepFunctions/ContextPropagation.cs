@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 sb.Append(','); // Add a comma if it's not an empty object
             }
 
-            sb.AppendFormat(" \"{0}\": {{", StepFunctionsKey); // Add _datadog:" {
+            sb.Append($$""" "{{StepFunctionsKey}}": {"""); // Add _datadog:" {
             tracer.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
             sb.Remove(sb.Length - 1, 1); // remove trailing comma
             sb.Append("}}"); // re-add both closing braces one for original JSON and one for context

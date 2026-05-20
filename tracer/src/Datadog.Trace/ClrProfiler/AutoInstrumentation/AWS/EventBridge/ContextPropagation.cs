@@ -62,8 +62,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 detailBuilder.Append(','); // Add comma if the original detail is not empty
             }
 
-            var traceContext = BuildContextJson(tracer, context, entry.EventBusName);
-            detailBuilder.Append($"\"{DatadogKey}\":{traceContext}").Append('}');
+            detailBuilder.Append($"\"{DatadogKey}\":");
+            AppendContextJson(tracer, context, entry.EventBusName, detailBuilder);
+            detailBuilder.Append('}');
 
             // Check new detail size
             var updatedDetail = Util.StringBuilderCache.GetStringAndRelease(detailBuilder);
@@ -77,25 +78,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             entry.Detail = updatedDetail;
         }
 
-        // Builds a JSON string containing Datadog trace context
-        private static string BuildContextJson(Tracer tracer, PropagationContext context, string? eventBusName)
+        // Appends the body of the Datadog trace-context JSON object (without surrounding braces) to the supplied builder.
+        private static void AppendContextJson(Tracer tracer, PropagationContext context, string? eventBusName, StringBuilder jsonBuilder)
         {
-            // Inject trace context
-            var jsonBuilder = Util.StringBuilderCache.Acquire();
             jsonBuilder.Append('{');
 
             tracer.TracerManager.SpanContextPropagator.Inject(context, jsonBuilder, new StringBuilderCarrierSetter());
 
-            // Inject start time and bus name
             var startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            jsonBuilder.Append($"\"{StartTimeKey}\":\"{startTime}\"");
+            jsonBuilder.Append($"\"{StartTimeKey}\":\"").Append(startTime).Append('"');
+
             if (eventBusName != null)
             {
-                jsonBuilder.Append($",\"{ResourceNameKey}\":\"{eventBusName}\"");
+                jsonBuilder.Append($",\"{ResourceNameKey}\":\"");
+                JsonHelper.WriteEscapedJavaScriptString(jsonBuilder, eventBusName);
+                jsonBuilder.Append('"');
             }
 
             jsonBuilder.Append('}');
-            return Util.StringBuilderCache.GetStringAndRelease(jsonBuilder);
         }
 
         private struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
