@@ -2844,7 +2844,7 @@ partial class Build
         }
 
         // Check if already downloaded
-        var vcpkgRoot = RootDirectory / "artifacts" / "bin" / "vcpkg";
+        var vcpkgRoot = BuildArtifactsDirectory / "vcpkg";
         var vcpkgExecPath = vcpkgRoot / "vcpkg.exe";
         var bootstrap = vcpkgRoot / "bootstrap-vcpkg.bat";
 
