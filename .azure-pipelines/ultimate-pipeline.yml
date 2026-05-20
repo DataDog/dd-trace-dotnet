@@ -81,7 +81,7 @@ variables:
   monitoringHome: $(System.DefaultWorkingDirectory)/artifacts/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/artifacts/output
   outputDir: $(System.DefaultWorkingDirectory)/artifacts
-  symbols: $(System.DefaultWorkingDirectory)/artifacts/symbols
+  symbols: $(System.DefaultWorkingDirectory)/artifacts/native-symbols
   relativeRunnerTool: artifacts/output/runnerTool
   relativeRunnerStandalone: artifacts/output/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)

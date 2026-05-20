@@ -61,7 +61,7 @@ partial class Build
     // Scratch space used by the release-tooling targets in Build.GitHub.cs to download
     // upstream Azure DevOps / GitLab artifacts. Not a build output destination.
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
-    AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "symbols";
+    AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "native-symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "output");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
