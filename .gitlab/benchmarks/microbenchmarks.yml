@@ -100,6 +100,9 @@ run-benchmarks:
     CLEANUP: "true"
     # Set to "true" to skip actual benchmarks and use _latest results (for testing the pipeline)
     BP_INFRA_TEST: "false"
+    # Set to "true" to run OpenTelemetry.Api benchmarks outside of "master" (for testing the pipeline)
+    RUN_OTEL_API_BENCHMARKS_ON_PR: "true"
+
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
@@ -111,7 +114,7 @@ run-benchmarks:
     # Nuke's BuildBenchmarks target (see Build.cs) checks PR_NUMBER to skip building
     # Benchmarks.OpenTelemetry.Api on PRs. Only int.TryParse is used (boolean check),
     # so any integer works. The actual PR number is not needed in this code path.
-    - if [ "$CI_COMMIT_REF_NAME" != "master" ]; then export PR_NUMBER=1; fi
+    - if [ "$CI_COMMIT_REF_NAME" != "master" ] && [ "$RUN_OTEL_API_BENCHMARKS_ON_PR" = "false" ]; then export PR_NUMBER=1; fi
     # Run benchmarks on ephemeral instance
     - |
       bp-infra launch \
