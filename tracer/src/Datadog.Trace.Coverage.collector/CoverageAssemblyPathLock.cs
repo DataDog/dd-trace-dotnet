@@ -18,6 +18,7 @@ namespace Datadog.Trace.Coverage.Collector
     {
         private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
         private static readonly object RegistryLock = new();
+        // Keep lock entries for the collector process lifetime so every same-path access shares one lock object.
         private static readonly Dictionary<string, ReaderWriterLockSlim> Locks = new(GetPathComparer());
 
         /// <summary>

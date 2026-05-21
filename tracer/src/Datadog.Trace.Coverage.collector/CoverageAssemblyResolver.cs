@@ -63,12 +63,12 @@ namespace Datadog.Trace.Coverage.Collector
             }
             catch (AssemblyResolutionException arEx)
             {
-                _logger.Error(arEx, $"Error in the custom resolver processing '{_assemblyFilePath}' for: {name.FullName}");
+                _logger.Error(arEx, $"{nameof(CoverageAssemblyResolver)} failed to resolve dependency '{name.FullName}' while processing target assembly '{_assemblyFilePath}'.");
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, $"Error in the custom resolver when trying to resolve assembly: {name.FullName}");
+                _logger.Error(ex, $"{nameof(CoverageAssemblyResolver)} failed to resolve dependency '{name.FullName}' while processing target assembly '{_assemblyFilePath}'.");
                 throw;
             }
         }
@@ -185,17 +185,9 @@ namespace Datadog.Trace.Coverage.Collector
 
         private AssemblyDefinition ReadAndCache(string requestedFullName, string assemblyPath)
         {
-            try
-            {
-                using var assemblyLock = CoverageAssemblyPathLock.EnterRead(assemblyPath);
-                var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, CreateDependencyReaderParameters());
-                return CacheAssembly(requestedFullName, assembly);
-            }
-            catch (Exception ex) when (ex is not AssemblyResolutionException)
-            {
-                _logger.Error(ex, $"Error reading the assembly: {assemblyPath}");
-                throw;
-            }
+            using var assemblyLock = CoverageAssemblyPathLock.EnterRead(assemblyPath);
+            var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, CreateDependencyReaderParameters());
+            return CacheAssembly(requestedFullName, assembly);
         }
 
         private AssemblyDefinition CacheAssembly(string requestedFullName, AssemblyDefinition assembly)
