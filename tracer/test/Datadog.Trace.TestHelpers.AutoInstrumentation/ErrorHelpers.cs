@@ -27,14 +27,8 @@ public static class ErrorHelpers
     private const string RuntimeMetadataRaceSkipMetric = "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_metadata_race";
 
     /// <summary>
-    /// Inspects a sample-launch attempt for known upstream/runtime-level error fingerprints
-    /// (currently dotnet/runtime#127957) and applies a retry-once-then-skip policy.
-    /// Returns true if the caller should retry the launch (a known error was detected, not
-    /// on the final attempt). Returns false if no known fingerprint was detected and the
-    /// caller should proceed with its normal validation. Throws SkipException if a known
-    /// fingerprint matched on the final attempt — the test is skipped rather than failed,
-    /// since these errors come from upstream bugs we can't fix here.
-    /// New fingerprints should be added as additional branches in this method.
+    /// Inspects a sample-launch attempt for known upstream/runtime-level error fingerprints.
+    /// Returns true if the caller should retry the launch.
     /// </summary>
     public static async Task<bool> HandleRuntimeSkippableErrorsAsync(
         int attempt, int maxAttempts, int exitCode, string stderr, TestHelper helper, Action<string> writeOutput)
@@ -75,9 +69,7 @@ public static class ErrorHelpers
 
         // Fingerprint B — MissingMethodException for ConcurrentDictionary.TryGetValue:
         // the canonical example in the runtime issue. A method signature read returns
-        // garbage from a freed metadata buffer, so the runtime concludes the method
-        // doesn't exist. Commonly hit during ASP.NET HostBuilder.Build() via
-        // Microsoft.Extensions.FileProviders.Physical.PhysicalFilesWatcher.
+        // garbage from a freed metadata buffer, so the runtime concludes the method doesn't exist.
         if (standardError.Contains("System.MissingMethodException: Method not found:")
             && standardError.Contains("ConcurrentDictionary")
             && standardError.Contains("TryGetValue"))
@@ -107,10 +99,6 @@ public static class ErrorHelpers
 
         if (IsRuntime127957Race(exitCode, standardError))
         {
-            // dotnet/runtime#127957 — race in MDInternalRW where ExpandTables() invalidates
-            // pointers returned by unlocked metadata readers while the profiler emits tokens.
-            // Reached when CheckForKnownSkipConditions is called directly (e.g. SmokeTestBase),
-            // outside the retry-aware paths that already call HandleRuntimeSkippableErrorsAsync.
             SendMetric(output, RuntimeMetadataRaceSkipMetric, environmentHelper, Runtime127957IssueTag).ConfigureAwait(false).GetAwaiter().GetResult();
             throw new SkipException(Runtime127957SkipMessage);
         }
