@@ -101,7 +101,7 @@ run-benchmarks:
     # Set to "true" to skip actual benchmarks and use _latest results (for testing the pipeline)
     BP_INFRA_TEST: "false"
     # Set to "true" to run OpenTelemetry.Api benchmarks outside of "master" (for testing the pipeline)
-    RUN_OTEL_API_BENCHMARKS_ON_PR: "true"
+    RUN_OTEL_API_BENCHMARKS_ON_PR: "false"
 
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
