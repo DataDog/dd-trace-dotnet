@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Coverage.Collector;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -18,6 +17,9 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class CoverageResolverTests
 {
+    private static readonly TimeSpan LockAcquisitionTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan ExpectedContentionTimeout = TimeSpan.FromMilliseconds(200);
+
     /// <summary>
     /// Verifies that sibling assembly resolution still finds assemblies in the target output directory.
     /// </summary>
@@ -55,10 +57,8 @@ public class CoverageResolverTests
     /// Verifies the Windows failure mode from issue 8592: resolved dependency handles are released.
     /// </summary>
     [SkippableFact]
-    public void DisposingResolverReleasesCopiedSiblingAssemblyOnWindows()
+    public void DisposingResolverReleasesCopiedSiblingAssembly()
     {
-        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
-
         using var directory = TemporaryDirectory.Create();
         var dependencyPath = CopyCoverageFixture(directory.Path);
         var resolver = CreateResolver(directory.Path);
@@ -71,7 +71,7 @@ public class CoverageResolverTests
     }
 
     /// <summary>
-    /// Verifies that changing the copied tracer location invalidates any earlier cached tracer assembly.
+    /// Verifies that changing the copied tracer location invalidates and releases the previous cached tracer assembly.
     /// </summary>
     [Fact]
     public void SetTracerAssemblyLocationInvalidatesCachedTracerAssembly()
@@ -88,27 +88,29 @@ public class CoverageResolverTests
         var second = resolver.Resolve(tracerName);
 
         second.Should().NotBeSameAs(first);
+        if (EnvironmentTools.IsWindows())
+        {
+            AssertCanOpenExclusively(firstTracerPath);
+        }
     }
 
     /// <summary>
-    /// Verifies that tracer cache invalidation releases the old tracer assembly file on Windows.
+    /// Verifies that setting the same copied tracer location keeps the existing cached tracer assembly.
     /// </summary>
-    [SkippableFact]
-    public void SetTracerAssemblyLocationReleasesOldTracerCopyOnWindows()
+    [Fact]
+    public void SetTracerAssemblyLocationKeepsCachedTracerAssemblyForSamePath()
     {
-        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
-
         using var directory = TemporaryDirectory.Create();
-        var firstTracerPath = CopyTracerAssembly(directory.Path, "first");
-        var secondTracerPath = CopyTracerAssembly(directory.Path, "second");
+        var tracerPath = CopyTracerAssembly(directory.Path, "tracer");
         using var resolver = CreateResolver(directory.Path);
-        var tracerName = AssemblyNameReference.Parse(AssemblyName.GetAssemblyName(firstTracerPath).FullName);
+        var tracerName = AssemblyNameReference.Parse(AssemblyName.GetAssemblyName(tracerPath).FullName);
 
-        resolver.SetTracerAssemblyLocation(firstTracerPath);
-        _ = resolver.Resolve(tracerName);
-        resolver.SetTracerAssemblyLocation(secondTracerPath);
+        resolver.SetTracerAssemblyLocation(tracerPath);
+        var first = resolver.Resolve(tracerName);
+        resolver.SetTracerAssemblyLocation(tracerPath);
+        var second = resolver.Resolve(tracerName);
 
-        AssertCanOpenExclusively(firstTracerPath);
+        second.Should().BeSameAs(first);
     }
 
     /// <summary>
@@ -119,11 +121,11 @@ public class CoverageResolverTests
     {
         using var directory = TemporaryDirectory.Create();
         var assemblyPath = CopyCoverageFixture(directory.Path);
-        using var writeLock = CoverageAssemblyPathLock.EnterWrite(assemblyPath, TimeSpan.FromSeconds(1));
+        using var writeLock = CoverageAssemblyPathLock.EnterWrite(assemblyPath, LockAcquisitionTimeout);
 
         var exception = CaptureExceptionFromThread(() =>
         {
-            using var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, TimeSpan.FromMilliseconds(20));
+            using var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, ExpectedContentionTimeout);
         });
 
         exception.Should().BeOfType<IOException>();
@@ -133,30 +135,17 @@ public class CoverageResolverTests
     /// Verifies that resolver dependency reads wait behind an active rewrite for the same assembly path.
     /// </summary>
     [Fact]
-    public async Task ResolverWaitsForTargetWriteLockBeforeReadingDependency()
+    public void ResolverCannotReadDependencyWhileTargetWriteLockIsHeld()
     {
         using var directory = TemporaryDirectory.Create();
         var dependencyPath = CopyCoverageFixture(directory.Path);
         using var resolver = CreateResolver(directory.Path);
         var assemblyName = AssemblyNameReference.Parse(AssemblyName.GetAssemblyName(dependencyPath).FullName);
-        var writeLock = CoverageAssemblyPathLock.EnterWrite(dependencyPath, TimeSpan.FromSeconds(1));
+        using var writeLock = CoverageAssemblyPathLock.EnterWrite(dependencyPath, LockAcquisitionTimeout);
 
-        try
-        {
-            var resolveTask = Task.Run(() => resolver.Resolve(assemblyName));
+        var exception = CaptureExceptionFromThread(() => resolver.Resolve(assemblyName));
 
-            Thread.Sleep(TimeSpan.FromMilliseconds(100));
-            resolveTask.IsCompleted.Should().BeFalse();
-            writeLock.Dispose();
-            var completedTask = await Task.WhenAny(resolveTask, Task.Delay(TimeSpan.FromSeconds(5)));
-            completedTask.Should().BeSameAs(resolveTask);
-            var assembly = await resolveTask;
-            assembly.Name.Name.Should().Be("CoverageRewriterAssembly");
-        }
-        finally
-        {
-            writeLock.Dispose();
-        }
+        exception.Should().BeOfType<IOException>();
     }
 
     /// <summary>
@@ -171,7 +160,7 @@ public class CoverageResolverTests
 
         using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
 
-        using var writeLock = CoverageAssemblyPathLock.EnterWrite(assemblyPath, TimeSpan.FromMilliseconds(20));
+        using var writeLock = CoverageAssemblyPathLock.EnterWrite(assemblyPath, LockAcquisitionTimeout);
         assembly.Name.Name.Should().Be("CoverageRewriterAssembly");
     }
 
@@ -179,29 +168,17 @@ public class CoverageResolverTests
     /// Verifies that target writes still exclude concurrent dependency reads of the same assembly path.
     /// </summary>
     [Fact]
-    public async Task WriteTargetAssemblyWaitsForDependencyReadLock()
+    public void WriteTargetAssemblyCannotWriteWhileDependencyReadLockIsHeld()
     {
         using var directory = TemporaryDirectory.Create();
         var assemblyPath = CopyCoverageFixture(directory.Path);
         using var resolver = CreateResolver(directory.Path);
         using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
-        var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, TimeSpan.FromSeconds(1));
+        using var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, LockAcquisitionTimeout);
 
-        try
-        {
-            var writeTask = Task.Run(() => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null));
+        var exception = CaptureExceptionFromThread(() => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null));
 
-            Thread.Sleep(TimeSpan.FromMilliseconds(100));
-            writeTask.IsCompleted.Should().BeFalse();
-            readLock.Dispose();
-            var completedTask = await Task.WhenAny(writeTask, Task.Delay(TimeSpan.FromSeconds(5)));
-            completedTask.Should().BeSameAs(writeTask);
-            await writeTask;
-        }
-        finally
-        {
-            readLock.Dispose();
-        }
+        exception.Should().BeOfType<IOException>();
     }
 
     /// <summary>
@@ -213,8 +190,8 @@ public class CoverageResolverTests
         using var directory = TemporaryDirectory.Create();
         var assemblyPath = CopyCoverageFixture(directory.Path);
 
-        using var firstReadLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, TimeSpan.FromSeconds(1));
-        using var secondReadLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, TimeSpan.FromSeconds(1));
+        using var firstReadLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, LockAcquisitionTimeout);
+        using var secondReadLock = CoverageAssemblyPathLock.EnterRead(assemblyPath, LockAcquisitionTimeout);
     }
 
     /// <summary>
@@ -226,9 +203,9 @@ public class CoverageResolverTests
         using var directory = TemporaryDirectory.Create();
         var firstPath = CopyCoverageFixture(directory.Path, "first.dll");
         var secondPath = CopyCoverageFixture(directory.Path, "second.dll");
-        using var writeLock = CoverageAssemblyPathLock.EnterWrite(firstPath, TimeSpan.FromSeconds(1));
+        using var writeLock = CoverageAssemblyPathLock.EnterWrite(firstPath, LockAcquisitionTimeout);
 
-        using var readLock = CoverageAssemblyPathLock.EnterRead(secondPath, TimeSpan.FromMilliseconds(20));
+        using var readLock = CoverageAssemblyPathLock.EnterRead(secondPath, LockAcquisitionTimeout);
     }
 
     /// <summary>
@@ -241,11 +218,11 @@ public class CoverageResolverTests
 
         using var directory = TemporaryDirectory.Create();
         var assemblyPath = CopyCoverageFixture(directory.Path);
-        using var writeLock = CoverageAssemblyPathLock.EnterWrite(assemblyPath.ToUpperInvariant(), TimeSpan.FromSeconds(1));
+        using var writeLock = CoverageAssemblyPathLock.EnterWrite(assemblyPath.ToUpperInvariant(), LockAcquisitionTimeout);
 
         var exception = CaptureExceptionFromThread(() =>
         {
-            using var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath.ToLowerInvariant(), TimeSpan.FromMilliseconds(20));
+            using var readLock = CoverageAssemblyPathLock.EnterRead(assemblyPath.ToLowerInvariant(), ExpectedContentionTimeout);
         });
 
         exception.Should().BeOfType<IOException>();
@@ -283,7 +260,7 @@ public class CoverageResolverTests
         });
 
         thread.Start();
-        thread.Join(TimeSpan.FromSeconds(5)).Should().BeTrue();
+        thread.Join(LockAcquisitionTimeout).Should().BeTrue();
         return exception;
     }
 

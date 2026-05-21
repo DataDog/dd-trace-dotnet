@@ -16,10 +16,16 @@ namespace Datadog.Trace.Coverage.Collector
     /// </summary>
     internal static class CoverageAssemblyPathLock
     {
-        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
-        private static readonly object RegistryLock = new();
         // Keep lock entries for the collector process lifetime so every same-path access shares one lock object.
-        private static readonly Dictionary<string, ReaderWriterLockSlim> Locks = new(GetPathComparer());
+        private static readonly Dictionary<string, ReaderWriterLockSlim> Locks;
+        private static readonly TimeSpan DefaultTimeout;
+
+        static CoverageAssemblyPathLock()
+        {
+            DefaultTimeout = TimeSpan.FromSeconds(5);
+            var pathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+            Locks = new(pathComparer);
+        }
 
         /// <summary>
         /// Acquires shared read access for a dependency assembly path.
@@ -80,7 +86,7 @@ namespace Datadog.Trace.Coverage.Collector
 
         private static ReaderWriterLockSlim GetLock(string normalizedPath)
         {
-            lock (RegistryLock)
+            lock (Locks)
             {
                 if (!Locks.TryGetValue(normalizedPath, out var pathLock))
                 {
@@ -92,14 +98,11 @@ namespace Datadog.Trace.Coverage.Collector
             }
         }
 
-        private static StringComparer GetPathComparer()
-            => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-
         private sealed class LockScope : IDisposable
         {
             private readonly ReaderWriterLockSlim _pathLock;
             private readonly bool _isWriteLock;
-            private bool _disposed;
+            private int _disposed;
 
             public LockScope(ReaderWriterLockSlim pathLock, bool isWriteLock)
             {
@@ -109,12 +112,11 @@ namespace Datadog.Trace.Coverage.Collector
 
             public void Dispose()
             {
-                if (_disposed)
+                if (Interlocked.Exchange(ref _disposed, 1) != 0)
                 {
                     return;
                 }
 
-                _disposed = true;
                 if (_isWriteLock)
                 {
                     _pathLock.ExitWriteLock();
