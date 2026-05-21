@@ -11,4 +11,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 /// Value-type cache key for SNS produce edge tags. Using a named struct avoids boxing and
 /// is compatible with all supported target frameworks.
 /// </summary>
-internal readonly record struct SnsEdgeTagCacheKey(string TopicName);
+internal readonly record struct SnsEdgeTagCacheKey(string TopicArn);
