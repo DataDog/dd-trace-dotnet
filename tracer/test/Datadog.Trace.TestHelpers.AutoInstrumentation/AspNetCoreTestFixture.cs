@@ -79,10 +79,6 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
-            // Retry sample launch up to (maxAttempts - 1) times if startup crashes with the
-            // dotnet/runtime#127957 fingerprint. The race fires during runtime startup before
-            // user code, so a fresh launch almost always succeeds. If the fingerprint persists
-            // across all attempts it's no longer credibly a flake — let the test fail.
             const int maxAttempts = 3;
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
@@ -146,13 +142,8 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                // Give the process a moment to finish exiting in case it's crashing — the
-                // port-bind mutex can time out before a slow runtime abort completes (createdump
-                // can take several seconds to write a dump before the process actually dies).
-                // Reading HasExited/ExitCode can also throw if the process is in an
-                // indeterminate state; defaulting to -1 lets the race-fingerprint check fail
-                // cleanly and the "Unable to determine port" path fire instead of an unhandled
-                // exception.
+                // Give a slow runtime abort (e.g. createdump in flight) up to 5s to finish
+                // before reading the exit code; defaults to -1 on any read failure.
                 int exitCode = -1;
                 try
                 {
@@ -190,9 +181,6 @@ namespace Datadog.Trace.TestHelpers
                     continue;
                 }
 
-                // Proceed (no race detected) and Persistent (race fingerprint persisted past
-                // retry budget) both fall through to the same loud failure here. The helper
-                // already emitted the corresponding metric in the Persistent case.
                 WriteToOutput("Unable to determine port application is listening on");
                 throw new Exception("Unable to determine port application is listening on");
             }

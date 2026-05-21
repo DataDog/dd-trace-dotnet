@@ -168,10 +168,6 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
-            // Retry the sample launch up to (maxAttempts - 1) times when it crashes with the
-            // dotnet/runtime#127957 fingerprint. The race fires during runtime startup before
-            // user code runs, so a clean restart almost always succeeds. If the fingerprint
-            // persists across all attempts it's no longer credibly a flake — let the test fail.
             const int maxAttempts = 3;
             var attempt = 1;
 
@@ -191,9 +187,6 @@ namespace Datadog.Trace.TestHelpers
 
                 if (outcome == RuntimeErrorOutcome.Proceed)
                 {
-                    // No known fingerprint matched — apply the standard skip-condition checks.
-                    // Skipped on Persistent because CheckForKnownSkipConditions would otherwise
-                    // re-skip the same race fingerprint we've decided to fail on.
                     ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
                 }
 
@@ -210,8 +203,6 @@ namespace Datadog.Trace.TestHelpers
             return result;
         }
 
-        // Exposes ErrorHelpers.SendMetric to callers that don't have access to EnvironmentHelper
-        // (which is protected). Used by AspNetCoreTestFixture for runtime#127957 retry telemetry.
         public Task SendCIMetricAsync(string metricName, params string[] extraTags)
             => ErrorHelpers.SendMetric(Output, metricName, EnvironmentHelper, extraTags);
 
