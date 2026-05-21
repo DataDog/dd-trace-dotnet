@@ -101,8 +101,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 case string str:
                     ddwafObjectStruct = GetStringObject(ref context, str);
                     break;
-                case JValue:
-                    ddwafObjectStruct = GetStringObject(ref context, o?.ToString() ?? string.Empty);
+                case JValue jValue:
+                    ddwafObjectStruct = Encode(ref context, remainingDepth, key, jValue.Value);
                     break;
                 case null:
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL };
@@ -308,7 +308,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     var idx = 0;
                     foreach (var val in enumerable)
                     {
-                        if (idx > childrenCount)
+                        if (idx >= childrenCount)
                         {
                             break;
                         }

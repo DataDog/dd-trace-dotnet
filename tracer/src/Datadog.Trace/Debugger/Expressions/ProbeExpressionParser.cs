@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -47,6 +46,11 @@ internal partial class ProbeExpressionParser<T>
             if (typeof(T) == typeof(bool))
             {
                 return (T)(object)true;
+            }
+
+            if (typeof(T) == typeof(object))
+            {
+                return (T)(object)Expressions.UndefinedValue.Instance;
             }
 
             return default;
@@ -523,6 +527,11 @@ internal partial class ProbeExpressionParser<T>
             // If declared type is Int32 but actual value is Int64, using declared type
             // would cause InvalidCastException when the lambda is executed.
             var runtimeType = argOrLocal.Value?.GetType() ?? argOrLocal.Type;
+            if (runtimeType.ContainsGenericParameters)
+            {
+                runtimeType = CloseOpenGenericType(runtimeType);
+            }
+
             var variable = Expression.Variable(runtimeType, argOrLocal.Name);
             scopeMembers.Add(variable);
 
@@ -544,6 +553,7 @@ internal partial class ProbeExpressionParser<T>
         var argsOrLocals = methodScopeMembers.Members;
         var @this = methodScopeMembers.InvocationTarget;
         var thisType = thisTypeOverride;
+
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
             var ex = new ArgumentException("Method has been called with an invalid argument");
@@ -616,6 +626,11 @@ internal partial class ProbeExpressionParser<T>
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
     {
         var parameterExpression = Expression.Parameter(scopeMember.GetType());
+        if (type.ContainsGenericParameters)
+        {
+            type = CloseOpenGenericType(scopeMember.Value?.GetType() ?? type);
+        }
+
         var variable = Expression.Variable(type, name);
         var valueField = Expression.Field(parameterExpression, "Value");
 

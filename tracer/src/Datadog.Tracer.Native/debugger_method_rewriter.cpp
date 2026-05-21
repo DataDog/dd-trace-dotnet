@@ -105,6 +105,9 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         {
             Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
                          " is By-Ref like.");
+            // We couldn't reliably determine whether this value is byref-like.
+            // Do not instrument it. Instrumenting byref-like values can lead to runtime failures.
+            continue;
         }
         else if (isTypeIsByRefLike)
         {
@@ -287,7 +290,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     if (probes.empty())
     {
-        Logger::Info("There are no probes for methodDef: ", methodHandler->GetMethodDef());
+        Logger::Debug("There are no probes for methodDef: ", methodHandler->GetMethodDef());
         return S_OK;
     }
 
@@ -2503,8 +2506,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         return E_FAIL;
     }
 
-    Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
-                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
+    Logger::Debug("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
+                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
 
     hr = this->m_corProfiler->info_->ApplyMetaData(module_id);
     if (FAILED(hr))

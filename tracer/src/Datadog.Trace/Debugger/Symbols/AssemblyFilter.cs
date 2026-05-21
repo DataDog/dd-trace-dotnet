@@ -7,7 +7,7 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Symbols
@@ -16,14 +16,16 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyFilter));
 
-        internal static bool ShouldSkipAssembly(Assembly assembly, ImmutableHashSet<string>? thirdPartyExcludes, ImmutableHashSet<string>? thirdPartyIncludes)
+        internal static bool ShouldSkipAssembly(Assembly assembly, ImmutableHashSet<string>? thirdPartyExcludes, ImmutableHashSet<string>? thirdPartyIncludes, bool requireAssemblyLocation = true)
         {
             var assemblyName = assembly.GetName().Name;
 
+            // Most callers require Assembly.Location (for example, SymbolsUploader uses it as a dedupe key).
+            // Code Origin can opt out for single-file assemblies and still emit reflection-derived tags.
             var shouldSkip = string.IsNullOrWhiteSpace(assemblyName) ||
                              assembly.IsDynamic ||
                              assembly.ManifestModule.IsResource() ||
-                             string.IsNullOrWhiteSpace(assembly.Location);
+                             (requireAssemblyLocation && string.IsNullOrWhiteSpace(assembly.Location));
 
             if (shouldSkip)
             {

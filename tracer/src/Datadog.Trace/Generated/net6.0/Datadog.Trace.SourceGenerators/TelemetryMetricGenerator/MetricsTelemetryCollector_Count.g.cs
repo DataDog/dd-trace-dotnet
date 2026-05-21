@@ -186,11 +186,13 @@ internal sealed partial class MetricsTelemetryCollector
             // context_header.truncated, index = 148
             new(new[] { "truncation_reason:baggage_item_count_exceeded" }),
             new(new[] { "truncation_reason:baggage_byte_count_exceeded" }),
-            // context_header_style.malformed, index = 150
+            new(new[] { "truncation_reason:baggage_extract_item_exceeded" }),
+            new(new[] { "truncation_reason:baggage_extract_byte_exceeded" }),
+            // context_header_style.malformed, index = 151
             new(new[] { "header_style:baggage" }),
-            // stats_api.requests, index = 151
+            // stats_api.requests, index = 152
             new(null),
-            // stats_api.responses, index = 152
+            // stats_api.responses, index = 153
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -213,11 +215,11 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
-            // stats_api.errors, index = 174
+            // stats_api.errors, index = 175
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // otel.env.hiding, index = 177
+            // otel.env.hiding, index = 178
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_log_level" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_metrics_exporter" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_propagators" }),
@@ -308,7 +310,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler_arg" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:unknown" }),
-            // otel.env.invalid, index = 267
+            // otel.env.invalid, index = 268
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_log_level" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_metrics_exporter" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_propagators" }),
@@ -399,30 +401,30 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler_arg" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:unknown" }),
-            // otel.metrics_export_attempts, index = 357
+            // otel.metrics_export_attempts, index = 358
             new(new[] { "protocol:grpc", "encoding:protobuf" }),
             new(new[] { "protocol:grpc", "encoding:json" }),
             new(new[] { "protocol:http", "encoding:protobuf" }),
             new(new[] { "protocol:http", "encoding:json" }),
-            // otel.metrics_export_successes, index = 361
+            // otel.metrics_export_successes, index = 362
             new(new[] { "protocol:grpc", "encoding:protobuf" }),
             new(new[] { "protocol:grpc", "encoding:json" }),
             new(new[] { "protocol:http", "encoding:protobuf" }),
             new(new[] { "protocol:http", "encoding:json" }),
-            // otel.metrics_export_partial_successes, index = 365
+            // otel.metrics_export_partial_successes, index = 366
             new(new[] { "protocol:grpc", "encoding:protobuf" }),
             new(new[] { "protocol:grpc", "encoding:json" }),
             new(new[] { "protocol:http", "encoding:protobuf" }),
             new(new[] { "protocol:http", "encoding:json" }),
-            // otel.metrics_export_failures, index = 369
+            // otel.metrics_export_failures, index = 370
             new(new[] { "protocol:grpc", "encoding:protobuf" }),
             new(new[] { "protocol:grpc", "encoding:json" }),
             new(new[] { "protocol:http", "encoding:protobuf" }),
             new(new[] { "protocol:http", "encoding:json" }),
-            // telemetry_api.requests, index = 373
+            // telemetry_api.requests, index = 374
             new(new[] { "endpoint:agent" }),
             new(new[] { "endpoint:agentless" }),
-            // telemetry_api.responses, index = 375
+            // telemetry_api.responses, index = 376
             new(new[] { "endpoint:agent", "status_code:200" }),
             new(new[] { "endpoint:agent", "status_code:201" }),
             new(new[] { "endpoint:agent", "status_code:202" }),
@@ -467,18 +469,18 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "endpoint:agentless", "status_code:503" }),
             new(new[] { "endpoint:agentless", "status_code:504" }),
             new(new[] { "endpoint:agentless", "status_code:5xx" }),
-            // telemetry_api.errors, index = 419
+            // telemetry_api.errors, index = 420
             new(new[] { "endpoint:agent", "type:timeout" }),
             new(new[] { "endpoint:agent", "type:network" }),
             new(new[] { "endpoint:agent", "type:status_code" }),
             new(new[] { "endpoint:agentless", "type:timeout" }),
             new(new[] { "endpoint:agentless", "type:network" }),
             new(new[] { "endpoint:agentless", "type:status_code" }),
-            // version_conflict_tracers_created, index = 425
+            // version_conflict_tracers_created, index = 426
             new(null),
-            // unsupported_custom_instrumentation_services, index = 426
+            // unsupported_custom_instrumentation_services, index = 427
             new(null),
-            // direct_log_logs, index = 427
+            // direct_log_logs, index = 428
             new(new[] { "integration_name:datadog" }),
             new(new[] { "integration_name:opentracing" }),
             new(new[] { "integration_name:version_conflict" }),
@@ -740,7 +742,7 @@ internal sealed partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 86, 1, 3, 5, 2, 2, 5, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 1, 22, 3, 90, 90, 4, 4, 4, 4, 2, 44, 6, 1, 1, 86, 1, 22, 3, 2, 2, 8, 3, 5, 15, 5, 4, 4, 5, 14, 1, 27, 1, 27, };
+        = new int[]{ 4, 85, 1, 3, 5, 2, 2, 5, 1, 1, 1, 22, 3, 2, 5, 5, 4, 1, 1, 22, 3, 90, 90, 4, 4, 4, 4, 2, 44, 6, 1, 1, 85, 1, 22, 3, 2, 2, 8, 3, 5, 15, 5, 4, 4, 5, 14, 1, 27, 1, 27, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -842,94 +844,94 @@ internal sealed partial class MetricsTelemetryCollector
 
     public void RecordCountContextHeaderMalformed(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderMalformed tag, int increment = 1)
     {
-        var index = 150 + (int)tag;
+        var index = 151 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountStatsApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[151], increment);
+        Interlocked.Add(ref _buffer.Count[152], increment);
     }
 
     public void RecordCountStatsApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
-        var index = 152 + (int)tag;
+        var index = 153 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
-        var index = 174 + (int)tag;
+        var index = 175 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
-        var index = 177 + ((int)tag1 * 10) + (int)tag2;
+        var index = 178 + ((int)tag1 * 10) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountOpenTelemetryConfigInvalid(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
-        var index = 267 + ((int)tag1 * 10) + (int)tag2;
+        var index = 268 + ((int)tag1 * 10) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMetricsExportAttempts(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
-        var index = 357 + ((int)tag1 * 2) + (int)tag2;
+        var index = 358 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMetricsExportSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
-        var index = 361 + ((int)tag1 * 2) + (int)tag2;
+        var index = 362 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMetricsExportPartialSuccesses(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
-        var index = 365 + ((int)tag1 * 2) + (int)tag2;
+        var index = 366 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMetricsExportFailures(Datadog.Trace.Telemetry.Metrics.MetricTags.Protocol tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.MetricEncoding tag2, int increment = 1)
     {
-        var index = 369 + ((int)tag1 * 2) + (int)tag2;
+        var index = 370 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1)
     {
-        var index = 373 + (int)tag;
+        var index = 374 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag2, int increment = 1)
     {
-        var index = 375 + ((int)tag1 * 22) + (int)tag2;
+        var index = 376 + ((int)tag1 * 22) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag2, int increment = 1)
     {
-        var index = 419 + ((int)tag1 * 3) + (int)tag2;
+        var index = 420 + ((int)tag1 * 3) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountVersionConflictTracerCreated(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[425], increment);
+        Interlocked.Add(ref _buffer.Count[426], increment);
     }
 
     public void RecordCountUnsupportedCustomInstrumentationServices(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[426], increment);
+        Interlocked.Add(ref _buffer.Count[427], increment);
     }
 
     public void RecordCountDirectLogLogs(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
-        var index = 427 + (int)tag;
+        var index = 428 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 

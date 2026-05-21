@@ -71,7 +71,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
-    internal static Dictionary<string, object>? ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
+    internal static Dictionary<string, object>? ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, headers, static (collection, key) => GetHeaderValueForWaf((IHeaderDictionary)collection, key));
 
     private static object GetHeaderAsArray(StringValues value) => value.Count == 1 ? value[0] : value;
 

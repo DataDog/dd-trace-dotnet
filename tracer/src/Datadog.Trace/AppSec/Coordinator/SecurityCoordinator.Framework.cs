@@ -410,8 +410,10 @@ internal readonly partial struct SecurityCoordinator
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
-        var headers = request.Headers;
-        var headersDic = ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
+        var headers = RequestDataHelper.GetHeaders(request);
+        var headersDic = headers is not null
+                             ? ExtractHeaders(headers.AllKeys, headers, static (collection, key) => GetHeaderValueForWaf((NameValueCollection)collection, key))
+                             : null;
         var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);

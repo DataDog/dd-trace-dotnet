@@ -503,14 +503,14 @@ supportedConfigurations:
     const_name: TotalFlakyRetryCount
     documentation: Configuration key for the maximum number of retry attempts for the entire session.
   DD_CODE_ORIGIN_FOR_SPANS_ENABLED:
-  - implementation: B
+  - implementation: A
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Debugger
     const_name: CodeOriginForSpansEnabled
     documentation: |-
       Configuration key to enable tag code origin for span.
-      Default value is false.
+      Default value is true.
   DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES:
   - implementation: A
     type: int
@@ -526,6 +526,12 @@ supportedConfigurations:
     default: null
     product: CIVisibility
     documentation: Jenkins CI environment variable for custom trace ID correlation.
+  DD_CUSTOM_PARENT_ID:
+  - implementation: A
+    type: string
+    default: null
+    product: CIVisibility
+    documentation: Jenkins CI environment variable for custom parent ID correlation.
   DD_DATA_STREAMS_ENABLED:
   - implementation: B
     type: boolean
@@ -1179,6 +1185,15 @@ supportedConfigurations:
       This variable is set by the native loader after trying to load the profiler.
       It means the profiler is _there_ though it may not be _loaded_. This only works
       on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
+  DD_INTERNAL_PROFILING_ENABLED_ARM64:
+  - implementation: A
+    type: string
+    default: 'false'
+    product: ContinuousProfiler
+    const_name: InternalProfilingEnabledArm64
+    documentation: |-
+      Internal gate: on Linux ARM64, the continuous profiler is only considered enabled in managed settings
+      when this is set to <c>true</c>. Must match the native profiler <c>DD_INTERNAL_PROFILING_ENABLED_ARM64</c> check.
   DD_INTERNAL_TELEMETRY_DEBUG_ENABLED:
   - implementation: A
     type: boolean
