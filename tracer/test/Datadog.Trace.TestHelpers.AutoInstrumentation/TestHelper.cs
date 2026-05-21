@@ -168,11 +168,11 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
-            // Allow a single retry when the sample crashes with the dotnet/runtime#127957 fingerprint.
-            // The race fires during runtime startup before user code runs, so a clean restart almost
-            // always succeeds. If it crashes the same way twice, fall through to the standard validation,
-            // which will skip the test via ErrorHelpers.CheckForKnownSkipConditions as a last resort.
-            const int maxAttempts = 2;
+            // Retry the sample launch up to (maxAttempts - 1) times when it crashes with the
+            // dotnet/runtime#127957 fingerprint. The race fires during runtime startup before
+            // user code runs, so a clean restart almost always succeeds. If the fingerprint
+            // persists across all attempts it's no longer credibly a flake — let the test fail.
+            const int maxAttempts = 3;
             var attempt = 1;
 
             while (true)
@@ -181,13 +181,22 @@ namespace Datadog.Trace.TestHelpers
                 using var processHelper = new ProcessHelper(process);
                 var result = WaitForProcessResultRaw(processHelper);
 
-                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
+                var outcome = await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine);
+
+                if (outcome == RuntimeErrorOutcome.Retry)
                 {
                     attempt++;
                     continue;
                 }
 
-                ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+                if (outcome == RuntimeErrorOutcome.Proceed)
+                {
+                    // No known fingerprint matched — apply the standard skip-condition checks.
+                    // Skipped on Persistent because CheckForKnownSkipConditions would otherwise
+                    // re-skip the same race fingerprint we've decided to fail on.
+                    ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+                }
+
                 ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode: 0, result.StandardError);
                 return result;
             }

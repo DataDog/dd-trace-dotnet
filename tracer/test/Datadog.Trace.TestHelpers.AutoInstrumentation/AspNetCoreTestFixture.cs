@@ -79,10 +79,11 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
-            // Allow one retry if startup crashes with the dotnet/runtime#127957 fingerprint.
-            // The race fires during runtime startup before user code, so a fresh launch
-            // almost always succeeds. If it crashes the same way twice, skip the test.
-            const int maxAttempts = 2;
+            // Retry sample launch up to (maxAttempts - 1) times if startup crashes with the
+            // dotnet/runtime#127957 fingerprint. The race fires during runtime startup before
+            // user code, so a fresh launch almost always succeeds. If the fingerprint persists
+            // across all attempts it's no longer credibly a flake — let the test fail.
+            const int maxAttempts = 3;
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
@@ -166,7 +167,9 @@ namespace Datadog.Trace.TestHelpers
                     // best-effort
                 }
 
-                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
+                var outcome = await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput);
+
+                if (outcome == RuntimeErrorOutcome.Retry)
                 {
                     try
                     {
@@ -187,6 +190,9 @@ namespace Datadog.Trace.TestHelpers
                     continue;
                 }
 
+                // Proceed (no race detected) and Persistent (race fingerprint persisted past
+                // retry budget) both fall through to the same loud failure here. The helper
+                // already emitted the corresponding metric in the Persistent case.
                 WriteToOutput("Unable to determine port application is listening on");
                 throw new Exception("Unable to determine port application is listening on");
             }

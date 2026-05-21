@@ -19,34 +19,68 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers;
 
+public enum RuntimeErrorOutcome
+{
+    /// <summary>
+    /// No known transient error fingerprint detected. The caller should apply its normal
+    /// validation path (including <see cref="ErrorHelpers.CheckForKnownSkipConditions"/>).
+    /// </summary>
+    Proceed,
+
+    /// <summary>
+    /// A known transient error fingerprint was detected and the retry budget is not yet
+    /// exhausted. The caller should clean up and retry the launch.
+    /// </summary>
+    Retry,
+
+    /// <summary>
+    /// A known transient error fingerprint was detected on every attempt — past the retry
+    /// budget. The error is no longer credibly a flake. The caller should let the test fail
+    /// loudly and must NOT call <see cref="ErrorHelpers.CheckForKnownSkipConditions"/>, which
+    /// would re-skip the same fingerprint.
+    /// </summary>
+    Persistent,
+}
+
 public static class ErrorHelpers
 {
     private const string Runtime127957SkipMessage = "Crash matching dotnet/runtime#127957 fingerprint (MDInternalRW race)";
     private const string Runtime127957IssueTag = "runtime_issue:127957";
     private const string RuntimeMetadataRaceRetryMetric = "dd_trace_dotnet.ci.tests.retried_due_to_runtime_metadata_race";
     private const string RuntimeMetadataRaceSkipMetric = "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_metadata_race";
+    private const string RuntimeMetadataRacePersistentMetric = "dd_trace_dotnet.ci.tests.persistent_runtime_metadata_race";
 
     /// <summary>
-    /// Inspects a sample-launch attempt for known upstream/runtime-level error fingerprints.
-    /// Returns true if the caller should retry the launch.
+    /// Inspects a sample-launch attempt for known upstream/runtime-level error fingerprints
+    /// (currently dotnet/runtime#127957) and decides whether the caller should retry, proceed
+    /// with normal validation, or treat the failure as a persistent (non-flake) error.
     /// </summary>
-    public static async Task<bool> HandleRuntimeSkippableErrorsAsync(
+    /// <returns>
+    /// <see cref="RuntimeErrorOutcome.Retry"/> when a known transient error is detected and
+    /// the retry budget isn't exhausted; <see cref="RuntimeErrorOutcome.Persistent"/> when a
+    /// known fingerprint matched on every attempt (no longer a flake — caller should let the
+    /// test fail loudly without consulting <see cref="CheckForKnownSkipConditions"/>, which
+    /// would otherwise skip the same fingerprint); <see cref="RuntimeErrorOutcome.Proceed"/>
+    /// when no known fingerprint was detected and the caller should proceed normally.
+    /// </returns>
+    public static async Task<RuntimeErrorOutcome> HandleRuntimeSkippableErrorsAsync(
         int attempt, int maxAttempts, int exitCode, string stderr, TestHelper helper, Action<string> writeOutput)
     {
-        if (IsRuntime127957Race(exitCode, stderr))
+        if (!IsRuntime127957Race(exitCode, stderr))
         {
-            if (attempt < maxAttempts)
-            {
-                writeOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
-                await helper.SendCIMetricAsync(RuntimeMetadataRaceRetryMetric, Runtime127957IssueTag);
-                return true;
-            }
-
-            await helper.SendCIMetricAsync(RuntimeMetadataRaceSkipMetric, Runtime127957IssueTag);
-            throw new SkipException(Runtime127957SkipMessage);
+            return RuntimeErrorOutcome.Proceed;
         }
 
-        return false;
+        if (attempt < maxAttempts)
+        {
+            writeOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
+            await helper.SendCIMetricAsync(RuntimeMetadataRaceRetryMetric, Runtime127957IssueTag);
+            return RuntimeErrorOutcome.Retry;
+        }
+
+        writeOutput($"dotnet/runtime#127957 fingerprint persisted across {maxAttempts} attempts — not a flake. Letting the test fail.");
+        await helper.SendCIMetricAsync(RuntimeMetadataRacePersistentMetric, Runtime127957IssueTag);
+        return RuntimeErrorOutcome.Persistent;
     }
 
     public static bool IsRuntime127957Race(int exitCode, string standardError)
