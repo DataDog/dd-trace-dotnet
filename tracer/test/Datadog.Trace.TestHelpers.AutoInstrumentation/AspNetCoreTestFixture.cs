@@ -135,56 +135,39 @@ namespace Datadog.Trace.TestHelpers
                     WriteToOutput("Timeout while waiting for the proces to start");
                 }
 
-                if (port != null)
+                if (port == null)
                 {
-                    HttpPort = port.Value;
-                    WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
-                    break;
+                    if (await CheckRaceAndCleanupForRetryAsync(attempt, maxAttempts, capturedStderr, helper))
+                    {
+                        continue;
+                    }
+
+                    WriteToOutput("Unable to determine port application is listening on");
+                    throw new Exception("Unable to determine port application is listening on");
                 }
 
-                // Give a slow runtime abort (e.g. createdump in flight) up to 5s to finish
-                // before reading the exit code; defaults to -1 on any read failure.
-                int exitCode = -1;
+                HttpPort = port.Value;
+                WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
+
                 try
                 {
-                    Process.WaitForExit(5000);
-                    if (Process.HasExited)
-                    {
-                        exitCode = Process.ExitCode;
-                    }
+                    await EnsureServerStarted(sendHealthCheck);
                 }
                 catch
                 {
-                    // best-effort
-                }
-
-                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
-                {
-                    try
+                    // Sample bound a port but never served the health check — could be the race
+                    // firing post-bind (gate thread dies after Kestrel is up).
+                    if (await CheckRaceAndCleanupForRetryAsync(attempt, maxAttempts, capturedStderr, helper))
                     {
-                        if (!Process.HasExited)
-                        {
-                            Process.Kill();
-                        }
-                    }
-                    catch
-                    {
-                        // best-effort cleanup
+                        continue;
                     }
 
-                    Process.Dispose();
-                    Process = null;
-                    Agent.Dispose();
-                    Agent = null;
-                    continue;
+                    throw;
                 }
 
-                WriteToOutput("Unable to determine port application is listening on");
-                throw new Exception("Unable to determine port application is listening on");
+                Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                return;
             }
-
-            await EnsureServerStarted(sendHealthCheck);
-            Agent.SpanFilters.Add(IsNotServerLifeCheck);
         }
 
         public void Dispose()
@@ -261,6 +244,51 @@ namespace Datadog.Trace.TestHelpers
                        count: 1,
                        minDateTime: now,
                        returnAllOperations: true);
+        }
+
+        // Returns true when a known race fingerprint was detected in the captured stderr and the
+        // caller should retry the launch (process and agent have been torn down). Returns false
+        // when no fingerprint matched. Throws if the fingerprint persisted past the retry budget.
+        private async Task<bool> CheckRaceAndCleanupForRetryAsync(int attempt, int maxAttempts, StringBuilder capturedStderr, TestHelper helper)
+        {
+            // Give a slow runtime abort (e.g. createdump in flight) up to 5s to finish before
+            // reading the exit code; defaults to -1 on any read failure.
+            int exitCode = -1;
+            try
+            {
+                Process.WaitForExit(5000);
+                if (Process.HasExited)
+                {
+                    exitCode = Process.ExitCode;
+                }
+            }
+            catch
+            {
+                // best-effort
+            }
+
+            if (!await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!Process.HasExited)
+                {
+                    Process.Kill();
+                }
+            }
+            catch
+            {
+                // best-effort cleanup
+            }
+
+            Process.Dispose();
+            Process = null;
+            Agent.Dispose();
+            Agent = null;
+            return true;
         }
 
         private async Task EnsureServerStarted(bool sendHealthCheck)
