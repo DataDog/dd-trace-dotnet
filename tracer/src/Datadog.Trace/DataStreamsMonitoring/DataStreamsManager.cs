@@ -325,8 +325,9 @@ internal sealed class DataStreamsManager
             var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 
-            // Clamp latencies to non-negative values. A future-dated upstream timestamp (clock skew or
-            // a buggy/malicious peer) would otherwise give a negative value
+            // Prevent negative value latencies from a future-dated upstream timestamp 
+            // (clock skew or a buggy/malicious peer)
+            
             var pathwayLatencyNs = Math.Max(0, nowNs - pathwayStartNs);
             var edgeLatencyNs = Math.Max(0, nowNs - (previousContext?.EdgeStart ?? edgeStartNs));
 
