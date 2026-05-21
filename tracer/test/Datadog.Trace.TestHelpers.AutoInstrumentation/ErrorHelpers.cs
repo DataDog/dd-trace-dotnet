@@ -20,6 +20,37 @@ namespace Datadog.Trace.TestHelpers;
 
 public static class ErrorHelpers
 {
+    private const string Runtime127957SkipMessage = "Crash matching dotnet/runtime#127957 fingerprint (MDInternalRW race)";
+    private const string Runtime127957RetryMetric = "dd_trace_dotnet.ci.tests.retried_due_to_runtime_127957";
+    private const string Runtime127957SkipMetric = "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957";
+
+    /// <summary>
+    /// Inspects a sample-launch attempt for the dotnet/runtime#127957 race fingerprint and
+    /// applies the retry-once-then-skip policy. Returns true if the caller should retry the
+    /// launch (race detected, not the final attempt); returns false if no race fingerprint was
+    /// detected and the caller should proceed with normal validation. Throws SkipException if
+    /// the race fingerprint matched on the final attempt — the test is skipped rather than
+    /// failed since #127957 is an upstream runtime bug.
+    /// </summary>
+    public static async Task<bool> HandleRuntime127957AttemptAsync(
+        int attempt, int maxAttempts, int exitCode, string stderr, TestHelper helper, Action<string> writeOutput)
+    {
+        if (!IsRuntime127957Race(exitCode, stderr))
+        {
+            return false;
+        }
+
+        if (attempt < maxAttempts)
+        {
+            writeOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
+            await helper.SendCIMetricAsync(Runtime127957RetryMetric);
+            return true;
+        }
+
+        await helper.SendCIMetricAsync(Runtime127957SkipMetric);
+        throw new SkipException(Runtime127957SkipMessage);
+    }
+
     public static bool IsRuntime127957Race(int exitCode, string standardError)
     {
         // Both fingerprints of dotnet/runtime#127957 surface as a SIGABRT (exit 134) caused by
@@ -74,10 +105,10 @@ public static class ErrorHelpers
         {
             // dotnet/runtime#127957 — race in MDInternalRW where ExpandTables() invalidates
             // pointers returned by unlocked metadata readers while the profiler emits tokens.
-            // See IsRuntime127957Race for the supported fingerprints.
-            // Reached here only if retries were exhausted (see RunSampleAndWaitForExit / AspNetCoreTestFixture.TryStartApp).
-            SendMetric(output, "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957", environmentHelper).ConfigureAwait(false).GetAwaiter().GetResult();
-            throw new SkipException("Crash matching dotnet/runtime#127957 fingerprint (MDInternalRW race)");
+            // Reached when CheckForKnownSkipConditions is called directly (e.g. SmokeTestBase),
+            // outside the retry-aware paths that already call HandleRuntime127957AttemptAsync.
+            SendMetric(output, Runtime127957SkipMetric, environmentHelper).ConfigureAwait(false).GetAwaiter().GetResult();
+            throw new SkipException(Runtime127957SkipMessage);
         }
 
 #if NETCOREAPP2_1

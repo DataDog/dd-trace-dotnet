@@ -177,13 +177,11 @@ namespace Datadog.Trace.TestHelpers
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
-                using var helper = new ProcessHelper(process);
-                var result = WaitForProcessResultCore(helper);
+                using var processHelper = new ProcessHelper(process);
+                var result = WaitForProcessResultCore(processHelper);
 
-                if (attempt < maxAttempts && ErrorHelpers.IsRuntime127957Race(result.ExitCode, result.StandardError))
+                if (await ErrorHelpers.HandleRuntime127957AttemptAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
                 {
-                    Output.WriteLine($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
-                    await ErrorHelpers.SendMetric(Output, "dd_trace_dotnet.ci.tests.retried_due_to_runtime_127957", EnvironmentHelper);
                     continue;
                 }
 

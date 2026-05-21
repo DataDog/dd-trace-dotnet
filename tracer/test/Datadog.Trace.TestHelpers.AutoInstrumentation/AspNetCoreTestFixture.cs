@@ -14,7 +14,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -147,13 +146,9 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 var exitCode = Process.HasExited ? Process.ExitCode : -1;
-                var isRuntime127957Race = ErrorHelpers.IsRuntime127957Race(exitCode, capturedStderr.ToString());
 
-                if (isRuntime127957Race && attempt < maxAttempts)
+                if (await ErrorHelpers.HandleRuntime127957AttemptAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
                 {
-                    WriteToOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
-                    await helper.SendCIMetricAsync("dd_trace_dotnet.ci.tests.retried_due_to_runtime_127957");
-
                     try
                     {
                         if (!Process.HasExited)
@@ -171,13 +166,6 @@ namespace Datadog.Trace.TestHelpers
                     Agent.Dispose();
                     Agent = null;
                     continue;
-                }
-
-                if (isRuntime127957Race)
-                {
-                    // Race persisted through retry — skip as last resort.
-                    await helper.SendCIMetricAsync("dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957");
-                    throw new SkipException("Crash matching dotnet/runtime#127957 fingerprint (MDInternalRW race)");
                 }
 
                 WriteToOutput("Unable to determine port application is listening on");
