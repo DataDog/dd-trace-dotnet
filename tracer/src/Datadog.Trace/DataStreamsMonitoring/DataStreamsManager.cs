@@ -325,6 +325,11 @@ internal sealed class DataStreamsManager
             var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 
+            // Clamp latencies to non-negative values. A future-dated upstream timestamp (clock skew or
+            // a buggy/malicious peer) would otherwise give a negative value
+            var pathwayLatencyNs = Math.Max(0, nowNs - pathwayStartNs);
+            var edgeLatencyNs = Math.Max(0, nowNs - (previousContext?.EdgeStart ?? edgeStartNs));
+
             var writer = Volatile.Read(ref _writer);
             writer?.Add(
                 new StatsPoint(
@@ -332,8 +337,8 @@ internal sealed class DataStreamsManager
                     hash: pathwayHash,
                     parentHash: parentHash,
                     timestampNs: nowNs,
-                    pathwayLatencyNs: nowNs - pathwayStartNs,
-                    edgeLatencyNs: nowNs - (previousContext?.EdgeStart ?? edgeStartNs),
+                    pathwayLatencyNs: pathwayLatencyNs,
+                    edgeLatencyNs: edgeLatencyNs,
                     payloadSizeBytes));
 
             var pathway = new PathwayContext(
