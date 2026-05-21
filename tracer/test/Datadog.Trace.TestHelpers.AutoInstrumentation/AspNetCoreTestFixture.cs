@@ -251,14 +251,19 @@ namespace Datadog.Trace.TestHelpers
         // when no fingerprint matched. Throws if the fingerprint persisted past the retry budget.
         private async Task<bool> CheckRaceAndCleanupForRetryAsync(int attempt, int maxAttempts, StringBuilder capturedStderr, TestHelper helper)
         {
-            // Give a slow runtime abort (e.g. createdump in flight) up to 5s to finish before
-            // reading the exit code; defaults to -1 on any read failure.
+            // Reset HttpPort up-front: whether we retry or rethrow, the port we bound earlier
+            // is now stale (process died) and Dispose() must not target it.
+            HttpPort = 0;
+
+            // 5s grace for createdump. Parameterless WaitForExit() after a successful timed
+            // wait drains async stdout/stderr handlers — otherwise capturedStderr may miss
+            // the final lines that carry the fingerprint.
             int exitCode = -1;
             try
             {
-                Process.WaitForExit(5000);
-                if (Process.HasExited)
+                if (Process.WaitForExit(5000))
                 {
+                    Process.WaitForExit();
                     exitCode = Process.ExitCode;
                 }
             }
