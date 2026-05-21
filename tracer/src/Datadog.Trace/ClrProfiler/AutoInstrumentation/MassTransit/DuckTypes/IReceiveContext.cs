@@ -22,7 +22,7 @@ internal interface IReceiveContext
 
     /// <summary>
     /// Gets the transport headers for trace context propagation.
-    /// Duck typed to IHeaders which exposes GetAll() — public on JsonTransportHeaders in all MT7 versions.
+    /// Duck typed to IHeaders which exposes TryGetHeader().
     /// </summary>
     IHeaders? TransportHeaders { get; }
 }

@@ -12,5 +12,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 /// </summary>
 internal interface IConsumeContextContainer
 {
-    object? ConsumeContext { get; }
+    IConsumeContext? ConsumeContext { get; }
 }

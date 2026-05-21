@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     /// <summary>
     /// Adapter for EXTRACTING (reading) trace context headers from incoming MassTransit messages (consumer side).
     /// Scenario: When a consumer receives a message, extract distributed tracing headers to continue the trace.
-    /// Uses duck typing to read headers via IHeaders.GetAll() which returns IEnumerable[HeaderValue].
+    /// Uses duck typing to look up headers via IHeaders.TryGetHeader() — O(1) dictionary lookup.
     /// Used by: MassTransitCommon.ExtractTraceContext() for distributed tracing propagation.
     /// </summary>
     internal readonly struct ContextPropagationExtractAdapter : IHeadersCollection
@@ -33,38 +33,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public IEnumerable<string> GetValues(string name)
         {
-            string? result = null;
-
-            if (_headersProxy != null)
+            if (_headersProxy == null)
             {
-                try
-                {
-                    var allHeaders = _headersProxy.GetAll();
-                    if (allHeaders != null)
-                    {
-                        foreach (var item in allHeaders)
-                        {
-                            // Items are KeyValuePair<string, object> — cast directly, no duck typing needed
-                            if (item is System.Collections.Generic.KeyValuePair<string, object> kvp
-                                && string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase)
-                                && kvp.Value != null)
-                            {
-                                result = kvp.Value.ToString();
-                                break;
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "ContextPropagationExtractAdapter.GetValues: Error reading headers for '{Name}'", name);
-                }
+                return [];
             }
 
-            if (result != null)
+            try
             {
-                yield return result;
+                if (_headersProxy.TryGetHeader(name, out var value) && value?.ToString() is { } result)
+                {
+                    return [result];
+                }
             }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "ContextPropagationExtractAdapter.GetValues: Error reading headers for '{Name}'", name);
+            }
+
+            return [];
         }
 
         public void Set(string name, string value)

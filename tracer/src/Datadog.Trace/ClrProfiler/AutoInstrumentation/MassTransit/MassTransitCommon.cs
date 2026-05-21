@@ -32,6 +32,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         private static readonly ConcurrentDictionary<PropertyCacheKey, PropertyInfo?> PropertyCache = new();
         private static readonly Func<PropertyCacheKey, PropertyInfo?> ResolvePropertyDelegate = ResolveProperty;
 
+        // Canonical message-type URN ("urn:message:Foo.Bar:Baz") is a pure function of the runtime Type,
+        // computed on every send/receive. Cache to avoid the substring/concat per message. The MassTransit
+        // message-type space is bounded by the application's message contracts, so unbounded growth is not
+        // a concern.
+        private static readonly ConcurrentDictionary<Type, string> CanonicalMessageTypeCache = new();
+        private static readonly Func<Type, string> BuildCanonicalMessageTypesDelegate = BuildCanonicalMessageTypes;
+
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
         /// </summary>
@@ -424,7 +431,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 }
 
                 if (context.TryDuckCast<IConsumeContextContainer>(out var consumeContextContainer) &&
-                    consumeContextContainer.ConsumeContext is { } consumeContext &&
+                    consumeContextContainer.ConsumeContext is { } consumeContextProxy &&
+                    (consumeContextProxy as IDuckType)?.Instance is { } consumeContext &&
                     !ReferenceEquals(consumeContext, context))
                 {
                     var consumeMessageType = GetMessageType(consumeContext, depth + 1);
@@ -486,6 +494,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         private static string GetCanonicalMessageTypes(Type messageType)
+            => CanonicalMessageTypeCache.GetOrAdd(messageType, BuildCanonicalMessageTypesDelegate);
+
+        private static string BuildCanonicalMessageTypes(Type messageType)
         {
             if (messageType.IsGenericType)
             {

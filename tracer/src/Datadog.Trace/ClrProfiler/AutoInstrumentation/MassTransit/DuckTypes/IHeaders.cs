@@ -5,20 +5,26 @@
 
 #nullable enable
 
-using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
-/// Minimal duck-typing interface for MassTransit headers collection
-/// Supports extracting trace context from TransportHeaders or Headers
+/// Minimal duck-typing interface for MassTransit headers collection.
+/// Supports extracting trace context from TransportHeaders or Headers.
 /// </summary>
 internal interface IHeaders
 {
     /// <summary>
-    /// Gets all header key/value pairs
-    /// Returns IEnumerable of HeaderValue structs or KeyValuePair structures
-    /// Using object to allow flexibility across different header implementations
+    /// Looks up a single header by key. Backed by a dictionary in MassTransit's
+    /// implementations, so this is O(1) and avoids the per-call allocations from GetAll().
+    /// <para/>
+    /// <c>TryGetHeader</c> is declared on the <c>MassTransit.Headers</c> interface but the concrete
+    /// types (e.g. JsonTransportHeaders) implement it via *explicit interface implementation*
+    /// — duck typing's default public-member binder cannot see those. The wildcard
+    /// <c>ExplicitInterfaceTypeName = "*"</c> tells the binder to also match
+    /// explicit impls (named <c>MassTransit.Headers.TryGetHeader</c> in IL).
     /// </summary>
-    System.Collections.IEnumerable GetAll();
+    [Duck(ExplicitInterfaceTypeName = "*")]
+    bool TryGetHeader(string key, out object value);
 }
