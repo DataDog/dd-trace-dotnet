@@ -327,7 +327,6 @@ internal sealed class DataStreamsManager
 
             // Prevent negative value latencies from a future-dated upstream timestamp
             // (clock skew or a buggy/malicious peer)
-            
             var pathwayLatencyNs = Math.Max(0, nowNs - pathwayStartNs);
             var edgeLatencyNs = Math.Max(0, nowNs - (previousContext?.EdgeStart ?? edgeStartNs));
 
