@@ -145,7 +145,26 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                var exitCode = Process.HasExited ? Process.ExitCode : -1;
+                // Give the process a moment to finish exiting in case it's crashing — the
+                // port-bind mutex can time out before a slow runtime abort completes (createdump
+                // can take several seconds to write a dump before the process actually dies).
+                // Reading HasExited/ExitCode can also throw if the process is in an
+                // indeterminate state; defaulting to -1 lets the race-fingerprint check fail
+                // cleanly and the "Unable to determine port" path fire instead of an unhandled
+                // exception.
+                int exitCode = -1;
+                try
+                {
+                    Process.WaitForExit(5000);
+                    if (Process.HasExited)
+                    {
+                        exitCode = Process.ExitCode;
+                    }
+                }
+                catch
+                {
+                    // best-effort
+                }
 
                 if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
                 {
