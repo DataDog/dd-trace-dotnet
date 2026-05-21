@@ -167,11 +167,11 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     private static int WriteResourceAttributes(byte[] bytes, int writePosition, in TraceChunkModel traceChunk)
     {
-        var state = new WriteResourceState(bytes, writePosition);
+        var state = new WriteAttributesState(bytes, writePosition);
         OtlpMapper.EmitResourceAttributesFromTraceChunk(
             in traceChunk,
             ref state,
-            static (ref WriteResourceState s, KeyValue kv) =>
+            static (ref WriteAttributesState s, KeyValue kv) =>
                 s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Resource_Attributes, kv));
         return state.Position;
     }
@@ -217,12 +217,14 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         writePosition = ProtobufSerializer.WriteFixed64WithTag(bytes, writePosition, Span_End_Time_Unix_Nano, endNs);
 
         // attributes (field 9, repeated KeyValue)
-        int posCapture = writePosition;
+        var attributesState = new WriteAttributesState(bytes, writePosition);
         int droppedAttributes = OtlpMapper.EmitAttributesFromSpan(
-            kv => posCapture = WriteKeyValueAttribute(bytes, posCapture, Span_Attributes, kv),
             in spanModel,
-            SpanAttributeCountLimit);
-        writePosition = posCapture;
+            SpanAttributeCountLimit,
+            ref attributesState,
+            static (ref WriteAttributesState s, KeyValue kv) =>
+                s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Span_Attributes, kv));
+        writePosition = attributesState.Position;
 
         if (droppedAttributes > 0)
         {
@@ -475,12 +477,12 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         return writePosition + SpanIdSize;
     }
 
-    private struct WriteResourceState
+    private struct WriteAttributesState
     {
         public byte[] Bytes;
         public int Position;
 
-        public WriteResourceState(byte[] bytes, int position)
+        public WriteAttributesState(byte[] bytes, int position)
         {
             Bytes = bytes;
             Position = position;
