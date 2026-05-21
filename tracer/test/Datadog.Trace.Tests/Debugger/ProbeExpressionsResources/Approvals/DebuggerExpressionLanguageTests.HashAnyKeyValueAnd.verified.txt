@@ -59,7 +59,9 @@ Expression: (
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
     var $dd_el_result = DictionaryLocal.Any(
-        stringStringKeyValuePair => (stringStringKeyValuePair.Key == "hello") && (stringStringKeyValuePair.Value == "world"));
+        stringStringKeyValuePair => (stringStringKeyValuePair.Key == "hello") && (ProbeExpressionParser<bool>.ShouldRedactDictionaryKey(stringStringKeyValuePair.Key)
+            ? false
+            : stringStringKeyValuePair.Value == "world"));
 
     return $dd_el_result;
 }

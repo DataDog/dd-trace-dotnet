@@ -7,12 +7,54 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 internal sealed partial class ProbeExpressionParser<T>
 {
+    private static bool SafeEquals(object left, object right)
+    {
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        if (left is null || right is null)
+        {
+            return false;
+        }
+
+        var leftType = left.GetType();
+        var rightType = right.GetType();
+        if (leftType != rightType || !IsSafeToCallEquals(leftType))
+        {
+            return false;
+        }
+
+        return left.Equals(right);
+    }
+
+    private static bool IsSafeToCallEquals(Type type)
+    {
+        var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+        if (TypeExtensions.IsSimple(effectiveType))
+        {
+            return true;
+        }
+
+        foreach (var allowedType in Redaction.AllowedTypesSafeToCallToString)
+        {
+            if (allowedType == effectiveType)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private Expression NotEqual(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return BinaryOperation(reader, parameters, itParameter, "!=");
@@ -62,14 +104,14 @@ internal sealed partial class ProbeExpressionParser<T>
 
             if (left.Type == typeof(string) && right.Type == typeof(string))
             {
-                return StringLexicographicComparison(left, right, operand);
+                return RedactDictionaryBinaryOperation(left, right, StringLexicographicComparison(left, right, operand));
             }
 
             HandleDurationBinaryOperation(ref left, ref right);
 
             NumericImplicitConversion(ref left, ref right);
 
-            return operand switch
+            var comparison = operand switch
             {
                 ">" => Expression.GreaterThan(left, right),
                 ">=" => Expression.GreaterThanOrEqual(left, right),
@@ -78,6 +120,7 @@ internal sealed partial class ProbeExpressionParser<T>
                 "==" or "!=" => EqualExpression(),
                 _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
             };
+            return RedactDictionaryBinaryOperation(left, right, comparison);
         }
         catch (Exception e)
         {
@@ -126,6 +169,17 @@ internal sealed partial class ProbeExpressionParser<T>
                 return operand == "=="
                     ? Expression.ReferenceEqual(Expression.Constant(null, typeof(object)), rightAsObject)
                     : Expression.Not(Expression.ReferenceEqual(Expression.Constant(null, typeof(object)), rightAsObject));
+            }
+
+            if (left.Type == typeof(object) || right.Type == typeof(object))
+            {
+                var leftAsObject = left.Type == typeof(object) ? left : Expression.Convert(left, typeof(object));
+                var rightAsObject = right.Type == typeof(object) ? right : Expression.Convert(right, typeof(object));
+                var safeEquals = Expression.Call(
+                    ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(SafeEquals), new[] { typeof(object), typeof(object) }),
+                    leftAsObject,
+                    rightAsObject);
+                return operand == "==" ? safeEquals : Expression.Not(safeEquals);
             }
 
             return operand == "==" ? Expression.Equal(left, right) : Expression.NotEqual(left, right);
