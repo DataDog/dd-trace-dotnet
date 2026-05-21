@@ -19,18 +19,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers;
 
-public enum RuntimeErrorOutcome
-{
-    /// <summary>No known fingerprint detected; proceed with normal validation.</summary>
-    Proceed,
-
-    /// <summary>Known fingerprint detected, retry budget remaining; caller should retry.</summary>
-    Retry,
-
-    /// <summary>Known fingerprint persisted past retry budget; caller should let the test fail.</summary>
-    Persistent,
-}
-
 public static class ErrorHelpers
 {
     private const string Runtime127957IssueTag = "runtime_issue:127957";
@@ -38,53 +26,61 @@ public static class ErrorHelpers
     private const string RuntimeMetadataRacePersistentMetric = "dd_trace_dotnet.ci.tests.persistent_runtime_metadata_race";
 
     /// <summary>
-    /// Dispatch helper for known transient runtime crashes. Returns whether the caller should
-    /// retry, fail, or proceed normally. New fingerprints should be added as branches here.
+    /// Dispatch helper for known transient runtime crashes. Returns true when the caller should
+    /// retry, false when no known fingerprint matched. Throws when the fingerprint persisted
+    /// across the retry budget (test must fail loudly — exit code alone can't be trusted to
+    /// surface the failure, e.g. Windows FailFast paths sometimes report exit 0).
     /// </summary>
-    public static async Task<RuntimeErrorOutcome> HandleRuntimeSkippableErrorsAsync(
+    public static async Task<bool> HandleRuntimeSkippableErrorsAsync(
         int attempt, int maxAttempts, int exitCode, string stderr, TestHelper helper, Action<string> writeOutput)
     {
         if (!IsRuntime127957Race(exitCode, stderr))
         {
-            return RuntimeErrorOutcome.Proceed;
+            return false;
         }
 
         if (attempt < maxAttempts)
         {
             writeOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
             await helper.SendCIMetricAsync(RuntimeMetadataRaceRetryMetric, Runtime127957IssueTag);
-            return RuntimeErrorOutcome.Retry;
+            return true;
         }
 
-        writeOutput($"dotnet/runtime#127957 fingerprint persisted across {maxAttempts} attempts; letting the test fail.");
         await helper.SendCIMetricAsync(RuntimeMetadataRacePersistentMetric, Runtime127957IssueTag);
-        return RuntimeErrorOutcome.Persistent;
+        throw new Exception($"dotnet/runtime#127957 fingerprint persisted across {maxAttempts} attempts; failing the test.");
     }
 
     public static bool IsRuntime127957Race(int exitCode, string standardError)
     {
-        // Both fingerprints of dotnet/runtime#127957 surface as a SIGABRT (exit 134) caused by
-        // an unhandled exception on a runtime worker thread that read corrupted metadata.
-        if (exitCode != 134 || standardError is null)
+        if (standardError is null)
         {
             return false;
         }
 
-        // Fingerprint A — TypeLoadException with the "Undefined resource string ID" fallback:
-        // garbage flowed into the IDS_* argument of the throw site, so the localization
-        // layer was asked for a string ID that doesn't exist.
-        if (standardError.Contains("System.TypeLoadException")
+        // Linux/SIGABRT — TypeLoadException with the "Undefined resource string ID" fallback.
+        if (exitCode == 134
+            && standardError.Contains("System.TypeLoadException")
             && standardError.Contains("Undefined resource string ID"))
         {
             return true;
         }
 
-        // Fingerprint B — MissingMethodException for ConcurrentDictionary.TryGetValue:
-        // the canonical example in the runtime issue. A method signature read returns
-        // garbage from a freed metadata buffer, so the runtime concludes the method doesn't exist.
-        if (standardError.Contains("System.MissingMethodException: Method not found:")
+        // Linux/SIGABRT — MissingMethodException for ConcurrentDictionary.TryGetValue
+        // (the canonical example from the runtime issue).
+        if (exitCode == 134
+            && standardError.Contains("System.MissingMethodException: Method not found:")
             && standardError.Contains("ConcurrentDictionary")
             && standardError.Contains("TryGetValue"))
+        {
+            return true;
+        }
+
+        // Windows — CLR FailFast with HRESULT 0x80131506 (COR_E_EXECUTIONENGINE) on the
+        // threadpool gate thread. Exit code is unreliable here (we've seen 0 in CI even though
+        // the runtime died), so we don't gate on it.
+        if (standardError.Contains("Fatal error. Internal CLR error. (0x80131506)")
+            && standardError.Contains("PortableThreadPool")
+            && standardError.Contains("GateThread"))
         {
             return true;
         }

@@ -177,19 +177,13 @@ namespace Datadog.Trace.TestHelpers
                 using var processHelper = new ProcessHelper(process);
                 var result = WaitForProcessResultRaw(processHelper);
 
-                var outcome = await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine);
-
-                if (outcome == RuntimeErrorOutcome.Retry)
+                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
                 {
                     attempt++;
                     continue;
                 }
 
-                if (outcome == RuntimeErrorOutcome.Proceed)
-                {
-                    ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
-                }
-
+                ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
                 ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode: 0, result.StandardError);
                 return result;
             }

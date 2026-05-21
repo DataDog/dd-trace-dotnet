@@ -158,9 +158,7 @@ namespace Datadog.Trace.TestHelpers
                     // best-effort
                 }
 
-                var outcome = await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput);
-
-                if (outcome == RuntimeErrorOutcome.Retry)
+                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
                 {
                     try
                     {
