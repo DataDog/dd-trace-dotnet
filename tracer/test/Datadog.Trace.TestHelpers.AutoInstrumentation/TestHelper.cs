@@ -173,8 +173,9 @@ namespace Datadog.Trace.TestHelpers
             // always succeeds. If it crashes the same way twice, fall through to the standard validation,
             // which will skip the test via ErrorHelpers.CheckForKnownSkipConditions as a last resort.
             const int maxAttempts = 2;
+            var attempt = 1;
 
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            while (true)
             {
                 var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
                 using var processHelper = new ProcessHelper(process);
@@ -182,6 +183,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
                 {
+                    attempt++;
                     continue;
                 }
 
@@ -189,8 +191,6 @@ namespace Datadog.Trace.TestHelpers
                 ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode: 0, result.StandardError);
                 return result;
             }
-
-            throw new InvalidOperationException("Retry loop exited without returning a result.");
         }
 
         public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false)
@@ -203,7 +203,8 @@ namespace Datadog.Trace.TestHelpers
 
         // Exposes ErrorHelpers.SendMetric to callers that don't have access to EnvironmentHelper
         // (which is protected). Used by AspNetCoreTestFixture for runtime#127957 retry telemetry.
-        public Task SendCIMetricAsync(string metricName) => ErrorHelpers.SendMetric(Output, metricName, EnvironmentHelper);
+        public Task SendCIMetricAsync(string metricName, params string[] extraTags)
+            => ErrorHelpers.SendMetric(Output, metricName, EnvironmentHelper, extraTags);
 
         public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(
             MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath, bool usePartialTrust, bool useLegacyCasModel)

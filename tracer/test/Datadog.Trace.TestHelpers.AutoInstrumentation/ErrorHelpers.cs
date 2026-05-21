@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
@@ -21,8 +22,9 @@ namespace Datadog.Trace.TestHelpers;
 public static class ErrorHelpers
 {
     private const string Runtime127957SkipMessage = "Crash matching dotnet/runtime#127957 fingerprint (MDInternalRW race)";
-    private const string Runtime127957RetryMetric = "dd_trace_dotnet.ci.tests.retried_due_to_runtime_127957";
-    private const string Runtime127957SkipMetric = "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957";
+    private const string Runtime127957IssueTag = "runtime_issue:127957";
+    private const string RuntimeMetadataRaceRetryMetric = "dd_trace_dotnet.ci.tests.retried_due_to_runtime_metadata_race";
+    private const string RuntimeMetadataRaceSkipMetric = "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_metadata_race";
 
     /// <summary>
     /// Inspects a sample-launch attempt for known upstream/runtime-level error fingerprints
@@ -42,11 +44,11 @@ public static class ErrorHelpers
             if (attempt < maxAttempts)
             {
                 writeOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
-                await helper.SendCIMetricAsync(Runtime127957RetryMetric);
+                await helper.SendCIMetricAsync(RuntimeMetadataRaceRetryMetric, Runtime127957IssueTag);
                 return true;
             }
 
-            await helper.SendCIMetricAsync(Runtime127957SkipMetric);
+            await helper.SendCIMetricAsync(RuntimeMetadataRaceSkipMetric, Runtime127957IssueTag);
             throw new SkipException(Runtime127957SkipMessage);
         }
 
@@ -109,7 +111,7 @@ public static class ErrorHelpers
             // pointers returned by unlocked metadata readers while the profiler emits tokens.
             // Reached when CheckForKnownSkipConditions is called directly (e.g. SmokeTestBase),
             // outside the retry-aware paths that already call HandleRuntimeSkippableErrorsAsync.
-            SendMetric(output, Runtime127957SkipMetric, environmentHelper).ConfigureAwait(false).GetAwaiter().GetResult();
+            SendMetric(output, RuntimeMetadataRaceSkipMetric, environmentHelper, Runtime127957IssueTag).ConfigureAwait(false).GetAwaiter().GetResult();
             throw new SkipException(Runtime127957SkipMessage);
         }
 
@@ -132,7 +134,7 @@ public static class ErrorHelpers
         SkipKnownCrashes(environmentHelper.PathToCrashReport, output).Wait();
     }
 
-    public static async Task SendMetric(ITestOutputHelper outputHelper, string metricName, EnvironmentHelper environmentHelper)
+    public static async Task SendMetric(ITestOutputHelper outputHelper, string metricName, EnvironmentHelper environmentHelper, params string[] extraTags)
     {
         const int maxTestFullNameLength = 200;
 
@@ -166,6 +168,11 @@ public static class ErrorHelpers
                          "test.name:{{SanitizeTagValue(testFullName)}}",
                          "git.branch:{{SanitizeTagValue(srcBranch)}}"
                      """;
+
+        if (extraTags is { Length: > 0 })
+        {
+            tags += ", " + string.Join(", ", extraTags.Select(t => $"\"{t}\""));
+        }
 
         var payload = $$"""
                             {
