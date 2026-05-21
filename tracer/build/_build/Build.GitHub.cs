@@ -763,7 +763,7 @@ partial class Build
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
-            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
+            Console.WriteLine("::set-output name=artifacts_path::" + ReleaseArtifactsDirectory / artifact.Name);
         });
 
     Target DownloadReleaseArtifacts => _ => _
@@ -788,12 +788,12 @@ partial class Build
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
-            var artifactsPath = OutputDirectory / artifact.Name;
+            var artifactsPath = ReleaseArtifactsDirectory / artifact.Name;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + artifactsPath);
 
-            var gitlabPath = OutputDirectory / CommitSha;
-            await DownloadGitlabArtifacts(OutputDirectory, CommitSha, FullVersion);
+            var gitlabPath = ReleaseArtifactsDirectory / CommitSha;
+            await DownloadGitlabArtifacts(ReleaseArtifactsDirectory, CommitSha, FullVersion);
             Console.WriteLine("::set-output name=gitlab_artifacts_path::" + gitlabPath);
 
             var files = artifactsPath.GlobFiles("*.*")
@@ -817,7 +817,7 @@ partial class Build
                 checksums.Add(checksumLine);
             }
 
-            var checksumPath = OutputDirectory / "sha512.txt";
+            var checksumPath = ReleaseArtifactsDirectory / "sha512.txt";
 
             // Use LF so can be read on linux
             File.WriteAllText(checksumPath, string.Join("\n", checksums));
@@ -1417,7 +1417,7 @@ partial class Build
                             artifactName: artifactName);
 
             Logger.Information("Release artifacts found, downloading...");
-            await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
+            await DownloadAzureArtifact(ReleaseArtifactsDirectory, artifact, AzureDevopsToken);
 
             return artifact;
         }
