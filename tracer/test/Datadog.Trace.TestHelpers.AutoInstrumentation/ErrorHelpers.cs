@@ -25,30 +25,32 @@ public static class ErrorHelpers
     private const string Runtime127957SkipMetric = "dd_trace_dotnet.ci.tests.skipped_due_to_runtime_127957";
 
     /// <summary>
-    /// Inspects a sample-launch attempt for the dotnet/runtime#127957 race fingerprint and
-    /// applies the retry-once-then-skip policy. Returns true if the caller should retry the
-    /// launch (race detected, not the final attempt); returns false if no race fingerprint was
-    /// detected and the caller should proceed with normal validation. Throws SkipException if
-    /// the race fingerprint matched on the final attempt — the test is skipped rather than
-    /// failed since #127957 is an upstream runtime bug.
+    /// Inspects a sample-launch attempt for known upstream/runtime-level error fingerprints
+    /// (currently dotnet/runtime#127957) and applies a retry-once-then-skip policy.
+    /// Returns true if the caller should retry the launch (a known error was detected, not
+    /// on the final attempt). Returns false if no known fingerprint was detected and the
+    /// caller should proceed with its normal validation. Throws SkipException if a known
+    /// fingerprint matched on the final attempt — the test is skipped rather than failed,
+    /// since these errors come from upstream bugs we can't fix here.
+    /// New fingerprints should be added as additional branches in this method.
     /// </summary>
-    public static async Task<bool> HandleRuntime127957AttemptAsync(
+    public static async Task<bool> HandleRuntimeSkippableErrorsAsync(
         int attempt, int maxAttempts, int exitCode, string stderr, TestHelper helper, Action<string> writeOutput)
     {
-        if (!IsRuntime127957Race(exitCode, stderr))
+        if (IsRuntime127957Race(exitCode, stderr))
         {
-            return false;
+            if (attempt < maxAttempts)
+            {
+                writeOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
+                await helper.SendCIMetricAsync(Runtime127957RetryMetric);
+                return true;
+            }
+
+            await helper.SendCIMetricAsync(Runtime127957SkipMetric);
+            throw new SkipException(Runtime127957SkipMessage);
         }
 
-        if (attempt < maxAttempts)
-        {
-            writeOutput($"Detected dotnet/runtime#127957 race on attempt {attempt}/{maxAttempts}, retrying.");
-            await helper.SendCIMetricAsync(Runtime127957RetryMetric);
-            return true;
-        }
-
-        await helper.SendCIMetricAsync(Runtime127957SkipMetric);
-        throw new SkipException(Runtime127957SkipMessage);
+        return false;
     }
 
     public static bool IsRuntime127957Race(int exitCode, string standardError)
@@ -106,7 +108,7 @@ public static class ErrorHelpers
             // dotnet/runtime#127957 — race in MDInternalRW where ExpandTables() invalidates
             // pointers returned by unlocked metadata readers while the profiler emits tokens.
             // Reached when CheckForKnownSkipConditions is called directly (e.g. SmokeTestBase),
-            // outside the retry-aware paths that already call HandleRuntime127957AttemptAsync.
+            // outside the retry-aware paths that already call HandleRuntimeSkippableErrorsAsync.
             SendMetric(output, Runtime127957SkipMetric, environmentHelper).ConfigureAwait(false).GetAwaiter().GetResult();
             throw new SkipException(Runtime127957SkipMessage);
         }

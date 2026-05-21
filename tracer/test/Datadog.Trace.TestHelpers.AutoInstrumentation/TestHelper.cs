@@ -178,9 +178,9 @@ namespace Datadog.Trace.TestHelpers
             {
                 var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
                 using var processHelper = new ProcessHelper(process);
-                var result = WaitForProcessResultCore(processHelper);
+                var result = WaitForProcessResultRaw(processHelper);
 
-                if (await ErrorHelpers.HandleRuntime127957AttemptAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
+                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
                 {
                     continue;
                 }
@@ -195,7 +195,7 @@ namespace Datadog.Trace.TestHelpers
 
         public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false)
         {
-            var result = WaitForProcessResultCore(helper, dumpChildProcesses);
+            var result = WaitForProcessResultRaw(helper, dumpChildProcesses);
             ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
             ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
             return result;
@@ -677,7 +677,7 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
-        private ProcessResult WaitForProcessResultCore(ProcessHelper helper, bool dumpChildProcesses = false)
+        private ProcessResult WaitForProcessResultRaw(ProcessHelper helper, bool dumpChildProcesses = false)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before

@@ -147,7 +147,7 @@ namespace Datadog.Trace.TestHelpers
 
                 var exitCode = Process.HasExited ? Process.ExitCode : -1;
 
-                if (await ErrorHelpers.HandleRuntime127957AttemptAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
+                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
                 {
                     try
                     {
