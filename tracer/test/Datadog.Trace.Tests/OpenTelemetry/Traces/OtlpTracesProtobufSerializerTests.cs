@@ -206,6 +206,180 @@ public class OtlpTracesProtobufSerializerTests
     }
 
     [Theory]
+    [InlineData((byte)5, 5L)]
+    [InlineData((sbyte)-5, -5L)]
+    [InlineData((short)-30000, -30000L)]
+    [InlineData((ushort)60000, 60000L)]
+    [InlineData(int.MinValue, (long)int.MinValue)]
+    [InlineData(uint.MaxValue, (long)uint.MaxValue)]
+    [InlineData(long.MaxValue, long.MaxValue)]
+    public void EventAttribute_IntegralType_EmitsAsIntValue(object input, long expected)
+    {
+        var attr = SerializeEventAttribute("k", input);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.IntValue);
+        attr.IntValue.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData('a', "a")]
+    [InlineData('Z', "Z")]
+    public void EventAttribute_Char_EmitsAsStringValue(char input, string expected)
+    {
+        var attr = SerializeEventAttribute("k", input);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.StringValue);
+        attr.StringValue.Should().Be(expected);
+    }
+
+    [Fact]
+    public void EventAttribute_Ulong_FallsBackToStringValue()
+    {
+        // ulong may overflow long, so OTel's TagWriter falls back to ToString.
+        var attr = SerializeEventAttribute("k", ulong.MaxValue);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.StringValue);
+        attr.StringValue.Should().Be(ulong.MaxValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    [Fact]
+    public void EventAttribute_Decimal_FallsBackToStringValue()
+    {
+        // decimal → double would lose precision, so OTel's TagWriter falls back to ToString.
+        var attr = SerializeEventAttribute("k", 1.25m);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.StringValue);
+        attr.StringValue.Should().Be("1.25");
+    }
+
+    [Fact]
+    public void EventAttribute_StringArray_EmitsAsArrayOfStringValues()
+    {
+        var attr = SerializeEventAttribute("k", new[] { "a", "b", "c" });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(3);
+        attr.ArrayValue.Values[0].StringValue.Should().Be("a");
+        attr.ArrayValue.Values[1].StringValue.Should().Be("b");
+        attr.ArrayValue.Values[2].StringValue.Should().Be("c");
+    }
+
+    [Fact]
+    public void EventAttribute_StringArrayWithNullElement_EmitsNullAnyValueInPlace()
+    {
+        var attr = SerializeEventAttribute("k", new string?[] { "a", null, "c" });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(3);
+        attr.ArrayValue.Values[0].StringValue.Should().Be("a");
+        attr.ArrayValue.Values[1].ValueCase.Should().Be(AnyValue.ValueOneofCase.None);
+        attr.ArrayValue.Values[2].StringValue.Should().Be("c");
+    }
+
+    [Fact]
+    public void EventAttribute_BoolArray_EmitsAsArrayOfBoolValues()
+    {
+        var attr = SerializeEventAttribute("k", new[] { true, false, true });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(3);
+        attr.ArrayValue.Values[0].BoolValue.Should().BeTrue();
+        attr.ArrayValue.Values[1].BoolValue.Should().BeFalse();
+        attr.ArrayValue.Values[2].BoolValue.Should().BeTrue();
+    }
+
+    [Fact]
+    public void EventAttribute_IntArray_EmitsAsArrayOfIntValues()
+    {
+        var attr = SerializeEventAttribute("k", new[] { 1, 2, 3 });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(3);
+        attr.ArrayValue.Values[0].IntValue.Should().Be(1L);
+        attr.ArrayValue.Values[1].IntValue.Should().Be(2L);
+        attr.ArrayValue.Values[2].IntValue.Should().Be(3L);
+    }
+
+    [Fact]
+    public void EventAttribute_LongArray_EmitsAsArrayOfIntValues()
+    {
+        var attr = SerializeEventAttribute("k", new[] { 1L, 9_000_000_000L, -42L });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(3);
+        attr.ArrayValue.Values[0].IntValue.Should().Be(1L);
+        attr.ArrayValue.Values[1].IntValue.Should().Be(9_000_000_000L);
+        attr.ArrayValue.Values[2].IntValue.Should().Be(-42L);
+    }
+
+    [Fact]
+    public void EventAttribute_DoubleArray_EmitsAsArrayOfDoubleValues()
+    {
+        var attr = SerializeEventAttribute("k", new[] { 1.5, 2.5, 3.5 });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(3);
+        attr.ArrayValue.Values[0].DoubleValue.Should().Be(1.5);
+        attr.ArrayValue.Values[1].DoubleValue.Should().Be(2.5);
+        attr.ArrayValue.Values[2].DoubleValue.Should().Be(3.5);
+    }
+
+    [Fact]
+    public void EventAttribute_FloatArray_EmitsAsArrayOfDoubleValues()
+    {
+        var attr = SerializeEventAttribute("k", new[] { 1.5f, 2.5f });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(2);
+        attr.ArrayValue.Values[0].DoubleValue.Should().BeApproximately(1.5, 1e-6);
+        attr.ArrayValue.Values[1].DoubleValue.Should().BeApproximately(2.5, 1e-6);
+    }
+
+    [Fact]
+    public void EventAttribute_CharArray_EmitsAsArrayOfStringValues()
+    {
+        var attr = SerializeEventAttribute("k", new[] { 'a', 'b' });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(2);
+        attr.ArrayValue.Values[0].StringValue.Should().Be("a");
+        attr.ArrayValue.Values[1].StringValue.Should().Be("b");
+    }
+
+    [Fact]
+    public void EventAttribute_EmptyArray_EmitsEmptyArrayValue()
+    {
+        var attr = SerializeEventAttribute("k", Array.Empty<int>());
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void EventAttribute_ObjectArrayMixedTypes_EmitsMixedAnyValueElements()
+    {
+        var attr = SerializeEventAttribute("k", new object?[] { "a", true, 42, 3.14, null });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(5);
+        attr.ArrayValue.Values[0].StringValue.Should().Be("a");
+        attr.ArrayValue.Values[1].BoolValue.Should().BeTrue();
+        attr.ArrayValue.Values[2].IntValue.Should().Be(42L);
+        attr.ArrayValue.Values[3].DoubleValue.Should().Be(3.14);
+        attr.ArrayValue.Values[4].ValueCase.Should().Be(AnyValue.ValueOneofCase.None);
+    }
+
+    [Fact]
+    public void EventAttribute_ByteArray_StillEmitsAsBytesValue()
+    {
+        // byte[] must short-circuit array handling and emit as bytes, not an array of ints.
+        var attr = SerializeEventAttribute("k", new byte[] { 0x01, 0x02, 0x03 });
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.BytesValue);
+        attr.BytesValue.ToByteArray().Should().Equal(new byte[] { 0x01, 0x02, 0x03 });
+    }
+
+    [Theory]
     [InlineData(2, 1u)]   // user-keep
     [InlineData(1, 1u)]   // auto-keep
     [InlineData(0, 0u)]   // auto-reject
@@ -292,6 +466,19 @@ public class OtlpTracesProtobufSerializerTests
     }
 
     // ----- helpers -----
+
+    private static AnyValue SerializeEventAttribute(string key, object? value)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.AddEvent(new SpanEvent("e", DateTimeOffset.UtcNow, new List<KeyValuePair<string, object>>
+        {
+            new(key, value!),
+        }));
+
+        var attributes = SerializeAndParse(CreateChunk(ddSpan)).Events[0].Attributes;
+        attributes.Should().ContainSingle(a => a.Key == key);
+        return attributes[0].Value;
+    }
 
     private static OtlpSpan SerializeAndParse(TraceChunkModel chunk)
     {

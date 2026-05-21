@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.OpenTelemetry.Common;
@@ -440,10 +441,12 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     private static int WriteKeyValueAttribute(byte[] bytes, int writePosition, int fieldNumber, KeyValue kv)
     {
+        // Write the field number (so this can be used anywhere `repeated opentelemetry.proto.common.v1.KeyValue` is used)
         writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, fieldNumber, ProtobufWireType.LEN);
         int lengthPos = writePosition;
         writePosition += ReserveSizeForLength;
 
+        // KeyValue.key (field 1, string)
         writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, KeyValue_Key, kv.Key);
 
         // KeyValue.value (field 2, AnyValue)
@@ -458,29 +461,82 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         return writePosition;
     }
 
+    // Dispatch matches OpenTelemetry .NET SDK's TagWriter.TryWriteTag so that every supported
+    // primitive maps to the AnyValue oneof field the ProtobufOtlpTagWriter would have emitted.
+    // See https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/Shared/TagWriter/TagWriter.cs
+    // and https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.OpenTelemetryProtocol/Implementation/Serializer/ProtobufOtlpTagWriter.cs.
+    //
+    // Note on the integers: All integers are emitted as a protobuf int64 wire type.
+    // For unsigned integers, we expand them into ulong values.
+    // For signed integers, we first cast to long to sign-extend (to 64 bits) and then do an unchecked cast to ulong to preserve the bits.
+    //
+    // Example: (long)(sbyte)(-5) sign-extends to -5L (0xFFFFFFFFFFFFFFFB) and then cast to ulong.
+    // WriteVarInt64 will then emit the 10-byte varint, which decodes back to -2147483648 as protobuf int64
     private static int WriteAnyValue(byte[] bytes, int writePosition, object? value)
     {
         switch (value)
         {
             case null:
                 return writePosition; // empty AnyValue
+            case char c:
+                Span<char> asSpan = [c];
+                return ProtobufSerializer.WriteStringWithTag(bytes, writePosition, AnyValue_String_Value, asSpan);
             case string s:
                 return ProtobufSerializer.WriteStringWithTag(bytes, writePosition, AnyValue_String_Value, s);
             case bool b:
                 return ProtobufSerializer.WriteBoolWithTag(bytes, writePosition, AnyValue_Bool_Value, b);
-            case int i:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)(long)i));
-            case long l:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)l));
-            case double d:
-                return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, d);
-            case float f:
-                return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f);
+            case byte u8:
+                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, u8);
+            case sbyte i8:
+                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)(long)i8));
+            case short i16:
+                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)(long)i16));
+            case ushort u16:
+                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, u16);
+            case int i32:
+                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)(long)i32));
+            case uint u32:
+                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, u32);
+            case long i64:
+                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)i64));
+            case float f32:
+                return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f32);
+            case double f64:
+                return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f64);
             case byte[] bytesValue:
                 return ProtobufSerializer.WriteByteArrayWithTag(bytes, writePosition, AnyValue_Bytes_Value, bytesValue);
+            case Array array:
+                return WriteArrayAnyValue(bytes, writePosition, array);
             default:
-                return ProtobufSerializer.WriteStringWithTag(bytes, writePosition, AnyValue_String_Value, value.ToString() ?? string.Empty);
+                // ulong, decimal, nint, nuint, and unknown types fall back to ToString — matches
+                // OpenTelemetry's TagWriter, which avoids overflow/precision loss for those types.
+                var stringValue = Convert.ToString(value, CultureInfo.InvariantCulture);
+                return stringValue is null
+                    ? writePosition
+                    : ProtobufSerializer.WriteStringWithTag(bytes, writePosition, AnyValue_String_Value, stringValue);
         }
+    }
+
+    private static int WriteArrayAnyValue(byte[] bytes, int writePosition, Array array)
+    {
+        // AnyValue.array_value (field 5, LEN) -> ArrayValue { repeated values (field 1, LEN) -> AnyValue }
+        writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, AnyValue_Array_Value, ProtobufWireType.LEN);
+        int arrayLengthPos = writePosition;
+        writePosition += ReserveSizeForLength;
+
+        foreach (var item in array)
+        {
+            writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ArrayValue_Value, ProtobufWireType.LEN);
+            int elementLengthPos = writePosition;
+            writePosition += ReserveSizeForLength;
+
+            writePosition = WriteAnyValue(bytes, writePosition, item);
+
+            ProtobufSerializer.WriteReservedLength(bytes, elementLengthPos, writePosition - (elementLengthPos + ReserveSizeForLength));
+        }
+
+        ProtobufSerializer.WriteReservedLength(bytes, arrayLengthPos, writePosition - (arrayLengthPos + ReserveSizeForLength));
+        return writePosition;
     }
 
     private static int WriteTraceIdField(byte[] bytes, int writePosition, int fieldNumber, TraceId traceId)
