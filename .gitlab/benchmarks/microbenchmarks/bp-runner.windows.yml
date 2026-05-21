@@ -1,23 +1,23 @@
 # bp-runner config for dd-trace-dotnet microbenchmarks on Windows.
 #
-# Instance: Intel Xeon 8259CL bare metal, 2 NUMA nodes × 24 cores each (48 total, HT disabled).
-#
 # Three experiments run in parallel:
 #   - trace-0: Benchmarks.Trace (9 benchmarks) on NUMA node 0, cores 0-17
 #   - trace-1: Benchmarks.Trace (11 benchmarks) on NUMA node 1, cores 0-21
 #   - otel:    OpenTelemetry benchmarks on NUMA node 0, cores 18-23
-#              Step 1: InstrumentedApi (always), Step 2: Api (master only, sequential)
+#              Step 1: InstrumentedApi (always), Step 2: Api (master only, after InstrumentedApi finishes)
 #
 # trace-0 clones and builds; others wait for .build-complete marker file.
 # Artifact dirs are prefixed with batch name to avoid collisions.
 #
-# Each benchmark item gets 2 CPUs for reduced noise.
+# Each benchmark item gets 2 CPUs. We empirically verified noise was too high for .NET 6.0 on single CPUs.
 #
-# bp-runner keywords (enable parallel benchmark execution on isolated CPU sets):
+# bp-runner uses the "run: run_microbenchmarks" template on each "experiment step". 
+# This template orchestrates running microbenchmarks in parallel. It requires the following fields:
 #   - how_to_fetch_release: script to clone/build the repo for baseline/candidate
 #   - how_to_run_benchmarks: script invoked for each parallel item
 #   - cpus: CPU affinity mask for NUMA node isolation
 #   - parallelize.items: benchmark filters, each run in parallel within the batch
+#
 #
 # YAML anchors (&name/*name) define reusable script blocks referenced below.
 
