@@ -61,10 +61,6 @@ partial class Build
     // Scratch space used by the release-tooling targets in Build.GitHub.cs to download
     // upstream Azure DevOps / GitLab artifacts. Not a build output destination.
     AbsolutePath ReleaseArtifactsDirectory => BuildArtifactsDirectory / "release-artifacts";
-
-    // Legacy alias retained for one commit while CompareCodeCoverageReports still
-    // points here; removed in the follow-up commit that moves coverage under build_data.
-    AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "native-symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "output");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";

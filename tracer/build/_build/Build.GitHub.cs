@@ -833,8 +833,8 @@ partial class Build
          .Requires(() => GitHubToken)
          .Executes(async () =>
           {
-              var newReportdir = OutputDirectory / "CodeCoverage" / "New";
-              var oldReportdir = OutputDirectory / "CodeCoverage" / "Old";
+              var newReportdir = BuildDataDirectory / "CodeCoverage" / "New";
+              var oldReportdir = BuildDataDirectory / "CodeCoverage" / "Old";
 
               FileSystemTasks.EnsureCleanDirectory(newReportdir);
               FileSystemTasks.EnsureCleanDirectory(oldReportdir);
