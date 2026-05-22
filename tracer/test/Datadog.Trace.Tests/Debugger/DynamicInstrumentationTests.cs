@@ -61,7 +61,7 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
-    public void DynamicInstrumentation_DisposesGlobalRateLimiterOnDispose()
+    public void DynamicInstrumentation_DoesNotDisposeGlobalRateLimiterOnDispose()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
@@ -84,7 +84,7 @@ public class DynamicInstrumentationTests
 
         debugger.Dispose();
 
-        globalRateLimiter.DisposeCallCount.Should().Be(1);
+        globalRateLimiter.DisposeCallCount.Should().Be(0);
         logUploader.DisposeCallCount.Should().Be(1);
     }
 
@@ -1050,7 +1050,7 @@ public class DynamicInstrumentationTests
                 probeStatusPoller,
                 ConfigurationUpdater.Create("env", "version", 0),
                 global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance,
-                (_, _, _, _) => { });
+                instrumentProbes: (_, _, _, _) => { });
             _debuggers.Add(debugger);
             return debugger;
         }

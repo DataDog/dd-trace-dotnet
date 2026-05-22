@@ -54,8 +54,7 @@ namespace Datadog.Trace.Debugger
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
         private readonly DebuggerSettings _settings;
-        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
-		private readonly NativeProbeInstrumentationRequester _instrumentProbes;
+        private readonly NativeProbeInstrumentationRequester _instrumentProbes;
         private readonly object _instanceLock = new();
         private int _disposeState;
         private int _initializationState;
@@ -73,7 +72,7 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats,
             IDebuggerGlobalRateLimiter? globalRateLimiter = null,
-			NativeProbeInstrumentationRequester? instrumentProbes = null)
+            NativeProbeInstrumentationRequester? instrumentProbes = null)
         {
             Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
@@ -91,8 +90,7 @@ namespace Datadog.Trace.Debugger
             _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
             _lastReportedUnboundProbeErrors = new Dictionary<string, LineProbeResolveErrorKey>();
-			_globalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
-			_globalRateLimiter.Initialize();
+            (globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance).Initialize();
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -270,25 +268,25 @@ namespace Datadog.Trace.Debugger
                                         case LiveProbeResolveStatus.Bound:
                                             lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
-                                                _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
+                                            _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
                                             ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
                                             SetRateLimit(addedProbe);
                                             break;
                                         case LiveProbeResolveStatus.Unbound:
-                                                // Unbound line probes remain retryable on future assembly loads. Some retryable
-                                                // outcomes are still reported as ERROR so the backend can show actionable user
-                                                // feedback while the tracer keeps looking for a later exact/unique match.
-                                                Log.Information("ProbeID {ProbeID} is unbound. It will be retried when new assemblies are loaded.", addedProbe.Id);
+                                            // Unbound line probes remain retryable on future assembly loads. Some retryable
+                                            // outcomes are still reported as ERROR so the backend can show actionable user
+                                            // feedback while the tracer keeps looking for a later exact/unique match.
+                                            Log.Information("ProbeID {ProbeID} is unbound. It will be retried when new assemblies are loaded.", addedProbe.Id);
                                             _unboundProbes.Add(addedProbe);
-                                                var unboundProbeStatus = lineProbeResult.ReportError
-                                                                             ? new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: GetLineProbeResolveMessage(lineProbeResult))
-                                                                             : new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null);
-                                                UpdateLastReportedUnboundProbeError(addedProbe.Id, lineProbeResult);
-                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, unboundProbeStatus));
+                                            var unboundProbeStatus = lineProbeResult.ReportError
+                                                                         ? new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: GetLineProbeResolveMessage(lineProbeResult))
+                                                                         : new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null);
+                                            UpdateLastReportedUnboundProbeError(addedProbe.Id, lineProbeResult);
+                                            fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, unboundProbeStatus));
                                             break;
                                         case LiveProbeResolveStatus.Error:
                                             Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", addedProbe.Id, lineProbeResult.Message);
-                                                _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
+                                            _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: lineProbeResult.Message)));
                                             break;
                                     }
@@ -335,7 +333,7 @@ namespace Datadog.Trace.Debugger
                 using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
                 if (methodProbes.Count != 0 || lineProbes.Count != 0 || spanProbes.Count != 0)
                 {
-                        _instrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
+                    _instrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), []);
                 }
 
                 var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
@@ -578,11 +576,11 @@ namespace Datadog.Trace.Debugger
             // A new assembly was loaded, so re-examine whether the probe can now be resolved.
             lock (_instanceLock)
             {
-				if (IsDisposed)
+                if (IsDisposed)
                 {
                     return;
                 }
-				
+
                 if (_unboundProbes.Count == 0)
                 {
                     return;
@@ -954,7 +952,6 @@ namespace Datadog.Trace.Debugger
                             .Add(_diagnosticsUploader)
                             .Add(_probeStatusPoller)
                             .DisposeAll();
-                _globalRateLimiter.Dispose();
             }
 
             // Cannot await here because Dispose() is synchronous and callers hold locks.
