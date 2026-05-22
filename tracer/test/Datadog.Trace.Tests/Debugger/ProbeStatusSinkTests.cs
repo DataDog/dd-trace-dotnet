@@ -10,6 +10,8 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 using NativeProbeStatus = Datadog.Trace.Debugger.PInvoke.ProbeStatus;
@@ -105,6 +107,24 @@ namespace Datadog.Trace.Tests.Debugger
             probe.DebuggerDiagnostics.Diagnostics.Exception.Type.Should().Be(exception.GetType().Name);
             probe.DebuggerDiagnostics.Diagnostics.Exception.Message.Should().Be(exception.Message);
             probe.DebuggerDiagnostics.Diagnostics.Exception.StackTrace.Should().Be(exception.StackTrace);
+        }
+
+        [Fact]
+        public void AddError_WithOnlyMessage_OmitsStackTrace()
+        {
+            var probeId = Guid.NewGuid().ToString();
+            var errorMessage = $"Test error at ${nameof(AddError_WithOnlyMessage_OmitsStackTrace)}";
+
+            _sink.AddProbeStatus(probeId, Status.ERROR, errorMessage: errorMessage);
+
+            var probe = _sink.GetDiagnostics().Should().ContainSingle().Subject;
+            probe.DebuggerDiagnostics.Diagnostics.Status.Should().Be(Status.ERROR);
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Should().NotBeNull();
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Type.Should().Be("NO_TYPE");
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Message.Should().Be(errorMessage);
+            probe.DebuggerDiagnostics.Diagnostics.Exception.StackTrace.Should().BeNull();
+            JsonConvert.SerializeObject(probe).Should().NotContain("stacktrace");
+            JsonHelper.SerializeObject(probe).Should().NotContain("stacktrace");
         }
 
         [Fact]
@@ -539,6 +559,27 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.EMITTING, probeVersion: 1)
             });
+        }
+
+        [Fact]
+        public void PollerDoesNotReplayExplicitErrorStatusOnPoll()
+        {
+            _timeLord.StopTime();
+            var probeId = Guid.NewGuid().ToString();
+            using var poller = ProbeStatusPoller.Create(_sink, _settings);
+            var fetchProbeStatus = new FetchProbeStatus(probeId, 1, new NativeProbeStatus(probeId, Status.ERROR, "error"));
+
+            poller.UpdateProbe(probeId, fetchProbeStatus);
+            _sink.GetDiagnostics().Should().Equal(new[]
+            {
+                new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, probeVersion: 1, errorMessage: "error")
+            });
+
+            poller.GetType()
+                  .GetMethod("OnProbeStatusesPoll", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                  .Invoke(poller, []);
+
+            _sink.GetDiagnostics().Should().BeEmpty();
         }
 
         [Fact]

@@ -316,6 +316,314 @@ public class DynamicInstrumentationTests
             }
         }
 
+        [Fact]
+        public void UpdateAddedProbeInstrumentations_RetryableLineProbeResolutionFailureReportsErrorStatus()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                    "Source file location for probe did not uniquely match the PDB document path.",
+                    ErrorKey: SourceMismatchKey(),
+                    ErrorDetails: SourceMismatchDetails(),
+                    ReportError: true));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            var status = probeStatusPoller.UpdatedProbeStatuses.Should().ContainSingle().Subject.ProbeStatus;
+            status.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            status.ErrorMessage.Should().Be("Source file location for probe did not uniquely match the PDB document path.");
+        }
+
+        [Fact]
+        public void UpdateAddedProbeInstrumentations_RetryableLineProbeResolutionFailureBuildsErrorStatusFromKey()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                    ErrorKey: SourceMismatchKey(),
+                    ErrorDetails: SourceMismatchDetails(),
+                    ReportError: true));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            var status = probeStatusPoller.UpdatedProbeStatuses.Should().ContainSingle().Subject.ProbeStatus;
+            status.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            status.ErrorMessage.Should().Contain("Source file location for probe did not uniquely match the PDB document path");
+            status.ErrorMessage.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
+        }
+
+        [Fact]
+        public void UpdateAddedProbeInstrumentations_RetryableLineProbeResolutionFailureKeepsProbeRetryable()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                    "Source file location for probe did not uniquely match the PDB document path.",
+                    ErrorKey: SourceMismatchKey(),
+                    ErrorDetails: SourceMismatchDetails(),
+                    ReportError: true));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Bound,
+                Diagnostics: new LineProbeResolutionDiagnostics(ProbeFile: "wrong/path/MyClass.cs", ProbeLine: 25));
+            debugger.GetType()
+                    .GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Should().Be(global::Datadog.Trace.Debugger.PInvoke.ProbeStatus.Default);
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureCanTransitionToErrorStatus()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(),
+                ReportError: true);
+            debugger.GetType()
+                    .GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Source file location for probe did not uniquely match the PDB document path");
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureDoesNotRepeatSameErrorStatus()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(),
+                ReportError: true);
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureDoesNotRepeatWhenOnlyCountsChange()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(bestMatchingTrailingSegments: 1, qualifiedFallbackMatchCount: 0, sameFileNameMatchCount: 1),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(bestMatchingTrailingSegments: 3, qualifiedFallbackMatchCount: 2, sameFileNameMatchCount: 4),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Same file name matches: 1");
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureReportsChangedErrorKey()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(LineProbeFallbackFailureReason.AmbiguousQualifiedMatches),
+                ErrorDetails: SourceMismatchDetails(LineProbeFallbackFailureReason.AmbiguousQualifiedMatches, bestMatchingTrailingSegments: 3, qualifiedFallbackMatchCount: 2, sameFileNameMatchCount: 2),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(3);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
+            probeStatusPoller.UpdatedProbeStatuses[2].ProbeStatus.ErrorMessage.Should().Contain("Fallback failure reason: AmbiguousQualifiedMatches");
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_TerminalLineProbeResolutionFailureStopsRetrying()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-missing-pdb",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Error,
+                LineProbeResolveReason.MissingPdb,
+                "Failed to read from PDB");
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            lineProbeResolver.CallCount.Should().Be(2);
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Be("Failed to read from PDB");
+        }
+
         [Theory]
         [InlineData(null, false, "non-existent file")]
         [InlineData("{ invalid json }", true, "invalid json")]
@@ -510,6 +818,26 @@ public class DynamicInstrumentationTests
             GetFileProbes(debugger).Should().NotBeNull();
         }
 
+        private static LineProbeResolveErrorKey SourceMismatchKey(LineProbeFallbackFailureReason fallbackFailureReason = LineProbeFallbackFailureReason.NoQualifiedSuffixMatch)
+        {
+            return new LineProbeResolveErrorKey(
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                fallbackFailureReason);
+        }
+
+        private static LineProbeResolveErrorDetails SourceMismatchDetails(
+            LineProbeFallbackFailureReason fallbackFailureReason = LineProbeFallbackFailureReason.NoQualifiedSuffixMatch,
+            int bestMatchingTrailingSegments = 1,
+            int qualifiedFallbackMatchCount = 0,
+            int sameFileNameMatchCount = 1)
+        {
+            return new LineProbeResolveErrorDetails(
+                SourceMismatchKey(fallbackFailureReason),
+                bestMatchingTrailingSegments,
+                qualifiedFallbackMatchCount,
+                sameFileNameMatchCount);
+        }
+
         private static ProbeConfiguration? GetFileProbes(DynamicInstrumentation debugger)
         {
             var updater = GetConfigurationUpdater(debugger);
@@ -564,7 +892,8 @@ public class DynamicInstrumentationTests
                 diagnosticsUploader,
                 probeStatusPoller,
                 ConfigurationUpdater.Create("env", "version", 0),
-                global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance);
+                global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance,
+                (_, _, _, _) => { });
             _debuggers.Add(debugger);
             return debugger;
         }
@@ -852,13 +1181,37 @@ public class DynamicInstrumentationTests
 
     private class LineProbeResolverMock : ILineProbeResolver
     {
+        private readonly LineProbeResolveResult _result;
+
+        public LineProbeResolverMock()
+            : this(new LineProbeResolveResult(LiveProbeResolveStatus.Error, LineProbeResolveReason.MissingPdb, "PDB not available in unit test"))
+        {
+        }
+
+        public LineProbeResolverMock(LineProbeResolveResult result)
+        {
+            _result = result;
+        }
+
         internal bool Called { get; private set; }
+
+        internal int CallCount { get; private set; }
+
+        internal LineProbeResolveResult? NextResult { get; set; }
 
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation? location, LineProbeDiagnosticLevel diagnosticLevel = LineProbeDiagnosticLevel.Full)
         {
             Called = true;
+            CallCount++;
+            var result = NextResult ?? _result;
+            if (result.Status == LiveProbeResolveStatus.Bound)
+            {
+                location = new LineProbeResolver.BoundLineProbeLocation(probe, Guid.NewGuid(), methodToken: 1, bytecodeOffset: 0, lineNumber: 25);
+                return result;
+            }
+
             location = null;
-            return new LineProbeResolveResult(LiveProbeResolveStatus.Error, LineProbeResolveReason.MissingPdb, "PDB not available in unit test");
+            return result;
         }
     }
 
@@ -893,7 +1246,11 @@ public class DynamicInstrumentationTests
 
     private class ProbeStatusPollerMock : IProbeStatusPoller
     {
+        private readonly List<FetchProbeStatus> _updatedProbeStatuses = new();
+
         internal bool Called { get; private set; }
+
+        internal IReadOnlyList<FetchProbeStatus> UpdatedProbeStatuses => _updatedProbeStatuses;
 
         public void StartPolling()
         {
@@ -913,11 +1270,13 @@ public class DynamicInstrumentationTests
         public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
         {
             Called = true;
+            _updatedProbeStatuses.AddRange(newProbeStatuses);
         }
 
         public void UpdateProbe(string probeId, FetchProbeStatus newProbeStatus)
         {
             Called = true;
+            _updatedProbeStatuses.Add(newProbeStatus);
         }
 
         public string[] GetBoundedProbes()
