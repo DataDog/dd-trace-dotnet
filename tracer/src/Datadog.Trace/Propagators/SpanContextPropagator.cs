@@ -21,6 +21,16 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
+        // Datadog scan/test markers, tagged unconditionally on HTTP server entry spans so
+        // the API endpoint reducer can distinguish scan/test traffic from real user traffic
+        // and keep it out of the API inventory. Tag names are precomputed to avoid string
+        // concatenation per request.
+        private static readonly (string Header, string Tag)[] SecurityTestingHeaders =
+        [
+            ("x-datadog-endpoint-scan", HttpRequestHeadersTagPrefix + ".x-datadog-endpoint-scan"),
+            ("x-datadog-security-test", HttpRequestHeadersTagPrefix + ".x-datadog-security-test"),
+        ];
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
@@ -252,6 +262,43 @@ namespace Datadog.Trace.Propagators
         {
             var processor = new SpanTagHeaderTagProcessor(span);
             ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, useragent);
+        }
+
+        // Tags the Datadog scan/test markers (x-datadog-endpoint-scan, x-datadog-security-test)
+        // on the span as http.request.headers.<name>, regardless of DD_TRACE_HEADER_TAGS or
+        // AppSec enablement. Empty values are still tagged: per RFC the marker is presence-based.
+        public void AddSecurityTestingHeadersAsTags<THeaders>(ISpan span, THeaders headers)
+            where THeaders : IHeadersCollection
+        {
+            foreach (var (headerName, tagName) in SecurityTestingHeaders)
+            {
+                var values = headers.GetValues(headerName);
+                if (values is null)
+                {
+                    continue;
+                }
+
+                // string[] fast path avoids the IEnumerator<string> heap allocation on the
+                // .NET Framework legacy carriers (NameValueHeadersCollection, WebHeadersCollection)
+                // which back `GetValues` with a string[]. ASP.NET Core's StringValues goes through
+                // the slow path below — that's a single boxed enumerator per request, unchanged
+                // from how the existing AddHeadersToSpanAsTags handles it.
+                if (values is string[] array)
+                {
+                    if (array.Length > 0)
+                    {
+                        span.SetTag(tagName, array[0]);
+                    }
+
+                    continue;
+                }
+
+                foreach (var value in values)
+                {
+                    span.SetTag(tagName, value);
+                    break;
+                }
+            }
         }
 
         internal void ExtractHeaderTags<THeaders, TProcessor>(ref TProcessor processor, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
