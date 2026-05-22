@@ -153,7 +153,42 @@ public class ProbeProcessorTests
     }
 
     [Fact]
-    public void TryBeginProcess_UnconditionalLogProbe_SamplesGlobalBeforePerProbe()
+    public void TryBeginProcess_UnconditionalSnapshotProbe_SamplesPerProbeBeforeGlobal()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(true);
+        var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
+
+        Assert.False(shouldProcess);
+        Assert.Null(snapshotCreator);
+        Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
+        Assert.Equal(1, perProbeSampler.SampleCalls);
+    }
+
+    [Fact]
+    public void TryBeginProcess_UnconditionalSnapshotProbe_DoesNotSpendGlobalBudgetWhenPerProbeRejects()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(true);
+        var perProbeSampler = new TestAdaptiveSampler(false);
+        var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
+
+        Assert.False(shouldProcess);
+        Assert.Null(snapshotCreator);
+        Assert.Equal(1, perProbeSampler.SampleCalls);
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+    }
+
+    [Fact]
+    public void TryBeginProcess_UnconditionalLogProbe_DoesNotUseGlobalLimiter()
     {
         var globalRateLimiter = new GlobalRateLimiterMock(false);
         var perProbeSampler = new TestAdaptiveSampler(true);
@@ -163,12 +198,10 @@ public class ProbeProcessorTests
 
         var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
 
-        Assert.False(shouldProcess);
-        Assert.Null(snapshotCreator);
-        Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
-        Assert.Equal(ProbeType.Log, globalRateLimiter.LastProbeType);
-        Assert.Equal("log-probe", globalRateLimiter.LastProbeId);
-        Assert.Equal(0, perProbeSampler.SampleCalls);
+        Assert.True(shouldProcess);
+        Assert.NotNull(snapshotCreator);
+        Assert.Equal(1, perProbeSampler.SampleCalls);
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
     }
 
     [Fact]
@@ -531,12 +564,9 @@ public class ProbeProcessorTests
 
         public string LastProbeId { get; private set; } = string.Empty;
 
-        public ProbeType? LastProbeType { get; private set; }
-
-        public bool ShouldSample(ProbeType probeType, string probeId)
+        public bool ShouldSampleSnapshot(string probeId)
         {
             ShouldSampleCallCount++;
-            LastProbeType = probeType;
             LastProbeId = probeId;
             return _results.Count == 0 || _results.Dequeue();
         }

@@ -8,7 +8,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.RateLimiting
@@ -16,7 +15,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
     internal sealed class DebuggerGlobalRateLimiter : IDebuggerGlobalRateLimiter
     {
         internal const int DefaultSnapshotSamplesPerSecond = 100;
-        internal const int DefaultLogSamplesPerSecond = 5000;
 
         private const int LogCooldownSeconds = 60;
 
@@ -27,7 +25,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private readonly object _lifetimeLock = new();
 
         private IAdaptiveSampler _snapshotSampler;
-        private IAdaptiveSampler _logSampler;
         private bool _disposed;
 
         internal DebuggerGlobalRateLimiter()
@@ -40,27 +37,21 @@ namespace Datadog.Trace.Debugger.RateLimiting
             _samplerFactory = samplerFactory ?? throw new ArgumentNullException(nameof(samplerFactory));
             _logRateLimiter = logRateLimiter ?? throw new ArgumentNullException(nameof(logRateLimiter));
             _snapshotSampler = NopAdaptiveSampler.Instance;
-            _logSampler = NopAdaptiveSampler.Instance;
             ResetRate();
         }
 
         internal static DebuggerGlobalRateLimiter Instance { get; } = new();
 
-        public bool ShouldSample(ProbeType probeType, string probeId)
+        public bool ShouldSampleSnapshot(string probeId)
         {
-            var sampler = probeType switch
-            {
-                ProbeType.Snapshot => Volatile.Read(ref _snapshotSampler),
-                ProbeType.Log => Volatile.Read(ref _logSampler),
-                _ => null
-            };
+            var sampler = Volatile.Read(ref _snapshotSampler);
 
-            if (sampler == null || sampler.Sample())
+            if (sampler.Sample())
             {
                 return true;
             }
 
-            LogDrop(probeType, probeId);
+            LogDrop(probeId);
             return false;
         }
 
@@ -69,7 +60,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             lock (_lifetimeLock)
             {
                 _disposed = false;
-                ReplaceSamplers(DefaultSnapshotSamplesPerSecond, DefaultLogSamplesPerSecond);
+                ReplaceSampler(DefaultSnapshotSamplesPerSecond);
             }
         }
 
@@ -84,12 +75,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
                 if (!samplesPerSecond.HasValue)
                 {
-                    ReplaceSamplers(DefaultSnapshotSamplesPerSecond, DefaultLogSamplesPerSecond);
+                    ReplaceSampler(DefaultSnapshotSamplesPerSecond);
                     return;
                 }
 
                 var configuredRate = Math.Max((int)samplesPerSecond.Value, 0);
-                ReplaceSamplers(configuredRate, configuredRate);
+                ReplaceSampler(configuredRate);
             }
         }
 
@@ -102,7 +93,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     return;
                 }
 
-                ReplaceSamplers(DefaultSnapshotSamplesPerSecond, DefaultLogSamplesPerSecond);
+                ReplaceSampler(DefaultSnapshotSamplesPerSecond);
             }
         }
 
@@ -117,34 +108,31 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
                 _disposed = true;
                 AdaptiveSamplerLifetime.Dispose(ref _snapshotSampler);
-                AdaptiveSamplerLifetime.Dispose(ref _logSampler);
             }
         }
 
-        private void ReplaceSamplers(int snapshotSamplesPerSecond, int logSamplesPerSecond)
+        private void ReplaceSampler(int snapshotSamplesPerSecond)
         {
             AdaptiveSamplerLifetime.Replace(ref _snapshotSampler, _samplerFactory(snapshotSamplesPerSecond));
-            AdaptiveSamplerLifetime.Replace(ref _logSampler, _samplerFactory(logSamplesPerSecond));
         }
 
-        private void LogDrop(ProbeType probeType, string probeId, [CallerFilePath] string sourceFile = "", [CallerLineNumber] int sourceLine = 0)
+        private void LogDrop(string probeId, [CallerFilePath] string sourceFile = "", [CallerLineNumber] int sourceLine = 0)
         {
             if (!_logRateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
             {
                 return;
             }
 
-            var probeTypeName = probeType == ProbeType.Snapshot ? "snapshot" : "log";
-            const string message = "Global debugger rate limit reached for {ProbeType} probes. Dropping capture for ProbeId={ProbeId}";
-            const string messageWithSkipCount = "Global debugger rate limit reached for {ProbeType} probes. Dropping capture for ProbeId={ProbeId}, {SkipCount} additional messages skipped";
+            const string message = "Global debugger rate limit reached for snapshot probes. Dropping capture for ProbeId={ProbeId}";
+            const string messageWithSkipCount = "Global debugger rate limit reached for snapshot probes. Dropping capture for ProbeId={ProbeId}, {SkipCount} additional messages skipped";
 
             if (skipCount > 0)
             {
-                Log.Warning(messageWithSkipCount, probeTypeName, probeId, skipCount);
+                Log.Warning(messageWithSkipCount, probeId, skipCount);
             }
             else
             {
-                Log.Warning(message, probeTypeName, probeId);
+                Log.Warning(message, probeId);
             }
         }
     }

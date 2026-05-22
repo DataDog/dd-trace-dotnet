@@ -118,8 +118,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private bool SamplePayload(in ProbeInfo probeInfo, IAdaptiveSampler sampler)
         {
-            return (probeInfo.ProbeType is not (ProbeType.Snapshot or ProbeType.Log) || _globalRateLimiter.ShouldSample(probeInfo.ProbeType, probeInfo.ProbeId))
-                && sampler.Sample();
+            return sampler.Sample()
+                && (probeInfo.ProbeType != ProbeType.Snapshot || _globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId));
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)

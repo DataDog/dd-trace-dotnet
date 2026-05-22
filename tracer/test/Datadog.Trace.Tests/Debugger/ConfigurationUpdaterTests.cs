@@ -10,7 +10,6 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -286,7 +285,7 @@ public class ConfigurationUpdaterTests
 
         public int ResetRateCallCount { get; private set; }
 
-        public bool ShouldSample(ProbeType probeType, string probeId) => true;
+        public bool ShouldSampleSnapshot(string probeId) => true;
 
         public void Initialize()
         {

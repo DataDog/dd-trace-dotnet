@@ -6,13 +6,12 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Debugger.Expressions;
 
 namespace Datadog.Trace.Debugger.RateLimiting
 {
     internal interface IDebuggerGlobalRateLimiter : IDisposable
     {
-        bool ShouldSample(ProbeType probeType, string probeId);
+        bool ShouldSampleSnapshot(string probeId);
 
         void Initialize();
 

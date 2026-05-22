@@ -1461,7 +1461,7 @@ public class DynamicInstrumentationTests
 
         internal int SetRateCallCount { get; private set; }
 
-        public bool ShouldSample(ProbeType probeType, string probeId) => true;
+        public bool ShouldSampleSnapshot(string probeId) => true;
 
         public void Initialize()
         {

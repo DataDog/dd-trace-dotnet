@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 using Xunit;
@@ -21,12 +20,12 @@ public class DebuggerGlobalRateLimiterTests
         _ = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
         Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
     [Fact]
-    public void SetRate_UsesConfiguredRateForSnapshotAndLogSamplers()
+    public void SetRate_UsesConfiguredRateForSnapshotSampler()
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
@@ -34,7 +33,7 @@ public class DebuggerGlobalRateLimiterTests
         limiter.SetRate(42);
 
         Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond, 42, 42],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42],
             factory.RequestedRates);
     }
 
@@ -44,12 +43,10 @@ public class DebuggerGlobalRateLimiterTests
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
         var initialSnapshotSampler = factory.Samplers[0];
-        var initialLogSampler = factory.Samplers[1];
 
         limiter.SetRate(42);
 
         Assert.Equal(1, initialSnapshotSampler.DisposeCallCount);
-        Assert.Equal(1, initialLogSampler.DisposeCallCount);
     }
 
     [Fact]
@@ -62,7 +59,7 @@ public class DebuggerGlobalRateLimiterTests
         limiter.ResetRate();
 
         Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond, 42, 42, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, 42, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
@@ -72,13 +69,11 @@ public class DebuggerGlobalRateLimiterTests
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
         limiter.SetRate(42);
-        var currentSnapshotSampler = factory.Samplers[2];
-        var currentLogSampler = factory.Samplers[3];
+        var currentSnapshotSampler = factory.Samplers[1];
 
         limiter.Dispose();
 
         Assert.Equal(1, currentSnapshotSampler.DisposeCallCount);
-        Assert.Equal(1, currentLogSampler.DisposeCallCount);
     }
 
     [Fact]
@@ -91,7 +86,7 @@ public class DebuggerGlobalRateLimiterTests
         limiter.SetRate(42);
 
         Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
@@ -105,7 +100,7 @@ public class DebuggerGlobalRateLimiterTests
         limiter.Initialize();
 
         Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultLogSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
@@ -116,28 +111,22 @@ public class DebuggerGlobalRateLimiterTests
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
         factory.Samplers[0].SetResults(true, false);
 
-        var firstResult = limiter.ShouldSample(ProbeType.Snapshot, "snapshot-1");
-        var secondResult = limiter.ShouldSample(ProbeType.Snapshot, "snapshot-2");
+        var firstResult = limiter.ShouldSampleSnapshot("snapshot-1");
+        var secondResult = limiter.ShouldSampleSnapshot("snapshot-2");
 
         Assert.True(firstResult);
         Assert.False(secondResult);
         Assert.Equal(2, factory.Samplers[0].SampleCallCount);
-        Assert.Equal(0, factory.Samplers[1].SampleCallCount);
     }
 
     [Fact]
-    public void NonPayloadProbesAreUnaffected()
+    public void Constructor_DoesNotSampleUntilAsked()
     {
         var factory = new RecordingSamplerFactory();
-        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
-        var metricResult = limiter.ShouldSample(ProbeType.Metric, "metric");
-        var spanDecorationResult = limiter.ShouldSample(ProbeType.SpanDecoration, "span");
+        _ = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
-        Assert.True(metricResult);
-        Assert.True(spanDecorationResult);
         Assert.Equal(0, factory.Samplers[0].SampleCallCount);
-        Assert.Equal(0, factory.Samplers[1].SampleCallCount);
     }
 
     private sealed class RecordingSamplerFactory
