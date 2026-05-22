@@ -2681,25 +2681,76 @@
                     {
                       "key": "baz",
                       "value": {
-                        "stringValue": "System.Int32[]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "intValue": "1"
+                            },
+                            {
+                              "intValue": "2"
+                            },
+                            {
+                              "intValue": "3"
+                            }
+                          ]
+                        }
                       }
                     },
                     {
                       "key": "strings",
                       "value": {
-                        "stringValue": "System.String[]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "stringValue": "str"
+                            },
+                            {
+                              "stringValue": "1"
+                            }
+                          ]
+                        }
                       }
                     },
                     {
                       "key": "ignored_array_of_object",
                       "value": {
-                        "stringValue": "System.Object[]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "stringValue": "str"
+                            },
+                            {
+                              "intValue": "2"
+                            }
+                          ]
+                        }
                       }
                     },
                     {
                       "key": "ignored_array_of_arrays",
                       "value": {
-                        "stringValue": "System.String[][]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "arrayValue": {
+                                "values": [
+                                  {
+                                    "stringValue": "arr1_val1"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "arrayValue": {
+                                "values": [
+                                  {
+                                    "stringValue": "arr2_val1"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
                       }
                     },
                     {
@@ -2729,25 +2780,76 @@
                     {
                       "key": "baz",
                       "value": {
-                        "stringValue": "System.Int32[]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "intValue": "1"
+                            },
+                            {
+                              "intValue": "2"
+                            },
+                            {
+                              "intValue": "3"
+                            }
+                          ]
+                        }
                       }
                     },
                     {
                       "key": "strings",
                       "value": {
-                        "stringValue": "System.String[]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "stringValue": "str"
+                            },
+                            {
+                              "stringValue": "1"
+                            }
+                          ]
+                        }
                       }
                     },
                     {
                       "key": "ignored_array_of_object",
                       "value": {
-                        "stringValue": "System.Object[]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "stringValue": "str"
+                            },
+                            {
+                              "intValue": "2"
+                            }
+                          ]
+                        }
                       }
                     },
                     {
                       "key": "ignored_array_of_arrays",
                       "value": {
-                        "stringValue": "System.String[][]"
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "arrayValue": {
+                                "values": [
+                                  {
+                                    "stringValue": "arr1_val1"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "arrayValue": {
+                                "values": [
+                                  {
+                                    "stringValue": "arr2_val1"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
                       }
                     },
                     {

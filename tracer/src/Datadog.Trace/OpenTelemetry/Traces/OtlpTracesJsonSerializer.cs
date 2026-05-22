@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Agent;
@@ -533,14 +534,16 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(boolValue);
                 break;
 
-            case int intValue:
+            case byte:
+            case sbyte:
+            case short:
+            case ushort:
+            case int:
+            case uint:
+            case long:
+            case ulong:
                 writer.WritePropertyName("intValue");
-                writer.WriteValue(intValue.ToString());
-                break;
-
-            case long longValue:
-                writer.WritePropertyName("intValue");
-                writer.WriteValue(longValue.ToString());
+                writer.WriteValue(value.ToString());
                 break;
 
             case double doubleValue:
@@ -558,12 +561,33 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(Convert.ToBase64String(bytesValue));
                 break;
 
+            case Array array:
+                writer.WritePropertyName("arrayValue");
+                WriteArrayAnyValue(writer, array);
+                break;
+
             default:
                 // For other types, try to convert to string
                 writer.WritePropertyName("stringValue");
-                writer.WriteValue(value.ToString());
+                writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
                 break;
         }
+
+        writer.WriteEndObject();
+    }
+
+    private static void WriteArrayAnyValue(JsonTextWriter writer, Array array)
+    {
+        writer.WriteStartObject();
+        writer.WritePropertyName("values");
+
+        writer.WriteStartArray();
+        foreach (var item in array)
+        {
+            WriteAnyValue(writer, item);
+        }
+
+        writer.WriteEndArray();
 
         writer.WriteEndObject();
     }
