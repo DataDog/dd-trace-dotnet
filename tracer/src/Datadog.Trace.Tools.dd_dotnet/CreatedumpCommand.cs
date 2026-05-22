@@ -300,7 +300,7 @@ internal class CreatedumpCommand : Command
                     resolvedFrame->IsSuspicious = IsMethodSuspicious(frame.Method);
 
                     var assemblyName = frame.Method.Type.Module.AssemblyName;
-                    var methodName = ShouldRedactFrame(assemblyName) ? "REDACTED" : $"{frame.Method.Type}.{frame.Method.Name}";
+                    var methodName = $"{frame.Method.Type}.{frame.Method.Name}";
                     symbolName = $"{Path.GetFileName(assemblyName)}!{methodName}";
                 }
                 else
