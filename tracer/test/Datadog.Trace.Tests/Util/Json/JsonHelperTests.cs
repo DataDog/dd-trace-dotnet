@@ -167,6 +167,74 @@ public class JsonHelperTests
         deserialized.Should().BeEquivalentTo(original);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("hello world")]
+    [InlineData("plain-trace-id-1234567890")]
+    [InlineData("with\"quote")]
+    [InlineData("with\\backslash")]
+    [InlineData("a\"b\\c\"d")]
+    [InlineData("tab\there")]
+    [InlineData("new\nline")]
+    [InlineData("carriage\rreturn")]
+    [InlineData("back\bspace")]
+    [InlineData("form\ffeed")]
+    [InlineData("control\u0001char")]
+    [InlineData("nel\u0085char")]
+    [InlineData("lsep\u2028char")]
+    [InlineData("psep\u2029char")]
+    [InlineData("emoji 😀 here")]
+    [InlineData("accents éè")]
+    [InlineData("\"leading-quote")]
+    [InlineData("trailing-backslash\\")]
+    [InlineData("\"\"\"")]
+    [InlineData("multi\"esc\\seq\nhere\t")]
+    public void WriteEscapedJavaScriptString_MatchesNewtonsoftEscaping(string value)
+    {
+        var sb = new StringBuilder();
+        sb.Append('"');
+        JsonHelper.WriteEscapedJavaScriptString(sb, value);
+        sb.Append('"');
+
+        var expected = JsonConvert.ToString(value);
+        sb.ToString().Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public void WriteEscapedJavaScriptString_NullOrEmptyInput_AppendsNothing(string input)
+    {
+        var sb = new StringBuilder("prefix");
+        JsonHelper.WriteEscapedJavaScriptString(sb, input);
+        sb.ToString().Should().Be("prefix");
+    }
+
+    [Fact]
+    public void WriteEscapedJavaScriptString_NoEscapeNeeded_AppendsSourceUnchanged()
+    {
+        // covers the FirstCharToEscape == -1 fast path
+        var sb = new StringBuilder();
+        JsonHelper.WriteEscapedJavaScriptString(sb, "abc123-_/.:;");
+        sb.ToString().Should().Be("abc123-_/.:;");
+    }
+
+    [Fact]
+    public void WriteEscapedJavaScriptString_ProducesParseableJsonWhenWrappedInObject()
+    {
+        // simulates the AWS Step Functions / EventBridge call pattern: build a JSON object
+        // by concatenation, with the escape helper handling untrusted values
+        var malicious = "_dd.p.foo=bad\"v\\}";
+        var sb = new StringBuilder();
+        sb.Append("{\"x-datadog-tags\":\"");
+        JsonHelper.WriteEscapedJavaScriptString(sb, malicious);
+        sb.Append("\"}");
+
+        var parsed = JsonConvert.DeserializeObject<Dictionary<string, string>>(sb.ToString());
+        parsed.Should().NotBeNull();
+        parsed["x-datadog-tags"].Should().Be(malicious);
+    }
+
     private static object[] GetDataToSerialize() =>
     [
         null,

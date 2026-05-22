@@ -5,7 +5,6 @@
       "diagnostics": {
         "exception": {
           "message": "Probe location did not map out to a valid bytecode offset",
-          "stacktrace": null,
           "type": "NO_TYPE"
         },
         "probeId": "31d232fd-e292-63a1-cfc5-f0e71d98afd1",
