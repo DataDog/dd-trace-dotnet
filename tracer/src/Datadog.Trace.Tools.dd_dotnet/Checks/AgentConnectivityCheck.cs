@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -125,7 +126,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                         {
                             ConnectCallback = async (context, token) =>
                             {
-                                var pipeStream = new NamedPipeClientStream(".", settings.TracesPipeName!, PipeDirection.InOut, PipeOptions.Asynchronous);
+                                var pipeStream = new NamedPipeClientStream(".", settings.TracesPipeName!, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Anonymous);
                                 await pipeStream.ConnectAsync(500, token).ConfigureAwait(false);
                                 return pipeStream;
                             }
