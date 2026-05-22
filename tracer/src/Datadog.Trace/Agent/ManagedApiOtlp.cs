@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
-
 #nullable enable
 
 using System;
@@ -50,5 +48,3 @@ internal sealed class ManagedApiOtlp : IApi
     public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         => Volatile.Read(ref _api).SendStatsAsync(stats, bucketDuration, tracerObfuscationVersion);
 }
-
-#endif
