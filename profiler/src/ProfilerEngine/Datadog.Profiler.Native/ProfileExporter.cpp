@@ -74,8 +74,6 @@ std::string const ProfileExporter::AllocationsExtension = ".balloc";
 
 std::string const ProfileExporter::ClassHistogramFilename = "histogram.json";
 
-std::string const ProfileExporter::ReferenceTreeFilename = "reference_tree.json";
-
 std::string const ProfileExporter::StartTime = OsSpecificApi::GetProcessStartTime();
 
 ProfileExporter::ProfileExporter(
@@ -618,7 +616,9 @@ bool ProfileExporter::Export(bool lastCall)
     // additional content to be sent along the .pprof
     auto metricsFileContent = CreateMetricsFileContent();
     auto classHistogramContent = CreateClassHistogramContent();
-    auto referenceTreeContent = CreateReferenceTreeContent();
+    auto referenceTreeFiles = (_heapSnapshotManager != nullptr)
+        ? _heapSnapshotManager->GetAndClearReferenceTreeContent()
+        : std::vector<IHeapSnapshotManager::FileEntry>{};
 
     for (auto& runtimeId : keys)
     {
@@ -685,22 +685,27 @@ bool ProfileExporter::Export(bool lastCall)
             additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
         }
 
-        auto filesToSend = std::vector<std::pair<std::string, std::string>>{};
+        auto filesToSend = std::vector<std::pair<std::string, std::vector<uint8_t>>>{};
 
         if (!metricsFileContent.empty())
         {
-            filesToSend.emplace_back(MetricsFilename, std::move(metricsFileContent));
+            Log::Debug("Attaching file: ", MetricsFilename, " (", metricsFileContent.size(), " bytes)");
+            filesToSend.emplace_back(MetricsFilename,
+                std::vector<uint8_t>(metricsFileContent.begin(), metricsFileContent.end()));
         }
 
         if (!classHistogramContent.empty())
         {
-            filesToSend.emplace_back(ClassHistogramFilename, std::move(classHistogramContent));
+            Log::Debug("Attaching file: ", ClassHistogramFilename, " (", classHistogramContent.size(), " bytes)");
+            filesToSend.emplace_back(ClassHistogramFilename,
+                std::vector<uint8_t>(classHistogramContent.begin(), classHistogramContent.end()));
             additionalTags.Add("profile_has_class_histogram", "true");
         }
 
-        if (!referenceTreeContent.empty())
+        for (auto& [filename, content] : referenceTreeFiles)
         {
-            filesToSend.emplace_back(ReferenceTreeFilename, std::move(referenceTreeContent));
+            Log::Debug("Attaching file: ", filename, " (", content.size(), " bytes)");
+            filesToSend.emplace_back(filename, std::move(content));
             additionalTags.Add("profile_has_reference_tree", "true");
         }
 
@@ -772,21 +777,6 @@ std::string ProfileExporter::CreateClassHistogramContent() const
     return "";
 }
 
-std::string ProfileExporter::CreateReferenceTreeContent() const
-{
-    if (_heapSnapshotManager == nullptr)
-    {
-        return "";
-    }
-
-    auto referenceTreeJson = _heapSnapshotManager->GetAndClearReferenceTreeJson();
-    if (!referenceTreeJson.empty() && referenceTreeJson != "{}")
-    {
-        return referenceTreeJson;
-    }
-
-    return "";
-}
 
 std::string ProfileExporter::GetMetadataJson() const
 {

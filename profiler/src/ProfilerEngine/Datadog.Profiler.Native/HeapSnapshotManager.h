@@ -76,7 +76,7 @@ public:
     std::string GetHeapSnapshotText();
 
     // Reference tree output (separate from histogram)
-    std::string GetAndClearReferenceTreeJson() override;
+    std::vector<FileEntry> GetAndClearReferenceTreeContent() override;
 
     ~HeapSnapshotManager();
 
@@ -165,6 +165,7 @@ private:
     std::chrono::seconds _heapDumpInterval;
     std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
+    uint32_t _referenceTreeFormat;
     bool _delayFirstSnapshot;
     uint64_t _runtimeSessionKeywords;
     uint32_t _runtimeSessionVerbosity;

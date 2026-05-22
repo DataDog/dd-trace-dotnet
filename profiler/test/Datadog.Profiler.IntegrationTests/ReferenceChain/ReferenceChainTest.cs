@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -39,13 +40,14 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             // check the reference_tree.json files are sent with the profiles
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             bool hasReferenceTree = false;
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                hasReferenceTree |= HasReferenceTree(ctx.Value.Request);
+                hasReferenceTree |= HasReferenceTreeFile(ctx.Value.Request, "reference_tree.json");
             };
 
             runner.Run(agent);
@@ -69,6 +71,120 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckSimpleChainBinaryFormat(string appName, string framework, string appAssembly)
+        {
+            // Same as CheckSimpleChainScenario but with binary serialization (format=1, the default).
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "1"); // binary
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            bool hasReferenceTree = false;
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                hasReferenceTree |= HasReferenceTreeFile(ctx.Value.Request, "reference_tree.bin");
+            };
+
+            runner.Run(agent);
+
+            Assert.True(hasReferenceTree, "No binary reference tree was sent to the agent");
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.bin");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree binary files were generated");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    HasRootOfCategory(tree, "K") &&
+                    HasAncestorDescendantChain(tree, "Order", "Customer") &&
+                    HasAncestorDescendantChain(tree, "Customer", "Address") &&
+                    HasAncestorDescendantChain(tree, "Order", "Product")),
+                "Expected at least one binary snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckSimpleChainBothFormats(string appName, string framework, string appAssembly)
+        {
+            // Format=3 emits both JSON and binary files for the same tree — useful for validation.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "3"); // both
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            bool hasJsonTree = false;
+            bool hasBinTree = false;
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                var request = ctx.Value.Request;
+                if (!request.ContentType.StartsWith("multipart/form-data"))
+                {
+                    return;
+                }
+
+                var mpReader = new MultiPartReader(request);
+                if (!mpReader.Parse())
+                {
+                    return;
+                }
+
+                hasJsonTree |= mpReader.Files.Any(f => f.FileName == "reference_tree.json");
+                hasBinTree |= mpReader.Files.Any(f => f.FileName == "reference_tree.bin");
+            };
+
+            runner.Run(agent);
+
+            Assert.True(hasJsonTree, "No JSON reference tree was sent in both-formats mode");
+            Assert.True(hasBinTree, "No binary reference tree was sent in both-formats mode");
+
+            var jsonFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            var binFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.bin");
+            Assert.True(jsonFiles.Length > 0, "No reference tree JSON files were generated in both-formats mode");
+            Assert.True(binFiles.Length > 0, "No reference tree binary files were generated in both-formats mode");
+
+            // Pair JSON and binary files from the same export cycle by matching the
+            // filename stem (everything before the extension). Both formats share the
+            // same generated suffix: reference_tree_<service>_<pid>_<uid>.<ext>
+            var jsonByStem = jsonFiles.ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
+            var binByStem = binFiles.ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
+            var commonStems = jsonByStem.Keys.Intersect(binByStem.Keys).ToList();
+
+            Assert.True(commonStems.Count > 0,
+                "No matching JSON/binary file pairs found (expected same filename stem for both formats)");
+
+            foreach (var stem in commonStems)
+            {
+                var jsonTree = LoadAndValidateAllTrees(new[] { jsonByStem[stem] }).Single();
+                var binTree = LoadAndValidateAllTrees(new[] { binByStem[stem] }).Single();
+
+                _output.WriteLine($"Comparing paired trees for {stem}: JSON has {jsonTree.Roots.Count} roots, binary has {binTree.Roots.Count} roots");
+
+                Assert.Equal(jsonTree.Version, binTree.Version);
+                Assert.Equal(jsonTree.TypeTable.Count, binTree.TypeTable.Count);
+                Assert.Equal(jsonTree.Roots.Count, binTree.Roots.Count);
+
+                // Verify the same type names are present (order may differ between formats)
+                var jsonTypes = jsonTree.TypeTable.OrderBy(t => t).ToList();
+                var binTypes = binTree.TypeTable.OrderBy(t => t).ToList();
+                Assert.Equal(jsonTypes, binTypes);
+
+                // Verify both trees have the same root categories
+                var jsonCategories = jsonTree.Roots.Select(r => r.CategoryCode).OrderBy(c => c).ToList();
+                var binCategories = binTree.Roots.Select(r => r.CategoryCode).OrderBy(c => c).ToList();
+                Assert.Equal(jsonCategories, binCategories);
+
+                // Verify equivalent reference chains exist in both trees
+                AssertSameChains(jsonTree, binTree);
+            }
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckSkipTraversalProducesNoReferenceTree(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
@@ -76,13 +192,14 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotSkipTraversal, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             bool hasReferenceTree = false;
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                hasReferenceTree |= HasReferenceTree(ctx.Value.Request);
+                hasReferenceTree |= HasAnyReferenceTree(ctx.Value.Request);
             };
 
             runner.Run(agent);
@@ -99,6 +216,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -126,6 +244,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -152,6 +271,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -179,6 +299,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -203,6 +324,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -230,6 +352,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -256,6 +379,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -282,6 +406,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -323,6 +448,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -353,6 +479,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -382,6 +509,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -407,6 +535,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -430,6 +559,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -455,6 +585,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -480,6 +611,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -503,6 +635,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -530,6 +663,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -562,6 +696,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -591,6 +726,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -617,6 +753,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -645,6 +782,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
             runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -665,7 +803,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         // Static helpers
         // ====================================================================
 
-        private static bool HasReferenceTree(HttpListenerRequest request)
+        private static bool HasReferenceTreeFile(HttpListenerRequest request, string expectedFileName)
         {
             if (!request.ContentType.StartsWith("multipart/form-data"))
             {
@@ -678,25 +816,37 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 return false;
             }
 
-            var files = mpReader.Files;
-            var referenceTreeFileInfo = files.FirstOrDefault(f => f.FileName == "reference_tree.json");
-            return referenceTreeFileInfo is not null;
+            return mpReader.Files.Any(f => f.FileName == expectedFileName);
+        }
+
+        private static bool HasAnyReferenceTree(HttpListenerRequest request)
+        {
+            return HasReferenceTreeFile(request, "reference_tree.json")
+                || HasReferenceTreeFile(request, "reference_tree.bin");
         }
 
         /// <summary>
-        /// Load all reference tree JSON files, validate their structure, and return the parsed trees.
-        /// Structural validation runs on every file; chain validation is left to the caller.
+        /// Load all reference tree files (JSON or binary), validate their structure, and return the parsed trees.
+        /// Structural validation runs on JSON files; chain validation is left to the caller.
         /// </summary>
         private List<ReferenceTree> LoadAndValidateAllTrees(string[] referenceTreeFiles)
         {
             var trees = new List<ReferenceTree>();
             foreach (var referenceTreeFile in referenceTreeFiles)
             {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+                if (referenceTreeFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var jsonContent = File.ReadAllText(referenceTreeFile);
+                    _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, Math.Min(2000, jsonContent.Length))}...");
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-                trees.Add(ReferenceTreeLoader.Load(jsonContent));
+                    ValidateReferenceTreeJsonStructure(jsonContent);
+                    trees.Add(ReferenceTreeLoader.Load(jsonContent));
+                }
+                else
+                {
+                    _output.WriteLine($"Reference tree binary ({referenceTreeFile}): {new FileInfo(referenceTreeFile).Length} bytes");
+                    trees.Add(ReferenceTreeLoader.LoadFromFile(referenceTreeFile));
+                }
             }
 
             return trees;
@@ -937,6 +1087,49 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             }
 
             return maxChildDepth;
+        }
+
+        /// <summary>
+        /// Assert that two trees (from JSON and binary serialization of the same snapshot)
+        /// contain the same reference chains. Compares by collecting all ancestor-descendant
+        /// type-name pairs present in each tree and verifying both sets are equal.
+        /// </summary>
+        private static void AssertSameChains(ReferenceTree jsonTree, ReferenceTree binTree)
+        {
+            var jsonEdges = CollectTypeEdges(jsonTree);
+            var binEdges = CollectTypeEdges(binTree);
+
+            var onlyInJson = jsonEdges.Except(binEdges).ToList();
+            var onlyInBin = binEdges.Except(jsonEdges).ToList();
+
+            Assert.True(
+                onlyInJson.Count == 0 && onlyInBin.Count == 0,
+                $"Trees differ. Edges only in JSON: [{string.Join(", ", onlyInJson)}], only in binary: [{string.Join(", ", onlyInBin)}]");
+        }
+
+        /// <summary>
+        /// Collect all direct parent->child type-name edges in the tree.
+        /// </summary>
+        private static HashSet<string> CollectTypeEdges(ReferenceTree tree)
+        {
+            var edges = new HashSet<string>();
+            foreach (var root in tree.Roots)
+            {
+                CollectTypeEdgesRecursive(root, tree, edges);
+            }
+
+            return edges;
+        }
+
+        private static void CollectTypeEdgesRecursive(ReferenceNode node, ReferenceTree tree, HashSet<string> edges)
+        {
+            var parentName = tree.GetTypeName(node.TypeIndex);
+            foreach (var child in node.Children)
+            {
+                var childName = tree.GetTypeName(child.TypeIndex);
+                edges.Add($"{parentName}->{childName}");
+                CollectTypeEdgesRecursive(child, tree, edges);
+            }
         }
     }
 }

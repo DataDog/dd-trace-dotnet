@@ -93,6 +93,7 @@ public:
     uint32_t GetHeapHandleLimit() const override;
     bool UseManagedCodeCache() const override;
     bool IsMemoryFootprintEnabled() const override;
+    uint32_t GetReferenceTreeFormat() const override;
 
 private:
     static tags ExtractUserTags();
@@ -211,4 +212,5 @@ private:
     std::chrono::seconds _testHeapSnapshotInterval;
     bool _useManagedCodeCache;
     bool _isMemoryFootprintEnabled;
+    uint32_t _referenceTreeFormat;
 };

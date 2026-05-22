@@ -8,6 +8,7 @@
 #include "TypeReferenceTree.h"
 #include "ReferenceChainTraverser.h"
 #include "TypeReferenceTreeJsonSerializer.h"
+#include "TypeReferenceTreeBinarySerializer.h"
 #include "ReferenceChainTypes.h"
 
 #include "Log.h"
@@ -50,6 +51,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     _shouldCleanupHeapDumpSession.store(false);
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
     _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
+    _referenceTreeFormat = pConfiguration->GetReferenceTreeFormat();
 
     auto testInterval = pConfiguration->GetTestHeapSnapshotInterval();
     _delayFirstSnapshot = (testInterval.count() > 0);
@@ -199,21 +201,31 @@ std::string HeapSnapshotManager::GetAndClearHeapSnapshotText()
     return heapSnapshotText;
 }
 
-std::string HeapSnapshotManager::GetAndClearReferenceTreeJson()
+std::vector<IHeapSnapshotManager::FileEntry> HeapSnapshotManager::GetAndClearReferenceTreeContent()
 {
     std::lock_guard lock(_histogramLock);
+    std::vector<FileEntry> result;
 
     if (!_typeReferenceTree || _typeReferenceTree->IsEmpty())
     {
-        return "{}";
+        return result;
     }
 
-    std::string json = TypeReferenceTreeJsonSerializer::Serialize(*_typeReferenceTree, _pFrameStore);
+    if ((_referenceTreeFormat & ReferenceTreeFormat_Json) != 0)
+    {
+        auto json = TypeReferenceTreeJsonSerializer::Serialize(*_typeReferenceTree, _pFrameStore);
+        result.emplace_back("reference_tree.json",
+            std::vector<uint8_t>(json.begin(), json.end()));
+    }
 
-    // Clear after serialization
+    if ((_referenceTreeFormat & ReferenceTreeFormat_Binary) != 0)
+    {
+        auto bin = TypeReferenceTreeBinarySerializer::Serialize(*_typeReferenceTree, _pFrameStore);
+        result.emplace_back("reference_tree.bin", std::move(bin));
+    }
+
     _typeReferenceTree->Clear();
-
-    return json;
+    return result;
 }
 
 // NOTE: must be called under the lock

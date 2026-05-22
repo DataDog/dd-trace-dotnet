@@ -6,8 +6,10 @@
 #include "VisitedObjectSet.h"
 #include "TypeReferenceTree.h"
 #include "TypeReferenceTreeJsonSerializer.h"
+#include "TypeReferenceTreeBinarySerializer.h"
 #include "IFrameStore.h"
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <sstream>
@@ -1522,4 +1524,344 @@ TEST(TypeReferenceTreeJsonSerializerTest, AllUnresolvableTypesProduceMinimalJson
     }
     ASSERT_EQ(braces, 0);
     ASSERT_EQ(brackets, 0);
+}
+
+// ============================================================================
+// Binary varint reader helper for test validation
+// ============================================================================
+
+class BinReader
+{
+public:
+    BinReader(const std::vector<uint8_t>& data) : _data(data), _pos(0) {}
+
+    uint64_t ReadVarint()
+    {
+        uint64_t value = 0;
+        int shift = 0;
+        while (_pos < _data.size())
+        {
+            uint8_t byte = _data[_pos++];
+            value |= static_cast<uint64_t>(byte & 0x7F) << shift;
+            if ((byte & 0x80) == 0)
+                return value;
+            shift += 7;
+        }
+        return value;
+    }
+
+    uint8_t ReadByte() { return _data[_pos++]; }
+
+    std::string ReadString()
+    {
+        auto len = static_cast<size_t>(ReadVarint());
+        std::string s(reinterpret_cast<const char*>(&_data[_pos]), len);
+        _pos += len;
+        return s;
+    }
+
+    void ReadFixedBytes(uint8_t* out, size_t count)
+    {
+        std::memcpy(out, &_data[_pos], count);
+        _pos += count;
+    }
+
+    bool AtEnd() const { return _pos >= _data.size(); }
+
+private:
+    const std::vector<uint8_t>& _data;
+    size_t _pos;
+};
+
+// ============================================================================
+// TypeReferenceTreeBinarySerializer Tests
+// ============================================================================
+
+TEST(TypeReferenceTreeBinarySerializerTest, NullFrameStoreReturnsEmpty)
+{
+    TypeReferenceTree tree;
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, nullptr);
+    ASSERT_TRUE(bin.empty());
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, EmptyTreeHasMagicAndZeroCounts)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+
+    ASSERT_GE(bin.size(), 4u);
+    ASSERT_EQ(bin[0], 'D');
+    ASSERT_EQ(bin[1], 'D');
+    ASSERT_EQ(bin[2], 'R');
+    ASSERT_EQ(bin[3], 'T');
+
+    BinReader reader(bin);
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // version
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // type_count
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // root_count
+    ASSERT_TRUE(reader.AtEnd());
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, SingleRootRoundTrip)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    frameStore.RegisterType(typeA, "System.String");
+    tree.AddRoot(typeA, RootCategory::Stack, 256);
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    ASSERT_EQ(magic[0], 'D');
+    ASSERT_EQ(magic[3], 'T');
+
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // version
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // type_count
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // root_count
+
+    ASSERT_EQ(reader.ReadString(), "System.String");
+
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // type_index
+    ASSERT_EQ(reader.ReadByte(), static_cast<uint8_t>(RootCategory::Stack));
+    ASSERT_EQ(reader.ReadVarint(), 1u);   // ic
+    ASSERT_EQ(reader.ReadVarint(), 256u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);   // field_len
+    ASSERT_EQ(reader.ReadVarint(), 0u);   // child_count
+
+    ASSERT_TRUE(reader.AtEnd());
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, RootWithChildrenRoundTrip)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100, typeB = 200;
+    frameStore.RegisterType(typeA, "MyApp.Order");
+    frameStore.RegisterType(typeB, "MyApp.Customer");
+
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable, 128);
+    TypeTreeNode* childNode = rootNode->GetOrCreateChild(typeB);
+    childNode->AddInstance(64);
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint(); // version
+    ASSERT_EQ(reader.ReadVarint(), 2u); // type_count
+    ASSERT_EQ(reader.ReadVarint(), 1u); // root_count
+
+    ASSERT_EQ(reader.ReadString(), "MyApp.Order");
+    ASSERT_EQ(reader.ReadString(), "MyApp.Customer");
+
+    // Root
+    ASSERT_EQ(reader.ReadVarint(), 0u); // type_index
+    ASSERT_EQ(reader.ReadByte(), static_cast<uint8_t>(RootCategory::StaticVariable));
+    ASSERT_EQ(reader.ReadVarint(), 1u);   // ic
+    ASSERT_EQ(reader.ReadVarint(), 128u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);   // field_len
+    ASSERT_EQ(reader.ReadVarint(), 1u);   // child_count
+
+    // Child (inline DFS)
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // type_index
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // ic
+    ASSERT_EQ(reader.ReadVarint(), 64u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // child_count
+
+    ASSERT_TRUE(reader.AtEnd());
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, AllRootCategoriesRoundTrip)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    RootCategory categories[] = {
+        RootCategory::Stack, RootCategory::StaticVariable, RootCategory::Finalizer,
+        RootCategory::Handle, RootCategory::Pinning, RootCategory::ConditionalWeakTable,
+        RootCategory::COM, RootCategory::Other, RootCategory::Unknown
+    };
+
+    for (size_t i = 0; i < RootCategoryCount; i++)
+    {
+        ClassID typeId = static_cast<ClassID>(100 + i);
+        frameStore.RegisterType(typeId, "Type" + std::to_string(i));
+        tree.AddRoot(typeId, categories[i], 64);
+    }
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint(); // version
+    auto typeCount = reader.ReadVarint();
+    ASSERT_EQ(typeCount, RootCategoryCount);
+    auto rootCount = reader.ReadVarint();
+    ASSERT_EQ(rootCount, RootCategoryCount);
+
+    for (size_t i = 0; i < typeCount; i++)
+        reader.ReadString();
+
+    std::set<uint8_t> seenCategories;
+    for (size_t i = 0; i < rootCount; i++)
+    {
+        reader.ReadVarint(); // typeIndex
+        seenCategories.insert(reader.ReadByte());
+        reader.ReadVarint(); // ic
+        reader.ReadVarint(); // ts
+        auto fl = reader.ReadVarint();
+        if (fl > 0) reader.ReadString();
+        reader.ReadVarint(); // childCount
+    }
+
+    for (uint8_t i = 0; i < static_cast<uint8_t>(RootCategoryCount); i++)
+    {
+        ASSERT_TRUE(seenCategories.count(i) > 0)
+            << "Missing category ordinal " << static_cast<int>(i);
+    }
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, DeepHierarchyRoundTrip)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    const int depth = 5;
+    for (int i = 0; i <= depth; i++)
+    {
+        frameStore.RegisterType(static_cast<ClassID>(100 + i), "Level" + std::to_string(i));
+    }
+
+    TypeTreeNode* current = tree.AddRoot(100, RootCategory::Stack, 64);
+    for (int i = 1; i <= depth; i++)
+    {
+        TypeTreeNode* child = current->GetOrCreateChild(static_cast<ClassID>(100 + i));
+        child->AddInstance(32);
+        current = child;
+    }
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint(); // version
+    auto typeCount = reader.ReadVarint();
+    ASSERT_EQ(typeCount, static_cast<uint64_t>(depth + 1));
+    reader.ReadVarint(); // rootCount
+
+    for (size_t i = 0; i < typeCount; i++)
+        reader.ReadString();
+
+    // Root node
+    reader.ReadVarint(); // typeIndex
+    reader.ReadByte();   // category
+    reader.ReadVarint(); // ic
+    reader.ReadVarint(); // ts
+    reader.ReadVarint(); // fieldLen
+    ASSERT_EQ(reader.ReadVarint(), 1u); // childCount
+
+    for (int i = 1; i <= depth; i++)
+    {
+        reader.ReadVarint(); // typeIndex
+        reader.ReadVarint(); // ic
+        reader.ReadVarint(); // ts
+        auto cc = reader.ReadVarint();
+        ASSERT_EQ(cc, (i < depth) ? 1u : 0u) << "Unexpected child count at level " << i;
+    }
+
+    ASSERT_TRUE(reader.AtEnd());
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, LargeValuesEncodeCorrectly)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    frameStore.RegisterType(typeA, "HeavyType");
+
+    for (uint64_t i = 0; i < 1000; i++)
+        tree.AddRoot(typeA, RootCategory::Stack, 1000000);
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint(); // version
+    reader.ReadVarint(); // typeCount
+    reader.ReadVarint(); // rootCount
+    reader.ReadString();
+
+    reader.ReadVarint(); // typeIndex
+    reader.ReadByte();   // category
+    ASSERT_EQ(reader.ReadVarint(), 1000u);       // ic
+    ASSERT_EQ(reader.ReadVarint(), 1000000000u); // ts
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, BinarySmallerThanJson)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    for (int i = 0; i < 50; i++)
+    {
+        ClassID typeId = static_cast<ClassID>(100 + i);
+        frameStore.RegisterType(typeId, "Namespace.Type" + std::to_string(i));
+        TypeTreeNode* root = tree.AddRoot(typeId, RootCategory::Stack, 64 + i);
+
+        for (int j = 0; j < 3; j++)
+        {
+            ClassID childType = static_cast<ClassID>(1000 + i * 10 + j);
+            frameStore.RegisterType(childType, "Child" + std::to_string(i) + "_" + std::to_string(j));
+            TypeTreeNode* child = root->GetOrCreateChild(childType);
+            child->AddInstance(32 + j);
+        }
+    }
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+
+    ASSERT_GT(json.size(), bin.size())
+        << "Binary (" << bin.size() << " bytes) should be smaller than JSON (" << json.size() << " bytes)";
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, StaticFieldNameRoundTrip)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    frameStore.RegisterType(typeA, "System.Collections.Generic.List`1");
+    tree.AddRoot(typeA, RootCategory::StaticVariable, 256, L"_staticOrders");
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint(); // version
+    reader.ReadVarint(); // typeCount
+    reader.ReadVarint(); // rootCount
+    reader.ReadString(); // type table entry
+
+    reader.ReadVarint(); // typeIndex
+    reader.ReadByte();   // category
+    reader.ReadVarint(); // ic
+    reader.ReadVarint(); // ts
+
+    ASSERT_EQ(reader.ReadString(), "_staticOrders");
 }

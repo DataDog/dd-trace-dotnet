@@ -161,8 +161,8 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
-            Title = "Open Reference Chain JSON",
+            Filter = "Reference tree files (*.json;*.bin)|*.json;*.bin|JSON files (*.json)|*.json|Binary files (*.bin)|*.bin|All files (*.*)|*.*",
+            Title = "Open Reference Tree",
             InitialDirectory = _lastLoadedDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         };
 

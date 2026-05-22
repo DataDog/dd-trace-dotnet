@@ -263,6 +263,7 @@
     <ClInclude Include="ReferenceChainTypes.h" />
     <ClInclude Include="TypeReferenceTree.h" />
     <ClInclude Include="TypeReferenceTreeJsonSerializer.h" />
+    <ClInclude Include="TypeReferenceTreeBinarySerializer.h" />
     <ClInclude Include="VisitedObjectSet.h" />
     <ClInclude Include="IGcSettingsProvider.h" />
     <ClInclude Include="IHeapSnapshotManager.h" />
@@ -427,6 +428,7 @@
     <ClCompile Include="HeapSnapshotManager.cpp" />
     <ClCompile Include="ReferenceChainTraverser.cpp" />
     <ClCompile Include="TypeReferenceTreeJsonSerializer.cpp" />
+    <ClCompile Include="TypeReferenceTreeBinarySerializer.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="NativeThreadList.cpp" />
     <ClCompile Include="NetworkActivity.cpp" />

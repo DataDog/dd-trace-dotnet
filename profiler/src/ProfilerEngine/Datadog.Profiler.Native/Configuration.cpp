@@ -134,6 +134,7 @@ Configuration::Configuration()
     #endif
     _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, defaultUseManagedCodeCache);
     _isMemoryFootprintEnabled = GetEnvironmentValue(EnvironmentVariables::MemoryFootprintEnabled, false);
+    _referenceTreeFormat = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, static_cast<uint32_t>(1));
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -332,6 +333,11 @@ bool Configuration::UseManagedCodeCache() const
 bool Configuration::IsMemoryFootprintEnabled() const
 {
     return _isMemoryFootprintEnabled;
+}
+
+uint32_t Configuration::GetReferenceTreeFormat() const
+{
+    return _referenceTreeFormat;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const
@@ -661,6 +667,17 @@ static bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
 static bool convert_to(shared::WSTRING const& s, int32_t& result)
 {
     return TryParse(s, result);
+}
+
+static bool convert_to(shared::WSTRING const& s, uint32_t& result)
+{
+    int32_t value;
+    if (!TryParse(s, value) || value < 0)
+    {
+        return false;
+    }
+    result = static_cast<uint32_t>(value);
+    return true;
 }
 
 static bool convert_to(shared::WSTRING const& s, uint64_t& result)

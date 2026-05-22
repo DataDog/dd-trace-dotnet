@@ -525,6 +525,9 @@
     <ClInclude Include="TypeReferenceTreeJsonSerializer.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
+    <ClInclude Include="TypeReferenceTreeBinarySerializer.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
     <ClInclude Include="VisitedObjectSet.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
@@ -807,6 +810,9 @@
       <Filter>HeapSnapshot</Filter>
     </ClCompile>
     <ClCompile Include="TypeReferenceTreeJsonSerializer.cpp">
+      <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="TypeReferenceTreeBinarySerializer.cpp">
       <Filter>HeapSnapshot</Filter>
     </ClCompile>
     <ClCompile Include="NativeThreadList.cpp">

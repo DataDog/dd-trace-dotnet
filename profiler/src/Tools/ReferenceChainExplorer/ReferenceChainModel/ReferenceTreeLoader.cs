@@ -29,10 +29,23 @@ public static class ReferenceTreeLoader
     }
 
     /// <summary>
-    /// Load a reference tree from a JSON file on disk.
+    /// Load a reference tree from a file on disk.
+    /// Auto-detects binary (DDRT magic) vs JSON format.
     /// </summary>
     public static ReferenceTree LoadFromFile(string path)
     {
+        var header = new byte[4];
+        using (var fs = File.OpenRead(path))
+        {
+            if (fs.Read(header, 0, 4) == 4
+                && header[0] == 'D' && header[1] == 'D'
+                && header[2] == 'R' && header[3] == 'T')
+            {
+                fs.Position = 0;
+                return ReferenceTreeBinaryLoader.Load(fs);
+            }
+        }
+
         var jsonContent = File.ReadAllText(path);
         return Load(jsonContent);
     }
