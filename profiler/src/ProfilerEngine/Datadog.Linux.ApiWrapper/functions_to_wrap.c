@@ -723,7 +723,6 @@ pid_t fork()
 #endif
 #endif
 
-<<<<<<< HEAD
 // https://github.com/DataDog/dd-trace-dotnet/pull/8162
 // There is a stack overflow on the altstack when coreclr's SIGSEGV handler is interrupted by
 // SIGPROF/SIGUSR1 signals.
@@ -755,7 +754,6 @@ static void dd_sigsegv_handler(int signum, siginfo_t* info, void* context)
 {
     struct crashing_data_t* current_crash_data = atomic_load(&crash_data);
     if (current_crash_data != NULL) {
-        current_crash_data->is_app_crashing = 1;
         current_crash_data->thread_context = (ucontext_t*)context;
     }
     sigsegv_handler_fn handler = sigsegv_current_handler;
