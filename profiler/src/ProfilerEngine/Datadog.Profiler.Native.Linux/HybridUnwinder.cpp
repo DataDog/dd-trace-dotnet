@@ -104,14 +104,22 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
         }
 
         auto stepResult = unw_step(&cursor->cursor);
+        unw_cursor_snapshot_t snapshot;
+        unw_get_cursor_snapshot(&cursor->cursor, &snapshot);
+        bool unSafeStep = stepResult <= 0 || snapshot.step_method == UNW_STEP_FALLBACK_LR_NO_PROC_INFO;
+
         if (recorder)
         {
-            unw_cursor_snapshot_t snapshot;
-            unw_get_cursor_snapshot(&cursor->cursor, &snapshot);
             recorder->Record(EventType::LibunwindStep, stepResult, snapshot);
         }
-        if (stepResult <= 0)
+
+        if (unSafeStep)
         {
+            if (stepResult > 0)
+            {
+                stepResult = -UNW_STEP_FALLBACK_LR_NO_PROC_INFO;
+            }
+
             if (recorder)
             {
                 recorder->RecordFinish(static_cast<std::int32_t>(stepResult), FinishReason::FailedLibunwindStep);
