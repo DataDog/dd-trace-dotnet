@@ -143,13 +143,12 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
                 }
 
                 // Otherwise, double the size of the buffer and try again.
-                var newBufferSize = currentBufferSize * 2;
-                if (newBufferSize > maxSize)
-                {
-                    // If the new size is still too small, use the max size.
-                    newBufferSize = maxSize;
-                }
+                var newBufferSize = Math.Min(currentBufferSize * 2, maxSize);
 
+                // Expanding the buffer is not expected to fail:
+                // - ArgumentOutOfRangeException is thrown if the requested size is negative
+                // - InvalidOperationException is thrown if the requested size exceeds the maximum size of an array
+                // of 0x7FFFFFC7 (2147,483,615). Our max size is 10 MB (10,485,760), so this is not expected to happen.
                 MessagePackBinary.EnsureCapacity(ref bytes, temporaryBufferOffset, newBufferSize);
             }
         }
@@ -470,7 +469,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     // For unsigned integers, we expand them into ulong values.
     // For signed integers, we first cast to long to sign-extend (to 64 bits) and then do an unchecked cast to ulong to preserve the bits.
     //
-    // Example: (long)(sbyte)(-5) sign-extends to -5L (0xFFFFFFFFFFFFFFFB) and then cast to ulong.
+    // Example: (ulong)(long)(-5) sign-extends to -5L (0xFFFFFFFFFFFFFFFB) and then cast to ulong.
     // WriteVarInt64 will then emit the 10-byte varint, which decodes back to -2147483648 as protobuf int64
     private static int WriteAnyValue(byte[] bytes, int writePosition, object? value)
     {
