@@ -53,13 +53,14 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
-    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out uint? nativeExceptionCode)
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out uint? nativeExceptionCode, out IntPtr? threadContextAddress)
     {
         pid = default;
         signal = default;
         signalCode = default;
         crashThread = default;
         nativeExceptionCode = default;
+        threadContextAddress = default;
 
         // Parse the createdump command-line
         // Unfortunately, the pid is not necessarily at the beginning or the end, it can be between other arguments.
@@ -100,7 +101,8 @@ internal class CreatedumpCommand : Command
             { "--errno", true },
             { "--address", true },
             // Datadog-specific argument. Will be discarded by createdump.
-            { "--dd-native-exception-code", true }
+            { "--dd-native-exception-code", true },
+            { "--dd-thread-context", true }
         };
 
         const string pidRegex = "[0-9]+";
@@ -187,6 +189,20 @@ internal class CreatedumpCommand : Command
         if (parsedArguments.TryGetValue("--dd-native-exception-code", out var rawNativeExceptionCode) && uint.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
         {
             nativeExceptionCode = nativeExceptionCodeValue;
+        }
+
+        if (parsedArguments.TryGetValue("--dd-thread-context", out var rawThreadContextAddress) && IntPtr.TryParse(rawThreadContextAddress, out var threadContextAddressValue))
+        {
+            threadContextAddress = threadContextAddressValue;
+        }
+
+        if (threadContextAddress != null)
+        {
+            AnsiConsole.WriteLine($"Thread context address is {threadContextAddress}");
+        }
+        else
+        {
+            AnsiConsole.WriteLine("Thread context is not provided");
         }
 
         // Have we found the pid?
@@ -673,9 +689,9 @@ internal class CreatedumpCommand : Command
         {
             if (IsTelemetryEnabled())
             {
-                if (ParseArguments(allArguments, out var pid, out var signal, out var signalCode, out var crashThread, out var nativeExceptionCode))
+                if (ParseArguments(allArguments, out var pid, out var signal, out var signalCode, out var crashThread, out var nativeExceptionCode, out var threadContextAddress))
                 {
-                    GenerateCrashReport(pid, signal, signalCode, crashThread, nativeExceptionCode);
+                    GenerateCrashReport(pid, signal, signalCode, crashThread, nativeExceptionCode, threadContextAddress);
                 }
                 else
                 {
@@ -730,7 +746,7 @@ internal class CreatedumpCommand : Command
         DebugPrint("dd-dotnet exited normally");
     }
 
-    private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, uint? nativeExceptionCode)
+    private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, uint? nativeExceptionCode, IntPtr? threadContextAddress)
     {
         DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, signal code: {signalCode}, crashing thread id: {crashThread}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})");
 
@@ -854,7 +870,7 @@ internal class CreatedumpCommand : Command
         {
             DebugPrint("Resolving callstacks");
             var callback = (delegate* unmanaged<int, IntPtr, ResolveMethodData**, int*, int>)&ResolveManagedCallstack;
-            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
+            crashReport.ResolveStacks(crashThread ?? 0, threadContextAddress ?? IntPtr.Zero, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
         }
         catch (Win32Exception ex)
         {
