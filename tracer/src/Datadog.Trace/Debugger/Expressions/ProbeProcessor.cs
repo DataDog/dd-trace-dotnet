@@ -118,8 +118,13 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private bool SamplePayload(in ProbeInfo probeInfo, IAdaptiveSampler sampler)
         {
-            return sampler.Sample()
-                && (probeInfo.ProbeType != ProbeType.Snapshot || _globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId));
+            // Global-first matches Java; it can affect per-probe fairness and may be improved later.
+            if (probeInfo.ProbeType == ProbeType.Snapshot && !_globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId))
+            {
+                return false;
+            }
+
+            return sampler.Sample();
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)

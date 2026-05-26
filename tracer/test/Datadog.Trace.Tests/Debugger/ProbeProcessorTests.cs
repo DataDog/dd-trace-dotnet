@@ -153,7 +153,7 @@ public class ProbeProcessorTests
     }
 
     [Fact]
-    public void TryBeginProcess_UnconditionalSnapshotProbe_SamplesPerProbeBeforeGlobal()
+    public void TryBeginProcess_UnconditionalSnapshotProbe_SamplesGlobalBeforePerProbe()
     {
         var globalRateLimiter = new GlobalRateLimiterMock(false);
         var perProbeSampler = new TestAdaptiveSampler(true);
@@ -167,11 +167,11 @@ public class ProbeProcessorTests
         Assert.Null(snapshotCreator);
         Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
         Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
-        Assert.Equal(1, perProbeSampler.SampleCalls);
+        Assert.Equal(0, perProbeSampler.SampleCalls);
     }
 
     [Fact]
-    public void TryBeginProcess_UnconditionalSnapshotProbe_DoesNotSpendGlobalBudgetWhenPerProbeRejects()
+    public void TryBeginProcess_UnconditionalSnapshotProbe_CalibratesGlobalSamplerWhenPerProbeRejects()
     {
         var globalRateLimiter = new GlobalRateLimiterMock(true);
         var perProbeSampler = new TestAdaptiveSampler(false);
@@ -183,8 +183,9 @@ public class ProbeProcessorTests
 
         Assert.False(shouldProcess);
         Assert.Null(snapshotCreator);
+        Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
         Assert.Equal(1, perProbeSampler.SampleCalls);
-        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
     }
 
     [Fact]
