@@ -104,14 +104,15 @@ namespace Datadog.Trace.Debugger.Configurations
             var filteredConfiguration = ApplyConfigurationFilters(GetEffectiveConfiguration());
             var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
 
-            if (comparer.HasProbeRelatedChanges)
-            {
-                result = HandleAddedProbesChanges(comparer);
-            }
-
+            // Apply the global limiter before making new probes live.
             if (comparer.HasRateLimitChanged)
             {
                 HandleRateLimitChanged(filteredConfiguration);
+            }
+
+            if (comparer.HasProbeRelatedChanges)
+            {
+                result = HandleAddedProbesChanges(comparer);
             }
 
             _currentConfiguration = filteredConfiguration;

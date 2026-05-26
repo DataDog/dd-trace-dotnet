@@ -176,6 +176,34 @@ public class ConfigurationUpdaterTests
     }
 
     [Fact]
+    public void AcceptAdded_ServiceConfigurationAndProbe_UpdatesGlobalRateLimiterBeforeAddingProbe()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        double? rateWhenAddingProbe = null;
+        updater.SetProbeInstrumentationHandlers(
+            probes =>
+            {
+                rateWhenAddingProbe = globalRateLimiter.LastRate;
+                return probes.Select(probe => new ConfigurationUpdater.UpdateResult(probe.Id, null)).ToList();
+            },
+            _ => { });
+
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                },
+                LogProbes = [CreateLogProbe("log-probe")]
+            });
+
+        globalRateLimiter.SetRateCallCount.Should().Be(1);
+        rateWhenAddingProbe.Should().Be(42);
+    }
+
+    [Fact]
     public void AcceptAdded_ProbeOnlyChange_DoesNotResetGlobalRateLimiter()
     {
         var globalRateLimiter = new GlobalRateLimiterMock();
