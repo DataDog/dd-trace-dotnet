@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -24,6 +25,13 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private const int MaxRetries = 3;
         private const int StartingSleepDuration = 3;
+
+        private static readonly byte[] InitialBoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes("--" + DatadogHttpValues.Boundary + DatadogHttpValues.CrLf);
+        private static readonly byte[] BoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes(DatadogHttpValues.CrLf + "--" + DatadogHttpValues.Boundary + DatadogHttpValues.CrLf);
+        private static readonly byte[] FinalBoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes(DatadogHttpValues.CrLf + "--" + DatadogHttpValues.Boundary + "--" + DatadogHttpValues.CrLf);
+        private static readonly byte[] FileJsonHeaderBytes = EncodingHelpers.Utf8NoBom.GetBytes("Content-Type: " + MimeTypes.Json + DatadogHttpValues.CrLf + "Content-Disposition: form-data; name=\"file\"; filename=\"file.json\"" + DatadogHttpValues.CrLf + DatadogHttpValues.CrLf);
+        private static readonly byte[] FileGzipHeaderBytes = EncodingHelpers.Utf8NoBom.GetBytes("Content-Type: " + MimeTypes.Gzip + DatadogHttpValues.CrLf + "Content-Disposition: form-data; name=\"file\"; filename=\"file.gz\"" + DatadogHttpValues.CrLf + DatadogHttpValues.CrLf);
+        private static readonly byte[] EventHeaderBytes = EncodingHelpers.Utf8NoBom.GetBytes("Content-Type: " + MimeTypes.Json + DatadogHttpValues.CrLf + "Content-Disposition: form-data; name=\"event\"; filename=\"event.json\"" + DatadogHttpValues.CrLf + DatadogHttpValues.CrLf);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolUploadApi>();
 
@@ -134,6 +142,19 @@ namespace Datadog.Trace.Debugger.Upload
                 return false;
             }
 
+            return await SendBatchAsync(
+                       stream => stream.WriteAsync(symbols.Array, symbols.Offset, symbols.Count),
+                       metadata)
+                  .ConfigureAwait(false);
+        }
+
+        public async Task<bool> SendBatchAsync(Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
+        {
+            if (writeSymbols == null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(writeSymbols));
+            }
+
             var uri = BuildUri();
             if (string.IsNullOrEmpty(uri))
             {
@@ -146,35 +167,15 @@ namespace Datadog.Trace.Debugger.Upload
             var retries = 0;
             var sleepDuration = StartingSleepDuration;
 
-            MultipartFormItem symbolsItem;
-            ArraySegment<byte> attachmentBytes;
-
-            if (!_enableCompression)
-            {
-                attachmentBytes = symbols;
-                symbolsItem = new MultipartFormItem("file", MimeTypes.Json, "file.json", attachmentBytes);
-            }
-            else
-            {
-                var compressedSymbols = await CompressDataAsync(symbols).ConfigureAwait(false);
-                if (compressedSymbols == null)
-                {
-                    return false;
-                }
-
-                attachmentBytes = compressedSymbols.Value;
-                symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", attachmentBytes);
-            }
-
-            var eventMetadata = CreateEventMetadata(
-                metadata,
-                _runtimeId,
-                attachmentBytes.Count);
-            var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", eventMetadata) };
-
             while (retries < MaxRetries)
             {
-                using var response = await request.PostAsync(items).ConfigureAwait(false);
+                using var response = await request
+                                           .PostAsync(
+                                                stream => WriteMultipartFormData(stream, writeSymbols, metadata),
+                                                MimeTypes.MultipartFormData,
+                                                contentEncoding: null,
+                                                DatadogHttpValues.Boundary)
+                                           .ConfigureAwait(false);
                 if (response.StatusCode is >= 200 and <= 299)
                 {
                     return true;
@@ -197,41 +198,108 @@ namespace Datadog.Trace.Debugger.Upload
             return false;
         }
 
-        internal async Task<ArraySegment<byte>?> CompressDataAsync(ArraySegment<byte> data)
+        private async Task WriteMultipartFormData(Stream destination, Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
         {
-            using var memoryStream = new MemoryStream();
+            await destination.WriteAsync(InitialBoundaryBytes, 0, InitialBoundaryBytes.Length).ConfigureAwait(false);
+            await destination.WriteAsync(_enableCompression ? FileGzipHeaderBytes : FileJsonHeaderBytes, 0, _enableCompression ? FileGzipHeaderBytes.Length : FileJsonHeaderBytes.Length).ConfigureAwait(false);
 
+            var countingStream = new CountingWriteStream(destination);
+            if (_enableCompression)
+            {
 #if NETFRAMEWORK
-            using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
+                using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(countingStream) { IsStreamOwner = false })
 #else
-            using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                using (var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true))
 #endif
+                {
+                    await writeSymbols(gzipStream).ConfigureAwait(false);
+                    await gzipStream.FlushAsync().ConfigureAwait(false);
+                }
+            }
+            else
             {
-                await gzipStream.WriteAsync(data.Array!, data.Offset, data.Count).ConfigureAwait(false);
-                await gzipStream.FlushAsync().ConfigureAwait(false);
+                await writeSymbols(countingStream).ConfigureAwait(false);
+                await countingStream.FlushAsync().ConfigureAwait(false);
             }
 
-            var compressedData = memoryStream.ToArray();
+            var eventMetadata = CreateEventMetadata(metadata, _runtimeId, checked((int)countingStream.BytesWritten));
 
-            // see here about the following validation: https://forensics.wiki/gzip/
-            // minimum size for header + footer
-            if (compressedData.Length < 18)
+            await destination.WriteAsync(BoundaryBytes, 0, BoundaryBytes.Length).ConfigureAwait(false);
+            await destination.WriteAsync(EventHeaderBytes, 0, EventHeaderBytes.Length).ConfigureAwait(false);
+            await destination.WriteAsync(eventMetadata.Array!, eventMetadata.Offset, eventMetadata.Count).ConfigureAwait(false);
+            await destination.WriteAsync(FinalBoundaryBytes, 0, FinalBoundaryBytes.Length).ConfigureAwait(false);
+            await destination.FlushAsync().ConfigureAwait(false);
+        }
+
+        private sealed class CountingWriteStream : Stream
+        {
+            private readonly Stream _inner;
+
+            public CountingWriteStream(Stream inner)
             {
-                Log.Error("Compression produced invalid data: size {Size} bytes is below minimum valid GZip size", property: compressedData.Length);
-                return null;
+                _inner = inner;
             }
 
-            // header magic numbers
-            if (compressedData[0] != 0x1F || compressedData[1] != 0x8B)
-            {
-                Log.Error(
-                    "Compression produced invalid data: invalid GZip header {Header}",
-                    BitConverter.ToString(System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Take(compressedData, 2))));
+            public long BytesWritten { get; private set; }
 
-                return null;
+            public override bool CanRead => false;
+
+            public override bool CanSeek => false;
+
+            public override bool CanWrite => _inner.CanWrite;
+
+            public override long Length => throw new NotSupportedException();
+
+            public override long Position
+            {
+                get => throw new NotSupportedException();
+                set => throw new NotSupportedException();
             }
 
-            return new ArraySegment<byte>(compressedData);
+            public override void Flush()
+            {
+                _inner.Flush();
+            }
+
+            public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+            {
+                return _inner.FlushAsync(cancellationToken);
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override void SetLength(long value)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                _inner.Write(buffer, offset, count);
+                BytesWritten += count;
+            }
+
+            public override async Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+            {
+                await _inner.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+                BytesWritten += count;
+            }
+
+#if NETCOREAPP
+            public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, System.Threading.CancellationToken cancellationToken = default)
+            {
+                await _inner.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+                BytesWritten += buffer.Length;
+            }
+#endif
         }
     }
 }

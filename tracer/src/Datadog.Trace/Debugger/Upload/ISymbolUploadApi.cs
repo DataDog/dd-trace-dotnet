@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Debugger.Upload
@@ -12,5 +13,7 @@ namespace Datadog.Trace.Debugger.Upload
     internal interface ISymbolUploadApi : IBatchUploadApi
     {
         Task<bool> SendBatchAsync(ArraySegment<byte> symbols, SymDbUploadMetadata metadata);
+
+        Task<bool> SendBatchAsync(Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata);
     }
 }

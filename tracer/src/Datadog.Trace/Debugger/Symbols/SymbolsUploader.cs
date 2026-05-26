@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -50,7 +51,6 @@ namespace Datadog.Trace.Debugger.Symbols
         // match them up.
         private readonly Guid _symdbUploadId = Guid.NewGuid();
         private volatile bool _disposed;
-        private byte[]? _payload;
         private volatile string? _symDbEndpoint;
         private long _symdbBatchNum;
 
@@ -113,6 +113,33 @@ namespace Datadog.Trace.Debugger.Symbols
 
             // TODO: we need to be able to update the tracer settings dynamically
             return new SymbolsUploader(api, discoveryService, settings, tracerSettings, serviceNameProvider);
+        }
+
+        private static async Task WriteSymbols(Stream stream, StringBuilder builder)
+        {
+            const int bufferSize = 4096;
+            var buffer = ArrayPool<char>.Shared.Rent(bufferSize);
+            using var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
+            try
+            {
+                var remaining = builder.Length;
+                var position = 0;
+                while (remaining > 0)
+                {
+                    var count = remaining > buffer.Length ? buffer.Length : remaining;
+                    builder.CopyTo(position, buffer, 0, count);
+                    streamWriter.Write(buffer, 0, count);
+                    position += count;
+                    remaining -= count;
+                }
+
+                await streamWriter.FlushAsync().ConfigureAwait(false);
+                await stream.FlushAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(buffer);
+            }
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -246,7 +273,7 @@ namespace Datadog.Trace.Debugger.Symbols
             // The payload builder is used for the whole upload: each batch
             // starts by appending a fresh prefix (with a per-batch batch_num),
             // class scopes are appended directly into it, and on flush we
-            // append ']' + suffix and send.
+            // append ']' + suffix and stream its chars directly as UTF-8.
             var payloadBuilder = StringBuilderCache.Acquire((int)_thresholdInBytes + 256);
 
             var serializer = JsonSerializer.Create(_jsonSerializerSettings);
@@ -269,11 +296,8 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    // Try to serialize and append the class
                     if (!TrySerializeClass(classSymbol, payloadBuilder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out var newByteCount))
                     {
-                        // If we couldn't append because it would exceed capacity,
-                        // upload current batch first
                         bool succeeded = false;
                         if (hasAnyClass)
                         {
@@ -286,7 +310,6 @@ namespace Datadog.Trace.Debugger.Symbols
                                 return;
                             }
 
-                            // Try again with empty scopes in the new batch
                             succeeded = TrySerializeClass(classSymbol, payloadBuilder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out newByteCount);
                         }
 
@@ -302,7 +325,6 @@ namespace Datadog.Trace.Debugger.Symbols
                     hasAnyClass = true;
                 }
 
-                // Upload any remaining data
                 if (hasAnyClass)
                 {
                     await Flush(payloadBuilder, suffix, batchNum).ConfigureAwait(false);
@@ -344,26 +366,15 @@ namespace Datadog.Trace.Debugger.Symbols
                 // Always false: the .NET tracer continuously uploads new code as
                 // assemblies get loaded; there is no defined end-of-upload point.
                 Final: false);
-            await SendSymbol(builder.ToString(), metadata).ConfigureAwait(false);
+            await SendSymbol(stream => WriteSymbols(stream, builder), metadata).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendSymbol(string symbol, SymDbUploadMetadata metadata)
+        private async Task<bool> SendSymbol(Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
         {
-            // TODO: Consider streaming SymDB payload bytes directly to the stream
-            // to avoid the extra `string -> UTF8 bytes` encoding step and intermediate byte[] allocations/copies.
-            // Similar allocation reductions were done in https://github.com/DataDog/dd-trace-dotnet/pull/8017
-            // and https://github.com/DataDog/dd-trace-dotnet/pull/8019).
-            var count = Encoding.UTF8.GetByteCount(symbol);
-            if (_payload == null || count > _payload.Length)
-            {
-                _payload = new byte[count];
-            }
-
-            Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
             try
             {
                 return await _api
-                    .SendBatchAsync(new ArraySegment<byte>(_payload, 0, count), metadata)
+                    .SendBatchAsync(writeSymbols, metadata)
                     .ConfigureAwait(false);
             }
             catch (Exception e)
@@ -397,7 +408,6 @@ namespace Datadog.Trace.Debugger.Symbols
                 return false;
             }
 
-            // Safe to append
             if (hasAnyClass)
             {
                 payloadBuilder.Append(',');
