@@ -105,6 +105,11 @@ RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f
     && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
+# Replace libcoreclr.so in the .NET 10 runtime with a patched build
+RUN ls -l /usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.0/ \
+    && curl -fsSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/libcoreclr.so \
+        --output /usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.0/libcoreclr.so && \
+    ls -l /usr/share/dotnet/shared/Microsoft.NETCore.App/10.0.0/
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
