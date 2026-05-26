@@ -351,37 +351,38 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrix(bool dockerTest)
             {
-                var baseImages = new []
-                {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"),
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
-                };
-
-                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux);
+                // Patched .NET 10 runtime smoke test branch: only run alpine + .NET 10,
+                // and produce 10 parallel shards per matrix to stress the patched libcoreclr.so.
+                const string baseImage = "alpine";
+                const string artifactSuffix = "linux-musl-x64";
+                var framework = TargetFramework.NET10_0;
 
                 var matrix = new Dictionary<string, object>();
-                foreach (var framework in targetFrameworks)
+                if (dockerTest)
                 {
-                    foreach (var (baseImage, artifactSuffix) in baseImages)
+                    // 5 shards per dockerGroup => 10 total
+                    var dockerGroups = new[] { 1, 2 };
+                    foreach (var dockerGroup in dockerGroups)
                     {
-                        if (dockerTest)
+                        for (var shard = 1; shard <= 5; shard++)
                         {
-                            var dockerGroups = new[] { 1, 2 };
-                            foreach (var dockerGroup in dockerGroups)
-                            {
-                                matrix.Add($"{baseImage}_{framework}_group{dockerGroup}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, dockerGroup = dockerGroup });
-                            }
+                            matrix.Add(
+                                $"{baseImage}_{framework}_group{dockerGroup}_shard{shard}",
+                                new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, dockerGroup = dockerGroup });
                         }
-                        else
+                    }
+                }
+                else
+                {
+                    // 5 shards per area => 10 total
+                    var areas = new[] { TracerArea, AsmArea };
+                    foreach (var area in areas)
+                    {
+                        for (var shard = 1; shard <= 5; shard++)
                         {
-                            var areas = new[] { TracerArea, AsmArea };
-                            foreach (var area in areas)
-                            {
-                                if (ShouldBeIncluded(area))
-                                {
-                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
-                                }
-                            }
+                            matrix.Add(
+                                $"{baseImage}_{framework}_{area}_shard{shard}",
+                                new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
                         }
                     }
                 }
@@ -394,29 +395,8 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxArm64Matrix()
             {
-                var baseImages = new []
-                {
-                    (baseImage: "debian", artifactSuffix: "linux-arm64"),
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
-                };
-
-                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux, isArm64: true);
-
+                // Patched .NET 10 runtime smoke test branch: arm64 is out of scope, emit an empty matrix.
                 var matrix = new Dictionary<string, object>();
-                foreach (var framework in targetFrameworks)
-                {
-                    foreach (var (baseImage, artifactSuffix) in baseImages)
-                    {
-                        if (ShouldBeIncluded(AsmArea))
-                        {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
-                        }
-                        else
-                        {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea });
-                        }
-                    }
-                }
 
                 Logger.Information($"Integration test Linux Arm64 matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
@@ -425,32 +405,8 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
             {
-                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux);
-                var baseImages = new []
-                {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"),
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
-                };
-                var optimizations = new[] { "true", "false" };
-
+                // Patched .NET 10 runtime smoke test branch: debugger linux tests are out of scope, emit an empty matrix.
                 var matrix = new Dictionary<string, object>();
-                foreach (var framework in targetFrameworks)
-                {
-                    foreach (var (baseImage, artifactSuffix) in baseImages)
-                    {
-                        foreach (var optimize in optimizations)
-                        {
-                            matrix.Add($"{baseImage}_{framework}_{optimize}",
-                                       new
-                                       {
-                                           publishTargetFramework = framework,
-                                           baseImage = baseImage,
-                                           optimize = optimize,
-                                           artifactSuffix = artifactSuffix
-                                       });
-                        }
-                    }
-                }
 
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
