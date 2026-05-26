@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 
 namespace Samples.DatabaseHelper
 {
@@ -92,5 +94,20 @@ namespace Samples.DatabaseHelper
             command.AddParameterWithValue("Id", 1);
             return command;
         }
+
+#if NET6_0_OR_GREATER
+        public virtual DbBatch GetBatchCommand(IDbConnection connection, IBatchCommandHandler batchCommandHandler)
+        {
+            var batch = batchCommandHandler.CreateBatch(connection);
+
+            batch.BatchCommands.Add(batchCommandHandler.CreateBatchCommand($"DROP TABLE IF EXISTS {_quotedTableName};"));
+            batch.BatchCommands.Add(batchCommandHandler.CreateBatchCommand($"CREATE TABLE {_quotedTableName} (Id int PRIMARY KEY, Name varchar(100));"));
+            var id = new KeyValuePair<string, object>("Id", value: 1);
+            var name = new KeyValuePair<string, object>("Name", "Name1");
+            batch.BatchCommands.Add(batchCommandHandler.CreateBatchCommand($"INSERT INTO {_quotedTableName} (Id, Name) VALUES (@Id, @Name);", id, name));
+
+            return batch;
+        }
+#endif
     }
 }
