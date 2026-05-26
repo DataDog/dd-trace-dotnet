@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Json;
@@ -38,7 +39,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        internal void AddProbeProcessor(ProbeDefinition probe)
+        internal void AddProbeProcessor(ProbeDefinition probe, DebuggerGlobalRateLimiter globalRateLimiter)
         {
             if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
             {
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 _processors.AddOrUpdate(
                     probe.Id,
-                    _ => new ProbeProcessor(probe),
+                    _ => new ProbeProcessor(probe, globalRateLimiter),
                     (s, processor) => processor.UpdateProbeProcessor(probe));
             }
             catch (Exception e)

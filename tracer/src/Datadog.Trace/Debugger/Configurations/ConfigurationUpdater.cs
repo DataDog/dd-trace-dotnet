@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Configurations
         private readonly string? _env;
         private readonly string? _version;
         private readonly int _maxProbesPerType;
-        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
+        private readonly DebuggerGlobalRateLimiter _globalRateLimiter;
         private readonly HashSet<string> _removedRcmProbeIds = new();
         private Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>>? _handleAddedProbesChanges;
         private Action<string[]>? _handleRemovedProbesChanges;
@@ -30,17 +30,17 @@ namespace Datadog.Trace.Debugger.Configurations
         private ProbeConfiguration? _fileConfiguration;
         private ProbeConfiguration _rcmConfiguration;
 
-        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter)
+        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType, DebuggerGlobalRateLimiter globalRateLimiter)
         {
             _env = env;
             _version = version;
             _maxProbesPerType = maxProbesPerType;
-            _globalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
+            _globalRateLimiter = globalRateLimiter;
             _currentConfiguration = new ProbeConfiguration();
             _rcmConfiguration = new ProbeConfiguration();
         }
 
-        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter = null)
+        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType, DebuggerGlobalRateLimiter globalRateLimiter)
         {
             return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType, globalRateLimiter);
         }

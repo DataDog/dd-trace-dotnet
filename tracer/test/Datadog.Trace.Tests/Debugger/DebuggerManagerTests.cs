@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +14,10 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Logging;
 using FluentAssertions;
 using Xunit;
 
@@ -222,6 +225,61 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
+        [Fact]
+        public void EnsureGlobalRateLimiterCreatesProcessWideLimiterLazily()
+        {
+            var manager = CreateDebuggerManager();
+
+            GetGlobalRateLimiter(manager).Should().BeNull();
+
+            var limiter = InvokeEnsureGlobalRateLimiter(manager);
+
+            limiter.Should().NotBeNull();
+            GetGlobalRateLimiter(manager).Should().BeSameAs(limiter);
+        }
+
+        [Fact]
+        public void EnsureGlobalRateLimiterReturnsSameInstanceAcrossRepeatedRequests()
+        {
+            var manager = CreateDebuggerManager();
+
+            var first = InvokeEnsureGlobalRateLimiter(manager);
+            var second = InvokeEnsureGlobalRateLimiter(manager);
+
+            second.Should().BeSameAs(first);
+        }
+
+        [Fact]
+        public void DisableDynamicInstrumentationDoesNotDisposeGlobalRateLimiter()
+        {
+            var manager = CreateDebuggerManager();
+            var limiter = CreateGlobalRateLimiter(out var samplerFactory);
+            limiter.Initialize();
+            SetGlobalRateLimiter(manager, limiter);
+            var activeSampler = samplerFactory.Samplers[0];
+
+            InvokeDisableDynamicInstrumentation(manager, dynamicallyDisabled: true);
+
+            GetGlobalRateLimiter(manager).Should().BeSameAs(limiter);
+            activeSampler.DisposeCallCount.Should().Be(0);
+        }
+
+        [Fact]
+        public void ShutdownTasksDisposesGlobalRateLimiter()
+        {
+            var manager = CreateDebuggerManager();
+            var limiter = CreateGlobalRateLimiter(out var samplerFactory);
+            limiter.Initialize();
+            SetGlobalRateLimiter(manager, limiter);
+            var activeSampler = samplerFactory.Samplers[0];
+
+            InvokeShutdownTasks(manager);
+
+            activeSampler.DisposeCallCount.Should().Be(1);
+            limiter.SetRate(42);
+            samplerFactory.RequestedRates.Should().Equal(DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond);
+        }
+
         private static DebuggerManager CreateDebuggerManager()
         {
             var constructor = typeof(DebuggerManager).GetConstructor(
@@ -260,11 +318,38 @@ namespace Datadog.Trace.Tests.Debugger
             return field!.GetValue(manager)!;
         }
 
+        private static DebuggerGlobalRateLimiter? GetGlobalRateLimiter(DebuggerManager manager)
+        {
+            var field = typeof(DebuggerManager).GetField("_globalRateLimiter", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return (DebuggerGlobalRateLimiter?)field!.GetValue(manager);
+        }
+
+        private static DebuggerGlobalRateLimiter InvokeEnsureGlobalRateLimiter(DebuggerManager manager)
+        {
+            var method = typeof(DebuggerManager).GetMethod("EnsureGlobalRateLimiter", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Should().NotBeNull();
+            return (DebuggerGlobalRateLimiter)method!.Invoke(manager, null)!;
+        }
+
         private static void SetSymbolsUploader(DebuggerManager manager, IDebuggerUploader uploader)
         {
             var property = typeof(DebuggerManager).GetProperty(nameof(DebuggerManager.SymbolsUploader), BindingFlags.Instance | BindingFlags.NonPublic);
             property.Should().NotBeNull();
             property!.SetValue(manager, uploader);
+        }
+
+        private static void SetGlobalRateLimiter(DebuggerManager manager, DebuggerGlobalRateLimiter limiter)
+        {
+            var field = typeof(DebuggerManager).GetField("_globalRateLimiter", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            field!.SetValue(manager, limiter);
+        }
+
+        private static DebuggerGlobalRateLimiter CreateGlobalRateLimiter(out RecordingSamplerFactory samplerFactory)
+        {
+            samplerFactory = new RecordingSamplerFactory();
+            return new DebuggerGlobalRateLimiter(samplerFactory.Create, new NullLogRateLimiter());
         }
 
         private static void InvokeEnsureSnapshotPipelineConfigured(DebuggerManager manager, DebuggerSettings settings)
@@ -279,6 +364,13 @@ namespace Datadog.Trace.Tests.Debugger
             var method = typeof(DebuggerManager).GetMethod("DisableSymbolUploader", BindingFlags.Instance | BindingFlags.NonPublic);
             method.Should().NotBeNull();
             method!.Invoke(manager, null);
+        }
+
+        private static void InvokeDisableDynamicInstrumentation(DebuggerManager manager, bool dynamicallyDisabled)
+        {
+            var method = typeof(DebuggerManager).GetMethod("DisableDynamicInstrumentation", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Should().NotBeNull();
+            method!.Invoke(manager, [dynamicallyDisabled]);
         }
 
         private static void InvokeOnSymbolDatabaseRemoteConfiguration(DebuggerManager manager, TracerSettings tracerSettings, DebuggerSettings debuggerSettings, bool uploadSymbols)
@@ -317,6 +409,39 @@ namespace Datadog.Trace.Tests.Debugger
             public void Dispose()
             {
                 Disposed = true;
+            }
+        }
+
+        private sealed class RecordingSamplerFactory
+        {
+            public List<int> RequestedRates { get; } = [];
+
+            public List<TestAdaptiveSampler> Samplers { get; } = [];
+
+            public IAdaptiveSampler Create(int samplesPerSecond)
+            {
+                RequestedRates.Add(samplesPerSecond);
+                var sampler = new TestAdaptiveSampler();
+                Samplers.Add(sampler);
+                return sampler;
+            }
+        }
+
+        private sealed class TestAdaptiveSampler : IAdaptiveSampler
+        {
+            public int DisposeCallCount { get; private set; }
+
+            public bool Sample() => true;
+
+            public bool Keep() => true;
+
+            public bool Drop() => false;
+
+            public double NextDouble() => 0;
+
+            public void Dispose()
+            {
+                DisposeCallCount++;
             }
         }
     }

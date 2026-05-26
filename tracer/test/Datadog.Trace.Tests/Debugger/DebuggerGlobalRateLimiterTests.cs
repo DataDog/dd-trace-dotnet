@@ -13,15 +13,13 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DebuggerGlobalRateLimiterTests
 {
     [Fact]
-    public void Constructor_UsesFallbackRates()
+    public void Constructor_DoesNotCreateSamplers()
     {
         var factory = new RecordingSamplerFactory();
 
         _ = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
-        Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
-            factory.RequestedRates);
+        Assert.Empty(factory.RequestedRates);
     }
 
     [Fact]
@@ -30,6 +28,7 @@ public class DebuggerGlobalRateLimiterTests
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
+        limiter.Initialize();
         limiter.SetRate(42);
 
         Assert.Equal(
@@ -42,6 +41,7 @@ public class DebuggerGlobalRateLimiterTests
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
         var initialSnapshotSampler = factory.Samplers[0];
 
         limiter.SetRate(42);
@@ -54,6 +54,7 @@ public class DebuggerGlobalRateLimiterTests
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
         limiter.SetRate(42);
 
         limiter.ResetRate();
@@ -68,6 +69,7 @@ public class DebuggerGlobalRateLimiterTests
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
         limiter.SetRate(42);
         var currentSnapshotSampler = factory.Samplers[1];
 
@@ -81,6 +83,7 @@ public class DebuggerGlobalRateLimiterTests
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
 
         limiter.Dispose();
         limiter.SetRate(42);
@@ -91,16 +94,17 @@ public class DebuggerGlobalRateLimiterTests
     }
 
     [Fact]
-    public void Initialize_AfterDispose_RecreatesDefaultSamplers()
+    public void Initialize_AfterDispose_DoesNotCreateNewSamplers()
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
 
         limiter.Dispose();
         limiter.Initialize();
 
         Assert.Equal(
-            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
             factory.RequestedRates);
     }
 
@@ -109,6 +113,7 @@ public class DebuggerGlobalRateLimiterTests
     {
         var factory = new RecordingSamplerFactory();
         var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
         factory.Samplers[0].SetResults(true, false);
 
         var firstResult = limiter.ShouldSampleSnapshot("snapshot-1");
@@ -120,12 +125,26 @@ public class DebuggerGlobalRateLimiterTests
     }
 
     [Fact]
-    public void Constructor_DoesNotSampleUntilAsked()
+    public void Initialize_DoesNotSampleUntilAsked()
     {
         var factory = new RecordingSamplerFactory();
+        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
 
-        _ = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
 
+        Assert.Equal(0, factory.Samplers[0].SampleCallCount);
+    }
+
+    [Fact]
+    public void ShouldSampleSnapshot_AfterDispose_DropsSnapshot()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        limiter.Initialize();
+
+        limiter.Dispose();
+
+        Assert.False(limiter.ShouldSampleSnapshot("snapshot"));
         Assert.Equal(0, factory.Samplers[0].SampleCallCount);
     }
 

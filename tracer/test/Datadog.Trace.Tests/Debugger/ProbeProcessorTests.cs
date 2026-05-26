@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Logging;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -155,7 +156,8 @@ public class ProbeProcessorTests
     [Fact]
     public void TryBeginProcess_UnconditionalSnapshotProbe_SamplesGlobalBeforePerProbe()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var globalSampler = CreateGlobalSampler(false);
+        var globalRateLimiter = CreateGlobalRateLimiter(globalSampler);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
         var processor = new ProbeProcessor(probe, globalRateLimiter);
@@ -165,15 +167,15 @@ public class ProbeProcessorTests
 
         Assert.False(shouldProcess);
         Assert.Null(snapshotCreator);
-        Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
-        Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
+        Assert.Equal(1, globalSampler.SampleCalls);
         Assert.Equal(0, perProbeSampler.SampleCalls);
     }
 
     [Fact]
     public void TryBeginProcess_UnconditionalSnapshotProbe_CalibratesGlobalSamplerWhenPerProbeRejects()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock(true);
+        var globalSampler = CreateGlobalSampler(true);
+        var globalRateLimiter = CreateGlobalRateLimiter(globalSampler);
         var perProbeSampler = new TestAdaptiveSampler(false);
         var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
         var processor = new ProbeProcessor(probe, globalRateLimiter);
@@ -183,15 +185,15 @@ public class ProbeProcessorTests
 
         Assert.False(shouldProcess);
         Assert.Null(snapshotCreator);
-        Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
-        Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
+        Assert.Equal(1, globalSampler.SampleCalls);
         Assert.Equal(1, perProbeSampler.SampleCalls);
     }
 
     [Fact]
     public void TryBeginProcess_UnconditionalLogProbe_DoesNotUseGlobalLimiter()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var globalSampler = CreateGlobalSampler(false);
+        var globalRateLimiter = CreateGlobalRateLimiter(globalSampler);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = CreateLogProbe("log-probe", captureSnapshot: false);
         var processor = new ProbeProcessor(probe, globalRateLimiter);
@@ -202,13 +204,14 @@ public class ProbeProcessorTests
         Assert.True(shouldProcess);
         Assert.NotNull(snapshotCreator);
         Assert.Equal(1, perProbeSampler.SampleCalls);
-        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, globalSampler.SampleCalls);
     }
 
     [Fact]
     public void Process_ConditionalProbe_EvaluatesConditionBeforeRateLimiting()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var globalSampler = CreateGlobalSampler(false);
+        var globalRateLimiter = CreateGlobalRateLimiter(globalSampler);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = CreateConditionalLogProbe("conditional-false", FalseConditionJson, captureSnapshot: true);
         var processor = new ProbeProcessor(probe, globalRateLimiter);
@@ -219,14 +222,15 @@ public class ProbeProcessorTests
         var result = processor.Process(ref captureInfo, snapshotCreator, in probeData);
 
         Assert.False(result);
-        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, globalSampler.SampleCalls);
         Assert.Equal(0, perProbeSampler.SampleCalls);
     }
 
     [Fact]
     public void TryBeginProcess_MetricProbe_DoesNotUseGlobalLimiter()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var globalSampler = CreateGlobalSampler(false);
+        var globalRateLimiter = CreateGlobalRateLimiter(globalSampler);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = new MetricProbe
         {
@@ -243,14 +247,15 @@ public class ProbeProcessorTests
 
         Assert.True(shouldProcess);
         Assert.NotNull(snapshotCreator);
-        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, globalSampler.SampleCalls);
         Assert.Equal(1, perProbeSampler.SampleCalls);
     }
 
     [Fact]
     public void TryBeginProcess_SpanDecorationProbe_DoesNotUseGlobalLimiter()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var globalSampler = CreateGlobalSampler(false);
+        var globalRateLimiter = CreateGlobalRateLimiter(globalSampler);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = new SpanDecorationProbe
         {
@@ -267,13 +272,13 @@ public class ProbeProcessorTests
 
         Assert.True(shouldProcess);
         Assert.NotNull(snapshotCreator);
-        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, globalSampler.SampleCalls);
         Assert.Equal(1, perProbeSampler.SampleCalls);
     }
 
     private static ProbeProcessor CreateConditionalProbeProcessor()
     {
-        return new ProbeProcessor(
+        return CreateProbeProcessor(
             new LogProbe
             {
                 Id = "probe-id",
@@ -291,7 +296,7 @@ public class ProbeProcessorTests
 
     private static ProbeProcessor CreateCaptureExpressionProbeProcessor(bool includeNullEntry = false, bool includeEmptyNameEntry = false)
     {
-        return new ProbeProcessor(
+        return CreateProbeProcessor(
             new LogProbe
             {
                 Id = "probe-id",
@@ -317,7 +322,7 @@ public class ProbeProcessorTests
 
     private static ProbeProcessor CreateVersionedCaptureExpressionProbeProcessor(string probeId, int version, string captureName)
     {
-        return new ProbeProcessor(CreateVersionedCaptureExpressionProbe(probeId, version, captureName));
+        return CreateProbeProcessor(CreateVersionedCaptureExpressionProbe(probeId, version, captureName));
     }
 
     private static LogProbe CreateLogProbe(string probeId, bool captureSnapshot)
@@ -387,7 +392,7 @@ public class ProbeProcessorTests
 
     private static ProbeProcessor CreateUndefinedCaptureExpressionProbeProcessor()
     {
-        return new ProbeProcessor(
+        return CreateProbeProcessor(
             new LogProbe
             {
                 Id = "probe-id",
@@ -404,6 +409,23 @@ public class ProbeProcessorTests
                     new CaptureExpression { Name = "missingValue" }
                 ]
             });
+    }
+
+    private static ProbeProcessor CreateProbeProcessor(ProbeDefinition probe)
+    {
+        return new ProbeProcessor(probe, CreateGlobalRateLimiter(CreateGlobalSampler()));
+    }
+
+    private static TestAdaptiveSampler CreateGlobalSampler(params bool[] samples)
+    {
+        return new TestAdaptiveSampler(samples);
+    }
+
+    private static DebuggerGlobalRateLimiter CreateGlobalRateLimiter(TestAdaptiveSampler sampler)
+    {
+        var rateLimiter = new DebuggerGlobalRateLimiter(_ => sampler, new NullLogRateLimiter());
+        rateLimiter.Initialize();
+        return rateLimiter;
     }
 
     private static DebuggerSnapshotCreator CreateSnapshotCreator(ProbeProcessor processor, in ProbeData probeData)
@@ -543,46 +565,6 @@ public class ProbeProcessorTests
         public bool Drop() => !Sample();
 
         public double NextDouble() => 0;
-
-        public void Dispose()
-        {
-        }
-    }
-
-    private sealed class GlobalRateLimiterMock : IDebuggerGlobalRateLimiter
-    {
-        private readonly Queue<bool> _results = new();
-
-        public GlobalRateLimiterMock(params bool[] results)
-        {
-            foreach (var result in results)
-            {
-                _results.Enqueue(result);
-            }
-        }
-
-        public int ShouldSampleCallCount { get; private set; }
-
-        public string LastProbeId { get; private set; } = string.Empty;
-
-        public bool ShouldSampleSnapshot(string probeId)
-        {
-            ShouldSampleCallCount++;
-            LastProbeId = probeId;
-            return _results.Count == 0 || _results.Dequeue();
-        }
-
-        public void Initialize()
-        {
-        }
-
-        public void SetRate(double? samplesPerSecond)
-        {
-        }
-
-        public void ResetRate()
-        {
-        }
 
         public void Dispose()
         {

@@ -55,6 +55,7 @@ namespace Datadog.Trace.Debugger
         private TracerSettings.SettingsManager? _subscribedSettingsManager;
         private IDisposable? _tracerSettingsSubscription;
         private SymDbRemoteConfig? _symDbRemoteConfig;
+        private volatile DebuggerGlobalRateLimiter? _globalRateLimiter;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
@@ -206,6 +207,20 @@ namespace Datadog.Trace.Debugger
                 DebuggerSnapshotSerializer.SetConfig(settings);
                 Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
                 _snapshotPipelineConfigured = 1;
+            }
+        }
+
+        private DebuggerGlobalRateLimiter EnsureGlobalRateLimiter()
+        {
+            var rateLimiter = _globalRateLimiter;
+            if (rateLimiter is not null)
+            {
+                return rateLimiter;
+            }
+
+            lock (_syncLock)
+            {
+                return _globalRateLimiter ??= new DebuggerGlobalRateLimiter();
             }
         }
 
@@ -708,7 +723,8 @@ namespace Datadog.Trace.Debugger
                     tracerSettings,
                     () => ServiceName,
                     DebuggerSettings,
-                    tracerManager.GitMetadataTagsProvider);
+                    tracerManager.GitMetadataTagsProvider,
+                    EnsureGlobalRateLimiter());
 
                 if (!_isDebuggerEndpointAvailable)
                 {
@@ -852,7 +868,7 @@ namespace Datadog.Trace.Debugger
                         .Add(Volatile.Read(ref _symDbRemoteConfig))
                         .Add(_dynamicInstrumentation)
                         .Add(ExceptionReplay)
-                        .Execute(DebuggerGlobalRateLimiter.TryDisposeInstance, "disposing global debugger rate limiter")
+                        .Add(_globalRateLimiter)
                         .DisposeAll();
         }
     }

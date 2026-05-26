@@ -28,9 +28,8 @@ internal sealed class DebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerFactory));
 
-    internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, Func<string> serviceNameProvider, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, Func<string> serviceNameProvider, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, DebuggerGlobalRateLimiter globalRateLimiter)
     {
-        var globalRateLimiter = DebuggerGlobalRateLimiter.Instance;
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
         var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);

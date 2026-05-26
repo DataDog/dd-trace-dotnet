@@ -11,6 +11,7 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
@@ -159,7 +160,7 @@ public class ConfigurationUpdaterTests
     [Fact]
     public void AcceptAdded_ServiceConfigurationOnly_UpdatesGlobalRateLimiter()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock();
+        var globalRateLimiter = CreateGlobalRateLimiter(out var samplerFactory);
         var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
 
         updater.AcceptAdded(
@@ -171,20 +172,19 @@ public class ConfigurationUpdaterTests
                 }
             });
 
-        globalRateLimiter.SetRateCallCount.Should().Be(1);
-        globalRateLimiter.LastRate.Should().Be(42);
+        samplerFactory.RequestedRates.Should().Equal(42);
     }
 
     [Fact]
     public void AcceptAdded_ServiceConfigurationAndProbe_UpdatesGlobalRateLimiterBeforeAddingProbe()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock();
+        var globalRateLimiter = CreateGlobalRateLimiter(out var samplerFactory);
         var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
-        double? rateWhenAddingProbe = null;
+        int? rateWhenAddingProbe = null;
         updater.SetProbeInstrumentationHandlers(
             probes =>
             {
-                rateWhenAddingProbe = globalRateLimiter.LastRate;
+                rateWhenAddingProbe = samplerFactory.RequestedRates.LastOrDefault();
                 return probes.Select(probe => new ConfigurationUpdater.UpdateResult(probe.Id, null)).ToList();
             },
             _ => { });
@@ -199,14 +199,14 @@ public class ConfigurationUpdaterTests
                 LogProbes = [CreateLogProbe("log-probe")]
             });
 
-        globalRateLimiter.SetRateCallCount.Should().Be(1);
+        samplerFactory.RequestedRates.Should().Equal(42);
         rateWhenAddingProbe.Should().Be(42);
     }
 
     [Fact]
     public void AcceptAdded_ProbeOnlyChange_DoesNotResetGlobalRateLimiter()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock();
+        var globalRateLimiter = CreateGlobalRateLimiter(out var samplerFactory);
         var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
         updater.AcceptAdded(
             new ProbeConfiguration
@@ -216,7 +216,7 @@ public class ConfigurationUpdaterTests
                     Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
                 }
             });
-        globalRateLimiter.ResetCounters();
+        samplerFactory.RequestedRates.Clear();
 
         updater.AcceptAdded(
             new ProbeConfiguration
@@ -228,14 +228,13 @@ public class ConfigurationUpdaterTests
                 LogProbes = [CreateLogProbe("log-probe")]
             });
 
-        globalRateLimiter.SetRateCallCount.Should().Be(0);
-        globalRateLimiter.ResetRateCallCount.Should().Be(0);
+        samplerFactory.RequestedRates.Should().BeEmpty();
     }
 
     [Fact]
     public void AcceptRemoved_ServiceConfiguration_ResetsGlobalRateLimiterToDefaultRate()
     {
-        var globalRateLimiter = new GlobalRateLimiterMock();
+        var globalRateLimiter = CreateGlobalRateLimiter(out var samplerFactory);
         var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
         updater.AcceptAdded(
             new ProbeConfiguration
@@ -245,12 +244,11 @@ public class ConfigurationUpdaterTests
                     Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
                 }
             });
-        globalRateLimiter.ResetCounters();
+        samplerFactory.RequestedRates.Clear();
 
         updater.AcceptRemoved([RemoteConfigurationPath.FromPath("datadog/123/LIVE_DEBUGGING/serviceConfig_/config")]);
 
-        globalRateLimiter.SetRateCallCount.Should().Be(1);
-        globalRateLimiter.LastRate.Should().BeNull();
+        samplerFactory.RequestedRates.Should().Equal(DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond);
     }
 
     private static ConfigurationUpdater CreateUpdater(
@@ -270,7 +268,7 @@ public class ConfigurationUpdaterTests
 
         var addedProbesCapture = addedProbes;
         var removedProbeIdsCapture = removedProbeIds;
-        var updater = ConfigurationUpdater.Create("env", "version", maxProbesPerType);
+        var updater = ConfigurationUpdater.Create("env", "version", maxProbesPerType, CreateGlobalRateLimiter(out _));
         updater.SetProbeInstrumentationHandlers(
             probes =>
             {
@@ -305,39 +303,20 @@ public class ConfigurationUpdaterTests
         return (ProbeConfiguration)field!.GetValue(updater)!;
     }
 
-    private sealed class GlobalRateLimiterMock : IDebuggerGlobalRateLimiter
+    private static DebuggerGlobalRateLimiter CreateGlobalRateLimiter(out RecordingSamplerFactory samplerFactory)
     {
-        public double? LastRate { get; private set; }
+        samplerFactory = new RecordingSamplerFactory();
+        return new DebuggerGlobalRateLimiter(samplerFactory.Create, new NullLogRateLimiter());
+    }
 
-        public int SetRateCallCount { get; private set; }
+    private sealed class RecordingSamplerFactory
+    {
+        public List<int> RequestedRates { get; } = [];
 
-        public int ResetRateCallCount { get; private set; }
-
-        public bool ShouldSampleSnapshot(string probeId) => true;
-
-        public void Initialize()
+        public IAdaptiveSampler Create(int samplesPerSecond)
         {
-        }
-
-        public void SetRate(double? samplesPerSecond)
-        {
-            SetRateCallCount++;
-            LastRate = samplesPerSecond;
-        }
-
-        public void ResetRate()
-        {
-            ResetRateCallCount++;
-        }
-
-        public void ResetCounters()
-        {
-            SetRateCallCount = 0;
-            ResetRateCallCount = 0;
-        }
-
-        public void Dispose()
-        {
+            RequestedRates.Add(samplesPerSecond);
+            return NopAdaptiveSampler.Instance;
         }
     }
 }

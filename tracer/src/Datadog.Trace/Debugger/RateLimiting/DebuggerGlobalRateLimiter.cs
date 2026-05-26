@@ -12,14 +12,13 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.RateLimiting
 {
-    internal sealed class DebuggerGlobalRateLimiter : IDebuggerGlobalRateLimiter
+    internal sealed class DebuggerGlobalRateLimiter : IDisposable
     {
         internal const int DefaultSnapshotSamplesPerSecond = 100;
 
         private const int LogCooldownSeconds = 60;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerGlobalRateLimiter));
-        private static readonly Lazy<DebuggerGlobalRateLimiter> InstanceLazy = new(() => new DebuggerGlobalRateLimiter());
 
         private readonly Func<int, IAdaptiveSampler> _samplerFactory;
         private readonly ILogRateLimiter _logRateLimiter;
@@ -35,20 +34,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         internal DebuggerGlobalRateLimiter(Func<int, IAdaptiveSampler> samplerFactory, ILogRateLimiter logRateLimiter)
         {
-            _samplerFactory = samplerFactory ?? throw new ArgumentNullException(nameof(samplerFactory));
-            _logRateLimiter = logRateLimiter ?? throw new ArgumentNullException(nameof(logRateLimiter));
+            _samplerFactory = samplerFactory;
+            _logRateLimiter = logRateLimiter;
             _snapshotSampler = NopAdaptiveSampler.Instance;
-            ResetRate();
-        }
-
-        internal static DebuggerGlobalRateLimiter Instance => InstanceLazy.Value;
-
-        internal static void TryDisposeInstance()
-        {
-            if (InstanceLazy.IsValueCreated)
-            {
-                InstanceLazy.Value.Dispose();
-            }
         }
 
         public bool ShouldSampleSnapshot(string probeId)
@@ -68,7 +56,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             lock (_lifetimeLock)
             {
-                _disposed = false;
+                if (_disposed)
+                {
+                    return;
+                }
+
                 ReplaceSampler(DefaultSnapshotSamplesPerSecond);
             }
         }
@@ -116,7 +108,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 }
 
                 _disposed = true;
-                AdaptiveSamplerLifetime.Dispose(ref _snapshotSampler);
+                // Exchange first so future readers observe a rejecting sampler while the old
+                // timer-backed sampler is being disposed.
+                AdaptiveSamplerLifetime.Dispose(Interlocked.Exchange(ref _snapshotSampler, RejectingAdaptiveSampler.Instance));
             }
         }
 

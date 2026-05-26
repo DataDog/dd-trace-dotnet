@@ -54,6 +54,7 @@ namespace Datadog.Trace.Debugger
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
         private readonly DebuggerSettings _settings;
+        private readonly DebuggerGlobalRateLimiter _globalRateLimiter;
         private readonly NativeProbeInstrumentationRequester _instrumentProbes;
         private readonly object _instanceLock = new();
         private int _disposeState;
@@ -71,7 +72,7 @@ namespace Datadog.Trace.Debugger
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats,
-            IDebuggerGlobalRateLimiter? globalRateLimiter = null,
+            DebuggerGlobalRateLimiter globalRateLimiter,
             NativeProbeInstrumentationRequester? instrumentProbes = null)
         {
             Log.Information("Initializing Dynamic Instrumentation");
@@ -87,10 +88,11 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater = configurationUpdater;
             _configurationUpdater.SetProbeInstrumentationHandlers(UpdateAddedProbeInstrumentations, UpdateRemovedProbeInstrumentations);
             _dogStats = dogStats;
+            _globalRateLimiter = globalRateLimiter;
             _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
             _lastReportedUnboundProbeErrors = new Dictionary<string, LineProbeResolveErrorKey>();
-            (globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance).Initialize();
+            _globalRateLimiter.Initialize();
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -269,7 +271,7 @@ namespace Datadog.Trace.Debugger
                                             lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                             _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
-                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _globalRateLimiter);
                                             SetRateLimit(addedProbe);
                                             break;
                                         case LiveProbeResolveStatus.Unbound:
@@ -308,7 +310,7 @@ namespace Datadog.Trace.Debugger
                                     {
                                         var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
                                         methodProbes.Add(nativeDefinition);
-                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _globalRateLimiter);
                                         SetRateLimit(addedProbe);
                                     }
 
@@ -649,7 +651,7 @@ namespace Datadog.Trace.Debugger
                     // configured rate would never take effect for that probe.
                     foreach (var boundProbe in boundProbes)
                     {
-                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe);
+                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _globalRateLimiter);
                         SetRateLimit(boundProbe);
                     }
 

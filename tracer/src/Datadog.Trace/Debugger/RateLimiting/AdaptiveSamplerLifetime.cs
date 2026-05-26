@@ -34,7 +34,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public static void Dispose(IAdaptiveSampler sampler)
         {
-            if (!ReferenceEquals(sampler, NopAdaptiveSampler.Instance))
+            if (!ReferenceEquals(sampler, NopAdaptiveSampler.Instance) &&
+                !ReferenceEquals(sampler, RejectingAdaptiveSampler.Instance))
             {
                 sampler.Dispose();
             }

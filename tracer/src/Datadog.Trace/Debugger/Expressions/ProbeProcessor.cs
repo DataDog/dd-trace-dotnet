@@ -28,23 +28,19 @@ namespace Datadog.Trace.Debugger.Expressions
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
-        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
+        private readonly DebuggerGlobalRateLimiter _globalRateLimiter;
         private volatile ProbeProcessorState _state;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
         /// </summary>
         /// <param name="probe">A probe that can pe log probe, metric probe or span decoration probe</param>
+        /// <param name="globalRateLimiter">Process-wide debugger snapshot rate limiter</param>
         /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
-        internal ProbeProcessor(ProbeDefinition probe)
-            : this(probe, DebuggerGlobalRateLimiter.Instance)
+        internal ProbeProcessor(ProbeDefinition probe, DebuggerGlobalRateLimiter globalRateLimiter)
         {
-        }
-
-        internal ProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
-        {
-            _globalRateLimiter = globalRateLimiter ?? throw new ArgumentNullException(nameof(globalRateLimiter));
+            _globalRateLimiter = globalRateLimiter;
             _state = ProbeProcessorState.Create(probe);
         }
 
