@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Nuke.Common;
@@ -118,10 +119,24 @@ partial class Build
         var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
         var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
-        FileSystemTasks.EnsureCleanDirectory(target);
+        // Fail fast on stalled connections (default git timeout is ~10 min) so the retry loop can recover.
+        var cloneCommand = $"-c http.lowSpeedLimit=1000 -c http.lowSpeedTime=60 clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
 
-        var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
-        GitTasks.Git(cloneCommand);
+        const int maxAttempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            FileSystemTasks.EnsureCleanDirectory(target);
+            try
+            {
+                GitTasks.Git(cloneCommand);
+                break;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                Logger.Warning(ex, "git clone of {Repo} failed on attempt {Attempt}/{MaxAttempts}, retrying...", testDescription.Name, attempt, maxAttempts);
+                Thread.Sleep(TimeSpan.FromSeconds(5 * attempt));
+            }
+        }
 
         var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
         if (!Directory.Exists(projectPath))
