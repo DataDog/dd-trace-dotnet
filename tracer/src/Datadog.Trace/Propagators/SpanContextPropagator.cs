@@ -21,11 +21,7 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
-        // Datadog scan/test markers, tagged unconditionally on HTTP server entry spans so
-        // the API endpoint reducer can distinguish scan/test traffic from real user traffic
-        // and keep it out of the API inventory. Header and tag names are compile-time
-        // constants — no per-request string concatenation. The set is fixed at two by RFC,
-        // so AddSecurityTestingHeadersAsTags inlines both lookups rather than iterating.
+        // Datadog scan/test markers tagged on every HTTP server entry span.
         private const string EndpointScanHeader = "x-datadog-endpoint-scan";
         private const string SecurityTestHeader = "x-datadog-security-test";
         private const string EndpointScanTag = HttpRequestHeadersTagPrefix + "." + EndpointScanHeader;
@@ -264,18 +260,8 @@ namespace Datadog.Trace.Propagators
             ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, useragent);
         }
 
-        // Tags the Datadog scan/test markers (x-datadog-endpoint-scan, x-datadog-security-test)
-        // on the span as http.request.headers.<name>, regardless of DD_TRACE_HEADER_TAGS or
-        // AppSec enablement. Empty values are still tagged: per RFC the marker is presence-based.
-        // The two headers are inlined rather than driven by a loop: the set is fixed at two and
-        // this runs on every HTTP server entry span, so we avoid the foreach + array overhead.
-        // Every in-tree HTTP server `IHeadersCollection` we call from (HeadersCollectionAdapter,
-        // NameValueHeadersCollection, WebHeadersCollection, plus the ClrProfiler AspNet
-        // HttpHeadersCollection used by Web API 2) returns an `IList<string>` at runtime — either
-        // a `string[]`, a boxed `StringValues`, or the `string[]` materialized by the BCL's
-        // `HttpHeaders.TryGetValues`. A future non-IList `IEnumerable<string>` carrier would
-        // silently lose the markers; that's an accepted contract bet rather than a foreach
-        // fallback, since the alternative is restoring per-request enumerator allocation.
+        // Tags the scan/test markers on the span as http.request.headers.<name>.
+        // Always tagged, regardless of DD_TRACE_HEADER_TAGS or AppSec. Empty values tagged.
         public void AddSecurityTestingHeadersAsTags<THeaders>(ISpan span, THeaders headers)
             where THeaders : IHeadersCollection
         {
