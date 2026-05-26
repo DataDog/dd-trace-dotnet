@@ -107,7 +107,7 @@ public class ManagedApiOtlpTests
         exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri("unix:///var/run/datadog/otlp.socket"));
     }
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [Theory]
     [InlineData("grpc",          "http://localhost")]
     [InlineData("http/protobuf", "http://localhost/v1/traces")]
