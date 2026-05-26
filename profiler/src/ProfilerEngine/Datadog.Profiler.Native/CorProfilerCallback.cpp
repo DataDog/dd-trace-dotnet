@@ -1572,7 +1572,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
     }
 
-    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get(), _pLibrariesInfoCache);
+    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get()
+#ifdef LINUX
+        , _pLibrariesInfoCache
+#endif
+    );
 
     // create services without starting them
     InitializeServices();

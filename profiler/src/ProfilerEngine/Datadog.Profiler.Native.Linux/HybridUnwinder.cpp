@@ -12,6 +12,7 @@
 
 #include "FrameStore.h"
 
+#include <cstring>
 #include <ucontext.h>
 
 #ifndef ARM64
@@ -292,12 +293,16 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
     ucontext_t localContext;
     if (ctx == nullptr)
     {
-        if (getcontext(&localContext) != 0)
-        {
-            if (recorder)
-                recorder->RecordFinish(0, FinishReason::FailedGetContext);
-            return 0;
-        }
+        std::memset(&localContext, 0, sizeof(localContext));
+
+        localContext.uc_mcontext.regs[29] = reinterpret_cast<uintptr_t>(__builtin_frame_address(0));
+        localContext.uc_mcontext.regs[30] = reinterpret_cast<uintptr_t>(__builtin_return_address(0));
+        localContext.uc_mcontext.pc = localContext.uc_mcontext.regs[30];
+
+        uintptr_t sp;
+        __asm__ volatile("mov %0, sp" : "=r"(sp));
+        localContext.uc_mcontext.sp = sp;
+
         ctx = &localContext;
     }
 
