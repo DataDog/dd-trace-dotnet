@@ -6,6 +6,8 @@
 #include "MemoryResourceManager.h"
 #include "LibrariesInfoCache.h"
 
+#include <cstdlib>
+
 #ifndef ARM64
 #include "Backtrace2Unwinder.h"
 #endif
@@ -88,3 +90,123 @@ TEST(LibrariesInfoCacheTests, CheckBehaviorAgainstDlIteratePhdr)
         ASSERT_EQ(cache[i].size, cache2[i].size);
     }
 }
+
+#ifdef ARM64
+__attribute__((noinline)) void KnownTestFunction_ForGetProcNameTest()
+{
+    asm volatile("");
+}
+
+__attribute__((noinline)) int KnownTestFunction_Second(int x)
+{
+    asm volatile("");
+    return x + 1;
+}
+
+__attribute__((noinline)) int KnownTestFunction_Third(int x, int y)
+{
+    asm volatile("");
+    return x * y;
+}
+
+TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForKnownFunction)
+{
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    ServiceWrapper serviceWrapper(&libCache);
+
+    auto ip = reinterpret_cast<unw_word_t>(&KnownTestFunction_ForGetProcNameTest);
+
+    char buf[128] = {};
+    unw_word_t offp = 0;
+
+    auto* as = static_cast<unw_addr_space_t>(LibrariesInfoCache::GetLocalAddressSpace());
+    int rc = LibrariesInfoCache::GetProcName(as, ip, buf, sizeof(buf), &offp, nullptr);
+
+    ASSERT_EQ(rc, 0) << "GetProcName failed for a known function address";
+    ASSERT_EQ(offp, 0u);
+}
+
+TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForMultipleKnownFunctions)
+{
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    ServiceWrapper serviceWrapper(&libCache);
+
+    auto* as = static_cast<unw_addr_space_t>(LibrariesInfoCache::GetLocalAddressSpace());
+
+    // Test functions from this binary (noinline, guaranteed symbol table entries)
+    // plus qsort from libc: pure C on both glibc and musl, no IFUNC, no assembly,
+    // always has st_size > 0 — unlike strlen/memcpy which are IFUNC-dispatched on
+    // ARM64 glibc with st_size == 0 assembly implementations.
+    std::vector<unw_word_t> testIps = {
+        reinterpret_cast<unw_word_t>(&KnownTestFunction_ForGetProcNameTest),
+        reinterpret_cast<unw_word_t>(&KnownTestFunction_Second),
+        reinterpret_cast<unw_word_t>(&KnownTestFunction_Third),
+        reinterpret_cast<unw_word_t>(&qsort),
+    };
+
+    for (auto ip : testIps)
+    {
+        char buf[128] = {};
+        unw_word_t offp = 0;
+        int rc = LibrariesInfoCache::GetProcName(as, ip, buf, sizeof(buf), &offp, nullptr);
+
+        ASSERT_EQ(rc, 0) << "GetProcName failed for ip=0x" << std::hex << ip;
+        ASSERT_EQ(offp, 0u) << "Offset at entry should be 0 for ip=0x" << std::hex << ip;
+    }
+}
+
+TEST(LibrariesInfoCacheTests, GetProcNameReturnsOffsetForAddressInsideFunction)
+{
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    ServiceWrapper serviceWrapper(&libCache);
+
+    auto funcAddr = reinterpret_cast<unw_word_t>(&KnownTestFunction_Third);
+    auto ip = funcAddr + 4;
+
+    char buf[128] = {};
+    unw_word_t offp = 0;
+
+    auto* as = static_cast<unw_addr_space_t>(LibrariesInfoCache::GetLocalAddressSpace());
+    int rc = LibrariesInfoCache::GetProcName(as, ip, buf, sizeof(buf), &offp, nullptr);
+
+    ASSERT_EQ(rc, 0) << "GetProcName failed for address inside KnownTestFunction_Third";
+    ASSERT_EQ(offp, 4u) << "Offset should reflect distance from function start";
+}
+
+TEST(LibrariesInfoCacheTests, GetProcNameFailsForBogusAddress)
+{
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    ServiceWrapper serviceWrapper(&libCache);
+
+    unw_word_t ip = 0x1;
+
+    char buf[128] = {};
+    unw_word_t offp = 0;
+
+    auto* as = static_cast<unw_addr_space_t>(LibrariesInfoCache::GetLocalAddressSpace());
+    int rc = LibrariesInfoCache::GetProcName(as, ip, buf, sizeof(buf), &offp, nullptr);
+
+    ASSERT_NE(rc, 0) << "GetProcName should fail for an unmapped address";
+}
+
+TEST(LibrariesInfoCacheTests, GetProcNameReplacesAndRestoresOriginalAccessor)
+{
+    auto* as = static_cast<unw_addr_space_t>(LibrariesInfoCache::GetLocalAddressSpace());
+    unw_accessors_t* acc = unw_get_accessors(as);
+
+    auto originalGetProcName = acc->get_proc_name;
+
+    {
+        LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+        ServiceWrapper serviceWrapper(&libCache);
+
+        ASSERT_EQ(acc->get_proc_name, &LibrariesInfoCache::GetProcName)
+            << "get_proc_name should point to LibrariesInfoCache::GetProcName after Start";
+        ASSERT_NE(acc->get_proc_name, originalGetProcName)
+            << "get_proc_name should differ from the original after Start";
+    }
+
+    ASSERT_EQ(acc->get_proc_name, originalGetProcName)
+        << "get_proc_name should be restored to the original after Stop";
+}
+#endif
