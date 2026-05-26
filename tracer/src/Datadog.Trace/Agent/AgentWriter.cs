@@ -94,16 +94,18 @@ namespace Datadog.Trace.Agent
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
 
-            ISpanBufferSerializer spanBufferSerializer = api.TracesEncoding switch
+            ISpanBufferSerializer CreateSpanSerializer() => api.TracesEncoding switch
             {
                 TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
+                TracesEncoding.OtlpProtobuf => new OtlpTracesProtobufSerializer(),
                 _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
             };
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
-            _frontBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
-            _backBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
+            // OtlpTracesProtobufSerializer is stateful, so we need to create a new instance for each buffer.
+            _frontBuffer = new SpanBuffer(maxBufferSize, CreateSpanSerializer());
+            _backBuffer = new SpanBuffer(maxBufferSize, CreateSpanSerializer());
             _activeBuffer = _frontBuffer;
 
             _apmTracingEnabled = apmTracingEnabled;

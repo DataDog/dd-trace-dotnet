@@ -76,6 +76,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "network.protocol.name"
         };
 
+        // Single source of truth for translating an OTLP http/protobuf payload (rendered as JSON
+        // by the test agent with snake_case field names and string-form enum values) to the
+        // OTLP http/json shape (camelCase field names, integer enum values). When a new OTLP
+        // field or enum reaches the serializer, add the mapping here.
+        private static readonly (string From, string To)[] ProtobufToJsonFieldNameMappings =
+        {
+            ("\"resource_spans\"",        "\"resourceSpans\""),
+            ("\"scope_spans\"",           "\"scopeSpans\""),
+            ("\"trace_id\"",              "\"traceId\""),
+            ("\"span_id\"",               "\"spanId\""),
+            ("\"parent_span_id\"",        "\"parentSpanId\""),
+            ("\"start_time_unix_nano\"",  "\"startTimeUnixNano\""),
+            ("\"end_time_unix_nano\"",    "\"endTimeUnixNano\""),
+            ("\"time_unix_nano\"",        "\"timeUnixNano\""),
+            ("\"string_value\"",          "\"stringValue\""),
+            ("\"double_value\"",          "\"doubleValue\""),
+            ("\"int_value\"",             "\"intValue\""),
+            ("\"bool_value\"",            "\"boolValue\""),
+            ("\"array_value\"",           "\"arrayValue\""),
+        };
+
+        private static readonly (string From, string To)[] ProtobufToJsonEnumMappings =
+        {
+            ("\"kind\": \"SPAN_KIND_INTERNAL\"", "\"kind\": 1"),
+            ("\"kind\": \"SPAN_KIND_SERVER\"",   "\"kind\": 2"),
+            ("\"kind\": \"SPAN_KIND_CLIENT\"",   "\"kind\": 3"),
+            ("\"kind\": \"SPAN_KIND_PRODUCER\"", "\"kind\": 4"),
+            ("\"kind\": \"SPAN_KIND_CONSUMER\"", "\"kind\": 5"),
+            ("\"code\": \"STATUS_CODE_UNSET\"",  "\"code\": 0"),
+            ("\"code\": \"STATUS_CODE_OK\"",     "\"code\": 1"),
+            ("\"code\": \"STATUS_CODE_ERROR\"",  "\"code\": 2"),
+        };
+
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
@@ -110,10 +143,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manualy if needed.
+                // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manually if needed.
                 // yield return [packageVersion[0], "false", "true", "http/protobuf", false];
                 yield return [packageVersion[0], "true", "false", "http/json", false];
                 yield return [packageVersion[0], "true", "false", "http/json", true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true];
             }
         }
 
@@ -229,7 +264,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-#if NET6_0_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTracesTestData))]
@@ -250,7 +284,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => string.Empty
             };
 
-            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD_{protocol.Replace("/", "_")}";
+            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD";
 
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
@@ -411,10 +445,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var @event in tracesRequests.SelectTokens("$..events[*]"))
                 {
-                    if (@event[timeUnixNanoKey] != null)
-                    {
-                        @event[timeUnixNanoKey] = "0";
-                    }
+                    ((JObject)@event).Remove(timeUnixNanoKey);
+                    ((JObject)@event).AddFirst(new JProperty(timeUnixNanoKey, "0"));
                 }
 
                 // For the Datadog SDK, perform more sanitization
@@ -494,6 +526,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpRegex, @"string_value"": ""System.ArgumentException: Example argument exception""");
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpJsonRegex, @"stringValue"": ""System.ArgumentException: Example argument exception""");
+
+                // Add scrubbers only for http/protobuf
+                if (protocol == "http/protobuf")
+                {
+                    AddProtobufToJsonScrubbers(settings);
+                }
+
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpTraces{snapshotName}";
 
                 await Verifier.Verify(finalJson, settings)
@@ -501,7 +540,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
-#endif
 
 #if NET6_0_OR_GREATER
         [SkippableTheory]
@@ -925,6 +963,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             return string.Empty;
+        }
+
+        private static void AddProtobufToJsonScrubbers(VerifyTests.VerifySettings settings)
+        {
+            foreach (var (from, to) in ProtobufToJsonFieldNameMappings)
+            {
+                settings.AddSimpleScrubber(from, to);
+            }
+
+            foreach (var (from, to) in ProtobufToJsonEnumMappings)
+            {
+                settings.AddSimpleScrubber(from, to);
+            }
         }
     }
 }
