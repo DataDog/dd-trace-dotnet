@@ -242,11 +242,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             private static readonly string? OperationName;
             private static readonly IntegrationId IntegrationId;
 
-            // ServiceName cache
-            private static KeyValuePair<string, ServiceNameMetadata> _serviceNameCache;
+            // Single-slot caches stored as reference-type nodes so that reads and writes are
+            // pointer-sized (8 bytes on 64-bit) and therefore atomic on all .NET runtimes.
+            // Previously these were KeyValuePair<string, TValue> structs (24 bytes on 64-bit),
+            // which are NOT atomically readable/writable. A torn read could expose a stale
+            // Value while the Key was already updated, causing _dd.svc_src to be dropped on
+            // the span and the system-test Test_SqlServiceNameSource to fail intermittently.
+            private sealed class ServiceNameCacheNode(string key, ServiceNameMetadata value)
+            {
+                public readonly string Key = key;
+                public readonly ServiceNameMetadata Value = value;
+            }
 
-            // ConnectionString tags cache
-            private static KeyValuePair<string, DbCommandCache.TagsCacheItem> _tagsByConnectionStringCache;
+            private sealed class TagsCacheNode(string key, DbCommandCache.TagsCacheItem value)
+            {
+                public readonly string Key = key;
+                public readonly DbCommandCache.TagsCacheItem Value = value;
+            }
+
+            // ServiceName cache (reference-type node — atomic pointer swap)
+            private static ServiceNameCacheNode? _serviceNameCache;
+
+            // ConnectionString tags cache (reference-type node — atomic pointer swap)
+            private static TagsCacheNode? _tagsByConnectionStringCache;
             // ReSharper restore StaticMemberInGenericType
 
             static Cache()
@@ -322,10 +340,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return tracer.CurrentTraceSettings.GetServiceNameMetadata(dbTypeName);
                 }
 
-                var serviceNameCache = _serviceNameCache;
+                var serviceNameCache = Volatile.Read(ref _serviceNameCache);
 
                 // If not a base class
-                if (serviceNameCache.Key == tracer.DefaultServiceName)
+                if (serviceNameCache?.Key == tracer.DefaultServiceName)
                 {
                     // Service has not changed
                     // Fastpath
@@ -336,7 +354,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 // Slowpath
                 var defaultServiceName = tracer.DefaultServiceName;
                 var metadata = tracer.CurrentTraceSettings.GetServiceNameMetadata(dbTypeName);
-                _serviceNameCache = new KeyValuePair<string, ServiceNameMetadata>(defaultServiceName, metadata);
+                Volatile.Write(ref _serviceNameCache, new ServiceNameCacheNode(defaultServiceName, metadata));
 
                 return metadata;
             }
@@ -368,8 +386,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
 
                 // Check if the connection string is the one in the cache
-                var tagsByConnectionString = _tagsByConnectionStringCache;
-                if (tagsByConnectionString.Key == connectionString)
+                var tagsByConnectionString = Volatile.Read(ref _tagsByConnectionStringCache);
+                if (tagsByConnectionString?.Key == connectionString)
                 {
                     // Fastpath
                     return tagsByConnectionString.Value;
@@ -378,7 +396,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 // Cache the new tags by connection string
                 // Slowpath
                 var tags = DbCommandCache.GetTagsFromDbCommand(command);
-                _tagsByConnectionStringCache = new KeyValuePair<string, DbCommandCache.TagsCacheItem>(connectionString, tags);
+                Volatile.Write(ref _tagsByConnectionStringCache, new TagsCacheNode(connectionString, tags));
                 return tags;
             }
         }
