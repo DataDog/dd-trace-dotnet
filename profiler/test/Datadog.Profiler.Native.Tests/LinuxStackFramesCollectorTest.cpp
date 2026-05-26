@@ -164,10 +164,14 @@ public:
         _stopWorker = false;
         _workerThread = std::make_unique<WorkerThread>(_stopWorker);
 
+        _librariesInfoCache = std::make_unique<LibrariesInfoCache>(MemoryResourceManager::GetDefault());
+        _librariesInfoCache->Start();
+
 #ifdef ARM64
         // TODO maybe a mock of ICorProfilerInfo to avoid crashing
         _pManagedCodeCache = std::make_unique<ManagedCodeCache>(nullptr);
-        _pUnwinder = std::make_unique<HybridUnwinder>(_pManagedCodeCache.get());
+        _pUnwinder = std::make_unique<HybridUnwinder>(
+            _pManagedCodeCache.get(), _librariesInfoCache->GetDeltaMapAtomicPtr());
 #else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
 #endif
@@ -177,9 +181,6 @@ public:
         _processId = OpSysTools::GetProcId();
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
         inside_wrapped_functions = 0;
-
-        _librariesInfoCache = std::make_unique<LibrariesInfoCache>(MemoryResourceManager::GetDefault());
-        _librariesInfoCache->Start();
     }
 
     void TearDown() override

@@ -183,7 +183,7 @@ void CorProfilerCallback::InitializeServices()
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
     // TODO add metrics to measure if it's ok or not
-    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
+    _pLibrariesInfoCache = RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(
@@ -635,7 +635,7 @@ void CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
 #ifdef ARM64
-        _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
+        _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get(), nullptr);
 #else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
 #endif
@@ -1572,7 +1572,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
     }
 
-    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get());
+    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get(), _pLibrariesInfoCache);
 
     // create services without starting them
     InitializeServices();
@@ -2341,7 +2341,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     // To prevent that, we call the unwinder here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
 #ifdef ARM64
-    HybridUnwinder warmup(_managedCodeCache.get());
+    HybridUnwinder warmup(_managedCodeCache.get(), nullptr);
 #else
     Backtrace2Unwinder warmup;
 #endif

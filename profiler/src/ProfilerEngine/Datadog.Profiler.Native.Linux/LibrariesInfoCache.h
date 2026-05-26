@@ -6,6 +6,7 @@
 #include <libunwind.h>
 
 #include "DlPhdrInfoWrapper.h"
+#include "StackDeltaMap.h"
 
 #include "AutoResetEvent.h"
 #include "MemoryResourceManager.h"
@@ -34,6 +35,22 @@ public:
 
     const char* GetName() final override;
 
+    // Returns the current stack delta map. The returned pointer is valid until
+    // the next UpdateCache() call swaps it out. Signal-safe: the map is
+    // immutable once published.
+    const StackDeltaMap* GetDeltaMap() const
+    {
+        return _activeDeltaMap.load(std::memory_order_acquire);
+    }
+
+    // Returns a pointer to the internal atomic that holds the active delta map.
+    // HybridUnwinder stores this pointer and does atomic loads from the
+    // signal handler, avoiding any locking.
+    const std::atomic<StackDeltaMap*>* GetDeltaMapAtomicPtr() const
+    {
+        return &_activeDeltaMap;
+    }
+
 protected:
     bool StartImpl() final override;
     bool StopImpl() final override;
@@ -52,6 +69,7 @@ private:
     static void NotifyCacheUpdate();
 
     void UpdateCache();
+    void BuildDeltaMap();
     int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
     void Work(std::shared_ptr<AutoResetEvent> startEvent);
 
@@ -59,6 +77,14 @@ private:
 
     std::shared_mutex _cacheLock;
     std::vector<DlPhdrInfoWrapper> _librariesInfo;
+
+    // Double-buffered delta maps for lock-free signal-handler reads.
+    // The background thread builds into the staging map and atomically
+    // publishes it, then the previously active map becomes the next
+    // staging buffer.
+    std::unique_ptr<StackDeltaMap> _deltaMapA = std::make_unique<StackDeltaMap>();
+    std::unique_ptr<StackDeltaMap> _deltaMapB = std::make_unique<StackDeltaMap>();
+    std::atomic<StackDeltaMap*> _activeDeltaMap{nullptr};
 
     std::thread _worker;
     std::atomic<bool> _stopRequested;

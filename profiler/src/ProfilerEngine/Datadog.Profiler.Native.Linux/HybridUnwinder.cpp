@@ -5,19 +5,18 @@
 
 #include "Callstack.h"
 #include "ManagedCodeCache.h"
+#include "StackDeltaMap.h"
+#include "StackDeltaTypes.h"
 
 #include "UnwindingRecorder.h"
 
 #include "FrameStore.h"
 
-#define UNW_LOCAL_ONLY
-#include <libunwind.h>
+#include <ucontext.h>
 
 #ifndef ARM64
 #error "HybridUnwinder is only supported on aarch64"
 #endif
-
-#define UNW_REG_FP UNW_AARCH64_X29
 
 static inline bool IsValidFp(uintptr_t fp, uintptr_t prevFp,
                              uintptr_t stackBase, uintptr_t stackEnd)
@@ -39,157 +38,198 @@ static inline bool IsValidFp(uintptr_t fp, uintptr_t prevFp,
     return true;
 }
 
-HybridUnwinder::HybridUnwinder(ManagedCodeCache* managedCodeCache) :
-    _codeCache(managedCodeCache)
+// Resolve a register value from the virtual register ID.
+static inline uintptr_t ResolveReg(UnwindReg reg, uintptr_t sp, uintptr_t fp, uintptr_t lr)
+{
+    switch (reg)
+    {
+        case UnwindReg::Sp: return sp;
+        case UnwindReg::Fp: return fp;
+        case UnwindReg::Lr: return lr;
+        default: return 0;
+    }
+}
+
+HybridUnwinder::HybridUnwinder(ManagedCodeCache* managedCodeCache,
+                               const std::atomic<StackDeltaMap*>* deltaMapAtomicPtr) :
+    _codeCache(managedCodeCache),
+    _deltaMapAtomicPtr(deltaMapAtomicPtr)
 {
 }
 
-struct UnwindCursor
+bool HybridUnwinder::UnwindNativeFrames(void* ctx, Callstack& callstack,
+    UnwindingRecorder* recorder, uintptr_t& outIp, uintptr_t& outFp) const
 {
-    unw_cursor_t cursor;
-};
+    auto* uctx = reinterpret_cast<ucontext_t*>(ctx);
 
-bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack,
-    UnwindingRecorder* recorder) const
-{
-    unw_word_t ip = 0;
-    while (true)
+    const StackDeltaMap* deltaMap = nullptr;
+    if (_deltaMapAtomicPtr != nullptr)
+        deltaMap = _deltaMapAtomicPtr->load(std::memory_order_acquire);
+
+    if (deltaMap == nullptr || deltaMap->IsEmpty())
+        return false;
+
+    uintptr_t pc = uctx->uc_mcontext.pc;
+    uintptr_t sp = uctx->uc_mcontext.sp;
+    uintptr_t fp = uctx->uc_mcontext.regs[29]; // x29
+    uintptr_t lr = uctx->uc_mcontext.regs[30]; // x30
+
+    static constexpr int MaxNativeFrames = 128;
+    for (int i = 0; i < MaxNativeFrames; ++i)
     {
-        if (auto getResult = unw_get_reg(&cursor->cursor, UNW_REG_IP, &ip); getResult != 0 || ip == 0)
+        if (pc == 0)
         {
             if (recorder)
-            {
-                recorder->RecordFinish(getResult, FinishReason::FailedGetReg);
-            }
+                recorder->RecordFinish(0, FinishReason::FailedGetReg);
             return false;
         }
 
-        auto isManaged = _codeCache->IsManaged(ip);
+        auto isManaged = _codeCache->IsManaged(pc);
         if (isManaged.has_value())
         {
             if (isManaged.value())
             {
                 if (recorder)
-                {
-                    unw_word_t managedFp = 0;
-                    unw_get_reg(&cursor->cursor, UNW_REG_FP, &managedFp);
-                    recorder->Record(EventType::ManagedTransition, ip, managedFp);
-                }
-                break;
+                    recorder->Record(EventType::ManagedTransition, pc, fp);
+                outIp = pc;
+                outFp = fp;
+                return true;
             }
         }
         else
         {
             callstack.Add(FrameStore::UnknownFrameTypeIP);
             if (recorder)
-            {
                 recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::FailedIsManaged);
-            }
             return false;
         }
 
         if (recorder)
+            recorder->Record(EventType::NativeFrame, pc, fp, sp);
+
+        if (!callstack.Add(pc))
         {
-            unw_word_t sp = 0;
-            unw_word_t nativeFp = 0;
-            unw_get_reg(&cursor->cursor, UNW_AARCH64_SP, &sp);
-            unw_get_reg(&cursor->cursor, UNW_REG_FP, &nativeFp);
-            recorder->Record(EventType::NativeFrame, ip, nativeFp, sp);
-        }
-
-        if (!callstack.Add(ip))
-        {
-            if (recorder) recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
-            return false;
-        }
-
-        auto stepResult = unw_step(&cursor->cursor);
-        unw_cursor_snapshot_t snapshot;
-        unw_get_cursor_snapshot(&cursor->cursor, &snapshot);
-        bool unSafeStep = stepResult <= 0 || snapshot.step_method == UNW_STEP_FALLBACK_LR_NO_PROC_INFO;
-
-        if (recorder)
-        {
-            recorder->Record(EventType::LibunwindStep, stepResult, snapshot);
-        }
-
-        if (unSafeStep)
-        {
-            if (stepResult > 0)
-            {
-                stepResult = -UNW_STEP_FALLBACK_LR_NO_PROC_INFO;
-            }
-
             if (recorder)
-            {
-                recorder->RecordFinish(static_cast<std::int32_t>(stepResult), FinishReason::FailedLibunwindStep);
-            }
+                recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
             return false;
         }
+
+        const UnwindInfo* info = deltaMap->Lookup(pc);
+        if (info == nullptr)
+        {
+            if (recorder)
+                recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::FailedLibunwindStep);
+            return false;
+        }
+
+        if (info->IsCommand())
+        {
+            switch (info->GetCommand())
+            {
+                case UnwindCommand::Stop:
+                    if (recorder)
+                        recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::Success);
+                    return false;
+
+                case UnwindCommand::FramePointer:
+                {
+                    // Standard FP frame: [fp] = prev_fp, [fp+8] = saved_lr
+                    uintptr_t newFp = *reinterpret_cast<uintptr_t*>(fp);
+                    uintptr_t newPc = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
+                    sp = fp + 2 * sizeof(void*);
+                    lr = 0;
+                    fp = newFp;
+                    pc = newPc;
+                    continue;
+                }
+
+                case UnwindCommand::Signal:
+                {
+                    // Signal trampoline: the sigcontext is on the stack.
+                    // On aarch64: rt_sigframe at sp, sigcontext at sp + 128 + 176 + 8 = sp + 312
+                    // regs[0..30] at sigcontext, PC at sigcontext+32*8=sigcontext+256
+                    auto* sigRegs = reinterpret_cast<uintptr_t*>(sp + 312);
+                    fp = sigRegs[29];
+                    lr = sigRegs[30];
+                    sp = sigRegs[31];
+                    pc = sigRegs[32]; // saved PC in sigcontext
+                    continue;
+                }
+
+                case UnwindCommand::Invalid:
+                default:
+                    if (recorder)
+                        recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::FailedLibunwindStep);
+                    return false;
+            }
+        }
+
+        // General unwind expression: CFA = baseReg + param
+        uintptr_t cfa = ResolveReg(info->baseReg, sp, fp, lr) + info->param;
+
+        uintptr_t newPc;
+        if (info->auxBaseReg == UnwindReg::Lr)
+        {
+            // RA is still in LR (leaf function)
+            newPc = lr;
+        }
+        else
+        {
+            // RA is saved on stack at auxBaseReg + auxParam
+            uintptr_t raAddr = ResolveReg(info->auxBaseReg, sp, fp, lr) + info->auxParam;
+            newPc = *reinterpret_cast<uintptr_t*>(raAddr);
+        }
+
+        // TODO: recover FP from stack if the unwind info indicates it was saved
+        // For now, preserve current FP (works for most ARM64 code where FP is
+        // preserved across calls).
+        uintptr_t newFp = fp;
+
+        sp = cfa;
+        fp = newFp;
+        lr = 0; // LR is only valid for the topmost frame
+        pc = newPc;
     }
 
-    return true;
+    if (recorder)
+        recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::TooManyNativeFrames);
+    return false;
 }
 
-void HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callstack,
-    UnwindingRecorder* recorder,
+
+void HybridUnwinder::UnwindManagedFrames(uintptr_t ip, uintptr_t fp,
+    Callstack& callstack, UnwindingRecorder* recorder,
     std::uintptr_t stackBase, std::uintptr_t stackEnd) const
 {
-    unw_word_t ip = 0;
-    if (auto result = unw_get_reg(&cursor->cursor, UNW_REG_IP, &ip); result != 0 || ip == 0)
+    if (ip == 0)
     {
         if (recorder)
-        {
-            recorder->RecordFinish(static_cast<std::int32_t>(UNW_REG_IP), FinishReason::FailedGetReg);
-        }
+            recorder->RecordFinish(0, FinishReason::FailedGetReg);
         return;
     }
 
     if (!callstack.Add(ip))
     {
         if (recorder)
-        {
             recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
-        }
         return;
     }
 
-    unw_word_t fp = 0;
-    if (auto result = unw_get_reg(&cursor->cursor, UNW_REG_FP, &fp); result != 0 || !IsValidFp(fp, 0, stackBase, stackEnd))
+    if (!IsValidFp(fp, 0, stackBase, stackEnd))
     {
         if (recorder)
-        {
-            recorder->RecordFinish(static_cast<std::int32_t>(result), FinishReason::InvalidFp);
-        }
+            recorder->RecordFinish(0, FinishReason::InvalidFp);
         return;
     }
 
-    // For now we do not handle leaf function case.
-    // This is a TODO:
-    // The reason is that we may duplicate top frame in some cases.
-    // Instead, in a follow up PR, we will give unwinding info to the unwinder
-    // to make the callstack collection more accurate.
-
-    // Walk the FP chain.
-    // In .NET 10+, user managed code calls throw via 3 native frames before reaching
-    // the managed RhThrowEx:
-    //   IL_Throw (asm stub) -> IL_Throw_Impl (C++) -> DispatchManagedException (C++) -> RhThrowEx (managed)
-    // In .NET 9, SoftwareExceptionFrame::Init() additionally calls PAL_VirtualUnwind(),
-    // which adds 1-3 extra native frames, bringing the total to 5-6.
-    // We must skip these native frames rather than stopping, or we lose the caller frame.
-    // The limit of 8 consecutive non-managed frames (6 + 2 margin) stops useless walking
-    // once we leave the managed portion of the stack entirely (e.g., thread startup code).
     uintptr_t prevFp = 0;
     int consecutiveNativeFrames = 0;
     FinishReason finishReason = FinishReason::Success;
     while (true)
     {
-        auto ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
+        ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
         if (ip == 0)
-        {
-            // We hit the bottom of the stack. Most of the time, ip == 0  means end of calls
             break;
-        }
 
         if (recorder) recorder->Record(EventType::FrameChainStep, ip, fp);
 
@@ -199,9 +239,7 @@ void HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
             if (!callstack.Add(ip))
             {
                 if (recorder)
-                {
                     recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
-                }
                 break;
             }
             consecutiveNativeFrames = 0;
@@ -209,15 +247,12 @@ void HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
         else
         {
             static constexpr std::size_t MaxConsecutiveNativeFrames = 8;
-            // In case we were unable to identify, we assume it's a managed frame
             if (!isManaged.has_value())
             {
                 if (!callstack.Add(FrameStore::FakeUnknownIP))
                 {
                     if (recorder)
-                    {
                         recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), FinishReason::BufferFull);
-                    }
                     break;
                 }
             }
@@ -237,10 +272,7 @@ void HybridUnwinder::UnwindManagedFrames(UnwindCursor* cursor, Callstack& callst
         }
     }
     if (recorder)
-    {
         recorder->RecordFinish(static_cast<std::int32_t>(callstack.Size()), finishReason);
-    }
-    return;
 }
 
 std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
@@ -248,68 +280,37 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, Callstack& callstack,
                                     UnwindingRecorder* recorder) const
 {
     if (recorder)
-    {
         recorder->RecordStart(reinterpret_cast<ucontext_t*>(ctx));
-    }
 
     if (stackBase == 0 || stackEnd == 0)
     {
         if (recorder)
-        {
             recorder->RecordFinish(0, FinishReason::NoStackBounds);
-        }
         return 0;
     }
 
-    auto* context = reinterpret_cast<unw_context_t*>(ctx);
-    auto flag = static_cast<unw_init_local2_flags_t>(UNW_INIT_SIGNAL_FRAME);
-
-    unw_context_t localContext;
+    ucontext_t localContext;
     if (ctx == nullptr)
     {
-        flag = static_cast<unw_init_local2_flags_t>(0);
-        if (auto getResult = unw_getcontext(&localContext); getResult  != 0)
+        if (getcontext(&localContext) != 0)
         {
             if (recorder)
-            {
-                recorder->RecordFinish(getResult, FinishReason::FailedGetContext);
-            }
-            return -1;
+                recorder->RecordFinish(0, FinishReason::FailedGetContext);
+            return 0;
         }
-        context = &localContext;
+        ctx = &localContext;
     }
 
-    UnwindCursor unwindCursor{};
-    auto initResult = unw_init_local2(&unwindCursor.cursor, context, flag);
-    if (recorder)
-    {
-        unw_cursor_snapshot_t snapshot= {0};
-        unw_get_cursor_snapshot(&unwindCursor.cursor, &snapshot);
-        recorder->Record(EventType::InitCursor, initResult, snapshot);
-    }
-    if (initResult != 0)
-    {
-        if (recorder)
-        {
-            recorder->RecordFinish(initResult, FinishReason::FailedInitLocal2);
-        }
-        return -1;
-    }
+    // === Phase 1: Walk native frames using stack deltas (signal-safe, no locks) ===
+    uintptr_t managedIp = 0;
+    uintptr_t managedFp = 0;
+    bool reachedManaged = UnwindNativeFrames(ctx, callstack, recorder, managedIp, managedFp);
 
-    // === Phase 1: Walk native frames with libunwind until managed code is reached ===
-    auto keepOnUnwinding = UnwindNativeFrames(&unwindCursor, callstack, recorder);
-    if (!keepOnUnwinding)
-    {
-        // already recorded state
+    if (!reachedManaged)
         return callstack.Size();
-    }
 
     // === Phase 2: Walk managed frames using the FP chain ===
-    // The .NET JIT on arm64 always emits a frame record [prev_fp, saved_lr] for
-    // every managed method, so FP chaining is reliable once we enter managed code.
+    UnwindManagedFrames(managedIp, managedFp, callstack, recorder, stackBase, stackEnd);
 
-    UnwindManagedFrames(&unwindCursor, callstack, recorder, stackBase, stackEnd);
-
-    // Already recorded state in recorder
     return callstack.Size();
 }

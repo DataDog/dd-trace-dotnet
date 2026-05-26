@@ -28,6 +28,7 @@
 #include "IUnwinder.h"
 #ifdef ARM64
 #include "HybridUnwinder.h"
+#include "LibrariesInfoCache.h"
 #else
 #include "Backtrace2Unwinder.h"
 #endif
@@ -53,11 +54,15 @@ static auto ticks_per_second = sysconf(_SC_CLK_TCK);
 
 static IUnwinder* s_pUnwinder = nullptr;
 
-void InitializeUnwinder(ManagedCodeCache* managedCodeCache)
+void InitializeUnwinder(ManagedCodeCache* managedCodeCache, LibrariesInfoCache* librariesInfoCache)
 {
 #ifdef ARM64
-    static auto unwinder = std::make_unique<HybridUnwinder>(managedCodeCache);
+    const std::atomic<StackDeltaMap*>* deltaMapPtr = nullptr;
+    if (librariesInfoCache != nullptr)
+        deltaMapPtr = librariesInfoCache->GetDeltaMapAtomicPtr();
+    static auto unwinder = std::make_unique<HybridUnwinder>(managedCodeCache, deltaMapPtr);
 #else
+    (void)librariesInfoCache;
     static auto unwinder = std::make_unique<Backtrace2Unwinder>();
 #endif
     s_pUnwinder = unwinder.get();
