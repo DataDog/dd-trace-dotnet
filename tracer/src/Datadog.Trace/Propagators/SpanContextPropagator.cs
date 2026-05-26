@@ -24,11 +24,12 @@ namespace Datadog.Trace.Propagators
         // Datadog scan/test markers, tagged unconditionally on HTTP server entry spans so
         // the API endpoint reducer can distinguish scan/test traffic from real user traffic
         // and keep it out of the API inventory. Tag names are precomputed to avoid string
-        // concatenation per request.
-        private static readonly (string Header, string Tag)[] SecurityTestingHeaders =
+        // concatenation per request. Uses a struct rather than ValueTuple because
+        // System.ValueTuple is unavailable on the net461 BCL.
+        private static readonly SecurityTestingHeader[] SecurityTestingHeaders =
         [
-            ("x-datadog-endpoint-scan", HttpRequestHeadersTagPrefix + ".x-datadog-endpoint-scan"),
-            ("x-datadog-security-test", HttpRequestHeadersTagPrefix + ".x-datadog-security-test"),
+            new("x-datadog-endpoint-scan", HttpRequestHeadersTagPrefix + ".x-datadog-endpoint-scan"),
+            new("x-datadog-security-test", HttpRequestHeadersTagPrefix + ".x-datadog-security-test"),
         ];
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
@@ -270,9 +271,9 @@ namespace Datadog.Trace.Propagators
         public void AddSecurityTestingHeadersAsTags<THeaders>(ISpan span, THeaders headers)
             where THeaders : IHeadersCollection
         {
-            foreach (var (headerName, tagName) in SecurityTestingHeaders)
+            foreach (var entry in SecurityTestingHeaders)
             {
-                var values = headers.GetValues(headerName);
+                var values = headers.GetValues(entry.Header);
                 if (values is null)
                 {
                     continue;
@@ -287,7 +288,7 @@ namespace Datadog.Trace.Propagators
                 {
                     if (array.Length > 0)
                     {
-                        span.SetTag(tagName, array[0]);
+                        span.SetTag(entry.Tag, array[0]);
                     }
 
                     continue;
@@ -295,7 +296,7 @@ namespace Datadog.Trace.Propagators
 
                 foreach (var value in values)
                 {
-                    span.SetTag(tagName, value);
+                    span.SetTag(entry.Tag, value);
                     break;
                 }
             }
@@ -411,6 +412,18 @@ namespace Datadog.Trace.Propagators
             public void ProcessTag(string key, string? value)
             {
                 _span.SetTag(key, value);
+            }
+        }
+
+        private readonly struct SecurityTestingHeader
+        {
+            public readonly string Header;
+            public readonly string Tag;
+
+            public SecurityTestingHeader(string header, string tag)
+            {
+                Header = header;
+                Tag = tag;
             }
         }
 
