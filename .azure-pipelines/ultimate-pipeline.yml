@@ -2255,7 +2255,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_linux
-  dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]

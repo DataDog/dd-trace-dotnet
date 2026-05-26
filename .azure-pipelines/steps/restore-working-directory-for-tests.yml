@@ -1,4 +1,4 @@
-# downloads the working directory and the tracer + profiler home assets
+# downloads the working directory and the tracer + profiler home assets from build pipeline 202204
 # Beneficial as it can avoid the need to wait for the package stage
 parameters:
   - name: 'artifactSuffix'
@@ -6,9 +6,17 @@ parameters:
     default: 'linux-x64'
 
 steps:
-- template: ./restore-working-directory.yml
-  parameters:
-    artifact: build-${{ parameters.artifactSuffix }}-working-directory
+- task: DownloadPipelineArtifact@2
+  displayName: "Download build-${{ parameters.artifactSuffix }}-working-directory"
+  inputs:
+    buildType: 'specific'
+    artifactName: build-${{ parameters.artifactSuffix }}-working-directory
+    targetPath: $(System.DefaultWorkingDirectory)
+    patterns: "**/@(bin|obj|packages)/**"
+    project: 'dd-trace-dotnet'
+    definition: 54
+    buildVersionToDownload: 'specific'
+    pipelineId: 202204
 
 - bash: |
     input="${{ parameters.artifactSuffix }}"
@@ -16,12 +24,24 @@ steps:
     echo "setting universalArtifactSuffix to ${output}"
     echo "##vso[task.setvariable variable=universalArtifactSuffix]${output}"
 
-- template: download-artifact.yml
-  parameters:
-    artifact: linux-universal-home-$(universalArtifactSuffix)
-    path: $(monitoringHome)/${{ parameters.artifactSuffix }}
+- task: DownloadPipelineArtifact@2
+  displayName: "Download linux-universal-home-$(universalArtifactSuffix)"
+  inputs:
+    buildType: 'specific'
+    artifactName: linux-universal-home-$(universalArtifactSuffix)
+    targetPath: $(monitoringHome)/${{ parameters.artifactSuffix }}
+    project: 'dd-trace-dotnet'
+    definition: 54
+    buildVersionToDownload: 'specific'
+    pipelineId: 202204
 
-- template: download-artifact.yml
-  parameters:
-    artifact: linux-profiler-home-${{ parameters.artifactSuffix }}
-    path: $(monitoringHome)
+- task: DownloadPipelineArtifact@2
+  displayName: "Download linux-profiler-home-${{ parameters.artifactSuffix }}"
+  inputs:
+    buildType: 'specific'
+    artifactName: linux-profiler-home-${{ parameters.artifactSuffix }}
+    targetPath: $(monitoringHome)
+    project: 'dd-trace-dotnet'
+    definition: 54
+    buildVersionToDownload: 'specific'
+    pipelineId: 202204
