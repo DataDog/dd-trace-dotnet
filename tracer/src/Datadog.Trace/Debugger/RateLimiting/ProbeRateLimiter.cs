@@ -49,21 +49,21 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public IAdaptiveSampler GerOrAddSampler(string probeId)
         {
-            while (true)
+            if (_samplers.TryGetValue(probeId, out var existing))
             {
-                if (_samplers.TryGetValue(probeId, out var sampler))
-                {
-                    return sampler;
-                }
+                return existing;
+            }
 
-                var candidate = _samplerFactory(DefaultSamplesPerSecond);
-                if (_samplers.TryAdd(probeId, candidate))
-                {
-                    return candidate;
-                }
-
+            // Use GetOrAdd's value overload: the factory overload can run more than once
+            // under contention, leaking the losing sampler's Timer.
+            var candidate = _samplerFactory(DefaultSamplesPerSecond);
+            var sampler = _samplers.GetOrAdd(probeId, candidate);
+            if (!ReferenceEquals(sampler, candidate))
+            {
                 AdaptiveSamplerLifetime.Dispose(candidate);
             }
+
+            return sampler;
         }
 
         public bool TryAddSampler(string probeId, IAdaptiveSampler sampler)
