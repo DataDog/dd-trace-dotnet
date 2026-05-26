@@ -65,7 +65,10 @@ namespace Datadog.Trace.Tests
         public void DoesNotTagWhenHeadersAreAbsent(HeaderCollectionType headersType)
         {
             var headers = GetHeadersCollection(headersType);
-            headers.Add("content-type", "application/json");
+            // Use a custom header name rather than a well-known one (e.g. "content-type").
+            // WebHeaderCollection treats well-known request headers as restricted on .NET
+            // Framework and throws from `.Add(...)`.
+            headers.Add("x-other-header", "value");
 
             var span = CreateSpan();
             Propagator.AddSecurityTestingHeadersAsTags(span, headers);
