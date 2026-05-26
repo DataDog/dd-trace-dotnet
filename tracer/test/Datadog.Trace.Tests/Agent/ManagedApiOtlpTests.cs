@@ -16,34 +16,6 @@ namespace Datadog.Trace.Tests.Agent;
 
 public class ManagedApiOtlpTests
 {
-#if NETCOREAPP3_1_OR_GREATER
-    [Theory]
-    [InlineData("grpc",          "http://localhost:4317")]
-    [InlineData("http/protobuf", "http://localhost:4318/v1/traces")]
-    [InlineData("http/json",     "http://localhost:4318/v1/traces")]
-    public void GetTraces_WhenApmUsesUnixDomainSocket_UsesDefaultOtlpEndpoint(string protocol, string expectedEndpoint)
-    {
-        // APM UDS exists at the default path, but no OTLP endpoint is configured.
-        // The OTLP factory must NOT route through the APM UDS, and the default OTLP
-        // endpoint must include /v1/traces for HTTP protocols but not for grpc.
-        var source = BuildSource(
-            $"OTEL_EXPORTER_OTLP_PROTOCOL:{protocol}",
-            "OTEL_TRACES_EXPORTER:otlp");
-        Func<string, bool> fileExists = path => path == ExporterSettings.DefaultTracesUnixDomainSocket;
-        var exporterSettings = new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);
-
-        exporterSettings.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
-        exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri(expectedEndpoint));
-
-        var factory = OtlpTransportStrategy.GetTraces(exporterSettings);
-
-        // The factory must be a plain HttpClientRequestFactory, not a
-        // SocketHandlerRequestFactory (which would route through the APM UDS)
-        factory.Should().BeOfType<HttpClientRequestFactory>();
-        factory.GetEndpoint(null).Should().Be(new Uri(expectedEndpoint));
-    }
-#endif
-
     [Theory]
     [InlineData("grpc",          "http://otel-collector:4317", "http://otel-collector:4317")]
     [InlineData("http/protobuf", "http://otel-collector:4318", "http://otel-collector:4318/v1/traces")]
@@ -90,6 +62,33 @@ public class ManagedApiOtlpTests
         factory.GetEndpoint(null).Should().Be(new Uri(signalEndpoint));
     }
 
+#if NETCOREAPP3_1_OR_GREATER
+    [Theory]
+    [InlineData("grpc",          "http://localhost:4317")]
+    [InlineData("http/protobuf", "http://localhost:4318/v1/traces")]
+    [InlineData("http/json",     "http://localhost:4318/v1/traces")]
+    public void GetTraces_WhenApmUsesUnixDomainSocket_UsesDefaultOtlpEndpoint(string protocol, string expectedEndpoint)
+    {
+        // APM UDS exists at the default path, but no OTLP endpoint is configured.
+        // The OTLP factory must NOT route through the APM UDS, and the default OTLP
+        // endpoint must include /v1/traces for HTTP protocols but not for grpc.
+        var source = BuildSource(
+            $"OTEL_EXPORTER_OTLP_PROTOCOL:{protocol}",
+            "OTEL_TRACES_EXPORTER:otlp");
+        Func<string, bool> fileExists = path => path == ExporterSettings.DefaultTracesUnixDomainSocket;
+        var exporterSettings = new ExporterSettings(source, fileExists, NullConfigurationTelemetry.Instance);
+
+        exporterSettings.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+        exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri(expectedEndpoint));
+
+        var factory = OtlpTransportStrategy.GetTraces(exporterSettings);
+
+        // The factory must be a plain HttpClientRequestFactory, not a
+        // SocketHandlerRequestFactory (which would route through the APM UDS)
+        factory.Should().BeOfType<HttpClientRequestFactory>();
+        factory.GetEndpoint(null).Should().Be(new Uri(expectedEndpoint));
+    }
+
     [Theory]
     [InlineData("grpc")]
     [InlineData("http/protobuf")]
@@ -107,7 +106,6 @@ public class ManagedApiOtlpTests
         exporterSettings.OtlpTracesEndpoint.Should().Be(new Uri("unix:///var/run/datadog/otlp.socket"));
     }
 
-#if NET6_0_OR_GREATER
     [Theory]
     [InlineData("grpc",          "http://localhost")]
     [InlineData("http/protobuf", "http://localhost/v1/traces")]
@@ -124,7 +122,11 @@ public class ManagedApiOtlpTests
 
         var factory = OtlpTransportStrategy.GetTraces(exporterSettings);
 
+#if NET6_0_OR_GREATER
         factory.Should().BeOfType<SocketHandlerRequestFactory>();
+#else
+        factory.Should().BeOfType<HttpStreamRequestFactory>();
+#endif
         factory.GetEndpoint(null).Should().Be(new Uri(expectedEndpoint));
     }
 
@@ -146,7 +148,11 @@ public class ManagedApiOtlpTests
 
         var factory = OtlpTransportStrategy.GetTraces(exporterSettings);
 
+#if NET6_0_OR_GREATER
         factory.Should().BeOfType<SocketHandlerRequestFactory>();
+#else
+        factory.Should().BeOfType<HttpStreamRequestFactory>();
+#endif
         factory.GetEndpoint(null).Should().Be(new Uri(expectedEndpoint));
     }
 
