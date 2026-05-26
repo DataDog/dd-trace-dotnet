@@ -20,6 +20,22 @@
 #include <thread>
 #include <vector>
 
+#ifdef ARM64
+struct FuncEntry
+{
+    unw_word_t start_ip;
+    unw_word_t end_ip;
+};
+
+struct ModuleRegion
+{
+    unw_word_t addr_low;
+    unw_word_t addr_high;
+    uint32_t sym_offset;
+    uint32_t sym_count;
+};
+#endif
+
 class LibrariesInfoCache : public ServiceBase
 {
 public:
@@ -45,6 +61,11 @@ public:
 private:
 #endif
     static int DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
+#ifdef ARM64
+    static int GetProcName(unw_addr_space_t as, unw_word_t ip,
+                           char* buf, size_t buf_len,
+                           unw_word_t* offp, void* arg);
+#endif
     void NotifyCacheUpdateImpl();
 #ifdef DD_TEST
 private:
@@ -52,6 +73,15 @@ private:
     static void NotifyCacheUpdate();
 
     void UpdateCache();
+#ifdef ARM64
+    void BuildSymbolCache(std::vector<DlPhdrInfoWrapper>& phdrCache,
+                          std::vector<ModuleRegion>& outRegions,
+                          std::vector<FuncEntry>& outSymbols);
+    int FindFunctionStart(unw_word_t ip, unw_word_t* func_start) const;
+    int GetProcNameImpl(unw_addr_space_t as, unw_word_t ip,
+                        char* buf, size_t buf_len,
+                        unw_word_t* offp, void* arg);
+#endif
     int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
     void Work(std::shared_ptr<AutoResetEvent> startEvent);
 
@@ -59,6 +89,14 @@ private:
 
     std::shared_mutex _cacheLock;
     std::vector<DlPhdrInfoWrapper> _librariesInfo;
+
+#ifdef ARM64
+    std::vector<ModuleRegion> _moduleRegions;
+    std::vector<FuncEntry> _symbols;
+
+    using GetProcNameFn = int (*)(unw_addr_space_t, unw_word_t, char*, size_t, unw_word_t*, void*);
+    GetProcNameFn _originalGetProcName = nullptr;
+#endif
 
     std::thread _worker;
     std::atomic<bool> _stopRequested;
