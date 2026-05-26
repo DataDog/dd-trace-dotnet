@@ -201,13 +201,17 @@ namespace Datadog.Trace.Debugger.Upload
         private async Task WriteMultipartFormData(Stream destination, Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
         {
             await destination.WriteAsync(InitialBoundaryBytes, 0, InitialBoundaryBytes.Length).ConfigureAwait(false);
-            await destination.WriteAsync(_enableCompression ? FileGzipHeaderBytes : FileJsonHeaderBytes, 0, _enableCompression ? FileGzipHeaderBytes.Length : FileJsonHeaderBytes.Length).ConfigureAwait(false);
+            var fileHeaderBytes = _enableCompression ? FileGzipHeaderBytes : FileJsonHeaderBytes;
+            await destination.WriteAsync(fileHeaderBytes, 0, fileHeaderBytes.Length).ConfigureAwait(false);
 
             var countingStream = new CountingWriteStream(destination);
             if (_enableCompression)
             {
 #if NETFRAMEWORK
                 using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(countingStream) { IsStreamOwner = false })
+#elif NETCOREAPP
+                var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true);
+                await using (gzipStream.ConfigureAwait(false))
 #else
                 using (var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true))
 #endif

@@ -118,17 +118,18 @@ namespace Datadog.Trace.Debugger.Symbols
         private static async Task WriteSymbols(Stream stream, StringBuilder builder)
         {
             const int bufferSize = 4096;
-            var buffer = ArrayPool<char>.Shared.Rent(bufferSize);
-            using var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
+            using var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize, leaveOpen: true);
+            char[]? buffer = null;
             try
             {
+                buffer = ArrayPool<char>.Shared.Rent(bufferSize);
                 var remaining = builder.Length;
                 var position = 0;
                 while (remaining > 0)
                 {
                     var count = remaining > buffer.Length ? buffer.Length : remaining;
                     builder.CopyTo(position, buffer, 0, count);
-                    streamWriter.Write(buffer, 0, count);
+                    await streamWriter.WriteAsync(buffer, 0, count).ConfigureAwait(false);
                     position += count;
                     remaining -= count;
                 }
@@ -138,7 +139,10 @@ namespace Datadog.Trace.Debugger.Symbols
             }
             finally
             {
-                ArrayPool<char>.Shared.Return(buffer);
+                if (buffer != null)
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
+                }
             }
         }
 
