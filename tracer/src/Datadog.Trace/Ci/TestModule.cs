@@ -110,6 +110,7 @@ public sealed class TestModule
                 Command = sessionSpanTags.Command,
                 WorkingDirectory = sessionSpanTags.WorkingDirectory,
                 IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
+                IntelligentTestRunnerTestsSkippingEnabled = sessionSpanTags.IntelligentTestRunnerTestsSkippingEnabled,
             };
         }
         else
@@ -128,6 +129,10 @@ public sealed class TestModule
                 OSPlatform = frameworkDescription.OSPlatform,
                 OSVersion = _testOptimization.HostInfo.GetOperatingSystemVersion(),
                 IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
+                IntelligentTestRunnerTestsSkippingEnabled =
+                    _testOptimization.SkippableFeature is { } sf
+                        ? (sf.Enabled ? "true" : "false")
+                        : null,
             };
 
             tags.SetCIEnvironmentValues(ciValues);

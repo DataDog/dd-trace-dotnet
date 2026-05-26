@@ -104,6 +104,9 @@ namespace Datadog.Trace.Ci.Tagging
         // TestsSkippedBytes = MessagePack.Serialize("_dd.ci.itr.tests_skipped");
         private static ReadOnlySpan<byte> TestsSkippedBytes => [184, 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100];
 
+        // IntelligentTestRunnerTestsSkippingEnabledBytes = MessagePack.Serialize("test.itr.tests_skipping.enabled");
+        private static ReadOnlySpan<byte> IntelligentTestRunnerTestsSkippingEnabledBytes => [191, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 101, 110, 97, 98, 108, 101, 100];
+
         // IntelligentTestRunnerSkippingTypeBytes = MessagePack.Serialize("test.itr.tests_skipping.type");
         private static ReadOnlySpan<byte> IntelligentTestRunnerSkippingTypeBytes => [188, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 116, 121, 112, 101];
 
@@ -182,6 +185,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "git.commit.committer.date" => GitCommitCommitterDate,
                 "_dd.ci.env_vars" => CiEnvVars,
                 "_dd.ci.itr.tests_skipped" => TestsSkipped,
+                "test.itr.tests_skipping.enabled" => IntelligentTestRunnerTestsSkippingEnabled,
                 "test.itr.tests_skipping.type" => IntelligentTestRunnerSkippingType,
                 "test.early_flake.enabled" => EarlyFlakeDetectionTestEnabled,
                 "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
@@ -288,6 +292,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "_dd.ci.itr.tests_skipped": 
                     TestsSkipped = value;
+                    break;
+                case "test.itr.tests_skipping.enabled": 
+                    IntelligentTestRunnerTestsSkippingEnabled = value;
                     break;
                 case "test.itr.tests_skipping.type": 
                     IntelligentTestRunnerSkippingType = value;
@@ -488,6 +495,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (TestsSkipped is not null)
             {
                 processor.Process(new TagItem<string>("_dd.ci.itr.tests_skipped", TestsSkipped, TestsSkippedBytes));
+            }
+
+            if (IntelligentTestRunnerTestsSkippingEnabled is not null)
+            {
+                processor.Process(new TagItem<string>("test.itr.tests_skipping.enabled", IntelligentTestRunnerTestsSkippingEnabled, IntelligentTestRunnerTestsSkippingEnabledBytes));
             }
 
             if (IntelligentTestRunnerSkippingType is not null)
@@ -770,6 +782,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("_dd.ci.itr.tests_skipped (tag):")
                   .Append(TestsSkipped)
+                  .Append(',');
+            }
+
+            if (IntelligentTestRunnerTestsSkippingEnabled is not null)
+            {
+                sb.Append("test.itr.tests_skipping.enabled (tag):")
+                  .Append(IntelligentTestRunnerTestsSkippingEnabled)
                   .Append(',');
             }
 
