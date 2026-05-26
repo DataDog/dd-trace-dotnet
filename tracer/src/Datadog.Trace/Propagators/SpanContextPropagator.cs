@@ -23,14 +23,13 @@ namespace Datadog.Trace.Propagators
 
         // Datadog scan/test markers, tagged unconditionally on HTTP server entry spans so
         // the API endpoint reducer can distinguish scan/test traffic from real user traffic
-        // and keep it out of the API inventory. Tag names are precomputed to avoid string
-        // concatenation per request. Uses a struct rather than ValueTuple because
-        // System.ValueTuple is unavailable on the net461 BCL.
-        private static readonly SecurityTestingHeader[] SecurityTestingHeaders =
-        [
-            new("x-datadog-endpoint-scan", HttpRequestHeadersTagPrefix + ".x-datadog-endpoint-scan"),
-            new("x-datadog-security-test", HttpRequestHeadersTagPrefix + ".x-datadog-security-test"),
-        ];
+        // and keep it out of the API inventory. Header and tag names are compile-time
+        // constants — no per-request string concatenation. The set is fixed at two by RFC,
+        // so AddSecurityTestingHeadersAsTags inlines both lookups rather than iterating.
+        private const string EndpointScanHeader = "x-datadog-endpoint-scan";
+        private const string SecurityTestHeader = "x-datadog-security-test";
+        private const string EndpointScanTag = HttpRequestHeadersTagPrefix + "." + EndpointScanHeader;
+        private const string SecurityTestTag = HttpRequestHeadersTagPrefix + "." + SecurityTestHeader;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
 
@@ -268,37 +267,26 @@ namespace Datadog.Trace.Propagators
         // Tags the Datadog scan/test markers (x-datadog-endpoint-scan, x-datadog-security-test)
         // on the span as http.request.headers.<name>, regardless of DD_TRACE_HEADER_TAGS or
         // AppSec enablement. Empty values are still tagged: per RFC the marker is presence-based.
+        // The two headers are inlined rather than driven by a loop: the set is fixed at two and
+        // this runs on every HTTP server entry span, so we avoid the foreach + array overhead.
+        // Every in-tree HTTP server `IHeadersCollection` we call from (HeadersCollectionAdapter,
+        // NameValueHeadersCollection, WebHeadersCollection, plus the ClrProfiler AspNet
+        // HttpHeadersCollection used by Web API 2) returns an `IList<string>` at runtime — either
+        // a `string[]`, a boxed `StringValues`, or the `string[]` materialized by the BCL's
+        // `HttpHeaders.TryGetValues`. A future non-IList `IEnumerable<string>` carrier would
+        // silently lose the markers; that's an accepted contract bet rather than a foreach
+        // fallback, since the alternative is restoring per-request enumerator allocation.
         public void AddSecurityTestingHeadersAsTags<THeaders>(ISpan span, THeaders headers)
             where THeaders : IHeadersCollection
         {
-            foreach (var entry in SecurityTestingHeaders)
+            if (headers.GetValues(EndpointScanHeader) is IList<string> { Count: > 0 } endpointScanValues)
             {
-                var values = headers.GetValues(entry.Header);
-                if (values is null)
-                {
-                    continue;
-                }
+                span.SetTag(EndpointScanTag, endpointScanValues[0]);
+            }
 
-                // string[] fast path avoids the IEnumerator<string> heap allocation on the
-                // .NET Framework legacy carriers (NameValueHeadersCollection, WebHeadersCollection)
-                // which back `GetValues` with a string[]. ASP.NET Core's StringValues goes through
-                // the slow path below — that's a single boxed enumerator per request, unchanged
-                // from how the existing AddHeadersToSpanAsTags handles it.
-                if (values is string[] array)
-                {
-                    if (array.Length > 0)
-                    {
-                        span.SetTag(entry.Tag, array[0]);
-                    }
-
-                    continue;
-                }
-
-                foreach (var value in values)
-                {
-                    span.SetTag(entry.Tag, value);
-                    break;
-                }
+            if (headers.GetValues(SecurityTestHeader) is IList<string> { Count: > 0 } securityTestValues)
+            {
+                span.SetTag(SecurityTestTag, securityTestValues[0]);
             }
         }
 
@@ -412,18 +400,6 @@ namespace Datadog.Trace.Propagators
             public void ProcessTag(string key, string? value)
             {
                 _span.SetTag(key, value);
-            }
-        }
-
-        private readonly struct SecurityTestingHeader
-        {
-            public readonly string Header;
-            public readonly string Tag;
-
-            public SecurityTestingHeader(string header, string tag)
-            {
-                Header = header;
-                Tag = tag;
             }
         }
 
