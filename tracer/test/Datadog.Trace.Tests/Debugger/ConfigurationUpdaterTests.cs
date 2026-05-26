@@ -10,10 +10,12 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
+using DebuggerSampling = Datadog.Trace.Debugger.Configurations.Models.Sampling;
 
 namespace Datadog.Trace.Tests.Debugger;
 
@@ -154,6 +156,103 @@ public class ConfigurationUpdaterTests
         GetCurrentConfiguration(updater).LogProbes.Should().ContainSingle().Which.Template.Should().Be("From RCM again");
     }
 
+    [Fact]
+    public void AcceptAdded_ServiceConfigurationOnly_UpdatesGlobalRateLimiter()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                }
+            });
+
+        globalRateLimiter.SetRateCallCount.Should().Be(1);
+        globalRateLimiter.LastRate.Should().Be(42);
+    }
+
+    [Fact]
+    public void AcceptAdded_ServiceConfigurationAndProbe_UpdatesGlobalRateLimiterBeforeAddingProbe()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        double? rateWhenAddingProbe = null;
+        updater.SetProbeInstrumentationHandlers(
+            probes =>
+            {
+                rateWhenAddingProbe = globalRateLimiter.LastRate;
+                return probes.Select(probe => new ConfigurationUpdater.UpdateResult(probe.Id, null)).ToList();
+            },
+            _ => { });
+
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                },
+                LogProbes = [CreateLogProbe("log-probe")]
+            });
+
+        globalRateLimiter.SetRateCallCount.Should().Be(1);
+        rateWhenAddingProbe.Should().Be(42);
+    }
+
+    [Fact]
+    public void AcceptAdded_ProbeOnlyChange_DoesNotResetGlobalRateLimiter()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                }
+            });
+        globalRateLimiter.ResetCounters();
+
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                },
+                LogProbes = [CreateLogProbe("log-probe")]
+            });
+
+        globalRateLimiter.SetRateCallCount.Should().Be(0);
+        globalRateLimiter.ResetRateCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void AcceptRemoved_ServiceConfiguration_ResetsGlobalRateLimiterToDefaultRate()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                }
+            });
+        globalRateLimiter.ResetCounters();
+
+        updater.AcceptRemoved([RemoteConfigurationPath.FromPath("datadog/123/LIVE_DEBUGGING/serviceConfig_/config")]);
+
+        globalRateLimiter.SetRateCallCount.Should().Be(1);
+        globalRateLimiter.LastRate.Should().BeNull();
+    }
+
     private static ConfigurationUpdater CreateUpdater(
         out List<IReadOnlyList<ProbeDefinition>> addedProbes,
         out List<string> removedProbeIds)
@@ -204,5 +303,41 @@ public class ConfigurationUpdaterTests
         var field = typeof(ConfigurationUpdater).GetField("_currentConfiguration", BindingFlags.Instance | BindingFlags.NonPublic);
         field.Should().NotBeNull();
         return (ProbeConfiguration)field!.GetValue(updater)!;
+    }
+
+    private sealed class GlobalRateLimiterMock : IDebuggerGlobalRateLimiter
+    {
+        public double? LastRate { get; private set; }
+
+        public int SetRateCallCount { get; private set; }
+
+        public int ResetRateCallCount { get; private set; }
+
+        public bool ShouldSampleSnapshot(string probeId) => true;
+
+        public void Initialize()
+        {
+        }
+
+        public void SetRate(double? samplesPerSecond)
+        {
+            SetRateCallCount++;
+            LastRate = samplesPerSecond;
+        }
+
+        public void ResetRate()
+        {
+            ResetRateCallCount++;
+        }
+
+        public void ResetCounters()
+        {
+            SetRateCallCount = 0;
+            ResetRateCallCount = 0;
+        }
+
+        public void Dispose()
+        {
+        }
     }
 }

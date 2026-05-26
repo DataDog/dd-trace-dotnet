@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Debugger.RateLimiting;
 using Xunit;
@@ -55,6 +56,34 @@ public class ProbeRateLimiterTests
     }
 
     [Fact]
+    public void ResetRate_DisposesRemovedSamplerFromFactory()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new ProbeRateLimiter(factory.Create);
+
+        _ = limiter.GerOrAddSampler("probe");
+        var sampler = factory.Samplers[0];
+
+        limiter.ResetRate("probe");
+
+        Assert.Equal(1, sampler.DisposeCallCount);
+    }
+
+    [Fact]
+    public void TryAddSampler_DisposesRejectedSampler()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new ProbeRateLimiter(factory.Create);
+        _ = limiter.GerOrAddSampler("probe");
+        var rejectedSampler = new TestAdaptiveSampler();
+
+        var added = limiter.TryAddSampler("probe", rejectedSampler);
+
+        Assert.False(added);
+        Assert.Equal(1, rejectedSampler.DisposeCallCount);
+    }
+
+    [Fact]
     public void GerOrAddSampler_ReturnsExistingEntryWithoutLeakingCandidate()
     {
         var limiter = ProbeRateLimiter.Instance;
@@ -73,6 +102,36 @@ public class ProbeRateLimiterTests
         finally
         {
             limiter.ResetRate(probeId);
+        }
+    }
+
+    private sealed class RecordingSamplerFactory
+    {
+        public List<TestAdaptiveSampler> Samplers { get; } = [];
+
+        public IAdaptiveSampler Create(int samplesPerSecond)
+        {
+            var sampler = new TestAdaptiveSampler();
+            Samplers.Add(sampler);
+            return sampler;
+        }
+    }
+
+    private sealed class TestAdaptiveSampler : IAdaptiveSampler
+    {
+        public int DisposeCallCount { get; private set; }
+
+        public bool Sample() => true;
+
+        public bool Keep() => true;
+
+        public bool Drop() => false;
+
+        public double NextDouble() => 0;
+
+        public void Dispose()
+        {
+            DisposeCallCount++;
         }
     }
 
