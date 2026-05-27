@@ -27,15 +27,8 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private const int MaxRetries = 3;
         private const int FailureLogInterval = 10;
+        private const int StaticMultipartBufferSize = 256;
         private static readonly TimeSpan StartingSleepDuration = TimeSpan.FromSeconds(3);
-
-        private static readonly byte[] InitialBoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes("--" + DatadogHttpValues.Boundary + DatadogHttpValues.CrLf);
-        private static readonly byte[] BoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes(DatadogHttpValues.CrLf + "--" + DatadogHttpValues.Boundary + DatadogHttpValues.CrLf);
-        private static readonly byte[] FinalBoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes(DatadogHttpValues.CrLf + "--" + DatadogHttpValues.Boundary + "--" + DatadogHttpValues.CrLf);
-        private static readonly byte[] FileJsonHeaderBytes = EncodingHelpers.Utf8NoBom.GetBytes("Content-Type: " + MimeTypes.Json + DatadogHttpValues.CrLf + "Content-Disposition: form-data; name=\"file\"; filename=\"file.json\"" + DatadogHttpValues.CrLf + DatadogHttpValues.CrLf);
-        private static readonly byte[] FileGzipHeaderBytes = EncodingHelpers.Utf8NoBom.GetBytes("Content-Type: " + MimeTypes.Gzip + DatadogHttpValues.CrLf + "Content-Disposition: form-data; name=\"file\"; filename=\"file.gz\"" + DatadogHttpValues.CrLf + DatadogHttpValues.CrLf);
-        private static readonly byte[] EventHeaderBytes = EncodingHelpers.Utf8NoBom.GetBytes("Content-Type: " + MimeTypes.Json + DatadogHttpValues.CrLf + "Content-Disposition: form-data; name=\"event\"; filename=\"event.json\"" + DatadogHttpValues.CrLf + DatadogHttpValues.CrLf);
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -63,6 +56,18 @@ namespace Datadog.Trace.Debugger.Upload
             _discoveryCallback = OnDiscoveryServiceChanged;
             discoveryService.SubscribeToChanges(_discoveryCallback);
         }
+
+        private static ReadOnlySpan<byte> InitialBoundaryBytes => "--faa0a896-8bc8-48f3-b46d-016f2b15a884\r\n"u8;
+
+        private static ReadOnlySpan<byte> BoundaryBytes => "\r\n--faa0a896-8bc8-48f3-b46d-016f2b15a884\r\n"u8;
+
+        private static ReadOnlySpan<byte> FinalBoundaryBytes => "\r\n--faa0a896-8bc8-48f3-b46d-016f2b15a884--\r\n"u8;
+
+        private static ReadOnlySpan<byte> FileJsonHeaderBytes => "Content-Type: application/json\r\nContent-Disposition: form-data; name=\"file\"; filename=\"file.json\"\r\n\r\n"u8;
+
+        private static ReadOnlySpan<byte> FileGzipHeaderBytes => "Content-Type: application/gzip\r\nContent-Disposition: form-data; name=\"file\"; filename=\"file.gz\"\r\n\r\n"u8;
+
+        private static ReadOnlySpan<byte> EventHeaderBytes => "Content-Type: application/json\r\nContent-Disposition: form-data; name=\"event\"; filename=\"event.json\"\r\n\r\n"u8;
 
         internal static ISymbolUploadApi Create(
             IApiRequestFactory apiRequestFactory,
@@ -228,6 +233,12 @@ namespace Datadog.Trace.Debugger.Upload
             return TimeSpan.FromSeconds(StartingSleepDuration.TotalSeconds * Math.Pow(2, retryAttempt - 1));
         }
 
+        private static Task WriteStaticBytesAsync(Stream destination, ReadOnlySpan<byte> source, byte[] buffer)
+        {
+            source.CopyTo(buffer);
+            return destination.WriteAsync(buffer, 0, source.Length);
+        }
+
         private void OnDiscoveryServiceChanged(AgentConfiguration configuration)
         {
             if (string.IsNullOrEmpty(configuration.SymbolDbEndpoint))
@@ -242,39 +253,46 @@ namespace Datadog.Trace.Debugger.Upload
 
         private async Task WriteMultipartFormData<TState>(Stream destination, Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
-            await destination.WriteAsync(InitialBoundaryBytes, 0, InitialBoundaryBytes.Length).ConfigureAwait(false);
-            var fileHeaderBytes = _enableCompression ? FileGzipHeaderBytes : FileJsonHeaderBytes;
-            await destination.WriteAsync(fileHeaderBytes, 0, fileHeaderBytes.Length).ConfigureAwait(false);
-
-            var countingStream = new CountingWriteStream(destination);
-            if (_enableCompression)
+            var staticBuffer = ArrayPool<byte>.Shared.Rent(StaticMultipartBufferSize);
+            try
             {
-#if NETFRAMEWORK
-                using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(countingStream) { IsStreamOwner = false })
-#elif NETCOREAPP
-                var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true);
-                await using (gzipStream.ConfigureAwait(false))
-#else
-                using (var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true))
-#endif
+                await WriteStaticBytesAsync(destination, InitialBoundaryBytes, staticBuffer).ConfigureAwait(false);
+                await WriteStaticBytesAsync(destination, _enableCompression ? FileGzipHeaderBytes : FileJsonHeaderBytes, staticBuffer).ConfigureAwait(false);
+
+                var countingStream = new CountingWriteStream(destination);
+                if (_enableCompression)
                 {
-                    await writeSymbols(gzipStream, state).ConfigureAwait(false);
-                    await gzipStream.FlushAsync().ConfigureAwait(false);
+#if NETFRAMEWORK
+                    using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(countingStream) { IsStreamOwner = false })
+#elif NETCOREAPP
+                    var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true);
+                    await using (gzipStream.ConfigureAwait(false))
+#else
+                    using (var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true))
+#endif
+                    {
+                        await writeSymbols(gzipStream, state).ConfigureAwait(false);
+                        await gzipStream.FlushAsync().ConfigureAwait(false);
+                    }
                 }
+                else
+                {
+                    await writeSymbols(countingStream, state).ConfigureAwait(false);
+                    await countingStream.FlushAsync().ConfigureAwait(false);
+                }
+
+                var eventMetadata = CreateEventMetadata(metadata, _runtimeId, checked((int)countingStream.BytesWritten));
+
+                await WriteStaticBytesAsync(destination, BoundaryBytes, staticBuffer).ConfigureAwait(false);
+                await WriteStaticBytesAsync(destination, EventHeaderBytes, staticBuffer).ConfigureAwait(false);
+                await destination.WriteAsync(eventMetadata.Array!, eventMetadata.Offset, eventMetadata.Count).ConfigureAwait(false);
+                await WriteStaticBytesAsync(destination, FinalBoundaryBytes, staticBuffer).ConfigureAwait(false);
+                await destination.FlushAsync().ConfigureAwait(false);
             }
-            else
+            finally
             {
-                await writeSymbols(countingStream, state).ConfigureAwait(false);
-                await countingStream.FlushAsync().ConfigureAwait(false);
+                ArrayPool<byte>.Shared.Return(staticBuffer);
             }
-
-            var eventMetadata = CreateEventMetadata(metadata, _runtimeId, checked((int)countingStream.BytesWritten));
-
-            await destination.WriteAsync(BoundaryBytes, 0, BoundaryBytes.Length).ConfigureAwait(false);
-            await destination.WriteAsync(EventHeaderBytes, 0, EventHeaderBytes.Length).ConfigureAwait(false);
-            await destination.WriteAsync(eventMetadata.Array!, eventMetadata.Offset, eventMetadata.Count).ConfigureAwait(false);
-            await destination.WriteAsync(FinalBoundaryBytes, 0, FinalBoundaryBytes.Length).ConfigureAwait(false);
-            await destination.FlushAsync().ConfigureAwait(false);
         }
 
         private sealed class CountingWriteStream : Stream
