@@ -17,18 +17,28 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using HttpMultipartParser;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger.SymbolsTests;
 
+[UsesVerify]
 public class SymbolUploadApiTests
 {
+    public SymbolUploadApiTests()
+    {
+        VerifyHelper.InitializeGlobalSettings();
+    }
+
     [Fact]
     public void EventMetadata_IsValidJson_AndContainsAllFields()
     {
@@ -69,11 +79,10 @@ public class SymbolUploadApiTests
     public async Task SendBatchAsync_WritesExpectedMultipartWireFormat(bool enableCompression)
     {
         const string symbolsJson = """{"service":"benchmark","scopes":[]}""";
-        var uploadId = Guid.Parse("11111111-2222-3333-4444-555555555555");
         var metadata = new SymDbUploadMetadata(
             Service: "benchmark-service",
             Version: "1.0.0",
-            UploadId: uploadId,
+            UploadId: Guid.Parse("11111111-2222-3333-4444-555555555555"),
             BatchNum: 7,
             Final: false);
         var requestFactory = new CapturingRequestFactory();
@@ -92,7 +101,9 @@ public class SymbolUploadApiTests
                                metadata);
 
         result.Should().BeTrue();
-        AssertMultipartRequest(requestFactory.Request, metadata, uploadId, symbolsJson, enableCompression);
+        await Verifier.Verify(ParseRequestForVerify(requestFactory.Request, enableCompression))
+                      .UseFileName($"{nameof(SymbolUploadApiTests)}.SendBatchAsync_WritesExpectedMultipartWireFormat.{(enableCompression ? "compressed" : "uncompressed")}")
+                      .DisableRequireUniquePrefix();
     }
 
     [Theory]
@@ -101,11 +112,10 @@ public class SymbolUploadApiTests
     public async Task SendBatchAsync_RetriesWithFreshRequestAndReplaysMultipartBody(bool enableCompression)
     {
         const string symbolsJson = """{"service":"benchmark","scopes":[{"name":"type"}]}""";
-        var uploadId = Guid.Parse("11111111-2222-3333-4444-555555555555");
         var metadata = new SymDbUploadMetadata(
             Service: "benchmark-service",
             Version: "1.0.0",
-            UploadId: uploadId,
+            UploadId: Guid.Parse("11111111-2222-3333-4444-555555555555"),
             BatchNum: 7,
             Final: false);
         var requestFactory = new CapturingRequestFactory(500, 200);
@@ -140,8 +150,9 @@ public class SymbolUploadApiTests
         delays.Should().Equal(TimeSpan.FromSeconds(3));
         requestFactory.Requests.Should().HaveCount(2);
         requestFactory.Requests[0].Should().NotBeSameAs(requestFactory.Requests[1]);
-        AssertMultipartRequest(requestFactory.Requests[0], metadata, uploadId, symbolsJson, enableCompression);
-        AssertMultipartRequest(requestFactory.Requests[1], metadata, uploadId, symbolsJson, enableCompression);
+        ParseRequestForVerify(requestFactory.Requests[1], enableCompression)
+           .Should()
+           .BeEquivalentTo(ParseRequestForVerify(requestFactory.Requests[0], enableCompression));
     }
 
     [Fact]
@@ -201,35 +212,50 @@ public class SymbolUploadApiTests
         discoveryService.Callbacks.Should().BeEmpty();
     }
 
-    private static void AssertMultipartRequest(CapturingRequest request, SymDbUploadMetadata metadata, Guid uploadId, string symbolsJson, bool enableCompression)
+    private static object ParseRequestForVerify(CapturingRequest request, bool enableCompression)
     {
-        request.ContentType.Should().Be("multipart/form-data; boundary=" + DatadogHttpValues.Boundary);
-        request.MultipartBoundary.Should().Be(DatadogHttpValues.Boundary);
+        using var bodyStream = new MemoryStream(request.Body);
+        var form = MultipartFormDataParser.Parse(bodyStream, DatadogHttpValues.Boundary, Encoding.UTF8);
+        form.Parameters.Should().BeEmpty();
+        form.Files.Should().HaveCount(2);
 
-        var parts = ParseMultipart(request.Body);
-        parts.Should().HaveCount(2);
+        var filePart = form.Files[0];
+        var eventPart = form.Files[1];
+        var fileContent = ReadBytes(filePart.Data);
+        var eventContent = ReadBytes(eventPart.Data);
+        var eventJson = JObject.Parse(Encoding.UTF8.GetString(eventContent));
+        eventJson["runtimeId"] = "<runtime-id>";
 
-        var filePart = parts[0];
-        filePart.Headers.Should().Contain("Content-Disposition: form-data; name=\"file\"; filename=\"" + (enableCompression ? "file.gz" : "file.json") + "\"");
-        filePart.Headers.Should().Contain("Content-Type: " + (enableCompression ? MimeTypes.Gzip : MimeTypes.Json));
+        return new
+        {
+            ContentType = request.ContentType,
+            Files = new[]
+            {
+                new
+                {
+                    filePart.Name,
+                    filePart.FileName,
+                    filePart.ContentType,
+                    Length = fileContent.Length,
+                    Content = Encoding.UTF8.GetString(enableCompression ? Decompress(fileContent) : fileContent)
+                },
+                new
+                {
+                    eventPart.Name,
+                    eventPart.FileName,
+                    eventPart.ContentType,
+                    Length = eventContent.Length,
+                    Content = eventJson.ToString(Formatting.Indented)
+                }
+            }
+        };
+    }
 
-        var fileBytes = enableCompression ? Decompress(filePart.Content) : filePart.Content;
-        Encoding.UTF8.GetString(fileBytes).Should().Be(symbolsJson);
-
-        var eventPart = parts[1];
-        eventPart.Headers.Should().Contain("Content-Disposition: form-data; name=\"event\"; filename=\"event.json\"");
-        eventPart.Headers.Should().Contain("Content-Type: " + MimeTypes.Json);
-        var eventJson = JObject.Parse(Encoding.UTF8.GetString(eventPart.Content));
-        eventJson["ddsource"]!.Value<string>().Should().Be("dd_debugger");
-        eventJson["service"]!.Value<string>().Should().Be(metadata.Service);
-        eventJson["version"]!.Value<string>().Should().Be(metadata.Version);
-        eventJson["language"]!.Value<string>().Should().Be("dotnet");
-        eventJson["runtimeId"]!.Value<string>().Should().NotBeNullOrEmpty();
-        eventJson["type"]!.Value<string>().Should().Be("symdb");
-        eventJson["uploadId"]!.Value<string>().Should().Be(uploadId.ToString());
-        eventJson["batchNum"]!.Value<long>().Should().Be(metadata.BatchNum);
-        eventJson["final"]!.Value<bool>().Should().BeFalse();
-        eventJson["attachmentSize"]!.Value<int>().Should().Be(filePart.Content.Length);
+    private static byte[] ReadBytes(Stream stream)
+    {
+        using var memoryStream = new MemoryStream();
+        stream.CopyTo(memoryStream);
+        return memoryStream.ToArray();
     }
 
     private static byte[] Decompress(byte[] compressed)
@@ -240,110 +266,6 @@ public class SymbolUploadApiTests
         gzipStream.CopyTo(decompressed);
         return decompressed.ToArray();
     }
-
-    private static MultipartPart[] ParseMultipart(byte[] body)
-    {
-        var boundary = Encoding.UTF8.GetBytes("--" + DatadogHttpValues.Boundary);
-        var crlf = Encoding.UTF8.GetBytes("\r\n");
-        var headerSeparator = Encoding.UTF8.GetBytes("\r\n\r\n");
-        var parts = new System.Collections.Generic.List<MultipartPart>();
-        var position = 0;
-
-        while (position < body.Length)
-        {
-            var boundaryIndex = IndexOf(body, boundary, position);
-            if (boundaryIndex < 0)
-            {
-                break;
-            }
-
-            position = boundaryIndex + boundary.Length;
-            if (position + 2 <= body.Length && body[position] == '-' && body[position + 1] == '-')
-            {
-                break;
-            }
-
-            if (!StartsWith(body, crlf, position))
-            {
-                throw new InvalidOperationException("Expected CRLF after multipart boundary.");
-            }
-
-            position += crlf.Length;
-            var headerEnd = IndexOf(body, headerSeparator, position);
-            if (headerEnd < 0)
-            {
-                throw new InvalidOperationException("Expected multipart header separator.");
-            }
-
-            var headers = Encoding.UTF8.GetString(body, position, headerEnd - position)
-                                  .Split(new[] { "\r\n" }, StringSplitOptions.None);
-            position = headerEnd + headerSeparator.Length;
-
-            var nextBoundary = IndexOf(body, boundary, position);
-            if (nextBoundary < 0)
-            {
-                throw new InvalidOperationException("Expected next multipart boundary.");
-            }
-
-            var contentLength = nextBoundary - position;
-            if (contentLength >= crlf.Length &&
-                body[nextBoundary - 2] == '\r' &&
-                body[nextBoundary - 1] == '\n')
-            {
-                contentLength -= crlf.Length;
-            }
-
-            var content = new byte[contentLength];
-            Array.Copy(body, position, content, 0, content.Length);
-            parts.Add(new MultipartPart(headers, content));
-            position = nextBoundary;
-        }
-
-        return parts.ToArray();
-    }
-
-    private static bool StartsWith(byte[] source, byte[] value, int startIndex)
-    {
-        if (startIndex + value.Length > source.Length)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < value.Length; i++)
-        {
-            if (source[startIndex + i] != value[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static int IndexOf(byte[] source, byte[] value, int startIndex)
-    {
-        for (var i = startIndex; i <= source.Length - value.Length; i++)
-        {
-            var found = true;
-            for (var j = 0; j < value.Length; j++)
-            {
-                if (source[i + j] != value[j])
-                {
-                    found = false;
-                    break;
-                }
-            }
-
-            if (found)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    private readonly record struct MultipartPart(string[] Headers, byte[] Content);
 
     private sealed class MutableInt
     {
@@ -396,8 +318,6 @@ public class SymbolUploadApiTests
 
         public string? ContentType { get; private set; }
 
-        public string? MultipartBoundary { get; private set; }
-
         public void AddHeader(string name, string value)
         {
         }
@@ -431,7 +351,6 @@ public class SymbolUploadApiTests
             await writeToRequestStream(stream).ConfigureAwait(false);
             Body = stream.ToArray();
             ContentType = ContentTypeHelper.GetContentType(contentType, multipartBoundary);
-            MultipartBoundary = multipartBoundary;
             return new TestApiResponse(_statusCode, "{}", MimeTypes.Json);
         }
 
