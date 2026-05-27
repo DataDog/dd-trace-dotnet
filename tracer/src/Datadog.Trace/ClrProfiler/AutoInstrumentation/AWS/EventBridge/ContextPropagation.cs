@@ -67,8 +67,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 detailBuilder.Append(','); // Add comma if the original detail is not empty
             }
 
-            var traceContext = BuildContextJson(tracer, context, entry.EventBusName, pathwayContext);
-            detailBuilder.Append($"\"{DatadogKey}\":{traceContext}").Append('}');
+            detailBuilder.Append($"\"{DatadogKey}\":");
+            AppendContextJson(tracer, context, entry.EventBusName, pathwayContext, detailBuilder);
+            detailBuilder.Append('}');
 
             // Check new detail size
             var updatedDetail = Util.StringBuilderCache.GetStringAndRelease(detailBuilder);
@@ -82,11 +83,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             entry.Detail = updatedDetail;
         }
 
-        // Builds a JSON string containing Datadog trace context
-        private static string BuildContextJson(Tracer tracer, PropagationContext context, string? eventBusName, PathwayContext? pathwayContext)
+        // Appends a JSON object containing Datadog trace context to the supplied builder.
+        private static void AppendContextJson(Tracer tracer, PropagationContext context, string? eventBusName, PathwayContext? pathwayContext, StringBuilder jsonBuilder)
         {
-            // Inject trace context
-            var jsonBuilder = Util.StringBuilderCache.Acquire();
             jsonBuilder.Append('{');
 
             tracer.TracerManager.SpanContextPropagator.Inject(context, jsonBuilder, new StringBuilderCarrierSetter());
@@ -97,16 +96,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                     new CarrierWithDelegate<StringBuilder>(jsonBuilder, setter: static (carrier, key, value) => AppendJsonProperty(carrier, key, value)));
             }
 
-            // Inject start time and bus name
             var startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            jsonBuilder.Append($"\"{StartTimeKey}\":\"{startTime}\"");
+            jsonBuilder.Append($"\"{StartTimeKey}\":\"").Append(startTime).Append('"');
             if (eventBusName != null)
             {
-                jsonBuilder.Append($",\"{ResourceNameKey}\":\"{eventBusName}\"");
+                jsonBuilder.Append($",\"{ResourceNameKey}\":\"");
+                AppendEscapedJsonString(jsonBuilder, eventBusName);
+                jsonBuilder.Append('"');
             }
 
             jsonBuilder.Append('}');
-            return Util.StringBuilderCache.GetStringAndRelease(jsonBuilder);
         }
 
         [TestingAndPrivateOnly]
@@ -138,10 +137,73 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
         private static void AppendJsonProperty(StringBuilder carrier, string key, string value)
         {
-            carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+            carrier.Append('"').Append(key).Append("\":\"");
+            AppendEscapedJsonString(carrier, value);
+            carrier.Append("\",");
         }
 
-        private struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
+        private static void AppendEscapedJsonString(StringBuilder builder, string value)
+        {
+            foreach (var c in value)
+            {
+                switch (c)
+                {
+                    case '"':
+                        builder.Append("\\\"");
+                        break;
+                    case '\\':
+                        builder.Append("\\\\");
+                        break;
+                    case '\n':
+                        builder.Append("\\n");
+                        break;
+                    case '\r':
+                        builder.Append("\\r");
+                        break;
+                    case '\f':
+                        builder.Append("\\f");
+                        break;
+                    case '\b':
+                        builder.Append("\\b");
+                        break;
+                    case '\t':
+                        builder.Append("\\t");
+                        break;
+                    case '\u0085':
+                    case '\u2028':
+                    case '\u2029':
+                        AppendUnicodeEscape(builder, c);
+                        break;
+                    default:
+                        if (c < ' ')
+                        {
+                            AppendUnicodeEscape(builder, c);
+                        }
+                        else
+                        {
+                            builder.Append(c);
+                        }
+
+                        break;
+                }
+            }
+        }
+
+        private static void AppendUnicodeEscape(StringBuilder builder, char value)
+        {
+            builder.Append("\\u");
+            builder.Append(GetHexCharacter(value >> 12));
+            builder.Append(GetHexCharacter((value >> 8) & 0xF));
+            builder.Append(GetHexCharacter((value >> 4) & 0xF));
+            builder.Append(GetHexCharacter(value & 0xF));
+        }
+
+        private static char GetHexCharacter(int value)
+        {
+            return (char)(value < 10 ? value + '0' : (value - 10) + 'a');
+        }
+
+        private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
         {
             public void Set(StringBuilder carrier, string key, string value)
             {
