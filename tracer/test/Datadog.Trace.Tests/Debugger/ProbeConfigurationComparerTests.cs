@@ -77,7 +77,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -165,7 +165,44 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentSnapshotsCaptureExpressionChanged_ProbeRelatedChanged()
+    {
+        var current = new ProbeConfiguration
+        {
+            LogProbes = new LogProbe[]
+            {
+                new()
+                {
+                    Id = "probe",
+                    CaptureExpressions =
+                    [
+                        new CaptureExpression { Name = "value", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""value""}", null) }
+                    ]
+                }
+            }
+        };
+        var incoming = new ProbeConfiguration
+        {
+            LogProbes = new LogProbe[]
+            {
+                new()
+                {
+                    Id = "probe",
+                    CaptureExpressions =
+                    [
+                        new CaptureExpression { Name = "value", Expr = new SnapshotSegment(string.Empty, @"{""ref"":""otherValue""}", null) }
+                    ]
+                }
+            }
+        };
+
+        var comparer = new ProbeConfigurationComparer(current, incoming);
+        comparer.HasProbeRelatedChanges.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -187,7 +224,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -198,7 +235,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -220,7 +257,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -231,7 +268,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -253,7 +290,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]
@@ -264,7 +301,7 @@ public class ProbeConfigurationComparerTests
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeTrue();
-        comparer.HasRateLimitChanged.Should().BeTrue();
+        comparer.HasRateLimitChanged.Should().BeFalse();
     }
 
     [Fact]

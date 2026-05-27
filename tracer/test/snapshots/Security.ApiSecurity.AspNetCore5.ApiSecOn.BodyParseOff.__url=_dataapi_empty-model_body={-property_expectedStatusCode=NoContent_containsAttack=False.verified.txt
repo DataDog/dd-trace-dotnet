@@ -43,6 +43,10 @@
       _dd.appsec.s.req.body: [{"Property":[8],"Property2":[8],"Property3":[4],"Property4":[4]}],
       _dd.appsec.s.req.headers: [{"content-length":[8],"content-type":[8],"host":[8],"user-agent":[8],"x-forwarded-for":[8]}],
       _dd.appsec.s.req.params: [{"action":[8],"controller":[8]}],
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: EmptyModel,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataApiController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

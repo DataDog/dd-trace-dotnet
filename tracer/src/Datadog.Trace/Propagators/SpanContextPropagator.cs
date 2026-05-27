@@ -21,6 +21,12 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
+        // Datadog scan/test markers tagged on every HTTP server entry span.
+        private const string EndpointScanHeader = "x-datadog-endpoint-scan";
+        private const string SecurityTestHeader = "x-datadog-security-test";
+        private const string EndpointScanTag = HttpRequestHeadersTagPrefix + "." + EndpointScanHeader;
+        private const string SecurityTestTag = HttpRequestHeadersTagPrefix + "." + SecurityTestHeader;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
@@ -252,6 +258,22 @@ namespace Datadog.Trace.Propagators
         {
             var processor = new SpanTagHeaderTagProcessor(span);
             ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, useragent);
+        }
+
+        // Tags the scan/test markers on the span as http.request.headers.<name>.
+        // Always tagged, regardless of DD_TRACE_HEADER_TAGS or AppSec. Empty values tagged.
+        public void AddSecurityTestingHeadersAsTags<THeaders>(ISpan span, THeaders headers)
+            where THeaders : IHeadersCollection
+        {
+            if (headers.GetValues(EndpointScanHeader) is IList<string> { Count: > 0 } endpointScanValues)
+            {
+                span.SetTag(EndpointScanTag, endpointScanValues[0]);
+            }
+
+            if (headers.GetValues(SecurityTestHeader) is IList<string> { Count: > 0 } securityTestValues)
+            {
+                span.SetTag(SecurityTestTag, securityTestValues[0]);
+            }
         }
 
         internal void ExtractHeaderTags<THeaders, TProcessor>(ref TProcessor processor, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)

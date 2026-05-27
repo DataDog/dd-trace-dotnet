@@ -16,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
@@ -63,7 +64,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return;
             }
 
-            if (span.GetTag(_tags.Type) != null)
+            if (HasCodeOrigin(span))
             {
                 Log.Debug("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
@@ -101,7 +102,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal bool HasCodeOrigin(Span? span)
         {
-            return span?.GetTag(_tags.Type) != null;
+            return span?.Tags switch
+            {
+                AspNetCoreTags { CodeOriginType: not null } => true,
+                AspNetCoreSingleSpanTags { CodeOriginType: not null } => true,
+                { } tags => tags.GetTag(_tags.Type) is not null,
+                _ => false,
+            };
         }
 
         private void AddEntrySpanTags(Span span, Type type, MethodInfo method)
@@ -127,41 +134,49 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 // Add code origin tags to entry span
                 // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
                 // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
-                if (span.Tags is TagsList tagsList)
+                if (span.Tags is AspNetCoreTags aspNetCoreTags)
                 {
-                    if (sp is { } cached)
-                    {
-                        tagsList.SetTags(
-                            new(_tags.Type, "entry"),
-                            new(_tags.Index[0], "0"),
-                            new(_tags.Method[0], methodName),
-                            new(_tags.TypeName[0], typeFullName),
-                            new(_tags.File[0], cached.Url),
-                            new(_tags.Line[0], cached.Line),
-                            new(_tags.Column[0], cached.Column));
-                    }
-                    else
-                    {
-                        tagsList.SetTags(
-                            new(_tags.Type, "entry"),
-                            new(_tags.Index[0], "0"),
-                            new(_tags.Method[0], methodName),
-                            new(_tags.TypeName[0], typeFullName));
-                    }
-                }
-                else
-                {
-                    span.Tags.SetTag(_tags.Type, "entry");
-                    span.Tags.SetTag(_tags.Index[0], "0");
-                    span.Tags.SetTag(_tags.Method[0], methodName);
-                    span.Tags.SetTag(_tags.TypeName[0], typeFullName);
+                    aspNetCoreTags.CodeOriginType = "entry";
+                    aspNetCoreTags.CodeOriginFrameIndex = "0";
+                    aspNetCoreTags.CodeOriginFrameMethod = methodName;
+                    aspNetCoreTags.CodeOriginFrameType = typeFullName;
 
-                    if (sp is { } cached)
+                    if (sp.HasValue)
                     {
-                        span.Tags.SetTag(_tags.File[0], cached.Url);
-                        span.Tags.SetTag(_tags.Line[0], cached.Line);
-                        span.Tags.SetTag(_tags.Column[0], cached.Column);
+                        var cached = sp.Value;
+                        aspNetCoreTags.CodeOriginFrameFile = cached.Url;
+                        aspNetCoreTags.CodeOriginFrameLine = cached.Line;
+                        aspNetCoreTags.CodeOriginFrameColumn = cached.Column;
                     }
+
+                    return;
+                }
+
+                if (span.Tags is AspNetCoreSingleSpanTags aspNetCoreSingleSpanTags)
+                {
+                    aspNetCoreSingleSpanTags.CodeOriginType = "entry";
+                    aspNetCoreSingleSpanTags.CodeOriginFrameIndex = "0";
+                    aspNetCoreSingleSpanTags.CodeOriginFrameMethod = methodName;
+                    aspNetCoreSingleSpanTags.CodeOriginFrameType = typeFullName;
+
+                    if (sp.HasValue)
+                    {
+                        var cached = sp.Value;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameFile = cached.Url;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameLine = cached.Line;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameColumn = cached.Column;
+                    }
+
+                    return;
+                }
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Unexpected tags type for entry span {SpanID}: {TagsType}. Skipping code origin tags. Operation: {OperationName}",
+                        property0: span.SpanId,
+                        property1: span.Tags?.GetType().FullName ?? "<null>",
+                        property2: span.OperationName);
                 }
             }
             catch (Exception ex)
@@ -205,10 +220,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 bool shouldSkip;
                 try
                 {
+                    // Single-file assemblies have no Assembly.Location. We still want the
+                    // reflection-derived tags; PDB-backed file/line/column tags will be absent.
                     shouldSkip = AssemblyFilter.ShouldSkipAssembly(
                         assembly,
                         Settings.ThirdPartyDetectionExcludes,
-                        Settings.ThirdPartyDetectionIncludes);
+                        Settings.ThirdPartyDetectionIncludes,
+                        requireAssemblyLocation: false);
                 }
                 catch (Exception ex)
                 {
@@ -394,12 +412,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                             return;
                         }
 
-                        // Precompute string representations once during per-assembly cache population (stored per endpoint token)
-                        // to avoid per-span allocations (ToString()) for line/column.
+                        // Precompute per-assembly string values to avoid per-span ToString() allocations.
+                        // Normalize paths to the same forward-slash form used by Dynamic Instrumentation.
+                        var url = sp.URL.IndexOf('\\') >= 0 ? sp.URL.Replace('\\', '/') : sp.URL;
                         _sequencePoints.Add(
                             token,
                             new CachedSequencePoint(
-                                sp.URL,
+                                url,
                                 sp.StartLine.ToString(CultureInfo.InvariantCulture),
                                 sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
                     }

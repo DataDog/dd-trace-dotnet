@@ -38,6 +38,10 @@
       _dd.appsec.fp.session: ssn-7bcd1c9f---<SessionFp>,
       _dd.appsec.usr.id: Guid_2,
       _dd.appsec.usr.login: TestUser,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.AccountController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

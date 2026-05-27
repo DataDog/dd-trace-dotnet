@@ -48,6 +48,11 @@ internal partial class ProbeExpressionParser<T>
                 return (T)(object)true;
             }
 
+            if (typeof(T) == typeof(object))
+            {
+                return (T)(object)Expressions.UndefinedValue.Instance;
+            }
+
             return default;
         };
     }
@@ -477,6 +482,11 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression HandleReturnType(Expression finalExpr, List<ParameterExpression> scopeMembers)
     {
+        if (TryGetRedactedDictionaryValue(finalExpr, out var redactedDictionaryValue))
+        {
+            return RedactDictionaryValueForReturn(redactedDictionaryValue, finalExpr, scopeMembers);
+        }
+
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
             // If the expression type is already exactly T, return as-is.
@@ -615,6 +625,7 @@ internal partial class ProbeExpressionParser<T>
             body = body.ReduceAndCheck();
         }
 
+        _redactedDictionaryValues = null;
         return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, durationParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression);
     }
 

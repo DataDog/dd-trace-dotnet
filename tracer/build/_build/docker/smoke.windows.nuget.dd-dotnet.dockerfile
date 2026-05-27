@@ -16,7 +16,7 @@ ARG TOOL_VERSION
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
     && dotnet nuget add source "c:\src\artifacts" \
     && dotnet add package "Datadog.Trace.Bundle" --version %TOOL_VERSION% \
-    && dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% -o "c:\src\publish"
+    && dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% /p:PathMap=C:\src=/src -o "c:\src\publish"
 
 FROM $RUNTIME_IMAGE AS publish-msi
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]

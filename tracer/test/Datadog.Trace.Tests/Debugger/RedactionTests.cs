@@ -182,6 +182,32 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void IsRedactedType_WithConfiguredUnderlyingNullableType_Test()
+        {
+            // Arrange
+            Redaction.Instance.SetConfig(
+                new HashSet<string>(),
+                new HashSet<string>(),
+                new HashSet<string> { "System.Guid" });
+
+            // Act & Assert
+            Assert.True(Redaction.Instance.IsRedactedType(typeof(Guid?)));
+        }
+
+        [Fact]
+        public void IsRedactedType_WithConfiguredNullableWrapperType_Test()
+        {
+            // Arrange
+            Redaction.Instance.SetConfig(
+                new HashSet<string>(),
+                new HashSet<string>(),
+                new HashSet<string> { "System.Nullable*" });
+
+            // Act & Assert
+            Assert.True(Redaction.Instance.IsRedactedType(typeof(Guid?)));
+        }
+
+        [Fact]
         public void IsRedactedType_WithWildcardMatch_Test()
         {
             // Arrange
@@ -224,6 +250,7 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData("password", typeof(System.Security.SecureString), RedactionReason.Identifier)]
         [InlineData("no-password", typeof(System.Security.SecureString), RedactionReason.Type)]
+        [InlineData("nullable-guid", typeof(Guid?), RedactionReason.Type)]
         [InlineData("api_key", typeof(string), RedactionReason.Identifier)]
         [InlineData("normal", typeof(string), RedactionReason.None)]
         internal void ShouldRedact_CombinedScenarios_Test(string name, Type type, RedactionReason expectedReason)
@@ -232,7 +259,7 @@ namespace Datadog.Trace.Tests.Debugger
             Redaction.Instance.SetConfig(
                 new HashSet<string> { "api_key" },
                 new HashSet<string>(),
-                new HashSet<string> { "System.Security.SecureString" });
+                new HashSet<string> { "System.Security.SecureString", "System.Guid" });
 
             // Act
             bool result = Redaction.Instance.ShouldRedact(name, type, out var reason);

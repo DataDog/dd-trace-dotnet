@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -24,7 +24,11 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: user-dog,
-      _dd.appsec.events.users.login.success.sdk: true
+      _dd.appsec.events.users.login.success.sdk: true,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: TrackLoginSdk,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.UserController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,

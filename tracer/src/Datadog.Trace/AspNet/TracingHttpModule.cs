@@ -192,6 +192,11 @@ namespace Datadog.Trace.AspNet
                                        : null;
                 scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.CurrentTraceSettings.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(scope.Span, headers);
+                if (inferredProxyScope?.Span is { } proxySpan)
+                {
+                    tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(proxySpan, headers);
+                }
 
                 tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 

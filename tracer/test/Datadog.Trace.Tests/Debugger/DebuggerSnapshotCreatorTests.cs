@@ -167,6 +167,90 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void CaptureExpressions_AreWrittenWithoutArgumentsOrLocals()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult
+            {
+                CaptureExpressionCount = 2,
+                CaptureExpressions =
+                [
+                    new ExpressionEvaluationResult.CaptureExpressionResult("inputValue", "testValue", typeof(string), captureLimitInfo),
+                    new ExpressionEvaluationResult.CaptureExpressionResult("localValue", 9, typeof(int), captureLimitInfo)
+                ]
+            };
+
+            snapshotCreator.StartReturn();
+            snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
+            snapshotCreator.EndReturn();
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            var captureExpressions = snapshot.SelectToken("debugger.snapshot.captures.return.captureExpressions");
+            Assert.NotNull(captureExpressions);
+            Assert.Equal("testValue", captureExpressions!["inputValue"]?["value"]?.Value<string>());
+            Assert.Equal("9", captureExpressions["localValue"]?["value"]?.Value<string>());
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return.locals"));
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return.arguments"));
+        }
+
+        [Fact]
+        public void CaptureExpressions_AreSkippedWhenNoValuesWereCaptured()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult();
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return"));
+        }
+
+        [Fact]
         public async Task SpecialType_StringBuilder()
         {
             await ValidateSingleValue(new StringBuilder("hi from stringbuilder"));
