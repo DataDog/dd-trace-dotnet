@@ -10,10 +10,8 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Debugger.Upload
 {
-    internal interface ISymbolUploadApi : IBatchUploadApi
+    internal interface ISymbolUploadApi
     {
-        Task<bool> SendBatchAsync(ArraySegment<byte> symbols, SymDbUploadMetadata metadata);
-
-        Task<bool> SendBatchAsync(Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata);
+        Task<bool> SendBatchAsync<TState>(Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata);
     }
 }

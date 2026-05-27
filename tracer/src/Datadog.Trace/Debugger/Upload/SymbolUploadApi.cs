@@ -134,30 +134,7 @@ namespace Datadog.Trace.Debugger.Upload
                        : new ArraySegment<byte>(stream.ToArray());
         }
 
-        public override Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
-        {
-            // SymbolsUploader is the only caller and uses the typed overload
-            // below (so that metadata matches what's stamped into the
-            // attachment Root). The IBatchUploadApi.SendBatchAsync method is
-            // retained for interface compatibility only.
-            throw new NotSupportedException(
-                "Use SendBatchAsync(symbols, metadata) for SymDB uploads.");
-        }
-
-        public async Task<bool> SendBatchAsync(ArraySegment<byte> symbols, SymDbUploadMetadata metadata)
-        {
-            if (symbols.Array == null || symbols.Count == 0)
-            {
-                return false;
-            }
-
-            return await SendBatchAsync(
-                       stream => stream.WriteAsync(symbols.Array, symbols.Offset, symbols.Count),
-                       metadata)
-                  .ConfigureAwait(false);
-        }
-
-        public async Task<bool> SendBatchAsync(Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
+        public async Task<bool> SendBatchAsync<TState>(Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
             if (writeSymbols == null)
             {
@@ -179,7 +156,7 @@ namespace Datadog.Trace.Debugger.Upload
                 var request = _apiRequestFactory.Create(endpoint);
                 using (var response = await request
                            .PostAsync(
-                                stream => WriteMultipartFormData(stream, writeSymbols, metadata),
+                                stream => WriteMultipartFormData(stream, writeSymbols, state, metadata),
                                 MimeTypes.MultipartFormData,
                                 contentEncoding: null,
                                 DatadogHttpValues.Boundary)
@@ -263,7 +240,7 @@ namespace Datadog.Trace.Debugger.Upload
             Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
         }
 
-        private async Task WriteMultipartFormData(Stream destination, Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
+        private async Task WriteMultipartFormData<TState>(Stream destination, Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
             await destination.WriteAsync(InitialBoundaryBytes, 0, InitialBoundaryBytes.Length).ConfigureAwait(false);
             var fileHeaderBytes = _enableCompression ? FileGzipHeaderBytes : FileJsonHeaderBytes;
@@ -281,13 +258,13 @@ namespace Datadog.Trace.Debugger.Upload
                 using (var gzipStream = new GZipStream(countingStream, CompressionMode.Compress, leaveOpen: true))
 #endif
                 {
-                    await writeSymbols(gzipStream).ConfigureAwait(false);
+                    await writeSymbols(gzipStream, state).ConfigureAwait(false);
                     await gzipStream.FlushAsync().ConfigureAwait(false);
                 }
             }
             else
             {
-                await writeSymbols(countingStream).ConfigureAwait(false);
+                await writeSymbols(countingStream, state).ConfigureAwait(false);
                 await countingStream.FlushAsync().ConfigureAwait(false);
             }
 

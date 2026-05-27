@@ -18,7 +18,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Upload;
 
-internal abstract class DebuggerUploadApiBase : IBatchUploadApi
+internal abstract class DebuggerUploadApiBase
 {
     protected const string DebuggerV1Endpoint = "debugger/v1/input";
 
@@ -39,8 +39,6 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
         get => _endpoint;
         set => Volatile.Write(ref _endpoint, value);
     }
-
-    public abstract Task<bool> SendBatchAsync(ArraySegment<byte> data);
 
     protected string? BuildUri()
     {

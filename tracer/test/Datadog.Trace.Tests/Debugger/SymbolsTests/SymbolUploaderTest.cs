@@ -155,22 +155,10 @@ public class SymbolUploaderTest
     {
         public List<byte[]> Segments { get; } = new();
 
-        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
-        {
-            Segments.Add(symbols.ToArray());
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols, SymDbUploadMetadata metadata)
-        {
-            Segments.Add(symbols.ToArray());
-            return Task.FromResult(true);
-        }
-
-        public async Task<bool> SendBatchAsync(Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
+        public async Task<bool> SendBatchAsync<TState>(Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
             using var stream = new MemoryStream();
-            await writeSymbols(stream).ConfigureAwait(false);
+            await writeSymbols(stream, state).ConfigureAwait(false);
             Segments.Add(stream.ToArray());
             return true;
         }

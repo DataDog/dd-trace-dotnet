@@ -375,15 +375,15 @@ namespace Datadog.Trace.Debugger.Symbols
                 // Always false: the .NET tracer continuously uploads new code as
                 // assemblies get loaded; there is no defined end-of-upload point.
                 Final: false);
-            await SendSymbol(stream => WriteSymbols(stream, builder), metadata).ConfigureAwait(false);
+            await SendSymbol(static (stream, state) => WriteSymbols(stream, state), builder, metadata).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendSymbol(Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)
+        private async Task<bool> SendSymbol<TState>(Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
             try
             {
                 return await _api
-                    .SendBatchAsync(writeSymbols, metadata)
+                    .SendBatchAsync(writeSymbols, state, metadata)
                     .ConfigureAwait(false);
             }
             catch (Exception e)

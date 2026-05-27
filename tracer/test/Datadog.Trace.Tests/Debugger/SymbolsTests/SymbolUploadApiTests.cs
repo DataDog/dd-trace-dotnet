@@ -83,11 +83,12 @@ public class SymbolUploadApiTests
 
         var result = await api
                           .SendBatchAsync(
-                               async stream =>
+                               static async (stream, state) =>
                                {
-                                   var bytes = Encoding.UTF8.GetBytes(symbolsJson);
+                                   var bytes = Encoding.UTF8.GetBytes(state);
                                    await stream.WriteAsync(bytes, 0, bytes.Length);
                                },
+                               symbolsJson,
                                metadata);
 
         result.Should().BeTrue();
@@ -121,20 +122,21 @@ public class SymbolUploadApiTests
                 return Task.CompletedTask;
             });
         discoveryService.TriggerChange(symbolDbEndpoint: "symdb/v1/input");
-        var writerCalls = 0;
+        var writerCalls = new MutableInt();
 
         var result = await api
                           .SendBatchAsync(
-                               async stream =>
+                               static async (stream, state) =>
                                {
-                                   writerCalls++;
-                                   var bytes = Encoding.UTF8.GetBytes(symbolsJson);
+                                   state.WriterCalls.Value++;
+                                   var bytes = Encoding.UTF8.GetBytes(state.SymbolsJson);
                                    await stream.WriteAsync(bytes, 0, bytes.Length);
                                },
+                               (SymbolsJson: symbolsJson, WriterCalls: writerCalls),
                                metadata);
 
         result.Should().BeTrue();
-        writerCalls.Should().Be(2);
+        writerCalls.Value.Should().Be(2);
         delays.Should().Equal(TimeSpan.FromSeconds(3));
         requestFactory.Requests.Should().HaveCount(2);
         requestFactory.Requests[0].Should().NotBeSameAs(requestFactory.Requests[1]);
@@ -169,11 +171,12 @@ public class SymbolUploadApiTests
 
         var result = await api
                           .SendBatchAsync(
-                               async stream =>
+                               static async (stream, state) =>
                                {
-                                   var bytes = Encoding.UTF8.GetBytes(symbolsJson);
+                                   var bytes = Encoding.UTF8.GetBytes(state);
                                    await stream.WriteAsync(bytes, 0, bytes.Length);
                                },
+                               symbolsJson,
                                metadata);
 
         result.Should().BeFalse();
@@ -341,6 +344,11 @@ public class SymbolUploadApiTests
     }
 
     private readonly record struct MultipartPart(string[] Headers, byte[] Content);
+
+    private sealed class MutableInt
+    {
+        public int Value { get; set; }
+    }
 
     private sealed class CapturingRequestFactory : IApiRequestFactory
     {
