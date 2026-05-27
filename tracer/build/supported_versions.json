@@ -402,6 +402,23 @@
     ]
   },
   {
+    "integrationName": "AzureEventGrid",
+    "assemblyName": "Azure.Messaging.EventGrid",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "Azure.Messaging.EventGrid",
+        "minVersionAvailableInclusive": "4.0.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": "4.0.0",
+        "maxVersionSupportedInclusive": "5.0.0",
+        "maxVersionAvailableInclusive": "5.0.0",
+        "maxVersionTestedInclusive": "5.0.0"
+      }
+    ]
+  },
+  {
     "integrationName": "AzureEventHubs",
     "assemblyName": "Azure.Messaging.EventHubs",
     "minAssemblyVersionInclusive": "5.9.2",
@@ -937,7 +954,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.30.0",
+        "minVersionTestedInclusive": "2.0.2",
         "maxVersionSupportedInclusive": "3.5.2",
         "maxVersionAvailableInclusive": "3.9.0",
         "maxVersionTestedInclusive": "3.8.1"
@@ -1267,7 +1284,7 @@
         "name": "Serilog",
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
-        "minVersionTestedInclusive": "2.12.0",
+        "minVersionTestedInclusive": "1.4.214",
         "maxVersionSupportedInclusive": "4.3.1",
         "maxVersionAvailableInclusive": "4.3.1",
         "maxVersionTestedInclusive": "4.3.1"
@@ -1291,7 +1308,7 @@
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
-        "minVersionTestedInclusive": "6.1.0",
+        "minVersionTestedInclusive": "4.5.14",
         "maxVersionSupportedInclusive": "10.0.6",
         "maxVersionAvailableInclusive": "10.0.6",
         "maxVersionTestedInclusive": "10.0.6"
