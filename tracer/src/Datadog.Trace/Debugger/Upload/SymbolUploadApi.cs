@@ -18,13 +18,14 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Upload
 {
     internal sealed class SymbolUploadApi : DebuggerUploadApiBase, ISymbolUploadApi
     {
         private const int MaxRetries = 3;
-        private const int StartingSleepDuration = 3;
+        private static readonly TimeSpan StartingSleepDuration = TimeSpan.FromSeconds(3);
 
         private static readonly byte[] InitialBoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes("--" + DatadogHttpValues.Boundary + DatadogHttpValues.CrLf);
         private static readonly byte[] BoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes(DatadogHttpValues.CrLf + "--" + DatadogHttpValues.Boundary + DatadogHttpValues.CrLf);
@@ -38,18 +39,21 @@ namespace Datadog.Trace.Debugger.Upload
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly string _runtimeId;
         private readonly bool _enableCompression;
+        private readonly Func<TimeSpan, Task> _delayAsync;
 
         private SymbolUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             string runtimeId,
-            bool enableCompression)
+            bool enableCompression,
+            Func<TimeSpan, Task>? delayAsync = null)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
             _runtimeId = runtimeId;
             _enableCompression = enableCompression;
+            _delayAsync = delayAsync ?? Task.Delay;
             discoveryService.SubscribeToChanges(c =>
             {
                 Endpoint = c.SymbolDbEndpoint;
@@ -61,14 +65,16 @@ namespace Datadog.Trace.Debugger.Upload
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            bool enableCompression)
+            bool enableCompression,
+            Func<TimeSpan, Task>? delayAsync = null)
         {
             return new SymbolUploadApi(
                 apiRequestFactory,
                 discoveryService,
                 gitMetadataTagsProvider,
                 Tracer.RuntimeId,
-                enableCompression);
+                enableCompression,
+                delayAsync);
         }
 
         internal static ArraySegment<byte> CreateEventMetadata(
@@ -162,40 +168,59 @@ namespace Datadog.Trace.Debugger.Upload
                 return false;
             }
 
-            var request = _apiRequestFactory.Create(new Uri(uri));
-
             var retries = 0;
-            var sleepDuration = StartingSleepDuration;
+            var endpoint = new Uri(uri);
+            var lastStatusCode = 0;
 
             while (retries < MaxRetries)
             {
-                using var response = await request
-                                           .PostAsync(
-                                                stream => WriteMultipartFormData(stream, writeSymbols, metadata),
-                                                MimeTypes.MultipartFormData,
-                                                contentEncoding: null,
-                                                DatadogHttpValues.Boundary)
-                                           .ConfigureAwait(false);
-                if (response.StatusCode is >= 200 and <= 299)
+                var request = _apiRequestFactory.Create(endpoint);
+                var shouldRetry = false;
+                using (var response = await request
+                           .PostAsync(
+                                stream => WriteMultipartFormData(stream, writeSymbols, metadata),
+                                MimeTypes.MultipartFormData,
+                                contentEncoding: null,
+                                DatadogHttpValues.Boundary)
+                           .ConfigureAwait(false))
                 {
-                    return true;
+                    if (response.StatusCode is >= 200 and <= 299)
+                    {
+                        return true;
+                    }
+
+                    lastStatusCode = response.StatusCode;
+                    retries++;
+                    shouldRetry = response.ShouldRetry();
+                    if (!shouldRetry)
+                    {
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            var content = await response.ReadAsStringAsync().ConfigureAwait(false);
+                            Log.Debug<int, string, Uri, Guid, long>("Symbol database upload failed with non-retryable response status code {StatusCode} and message: {ResponseContent}; endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", response.StatusCode, content, endpoint, metadata.UploadId, metadata.BatchNum);
+                        }
+
+                        return false;
+                    }
                 }
 
-                retries++;
-                if (response.ShouldRetry())
+                if (shouldRetry)
                 {
-                    sleepDuration *= (int)Math.Pow(2, retries);
-                    await Task.Delay(sleepDuration).ConfigureAwait(false);
-                }
-                else
-                {
-                    var content = await response.ReadAsStringAsync().ConfigureAwait(false);
-                    Log.Error<int, string>("Failed to upload symbol with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, content);
-                    return false;
+                    if (retries < MaxRetries)
+                    {
+                        Log.Debug<int, int, Uri, Guid, long>("Retrying symbol database upload after retryable response status code {StatusCode}; attempt {Attempt}, endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", lastStatusCode, retries, endpoint, metadata.UploadId, metadata.BatchNum);
+                        await _delayAsync(GetRetryDelay(retries)).ConfigureAwait(false);
+                    }
                 }
             }
 
+            Log.Debug<int, int, Uri, Guid, long>("Symbol database upload failed after {Attempts} attempts with last status code {StatusCode}; endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", MaxRetries, lastStatusCode, endpoint, metadata.UploadId, metadata.BatchNum);
             return false;
+        }
+
+        private static TimeSpan GetRetryDelay(int retryAttempt)
+        {
+            return TimeSpan.FromSeconds(StartingSleepDuration.TotalSeconds * Math.Pow(2, retryAttempt - 1));
         }
 
         private async Task WriteMultipartFormData(Stream destination, Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)

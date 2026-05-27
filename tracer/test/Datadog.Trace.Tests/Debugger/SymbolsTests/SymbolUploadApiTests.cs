@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -90,10 +91,102 @@ public class SymbolUploadApiTests
                                metadata);
 
         result.Should().BeTrue();
-        requestFactory.Request.ContentType.Should().Be("multipart/form-data; boundary=" + DatadogHttpValues.Boundary);
-        requestFactory.Request.MultipartBoundary.Should().Be(DatadogHttpValues.Boundary);
+        AssertMultipartRequest(requestFactory.Request, metadata, uploadId, symbolsJson, enableCompression);
+    }
 
-        var parts = ParseMultipart(requestFactory.Request.Body);
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SendBatchAsync_RetriesWithFreshRequestAndReplaysMultipartBody(bool enableCompression)
+    {
+        const string symbolsJson = """{"service":"benchmark","scopes":[{"name":"type"}]}""";
+        var uploadId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+        var metadata = new SymDbUploadMetadata(
+            Service: "benchmark-service",
+            Version: "1.0.0",
+            UploadId: uploadId,
+            BatchNum: 7,
+            Final: false);
+        var requestFactory = new CapturingRequestFactory(500, 200);
+        var discoveryService = new DiscoveryServiceMock();
+        var delays = new List<TimeSpan>();
+        var api = SymbolUploadApi.Create(
+            requestFactory,
+            discoveryService,
+            new NullGitMetadataProvider(),
+            enableCompression,
+            delay =>
+            {
+                delays.Add(delay);
+                return Task.CompletedTask;
+            });
+        discoveryService.TriggerChange(symbolDbEndpoint: "symdb/v1/input");
+        var writerCalls = 0;
+
+        var result = await api
+                          .SendBatchAsync(
+                               async stream =>
+                               {
+                                   writerCalls++;
+                                   var bytes = Encoding.UTF8.GetBytes(symbolsJson);
+                                   await stream.WriteAsync(bytes, 0, bytes.Length);
+                               },
+                               metadata);
+
+        result.Should().BeTrue();
+        writerCalls.Should().Be(2);
+        delays.Should().Equal(TimeSpan.FromSeconds(3));
+        requestFactory.Requests.Should().HaveCount(2);
+        requestFactory.Requests[0].Should().NotBeSameAs(requestFactory.Requests[1]);
+        AssertMultipartRequest(requestFactory.Requests[0], metadata, uploadId, symbolsJson, enableCompression);
+        AssertMultipartRequest(requestFactory.Requests[1], metadata, uploadId, symbolsJson, enableCompression);
+    }
+
+    [Fact]
+    public async Task SendBatchAsync_DoesNotDelayAfterFinalRetry()
+    {
+        const string symbolsJson = """{"service":"benchmark","scopes":[{"name":"type"}]}""";
+        var metadata = new SymDbUploadMetadata(
+            Service: "benchmark-service",
+            Version: "1.0.0",
+            UploadId: Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            BatchNum: 7,
+            Final: false);
+        var requestFactory = new CapturingRequestFactory(500, 500, 500);
+        var discoveryService = new DiscoveryServiceMock();
+        var delays = new List<TimeSpan>();
+        var api = SymbolUploadApi.Create(
+            requestFactory,
+            discoveryService,
+            new NullGitMetadataProvider(),
+            enableCompression: false,
+            delayAsync: delay =>
+            {
+                delays.Add(delay);
+                return Task.CompletedTask;
+            });
+        discoveryService.TriggerChange(symbolDbEndpoint: "symdb/v1/input");
+
+        var result = await api
+                          .SendBatchAsync(
+                               async stream =>
+                               {
+                                   var bytes = Encoding.UTF8.GetBytes(symbolsJson);
+                                   await stream.WriteAsync(bytes, 0, bytes.Length);
+                               },
+                               metadata);
+
+        result.Should().BeFalse();
+        requestFactory.Requests.Should().HaveCount(3);
+        delays.Should().Equal(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(6));
+    }
+
+    private static void AssertMultipartRequest(CapturingRequest request, SymDbUploadMetadata metadata, Guid uploadId, string symbolsJson, bool enableCompression)
+    {
+        request.ContentType.Should().Be("multipart/form-data; boundary=" + DatadogHttpValues.Boundary);
+        request.MultipartBoundary.Should().Be(DatadogHttpValues.Boundary);
+
+        var parts = ParseMultipart(request.Body);
         parts.Should().HaveCount(2);
 
         var filePart = parts[0];
@@ -235,8 +328,16 @@ public class SymbolUploadApiTests
     private sealed class CapturingRequestFactory : IApiRequestFactory
     {
         private readonly Uri _baseEndpoint = new("http://localhost:8126/");
+        private readonly Queue<int> _statusCodes;
 
-        public CapturingRequest Request { get; } = new();
+        public CapturingRequestFactory(params int[] statusCodes)
+        {
+            _statusCodes = new Queue<int>(statusCodes.Length == 0 ? new[] { 200 } : statusCodes);
+        }
+
+        public List<CapturingRequest> Requests { get; } = new();
+
+        public CapturingRequest Request => Requests[0];
 
         public string Info(Uri endpoint)
             => endpoint.ToString();
@@ -245,7 +346,12 @@ public class SymbolUploadApiTests
             => UriHelpers.Combine(_baseEndpoint, relativePath);
 
         public IApiRequest Create(Uri endpoint)
-            => Request;
+        {
+            var statusCode = _statusCodes.Count > 0 ? _statusCodes.Dequeue() : 200;
+            var request = new CapturingRequest(statusCode);
+            Requests.Add(request);
+            return request;
+        }
 
         public void SetProxy(WebProxy proxy, NetworkCredential credential)
         {
@@ -254,6 +360,13 @@ public class SymbolUploadApiTests
 
     private sealed class CapturingRequest : IApiRequest
     {
+        private readonly int _statusCode;
+
+        public CapturingRequest(int statusCode)
+        {
+            _statusCode = statusCode;
+        }
+
         public byte[] Body { get; private set; } = [];
 
         public string? ContentType { get; private set; }
@@ -265,7 +378,7 @@ public class SymbolUploadApiTests
         }
 
         public Task<IApiResponse> GetAsync()
-            => Task.FromResult<IApiResponse>(new TestApiResponse(200, "{}", MimeTypes.Json));
+            => Task.FromResult<IApiResponse>(new TestApiResponse(_statusCode, "{}", MimeTypes.Json));
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
             => PostAsync(bytes, contentType, contentEncoding: null);
@@ -275,7 +388,7 @@ public class SymbolUploadApiTests
             Body = new byte[bytes.Count];
             Array.Copy(bytes.Array!, bytes.Offset, Body, 0, bytes.Count);
             ContentType = contentType;
-            return Task.FromResult<IApiResponse>(new TestApiResponse(200, "{}", MimeTypes.Json));
+            return Task.FromResult<IApiResponse>(new TestApiResponse(_statusCode, "{}", MimeTypes.Json));
         }
 
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
@@ -284,7 +397,7 @@ public class SymbolUploadApiTests
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
         {
             ContentType = MimeTypes.Json;
-            return Task.FromResult<IApiResponse>(new TestApiResponse(200, "{}", MimeTypes.Json));
+            return Task.FromResult<IApiResponse>(new TestApiResponse(_statusCode, "{}", MimeTypes.Json));
         }
 
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
@@ -294,7 +407,7 @@ public class SymbolUploadApiTests
             Body = stream.ToArray();
             ContentType = ContentTypeHelper.GetContentType(contentType, multipartBoundary);
             MultipartBoundary = multipartBoundary;
-            return new TestApiResponse(200, "{}", MimeTypes.Json);
+            return new TestApiResponse(_statusCode, "{}", MimeTypes.Json);
         }
 
         public Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
