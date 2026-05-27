@@ -34,7 +34,6 @@ namespace Datadog.Trace.Debugger.Upload
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IDiscoveryService _discoveryService;
-        private readonly Action<AgentConfiguration> _discoveryCallback;
         private readonly string _runtimeId;
         private readonly bool _enableCompression;
         private readonly Func<TimeSpan, Task> _delayAsync;
@@ -54,8 +53,7 @@ namespace Datadog.Trace.Debugger.Upload
             _runtimeId = runtimeId;
             _enableCompression = enableCompression;
             _delayAsync = delayAsync ?? Task.Delay;
-            _discoveryCallback = OnDiscoveryServiceChanged;
-            discoveryService.SubscribeToChanges(_discoveryCallback);
+            discoveryService.SubscribeToChanges(OnDiscoveryServiceChanged);
         }
 
         // Keep these boundary bytes in sync with DatadogHttpValues.Boundary.
@@ -256,7 +254,7 @@ namespace Datadog.Trace.Debugger.Upload
 
             Endpoint = configuration.SymbolDbEndpoint;
             // Once the agent advertises the SymDB endpoint, keep using it for this uploader.
-            _discoveryService.RemoveSubscription(_discoveryCallback);
+            _discoveryService.RemoveSubscription(OnDiscoveryServiceChanged);
             Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
         }
 
