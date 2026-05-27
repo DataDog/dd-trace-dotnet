@@ -7,6 +7,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -25,6 +26,7 @@ namespace Datadog.Trace.Debugger.Upload
     internal sealed class SymbolUploadApi : DebuggerUploadApiBase, ISymbolUploadApi
     {
         private const int MaxRetries = 3;
+        private const int FailureLogInterval = 10;
         private static readonly TimeSpan StartingSleepDuration = TimeSpan.FromSeconds(3);
 
         private static readonly byte[] InitialBoundaryBytes = EncodingHelpers.Utf8NoBom.GetBytes("--" + DatadogHttpValues.Boundary + DatadogHttpValues.CrLf);
@@ -42,6 +44,7 @@ namespace Datadog.Trace.Debugger.Upload
         private readonly string _runtimeId;
         private readonly bool _enableCompression;
         private readonly Func<TimeSpan, Task> _delayAsync;
+        private int _uploadFailureCount;
 
         private SymbolUploadApi(
             IApiRequestFactory apiRequestFactory,
@@ -170,12 +173,10 @@ namespace Datadog.Trace.Debugger.Upload
 
             var retries = 0;
             var endpoint = new Uri(uri);
-            var lastStatusCode = 0;
 
             while (retries < MaxRetries)
             {
                 var request = _apiRequestFactory.Create(endpoint);
-                var shouldRetry = false;
                 using (var response = await request
                            .PostAsync(
                                 stream => WriteMultipartFormData(stream, writeSymbols, metadata),
@@ -189,33 +190,60 @@ namespace Datadog.Trace.Debugger.Upload
                         return true;
                     }
 
-                    lastStatusCode = response.StatusCode;
                     retries++;
-                    shouldRetry = response.ShouldRetry();
+                    var shouldRetry = response.ShouldRetry();
                     if (!shouldRetry)
                     {
-                        if (Log.IsEnabled(LogEventLevel.Debug))
-                        {
-                            var content = await response.ReadAsStringAsync().ConfigureAwait(false);
-                            Log.Debug<int, string, Uri, Guid, long>("Symbol database upload failed with non-retryable response status code {StatusCode} and message: {ResponseContent}; endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", response.StatusCode, content, endpoint, metadata.UploadId, metadata.BatchNum);
-                        }
+                        var failureCount = Interlocked.Increment(ref _uploadFailureCount);
+                        await LogUploadFailureAsync(response, endpoint, metadata, failureCount).ConfigureAwait(false);
 
                         return false;
                     }
-                }
 
-                if (shouldRetry)
-                {
-                    if (retries < MaxRetries)
+                    if (retries >= MaxRetries)
                     {
-                        Log.Debug<int, int, Uri, Guid, long>("Retrying symbol database upload after retryable response status code {StatusCode}; attempt {Attempt}, endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", lastStatusCode, retries, endpoint, metadata.UploadId, metadata.BatchNum);
-                        await _delayAsync(GetRetryDelay(retries)).ConfigureAwait(false);
+                        var failureCount = Interlocked.Increment(ref _uploadFailureCount);
+                        await LogUploadFailureAsync(response, endpoint, metadata, failureCount).ConfigureAwait(false);
+
+                        return false;
                     }
+
+                    Log.Debug<int, int, Uri, Guid, long>("Retrying symbol database upload after retryable response status code {StatusCode}; attempt {Attempt}, endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", response.StatusCode, retries, endpoint, metadata.UploadId, metadata.BatchNum);
+                    await _delayAsync(GetRetryDelay(retries)).ConfigureAwait(false);
                 }
             }
 
-            Log.Debug<int, int, Uri, Guid, long>("Symbol database upload failed after {Attempts} attempts with last status code {StatusCode}; endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", MaxRetries, lastStatusCode, endpoint, metadata.UploadId, metadata.BatchNum);
             return false;
+        }
+
+        private static bool ShouldLogFailureAsError(int failureCount)
+        {
+            return failureCount == 1 || failureCount % FailureLogInterval == 0;
+        }
+
+        private static Task LogUploadFailureAsync(IApiResponse response, Uri endpoint, SymDbUploadMetadata metadata, int failureCount)
+        {
+            var shouldLogError = ShouldLogFailureAsError(failureCount);
+            var isDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
+            if (!shouldLogError && !isDebugEnabled)
+            {
+                return Task.CompletedTask;
+            }
+
+            return LogUploadFailureCoreAsync(response, endpoint, metadata, failureCount, shouldLogError);
+        }
+
+        private static async Task LogUploadFailureCoreAsync(IApiResponse response, Uri endpoint, SymDbUploadMetadata metadata, int failureCount, bool shouldLogError)
+        {
+            var content = await response.ReadAsStringAsync().ConfigureAwait(false);
+            if (shouldLogError)
+            {
+                Log.Error<int, string, int>("Symbol database upload failed with status code {StatusCode} and message: {ResponseContent}; failure count {FailureCount}", response.StatusCode, content, failureCount);
+            }
+            else
+            {
+                Log.Debug<int, string, Uri, Guid, long>("Symbol database upload failed with status code {StatusCode} and message: {ResponseContent}; endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", response.StatusCode, content, endpoint, metadata.UploadId, metadata.BatchNum);
+            }
         }
 
         private static TimeSpan GetRetryDelay(int retryAttempt)
