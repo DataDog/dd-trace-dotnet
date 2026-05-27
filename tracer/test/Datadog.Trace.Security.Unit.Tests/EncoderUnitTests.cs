@@ -124,6 +124,31 @@ public class EncoderUnitTests : WafLibraryRequiredTest
     [InlineData(WafConstants.MaxContainerSize - 1, WafConstants.MaxContainerSize - 1)]
     [InlineData(WafConstants.MaxContainerSize, WafConstants.MaxContainerSize)]
     [InlineData(WafConstants.MaxContainerSize + 10000, WafConstants.MaxContainerSize)]
+    public void TestNonIListEnumerableLength(int length, int expectedLength)
+    {
+        // The legacy encoder's type switch has no case for IEnumerable<object>;
+        // it falls through to EncodeUnknownType which calls ToString() on the
+        // enumerable, so this test only applies to the new Encoder.
+        Skip.If(_encoder is not Encoder, "Test only applies to the new (unsafe) Encoder");
+
+        // Lazy LINQ enumerable: RepeatIterator<T> implements IEnumerable<T> but
+        // not IList, so this exercises the non-IList branch of ProcessIEnumerable
+        var target = Enumerable.Repeat((object)"test", length);
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+
+        intermediate.ResultDdwafObject.NbEntries.Should().Be((ulong)expectedLength);
+
+        var result = intermediate.ResultDdwafObject.Decode() as List<object>;
+        result.Should().NotBeNull();
+        result.Should().HaveCount(expectedLength);
+        result.Should().AllBeEquivalentTo("test");
+    }
+
+    [SkippableTheory]
+    [InlineData(WafConstants.MaxContainerSize - 1, WafConstants.MaxContainerSize - 1)]
+    [InlineData(WafConstants.MaxContainerSize, WafConstants.MaxContainerSize)]
+    [InlineData(WafConstants.MaxContainerSize + 10000, WafConstants.MaxContainerSize)]
     public void TestMapLength(int length, int expectedLength)
     {
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");

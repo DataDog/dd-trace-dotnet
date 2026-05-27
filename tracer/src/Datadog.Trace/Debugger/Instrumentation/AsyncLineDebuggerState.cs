@@ -49,7 +49,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <param name="invocationTarget">The instance object (or null for static methods)</param>
         /// <param name="kickoffInvocationTarget">The instance object (or null for static methods) of the kickoff method</param>
-        internal AsyncLineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, object kickoffInvocationTarget)
+        /// <param name="snapshotCreator">The snapshot creator associated with the executing probe configuration</param>
+        internal AsyncLineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, object kickoffInvocationTarget, IDebuggerSnapshotCreator snapshotCreator)
         {
             _probeId = probeId;
             _scope = scope;
@@ -57,8 +58,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _lineNumber = lineNumber;
             _probeFilePath = probeFilePath;
             HasLocalsOrReturnValue = false;
-            var processor = probeData.Processor;
-            SnapshotCreator = processor.CreateSnapshotCreator();
+            SnapshotCreator = snapshotCreator;
             ProbeData = probeData;
             _moveNextInvocationTarget = invocationTarget;
             _kickoffInvocationTarget = kickoffInvocationTarget;

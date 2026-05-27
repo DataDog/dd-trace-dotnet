@@ -21,7 +21,8 @@ public class IpcTests
         using var server = new IpcServer(name);
         using var client = new IpcClient(name);
 
-        TestMessage? finalValue = null;
+        var finalServerValue = 0;
+        var finalClientValue = 0;
         var serverTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var clientTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -39,7 +40,7 @@ public class IpcTests
                 }
             }
 
-            Interlocked.Exchange(ref finalValue, value);
+            Interlocked.Exchange(ref finalServerValue, value.ServerValue);
             if (value.ServerValue == maxNumber)
             {
                 serverTaskCompletion.TrySetResult(true);
@@ -58,7 +59,7 @@ public class IpcTests
                 }
             }
 
-            Interlocked.Exchange(ref finalValue, value);
+            Interlocked.Exchange(ref finalClientValue, value.ClientValue);
             if (value.ClientValue == maxNumber)
             {
                 clientTaskCompletion.TrySetResult(true);
@@ -71,12 +72,11 @@ public class IpcTests
         var ipcTasks = Task.WhenAll(serverTaskCompletion.Task, clientTaskCompletion.Task);
         if (await Task.WhenAny(ipcTasks, delayTask) == delayTask)
         {
-            throw new TimeoutException($"Timeout waiting for messages. Values went up to [{finalValue?.ServerValue}, {finalValue?.ClientValue}]");
+            throw new TimeoutException($"Timeout waiting for messages. Values went up to [{finalServerValue}, {finalClientValue}]");
         }
 
-        finalValue.Should().NotBeNull();
-        finalValue!.ServerValue.Should().Be(maxNumber);
-        finalValue.ClientValue.Should().Be(maxNumber);
+        finalServerValue.Should().Be(maxNumber);
+        finalClientValue.Should().Be(maxNumber);
     }
 
     private class TestMessage(int serverValue, int clientValue)

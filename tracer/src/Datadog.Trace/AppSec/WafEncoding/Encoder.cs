@@ -308,7 +308,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     var idx = 0;
                     foreach (var val in enumerable)
                     {
-                        if (idx > childrenCount)
+                        if (idx >= childrenCount)
                         {
                             break;
                         }

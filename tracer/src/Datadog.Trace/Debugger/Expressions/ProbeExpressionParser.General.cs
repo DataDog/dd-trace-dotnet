@@ -270,27 +270,29 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Constant(false);
         }
 
-        return Expression.TypeIs(value, type);
+        return RedactDictionaryOperation(value, Expression.TypeIs(value, type));
     }
 
-    private MemberExpression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private Expression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
-        return Expression.Property(
+        var source = ParseTree(reader, parameters, itParameter);
+        return RedactDictionaryOperation(source, Expression.Property(
             Expression.Call(
-                ParseTree(reader, parameters, itParameter),
+                source,
                 ProbeExpressionParserHelper.GetMethodByReflection(typeof(object), "GetType", Type.EmptyTypes)),
-            nameof(Type.FullName));
+            nameof(Type.FullName)));
     }
 
-    private TypeBinaryExpression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
-        return Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType);
+        return RedactDictionaryOperation(value, Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType));
     }
 
-    private UnaryExpression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private Expression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
-        return Expression.Not(IsUndefined(reader, parameters, itParameter));
+        var value = ParseTree(reader, parameters, itParameter);
+        return RedactDictionaryOperation(value, Expression.Not(Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType)));
     }
 
     private Expression GetMember(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -353,6 +355,17 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
+            if (propertyOrFieldValue == nameof(KeyValuePair<int, int>.Value) &&
+                TryRedactDictionaryValueMember(expression, out var redactedValue))
+            {
+                return redactedValue;
+            }
+
+            if (TryGetRedactedDictionaryValue(expression, out var redactedDictionaryValue))
+            {
+                return RedactedDictionaryValueMember(redactedDictionaryValue, propertyOrFieldValue);
+            }
+
             var memberInfo = expression.Type.GetMember(propertyOrFieldValue, GetMemberFlags).FirstOrDefault();
 
             if (memberInfo == null)
@@ -411,6 +424,11 @@ internal partial class ProbeExpressionParser<T>
         {
             // metric
             return Expression.Return(ReturnTarget, Expression.Constant(0), typeof(T));
+        }
+        else if (typeof(T) == typeof(object))
+        {
+            // capture expression
+            return Expression.Return(ReturnTarget, Expression.Constant(Expressions.UndefinedValue.Instance, typeof(object)), typeof(T));
         }
         else
         {

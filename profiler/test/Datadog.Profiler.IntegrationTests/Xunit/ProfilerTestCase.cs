@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
@@ -29,12 +30,62 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
         {
         }
 
-        public override Task<RunSummary> RunAsync(
+        public override async Task<RunSummary> RunAsync(
             IMessageSink diagnosticMessageSink,
             IMessageBus messageBus,
             object[] constructorArguments,
             ExceptionAggregator aggregator,
             CancellationTokenSource cancellationTokenSource)
-           => new ProfilerTestCaseRunner(this, DisplayName, SkipReason, constructorArguments, TestMethodArguments, messageBus, aggregator, cancellationTokenSource).RunAsync();
+        {
+            int attemptsRemaining = 1;
+            var retryReason = string.Empty;
+
+            try
+            {
+                var flakyAttribute = TestMethod.Method.ToRuntimeMethod().GetCustomAttribute<FlakyAttribute>();
+                if (flakyAttribute is not null)
+                {
+                    // First attempt + retries
+                    attemptsRemaining = flakyAttribute.MaxRetries + 1;
+                    retryReason = flakyAttribute.Reason;
+                }
+            }
+            catch (Exception e)
+            {
+                diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: Looking for FlakyAttribute: {e}"));
+            }
+
+            if (attemptsRemaining <= 1)
+            {
+                return await RunOnceAsync(messageBus);
+            }
+
+            DelayedMessageBus delayedBus = null;
+            try
+            {
+                while (true)
+                {
+                    attemptsRemaining--;
+                    delayedBus = new DelayedMessageBus(messageBus);
+
+                    var summary = await RunOnceAsync(delayedBus);
+
+                    if (summary.Failed == 0 || attemptsRemaining <= 0)
+                    {
+                        return summary;
+                    }
+
+                    diagnosticMessageSink.OnMessage(
+                        new DiagnosticMessage($"RETRYING: {DisplayName} ({attemptsRemaining} attempts remaining, {retryReason})"));
+                }
+            }
+            finally
+            {
+                delayedBus?.Dispose();
+            }
+
+            Task<RunSummary> RunOnceAsync(IMessageBus bus)
+                => new ProfilerTestCaseRunner(this, DisplayName, SkipReason, constructorArguments, TestMethodArguments, bus, aggregator, cancellationTokenSource).RunAsync();
+        }
     }
 }
