@@ -159,40 +159,39 @@ namespace Datadog.Trace.Debugger.Upload
             while (retries < MaxRetries)
             {
                 var request = _apiRequestFactory.Create(endpoint);
-                using (var response = await request
+                using var response = await request
                            .PostAsync(
                                 stream => WriteMultipartFormData(stream, writeSymbols, state, metadata),
                                 MimeTypes.MultipartFormData,
                                 contentEncoding: null,
                                 DatadogHttpValues.Boundary)
-                           .ConfigureAwait(false))
+                           .ConfigureAwait(false);
+
+                if (response.StatusCode is >= 200 and <= 299)
                 {
-                    if (response.StatusCode is >= 200 and <= 299)
-                    {
-                        return true;
-                    }
-
-                    retries++;
-                    var shouldRetry = response.ShouldRetry();
-                    if (!shouldRetry)
-                    {
-                        var failureCount = Interlocked.Increment(ref _uploadFailureCount);
-                        await LogUploadFailureAsync(response, endpoint, metadata, failureCount).ConfigureAwait(false);
-
-                        return false;
-                    }
-
-                    if (retries >= MaxRetries)
-                    {
-                        var failureCount = Interlocked.Increment(ref _uploadFailureCount);
-                        await LogUploadFailureAsync(response, endpoint, metadata, failureCount).ConfigureAwait(false);
-
-                        return false;
-                    }
-
-                    Log.Debug<int, int, Uri, Guid, long>("Retrying symbol database upload after retryable response status code {StatusCode}; attempt {Attempt}, endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", response.StatusCode, retries, endpoint, metadata.UploadId, metadata.BatchNum);
-                    await _delayAsync(GetRetryDelay(retries)).ConfigureAwait(false);
+                    return true;
                 }
+
+                retries++;
+                var shouldRetry = response.ShouldRetry();
+                if (!shouldRetry)
+                {
+                    var failureCount = Interlocked.Increment(ref _uploadFailureCount);
+                    await LogUploadFailureAsync(response, endpoint, metadata, failureCount).ConfigureAwait(false);
+
+                    return false;
+                }
+
+                if (retries >= MaxRetries)
+                {
+                    var failureCount = Interlocked.Increment(ref _uploadFailureCount);
+                    await LogUploadFailureAsync(response, endpoint, metadata, failureCount).ConfigureAwait(false);
+
+                    return false;
+                }
+
+                Log.Debug<int, int, Uri, Guid, long>("Retrying symbol database upload after retryable response status code {StatusCode}; attempt {Attempt}, endpoint {Endpoint}, uploadId {UploadId}, batchNum {BatchNum}", response.StatusCode, retries, endpoint, metadata.UploadId, metadata.BatchNum);
+                await _delayAsync(GetRetryDelay(retries)).ConfigureAwait(false);
             }
 
             return false;
