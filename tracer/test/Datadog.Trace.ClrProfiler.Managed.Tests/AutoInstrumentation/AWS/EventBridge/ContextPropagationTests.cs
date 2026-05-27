@@ -372,6 +372,51 @@ public class ContextPropagationTests
     }
 
     [Fact]
+    public async Task InjectTracingContext_WithDsmEnabled_AndDefaultBus_AddsPathwayContext()
+    {
+        var request = GeneratePutEventsRequest([
+            new PutEventsRequestEntry { Detail = "{}", DetailType = DetailType, EventBusName = null }
+        ]);
+
+        var proxy = request.DuckCast<IPutEventsRequest>();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+
+        await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+        var scope = AwsEventBridgeCommon.CreateScope(tracer, "PutEvents", SpanKinds.Producer, out _);
+
+        try
+        {
+            ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope!.Span.Context, baggage: null));
+
+            var entries = (IList)proxy.Entries.Value!;
+            entries.Count.Should().Be(1);
+            var entry = (PutEventsRequestEntry)entries[0]!;
+
+            var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail);
+            detail.Should().NotBeNull();
+            var detailDictionary = detail!;
+            detailDictionary.Should().ContainKey(DatadogKey);
+
+            var extracted = detailDictionary.TryGetValue(DatadogKey, out var datadogObject);
+            extracted.Should().BeTrue();
+            datadogObject.Should().NotBeNull();
+
+            var jsonString = JsonConvert.SerializeObject(datadogObject);
+            var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var extractedTraceContextDictionary = extractedTraceContext!;
+
+            extractedTraceContextDictionary.Should().ContainKey(DataStreamsContextKey);
+            extractedTraceContextDictionary.Should().NotContainKey(ResourceNameKey);
+            extractedTraceContextDictionary[DataStreamsContextKey].Should().NotBeNull();
+            scope.Span.GetTag("pathway.hash").Should().NotBeNullOrEmpty();
+        }
+        finally
+        {
+            scope?.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task InjectTracingContext_WithDsmEnabled_AndInvalidDetail_DoesNotCreatePathwayContext()
     {
         var request = GeneratePutEventsRequest([

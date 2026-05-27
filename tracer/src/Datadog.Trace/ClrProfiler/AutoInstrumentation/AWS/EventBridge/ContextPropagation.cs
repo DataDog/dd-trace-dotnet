@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
         private static PathwayContext? SetDataStreamsCheckpoint(Tracer tracer, Scope? scope, string? detailType, string? eventBusName, long payloadSizeBytes)
         {
-            if (scope is null || StringUtil.IsNullOrEmpty(eventBusName))
+            if (scope is null)
             {
                 return null;
             }
@@ -127,8 +127,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 return null;
             }
 
+            var busName = AwsEventBridgeCommon.GetEventBusNameOrDefault(eventBusName);
             var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
-                new EventBridgeEdgeTagCacheKey(detailType ?? string.Empty, eventBusName!),
+                new EventBridgeEdgeTagCacheKey(detailType ?? string.Empty, busName),
                 static k => ["direction:out", $"topic:{k.DetailType}", $"type:eventbridge:{k.EventBusName}"]);
 
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes, timeInQueueMs: 0);
