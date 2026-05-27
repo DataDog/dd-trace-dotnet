@@ -17,7 +17,6 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
@@ -34,11 +33,6 @@ namespace Datadog.Trace.Tests.Debugger.SymbolsTests;
 [UsesVerify]
 public class SymbolUploadApiTests
 {
-    public SymbolUploadApiTests()
-    {
-        VerifyHelper.InitializeGlobalSettings();
-    }
-
     [Fact]
     public void EventMetadata_IsValidJson_AndContainsAllFields()
     {
@@ -101,7 +95,9 @@ public class SymbolUploadApiTests
                                metadata);
 
         result.Should().BeTrue();
-        await Verifier.Verify(ParseRequestForVerify(requestFactory.Request, enableCompression))
+        var settings = new VerifySettings();
+        settings.UseDirectory(Path.Combine("..", "..", "..", "snapshots"));
+        await Verifier.Verify(ParseRequestForVerify(requestFactory.Request, enableCompression), settings)
                       .UseFileName($"{nameof(SymbolUploadApiTests)}.SendBatchAsync_WritesExpectedMultipartWireFormat.{(enableCompression ? "compressed" : "uncompressed")}")
                       .DisableRequireUniquePrefix();
     }
