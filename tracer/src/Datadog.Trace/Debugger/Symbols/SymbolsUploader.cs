@@ -119,6 +119,12 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             const int bufferSize = 4096;
             using var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize, leaveOpen: true);
+#if NETCOREAPP
+            foreach (var chunk in builder.GetChunks())
+            {
+                await streamWriter.WriteAsync(chunk).ConfigureAwait(false);
+            }
+#else
             char[]? buffer = null;
             try
             {
@@ -133,9 +139,6 @@ namespace Datadog.Trace.Debugger.Symbols
                     position += count;
                     remaining -= count;
                 }
-
-                await streamWriter.FlushAsync().ConfigureAwait(false);
-                await stream.FlushAsync().ConfigureAwait(false);
             }
             finally
             {
@@ -144,6 +147,8 @@ namespace Datadog.Trace.Debugger.Symbols
                     ArrayPool<char>.Shared.Return(buffer);
                 }
             }
+#endif
+            await streamWriter.FlushAsync().ConfigureAwait(false);
         }
 
         private void RegisterToAssemblyLoadEvent()
