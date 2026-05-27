@@ -272,7 +272,8 @@ public class SymbolUploadApiTests
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string? contentEncoding)
         {
-            Body = bytes.ToArray();
+            Body = new byte[bytes.Count];
+            Array.Copy(bytes.Array!, bytes.Offset, Body, 0, bytes.Count);
             ContentType = contentType;
             return Task.FromResult<IApiResponse>(new TestApiResponse(200, "{}", MimeTypes.Json));
         }
