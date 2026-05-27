@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,7 +35,6 @@ namespace Datadog.Trace.Agent
         private readonly Uri _statsEndpoint; // This endpoint is passed for the _sendStats callback, but otherwise unused
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
-        private readonly Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter _metricsExporter;
 
         public ApiOtlp(IApiRequestFactory apiRequestFactory, TracerSettings settings, ExporterSettings exporterSettings, IDatadogLogger log = null)
         {
@@ -53,8 +50,6 @@ namespace Datadog.Trace.Agent
             _tracesHeaders = exporterSettings.OtlpTracesHeaders ?? [];
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
-
-            _metricsExporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(settings, exporterSettings);
         }
 
         private delegate Task<SendResult> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
@@ -196,8 +191,13 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     // TODO: Telemetry - Record OTLP Traces API submissions
-                    // TODO: Add more precise logic for "application/x-protobuf" vs "application/json"
-                    response = await request.PostAsync(traces, MimeTypes.Json).ConfigureAwait(false);
+                    var contentType = _tracesEncoding switch
+                    {
+                        TracesEncoding.OtlpProtobuf => MimeTypes.XProtobuf,
+                        _ => MimeTypes.Json,
+                    };
+
+                    response = await request.PostAsync(traces, contentType).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
@@ -304,4 +304,3 @@ namespace Datadog.Trace.Agent
         }
     }
 }
-#endif

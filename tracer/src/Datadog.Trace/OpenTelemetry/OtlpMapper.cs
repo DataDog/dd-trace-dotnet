@@ -22,9 +22,19 @@ namespace Datadog.Trace.OpenTelemetry;
 
 internal static class OtlpMapper
 {
+    internal delegate void KeyValueWriter<TState>(ref TState state, KeyValue keyValue);
+
     public static void EmitResourceAttributesFromTraceChunk(in TraceChunkModel traceChunk, Action<KeyValue> writeKeyValue)
     {
-        writeKeyValue(new KeyValue("service.name", traceChunk.DefaultServiceName ?? "unknown_service:dotnet"));
+        EmitResourceAttributesFromTraceChunk(
+            in traceChunk,
+            ref writeKeyValue,
+            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
+    }
+
+    public static void EmitResourceAttributesFromTraceChunk<TState>(in TraceChunkModel traceChunk, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    {
+        writeKeyValue(ref state, new KeyValue("service.name", traceChunk.DefaultServiceName ?? "unknown_service:dotnet"));
 
         // Breaking change: We are now sending the service version as a resource attribute.
         // This means we're adding version tags to all spans, not just those whose service name is the default service name
@@ -32,32 +42,32 @@ internal static class OtlpMapper
         {
             // Note: The `service.version` resource attribute gets written as both a `service.version` span tag
             // and a `version` span tag
-            writeKeyValue(new KeyValue("service.version", version));
+            writeKeyValue(ref state, new KeyValue("service.version", version));
         }
 
         if (traceChunk.Environment is string environment)
         {
             // Note: The `deployment.environment.name` resource attribute gets written as both a `deployment.environment.name` span tag
             // and a `env` span tag
-            writeKeyValue(new KeyValue("deployment.environment.name", environment));
+            writeKeyValue(ref state, new KeyValue("deployment.environment.name", environment));
         }
 
         // Write telemetry SDK attributes
-        writeKeyValue(new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
-        writeKeyValue(new KeyValue("telemetry.sdk.language", TracerConstants.Language));
-        writeKeyValue(new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.language", TracerConstants.Language));
+        writeKeyValue(ref state, new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
 
         if (traceChunk.GitCommitSha is string gitCommitSha)
         {
-            writeKeyValue(new KeyValue("git.commit.sha", gitCommitSha));
+            writeKeyValue(ref state, new KeyValue("git.commit.sha", gitCommitSha));
         }
 
         if (traceChunk.GitRepositoryUrl is string gitRepositoryUrl)
         {
-            writeKeyValue(new KeyValue("git.repository_url", gitRepositoryUrl));
+            writeKeyValue(ref state, new KeyValue("git.repository_url", gitRepositoryUrl));
         }
 
-        writeKeyValue(new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+        writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
     }
 
     public static bool IsHandledResourceAttribute(string tagKey)
@@ -73,12 +83,21 @@ internal static class OtlpMapper
 
     public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
     {
+        return EmitAttributesFromSpan(
+            in spanModel,
+            limit,
+            ref writeKeyValue,
+            static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
+    }
+
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    {
         int count = 0;
         int droppedAttributesCount = 0;
 
         if (count < limit)
         {
-            writeKeyValue(new KeyValue("service.name", spanModel.Span.ServiceName));
+            writeKeyValue(ref state, new KeyValue("service.name", spanModel.Span.ServiceName));
             count++;
         }
         else
@@ -88,7 +107,7 @@ internal static class OtlpMapper
 
         if (count < limit)
         {
-            writeKeyValue(new KeyValue("operation.name", spanModel.Span.OperationName));
+            writeKeyValue(ref state, new KeyValue("operation.name", spanModel.Span.OperationName));
             count++;
         }
         else
@@ -98,7 +117,7 @@ internal static class OtlpMapper
 
         if (count < limit)
         {
-            writeKeyValue(new KeyValue("resource.name", spanModel.Span.ResourceName));
+            writeKeyValue(ref state, new KeyValue("resource.name", spanModel.Span.ResourceName));
             count++;
         }
         else
@@ -108,7 +127,7 @@ internal static class OtlpMapper
 
         if (count < limit)
         {
-            writeKeyValue(new KeyValue("span.type", spanModel.Span.Type));
+            writeKeyValue(ref state, new KeyValue("span.type", spanModel.Span.Type));
             count++;
         }
         else
@@ -121,7 +140,7 @@ internal static class OtlpMapper
         {
             if (count < limit)
             {
-                writeKeyValue(new KeyValue(Trace.Tags.LastParentId, spanModel.Span.Context.LastParentId));
+                writeKeyValue(ref state, new KeyValue(Trace.Tags.LastParentId, spanModel.Span.Context.LastParentId));
                 count++;
             }
             else
@@ -137,7 +156,7 @@ internal static class OtlpMapper
         {
             if (count < limit)
             {
-                writeKeyValue(new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+                writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
                 count++;
             }
             else
@@ -151,7 +170,7 @@ internal static class OtlpMapper
         {
             if (count < limit)
             {
-                writeKeyValue(new KeyValue(Trace.Tags.Origin, spanModel.TraceChunk.Origin));
+                writeKeyValue(ref state, new KeyValue(Trace.Tags.Origin, spanModel.TraceChunk.Origin));
                 count++;
             }
             else
@@ -176,17 +195,19 @@ internal static class OtlpMapper
             tagProcessors = tracer.TracerManager?.TagProcessors;
         }
 
-        var tagWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
+        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit);
         spanModel.Span.Tags.EnumerateTags(ref tagWriter);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
+        state = tagWriter.State;
 
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
-        var metricsWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
+        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit);
         spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
         count = metricsWriter.Count;
         droppedAttributesCount += metricsWriter.DroppedCount;
+        state = metricsWriter.State;
 
         // if (model.IsLocalRoot)
         // add the "apm.enabled" tag with a value of 0
@@ -197,18 +218,20 @@ internal static class OtlpMapper
         return droppedAttributesCount;
     }
 
-    internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+    internal struct TagWriter<TState> : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
     {
-        private readonly Action<KeyValue> _writeKeyValue;
+        private readonly KeyValueWriter<TState> _writeKeyValue;
         private readonly ITagProcessor[]? _tagProcessors;
         private readonly int _limit;
 
+        public TState State;
         public int Count;
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TagWriter(Action<KeyValue> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit)
+        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit)
         {
+            State = state;
             _writeKeyValue = writeKeyValue;
             _tagProcessors = tagProcessors;
             _limit = limit;
@@ -243,7 +266,7 @@ internal static class OtlpMapper
                     }
                 }
 
-                _writeKeyValue(new KeyValue(key, value));
+                _writeKeyValue(ref State, new KeyValue(key, value));
                 Count++;
             }
             else
@@ -269,7 +292,7 @@ internal static class OtlpMapper
                     }
                 }
 
-                _writeKeyValue(new KeyValue(key, value));
+                _writeKeyValue(ref State, new KeyValue(key, value));
                 Count++;
             }
             else
@@ -283,7 +306,7 @@ internal static class OtlpMapper
         {
             if (Count < _limit)
             {
-                _writeKeyValue(new KeyValue(item.Key, item.Value));
+                _writeKeyValue(ref State, new KeyValue(item.Key, item.Value));
                 Count++;
             }
             else

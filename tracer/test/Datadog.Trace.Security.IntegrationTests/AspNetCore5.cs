@@ -83,6 +83,28 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.ScrubSessionFingerprint();
             await VerifyHelper.VerifySpans(spans, settings).UseFileName($"{GetTestName()}.test-null-action");
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestSecurityTestingHeadersTagged()
+        {
+            // Runs in both SecurityDisabled and SecurityEnabled derivatives — proves the
+            // markers land on the entry span unconditionally.
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var url = "/";
+            var dateTime = DateTime.UtcNow;
+            var headers = new[]
+            {
+                new KeyValuePair<string, string>("x-datadog-endpoint-scan", "scan-uuid-1"),
+                new KeyValuePair<string, string>("x-datadog-security-test", "test-uuid-2"),
+            };
+            await SubmitRequest(url, body: null, contentType: null, headers: headers);
+            var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.ScrubSessionFingerprint();
+            await VerifyHelper.VerifySpans(spans, settings).UseFileName($"{GetTestName()}.security-testing-headers");
+        }
     }
 
     public class AspNetCore5TestsSecurityDisabledWithDefaultExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
