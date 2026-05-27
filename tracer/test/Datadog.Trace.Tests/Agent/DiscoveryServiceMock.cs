@@ -50,7 +50,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
 
     public void TriggerChange(AgentConfiguration config)
     {
-        foreach (var callback in Callbacks)
+        foreach (var callback in new List<Action<AgentConfiguration>>(Callbacks))
         {
             callback(config);
         }

@@ -37,6 +37,8 @@ namespace Datadog.Trace.Debugger.Upload
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly IDiscoveryService _discoveryService;
+        private readonly Action<AgentConfiguration> _discoveryCallback;
         private readonly string _runtimeId;
         private readonly bool _enableCompression;
         private readonly Func<TimeSpan, Task> _delayAsync;
@@ -51,14 +53,12 @@ namespace Datadog.Trace.Debugger.Upload
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
+            _discoveryService = discoveryService;
             _runtimeId = runtimeId;
             _enableCompression = enableCompression;
             _delayAsync = delayAsync ?? Task.Delay;
-            discoveryService.SubscribeToChanges(c =>
-            {
-                Endpoint = c.SymbolDbEndpoint;
-                Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
-            });
+            _discoveryCallback = OnDiscoveryServiceChanged;
+            discoveryService.SubscribeToChanges(_discoveryCallback);
         }
 
         internal static ISymbolUploadApi Create(
@@ -221,6 +221,18 @@ namespace Datadog.Trace.Debugger.Upload
         private static TimeSpan GetRetryDelay(int retryAttempt)
         {
             return TimeSpan.FromSeconds(StartingSleepDuration.TotalSeconds * Math.Pow(2, retryAttempt - 1));
+        }
+
+        private void OnDiscoveryServiceChanged(AgentConfiguration configuration)
+        {
+            if (string.IsNullOrEmpty(configuration.SymbolDbEndpoint))
+            {
+                return;
+            }
+
+            Endpoint = configuration.SymbolDbEndpoint;
+            _discoveryService.RemoveSubscription(_discoveryCallback);
+            Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
         }
 
         private async Task WriteMultipartFormData(Stream destination, Func<Stream, Task> writeSymbols, SymDbUploadMetadata metadata)

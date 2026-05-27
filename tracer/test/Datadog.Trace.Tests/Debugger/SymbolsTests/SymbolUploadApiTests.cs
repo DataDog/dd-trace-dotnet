@@ -181,6 +181,23 @@ public class SymbolUploadApiTests
         delays.Should().Equal(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(6));
     }
 
+    [Fact]
+    public void DiscoverySubscription_IsRemovedAfterSymbolDbEndpointIsDiscovered()
+    {
+        var requestFactory = new CapturingRequestFactory();
+        var discoveryService = new DiscoveryServiceMock();
+        _ = SymbolUploadApi.Create(requestFactory, discoveryService, new NullGitMetadataProvider(), enableCompression: false);
+
+        discoveryService.Callbacks.Should().HaveCount(1);
+
+        discoveryService.TriggerChange(symbolDbEndpoint: null);
+        discoveryService.Callbacks.Should().HaveCount(1);
+
+        discoveryService.TriggerChange(symbolDbEndpoint: "symdb/v1/input");
+
+        discoveryService.Callbacks.Should().BeEmpty();
+    }
+
     private static void AssertMultipartRequest(CapturingRequest request, SymDbUploadMetadata metadata, Guid uploadId, string symbolsJson, bool enableCompression)
     {
         request.ContentType.Should().Be("multipart/form-data; boundary=" + DatadogHttpValues.Boundary);

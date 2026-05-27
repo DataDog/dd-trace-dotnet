@@ -37,7 +37,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
     protected string? Endpoint
     {
         get => _endpoint;
-        set => _endpoint = value;
+        set => Volatile.Write(ref _endpoint, value);
     }
 
     public abstract Task<bool> SendBatchAsync(ArraySegment<byte> data);
