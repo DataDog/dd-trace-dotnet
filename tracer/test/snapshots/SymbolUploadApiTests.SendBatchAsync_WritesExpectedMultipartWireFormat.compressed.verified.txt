@@ -5,7 +5,7 @@
       Name: file,
       FileName: file.gz,
       ContentType: application/gzip,
-      Length: 61,
+      Length: <compressed-length>,
       Content: {"service":"benchmark","scopes":[]}
     },
     {
@@ -24,7 +24,7 @@
   "uploadId": "11111111-2222-3333-4444-555555555555",
   "batchNum": 7,
   "final": false,
-  "attachmentSize": 61
+  "attachmentSize": "<compressed-length>"
 }
     }
   ]

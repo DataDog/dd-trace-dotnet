@@ -195,6 +195,21 @@ public class SymbolUploadApiTests
         delays.Should().Equal(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(6));
     }
 
+    [Theory]
+    [InlineData(400, false)]
+    [InlineData(401, false)]
+    [InlineData(403, false)]
+    [InlineData(408, true)]
+    [InlineData(429, true)]
+    [InlineData(500, true)]
+    [InlineData(502, true)]
+    [InlineData(503, true)]
+    [InlineData(504, true)]
+    public void ShouldRetry_SplitsPayloadBugsFromTransientFailures(int statusCode, bool expected)
+    {
+        new TestApiResponse(statusCode, "{}", MimeTypes.Json).ShouldRetry().Should().Be(expected);
+    }
+
     [Fact]
     public void DiscoverySubscription_IsRemovedAfterSymbolDbEndpointIsDiscovered()
     {
@@ -225,6 +240,13 @@ public class SymbolUploadApiTests
         var eventContent = ReadBytes(eventPart.Data);
         var eventJson = JObject.Parse(Encoding.UTF8.GetString(eventContent));
         eventJson["runtimeId"] = "<runtime-id>";
+        eventJson["attachmentSize"]?.Value<int>().Should().Be(fileContent.Length);
+
+        var fileLength = enableCompression ? (object)"<compressed-length>" : fileContent.Length;
+        if (enableCompression)
+        {
+            eventJson["attachmentSize"] = "<compressed-length>";
+        }
 
         return new
         {
@@ -236,7 +258,7 @@ public class SymbolUploadApiTests
                     filePart.Name,
                     filePart.FileName,
                     filePart.ContentType,
-                    Length = fileContent.Length,
+                    Length = fileLength,
                     Content = Encoding.UTF8.GetString(enableCompression ? Decompress(fileContent) : fileContent)
                 },
                 new
@@ -244,7 +266,7 @@ public class SymbolUploadApiTests
                     eventPart.Name,
                     eventPart.FileName,
                     eventPart.ContentType,
-                    Length = eventContent.Length,
+                    Length = (object)eventContent.Length,
                     Content = eventJson.ToString(Formatting.Indented)
                 }
             }

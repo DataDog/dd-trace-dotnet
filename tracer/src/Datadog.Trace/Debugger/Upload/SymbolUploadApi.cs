@@ -221,7 +221,14 @@ namespace Datadog.Trace.Debugger.Upload
             var content = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (shouldLogError)
             {
-                Log.Error<int, string, int>("Symbol database upload failed with status code {StatusCode} and message: {ResponseContent}; failure count {FailureCount}", response.StatusCode, content, failureCount);
+                if (response.ShouldRetry())
+                {
+                    Log.ErrorSkipTelemetry<int, string, int>("Symbol database upload failed with status code {StatusCode} and message: {ResponseContent}; failure count {FailureCount}", response.StatusCode, content, failureCount);
+                }
+                else
+                {
+                    Log.Error<int, string, int>("Symbol database upload failed with status code {StatusCode} and message: {ResponseContent}; failure count {FailureCount}", response.StatusCode, content, failureCount);
+                }
             }
             else
             {
@@ -248,6 +255,7 @@ namespace Datadog.Trace.Debugger.Upload
             }
 
             Endpoint = configuration.SymbolDbEndpoint;
+            // Once the agent advertises the SymDB endpoint, keep using it for this uploader.
             _discoveryService.RemoveSubscription(_discoveryCallback);
             Log.Debug("SymbolUploadApi: Updated endpoint to {Endpoint}", Endpoint);
         }
