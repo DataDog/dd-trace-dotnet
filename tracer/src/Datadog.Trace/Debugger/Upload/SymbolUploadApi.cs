@@ -27,6 +27,7 @@ namespace Datadog.Trace.Debugger.Upload
     {
         private const int MaxRetries = 3;
         private const int FailureLogInterval = 10;
+        // Must fit each static multipart fragment below; CopyTo throws if a fragment grows past this size.
         private const int StaticMultipartBufferSize = 256;
         private static readonly TimeSpan StartingSleepDuration = TimeSpan.FromSeconds(3);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolUploadApi>();
@@ -57,6 +58,7 @@ namespace Datadog.Trace.Debugger.Upload
             discoveryService.SubscribeToChanges(_discoveryCallback);
         }
 
+        // Keep these boundary bytes in sync with DatadogHttpValues.Boundary.
         private static ReadOnlySpan<byte> InitialBoundaryBytes => "--faa0a896-8bc8-48f3-b46d-016f2b15a884\r\n"u8;
 
         private static ReadOnlySpan<byte> BoundaryBytes => "\r\n--faa0a896-8bc8-48f3-b46d-016f2b15a884\r\n"u8;
