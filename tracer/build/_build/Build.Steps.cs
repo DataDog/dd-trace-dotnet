@@ -1664,7 +1664,9 @@ partial class Build
                   // Filter to a single candidate SampleName.
                   // Look up in SamplesSolution: the default Solution is Datadog.Trace.Build.g.sln, which excludes standalone samples.
                   var candidates =
-                      TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj")
+                      TracerDirectory.GlobFiles(
+                                         "test/test-applications/integrations/**/*.csproj",
+                                         "test/test-applications/azure-functions/**/*.csproj")
                                      .Select(x => SamplesSolution.GetProject(x))
                                      .Where(project => project is not null
                                                     && project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase));

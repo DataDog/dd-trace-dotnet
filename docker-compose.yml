@@ -240,6 +240,8 @@ services:
     profiles: ["group2"]
     depends_on:
       - sqledge
+    ports:
+      - "127.0.0.1:5672:5672"
     environment:
       - ACCEPT_EULA=Y
       - SQL_SERVER=sqledge:1433
@@ -456,6 +458,7 @@ services:
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-10.0.100}
+        - INSTALL_AZURE_FUNCTIONS_CORE_TOOLS=${INSTALL_AZURE_FUNCTIONS_CORE_TOOLS:-false}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-10.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
