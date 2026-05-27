@@ -957,6 +957,7 @@
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
+      <type fullname="System.Text.StringBuilder/ChunkEnumerator" />
       <type fullname="System.Threading.CancellationToken" />
       <type fullname="System.Threading.CancellationTokenRegistration" />
       <type fullname="System.Threading.CancellationTokenSource" />
