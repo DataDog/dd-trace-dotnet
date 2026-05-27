@@ -21,7 +21,6 @@
       "diagnostics": {
         "exception": {
           "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
-          "stacktrace": null,
           "type": "NO_TYPE"
         },
         "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",

@@ -6,7 +6,9 @@
 using System;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.ExtensionMethods;
 using FluentAssertions;
+using FluentAssertions.Extensions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
@@ -18,17 +20,33 @@ public class PathwayContextEncoderTests
     [Fact]
     public void TestRandomValues()
     {
+        var nowNs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1_000_000;
         for (var i = 0; i < 1000; i++)
         {
-            EncodeTest(unchecked((ulong)GetLong()), Math.Abs(GetLong()), Math.Abs(GetLong()));
+            // Mask off the sign bit to guarantee non-negative — Math.Abs(long.MinValue) returns long.MinValue
+            // (overflow), which would feed a negative timestamp into EncodeTest and fail the overflow guard.
+            EncodeTest(unchecked((ulong)GetLong()), GetNonNegativeLongInThePast(nowNs), GetNonNegativeLongInThePast(nowNs));
         }
+
+        static long GetNonNegativeLongInThePast(long nowNs) => (GetLong() & long.MaxValue) % nowNs;
     }
 
     [Theory]
     [InlineData(0, 0, 0)]
-    [InlineData(ulong.MaxValue, long.MaxValue, long.MaxValue)]
     public void TestEdgeCases(ulong hash, long pathwayStartNs, long edgeStartNs)
         => EncodeTest(hash, pathwayStartNs, edgeStartNs);
+
+    [Theory]
+    [InlineData(ulong.MaxValue, long.MaxValue, long.MaxValue)]
+    public void DecoderFailure_OverflowTimestamps(ulong hash, long pathwayStartNs, long edgeStartNs)
+    {
+        var pathway = new PathwayContext(new PathwayHash(hash), pathwayStartNs, edgeStartNs);
+
+        var bytes = PathwayContextEncoder.Encode(pathway);
+        var decoded = PathwayContextEncoder.Decode(bytes);
+
+        decoded.Should().BeNull();
+    }
 
     [Theory]
     [InlineData(0)]
@@ -105,6 +123,37 @@ public class PathwayContextEncoderTests
         decoded.Should().BeNull();
     }
 
+    [Fact]
+    public void DecoderFailure_FutureTimestamps()
+    {
+        var futureNs = DateTimeOffset.UtcNow
+                                     .AddNanoseconds(PathwayContextEncoder.MaxClockSkewNs * 5)
+                                     .ToUnixTimeNanoseconds();
+        var pathway = new PathwayContext(new PathwayHash(123), pathwayStartNs: futureNs, edgeStartNs: futureNs);
+
+        var bytes = PathwayContextEncoder.Encode(pathway);
+        var decoded = PathwayContextEncoder.Decode(bytes);
+
+        decoded.Should().BeNull();
+    }
+
+    [Fact]
+    public void DecodeSucceeds_TimestampExactlyNow()
+    {
+        // The check uses strict >, so a timestamp equal to nowNs (within tolerance) must round-trip.
+        var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+        EncodeTest(hash: 123, pathwayStartNs: nowNs, edgeStartNs: nowNs);
+    }
+
+    [Fact]
+    public void DecodeSucceeds_TimestampWithinSkewTolerance()
+    {
+        var futureNs = DateTimeOffset.UtcNow
+                                     .AddNanoseconds(PathwayContextEncoder.MaxClockSkewNs / 2)
+                                     .ToUnixTimeNanoseconds();
+        EncodeTest(hash: 123, pathwayStartNs: futureNs, edgeStartNs: futureNs);
+    }
+
 #if NETCOREAPP3_1_OR_GREATER
     [Theory]
     [InlineData(0, 0, 0)]
@@ -119,6 +168,22 @@ public class PathwayContextEncoderTests
         var bytesWritten = PathwayContextEncoder.EncodeInto(pathway, buffer);
 
         buffer.Slice(0, bytesWritten).ToArray().Should().Equal(expected);
+    }
+
+    [Fact]
+    public void DecoderFailure_FutureTimestamps_Span()
+    {
+        var futureNs = DateTimeOffset.UtcNow
+                                     .AddNanoseconds(PathwayContextEncoder.MaxClockSkewNs * 5)
+                                     .ToUnixTimeNanoseconds();
+        var pathway = new PathwayContext(new PathwayHash(123), pathwayStartNs: futureNs, edgeStartNs: futureNs);
+
+        Span<byte> buffer = stackalloc byte[PathwayContextEncoder.MaxEncodedSize];
+        var bytesWritten = PathwayContextEncoder.EncodeInto(pathway, buffer);
+
+        var decoded = PathwayContextEncoder.Decode(buffer.Slice(0, bytesWritten));
+
+        decoded.Should().BeNull();
     }
 #endif
 
