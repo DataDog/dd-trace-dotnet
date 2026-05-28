@@ -17,10 +17,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
     internal static class AwsEventBridgeCommon
     {
-        private const string DatadogAwsEventBridgeServiceName = "aws-eventbridge";
+        // private const string DatadogAwsEventBridgeServiceName = "aws-eventbridge";
         private const string EventBridgeRequestOperationName = "eventbridge.request";
-        private const string EventBridgeServiceName = "EventBridge";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsEventBridgeCommon));
+        // private const string EventBridgeServiceName = "EventBridge";
+        // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsEventBridgeCommon));
 
         internal const string IntegrationName = nameof(IntegrationId.AwsEventBridge);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AwsEventBridge;
@@ -38,26 +38,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
-                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsEventBridgeServiceName);
-                var operationName = GetOperationName(tracer);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                var span = scope.Span;
-
-                span.Type = SpanTypes.Http;
-                span.ResourceName = $"{EventBridgeServiceName}.{operation}";
-
-                tags.Service = EventBridgeServiceName;
-                tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
+            //     var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsEventBridgeServiceName);
+            //     var operationName = GetOperationName(tracer);
+            //     scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+            //     var span = scope.Span;
+            //
+            //     span.Type = SpanTypes.Http;
+            //     span.ResourceName = $"{EventBridgeServiceName}.{operation}";
+            //
+            //     tags.Service = EventBridgeServiceName;
+            //     tags.Operation = operation;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)

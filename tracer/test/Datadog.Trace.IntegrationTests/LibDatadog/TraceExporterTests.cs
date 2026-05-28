@@ -94,14 +94,14 @@ public class TraceExporterTests
         {
             using (var span = tracer.StartSpan("operationName"))
             {
-                span.ResourceName = "resourceName";
+                // span.ResourceName = "resourceName"; // non-recording-spans experiment: setter removed
                 span.Type = "test";
                 span.SetMetaStruct("test-meta-struct", metaStructBytes);
             }
 
             using (var span2 = tracer.StartSpan("operationName2"))
             {
-                span2.ResourceName = "resourceName2";
+                // span2.ResourceName = "resourceName2"; // non-recording-spans experiment: setter removed
                 span2.Type = "test";
                 span2.SetMetaStruct("test-meta-struct", metaStructBytes);
             }

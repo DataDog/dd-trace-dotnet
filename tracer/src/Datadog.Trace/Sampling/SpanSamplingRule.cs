@@ -34,7 +34,7 @@ namespace Datadog.Trace.Sampling
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanSamplingRule"/> class.
         /// </summary>
-        /// <param name="serviceNameGlob">The glob pattern for the <see cref="Span.ServiceName"/>.</param>
+        /// <param name="serviceNameGlob">The glob pattern for the <see cref="SpanBase.ServiceName"/>.</param>
         /// <param name="operationNameGlob">The glob pattern for the <see cref="Span.OperationName"/>.</param>
         /// <param name="resourceNameGlob">The glob pattern for the <see cref="Span.ResourceName"/>.</param>
         /// <param name="tagGlobs">The glob pattern for the <see cref="Span.Tags"/>.</param>

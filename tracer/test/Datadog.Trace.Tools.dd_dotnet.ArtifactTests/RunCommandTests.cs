@@ -88,7 +88,7 @@ public class RunCommandTests : ConsoleTestHelper
 
         try
         {
-            while (process.StandardOutput.ReadLine() is not "Ready" or null)
+            while (process.StandardOutput.ReadLine() is not "Ready" and not null)
             {
             }
 

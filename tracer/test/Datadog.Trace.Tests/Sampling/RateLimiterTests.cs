@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Sampling
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
-            var span = new Span(spanContext, null);
+            var span = TestSpanExtensions.CreateSpan(spanContext, null);
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null, intervalMilliseconds: null);
             var allowed = rateLimiter.Allowed(span);
             Assert.True(allowed);
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Tests.Sampling
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
-            var span = new Span(spanContext, null);
+            var span = TestSpanExtensions.CreateSpan(spanContext, null);
 
             var remaining = howManyTimes;
             var allowedCount = 0;
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Tests.Sampling
                                 var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
 
                                 // pass a specific start time since there is no TraceContext
-                                var span = new Span(spanContext, DateTimeOffset.UtcNow);
+                                var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow);
 
                                 Interlocked.Increment(ref totalAttempted);
 

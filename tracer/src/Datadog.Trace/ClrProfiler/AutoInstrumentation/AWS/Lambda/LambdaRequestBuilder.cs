@@ -47,44 +47,44 @@ internal sealed class LambdaRequestBuilder : ILambdaExtensionRequest
             request.Headers.Set("lambda-runtime-aws-request-id", state);
         }
 
-        if (stateObject.Scope is { Span: var span })
-        {
-            // TODO: add support for 128-bit trace ids in serverless
-            request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
-            request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
-
-            if (span.Context.TraceContext is { } traceContext)
-            {
-                var samplingPriority = traceContext.GetOrMakeSamplingDecision(span);
-                request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
-            }
-
-            var errorMessage = span.GetTag("error.msg");
-            if (errorMessage != null)
-            {
-                var encodedErrMessage = System.Text.Encoding.UTF8.GetBytes(errorMessage);
-                request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, Convert.ToBase64String(encodedErrMessage));
-            }
-
-            var errorType = span.GetTag("error.type");
-            if (errorType != null)
-            {
-                var encodedErrType = System.Text.Encoding.UTF8.GetBytes(errorType);
-                request.Headers.Set(HttpHeaderNames.InvocationErrorType, Convert.ToBase64String(encodedErrType));
-            }
-
-            var errorStack = span.GetTag("error.stack");
-            if (errorStack != null)
-            {
-                var encodedErrStack = System.Text.Encoding.UTF8.GetBytes(errorStack);
-                request.Headers.Set(HttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));
-            }
-        }
-
-        if (isError)
-        {
-            request.Headers.Set(HttpHeaderNames.InvocationError, "true");
-        }
+        // if (stateObject.Scope is { Span: var span })
+        // {
+        //     // TODO: add support for 128-bit trace ids in serverless
+        //     request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
+        //     request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
+        //
+        //     if (span.Context.TraceContext is { } traceContext)
+        //     {
+        //         var samplingPriority = traceContext.GetOrMakeSamplingDecision(span);
+        //         request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
+        //     }
+        //
+        //     var errorMessage = span.GetTag("error.msg");
+        //     if (errorMessage != null)
+        //     {
+        //         var encodedErrMessage = System.Text.Encoding.UTF8.GetBytes(errorMessage);
+        //         request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, Convert.ToBase64String(encodedErrMessage));
+        //     }
+        //
+        //     var errorType = span.GetTag("error.type");
+        //     if (errorType != null)
+        //     {
+        //         var encodedErrType = System.Text.Encoding.UTF8.GetBytes(errorType);
+        //         request.Headers.Set(HttpHeaderNames.InvocationErrorType, Convert.ToBase64String(encodedErrType));
+        //     }
+        //
+        //     var errorStack = span.GetTag("error.stack");
+        //     if (errorStack != null)
+        //     {
+        //         var encodedErrStack = System.Text.Encoding.UTF8.GetBytes(errorStack);
+        //         request.Headers.Set(HttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));
+        //     }
+        // }
+        //
+        // if (isError)
+        // {
+        //     request.Headers.Set(HttpHeaderNames.InvocationError, "true");
+        // }
 
         return request;
     }

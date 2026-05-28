@@ -33,26 +33,26 @@ internal static class HangfireCommon
 
         Scope? scope = null;
 
-        try
-        {
-            scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, tags: tags);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            scope.Span.Type = IntegrationType;
-            scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
-            tags.JobId = performingContext.JobId;
-            tags.CreatedAt = performingContext.BackgroundJob.CreatedAt.ToString("O");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Unable to create Hangfire span.");
-        }
+        // try
+        // {
+        //     scope = tracer.StartActiveInternal(HangfireConstants.OnPerformOperation, parent: parentContext, tags: tags);
+        //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+        //     scope.Span.Type = IntegrationType;
+        //     scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performingContext.Job;
+        //     tags.JobId = performingContext.JobId;
+        //     tags.CreatedAt = performingContext.BackgroundJob.CreatedAt.ToString("O");
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Unable to create Hangfire span.");
+        // }
 
         return scope;
     }
 
     internal static void SetStatusAndRecordException(Scope? scope, Exception exception)
     {
-        scope?.Span.SetException(exception);
+        // scope?.Span.SetException(exception);
     }
 
     internal static void InjectSpanProperties(IDictionary<string, string> jobParams, string key, string value)

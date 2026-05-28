@@ -38,9 +38,9 @@ public sealed class DataStreamsTrackTransactionIntegration
         var manager = tracer.TracerManager.DataStreamsManager;
         var activeSpan = tracer.InternalActiveScope?.Span;
 
-        if (activeSpan is not null)
+        if (activeSpan is Span span)
         {
-            activeSpan.TrackTransaction(manager, transactionId, checkpointName);
+            span.TrackTransaction(manager, transactionId, checkpointName);
         }
         else
         {

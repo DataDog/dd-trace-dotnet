@@ -13,8 +13,8 @@ namespace Datadog.Trace.Sampling
 
         bool IsResourceBasedSamplingRule { get; }
 
-        bool IsMatch(Span span);
+        bool IsMatch(in SamplingContext span);
 
-        float GetSamplingRate(Span span);
+        float GetSamplingRate(in SamplingContext span);
     }
 }

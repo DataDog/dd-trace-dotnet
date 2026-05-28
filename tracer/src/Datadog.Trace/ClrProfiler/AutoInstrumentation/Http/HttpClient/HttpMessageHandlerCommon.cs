@@ -46,19 +46,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     integrationId,
                     out var tags);
 
-                var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-                if (dataStreamsManager.IsTransactionTrackingEnabled)
+                if (scope?.Span is Span span)
                 {
-                    var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders);
-                    if (extractors != null)
+                    var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+                    if (dataStreamsManager.IsTransactionTrackingEnabled)
                     {
-                        foreach (var extractor in extractors)
+                        var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpOutHeaders);
+                        if (extractors != null)
                         {
-                            if (headers.TryGetValues(extractor.Value, out var headerValues))
+                            foreach (var extractor in extractors)
                             {
-                                foreach (var headerValue in headerValues)
+                                if (headers.TryGetValues(extractor.Value, out var headerValues))
                                 {
-                                    scope?.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
+                                    foreach (var headerValue in headerValues)
+                                    {
+                                        span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
+                                    }
                                 }
                             }
                         }
@@ -79,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 #if NETCOREAPP
                     if (requestMessage != null)
                     {
-                        var rootSpan = tracer.InternalActiveScope?.Root?.Span;
+                        var rootSpan = tracer.InternalActiveScope?.Root?.Span as Span;
                         try
                         {
                             executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(requestMessage, scope.Span.SpanId, rootSpan);
@@ -115,26 +118,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
             try
             {
-#if NETCOREAPP
-                if (responseMessage is System.Net.Http.HttpResponseMessage response)
-                {
-                    var statusCode = (int)response.StatusCode;
-                    if (state.State is true)
-                    {
-                        RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
-                    }
-#else
-                if (responseMessage.Instance is not null)
-                {
-                    var statusCode = responseMessage.StatusCode;
-#endif
-                    scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
-                }
-
-                if (exception != null)
-                {
-                    scope.Span.SetException(exception);
-                }
+// #if NETCOREAPP
+//                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
+//                 {
+//                     var statusCode = (int)response.StatusCode;
+//                     if (state.State is true)
+//                     {
+//                         RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+//                     }
+// #else
+//                 if (responseMessage.Instance is not null)
+//                 {
+//                     var statusCode = responseMessage.StatusCode;
+// #endif
+//                     scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+//                 }
+//
+//                 if (exception != null)
+//                 {
+//                     scope.Span.SetException(exception);
+//                 }
             }
             finally
             {

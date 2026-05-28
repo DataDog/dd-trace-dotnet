@@ -81,8 +81,8 @@ namespace Datadog.Trace.Tests
             var parentScope = (Scope)_tracer.StartActive("Parent");
             var childScope = (Scope)_tracer.StartActive("Child");
 
-            var parentSpan = parentScope.Span;
-            var childSpan = childScope.Span;
+            var parentSpan = (Span)parentScope.Span;
+            var childSpan = (Span)childScope.Span;
             var spanLink = new SpanLink(parentSpan.Context);
 
             childSpan.AddLink(spanLink);
@@ -97,8 +97,8 @@ namespace Datadog.Trace.Tests
             var parentScope = (Scope)_tracer.StartActive("Parent");
             var childScope = (Scope)_tracer.StartActive("Child");
 
-            var parentSpan = parentScope.Span;
-            var childSpan = childScope.Span;
+            var parentSpan = (Span)parentScope.Span;
+            var childSpan = (Span)childScope.Span;
             var spanLink = new SpanLink(parentSpan.Context);
 
             childSpan.Finish();
@@ -242,7 +242,7 @@ namespace Datadog.Trace.Tests
         public void SpanIds_SingleScopeIsRoot()
         {
             Scope scope = (Scope)_tracer.StartActive("Operation Galactic Storm");
-            var span = scope.Span;
+            var span = (Span)scope.Span;
             using (scope)
             {
                 span.SpanId.Should().NotBe(0);
@@ -271,7 +271,7 @@ namespace Datadog.Trace.Tests
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
             var spanCreationSettings = new SpanCreationSettings() { Parent = remoteParentSpanCtx };
             Scope scope = (Scope)_tracer.StartActive(operationName: "Operation Galactic Storm", spanCreationSettings);
-            var span = scope.Span;
+            var span = (Span)scope.Span;
             using (scope)
             {
                 span.SpanId.Should().NotBe(0);
@@ -315,9 +315,9 @@ namespace Datadog.Trace.Tests
                 scope2.Span.SpanId.Should().NotBe(0);
                 scope3.Span.SpanId.Should().NotBe(0);
 
-                var span1 = scope1.Span;
-                var span2 = scope2.Span;
-                var span3 = scope3.Span;
+                var span1 = (Span)scope1.Span;
+                var span2 = (Span)scope2.Span;
+                var span3 = (Span)scope3.Span;
 
                 span1.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span2.RootSpanId.Should().Be(scope1.Span.SpanId);
@@ -337,8 +337,8 @@ namespace Datadog.Trace.Tests
             using (Scope scope3 = (Scope)_tracer.StartActive(operationName: "Operation Middle 2"))
             using (Span span4 = _tracer.StartSpan(operationName: "Operation Leaf"))
             {
-                var span1 = scope1.Span;
-                var span3 = scope3.Span;
+                var span1 = (Span)scope1.Span;
+                var span3 = (Span)scope3.Span;
 
                 span1.SpanId.Should().NotBe(0);
                 span2.SpanId.Should().NotBe(0);
@@ -371,7 +371,7 @@ namespace Datadog.Trace.Tests
             var trace = new TraceContext(new StubDatadogTracer());
             var propagatedContext = new SpanContext(traceId, spanId: 1, samplingPriority: null, serviceName: null, origin: null);
             var childContext = new SpanContext(propagatedContext, trace, serviceName: null);
-            var span = new Span(childContext, start: null);
+            var span = TestSpanExtensions.CreateSpan(childContext, start: null);
 
             span.GetTag(Tags.TraceId).Should().Be(expected);
         }

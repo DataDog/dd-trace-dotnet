@@ -3,46 +3,46 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETFRAMEWORK
-using System;
-using System.Web;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-
-#nullable enable
-
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
-{
-    internal static class HttpContextHelper
-    {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpContextHelper));
-        private static bool _canReadHttpResponseHeaders = true;
-
-        internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
-        {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
-            {
-                var headerTags = Tracer.Instance.CurrentTraceSettings.Settings.HeaderTags;
-                if (!headerTags.IsNullOrEmpty())
-                {
-                    try
-                    {
-                        scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), headerTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                    }
-                    catch (PlatformNotSupportedException ex)
-                    {
-                        // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
-                        Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                        _canReadHttpResponseHeaders = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting HTTP headers to create header tags.");
-                    }
-                }
-            }
-        }
-    }
-}
-#endif
+// #if NETFRAMEWORK
+// using System;
+// using System.Web;
+// using Datadog.Trace.ExtensionMethods;
+// using Datadog.Trace.Logging;
+// using Datadog.Trace.Propagators;
+//
+// #nullable enable
+//
+// namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+// {
+//     internal static class HttpContextHelper
+//     {
+//         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpContextHelper));
+//         private static bool _canReadHttpResponseHeaders = true;
+//
+//         internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
+//         {
+//             if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
+//             {
+//                 var headerTags = Tracer.Instance.CurrentTraceSettings.Settings.HeaderTags;
+//                 if (!headerTags.IsNullOrEmpty())
+//                 {
+//                     try
+//                     {
+//                         scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), headerTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+//                     }
+//                     catch (PlatformNotSupportedException ex)
+//                     {
+//                         // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+//                         Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+//                         _canReadHttpResponseHeaders = false;
+//                     }
+//                     catch (Exception ex)
+//                     {
+//                         Log.Error(ex, "Error extracting HTTP headers to create header tags.");
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+// #endif

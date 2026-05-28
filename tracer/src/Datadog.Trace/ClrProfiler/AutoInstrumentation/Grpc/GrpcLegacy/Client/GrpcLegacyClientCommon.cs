@@ -36,63 +36,63 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             }
 
             Scope? scope = null;
-            try
-            {
-                // try extracting all the details we need
-                var requestMetadataWrapper = new MetadataHeadersCollection(requestMetadata);
-                var existingContext = tracer.TracerManager.SpanContextPropagator.Extract(requestMetadataWrapper);
-                var existingSpanContext = existingContext.SpanContext;
-
-                // If this operation creates the trace, then we will need to re-apply the sampling priority
-                bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && tracer.ActiveScope == null;
-
-                // grab the temporary values we stored in the metadata
-                ExtractTemporaryHeaders(
-                    requestMetadata,
-                    existingSpanContext?.TraceId128 ?? default,
-                    out var methodKind,
-                    out var methodName,
-                    out var grpcService,
-                    out var startTime,
-                    out var parentContext);
-
-                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
-                var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
-                var (serviceName, serviceNameSource) = clientSchema.GetServiceNameMetadata(ClientSchema.Component.Grpc);
-                var tags = clientSchema.CreateGrpcClientTags();
-                var methodFullName = callInvocationDetails.Method;
-
-                tags.Host = GetNormalizedHost(callInvocationDetails.Channel.Instance!, callInvocationDetails.Channel.Target);
-                GrpcCommon.AddGrpcTags(tags, tracer, methodKind, name: methodName, path: methodFullName, serviceName: grpcService);
-
-                var span = tracer.StartSpan(
-                    operationName,
-                    parent: parentContext,
-                    tags: tags,
-                    spanId: existingSpanContext?.SpanId ?? 0,
-                    traceId: existingSpanContext?.TraceId128 ?? default,
-                    serviceName: serviceName,
-                    serviceNameSource: serviceNameSource,
-                    startTime: startTime);
-
-                span.Type = SpanTypes.Grpc;
-                span.ResourceName = methodFullName;
-
-                span.SetHeaderTags(requestMetadataWrapper, tracer.CurrentTraceSettings.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
-                scope = tracer.ActivateSpan(span);
-
-                if (setSamplingPriority && existingSpanContext?.SamplingPriority is { } samplingPriority)
-                {
-                    span.Context.TraceContext?.SetSamplingPriority(samplingPriority);
-                }
-
-                GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating client span for GRPC call");
-            }
+            // try
+            // {
+            //     // try extracting all the details we need
+            //     var requestMetadataWrapper = new MetadataHeadersCollection(requestMetadata);
+            //     var existingContext = tracer.TracerManager.SpanContextPropagator.Extract(requestMetadataWrapper);
+            //     var existingSpanContext = existingContext.SpanContext;
+            //
+            //     // If this operation creates the trace, then we will need to re-apply the sampling priority
+            //     bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && tracer.ActiveScope == null;
+            //
+            //     // grab the temporary values we stored in the metadata
+            //     ExtractTemporaryHeaders(
+            //         requestMetadata,
+            //         existingSpanContext?.TraceId128 ?? default,
+            //         out var methodKind,
+            //         out var methodName,
+            //         out var grpcService,
+            //         out var startTime,
+            //         out var parentContext);
+            //
+            //     var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+            //     var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
+            //     var (serviceName, serviceNameSource) = clientSchema.GetServiceNameMetadata(ClientSchema.Component.Grpc);
+            //     var tags = clientSchema.CreateGrpcClientTags();
+            //     var methodFullName = callInvocationDetails.Method;
+            //
+            //     tags.Host = GetNormalizedHost(callInvocationDetails.Channel.Instance!, callInvocationDetails.Channel.Target);
+            //     GrpcCommon.AddGrpcTags(tags, tracer, methodKind, name: methodName, path: methodFullName, serviceName: grpcService);
+            //
+            //     var span = tracer.StartSpan(
+            //         operationName,
+            //         parent: parentContext,
+            //         tags: tags,
+            //         spanId: existingSpanContext?.SpanId ?? 0,
+            //         traceId: existingSpanContext?.TraceId128 ?? default,
+            //         serviceName: serviceName,
+            //         serviceNameSource: serviceNameSource,
+            //         startTime: startTime);
+            //
+            //     span.Type = SpanTypes.Grpc;
+            //     span.ResourceName = methodFullName;
+            //
+            //     span.SetHeaderTags(requestMetadataWrapper, tracer.CurrentTraceSettings.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
+            //     scope = tracer.ActivateSpan(span);
+            //
+            //     if (setSamplingPriority && existingSpanContext?.SamplingPriority is { } samplingPriority)
+            //     {
+            //         span.Context.TraceContext?.SetSamplingPriority(samplingPriority);
+            //     }
+            //
+            //     GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating client span for GRPC call");
+            // }
 
             return scope;
         }
@@ -244,18 +244,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
         {
-            var perTraceSettings = tracer.CurrentTraceSettings;
-            var operationName = perTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
-            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Client.GetServiceNameMetadata(ClientSchema.Component.Grpc);
-            var tags = perTraceSettings.Schema.Client.CreateGrpcClientTags();
-            tags.SetAnalyticsSampleRate(IntegrationId.Grpc, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-            perTraceSettings.Schema.RemapPeerService(tags);
+            // var perTraceSettings = tracer.CurrentTraceSettings;
+            // var operationName = perTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
+            // var (serviceName, serviceNameSource) = perTraceSettings.Schema.Client.GetServiceNameMetadata(ClientSchema.Component.Grpc);
+            // var tags = perTraceSettings.Schema.Client.CreateGrpcClientTags();
+            // tags.SetAnalyticsSampleRate(IntegrationId.Grpc, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            // perTraceSettings.Schema.RemapPeerService(tags);
 
-            var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, serviceNameSource: serviceNameSource, addToTraceContext: false);
-            span.Type = SpanTypes.Grpc;
-            span.ResourceName = methodFullName;
+            // var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, serviceNameSource: serviceNameSource, addToTraceContext: false);
+            // span.Type = SpanTypes.Grpc;
+            // span.ResourceName = methodFullName;
 
-            return span;
+            return null!;
         }
     }
 }

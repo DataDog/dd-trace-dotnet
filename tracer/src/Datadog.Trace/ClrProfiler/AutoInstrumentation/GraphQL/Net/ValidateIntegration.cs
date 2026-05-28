@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class ValidateIntegration
     {
-        private const string ErrorType = "GraphQL.Validation.ValidationError";
+        // private const string ErrorType = "GraphQL.Validation.ValidationError";
 
         /// <summary>
         /// OnMethodBegin callback
@@ -71,14 +71,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                if (exception != null)
-                {
-                    scope.Span?.SetException(exception);
-                }
-                else
-                {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, validationResult.Errors);
-                }
+                // if (exception != null)
+                // {
+                //     scope.Span?.SetException(exception);
+                // }
+                // else
+                // {
+                //     GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, validationResult.Errors);
+                // }
             }
             finally
             {

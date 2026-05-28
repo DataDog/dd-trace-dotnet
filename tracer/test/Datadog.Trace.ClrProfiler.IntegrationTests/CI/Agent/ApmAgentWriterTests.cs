@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
-            var spans1 = new SpanCollection(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
+            var spans1 = new SpanCollection(TestSpanExtensions.CreateSpan(new SpanContext(1, 1), DateTimeOffset.UtcNow));
             var traceChunk1 = new TraceChunkModel(spans1);
             var spanBufferSerializer = new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk1, SpanFormatterResolver.Instance);
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1, spanBufferSerializer.HeaderSize)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
             _api.Invocations.Clear();
 
-            var spans2 = new SpanCollection(new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow));
+            var spans2 = new SpanCollection(TestSpanExtensions.CreateSpan(new SpanContext(2, 2), DateTimeOffset.UtcNow));
             var traceChunk2 = new TraceChunkModel(spans2);
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk2, SpanFormatterResolver.Instance);
 

@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
         internal static CallTargetState OnMethodBegin<TTarget, TStatus, TMetadata, TResponse>(TTarget instance, in TStatus status, in TMetadata trailers, in TResponse response)
         {
             var tracer = Tracer.Instance;
-            if (tracer.ActiveScope is Scope { Span: { Tags: GrpcServerTags } span })
+            if (tracer.ActiveScope is Scope { Span: Span { Tags: GrpcServerTags } span })
             {
                 // Use CreateFrom to avoid boxing
                 var clientStatus = DuckType.CreateCache<StatusStruct>.CreateFrom(status);

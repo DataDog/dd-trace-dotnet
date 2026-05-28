@@ -69,7 +69,7 @@ public static class SignInManagerPasswordSignInIntegration
     {
         if (!returnValue.Succeeded
          && Security.Instance is { IsTrackUserEventsEnabled: true } security
-         && state is { Scope.Span: { } span })
+         && state is { Scope.Span: Span span })
         {
             // the new user semantics events must only be collected if either the user login or the user ID are available
             // here as it's the first login step, state.State is the username, db hasn't been hit yet.

@@ -224,8 +224,8 @@ namespace Datadog.Trace.Tests.Agent
                 var span = CreateTopLevelSpan(start, serviceName);
                 span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
 
-                span.ResourceName = resourceName;
-                span.OperationName = operationName;
+                // span.ResourceName = resourceName;
+                // span.OperationName = operationName;
                 span.Type = type;
                 span.SetTag(Tags.HttpStatusCode, httpStatusCode);
                 span.Context.Origin = origin;
@@ -250,20 +250,20 @@ namespace Datadog.Trace.Tests.Agent
             try
             {
                 var parentSpan = CreateTopLevelSpan(start, "service");
-                parentSpan.OperationName = "web.request";
+                // parentSpan.OperationName = "web.request";
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
-                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                var childSpan = TestSpanExtensions.CreateSpan(new RecordedSpanContext(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), "child", null), start);
                 childSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
-                measuredChildSpan1.OperationName = "child.op1";
+                var measuredChildSpan1 = TestSpanExtensions.CreateSpan(new RecordedSpanContext(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), "child.op1", null), start);
+                // measuredChildSpan1.OperationName = "child.op1"; // non-recording-spans experiment: setter removed
                 measuredChildSpan1.SetTag(Tags.Measured, "1");
                 measuredChildSpan1.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
-                measuredChildSpan2.OperationName = "child.op2";
+                var measuredChildSpan2 = TestSpanExtensions.CreateSpan(new RecordedSpanContext(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), "child.op2", null), start);
+                // measuredChildSpan2.OperationName = "child.op2"; // non-recording-spans experiment: setter removed
                 measuredChildSpan2.SetTag(Tags.Measured, "1");
                 measuredChildSpan2.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -324,7 +324,7 @@ namespace Datadog.Trace.Tests.Agent
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
                 // Create a new child span that is a service entry span, which means it will have stats computed for it
-                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service-http-client"), start);
+                var httpClientServiceSpan = TestSpanExtensions.CreateSpan(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service-http-client"), start);
                 httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
                 aggregator.Add(simpleSpan, parentSpan, snapshotSpan, httpClientServiceSpan);
@@ -482,7 +482,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoKeep, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
@@ -499,7 +499,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoReject, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
@@ -517,9 +517,9 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             span.Type = "sql";
-            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            // span.ResourceName = "SELECT * FROM users WHERE id = 123"; // non-recording-spans experiment: setter removed
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
             span.SetService(string.Empty, "manual");
@@ -552,7 +552,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             span.SetTag("env", "production");
             traceContext.AddSpan(span);
 
@@ -578,7 +578,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             span.SetTag("env", "production");
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
@@ -605,7 +605,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             span.SetTag("env", "production");
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
@@ -622,7 +622,7 @@ namespace Datadog.Trace.Tests.Agent
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
-            span.OperationName = "operation";
+            // span.OperationName = "operation"; // non-recording-spans experiment: setter removed
             span.SetDuration(TimeSpan.FromMilliseconds(100));
 
             var traceChunk = new SpanCollection([span]);
@@ -646,7 +646,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             span.SetTag("env", "production");
             traceContext.AddSpan(span);
 
@@ -671,7 +671,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             span.SetTag("env", "production");
             traceContext.AddSpan(span);
 
@@ -695,8 +695,8 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "http.request" };
-            span.ResourceName = "GET /healthcheck";
+            var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, operationName: "http.request");
+            // span.ResourceName = "GET /healthcheck"; // non-recording-spans experiment: setter removed
             traceContext.AddSpan(span);
 
             var traceChunk = new SpanCollection([span]);
@@ -711,7 +711,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
@@ -727,7 +727,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
@@ -743,7 +743,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
-            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var span = TestSpanExtensions.CreateSpan(new RecordedSpanContext(spanContext, "operation", null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
 
@@ -758,9 +758,9 @@ namespace Datadog.Trace.Tests.Agent
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
-            span.OperationName = "operation";
+            // span.OperationName = "operation";
             span.Type = "sql";
-            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            // span.ResourceName = "SELECT * FROM users WHERE id = 123";
             span.SetDuration(TimeSpan.FromMilliseconds(100));
 
             var traceChunk = new SpanCollection([span]);
@@ -779,9 +779,9 @@ namespace Datadog.Trace.Tests.Agent
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
-            span.OperationName = "operation";
+            // span.OperationName = "operation"; // non-recording-spans experiment: setter removed
             span.Type = "sql";
-            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            // span.ResourceName = "SELECT * FROM users WHERE id = 123"; // non-recording-spans experiment: setter removed
             span.SetDuration(TimeSpan.FromMilliseconds(100));
 
             var traceChunk = new SpanCollection([span]);
@@ -805,26 +805,26 @@ namespace Datadog.Trace.Tests.Agent
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // Child span with span.kind = "server" — should be included even though not top-level
-                var serverChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                var serverChildSpan = TestSpanExtensions.CreateSpan(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 serverChildSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
-                serverChildSpan.OperationName = "server.child";
+                // serverChildSpan.OperationName = "server.child"; // non-recording-spans experiment: setter removed
                 serverChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // Child span with span.kind = "client" — should be included
-                var clientChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                var clientChildSpan = TestSpanExtensions.CreateSpan(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 clientChildSpan.SetTag(Tags.SpanKind, SpanKinds.Client);
-                clientChildSpan.OperationName = "client.child";
+                // clientChildSpan.OperationName = "client.child"; // non-recording-spans experiment: setter removed
                 clientChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // Child span with span.kind = "internal" — should NOT be included
-                var internalChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                var internalChildSpan = TestSpanExtensions.CreateSpan(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
                 internalChildSpan.SetTag(Tags.SpanKind, SpanKinds.Internal);
-                internalChildSpan.OperationName = "internal.child";
+                // internalChildSpan.OperationName = "internal.child"; // non-recording-spans experiment: setter removed
                 internalChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // Child span with no span.kind — should NOT be included
-                var noKindChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
-                noKindChildSpan.OperationName = "nokind.child";
+                var noKindChildSpan = TestSpanExtensions.CreateSpan(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                // noKindChildSpan.OperationName = "nokind.child"; // non-recording-spans experiment: setter removed
                 noKindChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 aggregator.Add(parentSpan, serverChildSpan, clientChildSpan, internalChildSpan, noKindChildSpan);
@@ -855,12 +855,12 @@ namespace Datadog.Trace.Tests.Agent
             {
                 // Two top-level spans identical except span.kind
                 var clientSpan = CreateTopLevelSpan(start, "service");
-                clientSpan.OperationName = "op";
+                // clientSpan.OperationName = "op"; // non-recording-spans experiment: setter removed
                 clientSpan.SetTag(Tags.SpanKind, SpanKinds.Client);
                 clientSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 var serverSpan = CreateTopLevelSpan(start, "service");
-                serverSpan.OperationName = "op";
+                // serverSpan.OperationName = "op"; // non-recording-spans experiment: setter removed
                 serverSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
                 serverSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -885,13 +885,13 @@ namespace Datadog.Trace.Tests.Agent
             {
                 // Span A: no parent (IsTraceRoot = true)
                 var rootSpan = CreateTopLevelSpan(start, "svc");
-                rootSpan.OperationName = "op";
+                // rootSpan.OperationName = "op"; // non-recording-spans experiment: setter removed
                 rootSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // Span B: has a parent from a different trace (IsTraceRoot = false, but IsTopLevel = true via service boundary)
                 var upstreamContext = new SpanContext(traceId: 2, spanId: 999, serviceName: "upstream-svc");
-                var entrySpan = new Span(new SpanContext(upstreamContext, new TraceContext(new StubDatadogTracer()), "svc"), start);
-                entrySpan.OperationName = "op";
+                var entrySpan = TestSpanExtensions.CreateSpan(new SpanContext(upstreamContext, new TraceContext(new StubDatadogTracer()), "svc"), start);
+                // entrySpan.OperationName = "op"; // non-recording-spans experiment: setter removed
                 entrySpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 aggregator.Add(rootSpan, entrySpan);
@@ -920,12 +920,12 @@ namespace Datadog.Trace.Tests.Agent
             try
             {
                 var getSpan = CreateTopLevelSpan(start, "svc");
-                getSpan.OperationName = "http.request";
+                // getSpan.OperationName = "http.request"; // non-recording-spans experiment: setter removed
                 getSpan.SetTag(Tags.HttpMethod, "GET");
                 getSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 var postSpan = CreateTopLevelSpan(start, "svc");
-                postSpan.OperationName = "http.request";
+                // postSpan.OperationName = "http.request"; // non-recording-spans experiment: setter removed
                 postSpan.SetTag(Tags.HttpMethod, "POST");
                 postSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -949,12 +949,12 @@ namespace Datadog.Trace.Tests.Agent
             try
             {
                 var usersSpan = CreateTopLevelSpan(start, "svc");
-                usersSpan.OperationName = "http.request";
+                // usersSpan.OperationName = "http.request"; // non-recording-spans experiment: setter removed
                 usersSpan.SetTag(Tags.HttpRoute, "/users/{id}");
                 usersSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 var ordersSpan = CreateTopLevelSpan(start, "svc");
-                ordersSpan.OperationName = "http.request";
+                // ordersSpan.OperationName = "http.request"; // non-recording-spans experiment: setter removed
                 ordersSpan.SetTag(Tags.HttpRoute, "/orders/{id}");
                 ordersSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -978,12 +978,12 @@ namespace Datadog.Trace.Tests.Agent
             try
             {
                 var okSpan = CreateTopLevelSpan(start, "svc");
-                okSpan.OperationName = "grpc.call";
+                // okSpan.OperationName = "grpc.call"; // non-recording-spans experiment: setter removed
                 okSpan.SetTag(Tags.GrpcStatusCode, "0");
                 okSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 var errorSpan = CreateTopLevelSpan(start, "svc");
-                errorSpan.OperationName = "grpc.call";
+                // errorSpan.OperationName = "grpc.call"; // non-recording-spans experiment: setter removed
                 errorSpan.SetTag(Tags.GrpcStatusCode, "2");
                 errorSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -1011,7 +1011,7 @@ namespace Datadog.Trace.Tests.Agent
             try
             {
                 var span = CreateTopLevelSpan(start, "svc");
-                span.OperationName = "grpc.call";
+                // span.OperationName = "grpc.call"; // non-recording-spans experiment: setter removed
                 span.SetTag(tagName, tagValue);
                 span.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -1038,7 +1038,7 @@ namespace Datadog.Trace.Tests.Agent
             {
                 // When multiple gRPC tags are present, the highest priority one wins
                 var span = CreateTopLevelSpan(start, "svc");
-                span.OperationName = "grpc.call";
+                // span.OperationName = "grpc.call"; // non-recording-spans experiment: setter removed
                 span.SetTag("rpc.grpc.status_code", "1");
                 span.SetTag("grpc.status.code", "2");
                 span.SetDuration(TimeSpan.FromMilliseconds(100));
@@ -1065,12 +1065,12 @@ namespace Datadog.Trace.Tests.Agent
             try
             {
                 var span1 = CreateTopLevelSpan(start, "svc");
-                span1.OperationName = "op";
+                // span1.OperationName = "op"; // non-recording-spans experiment: setter removed
                 span1.Context.ServiceNameSource = "integration";
                 span1.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 var span2 = CreateTopLevelSpan(start, "svc");
-                span2.OperationName = "op";
+                // span2.OperationName = "op"; // non-recording-spans experiment: setter removed
                 span2.Context.ServiceNameSource = "user";
                 span2.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -1097,13 +1097,13 @@ namespace Datadog.Trace.Tests.Agent
                 // GetWeight uses TraceContext.AppliedSamplingRate
                 var sampledTraceContext = new TraceContext(new StubDatadogTracer());
                 sampledTraceContext.AppliedSamplingRate = 0.1f;
-                var sampledSpan = new Span(new SpanContext(null, sampledTraceContext, "svc"), start);
-                sampledSpan.OperationName = "op";
+                var sampledSpan = TestSpanExtensions.CreateSpan(new SpanContext(null, sampledTraceContext, "svc"), start);
+                // sampledSpan.OperationName = "op"; // non-recording-spans experiment: setter removed
                 sampledSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // Span with no sampling rate → weight = 1.0
                 var unweightedSpan = CreateTopLevelSpan(start, "svc2");
-                unweightedSpan.OperationName = "op";
+                // unweightedSpan.OperationName = "op"; // non-recording-spans experiment: setter removed
                 unweightedSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 aggregator.Add(sampledSpan, unweightedSpan);
@@ -1132,13 +1132,13 @@ namespace Datadog.Trace.Tests.Agent
                 // Two client spans with same resource but different peer.service values
                 // Use Tags.SetTag directly to avoid PeerService special handling in Span.SetTag that requires TraceContext
                 var span1 = CreateTopLevelSpan(start, "svc");
-                span1.OperationName = "http.client";
+                // span1.OperationName = "http.client"; // non-recording-spans experiment: setter removed
                 span1.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span1.Tags.SetTag(Tags.PeerService, "service-a");
                 span1.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 var span2 = CreateTopLevelSpan(start, "svc");
-                span2.OperationName = "http.client";
+                // span2.OperationName = "http.client"; // non-recording-spans experiment: setter removed
                 span2.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span2.Tags.SetTag(Tags.PeerService, "service-b");
                 span2.SetDuration(TimeSpan.FromMilliseconds(100));
@@ -1312,7 +1312,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
             var context = new SpanContext(null, traceContext, serviceName);
-            return new Span(context, start);
+            return TestSpanExtensions.CreateSpan(context, start);
         }
 
         private static TracerSettings GetSettings(int? statsComputationIntervalSeconds = null)

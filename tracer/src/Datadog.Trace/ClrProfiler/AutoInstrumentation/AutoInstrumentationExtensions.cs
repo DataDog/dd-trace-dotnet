@@ -21,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
 
             try
             {
-                if (exception != null)
+                if (exception != null && scope.Span is Span span)
                 {
-                    scope.Span?.SetException(exception);
+                    span.SetException(exception);
                 }
             }
             finally

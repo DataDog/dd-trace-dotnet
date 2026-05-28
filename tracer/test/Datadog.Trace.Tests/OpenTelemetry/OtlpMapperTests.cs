@@ -335,7 +335,7 @@ public class OtlpMapperTests
         var traceContext = new TraceContext(new StubDatadogTracer());
         traceContext.Origin = origin;
         var spanContext = new SpanContext(parent: null, traceContext, serviceName: null);
-        return new Span(spanContext, DateTimeOffset.UtcNow);
+        return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow);
     }
 
     private static SpanModel CreateSpanModel(Span span)

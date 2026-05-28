@@ -263,7 +263,7 @@ namespace Datadog.Trace.Tests
 
                 using (var scope = tracer.StartActive("root"))
                 {
-                    scope.Span.ResourceName = "resource";
+                    // scope.Span.ResourceName = "resource"; // non-recording-spans experiment: setter removed
                     await Task.Delay(5);
                 }
 

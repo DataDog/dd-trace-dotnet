@@ -1,4 +1,4 @@
-// <copyright file="StartActiveImplementationIntegration.cs" company="Datadog">
+﻿// <copyright file="StartActiveImplementationIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -44,13 +44,19 @@ public sealed class StartActiveImplementationIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = tracer.StartActiveInternal(
+        var spanContext = tracer.CreateSpanContext(
             operationName,
+            resourceName: operationName,
             parent: parentContext,
             serviceName: serviceName,
-            serviceNameSource: serviceName is not null ? Datadog.Trace.Configuration.Schema.ServiceNameMetadata.Manual : null,
-            startTime: startTime,
-            finishOnClose: finishOnClose ?? true);
+            serviceNameSource: serviceName is not null ? Datadog.Trace.Configuration.Schema.ServiceNameMetadata.Manual : null);
+
+        var scope = spanContext switch
+        {
+            RecordedSpanContext recorded => tracer.StartActiveInternal(recorded, startTime: startTime, finishOnClose: finishOnClose ?? true),
+            UnrecordedSpanContext unrecorded => tracer.StartActiveInternal(unrecorded, finishOnClose: finishOnClose ?? true),
+            _ => null, // can't be hit
+        };
 
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ManualInstrumentationConstants.Id);
         return new CallTargetState(scope);

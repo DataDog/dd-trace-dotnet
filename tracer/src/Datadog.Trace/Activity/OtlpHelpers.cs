@@ -54,8 +54,8 @@ namespace Datadog.Trace.Activity
             var w3cActivity = activity as IW3CActivity;
             var activity5 = activity as IActivity5;
             var activity6 = activity as IActivity6;
-            span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
-            span.OperationName = null; // Reset the operation name, it will be repopulated
+            // span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
+            // span.OperationName = null; // Reset the operation name, it will be repopulated
 
             // TODO: Add resources to spans
             // OpenTelemetry SDK resources are added to the span attributes by the configured exporter when OpenTelemetry.BaseExporter<T>.Export is called (e.g. OpenTelemetry.Exporter.ConsoleActivityExporter.Export)
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Activity
             // Later: Support config 'span_name_remappings'
             if (string.IsNullOrEmpty(span.OperationName))
             {
-                span.OperationName = OperationNameMapper.GetOperationName(tags);
+                // span.OperationName = OperationNameMapper.GetOperationName(tags);
             }
 
             // TODO: Add container tags from attributes if the tag isn't already in the span
@@ -190,16 +190,16 @@ namespace Datadog.Trace.Activity
             }
 
             // Update Service with a reasonable default
-            if (span.ServiceName is null)
-            {
-                span.SetService(
-                    span.GetTag("peer.service") switch
-                    {
-                        string peerService when !string.IsNullOrEmpty(peerService) => peerService,
-                        _ => "OTLPResourceNoServiceName",
-                    },
-                    source: null);
-            }
+            // if (span.ServiceName is null)
+            // {
+            //     span.SetService(
+            //         span.GetTag("peer.service") switch
+            //         {
+            //             string peerService when !string.IsNullOrEmpty(peerService) => peerService,
+            //             _ => "OTLPResourceNoServiceName",
+            //         },
+            //         source: null);
+            // }
 
             // Update Resource with a reasonable default
             if (span.ResourceName is null)
@@ -210,11 +210,11 @@ namespace Datadog.Trace.Activity
                 // Fallback: Use the information provided by Activity
                 if (activity5 is not null)
                 {
-                    span.ResourceName = activity5.DisplayName;
+                    // span.ResourceName = activity5.DisplayName;
                 }
                 else
                 {
-                    span.ResourceName = activity.OperationName;
+                    // span.ResourceName = activity.OperationName;
                 }
             }
 
@@ -474,23 +474,19 @@ namespace Datadog.Trace.Activity
             switch (key)
             {
                 case "operation.name":
-                    if (setKnownValues)
-                    {
-                        span.OperationName = value?.ToLowerInvariant();
-                    }
-
+                    // span.OperationName = value?.ToLowerInvariant();
                     break;
                 case "service.name":
                     if (setKnownValues)
                     {
-                        span.SetService(value, source: null);
+                        // span.SetService(value, source: null);
                     }
 
                     break;
                 case "resource.name":
                     if (setKnownValues)
                     {
-                        span.ResourceName = value;
+                        // span.ResourceName = value;
                     }
 
                     break;

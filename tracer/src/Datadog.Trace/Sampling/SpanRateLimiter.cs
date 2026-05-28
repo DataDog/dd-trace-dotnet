@@ -28,9 +28,9 @@ namespace Datadog.Trace.Sampling
         {
         }
 
-        protected override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
+        protected override void OnDisallowed(in SamplingContext context, int count, int intervalMs, int maxTracesPerInterval)
         {
-            Log.Debug<ulong, int, int>("Dropping span id {SpanId} with count of {Count} for last {Interval}ms.", span.SpanId, count, intervalMs);
+            Log.Debug<ulong, int, int>("Dropping span id {SpanId} with count of {Count} for last {Interval}ms.", context.Context.SpanId, count, intervalMs);
         }
     }
 }

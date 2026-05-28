@@ -15,10 +15,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
     internal static class AwsDynamoDbCommon
     {
-        private const string DatadogAwsDynamoDbServiceName = "aws-dynamodb";
-        private const string DynamoDbServiceName = "DynamoDB";
-        private const string DynamoDbOperationName = "aws.dynamodb.request";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsDynamoDbCommon));
+        // private const string DatadogAwsDynamoDbServiceName = "aws-dynamodb";
+        // private const string DynamoDbServiceName = "DynamoDB";
+        // private const string DynamoDbOperationName = "aws.dynamodb.request";
+        // private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsDynamoDbCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsDynamoDb);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsDynamoDb;
@@ -36,27 +36,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             Scope? scope = null;
 
-            try
-            {
-                tags = perTraceSettings.Schema.Database.CreateAwsDynamoDbTags();
-                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsDynamoDbServiceName);
-                scope = tracer.StartActiveInternal(DynamoDbOperationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                var span = scope.Span;
-
-                // This is needed to showcase the DynamoDB action in the
-                // span details. This will also cause to repeat an HTTP span.
-                span.Type = SpanTypes.DynamoDb;
-                span.ResourceName = $"{DynamoDbServiceName}.{operation}";
-
-                tags.Service = DynamoDbServiceName;
-                tags.Operation = operation;
-                tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     tags = perTraceSettings.Schema.Database.CreateAwsDynamoDbTags();
+            //     var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsDynamoDbServiceName);
+            //     scope = tracer.StartActiveInternal(DynamoDbOperationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
+            //     var span = scope.Span;
+            //
+            //     // This is needed to showcase the DynamoDB action in the
+            //     // span details. This will also cause to repeat an HTTP span.
+            //     span.Type = SpanTypes.DynamoDb;
+            //     span.ResourceName = $"{DynamoDbServiceName}.{operation}";
+            //
+            //     tags.Service = DynamoDbServiceName;
+            //     tags.Operation = operation;
+            //     tags.SetAnalyticsSampleRate(IntegrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             tags.TableName = tableName;
             var span = scope.Span;
-            span.ResourceName = $"{span.ResourceName} {tableName}";
+            // span.ResourceName = $"{span.ResourceName} {tableName}";
         }
 
         public static void TagBatchRequest<TBatchRequest>(TBatchRequest request, AwsDynamoDbTags? tags, Scope? scope)

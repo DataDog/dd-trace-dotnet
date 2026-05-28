@@ -43,21 +43,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 var receivedStatus = DuckType.CreateCache<ClientSideStatusWithMetadataStruct>.CreateFrom(clientSideStatus);
                 var status = receivedStatus.Status;
                 var scope = GrpcLegacyClientCommon.CreateClientSpan(tracer, in asyncCall.Details, in status);
-                if (scope?.Span is { } span)
-                {
-                    if (receivedStatus.Trailers is { Count: > 0 })
-                    {
-                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
-                    }
-                    else if (asyncCall.ResponseHeadersAsync is { IsCompleted: true } task)
-                    {
-                        var metadata = task.DuckCast<TaskOfMetadataStruct>().Result;
-                        if (metadata?.Count > 0)
-                        {
-                            span.SetHeaderTags(new MetadataHeadersCollection(metadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
-                        }
-                    }
-                }
+                // if (scope?.Span is { } span)
+                // {
+                //     if (receivedStatus.Trailers is { Count: > 0 })
+                //     {
+                //         span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                //     }
+                //     else if (asyncCall.ResponseHeadersAsync is { IsCompleted: true } task)
+                //     {
+                //         var metadata = task.DuckCast<TaskOfMetadataStruct>().Result;
+                //         if (metadata?.Count > 0)
+                //         {
+                //             span.SetHeaderTags(new MetadataHeadersCollection(metadata), settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                //         }
+                //     }
+                // }
 
                 scope?.Dispose();
             }

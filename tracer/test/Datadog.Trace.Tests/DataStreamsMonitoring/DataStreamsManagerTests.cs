@@ -260,7 +260,7 @@ public class DataStreamsManagerTests
     public void WhenEnabled_SetCheckpoint_SetsSpanTags()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
         span.SetDataStreamsCheckpoint(dsm, CheckpointKind.Produce, new[] { "direction:out" }, 100, 0);
         span.Tags.GetTag("pathway.hash").Should().NotBeNull();
@@ -270,7 +270,7 @@ public class DataStreamsManagerTests
     public void WhenEnabled_TrackTransaction_AddsTransactionAndTagsSpan()
     {
         var dsm = GetDataStreamManager(true, out var writer);
-        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
         span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
 
@@ -282,7 +282,7 @@ public class DataStreamsManagerTests
     public void WhenDisabled_TrackTransaction_DoesNothing()
     {
         var dsm = GetDataStreamManager(false, out var writer);
-        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
         span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
 
@@ -307,7 +307,7 @@ public class DataStreamsManagerTests
         var dsm = new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
         dsm.IsInDefaultState.Should().BeTrue("precondition: DSM must be in default state");
 
-        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
         span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
 
@@ -318,7 +318,7 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenManagerIsNull_TrackTransaction_DoesNothing()
     {
-        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
         var act = () => span.TrackTransaction(null, "tx-abc", "some-checkpoint");
         act.Should().NotThrow();

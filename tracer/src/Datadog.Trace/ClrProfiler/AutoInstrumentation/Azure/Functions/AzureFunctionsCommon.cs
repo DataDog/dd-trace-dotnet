@@ -37,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         // Set by FunctionsHttpProxyingMiddleware:
         //   https://github.com/Azure/azure-functions-dotnet-worker/blob/596a94ef97f458d68381678fec6d92585e80d83d/extensions/Worker.Extensions.Http.AspNetCore/src/FunctionsMiddleware/FunctionsHttpProxyingMiddleware.cs#L124
         private const string HttpRequestContextKey = "HttpRequestContext";
-        private const string SpanType = SpanTypes.Serverless;
 
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
         public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
@@ -73,133 +72,133 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             Scope? scope = null;
 
-            try
-            {
-                var triggerType = "Unknown";
-                var bindingSourceType = instanceParam.BindingSource.GetType();
-                var bindingSourceFullName = bindingSourceType.FullName ?? string.Empty;
-
-                switch (instanceParam.Reason)
-                {
-                    case AzureFunctionsExecutionReason.HostCall:
-                        // The root span will be the AspNetCoreDiagnosticObserver
-                        // This could be HttpTrigger or EventGridTrigger
-
-                        // Default HttpTrigger binding source: Microsoft.Azure.WebJobs.Host.Executors.BindingSource
-                        triggerType = "Http";
-
-                        if (bindingSourceFullName.Contains("Newtonsoft.Json.Linq.JObject"))
-                        {
-                            // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Newtonsoft.Json.Linq.JObject, Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed]]
-                            triggerType = "EventGrid";
-                        }
-
-                        break;
-                    case AzureFunctionsExecutionReason.AutomaticTrigger:
-                        // This can apply to anything not triggered by HTTP or manually from the dashboard
-                        // e.g., timer, queues ...
-                        // Automatic is the catch all for any triggers we don't explicitly handle
-                        triggerType = "Automatic";
-
-                        if (bindingSourceFullName.Contains("Timer"))
-                        {
-                            // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.WebJobs.TimerInfo, Microsoft.Azure.WebJobs.Extensions, Version=4.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]]
-                            triggerType = "Timer";
-                        }
-                        else if (bindingSourceFullName.Contains("ServiceBus"))
-                        {
-                            // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.WebJobs.ServiceBus.ServiceBusTriggerInput, Microsoft.Azure.WebJobs.ServiceBus, Version=4.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]]
-                            triggerType = "ServiceBus";
-                        }
-                        else if (bindingSourceFullName.Contains("Blob"))
-                        {
-                            // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.Storage.Blob.ICloudBlob, Microsoft.Azure.Storage.Blob, Version=11.1.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]]
-                            triggerType = "Blob";
-                        }
-                        else if (bindingSourceFullName.Contains("Microsoft.Azure.DocumentDB.Core"))
-                        {
-                            // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[System.Collections.Generic.IReadOnlyList`1[[Microsoft.Azure.Documents.Document, Microsoft.Azure.DocumentDB.Core, Version=2.13.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]], System.Private.CoreLib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
-                            triggerType = "Cosmos";
-                        }
-
-                        break;
-                    case AzureFunctionsExecutionReason.Dashboard:
-                        triggerType = "Dashboard";
-                        break;
-                }
-
-                var functionName = instanceParam.FunctionDescriptor.ShortName;
-                // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
-                // Ignoring null because guaranteed running in AAS
-                if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
-                 && tracer.InternalActiveScope is { } activeScope)
-                {
-                    // We don't want to create a new scope here when running isolated functions,
-                    // otherwise it is essentially a duplicate of the span created inside the
-                    // isolated app. We _do_ want to populate the "root" span here with the appropriate names
-                    // and update it to be a "serverless" span.
-                    if (!isProxySpan)
-                    {
-                        var rootSpan = activeScope.Root.Span;
-                        // The shortname is prefixed with "Functions.", so strip that off
-                        var remoteFunctionName = functionName?.StartsWith("Functions.") == true
-                                                     ? functionName.Substring(10)
-                                                     : functionName;
-                        AzureFunctionsTags.SetRootSpanTags(
-                            rootSpan.Tags,
-                            shortName: remoteFunctionName,
-                            fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
-                            bindingSource: bindingSourceType.FullName,
-                            triggerType: triggerType);
-                        rootSpan.Type = SpanType;
-                    }
-
-                    return null;
-                }
-
-                if (tracer.InternalActiveScope == null)
-                {
-                    var tags = new AzureFunctionsTags
-                    {
-                        TriggerType = triggerType,
-                        ShortName = functionName,
-                        FullName = instanceParam.FunctionDescriptor.FullName,
-                        BindingSource = bindingSourceType.FullName
-                    };
-
-                    // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags);
-                }
-                else
-                {
-                    scope = tracer.StartActiveInternal(OperationName);
-
-                    if (!isProxySpan)
-                    {
-                        AzureFunctionsTags.SetRootSpanTags(
-                            scope.Root.Span.Tags,
-                            shortName: functionName,
-                            fullName: instanceParam.FunctionDescriptor.FullName,
-                            bindingSource: bindingSourceType.FullName,
-                            triggerType: triggerType);
-                    }
-                }
-
-                if (!isProxySpan)
-                {
-                    scope.Root.Span.Type = SpanType;
-                }
-
-                scope.Span.ResourceName = $"{triggerType} {functionName}";
-                scope.Span.Type = SpanType;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // try
+            // {
+            //     var triggerType = "Unknown";
+            //     var bindingSourceType = instanceParam.BindingSource.GetType();
+            //     var bindingSourceFullName = bindingSourceType.FullName ?? string.Empty;
+            //
+            //     switch (instanceParam.Reason)
+            //     {
+            //         case AzureFunctionsExecutionReason.HostCall:
+            //             // The root span will be the AspNetCoreDiagnosticObserver
+            //             // This could be HttpTrigger or EventGridTrigger
+            //
+            //             // Default HttpTrigger binding source: Microsoft.Azure.WebJobs.Host.Executors.BindingSource
+            //             triggerType = "Http";
+            //
+            //             if (bindingSourceFullName.Contains("Newtonsoft.Json.Linq.JObject"))
+            //             {
+            //                 // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Newtonsoft.Json.Linq.JObject, Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed]]
+            //                 triggerType = "EventGrid";
+            //             }
+            //
+            //             break;
+            //         case AzureFunctionsExecutionReason.AutomaticTrigger:
+            //             // This can apply to anything not triggered by HTTP or manually from the dashboard
+            //             // e.g., timer, queues ...
+            //             // Automatic is the catch all for any triggers we don't explicitly handle
+            //             triggerType = "Automatic";
+            //
+            //             if (bindingSourceFullName.Contains("Timer"))
+            //             {
+            //                 // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.WebJobs.TimerInfo, Microsoft.Azure.WebJobs.Extensions, Version=4.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]]
+            //                 triggerType = "Timer";
+            //             }
+            //             else if (bindingSourceFullName.Contains("ServiceBus"))
+            //             {
+            //                 // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.WebJobs.ServiceBus.ServiceBusTriggerInput, Microsoft.Azure.WebJobs.ServiceBus, Version=4.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]]
+            //                 triggerType = "ServiceBus";
+            //             }
+            //             else if (bindingSourceFullName.Contains("Blob"))
+            //             {
+            //                 // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[Microsoft.Azure.Storage.Blob.ICloudBlob, Microsoft.Azure.Storage.Blob, Version=11.1.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]]
+            //                 triggerType = "Blob";
+            //             }
+            //             else if (bindingSourceFullName.Contains("Microsoft.Azure.DocumentDB.Core"))
+            //             {
+            //                 // ex: Microsoft.Azure.WebJobs.Host.Triggers.TriggerBindingSource`1[[System.Collections.Generic.IReadOnlyList`1[[Microsoft.Azure.Documents.Document, Microsoft.Azure.DocumentDB.Core, Version=2.13.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]], System.Private.CoreLib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
+            //                 triggerType = "Cosmos";
+            //             }
+            //
+            //             break;
+            //         case AzureFunctionsExecutionReason.Dashboard:
+            //             triggerType = "Dashboard";
+            //             break;
+            //     }
+            //
+            //     var functionName = instanceParam.FunctionDescriptor.ShortName;
+            //     // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
+            //     var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
+            //     // Ignoring null because guaranteed running in AAS
+            //     if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
+            //      && tracer.InternalActiveScope is { } activeScope)
+            //     {
+            //         // We don't want to create a new scope here when running isolated functions,
+            //         // otherwise it is essentially a duplicate of the span created inside the
+            //         // isolated app. We _do_ want to populate the "root" span here with the appropriate names
+            //         // and update it to be a "serverless" span.
+            //         if (!isProxySpan)
+            //         {
+            //             var rootSpan = activeScope.Root.Span;
+            //             // The shortname is prefixed with "Functions.", so strip that off
+            //             var remoteFunctionName = functionName?.StartsWith("Functions.") == true
+            //                                          ? functionName.Substring(10)
+            //                                          : functionName;
+            //             AzureFunctionsTags.SetRootSpanTags(
+            //                 rootSpan.Tags,
+            //                 shortName: remoteFunctionName,
+            //                 fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
+            //                 bindingSource: bindingSourceType.FullName,
+            //                 triggerType: triggerType);
+            //             rootSpan.Type = SpanType;
+            //         }
+            //
+            //         return null;
+            //     }
+            //
+            //     if (tracer.InternalActiveScope == null)
+            //     {
+            //         var tags = new AzureFunctionsTags
+            //         {
+            //             TriggerType = triggerType,
+            //             ShortName = functionName,
+            //             FullName = instanceParam.FunctionDescriptor.FullName,
+            //             BindingSource = bindingSourceType.FullName
+            //         };
+            //
+            //         // This is the root scope
+            //         tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+            //         scope = tracer.StartActiveInternal(OperationName, tags: tags);
+            //     }
+            //     else
+            //     {
+            //         scope = tracer.StartActiveInternal(OperationName);
+            //
+            //         if (!isProxySpan)
+            //         {
+            //             AzureFunctionsTags.SetRootSpanTags(
+            //                 scope.Root.Span.Tags,
+            //                 shortName: functionName,
+            //                 fullName: instanceParam.FunctionDescriptor.FullName,
+            //                 bindingSource: bindingSourceType.FullName,
+            //                 triggerType: triggerType);
+            //         }
+            //     }
+            //
+            //     if (!isProxySpan)
+            //     {
+            //         scope.Root.Span.Type = SpanType;
+            //     }
+            //
+            //     scope.Span.ResourceName = $"{triggerType} {functionName}";
+            //     scope.Span.Type = SpanType;
+            //     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            // }
+            // catch (Exception ex)
+            // {
+            //     Log.Error(ex, "Error creating or populating scope.");
+            // }
 
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
@@ -236,161 +235,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             Scope? scope = null;
 
-            try
-            {
-                // Try to work out which trigger type it is
-                var triggerType = "Unknown";
-                PropagationContext extractedContext = default;
-
-#pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
-                foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
-#pragma warning restore CS8605 // Unboxing a possibly null value.
-                {
-                    var binding = entry.Value.DuckCast<BindingMetadata>();
-                    if (binding.Direction != BindingDirection.In || binding.BindingType is null)
-                    {
-                        continue;
-                    }
-
-                    var type = binding.BindingType;
-                    triggerType = type switch
-                    {
-                        _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http",             // Microsoft.Azure.Functions.Worker.Extensions.Http
-                        _ when type.Equals("timerTrigger", StringComparison.OrdinalIgnoreCase) => "Timer",           // Microsoft.Azure.Functions.Worker.Extensions.Timer
-                        _ when type.Equals("serviceBusTrigger", StringComparison.OrdinalIgnoreCase) => "ServiceBus", // Microsoft.Azure.Functions.Worker.Extensions.ServiceBus
-                        _ when type.Equals("queue", StringComparison.OrdinalIgnoreCase) => "Queue",                  // Microsoft.Azure.Functions.Worker.Extensions.Queues
-                        _ when type.StartsWith("blob", StringComparison.OrdinalIgnoreCase) => "Blob",                // Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs
-                        _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub",        // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
-                        _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos",          // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
-                        _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
-                        _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
-                    };
-
-                    switch (triggerType)
-                    {
-                        case "Http":
-                        {
-                            // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items.
-                            // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC).
-                            // The headers in the gRPC message are STALE (contain host's root span context).
-                            // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker.
-                            // Only skip gRPC extraction when we successfully retrieved the ASP.NET Core scope bridge,
-                            // otherwise fall back to the (stale) gRPC headers to at least keep the spans in the same trace.
-                            var isAspNetCoreIntegration = functionContext.Items?.ContainsKey(HttpRequestContextKey) == true;
-
-                            if (isAspNetCoreIntegration && aspNetCoreScope is not null)
-                            {
-                                // Skip gRPC header extraction in HTTP proxying mode. We already have the
-                                // ASP.NET Core scope from the HttpContext.Items bridge and will use it as
-                                // the parent below.
-                                Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
-                            }
-                            else
-                            {
-                                // Fall back to gRPC message extraction when not using ASP.NET Core integration,
-                                // or when proxying is detected but the ASP.NET Core scope bridge is unavailable.
-                                extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
-
-                                if (isAspNetCoreIntegration)
-                                {
-                                    // ASP.NET Core integration detected but the scope bridge was not available
-                                    // (GetAspNetCoreScope returned null). Fall back to gRPC headers: the parent
-                                    // will be the host's root span (wrong, but keeps the spans in the same trace).
-                                    Log.Debug("HTTP trigger detected ASP.NET Core integration, but no active scope was found. Falling back to gRPC header extraction for trace correlation.");
-                                }
-                                else
-                                {
-                                    Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
-                                }
-                            }
-
-                            break;
-                        }
-
-                        case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
-                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
-                            break;
-
-                        case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
-                            extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
-                            break;
-                    }
-
-                    break;
-                }
-
-                var tags = new AzureFunctionsTags
-                {
-                    TriggerType = triggerType,
-                    ShortName = functionContext.FunctionDefinition.Name,
-                    FullName = functionContext.FunctionDefinition.EntryPoint,
-                };
-
-                // Use the supplied aspnet_core.request scope (from HttpContext.Items bridge)
-                // if available, otherwise fall back to the existing local active scope.
-                var activeScope = tracer.InternalActiveScope;
-
-                // Check if the ASP.NET Core scope is already active
-                if (aspNetCoreScope != null && activeScope == aspNetCoreScope)
-                {
-                    // The ASP.NET Core span is already active - don't create a new span,
-                    // just update the existing root span's tags to make it a "serverless" span.
-                    // Don't assign to `scope`: the ASP.NET Core middleware owns this scope's
-                    // lifetime, and returning it here would cause OnAsyncMethodEnd to dispose it.
-                    var rootSpan = activeScope.Root.Span;
-
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan.Tags,
-                        shortName: tags.ShortName,
-                        fullName: tags.FullName,
-                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: tags.TriggerType);
-
-                    rootSpan.Type = SpanType; // "serverless"
-                    rootSpan.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
-                }
-                else
-                {
-                    // Create a new span with the appropriate parent context from:
-                    // 1. Extracted from propagation headers (gRPC message from the host process).
-                    // 2. ASP.NET Core scope (if available but not active - shouldn't happen).
-                    // 3. Existing local span (fallback).
-                    var parentSpanContext = extractedContext.SpanContext ??
-                                            aspNetCoreScope?.Span.Context ??
-                                            activeScope?.Span.Context;
-
-                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
-                    var span = scope.Span;
-                    var rootSpan = scope.Root.Span;
-
-                    if (span == rootSpan)
-                    {
-                        // this is the local root span
-                        tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                    }
-                    else
-                    {
-                        // this is NOT the local root span, copy some tags to the root span
-                        AzureFunctionsTags.SetRootSpanTags(
-                            rootSpan.Tags,
-                            shortName: tags.ShortName,
-                            fullName: tags.FullName,
-                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                            triggerType: tags.TriggerType);
-
-                        rootSpan.Type = SpanType; // "serverless"
-                    }
-
-                    span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
-                    span.Type = SpanType;
-                }
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+            // TODO: re-enable isolated function scope creation once non-recording spans land.
+            // The pre-refactor implementation has been removed; reintroduce when ready.
 
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
@@ -452,7 +298,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                var span = aspNetCoreScope.Span;
+                if (aspNetCoreScope.Span is not Span span)
+                {
+                    return;
+                }
+
                 var settings = tracer.CurrentTraceSettings.Settings;
 
                 if (!span.HasHttpStatusCode())

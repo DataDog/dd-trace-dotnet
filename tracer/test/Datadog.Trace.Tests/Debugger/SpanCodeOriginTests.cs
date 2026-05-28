@@ -277,25 +277,25 @@ namespace Datadog.Trace.Tests.Debugger
             private Span CreateSpan()
             {
                 var spanContext = new SpanContext(1234, 5678);
-                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreTags());
+                return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, new AspNetCoreTags());
             }
 
             private Span CreateWebSpan()
             {
                 var spanContext = new SpanContext(1234, 5678);
-                return new Span(spanContext, DateTimeOffset.UtcNow, new WebTags());
+                return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, tags: new WebTags());
             }
 
             private Span CreateAspNetCoreSpan()
             {
                 var spanContext = new SpanContext(1234, 5678);
-                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreTags());
+                return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, tags: new AspNetCoreTags());
             }
 
             private Span CreateAspNetCoreSingleSpanSpan()
             {
                 var spanContext = new SpanContext(1234, 5678);
-                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreSingleSpanTags());
+                return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, tags: new AspNetCoreSingleSpanTags());
             }
 
             private int TestMethod() => 42;
@@ -328,7 +328,7 @@ namespace Datadog.Trace.Tests.Debugger
                 // Arrange
                 SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
 
-                var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
+                var span = TestSpanExtensions.CreateSpan(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
                 // Act
                 TestMethod(spanCodeOrigin, span);
@@ -359,7 +359,7 @@ namespace Datadog.Trace.Tests.Debugger
                 // Arrange
                 SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin(numberOfFrames: 2);
 
-                var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
+                var span = TestSpanExtensions.CreateSpan(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
                 // Act
                 DeepTestMethod1(span, spanCodeOrigin);

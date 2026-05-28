@@ -574,7 +574,7 @@ internal static partial class IastModule
 
         var currentSpan = (tracer.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
-        var rootSpan = traceContext?.RootSpan;
+        var rootSpan = traceContext?.RootSpan as Span;
 
         if (traceContext?.IastRequestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
@@ -660,9 +660,9 @@ internal static partial class IastModule
         }
 
         var scope = tracer.ActiveScope as Scope;
-        var currentSpan = scope?.Span;
+        var currentSpan = scope?.Span as Span;
         var traceContext = currentSpan?.Context?.TraceContext;
-        var rootSpan = traceContext?.RootSpan;
+        var rootSpan = traceContext?.RootSpan as Span;
         var isRequest = rootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
@@ -771,41 +771,41 @@ internal static partial class IastModule
         batch.Add(vulnerability);
 
         var tags = new IastTags { IastEnabled = "1" };
-        var scope = tracer.StartActiveInternal(operationName, tags: tags);
-        var span = scope.Span;
+        // var scope = tracer.StartActiveInternal(operationName, tags: tags);
+        // var span = scope.Span;
+        //
+        // if (Iast.Instance.IsMetaStructSupported())
+        // {
+        //     var iastEventMetaStruct = batch.ToMessagePack();
+        //     if (batch.IsTruncated())
+        //     {
+        //         span.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
+        //     }
+        //
+        //     span.SetMetaStruct(IastMetaStructKey, iastEventMetaStruct);
+        // }
+        // else
+        // {
+        //     tags.IastJson = batch.ToJson();
+        //     if (batch.IsTruncated())
+        //     {
+        //         span.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+        //     }
+        // }
+        //
+        // var traceContext = span.Context.TraceContext;
+        // span.Type = SpanTypes.IastVulnerability;
+        // tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+        // traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+        // traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+        // vulnerability.Location?.ReportStack(span);
+        //
+        // if (closeAfterCreation)
+        // {
+        //     scope.Dispose();
+        // }
 
-        if (Iast.Instance.IsMetaStructSupported())
-        {
-            var iastEventMetaStruct = batch.ToMessagePack();
-            if (batch.IsTruncated())
-            {
-                span.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
-            }
-
-            span.SetMetaStruct(IastMetaStructKey, iastEventMetaStruct);
-        }
-        else
-        {
-            tags.IastJson = batch.ToJson();
-            if (batch.IsTruncated())
-            {
-                span.SetTag(Tags.IastJsonTagSizeExceeded, "1");
-            }
-        }
-
-        var traceContext = span.Context.TraceContext;
-        span.Type = SpanTypes.IastVulnerability;
-        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-        traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-        traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
-        vulnerability.Location?.ReportStack(span);
-
-        if (closeAfterCreation)
-        {
-            scope.Dispose();
-        }
-
-        return new IastModuleResponse(scope);
+        return new IastModuleResponse(null);
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)

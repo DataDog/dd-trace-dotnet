@@ -14,7 +14,7 @@ namespace Datadog.Trace.Ci.Sampling
         // The Ci Sampler keeps all spans, so it doesn't depend on the resource name
         public bool HasResourceBasedSamplingRule => false;
 
-        public SamplingDecision MakeSamplingDecision(Span span)
+        public SamplingDecision MakeSamplingDecision(in SamplingContext context)
         {
             return new SamplingDecision(SamplingPriorityValues.UserKeep, mechanism: null, rate: null, limiterRate: null);
         }

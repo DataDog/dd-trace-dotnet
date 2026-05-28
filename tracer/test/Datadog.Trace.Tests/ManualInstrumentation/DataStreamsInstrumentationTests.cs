@@ -33,7 +33,7 @@ public class DataStreamsInstrumentationTests
         await using var tracer = TracerHelper.Create(settings, scopeManager: scopeManager);
         TracerRestorerAttribute.SetTracer(tracer);
 
-        var span = new Span(new SpanContext(traceId: 1, spanId: 1), DateTimeOffset.UtcNow);
+        var span = TestSpanExtensions.CreateSpan(new SpanContext(traceId: 1, spanId: 1), DateTimeOffset.UtcNow);
         using var scope = scopeManager.Activate(span, finishOnClose: false);
 
         DataStreamsTrackTransactionIntegration.OnMethodBegin<object>("tx-123", "my-checkpoint");

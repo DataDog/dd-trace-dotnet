@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     if (exception != null)
                     {
-                        AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, security, scope.Span, httpContext, exception);
+                        // AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, security, scope.Span, httpContext, exception);
                     }
                 }
                 finally

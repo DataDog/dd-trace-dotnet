@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var formatter = CIFormatterResolver.Instance;
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, formatter);
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
+            var span = TestSpanExtensions.CreateSpan(new SpanContext(1, 1), DateTimeOffset.UtcNow, tags: new TestSpanTags());
             span.Type = SpanTypes.Test;
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var formatter = CIFormatterResolver.Instance;
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, formatter);
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
+            var span = TestSpanExtensions.CreateSpan(new SpanContext(1, 1), DateTimeOffset.UtcNow, tags: new TestSpanTags());
             span.Type = SpanTypes.Test;
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                            return flushTcs.Task;
                        });
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var span = TestSpanExtensions.CreateSpan(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings, formatter);
             expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
             expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
@@ -256,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             for (ulong i = 0; i < numSpans; i++)
             {
-                var span = new Span(new SpanContext(i, i), DateTimeOffset.UtcNow);
+                var span = TestSpanExtensions.CreateSpan(new SpanContext(i, i), DateTimeOffset.UtcNow);
                 agentlessWriter.WriteEvent(new Ci.EventModel.SpanEvent(span));
             }
 
@@ -295,7 +295,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var formatter = CIFormatterResolver.Instance;
             int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize;
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var span = TestSpanExtensions.CreateSpan(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             var spanEvent = new Ci.EventModel.SpanEvent(span);
             var individualType = MessagePackSerializer.Serialize<Ci.IEvent>(spanEvent, formatter);
 

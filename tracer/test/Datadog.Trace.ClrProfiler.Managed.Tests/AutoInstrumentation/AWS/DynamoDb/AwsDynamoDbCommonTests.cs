@@ -34,7 +34,7 @@ public class AwsDynamoDbCommonTests
 
         tags.TableName.Should().Be("MyTableName");
 
-        var span = scope.Span;
+        var span = (Span)scope.Span;
         span.ResourceName.Should().Be("DynamoDB.GetItem MyTableName");
     }
 
@@ -49,7 +49,7 @@ public class AwsDynamoDbCommonTests
         tags = null;
         AwsDynamoDbCommon.TagTableNameAndResourceName(proxy.TableName, tags, scope);
 
-        var span = scope.Span;
+        var span = (Span)scope.Span;
         span.ResourceName.Should().Be("DynamoDB.GetItem");
     }
 
@@ -79,7 +79,7 @@ public class AwsDynamoDbCommonTests
 
         tags.TableName.Should().Be(null);
 
-        var span = scope.Span;
+        var span = (Span)scope.Span;
         span.ResourceName.Should().Be("DynamoDB.GetItem");
     }
 
@@ -101,7 +101,7 @@ public class AwsDynamoDbCommonTests
 
         tags.TableName.Should().Be("MyTableName");
 
-        var span = scope.Span;
+        var span = (Span)scope.Span;
         span.ResourceName.Should().Be("DynamoDB.BatchGetItem MyTableName");
     }
 
@@ -124,7 +124,7 @@ public class AwsDynamoDbCommonTests
 
         tags.TableName.Should().Be(null);
 
-        var span = scope.Span;
+        var span = (Span)scope.Span;
         span.ResourceName.Should().Be("DynamoDB.BatchGetItem");
     }
 
@@ -143,7 +143,7 @@ public class AwsDynamoDbCommonTests
 
         tags.TableName.Should().Be(null);
 
-        var span = scope.Span;
+        var span = (Span)scope.Span;
         span.ResourceName.Should().Be("DynamoDB.BatchWriteItem");
     }
 

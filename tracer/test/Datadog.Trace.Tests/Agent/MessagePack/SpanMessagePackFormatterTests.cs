@@ -42,9 +42,9 @@ public class SpanMessagePackFormatterTests
 
         var spans = new[]
         {
-            new Span(parentContext, DateTimeOffset.UtcNow),
-            new Span(new SpanContext(parentContext, traceContext, "ServiceName1"), DateTimeOffset.UtcNow),
-            new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
+            TestSpanExtensions.CreateSpan(parentContext, DateTimeOffset.UtcNow),
+            TestSpanExtensions.CreateSpan(new SpanContext(parentContext, traceContext, "ServiceName1"), DateTimeOffset.UtcNow),
+            TestSpanExtensions.CreateSpan(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
 
         spans[1].Tags.SetTag("Tag1", "Value1");
@@ -137,9 +137,9 @@ public class SpanMessagePackFormatterTests
 
         var spans = new[]
         {
-            new Span(parentContext, DateTimeOffset.UtcNow),
-            new Span(new SpanContext(parentContext, new TraceContext(_stubTracer), "ServiceName1"), DateTimeOffset.UtcNow),
-            new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
+            TestSpanExtensions.CreateSpan(parentContext, DateTimeOffset.UtcNow),
+            TestSpanExtensions.CreateSpan(new SpanContext(parentContext, new TraceContext(_stubTracer), "ServiceName1"), DateTimeOffset.UtcNow),
+            TestSpanExtensions.CreateSpan(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
         var attributesToAdd = new List<KeyValuePair<string, string>>
         {
@@ -238,7 +238,7 @@ public class SpanMessagePackFormatterTests
         var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
         var traceContext = new TraceContext(tracer);
         var spanContext = new SpanContext(parentContext, traceContext, "ServiceName1");
-        var span = new Span(spanContext, DateTimeOffset.UtcNow);
+        var span = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow);
 
         var eventName = "test_event";
         var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -542,8 +542,8 @@ public class SpanMessagePackFormatterTests
         };
 
         var spanContext = new SpanContext(null, traceContext, "api.example.com");
-        var proxySpan = new Span(spanContext, DateTimeOffset.UtcNow, proxyTags);
-        proxySpan.OperationName = "azure.apim";
+        var proxySpan = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, tags: proxyTags);
+        // proxySpan.OperationName = "azure.apim"; // non-recording-spans experiment: setter removed
         proxySpan.Type = SpanTypes.Web;
         proxySpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -600,8 +600,8 @@ public class SpanMessagePackFormatterTests
         // Create a regular (non-proxy) span with a trace context that references the tracer
         var traceContext = new TraceContext(tracer);
         var spanContext = new SpanContext(null, traceContext, "my-service");
-        var normalSpan = new Span(spanContext, DateTimeOffset.UtcNow);
-        normalSpan.OperationName = "http.request";
+        var normalSpan = TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow);
+        // normalSpan.OperationName = "http.request"; // non-recording-spans experiment: setter removed
         normalSpan.Type = SpanTypes.Http;
         normalSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 

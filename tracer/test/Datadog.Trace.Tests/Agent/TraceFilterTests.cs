@@ -21,7 +21,7 @@ public class TraceFilterTests
     {
         var filter = new TraceFilter(AgentTraceFilterConfig.Empty);
         var span = CreateRootSpan();
-        span.ResourceName = "GET /users";
+        // span.ResourceName = "GET /users"; // non-recording-spans experiment: setter removed
 
         filter.ShouldKeepTrace(span).Should().BeTrue();
     }
@@ -33,15 +33,15 @@ public class TraceFilterTests
         var filter = new TraceFilter(config);
 
         var healthcheck = CreateRootSpan();
-        healthcheck.ResourceName = "GET /healthcheck";
+        // healthcheck.ResourceName = "GET /healthcheck"; // non-recording-spans experiment: setter removed
         filter.ShouldKeepTrace(healthcheck).Should().BeFalse();
 
         var ping = CreateRootSpan();
-        ping.ResourceName = "GET /ping";
+        // ping.ResourceName = "GET /ping"; // non-recording-spans experiment: setter removed
         filter.ShouldKeepTrace(ping).Should().BeFalse();
 
         var users = CreateRootSpan();
-        users.ResourceName = "GET /users";
+        // users.ResourceName = "GET /users"; // non-recording-spans experiment: setter removed
         filter.ShouldKeepTrace(users).Should().BeTrue();
     }
 
@@ -119,7 +119,7 @@ public class TraceFilterTests
 
         // Even with correct required tag, resource reject wins
         var span = CreateRootSpan();
-        span.ResourceName = "GET /healthcheck";
+        // span.ResourceName = "GET /healthcheck"; // non-recording-spans experiment: setter removed
         span.SetTag("env", "prod");
         filter.ShouldKeepTrace(span).Should().BeFalse();
     }
@@ -129,6 +129,6 @@ public class TraceFilterTests
         var tracer = new StubDatadogTracer();
         var traceContext = new TraceContext(tracer);
         var context = new SpanContext(null, traceContext, "test-service");
-        return new Span(context, DateTimeOffset.UtcNow);
+        return TestSpanExtensions.CreateSpan(context, DateTimeOffset.UtcNow);
     }
 }

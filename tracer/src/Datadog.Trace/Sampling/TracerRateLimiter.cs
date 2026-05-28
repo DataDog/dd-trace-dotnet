@@ -18,11 +18,11 @@ namespace Datadog.Trace.Sampling
         {
         }
 
-        protected override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
+        protected override void OnDisallowed(in SamplingContext context, int count, int intervalMs, int maxTracesPerInterval)
         {
             if (!Volatile.Read(ref _warningWritten))
             {
-                Log.Warning<string, int, int>("Rate limiter dropped a trace ({TraceId}) after reaching {Count} traces in the last {Interval}ms.", span.Context.RawTraceId, count, intervalMs);
+                Log.Warning<string, int, int>("Rate limiter dropped a trace ({TraceId}) after reaching {Count} traces in the last {Interval}ms.", context.Context.RawTraceId, count, intervalMs);
                 _warningWritten = true;
             }
         }
