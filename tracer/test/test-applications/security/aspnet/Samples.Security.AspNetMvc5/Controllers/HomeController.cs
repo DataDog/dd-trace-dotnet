@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
 using System.Web;
 using System.Web.Mvc;
 using Samples.AspNetMvc5.Models;
@@ -50,6 +52,10 @@ namespace Samples.AspNetMvc5.Controllers
         public ActionResult ApiSecurity(int id, ApiSecurityModel model) => Json(new { Id = model.Dog, Message = $"{model.Dog2}-response", PathParamId = id });
 
         [HttpPost]
+        [Route("/home/datacontractjson/{id:int}")]
+        public ActionResult DataContractJson(int id, ApiSecurityModel model) => new DataContractJsonActionResult(new ApiSecurityResponseModel { Id = model.Dog, Message = $"{model.Dog2}-response", PathParamId = id });
+
+        [HttpPost]
         [Route("api/home/emptymodel")]
         public ActionResult EmptyModel(ApiSecurityModel model)
         {
@@ -83,6 +89,36 @@ namespace Samples.AspNetMvc5.Controllers
             SampleHelpers.RunShutDownTasks(this);
 
             return RedirectToAction("Index");
+        }
+
+        private class DataContractJsonActionResult : ActionResult
+        {
+            private readonly object _data;
+
+            public DataContractJsonActionResult(object data)
+            {
+                _data = data;
+            }
+
+            public override void ExecuteResult(ControllerContext context)
+            {
+                var response = context.HttpContext.Response;
+                response.ContentType = "application/json";
+                new DataContractJsonSerializer(_data.GetType()).WriteObject(response.OutputStream, _data);
+            }
+        }
+
+        [DataContract]
+        public class ApiSecurityResponseModel
+        {
+            [DataMember(Name = "id")]
+            public int Id { get; set; }
+
+            [DataMember(Name = "message")]
+            public string Message { get; set; }
+
+            [DataMember(Name = "path_param_id")]
+            public int PathParamId { get; set; }
         }
     }
 }
