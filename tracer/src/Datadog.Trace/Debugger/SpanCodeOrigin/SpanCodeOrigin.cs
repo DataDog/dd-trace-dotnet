@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Symbols;
@@ -43,6 +44,56 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         }
 
         internal DebuggerSettings Settings { get; }
+
+        private static Dictionary<int, CachedSequencePoint>? GetSingleFileSequencePoints(Assembly assembly)
+        {
+            var assemblyName = assembly.GetName().Name;
+            if (StringUtil.IsNullOrEmpty(assemblyName))
+            {
+                return null;
+            }
+
+            var endpointTokens = new HashSet<int>();
+            var consumer = new RuntimeEndpointTokenConsumer(endpointTokens, assembly);
+            foreach (var type in assembly.GetTypes())
+            {
+                EndpointDetector.GetEndpointMethodTokens(type, ref consumer);
+            }
+
+            var pdbPath = Path.Combine(AppContext.BaseDirectory, assemblyName + ".pdb");
+            if (!File.Exists(pdbPath))
+            {
+                Log.Debug("No sidecar portable PDB was found for single-file assembly {AssemblyName} at {PdbPath}. Embedded PDBs in single-file bundles are not supported by this lookup path.", assembly.FullName, pdbPath);
+                return null;
+            }
+
+            var allSequencePoints = DatadogMetadataReader.GetPortablePdbSequencePoints(pdbPath, endpointTokens);
+            if (allSequencePoints is null)
+            {
+                return null;
+            }
+
+            Dictionary<int, CachedSequencePoint>? endpointSequencePoints = null;
+            foreach (var token in endpointTokens)
+            {
+                if (allSequencePoints.TryGetValue(token, out var sp))
+                {
+                    endpointSequencePoints ??= new Dictionary<int, CachedSequencePoint>();
+                    endpointSequencePoints[token] = ToCachedSequencePoint(sp);
+                }
+            }
+
+            return endpointSequencePoints;
+        }
+
+        private static CachedSequencePoint ToCachedSequencePoint(DatadogMetadataReader.DatadogSequencePoint sp)
+        {
+            var url = sp.URL!.IndexOf('\\') >= 0 ? sp.URL.Replace('\\', '/') : sp.URL;
+            return new CachedSequencePoint(
+                url,
+                sp.StartLine.ToString(CultureInfo.InvariantCulture),
+                sp.StartColumn.ToString(CultureInfo.InvariantCulture));
+        }
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
@@ -242,14 +293,21 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 Dictionary<int, CachedSequencePoint>? sequencePoints = null;
                 try
                 {
-                    // metadataOnly: true avoids PrefetchEntireImage, which would otherwise read the full DLL into memory.
-                    // We only need MetadataReader (for type/method enumeration) and the PDB reader (for sequence points).
-                    using var reader = DatadogMetadataReader.CreatePdbReader(assembly, metadataOnly: true);
-                    if (reader is { IsPdbExist: true })
+                    if (string.IsNullOrEmpty(assembly.Location))
                     {
-                        sequencePoints = new Dictionary<int, CachedSequencePoint>();
-                        var consumer = new SequencePointTokenConsumer(reader, sequencePoints, assembly);
-                        EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
+                        sequencePoints = GetSingleFileSequencePoints(assembly);
+                    }
+                    else
+                    {
+                        // metadataOnly: true avoids PrefetchEntireImage, which would otherwise read the full DLL into memory.
+                        // We only need MetadataReader (for type/method enumeration) and the PDB reader (for sequence points).
+                        using var reader = DatadogMetadataReader.CreatePdbReader(assembly, metadataOnly: true);
+                        if (reader is { IsPdbExist: true })
+                        {
+                            sequencePoints = new Dictionary<int, CachedSequencePoint>();
+                            var consumer = new SequencePointTokenConsumer(reader, sequencePoints, assembly);
+                            EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -385,6 +443,30 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private readonly record struct CachedSequencePoint(string Url, string Line, string Column);
 
+        private readonly struct RuntimeEndpointTokenConsumer : EndpointDetector.IEndpointRuntimeMethodConsumer
+        {
+            private readonly HashSet<int> _methodTokens;
+            private readonly Assembly _assembly;
+
+            public RuntimeEndpointTokenConsumer(HashSet<int> methodTokens, Assembly assembly)
+            {
+                _methodTokens = methodTokens;
+                _assembly = assembly;
+            }
+
+            public void OnEndpointMethod(MethodInfo method)
+            {
+                try
+                {
+                    _methodTokens.Add(method.MetadataToken);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to get metadata token for method {MethodName} in assembly {AssemblyName}", method.Name, _assembly.FullName);
+                }
+            }
+        }
+
         private readonly struct SequencePointTokenConsumer : EndpointDetector.IEndpointMethodTokenConsumer
         {
             private readonly DatadogMetadataReader _reader;
@@ -414,13 +496,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
                         // Precompute per-assembly string values to avoid per-span ToString() allocations.
                         // Normalize paths to the same forward-slash form used by Dynamic Instrumentation.
-                        var url = sp.URL.IndexOf('\\') >= 0 ? sp.URL.Replace('\\', '/') : sp.URL;
-                        _sequencePoints.Add(
-                            token,
-                            new CachedSequencePoint(
-                                url,
-                                sp.StartLine.ToString(CultureInfo.InvariantCulture),
-                                sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
+                        _sequencePoints.Add(token, ToCachedSequencePoint(sp));
                     }
                 }
                 catch (Exception ex)

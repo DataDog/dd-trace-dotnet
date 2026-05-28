@@ -86,6 +86,126 @@ namespace Datadog.Trace.Pdb
             return MetadataTokens.MethodDefinitionHandle(RidOf(methodToken));
         }
 
+        internal static Dictionary<int, DatadogSequencePoint>? GetPortablePdbSequencePoints(string pdbFullPath, ICollection<int> methodTokens)
+        {
+            if (string.IsNullOrEmpty(pdbFullPath) || methodTokens.Count == 0)
+            {
+                return null;
+            }
+
+            MetadataReaderProvider? pdbReaderProvider = null;
+
+            try
+            {
+                pdbReaderProvider = MetadataReaderProvider.FromPortablePdbStream(File.OpenRead(pdbFullPath), MetadataStreamOptions.PrefetchMetadata);
+                var pdbReader = pdbReaderProvider.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
+                Dictionary<int, DatadogSequencePoint>? sequencePoints = null;
+
+                foreach (var methodDebugInformationHandle in pdbReader.MethodDebugInformation)
+                {
+                    var methodDebugInformation = pdbReader.GetMethodDebugInformation(methodDebugInformationHandle);
+                    var methodDefinitionHandle = methodDebugInformationHandle.ToDefinitionHandle();
+                    var methodToken = MetadataTokens.GetToken(methodDefinitionHandle);
+                    var kickoffMethod = methodDebugInformation.GetStateMachineKickoffMethod();
+                    var kickoffMethodToken = kickoffMethod.IsNil ? 0 : MetadataTokens.GetToken(kickoffMethod);
+                    var methodTokenRequested = methodTokens.Contains(methodToken);
+                    var kickoffMethodTokenRequested = kickoffMethodToken != 0 && methodTokens.Contains(kickoffMethodToken);
+                    if (!methodTokenRequested && !kickoffMethodTokenRequested)
+                    {
+                        continue;
+                    }
+
+                    if (methodDebugInformation.SequencePointsBlob.IsNil)
+                    {
+                        continue;
+                    }
+
+                    DatadogSequencePoint? firstSequencePoint = null;
+                    foreach (var sequencePoint in methodDebugInformation.GetSequencePoints())
+                    {
+                        if (sequencePoint.IsHidden)
+                        {
+                            continue;
+                        }
+
+                        var filePath = GetDocumentName(pdbReader, sequencePoint.Document);
+                        if (!string.IsNullOrEmpty(filePath) && sequencePoint.StartLine > 0)
+                        {
+                            firstSequencePoint = new DatadogSequencePoint
+                            {
+                                URL = filePath,
+                                StartLine = sequencePoint.StartLine,
+                                EndLine = sequencePoint.EndLine,
+                                StartColumn = sequencePoint.StartColumn,
+                                EndColumn = sequencePoint.EndColumn,
+                                Offset = sequencePoint.Offset,
+                                IsHidden = sequencePoint.IsHidden
+                            };
+                            break;
+                        }
+                    }
+
+                    if (firstSequencePoint is not { } datadogSequencePoint)
+                    {
+                        continue;
+                    }
+
+                    sequencePoints ??= new Dictionary<int, DatadogSequencePoint>();
+                    if (methodTokenRequested)
+                    {
+                        sequencePoints[methodToken] = datadogSequencePoint;
+                    }
+
+                    if (kickoffMethodTokenRequested)
+                    {
+                        sequencePoints[kickoffMethodToken] = datadogSequencePoint;
+                    }
+                }
+
+                return sequencePoints;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Logger.Debug("Unable to access portable PDB in location: {PdbPath}. Error: {Error}", pdbFullPath, e.Message);
+                return null;
+            }
+            catch (IOException e)
+            {
+                Logger.Debug("Error while trying to read portable PDB in location: {PdbPath}. Error: {Error}", pdbFullPath, e.Message);
+                return null;
+            }
+            catch (BadImageFormatException e)
+            {
+                Logger.Debug("PDB in location {PdbPath} is not a valid portable PDB. Error: {Error}", pdbFullPath, e.Message);
+                return null;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error while trying to read portable PDB in location: {PdbPath}", pdbFullPath);
+                return null;
+            }
+            finally
+            {
+                pdbReaderProvider?.Dispose();
+            }
+
+            static string? GetDocumentName(MetadataReader pdbReader, DocumentHandle documentHandle)
+            {
+                if (documentHandle.IsNil)
+                {
+                    return null;
+                }
+
+                var document = pdbReader.GetDocument(documentHandle);
+                if (document.Name.IsNil)
+                {
+                    return null;
+                }
+
+                return pdbReader.GetString(document.Name);
+            }
+        }
+
         /// <summary>
         /// Opens a <see cref="DatadogMetadataReader"/> for the given assembly.
         /// </summary>

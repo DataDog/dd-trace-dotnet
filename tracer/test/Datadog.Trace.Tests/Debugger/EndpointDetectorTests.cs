@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using FluentAssertions;
@@ -50,6 +51,12 @@ namespace Datadog.Trace.Tests.Debugger
                 {
                     File.Delete(_assemblyPath);
                 }
+
+                var pdbPath = Path.ChangeExtension(_assemblyPath, "pdb");
+                if (!string.IsNullOrEmpty(pdbPath) && File.Exists(pdbPath))
+                {
+                    File.Delete(pdbPath);
+                }
             }
             catch
             {
@@ -65,7 +72,6 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Create a mapping of method tokens to more friendly names for debugging
             var tokenToMethodMap = new Dictionary<int, string>();
-            var expectedEndpoints = new HashSet<int>();
 
             var namespace_ = "EndpointDetectorTestNamespace";
             foreach (var type in _assembly.GetTypes().Where(t => t.Namespace == namespace_))
@@ -75,68 +81,10 @@ namespace Datadog.Trace.Tests.Debugger
                     var token = method.MetadataToken;
                     var fullMethodName = $"{type.Name}.{method.Name}";
                     tokenToMethodMap[token] = fullMethodName;
-
-                    // Add to expected endpoints for the types and methods we expect to be detected
-                    bool isExpectedEndpoint = false;
-
-                    // Controllers with action attributes
-                    if (type.Name is "ControllerAttributeController" or "ApiControllerAttributeController" or "RouteAttributeController" &&
-                        method.Name == "Get")
-                    {
-                        isExpectedEndpoint = true;
-                    }
-
-                    // Controllers inheriting from base classes
-                    else if (type.Name is "ControllerBaseInheritanceController" or "ControllerInheritanceController" &&
-                             method.Name == "Get")
-                    {
-                        isExpectedEndpoint = true;
-                    }
-
-                    // Leaf controller that inherits [ApiController] through a custom base type
-                    else if (type.Name == "InheritedAttributeController" && method.Name == "Get")
-                    {
-                        isExpectedEndpoint = true;
-                    }
-
-                    // Controller with HTTP methods
-                    else if (type.Name == "HttpMethodController" &&
-                            method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom" or "AcceptVerbs" or "RouteOnly")
-                    {
-                        isExpectedEndpoint = true;
-                    }
-
-                    // PageModel handlers (OnGetWithNonHandlerAttribute is excluded by the list
-                    // pattern itself - it's covered by the negative-case test, not here).
-                    else if (type.Name == "TestPageModel" &&
-                            method.Name is "OnGet" or "OnGetAsync" or "OnPost" or "OnPostAsync" or "OnPut" or "OnPutAsync" or "OnDelete" or "OnDeleteAsync" or "OnHead" or "OnHeadAsync" or "OnPatch" or "OnPatchAsync" or "OnOptions" or "OnOptionsAsync")
-                    {
-                        isExpectedEndpoint = true;
-                    }
-
-                    // SignalR hub methods
-                    else if (type.Name is "TestHub" or "TestGenericHub" &&
-                             method.Name is "Send" or "Receive" &&
-                             !method.IsStatic)
-                    {
-                        isExpectedEndpoint = true;
-                    }
-
-                    // minimal api endpoints
-                    else if (type.Name.Contains("<>") || type.Name.Contains("__DisplayClass"))
-                    {
-                        if (method.Name.Contains("b__"))
-                        {
-                            isExpectedEndpoint = true;
-                        }
-                    }
-
-                    if (isExpectedEndpoint)
-                    {
-                        expectedEndpoints.Add(token);
-                    }
                 }
             }
+
+            var expectedEndpoints = GetExpectedEndpointTokens(includeMinimalApiEndpoints: true);
 
             // Log and assert
             LogEndpointDetails(endpointTokens, tokenToMethodMap, expectedEndpoints);
@@ -149,6 +97,45 @@ namespace Datadog.Trace.Tests.Debugger
             // compiler-generated lambdas, but a runaway result set (e.g. every public instance method
             // on a compiler-generated type) would indicate a regression in the classification logic.
             endpointTokens.Count.Should().BeLessThan(expectedEndpoints.Count + 25, "the minimal-API fuzzy detection must not blow up the result set");
+        }
+
+        [Fact]
+        public void GetEndpointMethodTokens_FromRuntimeTypesMatchesMetadataReader()
+        {
+            // Arrange
+            var expectedTokens = GetExpectedEndpointTokens(includeMinimalApiEndpoints: false);
+            var runtimeTokens = new List<int>();
+            var consumer = new ListEndpointRuntimeMethodConsumer(runtimeTokens);
+
+            // Act
+            foreach (var type in _assembly.GetTypes())
+            {
+                EndpointDetector.GetEndpointMethodTokens(type, ref consumer);
+            }
+
+            // Assert
+            runtimeTokens.Should().Contain(expectedTokens, "single-file assemblies do not have Assembly.Location, so Code Origin uses runtime reflection to identify endpoint tokens");
+            runtimeTokens.Count.Should().BeLessThan(expectedTokens.Count + 25, "runtime endpoint detection must stay close to expected endpoint detection");
+        }
+
+        [Fact]
+        public void PortablePdbSequencePoints_CanReadSidecarPdbWithoutAssemblyLocation()
+        {
+            // Arrange
+            var pdbPath = Path.ChangeExtension(_assemblyPath, "pdb");
+            var controller = _assembly.GetType("EndpointDetectorTestNamespace.ControllerBaseInheritanceController");
+            controller.Should().NotBeNull();
+            var method = controller.GetMethod("Get");
+            method.Should().NotBeNull();
+            var methodTokens = new HashSet<int> { method.MetadataToken };
+
+            // Act
+            var sequencePoints = Datadog.Trace.Pdb.DatadogMetadataReader.GetPortablePdbSequencePoints(pdbPath, methodTokens);
+
+            // Assert
+            sequencePoints.Should().NotBeNull();
+            sequencePoints.Should().ContainKey(method.MetadataToken);
+            sequencePoints![method.MetadataToken].URL.Should().EndWith("EndpointDetectorTestAssembly.cs");
         }
 
         [Fact]
@@ -395,16 +382,21 @@ namespace Datadog.Trace.Tests.Debugger
 
         private string CreateTestAssembly()
         {
+            var syntaxTree = CSharpSyntaxTree.ParseText(GetTestAssemblyCode(), path: TestAssemblyName + ".cs");
             var compilation = CSharpCompilation.Create(
                 TestAssemblyName,
-                syntaxTrees: new[] { CSharpSyntaxTree.ParseText(GetTestAssemblyCode()) },
+                syntaxTrees: new[] { syntaxTree },
                 references: GetMetadataReferences(),
                 options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             var uniqueId = Guid.NewGuid().ToString("N").Substring(0, 8);
             var assemblyPath = Path.Combine(Path.GetTempPath(), $"{TestAssemblyName}_{uniqueId}.dll");
+            var pdbPath = Path.ChangeExtension(assemblyPath, "pdb");
 
-            EmitResult emitResult = compilation.Emit(assemblyPath);
+            var emitOptions = new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb);
+            using var assemblyStream = File.Create(assemblyPath);
+            using var pdbStream = File.Create(pdbPath);
+            EmitResult emitResult = compilation.Emit(assemblyStream, pdbStream, options: emitOptions);
             if (!emitResult.Success)
             {
                 string errors = string.Join(
@@ -456,9 +448,64 @@ namespace Datadog.Trace.Tests.Debugger
             ];
         }
 
+        private HashSet<int> GetExpectedEndpointTokens(bool includeMinimalApiEndpoints)
+        {
+            var expectedEndpoints = new HashSet<int>();
+            foreach (var type in _assembly.GetTypes().Where(t => t.Namespace == "EndpointDetectorTestNamespace"))
+            {
+                foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                {
+                    bool isExpectedEndpoint = false;
+
+                    if (type.Name is "ControllerAttributeController" or "ApiControllerAttributeController" or "RouteAttributeController" &&
+                        method.Name == "Get")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+                    else if (type.Name is "ControllerBaseInheritanceController" or "ControllerInheritanceController" &&
+                             method.Name == "Get")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+                    else if (type.Name == "InheritedAttributeController" && method.Name == "Get")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+                    else if (type.Name == "HttpMethodController" &&
+                             method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom" or "AcceptVerbs" or "RouteOnly")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+                    else if (type.Name == "TestPageModel" &&
+                             method.Name is "OnGet" or "OnGetAsync" or "OnPost" or "OnPostAsync" or "OnPut" or "OnPutAsync" or "OnDelete" or "OnDeleteAsync" or "OnHead" or "OnHeadAsync" or "OnPatch" or "OnPatchAsync" or "OnOptions" or "OnOptionsAsync")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+                    else if (type.Name is "TestHub" or "TestGenericHub" &&
+                             method.Name is "Send" or "Receive" &&
+                             !method.IsStatic)
+                    {
+                        isExpectedEndpoint = true;
+                    }
+                    else if (includeMinimalApiEndpoints && (type.Name.Contains("<>") || type.Name.Contains("__DisplayClass")) && method.Name.Contains("b__"))
+                    {
+                        isExpectedEndpoint = true;
+                    }
+
+                    if (isExpectedEndpoint)
+                    {
+                        expectedEndpoints.Add(method.MetadataToken);
+                    }
+                }
+            }
+
+            return expectedEndpoints;
+        }
+
         private SourceText GetTestAssemblyCode()
         {
-            return SourceText.From(@"
+            return SourceText.From(
+                @"
 using System;
 using System.Threading.Tasks;
 
@@ -766,7 +813,8 @@ namespace EndpointDetectorTestNamespace
             // This empty method ensures the delegates are used
         }
     }
-}");
+}",
+                Encoding.UTF8);
         }
 
         private SourceText GetAssemblyWithoutEndpointsCode()
@@ -814,6 +862,21 @@ namespace EndpointDetectorNoEndpoints
             public void OnEndpointMethodToken(int token)
             {
                 Tokens.Add(token);
+            }
+        }
+
+        private struct ListEndpointRuntimeMethodConsumer : EndpointDetector.IEndpointRuntimeMethodConsumer
+        {
+            internal ListEndpointRuntimeMethodConsumer(List<int> tokens)
+            {
+                Tokens = tokens;
+            }
+
+            internal List<int> Tokens { get; }
+
+            public void OnEndpointMethod(MethodInfo method)
+            {
+                Tokens.Add(method.MetadataToken);
             }
         }
     }

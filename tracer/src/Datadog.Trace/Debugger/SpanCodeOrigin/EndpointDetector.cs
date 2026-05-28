@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Pdb;
 
@@ -57,6 +58,11 @@ internal static class EndpointDetector
     internal interface IEndpointMethodTokenConsumer
     {
         void OnEndpointMethodToken(int token);
+    }
+
+    internal interface IEndpointRuntimeMethodConsumer
+    {
+        void OnEndpointMethod(MethodInfo method);
     }
 
     internal static void GetEndpointMethodTokens<TConsumer>(DatadogMetadataReader datadogMetadataReader, ref TConsumer consumer)
@@ -129,9 +135,66 @@ internal static class EndpointDetector
         }
     }
 
+    internal static void GetEndpointMethodTokens<TConsumer>(Type type, ref TConsumer consumer)
+        where TConsumer : struct, IEndpointRuntimeMethodConsumer
+    {
+        if (type is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(type));
+        }
+
+        if (!IsValidTypeKind(type))
+        {
+            return;
+        }
+
+        var endpointType = ClassifyType(type);
+        if (endpointType == EndpointTypeKind.None)
+        {
+            return;
+        }
+
+        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+        {
+            if (!IsValidMethod(method))
+            {
+                continue;
+            }
+
+            if (endpointType == EndpointTypeKind.Controller && HasAttributeFromSet(method.GetCustomAttributesData(), KnownNameSet.ActionAttribute))
+            {
+                consumer.OnEndpointMethod(method);
+                continue;
+            }
+
+            if (endpointType == EndpointTypeKind.PageModel && IsPageModelHandler(method))
+            {
+                consumer.OnEndpointMethod(method);
+                continue;
+            }
+
+            if (endpointType == EndpointTypeKind.SignalRHub)
+            {
+                consumer.OnEndpointMethod(method);
+                continue;
+            }
+
+            // minimal API endpoints
+            if (endpointType == EndpointTypeKind.CompilerGenerated && MightBeEndpoint(method))
+            {
+                consumer.OnEndpointMethod(method);
+            }
+        }
+    }
+
     private static bool IsValidTypeKind(TypeDefinition typeDef)
     {
         return (typeDef.Attributes & InvalidTypeAttributes) == 0;
+    }
+
+    private static bool IsValidTypeKind(Type type)
+    {
+        return !type.IsInterface && !type.IsAbstract;
     }
 
     private static bool IsValidMethod(MethodDefinition methodDef)
@@ -139,6 +202,13 @@ internal static class EndpointDetector
         var attributes = methodDef.Attributes;
         return (attributes & PublicMethodAttributes) != 0 &&
                (attributes & InvalidMethodAttributes) == 0;
+    }
+
+    private static bool IsValidMethod(MethodInfo method)
+    {
+        return method.IsPublic &&
+               !method.IsStatic &&
+               !method.IsSpecialName;
     }
 
     private static EndpointTypeKind ClassifyType(TypeDefinition typeDef, MetadataReader reader)
@@ -193,6 +263,52 @@ internal static class EndpointDetector
         return isCompilerGenerated ? EndpointTypeKind.CompilerGenerated : EndpointTypeKind.None;
     }
 
+    private static EndpointTypeKind ClassifyType(Type type)
+    {
+        var typeAttributes = type.GetCustomAttributesData();
+        if (HasAttributeFromSet(typeAttributes, KnownNameSet.ControllerAttribute))
+        {
+            return EndpointTypeKind.Controller;
+        }
+
+        var fallbackType = EndpointTypeKind.None;
+        var isCompilerGenerated = HasAttributeFromSet(typeAttributes, KnownNameSet.CompilerGeneratedAttribute);
+        var baseType = type.BaseType;
+        while (baseType is not null)
+        {
+            if (BaseTypeMatchesAny(baseType, KnownBaseTypeSet.Controller))
+            {
+                return EndpointTypeKind.Controller;
+            }
+
+            if (fallbackType == EndpointTypeKind.None)
+            {
+                if (BaseTypeMatchesAny(baseType, KnownBaseTypeSet.PageModel))
+                {
+                    fallbackType = EndpointTypeKind.PageModel;
+                }
+                else if (BaseTypeMatchesAny(baseType, KnownBaseTypeSet.SignalRHub))
+                {
+                    fallbackType = EndpointTypeKind.SignalRHub;
+                }
+            }
+
+            if (HasAttributeFromSet(baseType.GetCustomAttributesData(), KnownNameSet.ControllerAttribute))
+            {
+                return EndpointTypeKind.Controller;
+            }
+
+            baseType = baseType.BaseType;
+        }
+
+        if (fallbackType != EndpointTypeKind.None)
+        {
+            return fallbackType;
+        }
+
+        return isCompilerGenerated ? EndpointTypeKind.CompilerGenerated : EndpointTypeKind.None;
+    }
+
     private static bool HasAttributeFromSet(CustomAttributeHandleCollection attributes, MetadataReader reader, KnownNameSet nameSet)
     {
         if (attributes.Count == 0)
@@ -209,6 +325,24 @@ internal static class EndpointDetector
             }
 
             if (NameMatches(reader, namespaceHandle, nameHandle, nameSet))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasAttributeFromSet(IList<CustomAttributeData> attributes, KnownNameSet nameSet)
+    {
+        if (attributes.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var attribute in attributes)
+        {
+            if (NameMatches(attribute.AttributeType.Namespace, attribute.AttributeType.Name, nameSet))
             {
                 return true;
             }
@@ -275,9 +409,31 @@ internal static class EndpointDetector
         return !HasAttributeFromSet(methodDef.GetCustomAttributes(), reader, KnownNameSet.NoHandlerAttribute);
     }
 
+    private static bool IsPageModelHandler(MethodInfo method)
+    {
+        // Razor Pages handler method conventions:
+        // https://learn.microsoft.com/en-us/aspnet/core/razor-pages/?view=aspnetcore-8.0#handler-methods
+        if (!method.Name.StartsWith("On", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (!IsKnownPageModelHandlerName(method.Name))
+        {
+            return false;
+        }
+
+        return !HasAttributeFromSet(method.GetCustomAttributesData(), KnownNameSet.NoHandlerAttribute);
+    }
+
     private static bool MightBeEndpoint(MethodDefinition methodDef, MetadataReader reader)
     {
         return reader.StringComparer.StartsWith(methodDef.Name, "<");
+    }
+
+    private static bool MightBeEndpoint(MethodInfo method)
+    {
+        return method.Name.StartsWith("<", StringComparison.Ordinal);
     }
 
     private static bool BaseTypeMatchesAny(EntityHandle typeHandle, MetadataReader reader, KnownBaseTypeSet baseTypeSet)
@@ -295,6 +451,11 @@ internal static class EndpointDetector
             default:
                 return false;
         }
+    }
+
+    private static bool BaseTypeMatchesAny(Type type, KnownBaseTypeSet baseTypeSet)
+    {
+        return BaseTypeNameMatches(type.Namespace, type.Name, baseTypeSet);
     }
 
     private static bool TypeSpecMatchesByOuterName(TypeSpecificationHandle typeHandle, MetadataReader reader, KnownBaseTypeSet baseTypeSet)
@@ -362,6 +523,24 @@ internal static class EndpointDetector
                comparer.Equals(name, "OnOptionsAsync");
     }
 
+    private static bool IsKnownPageModelHandlerName(string name)
+    {
+        return name == "OnGet" ||
+               name == "OnGetAsync" ||
+               name == "OnPost" ||
+               name == "OnPostAsync" ||
+               name == "OnPut" ||
+               name == "OnPutAsync" ||
+               name == "OnDelete" ||
+               name == "OnDeleteAsync" ||
+               name == "OnHead" ||
+               name == "OnHeadAsync" ||
+               name == "OnPatch" ||
+               name == "OnPatchAsync" ||
+               name == "OnOptions" ||
+               name == "OnOptionsAsync";
+    }
+
     private static bool NameMatches(MetadataReader reader, StringHandle namespaceHandle, StringHandle nameHandle, KnownNameSet nameSet)
     {
         var comparer = reader.StringComparer;
@@ -400,6 +579,43 @@ internal static class EndpointDetector
         }
     }
 
+    private static bool NameMatches(string? namespaceName, string name, KnownNameSet nameSet)
+    {
+        switch (nameSet)
+        {
+            case KnownNameSet.ControllerAttribute:
+                return namespaceName == MvcNamespace &&
+                       (name == "ApiControllerAttribute" ||
+                        name == "ControllerAttribute" ||
+                        name == "RouteAttribute");
+
+            case KnownNameSet.ActionAttribute:
+                return (namespaceName == MvcNamespace &&
+                        (name == "AcceptVerbsAttribute" ||
+                         name == "HttpGetAttribute" ||
+                         name == "HttpPostAttribute" ||
+                         name == "HttpPutAttribute" ||
+                         name == "HttpDeleteAttribute" ||
+                         name == "HttpPatchAttribute" ||
+                         name == "HttpHeadAttribute" ||
+                         name == "HttpOptionsAttribute" ||
+                         name == "RouteAttribute")) ||
+                       (namespaceName == MvcRoutingNamespace &&
+                        name == "HttpMethodAttribute");
+
+            case KnownNameSet.NoHandlerAttribute:
+                return namespaceName == RazorPagesNamespace &&
+                       name == "NonHandlerAttribute";
+
+            case KnownNameSet.CompilerGeneratedAttribute:
+                return namespaceName == CompilerServicesNamespace &&
+                       name == "CompilerGeneratedAttribute";
+
+            default:
+                return false;
+        }
+    }
+
     private static bool BaseTypeNameMatches(MetadataReader reader, StringHandle namespaceHandle, StringHandle nameHandle, KnownBaseTypeSet baseTypeSet)
     {
         var comparer = reader.StringComparer;
@@ -418,6 +634,29 @@ internal static class EndpointDetector
                 return comparer.Equals(namespaceHandle, SignalRNamespace) &&
                        (comparer.Equals(nameHandle, "Hub") ||
                         comparer.Equals(nameHandle, "Hub`1"));
+
+            default:
+                return false;
+        }
+    }
+
+    private static bool BaseTypeNameMatches(string? namespaceName, string name, KnownBaseTypeSet baseTypeSet)
+    {
+        switch (baseTypeSet)
+        {
+            case KnownBaseTypeSet.Controller:
+                return namespaceName == MvcNamespace &&
+                       (name == "Controller" ||
+                        name == "ControllerBase");
+
+            case KnownBaseTypeSet.PageModel:
+                return namespaceName == RazorPagesNamespace &&
+                       name == "PageModel";
+
+            case KnownBaseTypeSet.SignalRHub:
+                return namespaceName == SignalRNamespace &&
+                       (name == "Hub" ||
+                        name == "Hub`1");
 
             default:
                 return false;
