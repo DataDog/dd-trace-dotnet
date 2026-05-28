@@ -1496,6 +1496,31 @@
   },
   {
     "IntegrationName": "AspNetMvc",
+    "AssemblyName": "System.Runtime.Serialization",
+    "TargetTypeName": "System.Runtime.Serialization.Json.DataContractJsonSerializer",
+    "TargetMethodName": "WriteObject",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.IO.Stream",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 2
+  },
+  {
+    "IntegrationName": "AspNetMvc",
     "AssemblyName": "System.Web.Mvc",
     "TargetTypeName": "System.Web.Mvc.Async.AsyncControllerActionInvoker",
     "TargetMethodName": "BeginInvokeAction",
