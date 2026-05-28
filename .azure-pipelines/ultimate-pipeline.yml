@@ -2265,7 +2265,7 @@ stages:
       jobs: [Test, DockerTest, Serverless]
 
   - job: Test
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
 
