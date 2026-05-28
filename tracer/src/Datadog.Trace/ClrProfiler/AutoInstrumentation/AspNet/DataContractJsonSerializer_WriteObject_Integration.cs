@@ -40,9 +40,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     public sealed class DataContractJsonSerializer_WriteObject_Integration
     {
         private const string MethodName = "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()";
-        private const string HttpResponseStreamTypeName = "System.Web.HttpResponseStream";
 
-        private static readonly Type? HttpResponseStreamType = typeof(HttpResponse).Assembly.GetType(HttpResponseStreamTypeName);
+        private static readonly Type? HttpResponseStreamType = typeof(HttpResponse).Assembly.GetType("System.Web.HttpResponseStream");
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DataContractJsonSerializer_WriteObject_Integration));
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Stream stream, object? graph)
