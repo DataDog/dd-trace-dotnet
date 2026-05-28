@@ -93,7 +93,7 @@ namespace Datadog.Trace.AppSec
                     var field = fields[i];
 
                     var propertyName = GetPropertyName(field.Name);
-                    if (string.IsNullOrEmpty(propertyName))
+                    if (StringUtil.IsNullOrEmpty(propertyName))
                     {
                         Log.Warning("ExtractProperties - couldn't extract property name from: {FieldName}", field.Name);
                         continue;
