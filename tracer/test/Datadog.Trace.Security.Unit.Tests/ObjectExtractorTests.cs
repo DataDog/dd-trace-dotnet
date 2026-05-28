@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 #if NETFRAMEWORK
 using System.Web.Routing;
 using Datadog.Trace.Telemetry.Metrics;
@@ -138,6 +139,23 @@ namespace Datadog.Trace.Security.Unit.Tests
             Assert.Equal(target.Dog2, result[nameof(target.Dog2)]?.ToString());
             result[nameof(target.Id)].Should().BeOfType<int>();
             target.Id.Should().Be((int)result[nameof(target.Id)]);
+        }
+
+        [Fact]
+        public void TestDataMemberNames()
+        {
+            var target = new TestDataContractPoco { Id = 1, Message = "hello", Secret = "secret", Ignored = "ignored" };
+
+            var result = DataContractObjectExtractor.Extract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!["id"].Should().Be(target.Id);
+            result["message"].Should().Be(target.Message);
+            result.Should().HaveCount(2);
+            result.Should().NotContainKey(nameof(target.Id));
+            result.Should().NotContainKey(nameof(target.Message));
+            result.Should().NotContainKey(nameof(target.Secret));
+            result.Should().NotContainKey(nameof(target.Ignored));
         }
 
         [Fact]
@@ -538,6 +556,21 @@ namespace Datadog.Trace.Security.Unit.Tests
     public struct TestStructPoco
     {
         public string StringValue { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractPoco
+    {
+        [DataMember(Name = "id")]
+        public int Id { get; set; }
+
+        [DataMember(Name = "message")]
+        public string Message { get; set; }
+
+        public string Secret { get; set; }
+
+        [IgnoreDataMember]
+        public string Ignored { get; set; }
     }
 
     public class TestNestedPropertiesPoco
