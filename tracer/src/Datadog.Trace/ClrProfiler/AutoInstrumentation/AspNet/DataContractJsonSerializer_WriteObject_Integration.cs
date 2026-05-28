@@ -38,6 +38,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class DataContractJsonSerializer_WriteObject_Integration
     {
+        private const string MethodName = "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DataContractJsonSerializer_WriteObject_Integration));
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Stream stream, object? graph)
@@ -64,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error instrumenting method {MethodName}", "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()");
+                Log.Error(ex, "Error instrumenting method {MethodName}", MethodName);
                 return CallTargetState.GetDefault();
             }
         }
@@ -76,8 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 try
                 {
                     var security = Security.Instance;
-                    var httpContext = HttpContext.Current;
-                    var securityTransport = SecurityCoordinator.Get(security, scope.Span, httpContext);
+                    var securityTransport = SecurityCoordinator.Get(security, scope.Span, HttpContext.Current);
                     if (!securityTransport.IsBlocked)
                     {
                         var extractedObject = ObjectExtractor.ExtractDataContract(graph);
@@ -90,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
                 catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
                 {
-                    Log.Error(ex, "Error instrumenting method {MethodName}", "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()");
+                    Log.Error(ex, "Error instrumenting method {MethodName}", MethodName);
                 }
             }
 
