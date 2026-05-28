@@ -79,10 +79,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             try
             {
                 var dbmPropagationMode = tracer.Settings.DbmPropagationMode;
-                // DynamicService is service-level propagation with base-hash injection; normalize to Service for the propagators
-                var effectivePropagationMode = dbmPropagationMode == DbmPropagationLevel.DynamicService
-                    ? DbmPropagationLevel.Service
-                    : dbmPropagationMode;
                 if (dbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
                     var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
@@ -95,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         // There's not a lot we can do about it (we don't want to start parsing commandText), so just
                         // report it for now
                         if (!Volatile.Read(ref _dbCommandCachingLogged)
-                            && effectivePropagationMode != DbmPropagationLevel.Service)
+                            && dbmPropagationMode != DbmPropagationLevel.Service)
                         {
                             _dbCommandCachingLogged = true;
                             var spanContext = scope.Span.Context;
@@ -116,9 +112,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                         // PropagateDataViaComment (service) - this injects various trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(effectivePropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(effectivePropagationMode, integrationId, command, scope.Span);
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationMode, integrationId, command, scope.Span);
 
                         if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {
@@ -270,8 +266,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
-                var isDynamicService = tracer.Settings.DbmPropagationMode == DbmPropagationLevel.DynamicService;
-                var baseHash = tracer.Settings.PropagateProcessTags && (tracer.Settings.DbmInjectSqlBasehash || isDynamicService)
+                var baseHash = tracer.Settings.PropagateProcessTags && tracer.Settings.DbmInjectSqlBasehash
                                    ? tracer.TracerManager.ServiceRemappingHash?.Base64Value
                                    : null; // null if disabled
 

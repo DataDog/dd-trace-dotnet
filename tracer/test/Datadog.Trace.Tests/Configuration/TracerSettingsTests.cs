@@ -693,31 +693,32 @@ namespace Datadog.Trace.Tests.Configuration
         // See TracerSettingsServerlessTests for tests which rely on environment variables
 
         [Theory]
-        [InlineData("", DbmPropagationLevel.Disabled)]              // empty string defaults to disabled
-        [InlineData(null, DbmPropagationLevel.Disabled)]            // null defaults to disabled
-        [InlineData("      ", DbmPropagationLevel.Disabled)]        // whitespace defaults to disabled
-        [InlineData("invalid", DbmPropagationLevel.Disabled)]       // invalid input
-        [InlineData("full", DbmPropagationLevel.Full)]                              // exact match
-        [InlineData("service", DbmPropagationLevel.Service)]                      // exact match
-        [InlineData("dynamic_service", DbmPropagationLevel.DynamicService)]       // exact match
-        [InlineData("disabled", DbmPropagationLevel.Disabled)]                    // exact match
-        [InlineData("Disabled", DbmPropagationLevel.Disabled)]                    // case insenstive
-        [InlineData("SERVICE", DbmPropagationLevel.Service)]                      // case insensitive
-        [InlineData("FuLl", DbmPropagationLevel.Full)]                            // case insensitive
-        [InlineData("DYNAMIC_SERVICE", DbmPropagationLevel.DynamicService)]       // case insensitive
-        [InlineData("Dynamic_Service", DbmPropagationLevel.DynamicService)]       // case insensitive
-        [InlineData(" service", DbmPropagationLevel.Service)]                     // trim whitespace
-        [InlineData("service ", DbmPropagationLevel.Service)]                     // trim whitespace
-        [InlineData("full   ", DbmPropagationLevel.Full)]                         // trim whitespace
-        [InlineData("     disabled", DbmPropagationLevel.Disabled)]               // trim whitespace
-        [InlineData(" dynamic_service ", DbmPropagationLevel.DynamicService)]     // trim whitespace
-        [InlineData("s e r v i c e", DbmPropagationLevel.Disabled)]               // invalid input
-        public void DbmPropagationMode(string value, object expected)
+        [InlineData("", DbmPropagationLevel.Disabled, false)]              // empty string defaults to disabled
+        [InlineData(null, DbmPropagationLevel.Disabled, false)]            // null defaults to disabled
+        [InlineData("      ", DbmPropagationLevel.Disabled, false)]        // whitespace defaults to disabled
+        [InlineData("invalid", DbmPropagationLevel.Disabled, false)]       // invalid input
+        [InlineData("full", DbmPropagationLevel.Full, false)]                              // exact match
+        [InlineData("service", DbmPropagationLevel.Service, false)]                      // exact match
+        [InlineData("dynamic_service", DbmPropagationLevel.Service, true)]       // exact match
+        [InlineData("disabled", DbmPropagationLevel.Disabled, false)]                    // exact match
+        [InlineData("Disabled", DbmPropagationLevel.Disabled, false)]                    // case insenstive
+        [InlineData("SERVICE", DbmPropagationLevel.Service, false)]                      // case insensitive
+        [InlineData("FuLl", DbmPropagationLevel.Full, false)]                            // case insensitive
+        [InlineData("DYNAMIC_SERVICE", DbmPropagationLevel.Service, true)]       // case insensitive
+        [InlineData("Dynamic_Service", DbmPropagationLevel.Service, true)]       // case insensitive
+        [InlineData(" service", DbmPropagationLevel.Service, false)]                     // trim whitespace
+        [InlineData("service ", DbmPropagationLevel.Service, false)]                     // trim whitespace
+        [InlineData("full   ", DbmPropagationLevel.Full, false)]                         // trim whitespace
+        [InlineData("     disabled", DbmPropagationLevel.Disabled, false)]               // trim whitespace
+        [InlineData(" dynamic_service ", DbmPropagationLevel.Service, true)]     // trim whitespace
+        [InlineData("s e r v i c e", DbmPropagationLevel.Disabled, false)]               // invalid input
+        public void DbmPropagationMode(string value, object expected, bool injectBaseHash)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DbmPropagationMode, value));
             var settings = new TracerSettings(source);
 
             settings.DbmPropagationMode.Should().Be((DbmPropagationLevel)expected);
+            settings.DbmInjectSqlBasehash.Should().Be(injectBaseHash);
         }
 
         [Theory]

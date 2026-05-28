@@ -638,16 +638,24 @@ namespace Datadog.Trace.Configuration
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
                                                   : [];
 
-            DbmPropagationMode = config
-                                .WithKeys(ConfigurationKeys.DbmPropagationMode)
-                                .GetAs(
-                                     defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
-                                     converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
-                                     validator: null);
+            var dbmPropagationMode = config
+                                    .WithKeys(ConfigurationKeys.DbmPropagationMode)
+                                    .GetAs(
+                                         defaultValue: new(new(DbmPropagationLevel.Disabled), nameof(DbmPropagationLevel.Disabled)),
+                                         converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationResult>.Failure(),
+                                         validator: null);
+            DbmPropagationMode = dbmPropagationMode.EffectiveLevel;
 
             DbmInjectSqlBasehash = config
                 .WithKeys(ConfigurationKeys.DbmInjectSqlBasehash)
                 .AsBool(false);
+
+            if (dbmPropagationMode.ForceInjectBaseHash && !DbmInjectSqlBasehash)
+            {
+                // dynamic_service overrides the DbmInjectSqlBaseHash setting
+                DbmInjectSqlBasehash = true;
+                telemetry.Record(ConfigurationKeys.DbmInjectSqlBasehash, true, ConfigurationOrigins.Calculated);
+            }
 
             RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
 
@@ -1449,24 +1457,24 @@ namespace Datadog.Trace.Configuration
             return string.Empty;
         }
 
-        private static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
+        private static DbmPropagationResult? ToDbmPropagationInput(string inputValue)
         {
             inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
             if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
             {
-                return DbmPropagationLevel.Disabled;
+                return new(DbmPropagationLevel.Disabled);
             }
             else if (inputValue.Equals("service", StringComparison.OrdinalIgnoreCase))
             {
-                return DbmPropagationLevel.Service;
+                return new(DbmPropagationLevel.Service);
             }
             else if (inputValue.Equals("dynamic_service", StringComparison.OrdinalIgnoreCase))
             {
-                return DbmPropagationLevel.DynamicService;
+                return new(DbmPropagationLevel.Service, forceInjectBaseHash: true);
             }
             else if (inputValue.Equals("full", StringComparison.OrdinalIgnoreCase))
             {
-                return DbmPropagationLevel.Full;
+                return new(DbmPropagationLevel.Full);
             }
             else
             {
@@ -1479,6 +1487,12 @@ namespace Datadog.Trace.Configuration
         {
             Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
+        }
+
+        private readonly struct DbmPropagationResult(DbmPropagationLevel level, bool forceInjectBaseHash = false)
+        {
+            public readonly DbmPropagationLevel EffectiveLevel = level;
+            public readonly bool ForceInjectBaseHash = forceInjectBaseHash;
         }
     }
 }

@@ -16,9 +16,6 @@ namespace Datadog.Trace.Configuration
         /// <summary>Only service tags should be injected</summary>
         Service,
 
-        /// <summary>Service tags injected and base hash injected; equivalent to Service with DD_DBM_INJECT_SQL_BASEHASH=true</summary>
-        DynamicService,
-
         /// <summary>Both service details and span traceparent should be injected</summary>
         Full
     }
