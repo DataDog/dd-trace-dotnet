@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -36,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
     public class CiVisibilityProtocolWriterTests
     {
+        private const int MaxMetaStringLength = CIVisibilityMetadataStringTruncator.MaxMetaStringLength;
+
         [Fact]
         public async Task AgentlessTestEventTest()
         {
@@ -98,6 +101,74 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             await agentlessWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             Assert.True(finalPayload.SequenceEqual(expectedBytes));
+        }
+
+        [Fact]
+        public void TestEventMetaStringValuesAreTruncated()
+        {
+            var longValue = new string('a', MaxMetaStringLength + 1);
+            var exactValue = new string('b', MaxMetaStringLength);
+            var tags = new TestSpanTags
+            {
+                SessionId = 123,
+                ModuleId = 456,
+                SuiteId = 789,
+                Parameters = longValue
+            };
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, tags)
+            {
+                Type = SpanTypes.Test
+            };
+            span.SetTag("custom.tag", longValue);
+            span.SetTag("exact.tag", exactValue);
+            span.SetTag(Datadog.Trace.Tags.ErrorMsg, longValue);
+            span.SetMetric("custom.metric", 42);
+
+            var payloadObject = SerializeTestCyclePayload(new TestEvent(span));
+            var content = (JObject)payloadObject["events"]![0]!["content"]!;
+            var meta = (JObject)content["meta"]!;
+            var metrics = (JObject)content["metrics"]!;
+
+            meta["custom.tag"]!.Value<string>().Should().Be(longValue.Substring(0, MaxMetaStringLength));
+            meta["custom.tag"]!.Value<string>().Should().HaveLength(MaxMetaStringLength);
+            meta[TestTags.Parameters]!.Value<string>().Should().Be(longValue.Substring(0, MaxMetaStringLength));
+            meta[Datadog.Trace.Tags.ErrorMsg]!.Value<string>().Should().Be(longValue.Substring(0, MaxMetaStringLength));
+            meta["exact.tag"]!.Value<string>().Should().Be(exactValue);
+            metrics["custom.metric"]!.Value<double>().Should().Be(42);
+            meta.ContainsKey("test_session_id").Should().BeFalse();
+            meta.ContainsKey("test_module_id").Should().BeFalse();
+            meta.ContainsKey("test_suite_id").Should().BeFalse();
+            content["test_session_id"]!.Value<ulong>().Should().Be(123);
+            content["test_module_id"]!.Value<ulong>().Should().Be(456);
+            content["test_suite_id"]!.Value<ulong>().Should().Be(789);
+        }
+
+        [Fact]
+        public void PayloadMetadataStringValuesAreTruncated()
+        {
+            var longValue = new string('e', MaxMetaStringLength + 1);
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.Environment, longValue }
+            }));
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+            var formatter = new CIEventMessagePackFormatter(tracerSettings);
+            var payload = new Ci.Agent.Payloads.CITestCyclePayload(settings, CIFormatterResolver.Instance);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags())
+            {
+                Type = SpanTypes.Test
+            };
+            payload.TryProcessEvent(new TestEvent(span));
+
+            var bytes = new byte[8 * 1024];
+            var length = formatter.Serialize(ref bytes, 0, payload, CIFormatterResolver.Instance);
+            Array.Resize(ref bytes, length);
+            var payloadObject = JObject.Parse(MessagePackSerializer.ToJson(bytes));
+            var metadata = (JObject)payloadObject["metadata"]!;
+            var globalMetadata = (JObject)metadata["*"]!;
+
+            globalMetadata["env"]!.Value<string>().Should().Be(longValue.Substring(0, MaxMetaStringLength));
+            globalMetadata["env"]!.Value<string>().Should().HaveLength(MaxMetaStringLength);
         }
 
         [Fact]
@@ -361,6 +432,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
                 bufferSize *= 2;
             }
+        }
+
+        private static JObject SerializeTestCyclePayload(IEvent @event)
+        {
+            var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+            var formatter = CIFormatterResolver.Instance;
+            var payload = new Ci.Agent.Payloads.CITestCyclePayload(settings, formatter);
+            payload.TryProcessEvent(@event);
+            return JObject.Parse(MessagePackSerializer.ToJson(payload.ToArray()));
         }
 
         internal class TestMessageHandler : HttpMessageHandler

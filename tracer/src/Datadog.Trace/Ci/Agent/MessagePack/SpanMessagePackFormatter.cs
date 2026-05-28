@@ -249,7 +249,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         {
             count++;
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentNameBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, env);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, CIVisibilityMetadataStringTruncator.Truncate(env));
         }
 
         // add "language=dotnet" tag to all spans, except those that
@@ -270,7 +270,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionNameBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, version);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, CIVisibilityMetadataStringTruncator.Truncate(version));
             }
         }
 
@@ -294,6 +294,8 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             }
         }
 
+        value = CIVisibilityMetadataStringTruncator.Truncate(value);
+
         offset += MessagePackBinary.WriteString(ref bytes, offset, key);
         offset += MessagePackBinary.WriteString(ref bytes, offset, value);
     }
@@ -309,6 +311,8 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
                 tagProcessors[i]?.ProcessMeta(ref key, ref value);
             }
         }
+
+        value = CIVisibilityMetadataStringTruncator.Truncate(value);
 
         MessagePackBinary.EnsureCapacity(ref bytes, offset, keyBytes.Length + StringEncoding.UTF8.GetMaxByteCount(value.Length) + 5);
         offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);

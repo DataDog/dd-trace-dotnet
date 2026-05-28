@@ -14,7 +14,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack;
 
 internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibilityProtocolPayload>
 {
-    private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+    private readonly byte[] _runtimeIdValueBytes =
+        StringEncoding.UTF8.GetBytes(CIVisibilityMetadataStringTruncator.Truncate(Tracer.RuntimeId));
     private readonly byte[]? _environmentValueBytes;
     private readonly byte[]? _testSessionNameValueBytes;
     private readonly ArraySegment<byte> _envelopBytes;
@@ -24,13 +25,18 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
         // we don't subscribe, because we assume this _can't_ change in CI Visibility
         if (!string.IsNullOrEmpty(tracerSettings.Manager.InitialMutableSettings.Environment))
         {
-            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Manager.InitialMutableSettings.Environment);
+            _environmentValueBytes =
+                StringEncoding.UTF8.GetBytes(
+                    CIVisibilityMetadataStringTruncator.Truncate(
+                        tracerSettings.Manager.InitialMutableSettings.Environment));
         }
 
         var testOptimization = TestOptimization.Instance;
         if (!string.IsNullOrWhiteSpace(testOptimization.Settings.TestSessionName))
         {
-            _testSessionNameValueBytes = StringEncoding.UTF8.GetBytes(testOptimization.Settings.TestSessionName);
+            _testSessionNameValueBytes =
+                StringEncoding.UTF8.GetBytes(
+                    CIVisibilityMetadataStringTruncator.Truncate(testOptimization.Settings.TestSessionName));
         }
 
         _envelopBytes = GetEnvelopeArraySegment();
