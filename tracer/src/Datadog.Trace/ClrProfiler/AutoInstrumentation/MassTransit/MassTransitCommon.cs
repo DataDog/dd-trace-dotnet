@@ -260,24 +260,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Sets error information on a span from an exception.
-        /// </summary>
-        internal static void SetException(Scope scope, Exception? exception)
-        {
-            if (scope.Span is null || exception is null)
-            {
-                return;
-            }
-
-            Log.Debug("MassTransitCommon.SetException: Setting error on span: {ErrorMessage}", exception.Message);
-
-            scope.Span.Error = true;
-            scope.Span.SetTag(Tags.ErrorMsg, exception.Message);
-            scope.Span.SetTag(Tags.ErrorType, exception.GetType().FullName);
-            scope.Span.SetTag(Tags.ErrorStack, exception.ToString());
-        }
-
-        /// <summary>
         /// Sets additional context tags on a span.
         /// </summary>
         internal static void SetContextTags(Scope scope, Guid? messageId, Guid? conversationId, Guid? correlationId)
