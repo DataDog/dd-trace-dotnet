@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     public sealed class DataContractJsonSerializer_WriteObject_Integration
     {
         private const string MethodName = "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()";
+        private const string JsonContentTypeFragment = "json";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DataContractJsonSerializer_WriteObject_Integration));
 
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 var response = httpContext.Response;
-                if (!ReferenceEquals(stream, response.OutputStream))
+                if (!IsResponseOutputStream(stream, response))
                 {
                     return CallTargetState.GetDefault();
                 }
@@ -101,6 +102,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             return CallTargetReturn.GetDefault();
+        }
+
+        private static bool IsResponseOutputStream(Stream stream, HttpResponse response)
+        {
+            if (ReferenceEquals(stream, response.OutputStream))
+            {
+                return true;
+            }
+
+            if (response.ContentType?.IndexOf(JsonContentTypeFragment, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+
+            var streamType = stream.GetType();
+            return streamType.FullName?.StartsWith("System.Web.", StringComparison.Ordinal) == true
+                && ReferenceEquals(streamType.Assembly, typeof(HttpResponse).Assembly);
         }
 
         private sealed class DataContractJsonSerializerState(object graph, HttpContext httpContext)
