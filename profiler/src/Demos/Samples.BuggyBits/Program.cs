@@ -54,33 +54,15 @@ namespace BuggyBits
 
             ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
 
+            // Resolve the URL/port before building the host so that Kestrel is configured
+            // with a port that is actually free at bind time. This avoids a TOCTOU race:
+            // previously the host was built with the original --urls port, and the
+            // GetValidPort probe ran only after the build (too late to affect Kestrel).
+            args = ResolveListenUrl(args, out var rootUrl);
+            WriteLine($"Listening to {rootUrl}");
+
             using (var host = CreateHostBuilder(args).Build())
             {
-                // ASP.NET Core accepts listening url via what is set by Visual Studio
-                // (from the launchsettings.json). It could be overriden by --Urls
-                // on the command line
-                var configuration = host.Services.GetService(typeof(IConfiguration)) as IConfiguration;
-                var rootUrl = configuration["urls"];
-
-                // otherwise, use the default ASP.NET Core value
-                if (string.IsNullOrEmpty(rootUrl))
-                {
-                    rootUrl = "http://localhost:5000";
-                }
-
-                // avoid race condition in CI to find an available port
-                int port = -1;
-                if (int.TryParse(rootUrl.Substring(rootUrl.LastIndexOf(':') + 1), out port))
-                {
-                    port = GetValidPort(port, 3);
-                    if (port != -1)
-                    {
-                        rootUrl = rootUrl.Substring(0, rootUrl.LastIndexOf(':') + 1) + port;
-                    }
-                }
-
-                WriteLine($"Listening to {rootUrl}");
-
                 var cts = new CancellationTokenSource();
                 using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, _disableLogs))
                 {
@@ -177,46 +159,114 @@ namespace BuggyBits
             }
         }
 
-        private static int GetValidPort(int initialPort, int retries)
+        /// <summary>
+        /// Resolves the Kestrel listen URL by finding a free port before the host is built.
+        /// This ensures <see cref="CreateHostBuilder"/> receives the correct port in
+        /// <paramref name="args"/> so that Kestrel binds without a race.
+        /// </summary>
+        /// <param name="args">Original command-line args (may contain --urls).</param>
+        /// <param name="resolvedUrl">The resolved URL with a free port substituted in.</param>
+        /// <returns>Updated args array where --urls points to the resolved URL.</returns>
+        private static string[] ResolveListenUrl(string[] args, out string resolvedUrl)
         {
-            var port = initialPort;
-            bool isPortValid = false;
-            while (true)
+            // Extract the --urls value from command-line args (ASP.NET Core convention).
+            // Fall back to the default Kestrel URL if not specified.
+            string urlFromArgs = null;
+            for (int i = 0; i < args.Length - 1; i++)
             {
-                // seems like we can't reuse a listener if it fails to start,
-                // so create a new listener each time we retry
-                var listener = new HttpListener();
-                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                listener.Prefixes.Add($"http://localhost:{port}/");
-
-                try
+                if (args[i].Equals("--urls", StringComparison.OrdinalIgnoreCase))
                 {
-                    listener.Start();
-
-                    // success
-                    isPortValid = true;
+                    urlFromArgs = args[i + 1];
                     break;
                 }
-                catch (HttpListenerException) when (retries > 0)
+            }
+
+            var baseUrl = urlFromArgs ?? "http://localhost:5000";
+
+            // Find a free port (up to 5 attempts with fresh ephemeral ports on each retry).
+            resolvedUrl = FindFreePortUrl(baseUrl, retries: 5);
+
+            // Replace (or inject) --urls so CreateHostBuilder configures Kestrel correctly.
+            return ReplaceUrlInArgs(args, resolvedUrl);
+        }
+
+        /// <summary>
+        /// Returns <paramref name="baseUrl"/> with its port component replaced by the first
+        /// available port found within <paramref name="retries"/> attempts.
+        /// </summary>
+        private static string FindFreePortUrl(string baseUrl, int retries)
+        {
+            var lastColon = baseUrl.LastIndexOf(':');
+            if (lastColon < 0 || !int.TryParse(baseUrl.Substring(lastColon + 1), out int initialPort))
+            {
+                // No explicit port — return as-is and let Kestrel use its default.
+                return baseUrl;
+            }
+
+            var urlPrefix = baseUrl.Substring(0, lastColon + 1); // e.g. "http://localhost:"
+            var port = initialPort;
+
+            for (int attempt = 0; attempt <= retries; attempt++)
+            {
+                if (IsPortAvailable(port))
                 {
-                    // only catch the exception if there are retries left
-                    port = GetOpenPort();
-                    retries--;
+                    return urlPrefix + port;
                 }
-                finally
+
+                // Port is busy — pick a fresh ephemeral port for the next attempt.
+                port = GetOpenPort();
+            }
+
+            // All retries exhausted — use the last candidate and surface a real error if
+            // it is still busy (better than silently starting on the wrong port).
+            return urlPrefix + port;
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="port"/> appears to be free on the loopback
+        /// interface; false if it is already in use.
+        /// </summary>
+        private static bool IsPortAvailable(int port)
+        {
+            var listener = new HttpListener();
+            listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+            listener.Prefixes.Add($"http://localhost:{port}/");
+            try
+            {
+                listener.Start();
+                return true;
+            }
+            catch (HttpListenerException)
+            {
+                return false;
+            }
+            finally
+            {
+                listener.Close();
+            }
+        }
+
+        /// <summary>
+        /// Returns a copy of <paramref name="args"/> where the value after --urls is
+        /// replaced with <paramref name="newUrl"/>.  Appends --urls newUrl if the flag
+        /// is not already present.
+        /// </summary>
+        private static string[] ReplaceUrlInArgs(string[] args, string newUrl)
+        {
+            var list = new System.Collections.Generic.List<string>(args);
+            for (int i = 0; i < list.Count - 1; i++)
+            {
+                if (list[i].Equals("--urls", StringComparison.OrdinalIgnoreCase))
                 {
-                    listener.Close();
+                    list[i + 1] = newUrl;
+                    return list.ToArray();
                 }
             }
 
-            if (isPortValid)
-            {
-                return port;
-            }
-            else
-            {
-                return -1; // no valid port found
-            }
+            // "--urls" not found — append so Kestrel picks up the resolved port.
+            list.Add("--urls");
+            list.Add(newUrl);
+            return list.ToArray();
         }
 
         private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
