@@ -80,7 +80,8 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for setting DBM propagation mode
-    /// Default value is disabled, expected values are either: disabled, service or full
+    /// Default value is disabled, expected values are either: disabled, service, dynamic_service or full
+    /// dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
     public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
