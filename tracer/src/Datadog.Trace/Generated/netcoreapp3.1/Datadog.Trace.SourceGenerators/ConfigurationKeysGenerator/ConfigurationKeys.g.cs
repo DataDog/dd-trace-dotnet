@@ -424,12 +424,6 @@ internal static partial class ConfigurationKeys
     public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
 
     /// <summary>
-    /// Use libdatadog data pipeline to send traces.
-    /// Default value is <c>false</c> (disabled).
-    /// </summary>
-    public const string TraceDataPipelineEnabled = "DD_TRACE_DATA_PIPELINE_ENABLED";
-
-    /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debug mode.
     /// Default value is false (disabled).
     /// </summary>

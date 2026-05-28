@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -2911,38 +2910,4 @@ partial class Build
         }
     }
 
-    public static class LibdatadogLogParser
-    {
-        private static readonly JsonSerializerOptions Options = new()
-        {
-            PropertyNameCaseInsensitive = true,
-            AllowTrailingCommas = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-        };
-
-        public static LogEntry ParseEntry(string json)
-        {
-            try
-            {
-                return JsonSerializer.Deserialize<LogEntry>(json, Options);
-            }
-            catch (JsonException ex)
-            {
-                Console.Error.WriteLine($"Failed to parse JSON: {ex.Message}");
-                return null;
-            }
-        }
-
-        public record LogEntry(
-            DateTimeOffset Timestamp,
-            string Level,
-            Dictionary<string, object> Fields,
-            string Target,
-            string Filename,
-            // ReSharper disable once InconsistentNaming
-            int? Line_number,
-            string ThreadName,
-            string ThreadId
-        );
-    }
 }
