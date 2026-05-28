@@ -215,8 +215,24 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id)
     return {module_id, shared::WSTRING(module_path), GetAssemblyInfo(info, assembly_id), module_flags};
 }
 
-TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token_)
+namespace
 {
+// PR #4415 capped mdtTypeSpec / ELEMENT_TYPE_GENERICINST cycles only. Uncapped recursion on
+// type_extends, parent_type_token, and GetSigTypeTokName can still exhaust the ~256 KB x86 thread
+// stack (each GetTypeInfo frame allocates ~2 KB for type_name). See APMS-19659.
+constexpr int kMaxTypeInfoDepth = 50;
+
+shared::WSTRING GetSigTypeTokNameImpl(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport,
+                                      std::set<mdToken>& processed, int depth);
+
+TypeInfo GetTypeInfoImpl(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token_,
+                         std::set<mdToken>& processed, int depth)
+{
+    if (depth >= kMaxTypeInfoDepth)
+    {
+        return {};
+    }
+
     mdToken parent_token = mdTokenNil;
     std::shared_ptr<TypeInfo> parentTypeInfo = nullptr;
     mdToken parent_type_token = mdTokenNil;
@@ -234,7 +250,6 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
     auto token = token_;
     auto typeSpec = mdTypeSpecNil;
-    std::set<mdToken> processed;
 
     while (token != mdTokenNil)
     {
@@ -248,12 +263,14 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
                 metadata_import->GetNestedClassProps(token, &parent_type_token);
                 if (parent_type_token != mdTokenNil)
                 {
-                    parentTypeInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, parent_type_token));
+                    parentTypeInfo = std::make_shared<TypeInfo>(
+                        GetTypeInfoImpl(metadata_import, parent_type_token, processed, depth + 1));
                 }
 
                 if (type_extends != mdTokenNil)
                 {
-                    extendsInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, type_extends));
+                    extendsInfo =
+                        std::make_shared<TypeInfo>(GetTypeInfoImpl(metadata_import, type_extends, processed, depth + 1));
                     type_valueType =
                         extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
                 }
@@ -279,7 +296,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
                 if (signature[0] & ELEMENT_TYPE_GENERICINST)
                 {
-                    if (std::find(processed.begin(), processed.end(), token) != processed.end())
+                    if (processed.find(token) != processed.end())
                     {
                         return {}; // Break circular reference
                     }
@@ -322,6 +339,167 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
                 type_isSealed, parentTypeInfo,   parent_token};
     }
     return {};
+}
+
+shared::WSTRING GetSigTypeTokNameImpl(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport,
+                                      std::set<mdToken>& processed, int depth)
+{
+    if (depth >= kMaxTypeInfoDepth)
+    {
+        return shared::EmptyWStr;
+    }
+
+    shared::WSTRING tokenName = shared::EmptyWStr;
+    bool ref_flag = false;
+    if (*pbCur == ELEMENT_TYPE_BYREF)
+    {
+        pbCur++;
+        ref_flag = true;
+    }
+
+    bool pointer_flag = false;
+    if (*pbCur == ELEMENT_TYPE_PTR)
+    {
+        pbCur++;
+        pointer_flag = true;
+    }
+
+    switch (*pbCur)
+    {
+        case ELEMENT_TYPE_BOOLEAN:
+            tokenName = SystemBoolean;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_CHAR:
+            tokenName = SystemChar;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I1:
+            tokenName = SystemSByte;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U1:
+            tokenName = SystemByte;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U2:
+            tokenName = SystemUInt16;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I2:
+            tokenName = SystemInt16;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I4:
+            tokenName = SystemInt32;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U4:
+            tokenName = SystemUInt32;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I8:
+            tokenName = SystemInt64;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U8:
+            tokenName = SystemUInt64;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_R4:
+            tokenName = SystemSingle;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_R8:
+            tokenName = SystemDouble;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_I:
+            tokenName = SystemIntPtr;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_U:
+            tokenName = SystemUIntPtr;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_STRING:
+            tokenName = SystemString;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_OBJECT:
+            tokenName = SystemObject;
+            pbCur++;
+            break;
+        case ELEMENT_TYPE_CLASS:
+        case ELEMENT_TYPE_VALUETYPE:
+        {
+            pbCur++;
+            mdToken token;
+            pbCur += CorSigUncompressToken(pbCur, &token);
+            tokenName = GetTypeInfoImpl(pImport, token, processed, depth + 1).name;
+            break;
+        }
+        case ELEMENT_TYPE_SZARRAY:
+        {
+            pbCur++;
+            tokenName = GetSigTypeTokNameImpl(pbCur, pImport, processed, depth + 1) + WStr("[]");
+            break;
+        }
+        case ELEMENT_TYPE_GENERICINST:
+        {
+            pbCur++;
+            tokenName = GetSigTypeTokNameImpl(pbCur, pImport, processed, depth + 1);
+            tokenName += WStr("[");
+            ULONG num = 0;
+            pbCur += CorSigUncompressData(pbCur, &num);
+            for (ULONG i = 0; i < num; i++)
+            {
+                tokenName += GetSigTypeTokNameImpl(pbCur, pImport, processed, depth + 1);
+                if (i != num - 1)
+                {
+                    tokenName += WStr(",");
+                }
+            }
+            tokenName += WStr("]");
+            break;
+        }
+        case ELEMENT_TYPE_MVAR:
+        {
+            pbCur++;
+            ULONG num = 0;
+            pbCur += CorSigUncompressData(pbCur, &num);
+            tokenName = WStr("!!") + shared::ToWSTRING(std::to_string(num));
+            break;
+        }
+        case ELEMENT_TYPE_VAR:
+        {
+            pbCur++;
+            ULONG num = 0;
+            pbCur += CorSigUncompressData(pbCur, &num);
+            tokenName = WStr("!") + shared::ToWSTRING(std::to_string(num));
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (ref_flag)
+    {
+        tokenName += WStr("&");
+    }
+    if (pointer_flag)
+    {
+        tokenName += WStr("*");
+    }
+    return tokenName;
+}
+
+} // namespace
+
+TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token_)
+{
+    std::set<mdToken> processed;
+    return GetTypeInfoImpl(metadata_import, token_, processed, 0);
 }
 
 // Searches for an AssemblyRef whose name and version match exactly.
@@ -528,149 +706,8 @@ mdToken TypeSignature::GetTypeTok(const ComPtr<IMetaDataEmit2>& pEmit, mdAssembl
 
 shared::WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport)
 {
-    shared::WSTRING tokenName = shared::EmptyWStr;
-    bool ref_flag = false;
-    if (*pbCur == ELEMENT_TYPE_BYREF)
-    {
-        pbCur++;
-        ref_flag = true;
-    }
-
-    bool pointer_flag = false;
-    if (*pbCur == ELEMENT_TYPE_PTR)
-    {
-        pbCur++;
-        pointer_flag = true;
-    }
-
-    switch (*pbCur)
-    {
-        case ELEMENT_TYPE_BOOLEAN:
-            tokenName = SystemBoolean;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_CHAR:
-            tokenName = SystemChar;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_I1:
-            tokenName = SystemSByte;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_U1:
-            tokenName = SystemByte;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_U2:
-            tokenName = SystemUInt16;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_I2:
-            tokenName = SystemInt16;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_I4:
-            tokenName = SystemInt32;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_U4:
-            tokenName = SystemUInt32;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_I8:
-            tokenName = SystemInt64;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_U8:
-            tokenName = SystemUInt64;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_R4:
-            tokenName = SystemSingle;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_R8:
-            tokenName = SystemDouble;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_I:
-            tokenName = SystemIntPtr;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_U:
-            tokenName = SystemUIntPtr;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_STRING:
-            tokenName = SystemString;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_OBJECT:
-            tokenName = SystemObject;
-            pbCur++;
-            break;
-        case ELEMENT_TYPE_CLASS:
-        case ELEMENT_TYPE_VALUETYPE:
-        {
-            pbCur++;
-            mdToken token;
-            pbCur += CorSigUncompressToken(pbCur, &token);
-            tokenName = GetTypeInfo(pImport, token).name;
-            break;
-        }
-        case ELEMENT_TYPE_SZARRAY:
-        {
-            pbCur++;
-            tokenName = GetSigTypeTokName(pbCur, pImport) + WStr("[]");
-            break;
-        }
-        case ELEMENT_TYPE_GENERICINST:
-        {
-            pbCur++;
-            tokenName = GetSigTypeTokName(pbCur, pImport);
-            tokenName += WStr("[");
-            ULONG num = 0;
-            pbCur += CorSigUncompressData(pbCur, &num);
-            for (ULONG i = 0; i < num; i++)
-            {
-                tokenName += GetSigTypeTokName(pbCur, pImport);
-                if (i != num - 1)
-                {
-                    tokenName += WStr(",");
-                }
-            }
-            tokenName += WStr("]");
-            break;
-        }
-        case ELEMENT_TYPE_MVAR:
-        {
-            pbCur++;
-            ULONG num = 0;
-            pbCur += CorSigUncompressData(pbCur, &num);
-            tokenName = WStr("!!") + shared::ToWSTRING(std::to_string(num));
-            break;
-        }
-        case ELEMENT_TYPE_VAR:
-        {
-            pbCur++;
-            ULONG num = 0;
-            pbCur += CorSigUncompressData(pbCur, &num);
-            tokenName = WStr("!") + shared::ToWSTRING(std::to_string(num));
-            break;
-        }
-        default:
-            break;
-    }
-
-    if (ref_flag)
-    {
-        tokenName += WStr("&");
-    }
-    if (pointer_flag)
-    {
-        tokenName += WStr("*");
-    }
-    return tokenName;
+    std::set<mdToken> processed;
+    return GetSigTypeTokNameImpl(pbCur, pImport, processed, 0);
 }
 
 shared::WSTRING TypeSignature::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
