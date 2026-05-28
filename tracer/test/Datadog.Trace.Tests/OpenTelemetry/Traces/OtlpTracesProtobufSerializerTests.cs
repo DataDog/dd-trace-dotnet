@@ -379,6 +379,62 @@ public class OtlpTracesProtobufSerializerTests
         attr.BytesValue.ToByteArray().Should().Equal(new byte[] { 0x01, 0x02, 0x03 });
     }
 
+    [Fact]
+    public void EventAttribute_SelfReferentialObjectArray_DoesNotCrash()
+    {
+        var cycle = new object[1];
+        cycle[0] = cycle;
+
+        var attr = SerializeEventAttribute("k", cycle);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(1);
+        attr.ArrayValue.Values[0].StringValue.Should().Be(cycle.ToString());
+    }
+
+    [Fact]
+    public void EventAttribute_DeeplyNestedArray_IsBoundedAtOneLevel()
+    {
+        object[] current = new object[] { "leaf" };
+        for (int i = 0; i < 5_000; i++)
+        {
+            current = new object[] { current };
+        }
+
+        var attr = SerializeEventAttribute("k", current);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(1);
+        attr.ArrayValue.Values[0].StringValue.Should().Be(typeof(object[]).ToString());
+    }
+
+    [Fact]
+    public void EventAttribute_NestedObjectArray_StringifiesInsteadOfArrayValue()
+    {
+        var inner = new object[] { "a", 1 };
+        var outer = new object[] { inner };
+
+        var attr = SerializeEventAttribute("k", outer);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(1);
+        attr.ArrayValue.Values[0].StringValue.Should().Be(inner.ToString());
+    }
+
+    [Fact]
+    public void EventAttribute_NestedByteArray_StringifiesInsteadOfBytesValue()
+    {
+        // Top-level byte[] still emits BytesValue (see EventAttribute_ByteArray_StillEmitsAsBytesValue).
+        var nestedBytes = new byte[] { 0x01, 0x02 };
+        var outer = new object[] { nestedBytes };
+
+        var attr = SerializeEventAttribute("k", outer);
+
+        attr.ValueCase.Should().Be(AnyValue.ValueOneofCase.ArrayValue);
+        attr.ArrayValue.Values.Should().HaveCount(1);
+        attr.ArrayValue.Values[0].StringValue.Should().Be(nestedBytes.ToString());
+    }
+
     [Theory]
     [InlineData(2, 1u)]   // user-keep
     [InlineData(1, 1u)]   // auto-keep

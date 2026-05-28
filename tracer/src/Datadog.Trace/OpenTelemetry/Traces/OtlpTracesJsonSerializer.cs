@@ -584,10 +584,70 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteStartArray();
         foreach (var item in array)
         {
-            WriteAnyValue(writer, item);
+            WriteArrayElementAnyValue(writer, item);
         }
 
         writer.WriteEndArray();
+
+        writer.WriteEndObject();
+    }
+
+    // Per-array-element AnyValue writer. Mirrors WriteAnyValue but intentionally omits
+    // `case byte[]` and `case Array` so nested arrays stringify via Convert.ToString
+    // instead of recursing — prevents StackOverflowException on cyclic or deeply-nested
+    // array attributes. Matches OTel .NET SDK's TagWriter.WriteToArrayTypeChecked, see:
+    // https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/Shared/TagWriter/TagWriter.cs
+    private static void WriteArrayElementAnyValue(JsonTextWriter writer, object? item)
+    {
+        writer.WriteStartObject();
+
+        if (item == null)
+        {
+            // Empty AnyValue
+            writer.WriteEndObject();
+            return;
+        }
+
+        switch (item)
+        {
+            case string stringValue:
+                writer.WritePropertyName("stringValue");
+                writer.WriteValue(stringValue);
+                break;
+
+            case bool boolValue:
+                writer.WritePropertyName("boolValue");
+                writer.WriteValue(boolValue);
+                break;
+
+            case byte:
+            case sbyte:
+            case short:
+            case ushort:
+            case int:
+            case uint:
+            case long:
+            case ulong:
+                writer.WritePropertyName("intValue");
+                writer.WriteValue(item.ToString());
+                break;
+
+            case double doubleValue:
+                writer.WritePropertyName("doubleValue");
+                writer.WriteValue(doubleValue);
+                break;
+
+            case float floatValue:
+                writer.WritePropertyName("doubleValue");
+                writer.WriteValue(floatValue);
+                break;
+
+            default:
+                // Nested arrays (including byte[]) and any unknown types stringify here.
+                writer.WritePropertyName("stringValue");
+                writer.WriteValue(Convert.ToString(item, CultureInfo.InvariantCulture));
+                break;
+        }
 
         writer.WriteEndObject();
     }
