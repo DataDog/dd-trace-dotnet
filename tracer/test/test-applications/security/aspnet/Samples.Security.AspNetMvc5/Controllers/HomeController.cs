@@ -1,11 +1,9 @@
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
-using System.Web;
 using System.Web.Mvc;
 using Samples.AspNetMvc5.Models;
 using Samples.Security.AspNetMvc5.Models;
-using ActionResult = System.Web.Mvc.ActionResult;
 
 namespace Samples.AspNetMvc5.Controllers
 {

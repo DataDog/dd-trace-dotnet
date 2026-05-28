@@ -9,7 +9,6 @@ using System.Linq;
 using System.Runtime.Serialization;
 #if NETFRAMEWORK
 using System.Web.Routing;
-using Datadog.Trace.Telemetry.Metrics;
 #endif
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
