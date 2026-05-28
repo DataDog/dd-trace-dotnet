@@ -38,13 +38,20 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
-    [Solution("Datadog.Trace.sln")] readonly Solution Solution;
+    [Solution("Datadog.Trace.sln")] readonly Solution FullSolution;
     [Solution("Datadog.Trace.Samples.g.sln")] readonly Solution SamplesSolution;
+    [Solution("Datadog.Trace.Build.g.sln")] readonly Solution Solution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
     AbsolutePath BuildArtifactsDirectory => RootDirectory / "artifacts";
+    AbsolutePath ArtifactsBinDirectory => BuildArtifactsDirectory / "bin";
+
+    // Resolves the bin output directory of a managed tracer project under the UseArtifactsOutput layout
+    // (set in tracer/Directory.Build.props). Pivot is "{config}_{tfm}" lower-cased.
+    AbsolutePath GetProjectBinDirectory(string projectName, string tfm) =>
+        ArtifactsBinDirectory / projectName / $"{BuildConfiguration.ToString().ToLowerInvariant()}_{tfm.ToLowerInvariant()}";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
@@ -484,8 +491,8 @@ partial class Build
             DotnetBuild(toBuild, noDependencies: false);
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
-            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
-            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
         });
 
     Target CompileTracerNativeTestsWindows => _ => _
@@ -734,8 +741,6 @@ partial class Build
                     frameworks = frameworks.Where(x=> x == Framework).ToList();
                 }
 
-                var testBinFolder = testDir / "bin" / BuildConfiguration;
-
                 var (ext, source, libdatadog) = Platform switch
                 {
                     PlatformFamily.Windows => ("dll", MonitoringHomeDirectory / $"win-{TargetPlatform}", "datadog_profiling_ffi.dll"),
@@ -752,9 +757,10 @@ partial class Build
 
                 foreach (var framework in frameworks)
                 {
+                    var testBinFolder = GetProjectBinDirectory(project.Name, framework);
                     foreach (var lib in libs)
                     {
-                        var dest = testBinFolder / framework / lib.Item2;
+                        var dest = testBinFolder / lib.Item2;
                         CopyFile(source / lib.Item1, dest, FileExistsPolicy.Overwrite);
                     }
                 }
@@ -768,10 +774,7 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var testDir = project.Directory;
                     var frameworks = project.GetTargetFrameworks();
-
-                    var testBinFolder = testDir / "bin" / BuildConfiguration;
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -787,7 +790,7 @@ partial class Build
                                 var source = MonitoringHomeDirectory / arch;
                                 foreach (var framework in frameworks)
                                 {
-                                    var dest = testBinFolder / framework / arch;
+                                    var dest = GetProjectBinDirectory(project.Name, framework) / arch;
                                     CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
@@ -815,7 +818,7 @@ partial class Build
                                     // - The native tracer must be side-by-side with the running dll
                                     // As this is a managed-only unit test, the native tracer _must_ be in the root folder
                                     // For simplicity, we just copy all the native dlls there
-                                    var dest = testBinFolder / framework;
+                                    var dest = GetProjectBinDirectory(project.Name, framework);
 
                                     // use the files from the monitoring native folder
                                     CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
@@ -1548,7 +1551,9 @@ partial class Build
             // Compile the dependent samples.
             if (IsWin && !Framework.ToString().StartsWith("net4"))
             {
-                DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
+                // RazorPages is a sample, looked up in SamplesSolution (the default Solution excludes standalone samples).
+                // noRestore: false because the build-stage Restore is scoped to Build.g.sln; sample packages must be restored on demand.
+                DotnetBuild(SamplesSolution.GetProject(Projects.RazorPages), framework: Framework, noRestore: false);
             }
 
             var projects = TracerDirectory
@@ -1656,10 +1661,11 @@ partial class Build
                       return SamplesSolution;
                   }
 
-                  // Filter to a single candidate SampleName
+                  // Filter to a single candidate SampleName.
+                  // Look up in SamplesSolution: the default Solution is Datadog.Trace.Build.g.sln, which excludes standalone samples.
                   var candidates =
                       TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj")
-                                     .Select(x => Solution.GetProject(x))
+                                     .Select(x => SamplesSolution.GetProject(x))
                                      .Where(project => project is not null
                                                     && project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase));
 
@@ -1729,8 +1735,9 @@ partial class Build
                 (project: "Samples.Trimming",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
                 (project: "Samples.ManualInstrumentation",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
             };
+            // These are sample projects, looked up in SamplesSolution (the default Solution is now Datadog.Trace.Build.g.sln, which excludes samples).
             var projectsToPublish = trimmingSamples
-                                   .Select(x => (project: Solution.GetProject(x.project), x.include, x.r2r))
+                                   .Select(x => (project: SamplesSolution.GetProject(x.project), x.include, x.r2r))
                                    .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
                                     {
                                         ({include: false }, _, _) => false,
@@ -1931,10 +1938,11 @@ partial class Build
             // This does some "unnecessary" rebuilding and restoring
             var azureFunctions = TracerDirectory.GlobFiles("test/test-applications/azure-functions/**/*.csproj");
 
+            // Azure-functions samples live in SamplesSolution (the default Solution = Datadog.Trace.Build.g.sln excludes standalone samples).
             var projects = azureFunctions
                 .Where(path =>
                 {
-                    var project = Solution.GetProject(path);
+                    var project = SamplesSolution.GetProject(path);
                     return project.TryGetTargetFrameworks() switch
                     {
                         { } targets => targets.Contains(Framework),
@@ -2373,7 +2381,7 @@ partial class Build
             List<(string Assembly, string Type)> datadogTraceTypes = new();
             foreach (var tfm in AppTrimmingTFMs)
             {
-                datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
+                datadogTraceTypes.AddRange(GetTypeReferences(GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll"));
             }
 
             // add Datadog projects to the root descriptors file
@@ -2684,8 +2692,7 @@ partial class Build
 
         // Not sure if/why this is necessary, and we can't just point to the correct output location
         var src = MonitoringHomeDirectory;
-        var testProject = Solution.GetProject(project).Directory;
-        var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
+        var dest = GetProjectBinDirectory(project, Framework) / "profiler-lib";
         CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
         // not sure exactly where this is supposed to go, may need to change the original build

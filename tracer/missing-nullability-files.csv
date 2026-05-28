@@ -282,7 +282,6 @@ src/Datadog.Trace/Debugger/PInvoke/ProbeStatus.cs
 src/Datadog.Trace/Debugger/ProbeStatuses/FetchProbeStatus.cs
 src/Datadog.Trace/Debugger/ProbeStatuses/IProbeStatusPoller.cs
 src/Datadog.Trace/Debugger/ProbeStatuses/ProbeStatusPoller.cs
-src/Datadog.Trace/Debugger/RateLimiting/AdaptiveSampler.cs
 src/Datadog.Trace/Debugger/RateLimiting/AtomicInt64.cs
 src/Datadog.Trace/Debugger/RateLimiting/ProbeRateLimiter.cs
 src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotSerializer.cs

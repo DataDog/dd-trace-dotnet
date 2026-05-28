@@ -61,7 +61,10 @@ Expression: (
     var $dd_el_result = DictionaryLocal
         .Where(stringStringKeyValuePair1 => stringStringKeyValuePair1.Key == "hello")
         .ToList()
-        .Any(stringStringKeyValuePair2 => stringStringKeyValuePair2.Value == "world");
+        .Any(
+            stringStringKeyValuePair2 => ProbeExpressionParser<bool>.ShouldRedactDictionaryKey(stringStringKeyValuePair2.Key)
+                ? false
+                : stringStringKeyValuePair2.Value == "world");
 
     return $dd_el_result;
 }

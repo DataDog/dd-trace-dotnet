@@ -41,6 +41,8 @@
     <PackageReference Include="System.Reactive.Core" Version="3.1.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.7" />
+    <PackageReference Include="Google.Protobuf" Version="3.27.0" />
+
     <ProjectReference Include="..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" Aliases="DatadogTraceManual" />
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
@@ -68,6 +70,16 @@
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="Helpers\VerifyHelper.cs" />
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OTLP .proto files vendored from open-telemetry/opentelemetry-proto@v1.10.0. The matching
+         C# bindings under OpenTelemetry\Traces\Generated\ are pre-generated and committed so the
+         OTLP serializer tests can decode wire bytes via Google.Protobuf parsers without invoking
+         protoc at build time (Grpc.Tools does not ship a musl/Alpine binary, and NuGet does not
+         preserve the executable bit on Unix). See OpenTelemetry\Traces\Generated\README.md for
+         the regeneration command. -->
+    <None Include="OpenTelemetry\Traces\proto\**\*.proto" />
   </ItemGroup>
 
   <ItemGroup>

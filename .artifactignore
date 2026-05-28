@@ -1,0 +1,19 @@
+# Strategy: default-deny. Mirror the download filter in
+# .azure-pipelines/steps/restore-working-directory.yml, which only ever
+# extracts **/@(bin|obj|packages)/**. Every consumer runs clone-repo.yml
+# first to re-clone source from git, so the artifact only needs build outputs.
+
+# Default: ignore everything
+**
+
+# Re-include the four roots that downstream restore-working-directory pulls.
+# Unanchored `**/bin/**` etc. catch any depth (per-project bin/, shared/bin/,
+# and repo-root artifacts/bin/ from UseArtifactsOutput test apps).
+!**/bin/**
+!**/obj/**
+!packages/**
+!artifacts/**
+
+# Re-exclude .git/ — the AzDO matcher otherwise re-includes refs whose branch
+# names contain "bin" or "obj" as a substring (e.g. refs/.../andrew/move-bin-and-obj).
+.git/**

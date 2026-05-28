@@ -56,6 +56,7 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
         GitCommitCommitterName = suiteTags.GitCommitCommitterName;
         Command = suiteTags.Command;
         WorkingDirectory = suiteTags.WorkingDirectory;
+        IntelligentTestRunnerTestsSkippingEnabled = suiteTags.IntelligentTestRunnerTestsSkippingEnabled;
     }
 
     [Tag(TestTags.Name)]

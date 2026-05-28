@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Agent;
@@ -248,17 +249,16 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
 
         // status (optional)
-        var errorMsg = spanModel.Span.GetTag(Tags.ErrorMsg);
-        SpanStatus? spanStatus = spanModel.Span.GetTag("otel.status_code") switch
+        StatusCode? statusCode = spanModel.Span.GetTag("otel.status_code") switch
         {
-            "STATUS_CODE_OK" => new SpanStatus(StatusCode.Ok, errorMsg),
-            "STATUS_CODE_ERROR" => new SpanStatus(StatusCode.Error, errorMsg),
+            "STATUS_CODE_OK" => StatusCode.Ok,
+            "STATUS_CODE_ERROR" => StatusCode.Error,
             _ => null,
         };
-        if (spanStatus is not null)
+        if (statusCode is not null)
         {
             writer.WritePropertyName("status");
-            WriteSpanStatus(writer, spanStatus.Value);
+            WriteSpanStatus(writer, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
         }
 
         writer.WriteEndObject();
@@ -345,22 +345,22 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteEndObject();
     }
 
-    internal static void WriteSpanStatus(JsonTextWriter writer, SpanStatus status)
+    internal static void WriteSpanStatus(JsonTextWriter writer, StatusCode statusCode, string? errorMsg)
     {
         writer.WriteStartObject();
 
         // message (optional)
-        if (!string.IsNullOrEmpty(status.Message))
+        if (!string.IsNullOrEmpty(errorMsg))
         {
             writer.WritePropertyName("message");
-            writer.WriteValue(status.Message);
+            writer.WriteValue(errorMsg);
         }
 
         // code (optional, default is STATUS_CODE_UNSET)
-        if (status.Code != StatusCode.Unset)
+        if (statusCode != StatusCode.Unset)
         {
             writer.WritePropertyName("code");
-            writer.WriteValue((int)status.Code);
+            writer.WriteValue((int)statusCode);
         }
 
         writer.WriteEndObject();
@@ -534,14 +534,16 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(boolValue);
                 break;
 
-            case int intValue:
+            case byte:
+            case sbyte:
+            case short:
+            case ushort:
+            case int:
+            case uint:
+            case long:
+            case ulong:
                 writer.WritePropertyName("intValue");
-                writer.WriteValue(intValue.ToString());
-                break;
-
-            case long longValue:
-                writer.WritePropertyName("intValue");
-                writer.WriteValue(longValue.ToString());
+                writer.WriteValue(value.ToString());
                 break;
 
             case double doubleValue:
@@ -559,12 +561,33 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(Convert.ToBase64String(bytesValue));
                 break;
 
+            case Array array:
+                writer.WritePropertyName("arrayValue");
+                WriteArrayAnyValue(writer, array);
+                break;
+
             default:
                 // For other types, try to convert to string
                 writer.WritePropertyName("stringValue");
-                writer.WriteValue(value.ToString());
+                writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
                 break;
         }
+
+        writer.WriteEndObject();
+    }
+
+    private static void WriteArrayAnyValue(JsonTextWriter writer, Array array)
+    {
+        writer.WriteStartObject();
+        writer.WritePropertyName("values");
+
+        writer.WriteStartArray();
+        foreach (var item in array)
+        {
+            WriteAnyValue(writer, item);
+        }
+
+        writer.WriteEndArray();
 
         writer.WriteEndObject();
     }
