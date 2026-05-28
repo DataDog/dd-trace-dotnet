@@ -1918,12 +1918,16 @@ partial class Build
             return filter;
         }
 
-        if (string.IsNullOrWhiteSpace(filter))
+        var areaFilter = $"(Area={Area})";
+
+        // CiVisibility tests carry both Area=Tracer (assembly-level) and Area=CiVisibility (class-level).
+        // Exclude them from the Tracer job so they only run in the dedicated CiVisibility job.
+        if (Area == "Tracer")
         {
-            return $"(Area={Area})";
+            areaFilter += "&(Area!=CiVisibility)";
         }
 
-        return filter + $"&(Area={Area})";
+        return string.IsNullOrWhiteSpace(filter) ? areaFilter : filter + $"&{areaFilter}";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _

@@ -18,6 +18,7 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+    private const string CiVisibilityArea = "CiVisibility";
     private const string TracingDotnet = "@DataDog/tracing-dotnet";
     private const string ASMDotnet = "@DataDog/asm-dotnet";
     private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
@@ -213,7 +214,7 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
-                var areas = new[] { TracerArea, AsmArea };
+                var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
@@ -374,7 +375,7 @@ partial class Build : NukeBuild
                         }
                         else
                         {
-                            var areas = new[] { TracerArea, AsmArea };
+                            var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                             foreach (var area in areas)
                             {
                                 if (ShouldBeIncluded(area))

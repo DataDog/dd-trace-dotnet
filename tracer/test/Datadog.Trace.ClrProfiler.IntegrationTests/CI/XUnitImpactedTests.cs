@@ -22,6 +22,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [UsesVerify]
+    [Trait("Area", "CiVisibility")]
     public class XUnitImpactedTests : TestingFrameworkImpactedTests
     {
         private const string IsModifiedTag = "test.is_modified";
