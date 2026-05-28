@@ -53,8 +53,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 var httpContext = HttpContext.Current;
-                var response = httpContext?.Response;
-                if (response is null || !ReferenceEquals(stream, response.OutputStream))
+                if (httpContext is null)
+                {
+                    return CallTargetState.GetDefault();
+                }
+
+                var response = httpContext.Response;
+                if (!ReferenceEquals(stream, response.OutputStream))
                 {
                     return CallTargetState.GetDefault();
                 }
@@ -62,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var scope = SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey)
                          ?? SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
 
-                return scope is null ? CallTargetState.GetDefault() : new CallTargetState(scope, graph);
+                return scope is null ? CallTargetState.GetDefault() : new CallTargetState(scope, new DataContractJsonSerializerState(graph, new SecurityCoordinator.HttpTransport(httpContext)));
             }
             catch (Exception ex)
             {
@@ -73,15 +78,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         {
-            if (exception is null && state.State is { } graph && state.Scope is { } scope)
+            if (exception is null && state.State is DataContractJsonSerializerState serializerState && state.Scope is { } scope)
             {
                 try
                 {
                     var security = Security.Instance;
-                    var securityTransport = SecurityCoordinator.Get(security, scope.Span, HttpContext.Current);
+                    var securityTransport = SecurityCoordinator.Get(security, scope.Span, serializerState.Transport);
                     if (!securityTransport.IsBlocked)
                     {
-                        var extractedObject = ObjectExtractor.ExtractDataContract(graph);
+                        var extractedObject = ObjectExtractor.ExtractDataContract(serializerState.Graph);
                         if (extractedObject is not null)
                         {
                             var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObject } };
@@ -96,6 +101,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             return CallTargetReturn.GetDefault();
+        }
+
+        private sealed class DataContractJsonSerializerState(object graph, SecurityCoordinator.HttpTransport transport)
+        {
+            public object Graph { get; } = graph;
+
+            public SecurityCoordinator.HttpTransport Transport { get; } = transport;
         }
     }
 }
