@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var scope = SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey)
                          ?? SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
 
-                return scope is null ? CallTargetState.GetDefault() : new CallTargetState(scope, new DataContractJsonSerializerState(graph, new SecurityCoordinator.HttpTransport(httpContext)));
+                return scope is null ? CallTargetState.GetDefault() : new CallTargetState(scope, new DataContractJsonSerializerState(graph, httpContext));
             }
             catch (Exception ex)
             {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 try
                 {
                     var security = Security.Instance;
-                    var securityTransport = SecurityCoordinator.Get(security, scope.Span, serializerState.Transport);
+                    var securityTransport = SecurityCoordinator.Get(security, scope.Span, serializerState.HttpContext);
                     if (!securityTransport.IsBlocked)
                     {
                         var extractedObject = ObjectExtractor.ExtractDataContract(serializerState.Graph);
@@ -103,11 +103,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return CallTargetReturn.GetDefault();
         }
 
-        private sealed class DataContractJsonSerializerState(object graph, SecurityCoordinator.HttpTransport transport)
+        private sealed class DataContractJsonSerializerState(object graph, HttpContext httpContext)
         {
             public object Graph { get; } = graph;
 
-            public SecurityCoordinator.HttpTransport Transport { get; } = transport;
+            public HttpContext HttpContext { get; } = httpContext;
         }
     }
 }
