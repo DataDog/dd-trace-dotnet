@@ -750,9 +750,6 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            // There's a circular dependency here because DataPipeline depends on ExporterSettings,
-            // but the settings manager depends on TracerSettings. Basically this is all fine as long
-            // as nothing in the MutableSettings or ExporterSettings depends on the value of DataPipelineEnabled!
             Manager = new(source, this, telemetry, errorLog);
         }
 
