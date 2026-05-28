@@ -1460,13 +1460,17 @@ namespace Datadog.Trace.Configuration
             {
                 return DbmPropagationLevel.Service;
             }
+            else if (inputValue.Equals("dynamic_service", StringComparison.OrdinalIgnoreCase))
+            {
+                return DbmPropagationLevel.DynamicService;
+            }
             else if (inputValue.Equals("full", StringComparison.OrdinalIgnoreCase))
             {
                 return DbmPropagationLevel.Full;
             }
             else
             {
-                Log.Warning("Wrong setting '{PropagationInput}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service or full", inputValue);
+                Log.Warning("Wrong setting '{PropagationInput}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service, dynamic_service or full", inputValue);
                 return null;
             }
         }
