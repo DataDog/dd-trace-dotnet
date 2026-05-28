@@ -194,16 +194,16 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 if (request.Headers is { } requestHeaders)
-            {
-                var headersAdapter = new HeadersCollectionAdapter(requestHeaders);
-                tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(scope.Span, headersAdapter);
-                if (proxyContext?.Scope?.Span is { } proxySpan)
                 {
-                    tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(proxySpan, headersAdapter);
+                    var headersAdapter = new HeadersCollectionAdapter(requestHeaders);
+                    tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(span, headersAdapter);
+                    if (proxyContext?.Scope?.Span is Span proxySpan)
+                    {
+                        tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(proxySpan, headersAdapter);
+                    }
                 }
-            }
 
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, propagationContext.Baggage, tracer.Settings.BaggageTagKeys);
+                tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, propagationContext.Baggage, tracer.Settings.BaggageTagKeys);
 
                 var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
 #if NET6_0_OR_GREATER
@@ -215,19 +215,21 @@ namespace Datadog.Trace.PlatformHelpers
 #endif
 
                 if (AzureInfo.Instance.IsAzureFunction)
-            {
-                // Store scope in HttpContext.Items for Azure Functions middleware to retrieve
-                httpContext.Items[HttpContextActiveScopeKey] = scope;
-
-                if (_log.IsEnabled(LogEventLevel.Debug) && scope.Span.Context is { } spanContext)
                 {
-                    _log.Debug(
-                        "AspNetCore: Stored scope in HttpContext.Items, {TraceId}-{SpanId}, path: {Path}",
-                        spanContext.RawTraceId,
-                        spanContext.RawSpanId,
-                        request.Path);
+                    // Store scope in HttpContext.Items for Azure Functions middleware to retrieve
+                    httpContext.Items[HttpContextActiveScopeKey] = scope;
+
+                    if (_log.IsEnabled(LogEventLevel.Debug) && scope.Span.Context is { } spanContext)
+                    {
+                        _log.Debug(
+                            "AspNetCore: Stored scope in HttpContext.Items, {TraceId}-{SpanId}, path: {Path}",
+                            spanContext.RawTraceId,
+                            spanContext.RawSpanId,
+                            request.Path);
+                    }
                 }
-            }if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
+
+                if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
                 {
                     var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
                     string GetRequestHeaderFromKey(string key) => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;

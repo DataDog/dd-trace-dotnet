@@ -509,11 +509,7 @@ public class OtlpTracesProtobufSerializerTests
             ? null
             : new SpanContext(parent: null, traceContext, serviceName, traceId: traceId, spanId: parentSpanId);
         var context = new SpanContext(parent: parent, traceContext, serviceName, traceId: traceId, spanId: spanId);
-        var span = new Span(context, DateTimeOffset.UtcNow)
-        {
-            OperationName = "operation_name",
-            ResourceName = resourceName,
-        };
+        var span = TestSpanExtensions.CreateSpan(context, DateTimeOffset.UtcNow, operationName: "operation_name", resourceName: resourceName);
         span.SetDuration(TimeSpan.FromMilliseconds(1));
         return span;
     }
@@ -528,11 +524,7 @@ public class OtlpTracesProtobufSerializerTests
             samplingPriority: samplingPriority,
             serviceName: "service_name",
             origin: null);
-        var span = new Span(context, DateTimeOffset.UtcNow)
-        {
-            OperationName = "operation_name",
-            ResourceName = "resource_name",
-        };
+        var span = TestSpanExtensions.CreateSpan(context, DateTimeOffset.UtcNow, operationName: "operation_name", resourceName: "resource_name");
         span.SetDuration(TimeSpan.FromMilliseconds(1));
         return span;
     }

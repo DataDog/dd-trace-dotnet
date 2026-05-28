@@ -177,7 +177,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                     { "_dd.appsec.trace.numeric_string", "42" },
                 });
 
-            new SecurityReporter(rootTestScope.Span, new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
+            new SecurityReporter(rootTestScope.Span.AsSpan(), new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
 
             rootTestScope.Span.GetTag("_dd.appsec.trace.agent").Should().Be("TraceTagging/v1");
             rootTestScope.Span.GetTag("_dd.appsec.trace.numeric_string").Should().Be("42");
@@ -210,7 +210,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.SetupGet(x => x.HasKeep).Returns(hasKeep);
             result.SetupGet(x => x.Keep).Returns(keep);
 
-            new SecurityReporter(rootTestScope.Span, new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
+            new SecurityReporter(rootTestScope.Span.AsSpan(), new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
 
             rootTestScope.Span.GetTag(schemaTag).Should().NotBeNullOrEmpty();
             rootTestScope.Span.Context.TraceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserKeep);
@@ -235,7 +235,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.SetupGet(x => x.HasKeep).Returns(true);
             result.SetupGet(x => x.Keep).Returns(false);
 
-            new SecurityReporter(rootTestScope.Span, new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
+            new SecurityReporter(rootTestScope.Span.AsSpan(), new NoopHttpTransport(), isRoot: true).TryReport(result.Object, blocked: false);
 
             rootTestScope.Span.GetTag("_dd.appsec.trace.agent").Should().Be("TraceTagging/v1");
             rootTestScope.Span.GetMetric("_dd.appsec.trace.integer").Should().Be(42D);

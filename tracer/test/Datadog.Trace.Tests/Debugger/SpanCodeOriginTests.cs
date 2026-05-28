@@ -289,13 +289,13 @@ namespace Datadog.Trace.Tests.Debugger
             private Span CreateAspNetCoreSpan()
             {
                 var spanContext = new SpanContext(1234, 5678);
-                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreTags());
+                return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, tags: new AspNetCoreTags());
             }
 
             private Span CreateAspNetCoreSingleSpanSpan()
             {
                 var spanContext = new SpanContext(1234, 5678);
-                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreSingleSpanTags());
+                return TestSpanExtensions.CreateSpan(spanContext, DateTimeOffset.UtcNow, tags: new AspNetCoreSingleSpanTags());
             }
 
             private int TestMethod() => 42;

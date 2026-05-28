@@ -174,6 +174,6 @@ namespace Datadog.Trace.Tests
             };
 
         private static Span CreateSpan()
-            => new(new SpanContext(traceId: 42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            => TestSpanExtensions.CreateSpan(new SpanContext(traceId: 42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
     }
 }

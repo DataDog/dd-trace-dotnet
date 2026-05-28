@@ -251,12 +251,10 @@ public class ReconciliationSweepTests
         // Null the fields StartSpan populates with tracer defaults so the sweep's `is null/empty`
         // fallbacks actually fire. In production the GC'd-path fallbacks fire when these fields
         // haven't been populated by AgentConvertSpan; here we recreate that state explicitly.
-        span.OperationName = null;
-        span.ResourceName = null;
+        // OperationName is now set at construction and immutable post-creation; leave as-is.
+        span.SetResourceName(null!);
         span.Type = null;
-#pragma warning disable CS0618
-        span.ServiceName = null;
-#pragma warning restore CS0618
+        span.SetService(null!, source: null);
 
         presetTags?.Invoke(span);
 
@@ -286,12 +284,10 @@ public class ReconciliationSweepTests
         // `is null/empty` fallbacks actually fire. In production the GC'd-path fallbacks fire
         // when these fields haven't been populated by AgentConvertSpan; here we recreate that
         // state explicitly.
-        span.OperationName = null;
-        span.ResourceName = null;
+        // OperationName is now set at construction and immutable post-creation; leave as-is.
+        span.SetResourceName(null!);
         span.Type = null;
-#pragma warning disable CS0618
-        span.ServiceName = null;
-#pragma warning restore CS0618
+        span.SetService(null!, source: null);
 
         presetTags?.Invoke(span);
 

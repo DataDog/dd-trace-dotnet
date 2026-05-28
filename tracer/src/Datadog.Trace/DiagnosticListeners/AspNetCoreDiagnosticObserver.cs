@@ -658,7 +658,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                if (span is not null)
+                if (spanBase is Span span)
                 {
                     _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }

@@ -379,7 +379,7 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     // Activity was GC'd before Stop was called. Take ownership atomically; if
                     // another thread already removed this entry, bail without closing.
-                    if (mappings.TryRemove(kvp.Key, out var owned) && owned.Scope is { Span: { } span } scope)
+                    if (mappings.TryRemove(kvp.Key, out var owned) && owned.Scope is { Span: Span span } scope)
                     {
                         // Do some "clean up" of the span, to make sure it has sensible defaults
                         // Roughly analogous to OtlpHelpers.AgentConvertSpan, but much more basic with extra assumption
@@ -390,10 +390,8 @@ namespace Datadog.Trace.Activity.Handlers
                                 tags.SpanKind = SpanKinds.Internal;
                             }
 
-                            if (string.IsNullOrEmpty(span.OperationName))
-                            {
-                                span.OperationName = OperationNameMapper.GetOperationName(tags);
-                            }
+                            // OperationName is set at span construction and is no longer mutable post-creation.
+                            // Leave whatever was assigned at construction.
 
                             if (string.IsNullOrEmpty(tags.OtelStatusCode))
                             {
@@ -415,7 +413,7 @@ namespace Datadog.Trace.Activity.Handlers
 
                             if (string.IsNullOrEmpty(span.ResourceName))
                             {
-                                span.ResourceName = "ONGOING_ACTIVITY";
+                                span.SetResourceName("ONGOING_ACTIVITY");
                             }
 
                             if (string.IsNullOrWhiteSpace(span.Type))
