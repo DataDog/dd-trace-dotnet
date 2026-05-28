@@ -63,7 +63,7 @@ internal interface IMessageSendContext
 
     /// <summary>
     /// Gets the message headers for trace context injection.
-    /// Returns object? — caller uses DuckCast&lt;DictionarySendHeadersCopy&gt;() to copy _headers.
+    /// Duck-copied from the underlying DictionarySendHeaders, exposing its private _headers field.
     /// </summary>
-    object? Headers { get; }
+    DictionarySendHeadersInnerCopy? Headers { get; }
 }

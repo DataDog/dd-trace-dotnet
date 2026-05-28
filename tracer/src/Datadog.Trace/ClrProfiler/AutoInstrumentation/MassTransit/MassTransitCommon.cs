@@ -526,7 +526,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             var propagationContext = new PropagationContext(scope.Span.Context, Baggage.Current);
             bool injected = false;
 
-            // Access Headers dictionary via DuckCast to avoid second DuckCast.
             try
             {
                 var headersObj = sendContext.Headers;
@@ -535,7 +534,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     Log.Debug("MassTransitCommon.InjectTraceContext: Headers object is null");
                 }
 
-                var internalHeaders = headersObj?.DuckCast<DictionarySendHeadersInnerCopy>().Headers;
+                var internalHeaders = headersObj?.Headers;
                 if (internalHeaders != null)
                 {
                     var adapter = new CarrierWithDelegate<IDictionary<string, object>>(
@@ -556,7 +555,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 Log.Debug("MassTransitCommon.InjectTraceContext: Using reflection fallback to inject trace context");
                 try
                 {
-                    var headersObject = sendContext.Headers ?? TryGetProperty<object>((sendContext as IDuckType)?.Instance, "Headers");
+                    var headersObject = TryGetProperty<object>((sendContext as IDuckType)?.Instance, "Headers");
                     if (headersObject is null)
                     {
                         Log.Debug("MassTransitCommon.InjectTraceContext: No Headers property found in SendContext");

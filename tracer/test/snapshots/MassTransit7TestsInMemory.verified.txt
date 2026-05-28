@@ -448,7 +448,6 @@
     Service: Samples.MassTransit7,
     Type: queue,
     ParentId: Id_23,
-    Error: 1,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -552,7 +551,6 @@
     Service: Samples.MassTransit7,
     Type: queue,
     ParentId: Id_28,
-    Error: 1,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -706,7 +704,6 @@
     Service: Samples.MassTransit7,
     Type: queue,
     ParentId: Id_36,
-    Error: 1,
     Tags: {
       component: masstransit,
       env: integration_tests,
