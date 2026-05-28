@@ -146,7 +146,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var target = new TestDataContractPoco { Id = 1, Message = "hello", Secret = "secret", Ignored = "ignored" };
 
-            var result = DataContractObjectExtractor.Extract(target) as Dictionary<string, object>;
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
 
             result.Should().NotBeNull();
             result!["id"].Should().Be(target.Id);

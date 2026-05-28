@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var securityTransport = SecurityCoordinator.Get(security, scope.Span, httpContext);
                     if (!securityTransport.IsBlocked)
                     {
-                        var extractedObject = DataContractObjectExtractor.Extract(graph);
+                        var extractedObject = ObjectExtractor.ExtractDataContract(graph);
                         if (extractedObject is not null)
                         {
                             var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObject } };
