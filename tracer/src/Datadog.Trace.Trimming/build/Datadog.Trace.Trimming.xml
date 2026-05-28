@@ -880,6 +880,7 @@
       <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2/CreateValueCallback" />
+      <type fullname="System.Runtime.CompilerServices.ConfiguredAsyncDisposable" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable/ConfiguredTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1" />
@@ -956,12 +957,14 @@
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
+      <type fullname="System.Text.StringBuilder/ChunkEnumerator" />
       <type fullname="System.Threading.CancellationToken" />
       <type fullname="System.Threading.CancellationTokenRegistration" />
       <type fullname="System.Threading.CancellationTokenSource" />
       <type fullname="System.Threading.LazyThreadSafetyMode" />
       <type fullname="System.Threading.Tasks.Task" />
       <type fullname="System.Threading.Tasks.Task`1" />
+      <type fullname="System.Threading.Tasks.TaskAsyncEnumerableExtensions" />
       <type fullname="System.Threading.Tasks.TaskCanceledException" />
       <type fullname="System.Threading.Tasks.TaskCompletionSource`1" />
       <type fullname="System.Threading.Tasks.TaskContinuationOptions" />
