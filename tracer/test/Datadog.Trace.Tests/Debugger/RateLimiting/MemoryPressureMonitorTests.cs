@@ -532,6 +532,8 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
 
         private sealed class BlockingMemoryRatioProvider : IDisposable
         {
+            private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(5);
+
             private readonly ManualResetEventSlim _blocked = new(false);
             private readonly ManualResetEventSlim _release = new(false);
             private readonly double _blockedRatio;
@@ -559,12 +561,12 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
                 }
 
                 _blocked.Set();
-                _release.Wait();
+                _release.Wait(WaitTimeout).Should().BeTrue("the test should release the blocked memory sample");
                 ratio = _blockedRatio;
                 return true;
             }
 
-            public void WaitForBlockedCall() => _blocked.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+            public void WaitForBlockedCall() => _blocked.Wait(WaitTimeout).Should().BeTrue("the memory sample should reach the blocking point");
 
             public void ReleaseBlockedCall() => _release.Set();
 

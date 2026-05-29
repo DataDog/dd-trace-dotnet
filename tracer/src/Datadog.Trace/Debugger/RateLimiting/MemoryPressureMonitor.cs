@@ -266,7 +266,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 // Establish Gen2 baseline if needed.
                 if (!_hasGen2Baseline && gcAvailable)
                 {
-                    _lastRefreshMs = nowMs;
+                    Volatile.Write(ref _lastRefreshMs, nowMs);
                     _lastGen2Count = gen2Count;
                     _hasGen2Baseline = true;
                 }
