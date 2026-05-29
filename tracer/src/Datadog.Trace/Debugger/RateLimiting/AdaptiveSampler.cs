@@ -134,7 +134,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public double NextDouble()
         {
+#pragma warning disable CA5394 // Intentional: non-security randomness for rate limiting
             return ThreadSafeRandom.Shared.NextDouble();
+#pragma warning restore CA5394
         }
 
         public void SetRate(int samplesPerWindow)
