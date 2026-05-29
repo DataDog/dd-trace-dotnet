@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 

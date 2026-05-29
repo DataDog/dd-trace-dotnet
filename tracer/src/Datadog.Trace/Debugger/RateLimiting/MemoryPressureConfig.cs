@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Globalization;
 using Datadog.Trace.Util;
@@ -11,7 +13,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 {
     internal readonly struct MemoryPressureConfig
     {
-        public static MemoryPressureConfig Default => new()
+        public static MemoryPressureConfig Default { get; } = new()
         {
             HighPressureThresholdRatio = 0.85,
             MaxGen2PerSecond = 2,
@@ -22,7 +24,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
             RefreshInterval = TimeSpan.FromSeconds(1)
         };
 
-        public double HighPressureThresholdRatio { get; init; } // 0.0–1.0
+        // Enter high pressure at this fraction (0.0–1.0) of available memory in use. Machine-wide on .NET Framework.
+        public double HighPressureThresholdRatio { get; init; }
 
         public int MaxGen2PerSecond { get; init; }
 

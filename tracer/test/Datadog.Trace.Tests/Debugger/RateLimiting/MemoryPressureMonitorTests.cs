@@ -4,13 +4,18 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using Xunit;
+
+#nullable enable
 
 namespace Datadog.Trace.Tests.Debugger.RateLimiting
 {
@@ -18,107 +23,309 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
     public class MemoryPressureMonitorTests
     {
         [Fact]
-        public void Gen2CollectionsPerSecond_TracksGC()
+        public void RefreshIfStale_DoesNotSampleWhileIdle()
         {
-            using var scheduler = new TestScheduler();
-            var gc = new FakeGCInfoProvider()
-                    .WithGen2Counts(0, 3)
-                    .WithConstantMemoryRatio(0.1);
-            var clock = new FakeClock().WithTicksAtSeconds(0, 0, 1, 1);
+            var gc = new CountingGCInfoProvider();
 
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.95,
-                MaxGen2PerSecond = 100
-            };
+            using var monitor = CreateMonitor(null, gc.TryGetMemoryUsageRatio, gc.TryGetGen2CollectionCount);
 
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            scheduler.TriggerRefresh();
-
-            var rate = monitor.Gen2CollectionsPerSecond;
-
-            // Should be 3 collections per second
-            rate.Should().BeApproximately(3.0, 0.01);
+            gc.MemoryRatioCallCount.Should().Be(0);
+            gc.Gen2CallCount.Should().Be(0);
         }
 
         [Fact]
-        public async Task ConcurrentReadsDuringRefresh_NoDeadlock()
+        public void RefreshIfStale_SamplesWhenStaleOnly()
+        {
+            var gc = new CountingGCInfoProvider();
+            using var monitor = CreateMonitor(null, gc.TryGetMemoryUsageRatio, gc.TryGetGen2CollectionCount);
+
+            monitor.RefreshIfStale(0);
+            monitor.RefreshIfStale(500);
+            monitor.RefreshIfStale(1000);
+
+            gc.MemoryRatioCallCount.Should().Be(2);
+            gc.Gen2CallCount.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task ConcurrentRefresh_DoesNotOverlap()
+        {
+            using var gc = new BlockingMemoryRatioProvider(blockedRatio: 0.90);
+            using var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.80, MaxGen2PerSecond = 1000 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount);
+
+            monitor.RefreshIfStale(0);
+            var refreshTask = Task.Run(() => monitor.RefreshIfStale(1000));
+            gc.WaitForBlockedCall();
+
+            monitor.RefreshIfStale(2000);
+            gc.MemoryRatioCallCount.Should().Be(2);
+
+            gc.ReleaseBlockedCall();
+            await refreshTask;
+            monitor.IsHighMemoryPressure.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Dispose_DuringInFlightRefresh_DoesNotCommitState()
+        {
+            using var gc = new BlockingMemoryRatioProvider(blockedRatio: 0.90);
+            var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.80, MaxGen2PerSecond = 1000 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount);
+
+            monitor.RefreshIfStale(0);
+            var refreshTask = Task.Run(() => monitor.RefreshIfStale(1000));
+            gc.WaitForBlockedCall();
+
+            var disposeTask = Task.Run(() => monitor.Dispose());
+            gc.ReleaseBlockedCall();
+
+            await refreshTask;
+            await disposeTask;
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Dispose_PreventsFurtherRefresh()
+        {
+            var gc = new CountingGCInfoProvider();
+            var monitor = CreateMonitor(null, gc.TryGetMemoryUsageRatio, gc.TryGetGen2CollectionCount);
+
+            monitor.Dispose();
+            monitor.RefreshIfStale(1000);
+
+            gc.MemoryRatioCallCount.Should().Be(0);
+            monitor.MemoryUsagePercent.Should().Be(0);
+            monitor.Gen2CollectionsPerSecond.Should().Be(0);
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+        }
+
+        [Fact]
+        public void MemoryOnly_AppliesThresholdsAndHysteresis()
+        {
+            var gc = new MemoryOnlyGCInfoProvider(0.85, 0.76, 0.74);
+            using var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.80, MaxGen2PerSecond = 1000, MemoryExitMargin = 0.05 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount);
+
+            monitor.RefreshIfStale(0);
+            monitor.IsHighMemoryPressure.Should().BeTrue();
+            monitor.MemoryUsagePercent.Should().BeApproximately(85, 0.1);
+
+            monitor.RefreshIfStale(1000);
+            monitor.IsHighMemoryPressure.Should().BeTrue();
+
+            monitor.RefreshIfStale(2000);
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GcOnly_AppliesThresholdsAndRates()
+        {
+            var gc = new GCOnlyInfoProvider([0, 3, 5, 6]);
+            using var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.99, MaxGen2PerSecond = 2, Gen2ExitMargin = 1 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount);
+
+            monitor.RefreshIfStale(0);
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+
+            monitor.RefreshIfStale(1000);
+            monitor.Gen2CollectionsPerSecond.Should().BeApproximately(3.0, 0.01);
+            monitor.IsHighMemoryPressure.Should().BeTrue();
+
+            monitor.RefreshIfStale(2000);
+            monitor.IsHighMemoryPressure.Should().BeTrue();
+
+            monitor.RefreshIfStale(3000);
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ConsecutiveHighAndLowCycles_AreHonored()
         {
             var config = MemoryPressureConfig.Default with
             {
                 HighPressureThresholdRatio = 0.80,
-                MaxGen2PerSecond = 2
+                MaxGen2PerSecond = 1000,
+                ConsecutiveHighToEnter = 2,
+                ConsecutiveLowToExit = 2
             };
+            var gc = new MemoryOnlyGCInfoProvider(0.90, 0.91, 0.10, 0.10);
+            using var monitor = CreateMonitor(config, gc.TryGetMemoryUsageRatio, gc.TryGetGen2CollectionCount);
 
-            using var monitor = new MemoryPressureMonitor(config);
+            monitor.RefreshIfStale(0);
+            monitor.IsHighMemoryPressure.Should().BeFalse();
 
-            var readCount = 0;
-            var exceptions = 0;
-            var duration = TimeSpan.FromSeconds(2);
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            monitor.RefreshIfStale(1000);
+            monitor.IsHighMemoryPressure.Should().BeTrue();
 
-            // Read while refresh is happening every timer interval
-            var tasks = Enumerable.Range(0, 8)
-                                  .Select(i => Task.Run(() =>
-                                   {
-                                       try
-                                       {
-                                           while (sw.Elapsed < duration)
-                                           {
-                                               _ = monitor.IsHighMemoryPressure;
-                                               _ = monitor.MemoryUsagePercent;
-                                               _ = monitor.Gen2CollectionsPerSecond;
-                                               Interlocked.Increment(ref readCount);
-                                           }
-                                       }
-                                       catch
-                                       {
-                                           Interlocked.Increment(ref exceptions);
-                                       }
-                                   }))
-                                  .ToArray();
+            monitor.RefreshIfStale(2000);
+            monitor.IsHighMemoryPressure.Should().BeTrue();
 
-            await Task.WhenAll(tasks);
+            monitor.RefreshIfStale(3000);
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+        }
 
-            exceptions.Should().Be(0, "No exceptions should occur during concurrent reads");
-            readCount.Should().BeGreaterThan(1000, "Should achieve reasonable read throughput without lock contention");
+        [Fact]
+        public void Monitor_Disables_WhenNoSignalsAvailable()
+        {
+            var observer = new TestMemoryPressureObserver();
+            var gc = new NoSignalsGCInfoProvider();
+            using var monitor = CreateMonitor(null, gc.TryGetMemoryUsageRatio, gc.TryGetGen2CollectionCount, observer);
+
+            monitor.RefreshIfStale(0);
+            monitor.RefreshIfStale(1000);
+
+            gc.MemoryRatioCallCount.Should().Be(1);
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+            monitor.MemoryUsagePercent.Should().Be(0);
+            monitor.Gen2CollectionsPerSecond.Should().Be(0);
+            observer.Disables.Should().ContainSingle().Which.Should().Be(MetricTags.DebuggerMemoryPressureDisabledReason.NoSignals);
+        }
+
+        [Fact]
+        public void ProviderException_DoesNotCrashMonitor()
+        {
+            var observer = new TestMemoryPressureObserver();
+            var gc = new ThrowingGCInfoProvider();
+            using var monitor = CreateMonitor(null, gc.TryGetMemoryUsageRatio, gc.TryGetGen2CollectionCount, observer);
+
+            Action act = () => monitor.RefreshIfStale(0);
+
+            act.Should().NotThrow();
+            monitor.IsHighMemoryPressure.Should().BeFalse();
+            observer.Disables.Should().ContainSingle().Which.Should().Be(MetricTags.DebuggerMemoryPressureDisabledReason.Error);
+        }
+
+        [Fact]
+        public void Trigger_IsGen2_WhenOnlyGcSignalEntersHigh()
+        {
+            var observer = new TestMemoryPressureObserver();
+            var gc = new GCOnlyInfoProvider([0, 5]);
+            using var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.99, MaxGen2PerSecond = 2 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount,
+                observer);
+
+            monitor.RefreshIfStale(0);
+            monitor.RefreshIfStale(1000);
+
+            monitor.IsHighMemoryPressure.Should().BeTrue();
+            observer.Transitions.Should().ContainSingle().Which.Trigger.Should().Be(MetricTags.DebuggerMemoryPressureTrigger.Gen2);
+        }
+
+        [Fact]
+        public void GcOnlyTransition_DoesNotReportUnavailableMemoryAsZero()
+        {
+            var observer = new TestMemoryPressureObserver();
+            var gc = new GCOnlyInfoProvider([0, 5]);
+            using var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.99, MaxGen2PerSecond = 2 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount,
+                observer);
+
+            monitor.RefreshIfStale(0);
+            monitor.RefreshIfStale(1000);
+
+            var transition = observer.Transitions.Should().ContainSingle().Subject;
+            transition.MemoryUsagePercent.Should().BeNull();
+            transition.Gen2CollectionsPerSecond.Should().BeApproximately(5.0, 0.01);
+        }
+
+        [Fact]
+        public void GcOnlyTransition_DoesNotRecordMemoryUsageTelemetry()
+        {
+            var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+            var previousMetrics = TelemetryFactory.SetMetricsForTesting(collector);
+            try
+            {
+                var gc = new GCOnlyInfoProvider([0, 5]);
+                using var monitor = new MemoryPressureMonitor(
+                    MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.99, MaxGen2PerSecond = 2 },
+                    memoryRatioReader: gc.TryGetMemoryUsageRatio,
+                    gen2Reader: gc.TryGetGen2CollectionCount,
+                    onTransition: null);
+
+                monitor.RefreshIfStale(0);
+                monitor.RefreshIfStale(1000);
+                collector.AggregateMetrics();
+
+                var metrics = collector.GetMetrics();
+                metrics.Distributions.Should().NotContain(x =>
+                    x.Metric == DistributionShared.DebuggerMemoryPressureMemoryUsagePct.GetName());
+                metrics.Distributions.Should().Contain(x =>
+                    x.Metric == DistributionShared.DebuggerMemoryPressureGen2PerSec.GetName() &&
+                    x.Tags != null &&
+                    x.Tags.Length == 1 &&
+                    x.Tags[0] == "state:enter" &&
+                    x.Points.Single() == 5.0);
+            }
+            finally
+            {
+                TelemetryFactory.SetMetricsForTesting(previousMetrics);
+            }
+        }
+
+        [Fact]
+        public void Trigger_IsBoth_WhenMemoryAndGcEnterHighTogether()
+        {
+            var observer = new TestMemoryPressureObserver();
+            // First cycle stays below the memory threshold so entry only happens on the second cycle,
+            // where the gen2 rate is also computable - exercising the "both signals high at entry" path.
+            var gc = new MemoryAndGcInfoProvider(ratios: [0.10, 0.90], gen2Counts: [0, 5]);
+            using var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.80, MaxGen2PerSecond = 2 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount,
+                observer);
+
+            monitor.RefreshIfStale(0);
+            monitor.RefreshIfStale(1000);
+
+            monitor.IsHighMemoryPressure.Should().BeTrue();
+            observer.Transitions.Should().ContainSingle().Which.Trigger.Should().Be(MetricTags.DebuggerMemoryPressureTrigger.Both);
+        }
+
+        [Fact]
+        public void Observer_EmitsOnceOnEnterAndExit_WithSeverityAndDuration()
+        {
+            var observer = new TestMemoryPressureObserver();
+            var gc = new MemoryOnlyGCInfoProvider(0.90, 0.91, 0.70, 0.70);
+            using var monitor = CreateMonitor(
+                MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.80, MaxGen2PerSecond = 1000 },
+                gc.TryGetMemoryUsageRatio,
+                gc.TryGetGen2CollectionCount,
+                observer);
+
+            monitor.RefreshIfStale(0);
+            monitor.RefreshIfStale(1000);
+            monitor.RefreshIfStale(2000);
+            monitor.RefreshIfStale(3000);
+
+            observer.Transitions.Should().HaveCount(2);
+            observer.Transitions[0].Should().BeEquivalentTo(new Transition(true, MetricTags.DebuggerMemoryPressureTrigger.Memory, 90, null, 0));
+            observer.Transitions[1].IsHighPressure.Should().BeFalse();
+            observer.Transitions[1].Trigger.Should().Be(MetricTags.DebuggerMemoryPressureTrigger.None);
+            observer.Transitions[1].MemoryUsagePercent.Should().Be(70);
+            observer.Transitions[1].HighPressureDurationMs.Should().BeApproximately(2000, 0.1);
         }
 
         [Fact]
         public void Constructor_AcceptsExtremeParameterValues()
         {
-            using var scheduler = new TestScheduler();
+            using var monitor1 = new MemoryPressureMonitor(MemoryPressureConfig.Default with { HighPressureThresholdRatio = -0.1, MaxGen2PerSecond = -5 });
+            using var monitor2 = new MemoryPressureMonitor(MemoryPressureConfig.Default with { HighPressureThresholdRatio = 2 });
+            using var monitor3 = new MemoryPressureMonitor(MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0, MaxGen2PerSecond = 0 });
 
-            // Test negative values
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = -0.1,
-                MaxGen2PerSecond = -5
-            };
-
-            using var monitor1 = new MemoryPressureMonitor(config, scheduler);
-
-            // Test values > 1
-            config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 2,
-            };
-            using var monitor2 = new MemoryPressureMonitor(config, scheduler: scheduler);
-
-            // Test zero values
-            config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0,
-                MaxGen2PerSecond = 0
-            };
-            using var monitor3 = new MemoryPressureMonitor(config, scheduler: scheduler);
-
-            // All should initialize without throwing
             monitor1.Should().NotBeNull();
             monitor2.Should().NotBeNull();
             monitor3.Should().NotBeNull();
@@ -132,9 +339,7 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
                 return;
             }
 
-            var result = WindowsMemoryInfo.TryGetMemoryLoadRatio(out var ratio);
-
-            result.Should().BeTrue();
+            WindowsMemoryInfo.TryGetMemoryLoadRatio(out var ratio).Should().BeTrue();
             ratio.Should().BeGreaterThan(0);
             ratio.Should().BeLessOrEqualTo(1);
         }
@@ -147,759 +352,223 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
                 return;
             }
 
-            var result = WindowsMemoryInfo.TryGetAvailablePhysicalMemory(out var bytes);
-
-            result.Should().BeTrue();
+            WindowsMemoryInfo.TryGetAvailablePhysicalMemory(out var bytes).Should().BeTrue();
             bytes.Should().BeGreaterThan(0);
         }
 
-        [Fact]
-        public void Dispose_PreventsFurtherOperations()
+        // Fakes are passed as production reader delegates (method groups), so no shared test-only interface is needed.
+        private static MemoryPressureMonitor CreateMonitor(
+            MemoryPressureConfig? config,
+            TryReadMemoryUsageRatio memoryReader,
+            TryReadGen2CollectionCount gen2Reader,
+            TestMemoryPressureObserver? observer = null)
         {
-            using var scheduler = new TestScheduler();
-            var monitor = new MemoryPressureMonitor(MemoryPressureConfig.Default, scheduler: scheduler);
-
-            monitor.Dispose();
-
-            // Further operations should not throw but may not update
-            scheduler.TriggerRefresh();
-
-            // Access properties - should not throw
-            var usage = monitor.MemoryUsagePercent;
-            var gen2Rate = monitor.Gen2CollectionsPerSecond;
-            var isHigh = monitor.IsHighMemoryPressure;
-
-            // Values should be valid (last known values or defaults)
-            usage.Should().BeGreaterOrEqualTo(0);
-            gen2Rate.Should().BeGreaterOrEqualTo(0);
+            return new MemoryPressureMonitor(
+                config ?? MemoryPressureConfig.Default,
+                memoryRatioReader: memoryReader,
+                gen2Reader: gen2Reader,
+                onTransition: observer is null ? null : observer.OnTransition,
+                onDisabled: observer is null ? null : observer.OnDisabled);
         }
 
-        [Fact]
-        public void Dispose_StopsScheduledRefresh()
-        {
-            using var scheduler = new TestScheduler();
-            var gc = new FakeGCInfoProvider()
-                    .WithConstantMemoryRatio(0.10) // below threshold
-                    .WithConstantGen2Count(0); // no GC pressure
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1);
+        private readonly record struct Transition(bool IsHighPressure, MetricTags.DebuggerMemoryPressureTrigger Trigger, double? MemoryUsagePercent, double? Gen2CollectionsPerSecond, double HighPressureDurationMs);
 
-            var config = MemoryPressureConfig.Default with
+        private sealed class TestMemoryPressureObserver
+        {
+            public List<Transition> Transitions { get; } = [];
+
+            public List<MetricTags.DebuggerMemoryPressureDisabledReason> Disables { get; } = [];
+
+            public void OnTransition(bool isHighPressure, MetricTags.DebuggerMemoryPressureTrigger trigger, double? memoryUsagePercent, double? gen2CollectionsPerSecond, double highPressureDurationMs)
             {
-                HighPressureThresholdRatio = 0.99,
-                MaxGen2PerSecond = 1000
-            };
+                Transitions.Add(new Transition(isHighPressure, trigger, memoryUsagePercent, gen2CollectionsPerSecond, highPressureDurationMs));
+            }
 
-            var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-
-            // Queue an event that would flip to high on next refresh
-            monitor.RecordMemoryPressureEvent();
-
-            // Dispose should remove the scheduled callback; triggering should not process the event
-            monitor.Dispose();
-            scheduler.TriggerRefresh();
-
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-        }
-
-        [Fact]
-        public void ConsecutiveLowToExit_DelaysExit()
-        {
-            using var scheduler = new TestScheduler();
-            var config = new MemoryPressureConfig
+            public void OnDisabled(MetricTags.DebuggerMemoryPressureDisabledReason reason)
             {
-                HighPressureThresholdRatio = 2.0,
-                MaxGen2PerSecond = 1000,
-                MemoryExitMargin = 0.0,
-                Gen2ExitMargin = 0,
-                ConsecutiveHighToEnter = 1,
-                ConsecutiveLowToExit = 2
-            };
-
-            using var monitor = new MemoryPressureMonitor(config, scheduler);
-
-            // Enter high via pressure event (bypasses other checks)
-            monitor.RecordMemoryPressureEvent();
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // No new events; low cycle #1: should remain high
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Low cycle #2: should EXIT
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeFalse();
+                Disables.Add(reason);
+            }
         }
 
-        [Fact]
-        public void PressureEvent_BypassesConsecutiveHighRequirement()
+        private sealed class CountingGCInfoProvider
         {
-            using var scheduler = new TestScheduler();
-            var config = new MemoryPressureConfig
+            public int MemoryRatioCallCount { get; private set; }
+
+            public int Gen2CallCount { get; private set; }
+
+            public bool TryGetGen2CollectionCount(out int count)
             {
-                HighPressureThresholdRatio = 0.99,
-                MaxGen2PerSecond = 1000,
-                ConsecutiveHighToEnter = 3,
-                ConsecutiveLowToExit = 1
-            };
+                Gen2CallCount++;
+                count = 0;
+                return true;
+            }
 
-            using var monitor = new MemoryPressureMonitor(config, scheduler);
-
-            monitor.RecordMemoryPressureEvent();
-            scheduler.TriggerRefresh();
-
-            // Should enter immediately due to event bypass
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-        }
-
-        [Fact]
-        public void PressureEvents_ResetToZero_AfterProcessing()
-        {
-            using var scheduler = new TestScheduler();
-
-            var config = new MemoryPressureConfig
+            public bool TryGetMemoryUsageRatio(out double ratio)
             {
-                HighPressureThresholdRatio = 2.0,
-                MaxGen2PerSecond = 1000,
-                MemoryExitMargin = 0.0,
-                Gen2ExitMargin = 0
-            };
-
-            using var monitor = new MemoryPressureMonitor(config, scheduler);
-
-            // Record events
-            monitor.RecordMemoryPressureEvent();
-            monitor.RecordMemoryPressureEvent();
-
-            // First refresh processes them
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Record one more event
-            monitor.RecordMemoryPressureEvent();
-
-            // Second refresh processes the new event
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Third refresh with no new events should exit high pressure
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeFalse();
+                MemoryRatioCallCount++;
+                ratio = 0.10;
+                return true;
+            }
         }
 
-        [Fact]
-        public void ThresholdBoundary_JustAboveMemoryThreshold_Enters()
+        private sealed class NoSignalsGCInfoProvider
         {
-            using var scheduler = new TestScheduler();
-            var gc = new FakeGCInfoProvider()
-               .WithConstantMemoryRatio(0.8006); // Just above threshold (0.80)
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1);
+            public int MemoryRatioCallCount { get; private set; }
 
-            var config = MemoryPressureConfig.Default with
+            public bool TryGetGen2CollectionCount(out int count)
             {
-                HighPressureThresholdRatio = 0.80,
-                MaxGen2PerSecond = 1000
-            };
+                count = 0;
+                return false;
+            }
 
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            scheduler.TriggerRefresh();
-
-            // Should enter because > threshold
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Monitor_Disables_WhenNoSignalsAvailable()
-        {
-            using var scheduler = new TestScheduler();
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1, 2);
-            var config = MemoryPressureConfig.Default with
+            public bool TryGetMemoryUsageRatio(out double ratio)
             {
-                HighPressureThresholdRatio = 0.80,
-                MaxGen2PerSecond = 2
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: new NoSignalsGCInfoProvider(),
-                clock: clock);
-
-            // Constructor performs an initial refresh and disables immediately -> no subscription
-            scheduler.SubscriptionCount.Should().Be(0);
-
-            // First refresh should detect no signals and disable the monitor
-            scheduler.TriggerRefresh();
-
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-            monitor.MemoryUsagePercent.Should().Be(0);
-            monitor.Gen2CollectionsPerSecond.Should().Be(0);
-
-            // Monitor should have unsubscribed
-            scheduler.SubscriptionCount.Should().Be(0);
-
-            // Further refresh calls should have no effect
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-            monitor.MemoryUsagePercent.Should().Be(0);
-            monitor.Gen2CollectionsPerSecond.Should().Be(0);
+                MemoryRatioCallCount++;
+                ratio = 0;
+                return false;
+            }
         }
 
-        [Fact]
-        public void MemoryOnly_AppliesThresholds_WhenGcUnavailable()
+        private sealed class MemoryOnlyGCInfoProvider
         {
-            using var scheduler = new TestScheduler();
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1, 2, 3);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.80,
-                MaxGen2PerSecond = 1000
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: new MemoryOnlyGCInfoProvider(0.50, 0.85, 0.74), // Add a below-threshold sample for ctor refresh, then enter, then exit
-                clock: clock);
-
-            // First refresh: memory 0.85 > 0.80 => enter high
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-            monitor.Gen2CollectionsPerSecond.Should().Be(0);
-
-            // Second refresh: memory 0.74 < 0.80 - 0.05 (exit threshold 0.75) => exit
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-            monitor.Gen2CollectionsPerSecond.Should().Be(0);
-        }
-
-        [Fact]
-        public void GcOnly_AppliesThresholds_WhenMemoryUnavailable()
-        {
-            using var scheduler = new TestScheduler();
-            var clock = new FakeClock().WithTicksAtSeconds(0, 0, 1, 1);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.99,
-                MaxGen2PerSecond = 2
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: new GCOnlyInfoProvider([0, 3]),
-                clock: clock);
-
-            // First scheduled refresh: ctor has already established baseline; rate is 3/sec > 2 => enter high
-            scheduler.TriggerRefresh();
-            monitor.Gen2CollectionsPerSecond.Should().BeApproximately(3.0, 0.01);
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Second refresh: no additional collections => rate ~0
-            scheduler.TriggerRefresh();
-            monitor.Gen2CollectionsPerSecond.Should().BeLessOrEqualTo(0.001);
-        }
-
-        [Fact]
-        public void ThresholdBoundary_JustBelowExitThreshold_RemainsHigh()
-        {
-            using var scheduler = new TestScheduler();
-
-            // Add an initial below-threshold sample to offset constructor's initial refresh
-            var gc = new FakeGCInfoProvider()
-               .WithMemoryRatios(0.70, 0.90, 0.8001); // Enter high on 0.90, then drop to just above exit (needs 0.05 to exit)
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1, 2, 3);
-
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.85,
-                MaxGen2PerSecond = 1000,
-                MemoryExitMargin = 0.05
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            // Enter high pressure
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Drop to just above exit threshold (0.8001 > 0.80)
-            scheduler.TriggerRefresh();
-
-            // Should remain high
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-        }
-
-        [Fact]
-        public void ThresholdBoundary_JustAboveGen2Threshold_Enters()
-        {
-            using var scheduler = new TestScheduler();
-            var gc = new FakeGCInfoProvider()
-                    .WithGen2Counts(0, 3) // 3 Gen2/sec > threshold
-                    .WithConstantMemoryRatio(0.1);
-            var clock = new FakeClock().WithTicksAtSeconds(0, 0, 1, 1);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.99,
-                MaxGen2PerSecond = 2,
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            scheduler.TriggerRefresh();
-
-            // Should enter because > threshold
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Gen2ExitMargin_Hysteresis_ExitOnlyWhenBelowMargin()
-        {
-            using var scheduler = new TestScheduler();
-
-            // Counts: baseline (ctor refresh) at 0, then +3, then +2, then +1
-            // Rates: 3/sec (enter), 2/sec (>1 remain high), 1/sec (==1 exit)
-            var gcOnly = new GCOnlyInfoProvider([0, 3, 5, 6]);
-            var clock = new FakeClock().WithTicksAtSeconds(0, 0, 1, 2, 3);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 1.0,
-                MaxGen2PerSecond = 2,
-                Gen2ExitMargin = 1
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gcOnly,
-                clock: clock);
-
-            // First scheduled refresh: 3/sec -> ENTER
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Second: 2/sec (>1) -> remain HIGH
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Third: 1/sec (==1) -> EXIT
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-        }
-
-        [Fact]
-        public void ConsecutiveHighToEnter_WithMetrics_RequiresMultipleCycles()
-        {
-            using var scheduler = new TestScheduler();
-            var memOnly = new MemoryOnlyGCInfoProvider(0.50, 0.86, 0.86); // below for ctor; then above twice
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1, 2, 3);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.85,
-                MaxGen2PerSecond = 1000,
-                ConsecutiveHighToEnter = 2
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: memOnly,
-                clock: clock);
-
-            // First above-threshold cycle -> not enough to enter
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-
-            // Second consecutive above-threshold -> ENTER
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-        }
-
-        [Fact]
-        public void EstablishesGen2Baseline_OnFirstSuccessfulRefresh()
-        {
-            // This test exercises the generic IGCInfoProvider contract, not the current SystemGCInfoProvider.
-            // It simulates a transient GC failure during the ctor's initial Refresh:
-            //  - First call to GetGen2CollectionCount() throws, so no Gen2 baseline is established yet.
-            //  - A later refresh, once the provider starts succeeding, establishes the baseline (rate still 0).
-            //  - Subsequent refreshes then compute non-zero rates from that baseline and can enter high pressure.
-            // With the current SystemGCInfoProvider implementation GC.CollectionCount(2) is not expected to throw,
-            // but we validate that MemoryPressureMonitor behaves correctly if a custom or future provider does.
-
-            using var scheduler = new TestScheduler();
-            var gc = new TransientGcThrowProvider(
-                initialMemoryRatio: 0.1,
-                countsAfterRecovery: new[] { 0, 3, 6 }); // after recovery: baseline 0, then 3, then 6
-            var clock = new FakeClock().WithTicksAtSeconds(0, 0, 1, 2, 3);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 1.0,
-                MaxGen2PerSecond = 2,
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            // First scheduled refresh: GC threw in ctor; this establishes baseline (rate still 0)
-            scheduler.TriggerRefresh();
-            monitor.Gen2CollectionsPerSecond.Should().Be(0);
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-
-            // Second scheduled refresh: depending on timestamp alignment, rate may still be ~0
-            scheduler.TriggerRefresh();
-            monitor.Gen2CollectionsPerSecond.Should().BeGreaterOrEqualTo(0);
-
-            // Third scheduled refresh: delta of 3 over 1 second => ~3/sec and ENTER high
-            scheduler.TriggerRefresh();
-            monitor.Gen2CollectionsPerSecond.Should().BeApproximately(3.0, 0.05);
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-        }
-
-        [Fact]
-        public void MemoryUsagePercent_ScalesRatioToPercent()
-        {
-            using var scheduler = new TestScheduler();
-            var gc = new FakeGCInfoProvider()
-                    .WithConstantMemoryRatio(0.80)
-                    .WithConstantGen2Count(0);
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1);
-
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 2.0,
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            scheduler.TriggerRefresh();
-
-            monitor.MemoryUsagePercent.Should().BeApproximately(80.0, 0.1);
-        }
-
-        [Fact]
-        public void CycleWithoutTime_Gen2RateDoesNotInflate()
-        {
-            using var scheduler = new TestScheduler();
-            var gc = new FakeGCInfoProvider()
-               .WithGen2Counts(0, 2, 4);
-            var clock = new FakeClock()
-               .WithTicksAtSeconds(1.0, 1.0, 1.0); // No time progress!
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.99,
-                MaxGen2PerSecond = 1000
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            // First refresh: sets baseline
-            scheduler.TriggerRefresh();
-
-            // Second refresh: no time elapsed, should compute rate as 0
-            scheduler.TriggerRefresh();
-
-            var rate = monitor.Gen2CollectionsPerSecond;
-
-            // Should be 0 or very small, not infinity or large number
-            rate.Should().BeLessOrEqualTo(0.001);
-        }
-
-        [Fact]
-        public void SchedulerDispose_ThenTriggerRefresh_DoesNotThrow()
-        {
-            var scheduler = new TestScheduler();
-            using var monitor = new MemoryPressureMonitor(MemoryPressureConfig.Default, scheduler: scheduler);
-
-            scheduler.Dispose();
-
-            // Should not throw even though scheduler is disposed
-            Action act = () => scheduler.TriggerRefresh();
-            act.Should().NotThrow();
-
-            // Monitor should still be accessible
-            monitor.MemoryUsagePercent.Should().BeGreaterOrEqualTo(0);
-        }
-
-        [Fact]
-        public void NegativeGen2Delta_TreatedAsZero()
-        {
-            using var scheduler = new TestScheduler();
-            var gc = new FakeGCInfoProvider()
-               .WithGen2Counts(100, 50); // Count goes backward (shouldn't happen in reality)
-            var clock = new FakeClock().WithTicksAtSeconds(0, 0, 1, 1);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.99,
-                MaxGen2PerSecond = 1000
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            scheduler.TriggerRefresh();
-
-            var rate = monitor.Gen2CollectionsPerSecond;
-
-            // Should be 0, not negative
-            rate.Should().Be(0);
-        }
-
-        [Fact]
-        public void ExitMargin_WithPositiveMargin_ExitsOnlyBelowMargin()
-        {
-            using var scheduler = new TestScheduler();
-
-            // Add an initial below-threshold sample to offset constructor's initial refresh
-            var gc = new FakeGCInfoProvider()
-                    .WithMemoryRatios(0.50, 0.85, 0.85, 0.81, 0.76, 0.74) // Enter high, stay, drop gradually
-                    .WithConstantGen2Count(0);
-
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1, 2, 3, 4, 5, 6);
-
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.80,
-                MaxGen2PerSecond = 1000,
-                MemoryExitMargin = 0.05
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            // Enter (0.85 > 0.80)
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Stay high (0.85 > 0.75)
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Still high (0.81 > 0.75)
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Still high (0.76 > 0.75)
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeTrue();
-
-            // Exit (0.74 <= 0.75)
-            scheduler.TriggerRefresh();
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-        }
-
-        [Fact]
-        public void ProviderException_DoesNotCrashMonitor()
-        {
-            using var scheduler = new TestScheduler();
-            var gc = new ThrowingGCInfoProvider();
-            var clock = new FakeClock().WithTicksAtSeconds(0, 1, 2);
-            var config = MemoryPressureConfig.Default with
-            {
-                HighPressureThresholdRatio = 0.80,
-                MaxGen2PerSecond = 10,
-            };
-
-            using var monitor = new MemoryPressureMonitor(
-                config,
-                scheduler: scheduler,
-                gcInfoProvider: gc,
-                clock: clock);
-
-            // Constructor performs an initial refresh that disables due to no signals -> no subscription
-            scheduler.SubscriptionCount.Should().Be(0);
-
-            // Refresh should not throw even if provider throws
-            Action act = () => scheduler.TriggerRefresh();
-            act.Should().NotThrow();
-
-            // Properties should still be accessible (with default/previous values)
-            monitor.MemoryUsagePercent.Should().BeGreaterOrEqualTo(0);
-            monitor.Gen2CollectionsPerSecond.Should().BeGreaterOrEqualTo(0);
-
-            // Should not enter high pressure due to provider failures
-            monitor.IsHighMemoryPressure.Should().BeFalse();
-
-            // Monitor should disable itself (unsubscribe) as no signals are available
-            scheduler.SubscriptionCount.Should().Be(0);
-        }
-
-        /// <summary>
-        /// GC provider that throws for both memory and GC info, simulating unsupported platform.
-        /// </summary>
-        private class NoSignalsGCInfoProvider : IGCInfoProvider
-        {
-            public int GetGen2CollectionCount() => throw new InvalidOperationException("No GC info available");
-
-#if NETCOREAPP3_1_OR_GREATER
-            public GCMemoryInfo GetGCMemoryInfo() => new GCMemoryInfo();
-#endif
-
-            public double GetMemoryUsageRatio() => throw new InvalidOperationException("No memory info available");
-        }
-
-        /// <summary>
-        /// GC provider that supplies memory ratios only and throws for GC counts.
-        /// </summary>
-        private class MemoryOnlyGCInfoProvider : IGCInfoProvider
-        {
-            private readonly System.Collections.Generic.Queue<double> _ratios = new();
+            private readonly Queue<double> _ratios = new();
 
             public MemoryOnlyGCInfoProvider(params double[] ratios)
             {
-                foreach (var r in ratios)
+                foreach (var ratio in ratios)
                 {
-                    _ratios.Enqueue(r);
+                    _ratios.Enqueue(ratio);
                 }
             }
 
-            public int GetGen2CollectionCount() => throw new InvalidOperationException("GC count unavailable");
-
-#if NETCOREAPP3_1_OR_GREATER
-            public GCMemoryInfo GetGCMemoryInfo() => new GCMemoryInfo();
-#endif
-
-            public double GetMemoryUsageRatio()
+            public bool TryGetGen2CollectionCount(out int count)
             {
-                if (_ratios.Count == 0)
-                {
-                    return 0;
-                }
+                count = 0;
+                return false;
+            }
 
-                return _ratios.Dequeue();
+            public bool TryGetMemoryUsageRatio(out double ratio)
+            {
+                ratio = _ratios.Count == 0 ? 0 : _ratios.Dequeue();
+                return true;
             }
         }
 
-        /// <summary>
-        /// GC provider that supplies Gen2 counts only and throws for memory ratio.
-        /// </summary>
-        private class GCOnlyInfoProvider : IGCInfoProvider
+        private sealed class GCOnlyInfoProvider
         {
-            private readonly System.Collections.Generic.Queue<int> _counts = new();
+            private readonly Queue<int> _counts = new();
 
             public GCOnlyInfoProvider(int[] counts)
             {
-                foreach (var c in counts)
+                foreach (var count in counts)
                 {
-                    _counts.Enqueue(c);
+                    _counts.Enqueue(count);
                 }
             }
 
-            public int GetGen2CollectionCount()
+            public bool TryGetGen2CollectionCount(out int count)
             {
-                if (_counts.Count == 0)
-                {
-                    return 0;
-                }
-
-                return _counts.Dequeue();
+                count = _counts.Count == 0 ? 0 : _counts.Dequeue();
+                return true;
             }
 
-#if NETCOREAPP3_1_OR_GREATER
-            public GCMemoryInfo GetGCMemoryInfo() => new GCMemoryInfo();
-#endif
-
-            public double GetMemoryUsageRatio() => throw new InvalidOperationException("Memory ratio unavailable");
+            public bool TryGetMemoryUsageRatio(out double ratio)
+            {
+                ratio = 0;
+                return false;
+            }
         }
 
-        /// <summary>
-        /// Helper provider that throws exceptions to test error handling
-        /// </summary>
-        private class ThrowingGCInfoProvider : IGCInfoProvider
+        private sealed class MemoryAndGcInfoProvider
         {
-            public int GetGen2CollectionCount()
+            private readonly Queue<double> _ratios = new();
+            private readonly Queue<int> _gen2Counts = new();
+
+            public MemoryAndGcInfoProvider(double[] ratios, int[] gen2Counts)
             {
+                foreach (var ratio in ratios)
+                {
+                    _ratios.Enqueue(ratio);
+                }
+
+                foreach (var count in gen2Counts)
+                {
+                    _gen2Counts.Enqueue(count);
+                }
+            }
+
+            public bool TryGetGen2CollectionCount(out int count)
+            {
+                count = _gen2Counts.Count == 0 ? 0 : _gen2Counts.Dequeue();
+                return true;
+            }
+
+            public bool TryGetMemoryUsageRatio(out double ratio)
+            {
+                ratio = _ratios.Count == 0 ? 0 : _ratios.Dequeue();
+                return true;
+            }
+        }
+
+        private sealed class ThrowingGCInfoProvider
+        {
+            public bool TryGetGen2CollectionCount(out int count)
+            {
+                count = 0;
                 throw new InvalidOperationException("Test exception from GC provider");
             }
 
-#if NETCOREAPP3_1_OR_GREATER
-            public GCMemoryInfo GetGCMemoryInfo()
+            public bool TryGetMemoryUsageRatio(out double ratio)
             {
-                throw new InvalidOperationException("Test exception from GC provider");
-            }
-#endif
-
-            public double GetMemoryUsageRatio()
-            {
+                ratio = 0;
                 throw new InvalidOperationException("Test exception from memory provider");
             }
         }
 
-        /// <summary>
-        /// GC provider that throws for GetGen2CollectionCount() on first invocation only,
-        /// then returns provided counts. Memory ratio always available and low.
-        /// </summary>
-        private class TransientGcThrowProvider : IGCInfoProvider
+        private sealed class BlockingMemoryRatioProvider : IDisposable
         {
-            private readonly System.Collections.Generic.Queue<int> _counts = new();
-            private readonly double _memoryRatio;
-            private bool _hasThrown = false;
+            private readonly ManualResetEventSlim _blocked = new(false);
+            private readonly ManualResetEventSlim _release = new(false);
+            private readonly double _blockedRatio;
+            private int _memoryRatioCallCount;
 
-            public TransientGcThrowProvider(double initialMemoryRatio, int[] countsAfterRecovery)
+            public BlockingMemoryRatioProvider(double blockedRatio)
             {
-                _memoryRatio = initialMemoryRatio;
-                foreach (var c in countsAfterRecovery)
-                {
-                    _counts.Enqueue(c);
-                }
+                _blockedRatio = blockedRatio;
             }
 
-            public int GetGen2CollectionCount()
+            public int MemoryRatioCallCount => Volatile.Read(ref _memoryRatioCallCount);
+
+            public bool TryGetGen2CollectionCount(out int count)
             {
-                if (!_hasThrown)
-                {
-                    _hasThrown = true;
-                    throw new InvalidOperationException("Transient GC failure");
-                }
-
-                if (_counts.Count == 0)
-                {
-                    return 0;
-                }
-
-                return _counts.Dequeue();
+                count = 0;
+                return true;
             }
 
-#if NETCOREAPP3_1_OR_GREATER
-            public GCMemoryInfo GetGCMemoryInfo() => new GCMemoryInfo();
-#endif
+            public bool TryGetMemoryUsageRatio(out double ratio)
+            {
+                if (Interlocked.Increment(ref _memoryRatioCallCount) == 1)
+                {
+                    ratio = 0.10;
+                    return true;
+                }
 
-            public double GetMemoryUsageRatio() => _memoryRatio;
+                _blocked.Set();
+                _release.Wait();
+                ratio = _blockedRatio;
+                return true;
+            }
+
+            public void WaitForBlockedCall() => _blocked.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+
+            public void ReleaseBlockedCall() => _release.Set();
+
+            public void Dispose()
+            {
+                _release.Set();
+                _blocked.Dispose();
+                _release.Dispose();
+            }
         }
     }
 #endif
