@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal sealed partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int DistributionSharedLength = 13;
+    private const int DistributionSharedLength = 18;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionShared" /> values.
@@ -33,6 +33,14 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "component:dynamic_instrumentation" }),
             new(new[] { "component:tracemethods_pinvoke" }),
             new(new[] { "component:iast" }),
+            // debugger.memory_pressure.memory_usage_pct, index = 13
+            new(new[] { "state:enter" }),
+            new(new[] { "state:exit" }),
+            // debugger.memory_pressure.gen2_per_sec, index = 15
+            new(new[] { "state:enter" }),
+            new(new[] { "state:exit" }),
+            // debugger.memory_pressure.duration_ms, index = 17
+            new(null),
         };
 
     /// <summary>
@@ -41,11 +49,28 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionSharedEntryCounts { get; }
-        = new int[]{ 13, };
+        = new int[]{ 13, 2, 2, 1, };
 
     public void RecordDistributionSharedInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
     {
         var index = 0 + (int)tag;
         _buffer.DistributionShared[index].TryEnqueue(value);
+    }
+
+    public void RecordDistributionSharedDebuggerMemoryPressureMemoryUsagePct(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag, double value)
+    {
+        var index = 13 + (int)tag;
+        _buffer.DistributionShared[index].TryEnqueue(value);
+    }
+
+    public void RecordDistributionSharedDebuggerMemoryPressureGen2PerSec(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag, double value)
+    {
+        var index = 15 + (int)tag;
+        _buffer.DistributionShared[index].TryEnqueue(value);
+    }
+
+    public void RecordDistributionSharedDebuggerMemoryPressureDurationMs(double value)
+    {
+        _buffer.DistributionShared[17].TryEnqueue(value);
     }
 }

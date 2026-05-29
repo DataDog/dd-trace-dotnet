@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 51;
+    public const int Length = 53;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -58,6 +58,8 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => "direct_log_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => "direct_log_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => "direct_log_api.errors",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureTransitions => "debugger.memory_pressure.transitions",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureDisabled => "debugger.memory_pressure.disabled",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
@@ -90,6 +92,8 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => false,
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureTransitions => false,
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureDisabled => false,
             _ => true,
         };
 
@@ -111,6 +115,8 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureTransitions => "tracers",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureDisabled => "tracers",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",

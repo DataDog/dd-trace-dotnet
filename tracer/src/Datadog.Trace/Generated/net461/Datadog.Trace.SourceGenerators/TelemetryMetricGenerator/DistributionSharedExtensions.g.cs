@@ -12,7 +12,7 @@ internal static partial class DistributionSharedExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionShared" /> metric.
     /// </summary>
-    public const int Length = 1;
+    public const int Length = 4;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -23,6 +23,9 @@ internal static partial class DistributionSharedExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "init_time",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "debugger.memory_pressure.memory_usage_pct",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "debugger.memory_pressure.gen2_per_sec",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "debugger.memory_pressure.duration_ms",
             _ => null!,
         };
 
@@ -34,6 +37,9 @@ internal static partial class DistributionSharedExtensions
     public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.DistributionShared metric)
         => metric switch
         {
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => false,
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => false,
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => false,
             _ => true,
         };
 
@@ -46,6 +52,9 @@ internal static partial class DistributionSharedExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "general",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "tracers",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "tracers",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "tracers",
             _ => null,
         };
 }

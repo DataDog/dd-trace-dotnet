@@ -705,4 +705,51 @@ public class MetricsTelemetryCollectorTests
                .NotBeEmpty(); // we expect ~10 points, but don't assert that number to avoid flakiness
         await collector.DisposeAsync();
     }
+
+    [Fact]
+    public async Task DebuggerMemoryPressureMetrics_AreAggregated()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+
+        collector.RecordCountDebuggerMemoryPressureTransitions(MetricTags.DebuggerMemoryPressureState.Enter, MetricTags.DebuggerMemoryPressureTrigger.Memory);
+        collector.RecordCountDebuggerMemoryPressureTransitions(MetricTags.DebuggerMemoryPressureState.Exit, MetricTags.DebuggerMemoryPressureTrigger.None);
+        collector.RecordCountDebuggerMemoryPressureDisabled(MetricTags.DebuggerMemoryPressureDisabledReason.NoSignals);
+        collector.RecordDistributionSharedDebuggerMemoryPressureMemoryUsagePct(MetricTags.DebuggerMemoryPressureState.Enter, 91.2);
+        collector.RecordDistributionSharedDebuggerMemoryPressureGen2PerSec(MetricTags.DebuggerMemoryPressureState.Enter, 3.4);
+        collector.RecordDistributionSharedDebuggerMemoryPressureDurationMs(2_000);
+        collector.AggregateMetrics();
+
+        var metrics = collector.GetMetrics();
+
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureTransitions.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:enter", "trigger:memory" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureTransitions.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:exit", "trigger:none" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureDisabled.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "reason:no_signals" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionShared.DebuggerMemoryPressureMemoryUsagePct.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:enter" }) &&
+            x.Points.Single() == 91.2);
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionShared.DebuggerMemoryPressureGen2PerSec.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:enter" }) &&
+            x.Points.Single() == 3.4);
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionShared.DebuggerMemoryPressureDurationMs.GetName() &&
+            x.Tags == null &&
+            x.Points.Single() == 2_000);
+        await collector.DisposeAsync();
+    }
 }

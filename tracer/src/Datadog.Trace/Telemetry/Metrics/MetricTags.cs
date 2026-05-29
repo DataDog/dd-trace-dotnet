@@ -188,6 +188,26 @@ internal static class MetricTags
         [Description("component_name:iast_aspects")] IastAspects,
     }
 
+    internal enum DebuggerMemoryPressureState
+    {
+        [Description("state:enter")] Enter,
+        [Description("state:exit")] Exit,
+    }
+
+    internal enum DebuggerMemoryPressureTrigger
+    {
+        [Description("trigger:none")] None,
+        [Description("trigger:memory")] Memory,
+        [Description("trigger:gen2")] Gen2,
+        [Description("trigger:both")] Both,
+    }
+
+    internal enum DebuggerMemoryPressureDisabledReason
+    {
+        [Description("reason:no_signals")] NoSignals,
+        [Description("reason:error")] Error,
+    }
+
     internal enum IntegrationName
     {
         // manual integration
