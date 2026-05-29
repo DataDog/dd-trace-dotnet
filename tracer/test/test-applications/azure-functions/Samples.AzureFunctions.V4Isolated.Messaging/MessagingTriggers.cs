@@ -18,9 +18,6 @@ public class MessagingTriggers
     private const string EventHubName = "samples-eventhubs-hub";
     private const string EventHubConsumerGroup = "cg1";
     private const string TestIdEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_ID";
-    private const string TestModeEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_MODE";
-    private const string ServiceBusTestMode = "ServiceBus";
-    private const string EventHubTestMode = "EventHub";
     private const string TestIdApplicationProperty = "dd-test-id";
     private static int _shutdownStarted;
 
@@ -37,12 +34,6 @@ public class MessagingTriggers
     public Task ServiceBusTrigger(
         [ServiceBusTrigger(ServiceBusQueueName, Connection = "ASB_CONNECTION_STRING")] ServiceBusReceivedMessage message)
     {
-        if (!IsExpectedMode(ServiceBusTestMode) || !IsExpectedTestMessage(message.MessageId, message.ApplicationProperties))
-        {
-            _logger.LogInformation("Ignoring Service Bus message {MessageId}", message.MessageId);
-            return Task.CompletedTask;
-        }
-
         using (SampleHelpers.CreateScope("Manual inside ServiceBusTrigger"))
         {
             _logger.LogInformation(
@@ -59,19 +50,13 @@ public class MessagingTriggers
     public Task EventHubTrigger(
         [EventHubTrigger(EventHubName, Connection = "EVENTHUBS_CONNECTION_STRING", ConsumerGroup = EventHubConsumerGroup)] EventData[] events)
     {
-        var expectedEvent = events.FirstOrDefault(IsExpectedTestEvent);
-        if (!IsExpectedMode(EventHubTestMode) || expectedEvent is null)
-        {
-            _logger.LogInformation("Ignoring Event Hubs batch with {EventCount} event(s)", events.Length);
-            return Task.CompletedTask;
-        }
-
+        var eventData = events.First();
         using (SampleHelpers.CreateScope("Manual inside EventHubTrigger"))
         {
             _logger.LogInformation(
                 "Processed Event Hubs event {MessageId}: {Body}",
-                expectedEvent.MessageId,
-                Encoding.UTF8.GetString(expectedEvent.EventBody.ToArray()));
+                eventData.MessageId,
+                Encoding.UTF8.GetString(eventData.EventBody.ToArray()));
         }
 
         ScheduleShutdown();
@@ -109,37 +94,6 @@ public class MessagingTriggers
         eventData.Properties[TestIdApplicationProperty] = testId;
         await producer.SendAsync(new[] { eventData });
         return req.CreateResponse(HttpStatusCode.OK);
-    }
-
-    private static bool IsExpectedMode(string mode)
-        => string.Equals(Environment.GetEnvironmentVariable(TestModeEnvironmentVariable), mode, StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsExpectedTestEvent(EventData eventData)
-        => IsExpectedTestMessage(eventData.MessageId, eventData.Properties);
-
-    private static bool IsExpectedTestMessage(string messageId, IEnumerable<KeyValuePair<string, object>> properties)
-    {
-        var expectedTestId = Environment.GetEnvironmentVariable(TestIdEnvironmentVariable);
-        if (string.IsNullOrEmpty(expectedTestId))
-        {
-            return true;
-        }
-
-        if (string.Equals(messageId, expectedTestId, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        foreach (var property in properties)
-        {
-            if (string.Equals(property.Key, TestIdApplicationProperty, StringComparison.Ordinal)
-             && string.Equals(property.Value?.ToString(), expectedTestId, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void ScheduleShutdown()
