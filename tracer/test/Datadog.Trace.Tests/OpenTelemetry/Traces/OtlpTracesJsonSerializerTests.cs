@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Traces;
 public class OtlpTracesJsonSerializerTests
 {
     [Fact]
-    public void WriteAnyValue_SelfReferentialObjectArray_DoesNotCrash()
+    public void WriteAnyValue_SelfReferentialObjectArray_IsBoundedAtOneLevel()
     {
         var cycle = new object[1];
         cycle[0] = cycle;
@@ -60,6 +60,16 @@ public class OtlpTracesJsonSerializerTests
         var values = json["arrayValue"]!["values"]!;
         values.Should().HaveCount(1);
         values[0]!["stringValue"]!.Value<string>().Should().Be(inner.ToString());
+    }
+
+    [Fact]
+    public void WriteAnyValue_Ulong_EmitsStringValue()
+    {
+        // ulong overflows OTLP intValue (int64), so it must stringify — matches the protobuf
+        // serializer and OTel .NET SDK's TagWriter behavior.
+        var json = WriteAnyValue(ulong.MaxValue);
+
+        json["stringValue"]!.Value<string>().Should().Be(ulong.MaxValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
     [Fact]

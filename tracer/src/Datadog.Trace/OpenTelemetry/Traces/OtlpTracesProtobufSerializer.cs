@@ -471,7 +471,10 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     //
     // Example: (ulong)(long)(-5) sign-extends to -5L (0xFFFFFFFFFFFFFFFB) and then cast to ulong.
     // WriteVarInt64 will then emit the 10-byte varint, which decodes back to -2147483648 as protobuf int64
-    private static int WriteAnyValue(byte[] bytes, int writePosition, object? value)
+    //
+    // `expandArrays` is false when called per element from WriteArrayAnyValue, routing byte[] / Array
+    // to the stringify default — caps recursion depth at 1, matching WriteToArrayTypeChecked.
+    private static int WriteAnyValue(byte[] bytes, int writePosition, object? value, bool expandArrays = true)
     {
         switch (value)
         {
@@ -503,12 +506,22 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             case double f64:
                 return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f64);
             case byte[] bytesValue:
+                if (!expandArrays)
+                {
+                    goto default;
+                }
+
                 return ProtobufSerializer.WriteByteArrayWithTag(bytes, writePosition, AnyValue_Bytes_Value, bytesValue);
             case Array array:
+                if (!expandArrays)
+                {
+                    goto default;
+                }
+
                 return WriteArrayAnyValue(bytes, writePosition, array);
             default:
-                // ulong, decimal, nint, nuint, and unknown types fall back to ToString — matches
-                // OpenTelemetry's TagWriter, which avoids overflow/precision loss for those types.
+                // ulong, decimal, nint, nuint and unknown types stringify here — plus Array / byte[]
+                // when expandArrays is false. Matches OpenTelemetry's TagWriter.
                 var stringValue = Convert.ToString(value, CultureInfo.InvariantCulture);
                 return stringValue is null
                     ? writePosition
@@ -529,58 +542,13 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             int elementLengthPos = writePosition;
             writePosition += ReserveSizeForLength;
 
-            writePosition = WriteArrayElementAnyValue(bytes, writePosition, item);
+            writePosition = WriteAnyValue(bytes, writePosition, item, expandArrays: false);
 
             ProtobufSerializer.WriteReservedLength(bytes, elementLengthPos, writePosition - (elementLengthPos + ReserveSizeForLength));
         }
 
         ProtobufSerializer.WriteReservedLength(bytes, arrayLengthPos, writePosition - (arrayLengthPos + ReserveSizeForLength));
         return writePosition;
-    }
-
-    // Per-array-element AnyValue writer. Mirrors WriteAnyValue but intentionally omits
-    // `case byte[]` and `case Array` so nested arrays stringify via Convert.ToString
-    // instead of recursing — prevents StackOverflowException on cyclic or deeply-nested
-    // array attributes. Matches OTel .NET SDK's TagWriter.WriteToArrayTypeChecked, see:
-    // https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/Shared/TagWriter/TagWriter.cs
-    private static int WriteArrayElementAnyValue(byte[] bytes, int writePosition, object? item)
-    {
-        switch (item)
-        {
-            case null:
-                return writePosition; // empty AnyValue
-            case char c:
-                Span<char> asSpan = [c];
-                return ProtobufSerializer.WriteStringWithTag(bytes, writePosition, AnyValue_String_Value, asSpan);
-            case string s:
-                return ProtobufSerializer.WriteStringWithTag(bytes, writePosition, AnyValue_String_Value, s);
-            case bool b:
-                return ProtobufSerializer.WriteBoolWithTag(bytes, writePosition, AnyValue_Bool_Value, b);
-            case byte u8:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, u8);
-            case sbyte i8:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)(long)i8));
-            case short i16:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)(long)i16));
-            case ushort u16:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, u16);
-            case int i32:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)(long)i32));
-            case uint u32:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, u32);
-            case long i64:
-                return ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, AnyValue_Int_Value, unchecked((ulong)i64));
-            case float f32:
-                return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f32);
-            case double f64:
-                return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f64);
-            default:
-                // Nested arrays (including byte[]) and any unknown types stringify here.
-                var stringValue = Convert.ToString(item, CultureInfo.InvariantCulture);
-                return stringValue is null
-                    ? writePosition
-                    : ProtobufSerializer.WriteStringWithTag(bytes, writePosition, AnyValue_String_Value, stringValue);
-        }
     }
 
     private static int WriteTraceIdField(byte[] bytes, int writePosition, int fieldNumber, TraceId traceId)

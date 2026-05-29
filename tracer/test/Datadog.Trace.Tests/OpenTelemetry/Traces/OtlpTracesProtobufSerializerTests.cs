@@ -380,7 +380,7 @@ public class OtlpTracesProtobufSerializerTests
     }
 
     [Fact]
-    public void EventAttribute_SelfReferentialObjectArray_DoesNotCrash()
+    public void EventAttribute_SelfReferentialObjectArray_IsBoundedAtOneLevel()
     {
         var cycle = new object[1];
         cycle[0] = cycle;
