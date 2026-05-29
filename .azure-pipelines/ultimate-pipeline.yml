@@ -293,7 +293,7 @@ stages:
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/bin/Datadog.Trace.Manual/release_netcoreapp3.1/Datadog.Trace.Manual.dll
       displayName: Upload Datadog.Trace.Manual.dll for external CI
       artifact: Datadog.Trace.Manual.dll
 
@@ -2265,7 +2265,7 @@ stages:
       jobs: [Test, DockerTest, Serverless]
 
   - job: Test
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
 

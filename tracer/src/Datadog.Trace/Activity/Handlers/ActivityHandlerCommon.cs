@@ -36,6 +36,12 @@ namespace Datadog.Trace.Activity.Handlers
         // long enough that an in-flight listener would have completed.
         private static readonly TimeSpan MissedStopGracePeriod = TimeSpan.FromMinutes(1);
 
+        // Activity.StartTimeUtc comes from DateTime.UtcNow while Span.StartTime comes from
+        // TraceClock (a Stopwatch-based clock calibrated against DateTime.UtcNow periodically).
+        // The two sources can drift apart, so when comparing parent/child ordering across them
+        // we allow a small tolerance to avoid spurious "parent appears newer than child" results.
+        private static readonly TimeSpan ParentReorderingClockSkewTolerance = TimeSpan.FromMilliseconds(50);
+
         private static int _sweepInProgress;
         private static Timer? _reconciliationTimer;
 
@@ -129,7 +135,7 @@ namespace Datadog.Trace.Activity.Handlers
                  && activitySpanId is not null
                  && activityTraceId is not null
                  && Tracer.Instance.ActiveScope?.Span is Span activeSpan
-                 && (activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime))
+                 && (activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime + ParentReorderingClockSkewTolerance))
                 {
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId

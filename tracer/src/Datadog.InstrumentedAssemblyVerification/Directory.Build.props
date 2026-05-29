@@ -1,7 +1,14 @@
 ﻿<Project>
-  <!-- 
-       Only here so that the default Directory.Build.props will not be used. 
-       This is neccessary because of a conflict between StrongNamer and our ThreadAbortAnalyzer, 
-       which causes the following issue: https://github.com/dsplaisted/strongnamer/issues/42 
+  <!--
+       Only here so that the default Directory.Build.props will not be used.
+       This is neccessary because of a conflict between StrongNamer and our ThreadAbortAnalyzer,
+       which causes the following issue: https://github.com/dsplaisted/strongnamer/issues/42
   -->
+
+  <PropertyGroup>
+    <!-- Send obj/ output to the repo-root artifacts/ tree, matching the rest of the tracer. -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <!-- Normalize so that downstream tools that string-compare paths (e.g. GenerateBundle's dedupe in BuildStandaloneTool) don't trip on `tracer\..\` segments -->
+    <ArtifactsPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\..\artifacts'))</ArtifactsPath>
+  </PropertyGroup>
 </Project>
