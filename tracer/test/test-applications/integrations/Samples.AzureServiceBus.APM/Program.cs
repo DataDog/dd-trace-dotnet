@@ -42,6 +42,11 @@ namespace Samples.AzureServiceBus.APM
                     throw new ArgumentException($"Invalid or missing ASB_TEST_MODE environment variable. Expected one of: {validModes}. Got: '{testModeString}'");
                 }
 
+                // Purge leftover messages before running the test so that the subsequent
+                // ReceiveMessagesAsync calls made during purge don't generate extra spans
+                // that race with the integration-test assertions.
+                await PurgeQueue(receiver);
+
                 switch (testMode)
                 {
                     case TestMode.SendMessages:
@@ -62,8 +67,6 @@ namespace Samples.AzureServiceBus.APM
                     default:
                         throw new ArgumentOutOfRangeException(nameof(testMode), testMode, "Unhandled test mode");
                 }
-
-                await PurgeQueue(receiver);
 
                 await sender.DisposeAsync();
                 await receiver.DisposeAsync();
