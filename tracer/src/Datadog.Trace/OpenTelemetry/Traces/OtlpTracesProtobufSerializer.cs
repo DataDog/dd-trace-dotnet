@@ -505,19 +505,9 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
                 return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f32);
             case double f64:
                 return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f64);
-            case byte[] bytesValue:
-                if (!expandArrays)
-                {
-                    goto default;
-                }
-
+            case byte[] bytesValue when expandArrays:
                 return ProtobufSerializer.WriteByteArrayWithTag(bytes, writePosition, AnyValue_Bytes_Value, bytesValue);
-            case Array array:
-                if (!expandArrays)
-                {
-                    goto default;
-                }
-
+            case Array array when expandArrays:
                 return WriteArrayAnyValue(bytes, writePosition, array);
             default:
                 // ulong, decimal, nint, nuint and unknown types stringify here — plus Array / byte[]

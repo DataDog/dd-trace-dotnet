@@ -558,22 +558,12 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(floatValue);
                 break;
 
-            case byte[] bytesValue:
-                if (!expandArrays)
-                {
-                    goto default;
-                }
-
+            case byte[] bytesValue when expandArrays:
                 writer.WritePropertyName("bytesValue");
                 writer.WriteValue(Convert.ToBase64String(bytesValue));
                 break;
 
-            case Array array:
-                if (!expandArrays)
-                {
-                    goto default;
-                }
-
+            case Array array when expandArrays:
                 writer.WritePropertyName("arrayValue");
                 WriteArrayAnyValue(writer, array);
                 break;
