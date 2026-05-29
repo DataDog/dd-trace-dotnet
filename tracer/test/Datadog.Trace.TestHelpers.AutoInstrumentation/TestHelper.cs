@@ -114,10 +114,25 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
         {
-            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
+            const int maxAttempts = 3;
+            var attempt = 1;
 
-            using var helper = new ProcessHelper(process);
-            return WaitForProcessResult(helper, expectedExitCode, dumpChildProcesses: true);
+            while (true)
+            {
+                var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
+                using var processHelper = new ProcessHelper(process);
+                var result = WaitForProcessResultRaw(processHelper, dumpChildProcesses: true);
+
+                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
+                {
+                    attempt++;
+                    continue;
+                }
+
+                ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+                ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
+                return result;
+            }
         }
 
         public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
