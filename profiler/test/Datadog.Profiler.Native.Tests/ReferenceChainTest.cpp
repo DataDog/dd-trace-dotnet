@@ -10,6 +10,7 @@
 #include "IFrameStore.h"
 
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <unordered_map>
 #include <sstream>
@@ -1562,7 +1563,7 @@ public:
 
     void ReadFixedBytes(uint8_t* out, size_t count)
     {
-        std::memcpy(out, &_data[_pos], count);
+        memcpy(out, &_data[_pos], count);
         _pos += count;
     }
 
@@ -1846,7 +1847,8 @@ TEST(TypeReferenceTreeBinarySerializerTest, StaticFieldNameRoundTrip)
 
     ClassID typeA = 100;
     frameStore.RegisterType(typeA, "System.Collections.Generic.List`1");
-    tree.AddRoot(typeA, RootCategory::StaticVariable, 256, L"_staticOrders");
+    auto fieldName = shared::ToWSTRING("_staticOrders");
+    tree.AddRoot(typeA, RootCategory::StaticVariable, 256, fieldName.c_str());
 
     auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
     BinReader reader(bin);
