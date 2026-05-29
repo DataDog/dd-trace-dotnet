@@ -9,9 +9,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Web;
+using System.Xml;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
@@ -41,50 +43,86 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class DataContractJsonSerializer_WriteObject_Integration
     {
-        private const string MethodName = "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()";
-
-        private static readonly Type? HttpResponseStreamType = typeof(HttpResponse).Assembly.GetType("System.Web.HttpResponseStream");
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DataContractJsonSerializer_WriteObject_Integration));
-
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Stream stream, object? graph)
         {
             try
             {
-                if (instance is not DataContractJsonSerializer)
+                if (!DataContractJsonSerializerWriteObjectCommon.TryGetCaptureContext(instance, graph, out var httpContext, out var response, out var scope)
+                 || !DataContractJsonSerializerWriteObjectCommon.IsResponseOutputStream(stream, response))
                 {
                     return CallTargetState.GetDefault();
                 }
 
-                var security = Security.Instance;
-                if (!security.AppsecEnabled || !security.Settings.ApiSecurityParseResponseBody || graph is null)
-                {
-                    return CallTargetState.GetDefault();
-                }
-
-                var httpContext = HttpContext.Current;
-                if (httpContext is null)
-                {
-                    return CallTargetState.GetDefault();
-                }
-
-                var response = httpContext.Response;
-                var scope = SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey)
-                         ?? SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
-                if (scope is null || !IsResponseOutputStream(stream, response))
-                {
-                    return CallTargetState.GetDefault();
-                }
-
-                return new CallTargetState(scope, new DataContractJsonSerializerState(graph, httpContext));
+                return DataContractJsonSerializerWriteObjectCommon.CreateState(graph!, httpContext, scope);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error instrumenting method {MethodName}", MethodName);
+                DataContractJsonSerializerWriteObjectCommon.LogError(ex);
                 return CallTargetState.GetDefault();
             }
         }
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
+            => DataContractJsonSerializerWriteObjectCommon.OnMethodEnd(exception, in state);
+    }
+
+    /// <summary>
+    /// System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject calltarget instrumentation
+    /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "System.Runtime.Serialization",
+        TypeName = "System.Runtime.Serialization.Json.DataContractJsonSerializer",
+        MethodName = "WriteObject",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { "System.Xml.XmlDictionaryWriter", ClrNames.Object },
+        MinimumVersion = "4",
+        MaximumVersion = "4",
+        IntegrationName = nameof(IntegrationId.AspNetMvc),
+        InstrumentationCategory = InstrumentationCategory.AppSec,
+        CallTargetIntegrationKind = CallTargetKind.Default)]
+    // ReSharper disable once InconsistentNaming
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+    public sealed class DataContractJsonSerializer_WriteObject_XmlDictionaryWriter_Integration
+#pragma warning restore SA1402
+    {
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, XmlDictionaryWriter writer, object? graph)
+        {
+            try
+            {
+                if (!DataContractJsonSerializerWriteObjectCommon.TryGetCaptureContext(instance, graph, out var httpContext, out var response, out var scope)
+                 || !DataContractJsonSerializerWriteObjectCommon.IsResponseOutputWriter(writer, response))
+                {
+                    return CallTargetState.GetDefault();
+                }
+
+                return DataContractJsonSerializerWriteObjectCommon.CreateState(graph!, httpContext, scope);
+            }
+            catch (Exception ex)
+            {
+                DataContractJsonSerializerWriteObjectCommon.LogError(ex);
+                return CallTargetState.GetDefault();
+            }
+        }
+
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
+            => DataContractJsonSerializerWriteObjectCommon.OnMethodEnd(exception, in state);
+    }
+
+#pragma warning disable SA1402
+    internal static class DataContractJsonSerializerWriteObjectCommon
+#pragma warning restore SA1402
+    {
+        private const string MethodName = "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()";
+
+        private static readonly Type? HttpResponseStreamType = typeof(HttpResponse).Assembly.GetType("System.Web.HttpResponseStream");
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DataContractJsonSerializerWriteObjectCommon));
+
+        internal static CallTargetState CreateState(object graph, HttpContext httpContext, Scope scope)
+            => new(scope, new DataContractJsonSerializerState(graph, httpContext));
+
+        internal static CallTargetReturn OnMethodEnd(Exception? exception, in CallTargetState state)
         {
             if (exception is null && state.State is DataContractJsonSerializerState serializerState && state.Scope is { } scope)
             {
@@ -104,14 +142,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
                 catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
                 {
-                    Log.Error(ex, "Error instrumenting method {MethodName}", MethodName);
+                    LogError(ex);
                 }
             }
 
             return CallTargetReturn.GetDefault();
         }
 
-        private static bool IsResponseOutputStream(Stream stream, HttpResponse response)
+        internal static void LogError(Exception ex)
+            => Log.Error(ex, "Error instrumenting method {MethodName}", MethodName);
+
+        internal static bool TryGetCaptureContext<TTarget>(
+            TTarget instance,
+            object? graph,
+            [NotNullWhen(true)] out HttpContext? httpContext,
+            [NotNullWhen(true)] out HttpResponse? response,
+            [NotNullWhen(true)] out Scope? scope)
+        {
+            httpContext = null;
+            response = null;
+            scope = null;
+
+            if (instance is not DataContractJsonSerializer)
+            {
+                return false;
+            }
+
+            var security = Security.Instance;
+            if (!security.AppsecEnabled || !security.Settings.ApiSecurityParseResponseBody || graph is null)
+            {
+                return false;
+            }
+
+            httpContext = HttpContext.Current;
+            if (httpContext is null)
+            {
+                return false;
+            }
+
+            response = httpContext.Response;
+            scope = SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey)
+                 ?? SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
+            return scope is not null;
+        }
+
+        internal static bool IsResponseOutputStream(Stream stream, HttpResponse response)
         {
             if (ReferenceEquals(stream, response.OutputStream))
             {
@@ -130,6 +205,47 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
 
             return ReferenceEquals(writer.Response, response);
+        }
+
+        internal static bool IsResponseOutputWriter(XmlDictionaryWriter writer, HttpResponse response)
+        {
+            if (writer.GetType().FullName != "System.Runtime.Serialization.Json.XmlJsonWriter")
+            {
+                return false;
+            }
+
+            if (!writer.TryDuckCast<XmlJsonWriterStruct>(out var jsonWriter)
+             || jsonWriter.NodeWriter is not { } nodeWriter)
+            {
+                return false;
+            }
+
+            if (nodeWriter.GetType().FullName != "System.Runtime.Serialization.Json.XmlJsonWriter+JsonNodeWriter")
+            {
+                return false;
+            }
+
+            if (!nodeWriter.TryDuckCast<XmlStreamNodeWriterStruct>(out var streamNodeWriter)
+             || streamNodeWriter.Stream is not { } stream)
+            {
+                return false;
+            }
+
+            return IsResponseOutputStream(stream, response);
+        }
+
+        [DuckCopy]
+        internal struct XmlJsonWriterStruct
+        {
+            [DuckField(Name = "nodeWriter", FallbackToBaseTypes = true)]
+            public object? NodeWriter;
+        }
+
+        [DuckCopy]
+        internal struct XmlStreamNodeWriterStruct
+        {
+            [DuckField(Name = "stream", FallbackToBaseTypes = true)]
+            public Stream? Stream;
         }
 
         [DuckCopy]
