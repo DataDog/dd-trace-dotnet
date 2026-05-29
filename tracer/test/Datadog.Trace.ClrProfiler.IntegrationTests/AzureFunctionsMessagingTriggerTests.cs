@@ -151,7 +151,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
         var url = $"http://localhost:7071/api/{route}";
         var deadline = DateTime.UtcNow.AddSeconds(30);
-        while (true)
+        while (DateTime.UtcNow < deadline)
         {
             try
             {
@@ -161,7 +161,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
                     return;
                 }
 
-                if (response.StatusCode != System.Net.HttpStatusCode.NotFound || DateTime.UtcNow >= deadline)
+                if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
                 {
                     response.EnsureSuccessStatusCode();
                 }
@@ -173,6 +173,8 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
 
             await Task.Delay(500);
         }
+
+        throw new TimeoutException($"Function host did not accept route '{route}' within the timeout.");
     }
 
     private static async Task PurgeQueue(ServiceBusReceiver receiver)
