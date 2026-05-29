@@ -341,8 +341,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     _hasHighPressureStart = false;
                 }
 
-                // Telemetry runs outside the CAS region intentionally; it is the only observable side effect
-                // and may race a concurrent Dispose() with no ill effect (observational only).
+                // Keep transition emission inside the single-writer refresh so observers see serialized,
+                // ordered state transitions. This only runs on enter/exit, not every refresh.
                 _onTransition(nextHigh, trigger, usagePercent, sampledGen2PerSecond, durationMs);
 
                 Log.Debug(

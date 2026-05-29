@@ -200,6 +200,8 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
             Action act = () => monitor.RefreshIfStale(0);
 
             act.Should().NotThrow();
+            monitor.RefreshIfStale(1000);
+            gc.MemoryRatioCallCount.Should().Be(1);
             monitor.IsHighMemoryPressure.Should().BeFalse();
             observer.Disables.Should().ContainSingle().Which.Should().Be(MetricTags.DebuggerMemoryPressureDisabledReason.Error);
         }
@@ -512,6 +514,8 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
 
         private sealed class ThrowingGCInfoProvider
         {
+            public int MemoryRatioCallCount { get; private set; }
+
             public bool TryGetGen2CollectionCount(out int count)
             {
                 count = 0;
@@ -520,6 +524,7 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
 
             public bool TryGetMemoryUsageRatio(out double ratio)
             {
+                MemoryRatioCallCount++;
                 ratio = 0;
                 throw new InvalidOperationException("Test exception from memory provider");
             }
