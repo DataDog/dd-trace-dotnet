@@ -33,13 +33,13 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "component:dynamic_instrumentation" }),
             new(new[] { "component:tracemethods_pinvoke" }),
             new(new[] { "component:iast" }),
-            // debugger.memory_pressure.memory_usage_pct, index = 13
+            // memory_pressure.memory_usage_pct, index = 13
             new(new[] { "state:enter" }),
             new(new[] { "state:exit" }),
-            // debugger.memory_pressure.gen2_per_sec, index = 15
+            // memory_pressure.gen2_per_sec, index = 15
             new(new[] { "state:enter" }),
             new(new[] { "state:exit" }),
-            // debugger.memory_pressure.duration_ms, index = 17
+            // memory_pressure.duration_ms, index = 17
             new(null),
         };
 

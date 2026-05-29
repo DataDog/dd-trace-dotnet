@@ -206,17 +206,17 @@ internal enum Count
     [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors", isCommon: false)] DirectLogApiErrors,
 
 #endregion
-#region Debugger Namespace
+#region Live Debugger Namespace
 
     /// <summary>
     /// The number of Dynamic Instrumentation memory-pressure state transitions, tagged by state and the signal that triggered entry.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureTrigger>("debugger.memory_pressure.transitions", isCommon: false, NS.Tracer)] DebuggerMemoryPressureTransitions,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureTrigger>("memory_pressure.transitions", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureTransitions,
 
     /// <summary>
     /// The number of times the Dynamic Instrumentation memory-pressure monitor disabled itself, tagged by reason.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("debugger.memory_pressure.disabled", isCommon: false, NS.Tracer)] DebuggerMemoryPressureDisabled,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDisabled,
 #endregion
 #region AppSec Namespace
 

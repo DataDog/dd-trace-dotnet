@@ -23,9 +23,9 @@ internal static partial class DistributionSharedExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "init_time",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "debugger.memory_pressure.memory_usage_pct",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "debugger.memory_pressure.gen2_per_sec",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "debugger.memory_pressure.duration_ms",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "memory_pressure.memory_usage_pct",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "memory_pressure.gen2_per_sec",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "memory_pressure.duration_ms",
             _ => null!,
         };
 
@@ -37,9 +37,6 @@ internal static partial class DistributionSharedExtensions
     public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.DistributionShared metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => false,
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => false,
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => false,
             _ => true,
         };
 
@@ -52,9 +49,9 @@ internal static partial class DistributionSharedExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "general",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "tracers",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "tracers",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "tracers",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "live_debugger",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "live_debugger",
+            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "live_debugger",
             _ => null,
         };
 }

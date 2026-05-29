@@ -594,7 +594,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // debugger.memory_pressure.transitions, index = 539
+            // memory_pressure.transitions, index = 539
             new(new[] { "state:enter", "trigger:none" }),
             new(new[] { "state:enter", "trigger:memory" }),
             new(new[] { "state:enter", "trigger:gen2" }),
@@ -603,7 +603,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "state:exit", "trigger:memory" }),
             new(new[] { "state:exit", "trigger:gen2" }),
             new(new[] { "state:exit", "trigger:both" }),
-            // debugger.memory_pressure.disabled, index = 547
+            // memory_pressure.disabled, index = 547
             new(new[] { "reason:no_signals" }),
             new(new[] { "reason:error" }),
             // waf.init, index = 549

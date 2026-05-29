@@ -1,4 +1,55 @@
 ﻿{
+  "live_debugger": {
+    "memory_pressure.transitions": {
+      "tags": [
+        "state",
+        "trigger"
+      ],
+      "metric_type": "count",
+      "data_type": "transitions",
+      "description": "The number of Dynamic Instrumentation memory-pressure state transitions, tagged by state and the signal that triggered entry",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.disabled": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "The number of times the Dynamic Instrumentation memory-pressure monitor disabled itself, tagged by reason",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.memory_usage_pct": {
+      "tags": [
+        "state"
+      ],
+      "metric_type": "distribution",
+      "data_type": "percent",
+      "description": "Memory usage percentage recorded when Dynamic Instrumentation memory pressure changes state",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.gen2_per_sec": {
+      "tags": [
+        "state"
+      ],
+      "metric_type": "distribution",
+      "data_type": "collections",
+      "description": "Gen2 collections per second recorded when Dynamic Instrumentation memory pressure changes state",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.duration_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "Duration of Dynamic Instrumentation high-memory-pressure periods, recorded on exit",
+      "send_to_user": false,
+      "user_tags": []
+    }
+  },
   "general": {
     "init_time": {
       "tags": [
