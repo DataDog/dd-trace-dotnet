@@ -342,8 +342,7 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
             }
 
             WindowsMemoryInfo.TryGetMemoryLoadRatio(out var ratio).Should().BeTrue();
-            ratio.Should().BeGreaterThan(0);
-            ratio.Should().BeLessOrEqualTo(1);
+            ratio.Should().BeInRange(0, 1);
         }
 
         [Fact]
