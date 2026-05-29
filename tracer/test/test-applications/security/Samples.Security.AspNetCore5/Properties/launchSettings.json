@@ -68,10 +68,10 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)tracer/bin/tracer-home",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)artifacts/monitoring-home",
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "CORECLR_PROFILER_PATH": "$(SolutionDir)artifacts/monitoring-home/tracerDatadog.Trace.ClrProfiler.Native.so",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)artifacts/monitoring-home/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
         "DD_VERSION": "1.0.0",
         "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
         "DD_TRACE_DEBUG": "0"
