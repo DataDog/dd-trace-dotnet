@@ -1922,9 +1922,9 @@ partial class Build
 
         // CiVisibility tests carry both Area=Tracer (assembly-level) and Area=CiVisibility (class-level).
         // Exclude them from the Tracer job so they only run in the dedicated CiVisibility job.
-        if (Area == "Tracer")
+        if (Area == TracerArea)
         {
-            areaFilter += "&(Area!=CiVisibility)";
+            areaFilter += $"&(Area!={CiVisibilityArea})";
         }
 
         return string.IsNullOrWhiteSpace(filter) ? areaFilter : filter + $"&{areaFilter}";
