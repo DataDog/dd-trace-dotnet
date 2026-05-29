@@ -23,7 +23,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
-    /// System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject calltarget instrumentation
+    /// System.Runtime.Serialization.XmlObjectSerializer.WriteObject calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Serialization",
@@ -34,17 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "4",
         MaximumVersion = "4",
         IntegrationName = nameof(IntegrationId.AspNetMvc),
-        InstrumentationCategory = InstrumentationCategory.AppSec)]
-    [InstrumentMethod(
-        AssemblyName = "System.Runtime.Serialization",
-        TypeName = "System.Runtime.Serialization.Json.DataContractJsonSerializer",
-        MethodName = "WriteObject",
-        ReturnTypeName = ClrNames.Void,
-        ParameterTypeNames = new[] { ClrNames.Stream, ClrNames.Object },
-        MinimumVersion = "4",
-        MaximumVersion = "4",
-        IntegrationName = nameof(IntegrationId.AspNetMvc),
-        InstrumentationCategory = InstrumentationCategory.AppSec)]
+        InstrumentationCategory = InstrumentationCategory.AppSec,
+        CallTargetIntegrationKind = CallTargetKind.Derived)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -127,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 return true;
             }
 
-            if (!ReferenceEquals(stream.GetType(), HttpResponseStreamType))
+            if (HttpResponseStreamType is null || !HttpResponseStreamType.IsAssignableFrom(stream.GetType()))
             {
                 return false;
             }
@@ -144,14 +135,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         [DuckCopy]
         internal struct HttpResponseStreamStruct
         {
-            [DuckField(Name = "_writer")]
+            [DuckField(Name = "_writer", FallbackToBaseTypes = true)]
             public HttpWriterStruct? Writer;
         }
 
         [DuckCopy]
         internal struct HttpWriterStruct
         {
-            [DuckField(Name = "_response")]
+            [DuckField(Name = "_response", FallbackToBaseTypes = true)]
             public HttpResponse? Response;
         }
 
