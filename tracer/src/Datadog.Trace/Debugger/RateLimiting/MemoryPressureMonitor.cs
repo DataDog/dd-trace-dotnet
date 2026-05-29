@@ -39,8 +39,9 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// The actual sampling/commit in <see cref="Refresh"/> is serialized by a non-blocking
     /// <c>_refreshInProgress</c> CAS so there is exactly one writer; every mutated field therefore needs no lock.
     /// Disposal is lock-free and best-effort: an in-flight refresh may publish one final, benign sample/telemetry
-    /// transition concurrently with disposal. This is acceptable because the monitor is observational only and
-    /// disposal happens at shutdown.
+    /// transition concurrently with disposal. This is acceptable because the monitor is observational only.
+    /// Disposal can occur at runtime (when Dynamic Instrumentation is dynamically disabled via remote config),
+    /// concurrently with hot-path refreshes, as well as at process shutdown.
     /// </remarks>
     internal sealed class MemoryPressureMonitor : IDisposable
     {
@@ -62,14 +63,17 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private readonly MemoryPressureTransitionHandler _onTransition;
         private readonly Action<MetricTags.DebuggerMemoryPressureDisabledReason> _onDisabled;
 
-        // Refresh writes these fields through a single CAS-guarded writer; hot readers use volatile reads.
+        // Refresh writes these fields through a single CAS-guarded writer; every cross-thread access
+        // goes through Volatile.Read/Volatile.Write (and Interlocked where a read-modify-write is needed).
+        // We deliberately use the Volatile.* helpers rather than the `volatile` keyword so the idiom is
+        // uniform across the int/long fields too (`long` cannot be marked `volatile`).
         private int _currentMemoryUsagePercentTenths;
         private int _gen2CollectionsPerSecondHundredths;
-        private volatile bool _isHighPressure;
+        private bool _isHighPressure;
         private int _disabled;
         private int _disposed;
         private int _refreshInProgress;
-        private volatile bool _hasRefreshed;
+        private bool _hasRefreshed;
 
         // Single-writer statistics (only mutated inside the CAS-guarded Refresh).
         private long _lastGen2Count;
@@ -134,7 +138,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         public bool IsHighMemoryPressure
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _isHighPressure;
+            get => Volatile.Read(ref _isHighPressure);
         }
 
         public double HighPressureThreshold { get; }
@@ -162,7 +166,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             // continuous timer tax just because Dynamic Instrumentation is enabled.
             // The first sample always runs; afterwards we throttle by the stale interval. A dedicated
             // flag (rather than a sentinel timestamp) avoids re-sampling when the monotonic clock legitimately reads 0.
-            if (_hasRefreshed && !IsStale(nowMs, Volatile.Read(ref _lastRefreshMs)))
+            if (Volatile.Read(ref _hasRefreshed) && !IsStale(nowMs, Volatile.Read(ref _lastRefreshMs)))
             {
                 return;
             }
@@ -179,7 +183,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 return;
             }
 
-            _isHighPressure = false;
+            Volatile.Write(ref _isHighPressure, false);
             Volatile.Write(ref _currentMemoryUsagePercentTenths, 0);
             Volatile.Write(ref _gen2CollectionsPerSecondHundredths, 0);
         }
@@ -291,11 +295,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 var aboveEnterGc = _hasGen2Baseline && gcAvailable && (gen2PerSecond > MaxGen2PerSecond);
                 var aboveExitGc = _hasGen2Baseline && gcAvailable && (gen2PerSecond > _gen2ExitThreshold);
 
-                var meetsHighNow = _isHighPressure
+                var wasHigh = Volatile.Read(ref _isHighPressure);
+                var meetsHighNow = wasHigh
                                        ? (aboveExitMem || aboveExitGc)
                                        : (aboveEnterMem || aboveEnterGc);
 
-                var nextHigh = ComputeNextHigh(meetsHighNow);
+                var nextHigh = ComputeNextHigh(meetsHighNow, wasHigh);
                 double? usagePercent = memAvailable ? memRatio * 100 : null;
                 double? sampledGen2PerSecond = _hasGen2Baseline && gcAvailable ? gen2PerSecond : null;
 
@@ -311,12 +316,11 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     Volatile.Write(ref _gen2CollectionsPerSecondHundredths, ToScaledInt(sampledGen2PerSecond.Value, 100));
                 }
 
-                var prev = _isHighPressure;
-                _isHighPressure = nextHigh;
+                Volatile.Write(ref _isHighPressure, nextHigh);
                 Volatile.Write(ref _lastRefreshMs, nowMs);
-                _hasRefreshed = true;
+                Volatile.Write(ref _hasRefreshed, true);
 
-                if (nextHigh == prev)
+                if (nextHigh == wasHigh)
                 {
                     return;
                 }
@@ -361,7 +365,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 Volatile.Write(ref _refreshInProgress, 0);
             }
 
-            bool ComputeNextHigh(bool meetsHighNow)
+            bool ComputeNextHigh(bool meetsHighNow, bool isCurrentlyHigh)
             {
                 if (meetsHighNow)
                 {
@@ -382,7 +386,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     _highStreak = 0;
                 }
 
-                return _isHighPressure
+                return isCurrentlyHigh
                            ? _lowStreak < _consecutiveLowToExit // stay high until enough low cycles
                            : _highStreak >= _consecutiveHighToEnter; // enter after enough high cycles
             }
@@ -414,7 +418,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
 
             Volatile.Write(ref _disabled, 1);
-            _isHighPressure = false;
+            Volatile.Write(ref _isHighPressure, false);
             Volatile.Write(ref _currentMemoryUsagePercentTenths, 0);
             Volatile.Write(ref _gen2CollectionsPerSecondHundredths, 0);
             _onDisabled(reason);
