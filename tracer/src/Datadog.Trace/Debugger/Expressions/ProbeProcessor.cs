@@ -28,6 +28,7 @@ namespace Datadog.Trace.Debugger.Expressions
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
         private volatile ProbeProcessorState _state;
 
         /// <summary>
@@ -37,7 +38,13 @@ namespace Datadog.Trace.Debugger.Expressions
         /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
+            : this(probe, DebuggerGlobalRateLimiter.Instance)
         {
+        }
+
+        internal ProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
+        {
+            _globalRateLimiter = globalRateLimiter ?? throw new ArgumentNullException(nameof(globalRateLimiter));
             _state = ProbeProcessorState.Create(probe);
         }
 
@@ -99,7 +106,7 @@ namespace Datadog.Trace.Debugger.Expressions
         public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             var state = _state;
-            if (!state.HasCondition && !probeData.Sampler.Sample())
+            if (!state.HasCondition && !SamplePayload(state.ProbeInfo, probeData.Sampler))
             {
                 snapshotCreator = null;
                 return false;
@@ -107,6 +114,17 @@ namespace Datadog.Trace.Debugger.Expressions
 
             snapshotCreator = new DebuggerSnapshotCreator(state);
             return true;
+        }
+
+        private bool SamplePayload(in ProbeInfo probeInfo, IAdaptiveSampler sampler)
+        {
+            // Global-first matches Java; it can affect per-probe fairness and may be improved later.
+            if (probeInfo.ProbeType == ProbeType.Snapshot && !_globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId))
+            {
+                return false;
+            }
+
+            return sampler.Sample();
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -356,7 +374,7 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 // Probes with conditions defer sampling until after the condition is evaluated,
                 // so evaluation errors must honor that same sampler before emitting a snapshot.
-                if (probeInfo.HasCondition && !sampler.Sample())
+                if (probeInfo.HasCondition && !SamplePayload(in probeInfo, sampler))
                 {
                     shouldStopCapture = true;
                 }
@@ -371,7 +389,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Condition != null && // i.e. not a metric, span probe, or span decoration
                 (evaluationResult.Condition is false ||
-                !sampler.Sample()))
+                !SamplePayload(in probeInfo, sampler)))
             {
                 // if the expression evaluated to false, or there is a rate limit, stop capture
                 shouldStopCapture = true;

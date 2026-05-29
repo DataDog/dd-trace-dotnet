@@ -78,7 +78,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
+                var dbmPropagationMode = tracer.Settings.DbmPropagationMode;
+                if (dbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
                     var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
                                           // if we appended the comment, we need to look for a potential DBM comment in the whole string.
@@ -90,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         // There's not a lot we can do about it (we don't want to start parsing commandText), so just
                         // report it for now
                         if (!Volatile.Read(ref _dbCommandCachingLogged)
-                            && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
+                            && dbmPropagationMode != DbmPropagationLevel.Service)
                         {
                             _dbCommandCachingLogged = true;
                             var spanContext = scope.Span.Context;
@@ -111,9 +112,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                         // PropagateDataViaComment (service) - this injects various trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationMode, integrationId, command, scope.Span);
 
                         if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {

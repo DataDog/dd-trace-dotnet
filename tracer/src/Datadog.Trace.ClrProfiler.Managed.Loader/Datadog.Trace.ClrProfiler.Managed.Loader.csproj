@@ -3,7 +3,11 @@
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
     <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
-    <OutputPath>..\bin\ProfilerResources\</OutputPath>
+
+    <!-- The output path is referenced as a relative path by the native tracer's Resource.rc and -->
+    <!-- by build/cmake/FindManagedLoader.cmake; this explicit value wins over UseArtifactsOutput (set in tracer/Directory.Build.props). -->
+    <!-- $(TargetFramework) is appended manually because the SDK only auto-appends it when UseArtifactsOutput is false. -->
+    <OutputPath>..\bin\ProfilerResources\$(TargetFramework)\</OutputPath>
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>

@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         public static IEnumerable<object[]> GetEnabledDbmData()
             => from command in (IEnumerable<object[]>)GetDbmCommands()
-               from dbm in new[] { "service", "full" }
+               from dbm in new[] { "service", "dynamic_service", "full" }
                from enabled in new[] { false, true }
                select new[] { command[0], dbm, enabled };
 
@@ -181,6 +181,30 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 scope.Span.GetTag(Tags.BaseHash).Should().BeNull();
                 command.CommandText.Should().NotContain("ddsh=");
             }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDbmCommands))]
+        public async Task CreateDbCommandScope_DynamicService_EnablesBaseHashWithoutExplicitFlag(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = DbmCommandText;
+
+            // dynamic_service should inject base-hash even without DD_DBM_INJECT_SQL_BASEHASH=true
+            var tracerSettings = TracerSettings.Create(new Dictionary<string, object>
+            {
+                { ConfigurationKeys.PropagateProcessTags, "true" },
+                { ConfigurationKeys.DbmInjectSqlBasehash, "false" },
+                { ConfigurationKeys.DbmPropagationMode, "dynamic_service" }
+            });
+            var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service");
+            await using var tracer = TracerHelper.Create(tracerSettings, serviceRemappingHash: serviceRemappingHash);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+
+            scope.Should().NotBeNull();
+            scope.Span.GetTag(Tags.BaseHash).Should().Be(serviceRemappingHash.Base64Value);
+            command.CommandText.Should().Contain($"ddsh='{serviceRemappingHash.Base64Value}'");
         }
 
         [Theory]

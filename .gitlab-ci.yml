@@ -11,6 +11,10 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
+  # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
+  # GitLab does not expand top-level `variables:` inside `include:` keywords,
+  # so we cannot parameterize this group path the way we do for trigger jobs
+  # and scripts below. Update this line by hand at org-split cutover.
   - project: 'DataDog/apm-reliability/apm-sdks-benchmarks'
     file: '.gitlab/ci-dotnet-aspnet-realworld-parallel.yml'
     ref: 'main'
@@ -268,7 +272,7 @@ benchmark-serverless:
   needs:
     - benchmark-serverless-trigger
   script:
-    - curl -OL "binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
+    - curl -OL "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
     - mv "authanywhere-linux-amd64" /bin/authanywhere 
     - chmod +x /bin/authanywhere
     - BTI_CI_API_TOKEN=$(authanywhere --audience rapid-devex-ci)
