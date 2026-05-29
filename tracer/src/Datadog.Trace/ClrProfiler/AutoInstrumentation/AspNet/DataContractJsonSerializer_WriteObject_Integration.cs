@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.Serialization.Json;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -24,6 +25,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// <summary>
     /// System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject calltarget instrumentation
     /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "System.Runtime.Serialization",
+        TypeName = "System.Runtime.Serialization.XmlObjectSerializer",
+        MethodName = "WriteObject",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { ClrNames.Stream, ClrNames.Object },
+        MinimumVersion = "4",
+        MaximumVersion = "4",
+        IntegrationName = nameof(IntegrationId.AspNetMvc),
+        InstrumentationCategory = InstrumentationCategory.AppSec)]
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Serialization",
         TypeName = "System.Runtime.Serialization.Json.DataContractJsonSerializer",
@@ -48,6 +59,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
+                if (instance is not DataContractJsonSerializer)
+                {
+                    return CallTargetState.GetDefault();
+                }
+
                 var security = Security.Instance;
                 if (!security.AppsecEnabled || !security.Settings.ApiSecurityParseResponseBody || graph is null)
                 {
