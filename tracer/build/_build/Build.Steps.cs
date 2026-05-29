@@ -275,6 +275,7 @@ partial class Build
             EnsureExistingDirectory(ArtifactsDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
+            EnsureExistingDirectory(ReleaseArtifactsDirectory);
             EnsureExistingDirectory(SymbolsDirectory);
             EnsureExistingDirectory(BuildArtifactsDirectory / "publish");
         });
