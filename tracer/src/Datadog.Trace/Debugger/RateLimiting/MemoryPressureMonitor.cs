@@ -13,7 +13,7 @@ using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Debugger.RateLimiting
 {
-    /// <summary>Reads the current process memory-load ratio (0-1+). Returns false when unsupported.</summary>
+    /// <summary>Reads the current system/container memory-load ratio (0-1+). Returns false when unsupported.</summary>
     internal delegate bool TryReadMemoryUsageRatio(out double ratio);
 
     /// <summary>Reads the cumulative gen2 collection count. Returns false when unsupported.</summary>
