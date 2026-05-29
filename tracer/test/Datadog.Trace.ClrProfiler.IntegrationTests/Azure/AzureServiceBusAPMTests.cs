@@ -168,11 +168,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
                 var createSpans = spans.Where(span => span.Name == "azure_servicebus.create").ToList();
                 var sendSpans = spans.Where(span => span.Name == "azure_servicebus.send").ToList();
-                var receiveSpans = spans.Where(span => span.Name == "azure_servicebus.receive").ToList();
+                // Filter receive spans to only those starting at or after the first send span.
+                // PurgeQueue (now running first in the sample app) may emit an extra receive span
+                // when draining leftover messages from a prior failed run; those spans predate the send.
+                var sendStartTime = sendSpans.Count > 0 ? sendSpans.Min(sp => sp.Start) : long.MinValue;
+                var receiveSpans = spans
+                    .Where(span => span.Name == "azure_servicebus.receive" && span.Start >= sendStartTime)
+                    .ToList();
 
                 Output.WriteLine($"Create spans found: {createSpans.Count}");
                 Output.WriteLine($"Send spans found: {sendSpans.Count}");
-                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+                Output.WriteLine($"Receive spans found (after send): {receiveSpans.Count}");
 
                 createSpans.Should().HaveCount(3, "Expected 3 TryAddMessage spans with azure_servicebus.create operation");
                 sendSpans.Should().HaveCount(1, "Expected 1 SendMessagesAsync span with azure_servicebus.send operation");
@@ -220,6 +226,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
+                // Wait for at least the 1 send span and 1 receive span produced by the test itself.
+                // PurgeQueue (which runs first in the sample app to clear leftover messages from prior
+                // failed runs) may generate an extra azure_servicebus.receive span.  We use the send
+                // span's start time as a lower-bound to filter those out.
                 var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
 
                 using var s = new AssertionScope();
@@ -231,10 +241,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 }
 
                 var sendSpans = spans.Where(span => span.Name == "azure_servicebus.send").ToList();
-                var receiveSpans = spans.Where(span => span.Name == "azure_servicebus.receive").ToList();
+                // Filter receive spans to only those that started at or after the send span.
+                // Any receive span that predates the send belongs to PurgeQueue draining leftover
+                // messages from a previously interrupted test run and should not count.
+                var sendStartTime = sendSpans.Count > 0 ? sendSpans.Min(sp => sp.Start) : long.MinValue;
+                var receiveSpans = spans
+                    .Where(span => span.Name == "azure_servicebus.receive" && span.Start >= sendStartTime)
+                    .ToList();
 
                 Output.WriteLine($"Send spans found: {sendSpans.Count}");
-                Output.WriteLine($"Receive spans found: {receiveSpans.Count}");
+                Output.WriteLine($"Receive spans found (after send): {receiveSpans.Count}");
 
                 sendSpans.Should().HaveCount(1, "Expected 1 SendMessagesAsync span (no individual TryAddMessage spans when batch links disabled)");
                 receiveSpans.Should().HaveCount(1, "Expected 1 ReceiveMessagesAsync span");
