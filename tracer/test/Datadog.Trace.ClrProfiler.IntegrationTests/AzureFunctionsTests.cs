@@ -70,6 +70,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
     protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, Func<Task> seedAsync = null, string framework = null, int expectedExitCode = 0)
     {
+        // run the azure function
         var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework);
         Output.WriteLine("Using binFolder: " + binFolder);
         var process = await ProfilerHelper.StartProcessWithProfiler(
