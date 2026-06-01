@@ -364,7 +364,8 @@ namespace Datadog.Trace.Agent
                 httpEndpoint,
                 grpcStatusCode,
                 serviceSource,
-                peerTagsHash);
+                peerTagsHash,
+                additionalMetricTagsHash: 0);
         }
 
         /// <summary>
@@ -547,7 +548,7 @@ namespace Datadog.Trace.Agent
             if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
                 // Cold path: encode the peer tags for storage in the new bucket
-                bucket = new StatsBucket(key, GetEncodedPeerTags(span, peerTagKeys, in peerTagResults));
+                bucket = new StatsBucket(key, GetEncodedPeerTags(span, peerTagKeys, in peerTagResults), EmptyPeerTags);
                 buffer.Buckets.Add(key, bucket);
             }
 
