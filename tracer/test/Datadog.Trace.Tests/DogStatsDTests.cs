@@ -256,7 +256,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.TracerMetricsEnabled, tracerMetricsEnabled },
                     { ConfigurationKeys.RuntimeMetricsEnabled, tracerMetricsEnabled },
                     { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                    { ConfigurationKeys.TraceDataPipelineEnabled, false },
                 });
 
                 await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
