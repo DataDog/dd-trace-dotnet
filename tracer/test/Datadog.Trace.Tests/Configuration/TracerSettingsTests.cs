@@ -142,6 +142,61 @@ namespace Datadog.Trace.Tests.Configuration
             settings.StatsComputationInterval.Should().Be(expected);
         }
 
+        [Fact]
+        public void StatsAdditionalTags_EmptyWhenExperimentalFeatureNotEnabled()
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.StatsAdditionalTags, "region,tenant_id"));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTags.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void StatsAdditionalTags_DeduplicatesAndSorts()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.StatsAdditionalTags),
+                (ConfigurationKeys.StatsAdditionalTags, "tenant, region , tenant ,, region"));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTags.Should().Equal("region", "tenant");
+        }
+
+        [Fact]
+        public void StatsAdditionalTags_CapsToSixKeysKeepingAlphabeticallyFirst()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.StatsAdditionalTags),
+                (ConfigurationKeys.StatsAdditionalTags, "h,g,f,e,d,c,b,a"));
+            var settings = new TracerSettings(source);
+
+            // dedup+sort then keep the first 4 alphabetically; "e" through "h" are dropped
+            settings.StatsAdditionalTags.Should().Equal("a", "b", "c", "d");
+        }
+
+        [Fact]
+        public void StatsAdditionalTagsCardinalityLimit_DefaultsTo100WhenNotSet()
+        {
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTagsCardinalityLimit.Should().Be(100);
+        }
+
+        [Theory]
+        [InlineData("50", 50)]
+        [InlineData("1", 1)]
+        [InlineData("0", 100)]
+        [InlineData("-5", 100)]
+        [InlineData("not-a-number", 100)]
+        public void StatsAdditionalTagsCardinalityLimit_ValidatesAndFallsBack(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.StatsAdditionalTagsCardinalityLimit, value));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTagsCardinalityLimit.Should().Be(expected);
+        }
+
         [Theory]
         [InlineData("true", "none", true)]
         [InlineData("true", "otlp", true)]
