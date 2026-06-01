@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Agent
 {
     public class StatsBufferTests
     {
-        private static readonly List<byte[]> EmptyPeerTags = [];
+        private static readonly List<byte[]> EmptyTags = [];
 
         [Fact]
         public void KeyEquality()
@@ -62,9 +62,9 @@ namespace Datadog.Trace.Tests.Agent
             var key2 = CreateKey("resource2", "service2", "operation2", "type2", 2, false);
             var key3 = CreateKey("resource3", "service3", "operation3", "type3", 2, true);
 
-            var statsBucket1 = new StatsBucket(key1, EmptyPeerTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
-            var statsBucket2 = new StatsBucket(key2, EmptyPeerTags) { Duration = 2, Errors = 22, Hits = 222, TopLevelHits = 20 };
-            var statsBucket3 = new StatsBucket(key3, EmptyPeerTags) { Duration = 3, Errors = 0, Hits = 0, TopLevelHits = 0 };
+            var statsBucket1 = new StatsBucket(key1, EmptyTags, EmptyTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
+            var statsBucket2 = new StatsBucket(key2, EmptyTags, EmptyTags) { Duration = 2, Errors = 22, Hits = 222, TopLevelHits = 20 };
+            var statsBucket3 = new StatsBucket(key3, EmptyTags, EmptyTags) { Duration = 3, Errors = 0, Hits = 0, TopLevelHits = 0 };
 
             buffer.Buckets.Add(key1, statsBucket1);
             buffer.Buckets.Add(key2, statsBucket2);
@@ -114,8 +114,8 @@ namespace Datadog.Trace.Tests.Agent
             var key1 = CreateKey("resource1", "service1", "operation1", "type1", 1, false);
             var key2 = CreateKey("resource2", "service2", "operation2", "type2", 2, false);
 
-            var statsBucket1 = new StatsBucket(key1, EmptyPeerTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
-            var statsBucket2 = new StatsBucket(key2, EmptyPeerTags) { Duration = 2, Errors = 0, Hits = 0, TopLevelHits = 0 };
+            var statsBucket1 = new StatsBucket(key1, EmptyTags, EmptyTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
+            var statsBucket2 = new StatsBucket(key2, EmptyTags, EmptyTags) { Duration = 2, Errors = 0, Hits = 0, TopLevelHits = 0 };
 
             buffer.Buckets.Add(key1, statsBucket1);
             buffer.Buckets.Add(key2, statsBucket2);
@@ -148,7 +148,7 @@ namespace Datadog.Trace.Tests.Agent
             var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key = CreateKey("resource1", "service1", "operation1", "type1", 1, false);
-            var statsBucket = new StatsBucket(key, EmptyPeerTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
+            var statsBucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
 
             buffer.Buckets.Add(key, statsBucket);
 
@@ -217,7 +217,8 @@ namespace Datadog.Trace.Tests.Agent
             string httpEndpoint = null,
             string grpcStatusCode = "",
             string serviceSource = null,
-            ulong peerTagsHash = 0)
+            ulong peerTagsHash = 0,
+            ulong additionalMetricTagsHash = 0)
         {
             return new StatsAggregationKey(
                 resource,
@@ -234,7 +235,8 @@ namespace Datadog.Trace.Tests.Agent
                 httpEndpoint ?? string.Empty,
                 grpcStatusCode,
                 serviceSource ?? string.Empty,
-                peerTagsHash);
+                peerTagsHash,
+                additionalMetricTagsHash);
         }
 
         private static void AssertStatsGroup(MockClientGroupedStats group, StatsAggregationKey expectedKey, StatsBucket expectedBucket)
