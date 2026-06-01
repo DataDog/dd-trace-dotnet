@@ -50,7 +50,7 @@ partial class Build : NukeBuild
     [Parameter("Should minor versions of integration NuGet packages be included")]
     readonly bool IncludeMinorPackageVersions;
 
-    [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
+    [Parameter("The location to create the monitoring home directory. Default is ./artifacts/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
@@ -165,10 +165,8 @@ partial class Build : NukeBuild
             BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(BuildArtifactsDirectory);
             EnsureCleanDirectory(MonitoringHomeDirectory);
-            EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
-            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
+            EnsureCleanDirectory(NativeArtifactsDirectory);
             EnsureCleanDirectory(BuildDataDirectory);
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
