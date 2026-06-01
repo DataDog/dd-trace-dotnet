@@ -34,4 +34,20 @@ internal struct TelemetryClientConfiguration
     /// Defaults to false.
     /// </summary>
     public bool DebugEnabled;
+
+    /// <summary>
+    /// Emitted as the dd-session-id HTTP header. Empty CharSlice is treated as unset.
+    /// </summary>
+    public CharSlice SessionId;
+
+    /// <summary>
+    /// Emitted as the dd-root-session-id HTTP header. Empty CharSlice is treated as unset.
+    /// libdatadog suppresses the header when it equals <see cref="SessionId"/>.
+    /// </summary>
+    public CharSlice RootSessionId;
+
+    /// <summary>
+    /// Emitted as the dd-parent-session-id HTTP header. Empty CharSlice is treated as unset.
+    /// </summary>
+    public CharSlice ParentSessionId;
 }
