@@ -2408,7 +2408,6 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        installAzureFunctionsCoreTools: $(installAzureFunctionsCoreTools)
         command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
@@ -2418,7 +2417,7 @@ stages:
       displayName: docker pull latest ddapm-test-agent image (we rely on a newer version than the one in the base image)
 
     - script: |
-        docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) --build-arg INSTALL_AZURE_FUNCTIONS_CORE_TOOLS=$(installAzureFunctionsCoreTools) IntegrationTests
+        docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
         docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) run --rm StartDependencies.Group$(dockerGroup)
       env:
         baseImage: $(baseImage)
@@ -2447,7 +2446,6 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
         COMPOSE_PROFILES: group$(dockerGroup)
-        INSTALL_AZURE_FUNCTIONS_CORE_TOOLS: $(installAzureFunctionsCoreTools)
 
     - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) logs
       displayName: docker-compose logs

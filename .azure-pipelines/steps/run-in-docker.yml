@@ -31,10 +31,6 @@ parameters:
     type: number
     default: 0
 
-  - name: installAzureFunctionsCoreTools
-    type: string
-    default: 'false'
-
 steps:
 - template: ensure-docker-ready.yml
 
@@ -50,7 +46,6 @@ steps:
 
       docker build \
         --build-arg DOTNETSDK_VERSION=$sdkVersion \
-        --build-arg INSTALL_AZURE_FUNCTIONS_CORE_TOOLS=${{ parameters.installAzureFunctionsCoreTools }} \
         --tag dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }}:$sdkVersion \
         --target ${{ parameters.target }} \
         --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
