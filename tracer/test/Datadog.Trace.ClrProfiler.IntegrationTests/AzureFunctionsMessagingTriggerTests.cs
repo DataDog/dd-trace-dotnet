@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [Trait("RequiresDockerDependency", "true")]
 [Trait("DockerGroup", "2")]
 [Trait("Area", "AzureFunctions")]
+[Trait("Category", "ArmUnsupported")]
 public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
 {
     private const string ServiceBusQueueName = "samples-azureservicebus-queue";
