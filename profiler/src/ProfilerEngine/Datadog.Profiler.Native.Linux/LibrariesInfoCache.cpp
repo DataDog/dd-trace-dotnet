@@ -3,9 +3,11 @@
 
 #include "LibrariesInfoCache.h"
 
+#include "EhFrameParser.h"
 #include "Log.h"
 #include "OpSysTools.h"
 
+#include <elf.h>
 #include <unistd.h>
 
 using namespace std::chrono_literals;
@@ -78,6 +80,10 @@ bool LibrariesInfoCache::StopImpl()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
     s_instance.store(nullptr, std::memory_order_release);
+
+    // Clear the delta map before stopping so signal handlers don't use stale data
+    _activeDeltaMap.store(nullptr, std::memory_order_release);
+    std::atomic_thread_fence(std::memory_order_seq_cst);
 
     _stopRequested = true;
     NotifyCacheUpdateImpl();
@@ -165,12 +171,80 @@ void LibrariesInfoCache::UpdateCache()
         },
         &data);
 
+#ifdef ARM64
+    BuildDeltaMap();
+#endif
+
     {
         std::unique_lock l{_cacheLock};
         _librariesInfo.swap(newCache);
     }
 
     newCache.clear();
+}
+
+void LibrariesInfoCache::BuildDeltaMap()
+{
+    // Determine which map is currently the staging buffer (the one NOT active).
+    StackDeltaMap* activeMap = _activeDeltaMap.load(std::memory_order_relaxed);
+    StackDeltaMap* staging = (activeMap == _deltaMapA.get()) ? _deltaMapB.get() : _deltaMapA.get();
+
+    // Reset the staging map by constructing a fresh one in-place
+    *staging = StackDeltaMap{};
+
+    // Use dl_iterate_phdr directly to get const dl_phdr_info pointers
+    // suitable for EhFrameParser.
+    struct IterData
+    {
+        StackDeltaMap* staging;
+    };
+
+    IterData iterData = {staging};
+
+    dl_iterate_phdr(
+        [](struct dl_phdr_info* info, std::size_t /*size*/, void* data) -> int {
+            auto* d = static_cast<IterData*>(data);
+
+            uintptr_t segLow = 0;
+            uintptr_t segHigh = 0;
+            bool foundExecSeg = false;
+            for (int i = 0; i < info->dlpi_phnum; ++i)
+            {
+                const auto& phdr = info->dlpi_phdr[i];
+                if (phdr.p_type == PT_LOAD && (phdr.p_flags & PF_X))
+                {
+                    uintptr_t low = info->dlpi_addr + phdr.p_vaddr;
+                    uintptr_t high = low + phdr.p_memsz;
+                    if (!foundExecSeg || low < segLow)
+                        segLow = low;
+                    if (!foundExecSeg || high > segHigh)
+                        segHigh = high;
+                    foundExecSeg = true;
+                }
+            }
+
+            if (!foundExecSeg || segLow == segHigh)
+                return 0;
+
+            std::vector<StackDelta> deltas;
+            if (EhFrameParser::ExtractDeltas(info, deltas) && !deltas.empty())
+            {
+                d->staging->AddModule(segLow, segHigh, std::move(deltas));
+            }
+            return 0;
+        },
+        &iterData);
+
+    staging->Finalize();
+
+    Log::Debug("LibrariesInfoCache: Delta map built with ",
+               staging->ModuleCount(), " modules, ",
+               staging->TotalDeltas(), " total deltas.");
+
+    // Atomically publish the new map. Signal handlers will see the new map
+    // after this store. The old map (activeMap) remains valid until the next
+    // BuildDeltaMap call overwrites it as the staging buffer.
+    _activeDeltaMap.store(staging, std::memory_order_release);
 }
 
 int LibrariesInfoCache::DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)

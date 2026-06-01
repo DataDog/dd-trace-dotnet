@@ -32,7 +32,7 @@ class CallstackProvider;
 
 namespace OsSpecificApi {
 
-void InitializeUnwinder(ManagedCodeCache*) {}
+void InitializeUnwinder(ManagedCodeCache*, LibrariesInfoCache*) {}
 
 // if a system message was not found for the last error code the message will contain GetLastError between ()
 std::pair<DWORD, std::string> GetLastErrorMessage()

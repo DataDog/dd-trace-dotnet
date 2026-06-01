@@ -70,6 +70,7 @@ class UnwindingRecorderFactory;
 
 #ifdef LINUX
 class SystemCallsShield;
+class LibrariesInfoCache;
 #endif
 
 namespace shared {
@@ -270,6 +271,7 @@ private :
 
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
+    LibrariesInfoCache* _pLibrariesInfoCache = nullptr;
     std::unique_ptr<TimerCreateCpuProfiler> _pCpuProfiler = nullptr;
     std::unique_ptr<IUnwinder> _pUnwinder = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
