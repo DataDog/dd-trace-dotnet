@@ -606,6 +606,82 @@ namespace Datadog.Trace.Configuration
                 StatsComputationEnabled = false;
             }
 
+            if (!ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.StatsAdditionalTags))
+            {
+                StatsAdditionalTags = [];
+            }
+            else
+            {
+                // Deduplicate and sort up front so the aggregator receives a frozen, normalized list
+                // and so the configured-key cap drops a deterministic (alphabetical) set.
+                var statsAdditionalTags = config
+                                         .WithKeys(ConfigurationKeys.StatsAdditionalTags)
+                                         .AsString();
+                if (StringUtil.IsNullOrWhiteSpace(statsAdditionalTags))
+                {
+                    StatsAdditionalTags = [];
+                }
+                else
+                {
+                    HashSet<string>? entries = null;
+                    const int maxStatsAdditionalTagKeys = 4; // backend stats pipeline only supports a few primary tag dimensions
+
+                    // split the string value to find the tags
+                    foreach (var splitValue in statsAdditionalTags.SplitIntoSpans(','))
+                    {
+                        var span = splitValue.AsSpan().Trim();
+                        if (span.IsEmpty)
+                        {
+                            continue;
+                        }
+
+                        entries ??= [];
+                        entries.Add(span.ToString());
+                    }
+
+                    if (entries is { Count: > 0 })
+                    {
+                        // If we have more than maxStatsAdditionalTagKeys, we need to drop the remaining
+                        List<string>? dropped = null;
+                        var entryCount = Math.Min(entries.Count, maxStatsAdditionalTagKeys);
+                        var tags = new string[entryCount];
+                        var i = 0;
+
+                        // We order by the tags here, to ensure the stats aggregation key stats are consistent
+                        foreach (var entry in entries.OrderBy(static x => x, StringComparer.Ordinal))
+                        {
+                            if (i >= maxStatsAdditionalTagKeys)
+                            {
+                                dropped ??= [];
+                                dropped.Add(entry);
+                            }
+                            else
+                            {
+                                tags[i] = entry;
+                                i++;
+                            }
+                        }
+
+                        StatsAdditionalTags = tags;
+                        if (dropped is not null)
+                        {
+                            Log.Warning<int, string>(
+                                "DD_TRACE_STATS_ADDITIONAL_TAGS exceeds the maximum of {Max} keys. The following keys were dropped: {Dropped}",
+                                maxStatsAdditionalTagKeys,
+                                string.Join(",", dropped));
+                        }
+                    }
+                    else
+                    {
+                        StatsAdditionalTags = [];
+                    }
+                }
+            }
+
+            StatsAdditionalTagsCardinalityLimit = config
+                                                 .WithKeys(ConfigurationKeys.StatsAdditionalTagsCardinalityLimit)
+                                                 .AsInt32(defaultValue: 100, validator: x => x > 0).Value;
+
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
                                    .AsString(GetDefaultHttpClientExclusions());
@@ -943,6 +1019,21 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether stats are computed on the tracer side
         /// </summary>
         public bool StatsComputationEnabled { get; }
+
+        /// <summary>
+        /// Gets the span tag keys to extract and include as additional aggregation dimensions
+        /// for client-side stats. Deduplicated, sorted, and capped at 4 keys.
+        /// Empty unless the feature is enabled via <see cref="ExperimentalFeaturesEnabled"/>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsAdditionalTags"/>
+        internal string[] StatsAdditionalTags { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct stat entries with additional tags admitted
+        /// into each flush bucket.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsAdditionalTagsCardinalityLimit"/>
+        internal int StatsAdditionalTagsCardinalityLimit { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable span linking for individual messages
