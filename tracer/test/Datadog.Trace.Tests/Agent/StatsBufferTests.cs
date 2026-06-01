@@ -166,6 +166,41 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void Serialization_EmitsEmptyAdditionalMetricTagsWhenEmpty()
+        {
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Stats[0].Stats.Single().AdditionalMetricTags.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Serialization_PopulatesAdditionalMetricTags()
+        {
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false, additionalMetricTagsHash: 12345);
+            var additionalTags = new List<byte[]>
+            {
+                System.Text.Encoding.UTF8.GetBytes("region:us-east-1"),
+                System.Text.Encoding.UTF8.GetBytes("tenant:acme"),
+            };
+            var bucket = new StatsBucket(key, EmptyTags, additionalTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Stats[0].Stats.Single().AdditionalMetricTags.Should().Equal("region:us-east-1", "tenant:acme");
+        }
+
+        [Fact]
         public void KeyEquality_NewDimensions()
         {
             // Different SpanKind
