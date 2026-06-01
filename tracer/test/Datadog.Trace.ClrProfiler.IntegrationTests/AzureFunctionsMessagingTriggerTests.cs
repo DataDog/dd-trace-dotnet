@@ -139,6 +139,11 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     {
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
+        // Normalize emulator hostnames so snapshots are consistent across local and CI (Docker) environments
+        settings.AddSimpleScrubber("network.destination.name: azure-eventhubs-emulator", "network.destination.name: localhost");
+        settings.AddSimpleScrubber("network.destination.name: azureservicebus-emulator", "network.destination.name: localhost");
+        settings.AddSimpleScrubber("server.address: azure-eventhubs-emulator", "server.address: localhost");
+        settings.AddSimpleScrubber("server.address: azureservicebus-emulator", "server.address: localhost");
         // SpanLinks contain raw 128-bit trace IDs and trace state that change between runs
         settings.AddRegexScrubber(new Regex(@"TraceIdLow: \d+"), "TraceIdLow: 0");
         settings.AddRegexScrubber(new Regex(@"TraceIdHigh: \d+"), "TraceIdHigh: 0");
