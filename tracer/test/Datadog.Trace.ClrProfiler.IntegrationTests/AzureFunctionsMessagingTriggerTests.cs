@@ -27,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [UsesVerify]
 [Collection(AzureMessagingEmulatorTestsCollection.Name)]
 [Trait("Category", "EndToEnd")]
+[Trait("Category", "AzureFunctions")]
 [Trait("RequiresDockerDependency", "true")]
 [Trait("DockerGroup", "2")]
 [Trait("Area", "AzureFunctions")]
