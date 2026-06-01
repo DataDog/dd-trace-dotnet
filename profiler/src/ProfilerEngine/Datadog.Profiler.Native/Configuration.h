@@ -124,6 +124,7 @@ private:
     std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
     std::chrono::seconds ExtractTestHeapSnapshotInterval() const;
     int32_t ExtractHeapHandleLimit() const;
+    uint32_t ExtractReferenceTreeFormat() const;
 
 private:
     static std::string const DefaultProdSite;

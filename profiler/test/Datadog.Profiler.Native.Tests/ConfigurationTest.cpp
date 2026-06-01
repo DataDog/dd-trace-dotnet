@@ -7,6 +7,7 @@
 #include "Configuration.h"
 #include "EnvironmentHelper.h"
 #include "EnvironmentVariables.h"
+#include "IHeapSnapshotManager.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/string.h"
@@ -1542,5 +1543,68 @@ TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheUsesDefaultWhenVariableIsNot
 #else
     ASSERT_FALSE(configuration.UseManagedCodeCache());
 #endif
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatDefaultsToBinaryWhenVariableIsNotSet)
+{
+    unsetenv(EnvironmentVariables::HeapSnapshotReferenceTreeFormat);
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsBinaryWhenEnvVarSetToBinary)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsJsonWhenEnvVarSetToJson)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("2"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Json);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsBinaryAndJsonWhenEnvVarSetToThree)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("3"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToInvalidBit)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("4"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarHasValidAndInvalidBits)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("5"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("255"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToEmptyString)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
 }
 

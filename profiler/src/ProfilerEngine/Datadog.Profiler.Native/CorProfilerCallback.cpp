@@ -402,7 +402,8 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _metricsRegistry,
-                _pNativeThreadList
+                _pNativeThreadList,
+                _pRuntimeInfo.get()
                 );
 
             if (_pConfiguration->IsMemoryFootprintEnabled())
@@ -2066,11 +2067,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
         _pExceptionsProvider->OnModuleLoaded(moduleId);
-    }
-
-    if (_pHeapSnapshotManager != nullptr)
-    {
-        _pHeapSnapshotManager->OnModuleLoaded(moduleId);
     }
 
     if (_managedCodeCache != nullptr)

@@ -54,6 +54,11 @@ public:
     size_t GetVisitedHighWatermark() const { return _visited.GetBucketCount(); }
     size_t GetVisitedPeakEntryCount() const { return _visited.GetPeakEntryCount(); }
 
+    // Whether the GCDesc reader passed (or has not yet failed) its runtime
+    // self-test. When false, GCDesc-based traversal is disabled for this
+    // traverser; the class histogram (which does not use GCDesc) is unaffected.
+    bool IsGCDescTrusted() const { return _gcDescTrusted; }
+
 private:
     // Iterative object graph traversal using an explicit stack.
     // Uses GCDesc to enumerate reference fields directly from the MethodTable (fast path).
@@ -123,4 +128,13 @@ private:
 
     static constexpr size_t MinStackReserve = 64;
     size_t _traversalStackHighWatermark = MinStackReserve;
+
+    // GCDesc reader self-test state. The self-test runs on the first few
+    // scannable objects of a traversal and cross-checks the GCDesc/MethodTable
+    // layout against profiling-API metadata. On a clear contradiction the reader
+    // is disabled (_gcDescTrusted = false) for the rest of this traverser's life.
+    static constexpr uint32_t MaxSelfTestObjects = 8;
+    bool _gcDescTrusted = true;
+    GCDesc::SelfTestResult _selfTest = GCDesc::SelfTestResult::Pending;
+    uint32_t _selfTestObjectsChecked = 0;
 };

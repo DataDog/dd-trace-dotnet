@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "EnvironmentVariables.h"
+#include "IHeapSnapshotManager.h"
 #include "Log.h"
 #include "OpSysTools.h"
 
@@ -134,7 +135,8 @@ Configuration::Configuration()
     #endif
     _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, defaultUseManagedCodeCache);
     _isMemoryFootprintEnabled = GetEnvironmentValue(EnvironmentVariables::MemoryFootprintEnabled, false);
-    _referenceTreeFormat = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, static_cast<uint32_t>(1));
+
+    _referenceTreeFormat = ExtractReferenceTreeFormat();
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -948,4 +950,21 @@ int32_t Configuration::ExtractHeapHandleLimit() const
 uint32_t Configuration::GetHeapHandleLimit() const
 {
     return _heapHandleLimit;
+}
+
+uint32_t Configuration::ExtractReferenceTreeFormat() const
+{
+    // The format is a bitfield combining ReferenceTreeFormat_Binary (1) and ReferenceTreeFormat_Json (2).
+    // Only 1 (Binary), 2 (Json) and 3 (Binary + Json) are valid; anything else falls back to the
+    // default binary format.
+    constexpr uint32_t defaultFormat = ReferenceTreeFormat_Binary;
+    constexpr uint32_t validMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+
+    uint32_t format = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, defaultFormat);
+    if (format == 0 || (format & ~validMask) != 0)
+    {
+        return defaultFormat;
+    }
+
+    return format;
 }

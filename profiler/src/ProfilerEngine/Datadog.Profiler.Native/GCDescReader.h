@@ -28,6 +28,12 @@ namespace GCDesc
 // enum_flag_ContainsPointers = 0x01000000 in CoreCLR's vm/methodtable.h.
 static constexpr uint32_t Flag_ContainsPointers = 0x01000000;
 
+// Upper bound on the number of ValSerieItems describing a single value-type
+// array element. The CLR caps reference groups per value type well below this;
+// it is used purely as a defensive sanity bound when reading negative GCDesc
+// series counts (value-type arrays).
+static constexpr size_t MaxValSerieItems = 0xFFFF;
+
 // A GCDesc series describes a contiguous range of reference fields within an
 // object. Stored backwards from the MethodTable pointer.
 //
@@ -102,6 +108,26 @@ inline ptrdiff_t GetSeriesCount(ClassID classID)
     return mt[-1];
 }
 
+// Sanity-bound a GCDesc series count before trusting it. A legitimate count is
+// small: the number of distinct reference ranges (positive) or value-type array
+// ValSerieItems (negative) can never exceed the number of pointer-sized slots
+// that fit in the object. This turns a garbage read (e.g. if the MethodTable
+// layout ever changed) into a rejected value instead of an out-of-bounds walk.
+inline bool LooksLikeValidSeriesCount(ptrdiff_t count, SIZE_T objectSize)
+{
+    if (count == 0)
+    {
+        return false;
+    }
+
+    // Upper bound on plausible series: one per pointer-sized slot in the object,
+    // with a small floor so tiny objects (e.g. a single reference field) pass.
+    ptrdiff_t maxSeries = static_cast<ptrdiff_t>(objectSize / sizeof(void*)) + 1;
+
+    ptrdiff_t magnitude = (count < 0) ? -count : count;
+    return magnitude <= maxSeries;
+}
+
 // ============================================================================
 // Memory layout: MethodTable (MT) and GCDesc
 // ============================================================================
@@ -168,6 +194,13 @@ inline void EnumerateObjectRefs(ClassID classID, uintptr_t objectAddress, SIZE_T
         return;
     }
 
+    // Defense in depth: reject an implausible series count instead of walking
+    // arbitrary memory if the GCDesc/MethodTable layout is ever unexpected.
+    if (!LooksLikeValidSeriesCount(seriesCount, objectSize))
+    {
+        return;
+    }
+
     auto* series = reinterpret_cast<const GCDescSeries*>(mt - 1);
 
     // Each series describes a contiguous range of reference fields within the object.
@@ -176,6 +209,16 @@ inline void EnumerateObjectRefs(ClassID classID, uintptr_t objectAddress, SIZE_T
         const auto& s = series[-static_cast<ptrdiff_t>(i)];
         ptrdiff_t rangeSize = s.encodedSize + static_cast<ptrdiff_t>(objectSize);
         if (rangeSize <= 0)
+        {
+            continue;
+        }
+
+        // The reference range must stay within the object bounds. A series whose
+        // offset is negative or whose end exceeds the object size indicates a
+        // malformed/unexpected GCDesc -- skip it rather than read out of bounds.
+        if (s.offset < 0 ||
+            static_cast<SIZE_T>(s.offset) > objectSize ||
+            static_cast<SIZE_T>(s.offset + rangeSize) > objectSize)
         {
             continue;
         }
@@ -216,9 +259,24 @@ inline void EnumerateVTArrayRefs(ClassID arrayClassID, uintptr_t arrayAddress, u
     }
 
     size_t numValSerieItems = static_cast<size_t>(-seriesCount);
+
+    // Defense in depth: the ValSerieItem count describes a single value-type
+    // element's reference groups, so it is inherently small. Reject an absurd
+    // count rather than walking arbitrary memory if the layout is unexpected.
+    if (numValSerieItems > MaxValSerieItems)
+    {
+        return;
+    }
+
     // The offset field sits between the series count and the ValSerieItems and
     // is relative to the array object's ObjectID, matching CoreCLR's scanner.
     ptrdiff_t startOffset = mt[-2];
+
+    // A negative start offset would point before the array object -- malformed.
+    if (startOffset < 0)
+    {
+        return;
+    }
 
     auto* valSeries = reinterpret_cast<const ValSerieItem*>(mt - 2) - 1;
     auto* cur = reinterpret_cast<const uintptr_t*>(arrayAddress + startOffset);
@@ -249,6 +307,85 @@ inline void EnumerateVTArrayRefs(ClassID arrayClassID, uintptr_t arrayAddress, u
             cur = reinterpret_cast<const uintptr_t*>(reinterpret_cast<uintptr_t>(cur) + skip);
         }
     }
+}
+
+// Result of a runtime self-test of the GCDesc reader against an independent
+// metadata signal. Pending means "inconclusive on this object, try another";
+// only Failed indicates a clear contradiction that should disable the reader.
+enum class SelfTestResult
+{
+    Pending,
+    Passed,
+    Failed
+};
+
+// Validate that the GCDesc/MethodTable layout this reader depends on is
+// consistent with what the profiling API metadata reports for a given type.
+//
+// This is a cheap, defensive cross-check (run only on the first few scannable
+// objects of a dump -- never per object) to detect the unlikely case where a
+// future runtime changes the MethodTable flag bit or GCDesc layout, instead of
+// blindly dereferencing garbage.
+//
+// Strategy: only assert on clear contradictions. We deliberately return Pending
+// for ambiguous shapes so the caller can try another object before disabling.
+inline SelfTestResult ValidateAgainstMetadata(ICorProfilerInfo12* pInfo, ClassID classID, SIZE_T objectSize)
+{
+    if (pInfo == nullptr || classID == 0)
+    {
+        return SelfTestResult::Pending;
+    }
+
+    // Arrays have no per-field metadata to compare against GetClassLayout, so we
+    // cannot draw a conclusion from them here.
+    CorElementType elementType;
+    ClassID elementClassID;
+    ULONG rank = 0;
+    if (pInfo->IsArrayClass(classID, &elementType, &elementClassID, &rank) == S_OK)
+    {
+        return SelfTestResult::Pending;
+    }
+
+    bool flagSaysContainsPointers = ContainsGCPointers(classID);
+
+    // Ask the metadata how many instance fields this type has. We use this only
+    // as an independent signal, not to reconstruct the exact GCDesc.
+    ULONG fieldCount = 0;
+    ULONG classSize = 0;
+    HRESULT hr = pInfo->GetClassLayout(classID, nullptr, 0, &fieldCount, &classSize);
+    if (FAILED(hr))
+    {
+        // Can't get an independent signal -- inconclusive.
+        return SelfTestResult::Pending;
+    }
+
+    if (flagSaysContainsPointers)
+    {
+        // If the flag claims this type contains GC pointers, then the GCDesc must
+        // be present and well-formed: a non-zero, plausibly-sized series count.
+        ptrdiff_t seriesCount = GetSeriesCount(classID);
+        if (!LooksLikeValidSeriesCount(seriesCount, objectSize))
+        {
+            // The flag and the series count disagree in a way that indicates the
+            // layout we assume is wrong.
+            return SelfTestResult::Failed;
+        }
+
+        // A type that contains GC pointers must have at least one field. If the
+        // metadata reports zero fields yet the flag says "has pointers", the two
+        // sources contradict each other.
+        if (fieldCount == 0)
+        {
+            return SelfTestResult::Failed;
+        }
+
+        return SelfTestResult::Passed;
+    }
+
+    // Flag says "no GC pointers". We would never have called the enumerators for
+    // such a type (the traverser checks ContainsGCPointers first), so there is
+    // nothing to contradict here -- treat as inconclusive and move on.
+    return SelfTestResult::Pending;
 }
 
 } // namespace GCDesc

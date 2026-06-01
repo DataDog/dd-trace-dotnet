@@ -24,6 +24,7 @@
 // forward declarations
 class IThreadsCpuManager;
 class INativeThreadList;
+class IRuntimeInfo;
 class TypeReferenceTree;
 class ReferenceChainTraverser;
 struct RootInfo;
@@ -62,11 +63,8 @@ public:
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager,
         MetricsRegistry& metricsRegistry,
-        INativeThreadList* pNativeThreadList);
-
-    // Called from CorProfilerCallback::ModuleLoadFinished to detect mscorlib
-    // and eagerly resolve well-known ClassIDs (e.g. System.String).
-    void OnModuleLoaded(ModuleID moduleId);
+        INativeThreadList* pNativeThreadList,
+        IRuntimeInfo* pRuntimeInfo);
 
     // Inherited via IHeapSnapshotManager
     void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) override;
@@ -161,6 +159,11 @@ private:
     void CleanupSession();
     void StartAsyncSnapshotIfNeeded();
 
+    // Logs (once) the detected runtime type/version and whether it falls within
+    // the range the GCDesc reader has been validated against. This is a soft
+    // signal for diagnostics only; it never disables the feature.
+    void LogRuntimeVersionRangeOnce();
+
 private:
     std::chrono::seconds _heapDumpInterval;
     std::chrono::milliseconds _snapshotCheckInterval;
@@ -187,6 +190,7 @@ private:
     IFrameStore* _pFrameStore;
     IThreadsCpuManager* _pThreadsCpuManager;
     INativeThreadList* _pNativeThreadList;
+    IRuntimeInfo* _pRuntimeInfo;
 
     std::unique_ptr<std::thread> _pLoopThread;
     DWORD _loopThreadOsId;
@@ -219,6 +223,14 @@ private:
     // Reference chain tracking
     std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
     std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
+
+    // Set to true once the GCDesc reader fails its runtime self-test during a dump.
+    // When set, subsequent dumps skip reference-chain traversal entirely (no
+    // traverser is created) while the class histogram continues to work.
+    bool _gcDescDisabled = false;
+
+    // Ensures the runtime version range diagnostic is logged at most once.
+    bool _runtimeVersionLogged = false;
 
     // Persisted across heap dumps to avoid re-inspecting types for inline VT fields.
     std::unique_ptr<InlineVTCache> _pInlineVTCache;

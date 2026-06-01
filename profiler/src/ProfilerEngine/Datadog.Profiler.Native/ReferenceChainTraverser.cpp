@@ -23,6 +23,13 @@ ReferenceChainTraverser::ReferenceChainTraverser(
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 {
+    // If the GCDesc reader failed its self-test, skip all GCDesc-based traversal.
+    // The class histogram does not depend on this path and keeps working.
+    if (!_gcDescTrusted)
+    {
+        return;
+    }
+
     auto startTime = OpSysTools::GetHighPrecisionTimestamp();
     _rootCategoryCounts[static_cast<int>(root.category)]++;
 
@@ -130,6 +137,31 @@ void ReferenceChainTraverser::TraverseObjectGraph(
         if (!GCDesc::ContainsGCPointers(classID))
         {
             continue;
+        }
+
+        // Run the GCDesc self-test on the first few scannable objects only. This
+        // validates the raw MethodTable/GCDesc layout against profiling-API
+        // metadata so we degrade gracefully instead of dereferencing garbage if a
+        // future runtime ever changes the layout. It is never run per object.
+        if (_selfTest == GCDesc::SelfTestResult::Pending && _selfTestObjectsChecked < MaxSelfTestObjects)
+        {
+            _selfTestObjectsChecked++;
+            GCDesc::SelfTestResult result = GCDesc::ValidateAgainstMetadata(_pCorProfilerInfo, classID, objectSize);
+            if (result == GCDesc::SelfTestResult::Failed)
+            {
+                _gcDescTrusted = false;
+                _selfTest = GCDesc::SelfTestResult::Failed;
+                Log::Warn("GCDesc reference-chain self-test failed for class ", GetClassName(classID),
+                          " (classID=", classID, "): the CLR MethodTable/GCDesc layout does not match expectations. ",
+                          "Disabling reference-chain traversal for the rest of the process. ",
+                          "The class histogram is unaffected.");
+                return;
+            }
+            else if (result == GCDesc::SelfTestResult::Passed)
+            {
+                _selfTest = GCDesc::SelfTestResult::Passed;
+            }
+            // Pending: inconclusive on this object; try the next scannable one.
         }
 
         ptrdiff_t seriesCount = GCDesc::GetSeriesCount(classID);

@@ -3,6 +3,7 @@
 
 #include "HeapSnapshotManager.h"
 #include "INativeThreadList.h"
+#include "IRuntimeInfo.h"
 #include "OpSysTools.h"
 #include "ThreadsCpuManager.h"
 #include "TypeReferenceTree.h"
@@ -21,7 +22,8 @@ HeapSnapshotManager::HeapSnapshotManager(
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     MetricsRegistry& metricsRegistry,
-    INativeThreadList* pNativeThreadList) :
+    INativeThreadList* pNativeThreadList,
+    IRuntimeInfo* pRuntimeInfo) :
     ServiceBase(),
     _session(0),
     _gen2Size(0),
@@ -32,6 +34,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     _pFrameStore{pFrameStore},
     _pThreadsCpuManager{pThreadsCpuManager},
     _pNativeThreadList{pNativeThreadList},
+    _pRuntimeInfo{pRuntimeInfo},
     _runtimeSessionKeywords(0),
     _runtimeSessionVerbosity(0),
     _startTimestamp(0ns),
@@ -569,9 +572,46 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
     }
 }
 
-void HeapSnapshotManager::OnModuleLoaded(ModuleID /*moduleId*/)
+void HeapSnapshotManager::LogRuntimeVersionRangeOnce()
 {
-    // No longer needed: GCDesc reads reference fields directly from the MethodTable.
+    if (_runtimeVersionLogged)
+    {
+        return;
+    }
+    _runtimeVersionLogged = true;
+
+    if (_pRuntimeInfo == nullptr)
+    {
+        return;
+    }
+
+    // The CLR version is already computed once by CorProfilerCallback and shared
+    // via IRuntimeInfo.
+    const bool isDesktop = _pRuntimeInfo->IsDotnetFramework();
+    const uint16_t major = _pRuntimeInfo->GetMajorVersion();
+    const uint16_t minor = _pRuntimeInfo->GetMinorVersion();
+
+    // The GCDesc reader's MethodTable flag bit and GCDesc encoding have been
+    // validated against .NET 6 through 10.
+    // Outside that range we do not disable the feature -- the runtime self-test
+    // governs actual behavior -- but we record a diagnostic note.
+    bool isTestedRange;
+    if (isDesktop)  // this should never happen (check done in CorProfilerCallback)
+    {
+        isTestedRange = false;
+    }
+    else
+    {
+        isTestedRange = (major >= 6 && major <= 10);
+    }
+
+    Log::Info("HeapSnapshotManager: detected runtime ",
+              (isDesktop ? ".NET Framework (desktop CLR)" : ".NET Core/.NET"),
+              " version ", major, ".", minor,
+              isTestedRange
+                  ? ". GCDesc reference-chain reader has been validated for this runtime."
+                  : ". This runtime is outside the validated range (.NET 6-10); "
+                    "the GCDesc self-test will determine whether reference-chain traversal stays enabled.");
 }
 
 void HeapSnapshotManager::StartGCDump()
@@ -581,6 +621,8 @@ void HeapSnapshotManager::StartGCDump()
         // TODO: log a message and probably stop the current session
         return;
     }
+
+    LogRuntimeVersionRangeOnce();
 
     // reset the class histogram and reference tree
     {
@@ -594,9 +636,19 @@ void HeapSnapshotManager::StartGCDump()
         // Create/reset the traverser so it is ready to process roots during GC callbacks.
         // InlineVTCache is persisted across dumps to avoid re-inspecting types for inline VTs.
         // Visited set is pre-sized from the previous dump's high-water-mark to avoid Grow() storms.
-        _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
-            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
-            _visitedSetHighWatermark);
+        //
+        // If the GCDesc reader previously failed its self-test, do not create the
+        // traverser: the reference tree is skipped while the class histogram still runs.
+        if (_gcDescDisabled)
+        {
+            _pReferenceChainTraverser.reset();
+        }
+        else
+        {
+            _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
+                _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
+                _visitedSetHighWatermark);
+        }
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
     }
@@ -654,6 +706,16 @@ void HeapSnapshotManager::OnEndGCDump()
         }
         Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark,
                    " buckets (peak entries this dump: ", peakEntries, ")");
+
+        // If the GCDesc reader failed its self-test during this dump, disable
+        // reference-chain traversal for all subsequent dumps. The class histogram
+        // is unaffected and continues to be produced.
+        if (!_pReferenceChainTraverser->IsGCDescTrusted())
+        {
+            _gcDescDisabled = true;
+            Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
+                      "because the GCDesc reader failed its self-test. Heap class histograms are unaffected.");
+        }
     }
 
     if (_pInlineVTCache)
