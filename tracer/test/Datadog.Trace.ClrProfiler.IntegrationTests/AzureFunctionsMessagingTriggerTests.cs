@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Azure.Messaging.EventHubs;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
@@ -223,23 +224,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         || (Environment.GetEnvironmentVariable("EVENTHUBS_CONNECTION_STRING")?.Contains("azure-eventhubs-emulator", StringComparison.OrdinalIgnoreCase) ?? false);
 
     private static string GetEventHubsCheckpointNamespace()
-    {
-        var connectionString = GetEventHubsConnectionString();
-        const string endpointPrefix = "Endpoint=sb://";
-        var endpointStart = connectionString.IndexOf(endpointPrefix, StringComparison.OrdinalIgnoreCase);
-        if (endpointStart < 0)
-        {
-            return "localhost";
-        }
-
-        endpointStart += endpointPrefix.Length;
-        var endpointEnd = connectionString.IndexOf(';', endpointStart);
-        var hostAndPort = endpointEnd < 0
-                              ? connectionString.Substring(endpointStart)
-                              : connectionString.Substring(endpointStart, endpointEnd - endpointStart);
-        var portStart = hostAndPort.IndexOf(':');
-        return portStart < 0 ? hostAndPort : hostAndPort.Substring(0, portStart);
-    }
+        => EventHubsConnectionStringProperties.Parse(GetEventHubsConnectionString()).Endpoint.Host;
 
     private static string CreateTestId()
         => Guid.NewGuid().ToString("N");
