@@ -20,10 +20,10 @@ When setting up debugging configurations (e.g., in `launchSettings.json` or `.ru
 
 ```xml
 <!-- ❌ Unreliable - only works in some scenarios -->
-<DD_DOTNET_TRACER_HOME>$(SolutionDir)shared\bin\monitoring-home</DD_DOTNET_TRACER_HOME>
+<DD_DOTNET_TRACER_HOME>$(SolutionDir)artifacts\monitoring-home</DD_DOTNET_TRACER_HOME>
 
 <!-- ✅ Reliable - works in all scenarios (for local use only) -->
-<DD_DOTNET_TRACER_HOME>C:\Users\your.name\DDRepos\dd-trace-dotnet\shared\bin\monitoring-home</DD_DOTNET_TRACER_HOME>
+<DD_DOTNET_TRACER_HOME>C:\Users\your.name\DDRepos\dd-trace-dotnet\artifacts\monitoring-home</DD_DOTNET_TRACER_HOME>
 ```
 
 ⚠️ **Important:** Never commit absolute paths containing your personal username or machine-specific paths (e.g., `C:\Users\john.doe\...`), as they won't work for other developers.
@@ -32,20 +32,20 @@ When setting up debugging configurations (e.g., in `launchSettings.json` or `.ru
 
 **Windows:**
 ```json
-"DD_DOTNET_TRACER_HOME": "C:\\Users\\your.name\\DDRepos\\dd-trace-dotnet\\shared\\bin\\monitoring-home",
-"CORECLR_PROFILER_PATH": "C:\\Users\\your.name\\DDRepos\\dd-trace-dotnet\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+"DD_DOTNET_TRACER_HOME": "C:\\Users\\your.name\\DDRepos\\dd-trace-dotnet\\artifacts\\monitoring-home",
+"CORECLR_PROFILER_PATH": "C:\\Users\\your.name\\DDRepos\\dd-trace-dotnet\\artifacts\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
 ```
 
 **Linux:**
 ```json
-"DD_DOTNET_TRACER_HOME": "/home/your.name/DDRepos/dd-trace-dotnet/shared/bin/monitoring-home",
-"CORECLR_PROFILER_PATH": "/home/your.name/DDRepos/dd-trace-dotnet/shared/bin/monitoring-home/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+"DD_DOTNET_TRACER_HOME": "/home/your.name/DDRepos/dd-trace-dotnet/artifacts/monitoring-home",
+"CORECLR_PROFILER_PATH": "/home/your.name/DDRepos/dd-trace-dotnet/artifacts/monitoring-home/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
 ```
 
 **macOS:**
 ```json
-"DD_DOTNET_TRACER_HOME": "/Users/your.name/DDRepos/dd-trace-dotnet/shared/bin/monitoring-home",
-"CORECLR_PROFILER_PATH": "/Users/your.name/DDRepos/dd-trace-dotnet/shared/bin/monitoring-home/osx-x64/Datadog.Trace.ClrProfiler.Native.dylib"
+"DD_DOTNET_TRACER_HOME": "/Users/your.name/DDRepos/dd-trace-dotnet/artifacts/monitoring-home",
+"CORECLR_PROFILER_PATH": "/Users/your.name/DDRepos/dd-trace-dotnet/artifacts/monitoring-home/osx-x64/Datadog.Trace.ClrProfiler.Native.dylib"
 ```
 
 ## Required Environment Variables

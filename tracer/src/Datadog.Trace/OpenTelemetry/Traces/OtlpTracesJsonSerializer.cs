@@ -511,7 +511,10 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteEndObject();
     }
 
-    internal static void WriteAnyValue(JsonTextWriter writer, object? value)
+    // `expandArrays` is false when called per element from WriteArrayAnyValue, routing byte[] / Array
+    // to the stringify default — caps recursion depth at 1, matching OTel SDK's TagWriter.WriteToArrayTypeChecked.
+    // https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/Shared/TagWriter/TagWriter.cs
+    internal static void WriteAnyValue(JsonTextWriter writer, object? value, bool expandArrays = true)
     {
         writer.WriteStartObject();
 
@@ -541,7 +544,6 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             case int:
             case uint:
             case long:
-            case ulong:
                 writer.WritePropertyName("intValue");
                 writer.WriteValue(value.ToString());
                 break;
@@ -556,18 +558,19 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(floatValue);
                 break;
 
-            case byte[] bytesValue:
+            case byte[] bytesValue when expandArrays:
                 writer.WritePropertyName("bytesValue");
                 writer.WriteValue(Convert.ToBase64String(bytesValue));
                 break;
 
-            case Array array:
+            case Array array when expandArrays:
                 writer.WritePropertyName("arrayValue");
                 WriteArrayAnyValue(writer, array);
                 break;
 
             default:
-                // For other types, try to convert to string
+                // ulong (overflows long), decimal (precision loss), char, nint/nuint, and unknown
+                // types stringify here — plus Array / byte[] when expandArrays is false.
                 writer.WritePropertyName("stringValue");
                 writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
                 break;
@@ -584,7 +587,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteStartArray();
         foreach (var item in array)
         {
-            WriteAnyValue(writer, item);
+            WriteAnyValue(writer, item, expandArrays: false);
         }
 
         writer.WriteEndArray();

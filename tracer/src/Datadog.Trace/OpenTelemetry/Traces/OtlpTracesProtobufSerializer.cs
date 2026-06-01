@@ -471,7 +471,10 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     //
     // Example: (ulong)(long)(-5) sign-extends to -5L (0xFFFFFFFFFFFFFFFB) and then cast to ulong.
     // WriteVarInt64 will then emit the 10-byte varint, which decodes back to -2147483648 as protobuf int64
-    private static int WriteAnyValue(byte[] bytes, int writePosition, object? value)
+    //
+    // `expandArrays` is false when called per element from WriteArrayAnyValue, routing byte[] / Array
+    // to the stringify default — caps recursion depth at 1, matching WriteToArrayTypeChecked.
+    private static int WriteAnyValue(byte[] bytes, int writePosition, object? value, bool expandArrays = true)
     {
         switch (value)
         {
@@ -502,13 +505,13 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
                 return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f32);
             case double f64:
                 return ProtobufSerializer.WriteDoubleWithTag(bytes, writePosition, AnyValue_Double_Value, f64);
-            case byte[] bytesValue:
+            case byte[] bytesValue when expandArrays:
                 return ProtobufSerializer.WriteByteArrayWithTag(bytes, writePosition, AnyValue_Bytes_Value, bytesValue);
-            case Array array:
+            case Array array when expandArrays:
                 return WriteArrayAnyValue(bytes, writePosition, array);
             default:
-                // ulong, decimal, nint, nuint, and unknown types fall back to ToString — matches
-                // OpenTelemetry's TagWriter, which avoids overflow/precision loss for those types.
+                // ulong, decimal, nint, nuint and unknown types stringify here — plus Array / byte[]
+                // when expandArrays is false. Matches OpenTelemetry's TagWriter.
                 var stringValue = Convert.ToString(value, CultureInfo.InvariantCulture);
                 return stringValue is null
                     ? writePosition
@@ -529,7 +532,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             int elementLengthPos = writePosition;
             writePosition += ReserveSizeForLength;
 
-            writePosition = WriteAnyValue(bytes, writePosition, item);
+            writePosition = WriteAnyValue(bytes, writePosition, item, expandArrays: false);
 
             ProtobufSerializer.WriteReservedLength(bytes, elementLengthPos, writePosition - (elementLengthPos + ReserveSizeForLength));
         }

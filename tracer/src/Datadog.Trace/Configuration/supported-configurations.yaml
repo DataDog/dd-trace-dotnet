@@ -1906,14 +1906,6 @@ supportedConfigurations:
       Configuration key for the path to the configuration file.
       Can only be set with an environment variable
       or in the <c>app.config</c>/<c>web.config</c> file.
-  DD_TRACE_DATA_PIPELINE_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'false'
-    const_name: TraceDataPipelineEnabled
-    documentation: |-
-      Use libdatadog data pipeline to send traces.
-      Default value is <c>false</c> (disabled).
   DD_TRACE_DEBUG:
   - implementation: B
     type: boolean

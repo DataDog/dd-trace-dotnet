@@ -12,7 +12,6 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
@@ -366,7 +365,7 @@ namespace Datadog.Trace.Ci.Configuration
             }
 
             var newSource = new CompositeConfigurationSource([new DictionaryObjectConfigurationSource(additionalSource), source]);
-            return new TracerSettings(newSource, telemetry, new OverrideErrorLog(), new LibDatadogAvailableResult(false));
+            return new TracerSettings(newSource, telemetry, new OverrideErrorLog());
         }
     }
 }

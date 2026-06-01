@@ -32,9 +32,8 @@
       <PropertyGroup>
         <!-- When building standalone we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
         <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
-        <!-- $(TargetFramework) is appended manually because the SDK only auto-appends it when UseArtifactsOutput is false. -->
-        <OutputPath>bin\$(Configuration)\Console\$(TargetFramework)\</OutputPath>
-        <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
+        <!-- Distinguish the two variants under UseArtifactsOutput so console and tool builds don't clobber each other. -->
+        <ArtifactsProjectName>Datadog.Trace.Tools.Runner.Console</ArtifactsProjectName>
         <AssemblyName>dd-trace</AssemblyName>
         <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64;linux-musl-arm64</RuntimeIdentifiers>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -132,8 +131,8 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <PackageId>dd-trace</PackageId>
-        <!-- $(TargetFramework) is appended manually because the SDK only auto-appends it when UseArtifactsOutput is false. -->
-        <OutputPath>bin\$(Configuration)\Tool\$(TargetFramework)\</OutputPath>
+        <!-- Distinguish the two variants under UseArtifactsOutput so console and tool builds don't clobber each other. -->
+        <ArtifactsProjectName>Datadog.Trace.Tools.Runner.Tool</ArtifactsProjectName>
       </PropertyGroup>
       <ItemGroup>
         <Content Include="..\Datadog.Trace.Bundle\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
