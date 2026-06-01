@@ -635,9 +635,9 @@ void CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
 #ifdef ARM64
-        _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
+        auto unwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
 #else
-        _pUnwinder = std::make_unique<Backtrace2Unwinder>();
+        auto unwinder = std::make_unique<Backtrace2Unwinder>();
 #endif
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
@@ -647,7 +647,7 @@ void CorProfilerCallback::InitializeServices()
             _pManagedThreadList,
             _pCpuSampleProvider,
             _metricsRegistry,
-            _pUnwinder.get(),
+            std::move(unwinder),
             _pUnwindingRecorderFactory.get());
     }
 #endif

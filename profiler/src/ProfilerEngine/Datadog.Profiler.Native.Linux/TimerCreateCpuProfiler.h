@@ -34,7 +34,7 @@ public:
         IManagedThreadList* pManagedThreadsList,
         CpuSampleProvider* pProvider,
         MetricsRegistry& metricsRegistry,
-        IUnwinder* pUnwinder,
+        std::unique_ptr<IUnwinder> unwinder,
         UnwindingRecorderFactory* pUnwindingRecorderFactory) noexcept;
 
     ~TimerCreateCpuProfiler();

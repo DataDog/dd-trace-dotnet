@@ -28,7 +28,7 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IManagedThreadList* pManagedThreadsList,
     CpuSampleProvider* pProvider,
     MetricsRegistry& metricsRegistry,
-    IUnwinder* pUnwinder,
+    std::unique_ptr<IUnwinder> unwinder,
     UnwindingRecorderFactory* pUnwindingRecorderFactory) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
@@ -36,7 +36,7 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pProvider{pProvider},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
     _nbThreadsInSignalHandler{0},
-    _pUnwinder{pUnwinder},
+    _pUnwinder{std::move(unwinder)},
     _pUnwindingRecorderFactory{pUnwindingRecorderFactory}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
