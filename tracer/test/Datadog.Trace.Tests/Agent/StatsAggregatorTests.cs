@@ -1461,6 +1461,95 @@ namespace Datadog.Trace.Tests.Agent
             aggregator.CurrentBuffer.Buckets[key].AdditionalMetricTags.Should().BeEmpty();
         }
 
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_BlocksOverflowAndMergesAdmitted()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant", cardinalityLimit: 3), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            Span MakeTenant(string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("tenant", tenant);
+                return span;
+            }
+
+            // First 3 distinct tenants are admitted; "d" and "e" overflow into one masked "blocked" bucket.
+            aggregator.Add(MakeTenant("a"), MakeTenant("b"), MakeTenant("c"), MakeTenant("d"), MakeTenant("e"));
+
+            // 3 admitted + 1 blocked sink
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+
+            var blockedBucket = aggregator.CurrentBuffer.Buckets.Values
+                                          .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tenant:blocked_by_tracer" }));
+            blockedBucket.Hits.Should().Be(2); // d + e merged into the blocked bucket
+
+            // A repeat of an already-admitted key still merges into its existing entry, regardless of the cap.
+            aggregator.Add(MakeTenant("a"));
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+            aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(MakeTenant("a"))].Hits.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_DoesNotApplyToSpansWithoutAdditionalTags()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            // Five distinct buckets (by resource) but none carry the configured tag, so the cap never triggers.
+            for (var i = 0; i < 5; i++)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = $"resource-{i}";
+                aggregator.Add(span);
+            }
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(5);
+            aggregator.CurrentBuffer.Buckets.Values.Should().OnlyContain(b => b.AdditionalMetricTags.Count == 0);
+
+            // A span that does carry the tag is still admitted, since the budget was never consumed.
+            var withRegion = CreateTopLevelSpan(start, "svc");
+            withRegion.ResourceName = "resource-with-region";
+            withRegion.SetTag("region", "us-east-1");
+            aggregator.Add(withRegion);
+
+            DecodeTags(aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(withRegion)].AdditionalMetricTags)
+                .Should().Equal("region:us-east-1");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_FlushResetsCardinalityBudget()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            Span MakeRegion(string region)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                return span;
+            }
+
+            aggregator.Add(MakeRegion("a")); // admitted (budget now full)
+            aggregator.Add(MakeRegion("b")); // blocked: budget of 1 exhausted
+
+            var bufferBeforeFlush = aggregator.CurrentBuffer;
+            bufferBeforeFlush.Buckets.Should().HaveCount(2); // region=a + blocked sink
+
+            // Flush swaps the buffer and resets the per-bucket cardinality budget.
+            await aggregator.Flush();
+
+            aggregator.Add(MakeRegion("c")); // fresh budget => admitted with its real value, not masked
+
+            var bufferAfterFlush = aggregator.CurrentBuffer;
+            bufferAfterFlush.Should().NotBeSameAs(bufferBeforeFlush);
+            DecodeTags(bufferAfterFlush.Buckets[aggregator.BuildKey(MakeRegion("c"))].AdditionalMetricTags)
+                .Should().Equal("region:c");
+        }
+
         private static List<string> DecodeTags(List<byte[]> encoded)
             => encoded.Select(bytes => System.Text.Encoding.UTF8.GetString(bytes)).ToList();
 

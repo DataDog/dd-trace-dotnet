@@ -66,6 +66,30 @@ namespace Datadog.Trace.Agent
             AdditionalMetricTagsHash = additionalMetricTagsHash;
         }
 
+        /// <summary>
+        /// Returns a copy of this key with a different <see cref="AdditionalMetricTagsHash"/>.
+        /// Used by the per-flush-bucket cardinality cap to redirect a span into the "blocked" bucket
+        /// (same dimensions, masked additional-tag values).
+        /// </summary>
+        public StatsAggregationKey WithAdditionalMetricTagsHash(ulong additionalMetricTagsHash)
+            => new(
+                Resource,
+                Service,
+                OperationName,
+                Type,
+                HttpStatusCode,
+                IsSyntheticsRequest,
+                SpanKind,
+                IsError,
+                IsTopLevel,
+                IsTraceRoot,
+                HttpMethod,
+                HttpEndpoint,
+                GrpcStatusCode,
+                ServiceSource,
+                PeerTagsHash,
+                additionalMetricTagsHash);
+
         public bool Equals(StatsAggregationKey other)
         {
             return

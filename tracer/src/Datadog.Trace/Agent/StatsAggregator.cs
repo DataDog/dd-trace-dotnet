@@ -55,6 +55,7 @@ namespace Datadog.Trace.Agent
         private readonly AnalyticsEventsSampler _analyticsEventSampler;
         private readonly IDisposable _settingSubscription;
         private readonly AdditionalTagKey[] _additionalTagKeys;
+        private readonly int _additionalTagsBucketCountLimit;
 
         private int _currentBuffer;
 
@@ -62,6 +63,9 @@ namespace Datadog.Trace.Agent
         private TraceFilter _traceFilter;
         private List<PeerTagKey> _peerTagKeys = [];
         private int _computeStatsState;
+
+        private int _numberOfBucketsContainingAdditionalTags;
+        private int _additionalTagsBlockLoggedThisBucket;
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
@@ -77,6 +81,7 @@ namespace Datadog.Trace.Agent
             _errorSampler = new ErrorSampler();
             _rareSampler = new RareSampler(settings, this);
             _analyticsEventSampler = new AnalyticsEventsSampler();
+            _additionalTagsBucketCountLimit = settings.StatsAdditionalTagsCardinalityLimit;
 
             // StatsAdditionalTags is already deduplicated, sorted, and capped.
             // Pre-encode the UTF-8 key prefixes so BuildKey can hash without per-call string encoding.
@@ -517,6 +522,8 @@ namespace Datadog.Trace.Agent
             // Hash should be generated as TAGNAME:TAGVALUE, in sorted order (_additionalTagKeys is pre-sorted).
             ulong? previousHash = null;
             var presentTagCount = 0;
+            string firstPresentTagName = null;
+            string firstBlockedTagName = null;
             foreach (var tagKey in _additionalTagKeys)
             {
                 var tagValue = span.GetTag(tagKey.Name);
@@ -525,9 +532,12 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
+                firstPresentTagName ??= tagKey.Name;
+
                 if (tagValue.Length > AdditionalTagMaxValueLength)
                 {
                     tagValue = BlockedByTracerSentinel;
+                    firstBlockedTagName ??= tagKey.Name;
                 }
 
                 if (previousHash.HasValue)
@@ -540,7 +550,39 @@ namespace Datadog.Trace.Agent
                 presentTagCount++;
             }
 
-            results = new AdditionalTagResults { TagCount = presentTagCount };
+            results = new AdditionalTagResults
+            {
+                TagCount = presentTagCount,
+                FirstPresentTagName = firstPresentTagName,
+                FirstBlockedTagName = firstBlockedTagName,
+            };
+            return previousHash ?? 0;
+        }
+
+        /// <summary>
+        /// Computes the masked-value hash for the per-flush-bucket cardinality cap: every present tag's
+        /// value is replaced with <see cref="BlockedByTracerSentinel"/>. Spans that share the same set of
+        /// present keys collapse into a single "blocked" bucket.
+        /// </summary>
+        private ulong ComputeBlockedAdditionalMetricTagsHash(Span span)
+        {
+            ulong? previousHash = null;
+            foreach (var tagKey in _additionalTagKeys)
+            {
+                var tagValue = span.GetTag(tagKey.Name);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    continue;
+                }
+
+                if (previousHash.HasValue)
+                {
+                    previousHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, previousHash.Value);
+                }
+
+                previousHash = HashTag(tagKey.Utf8Prefix, BlockedByTracerSentinel, FnvHash64.Version.V1A, previousHash);
+            }
+
             return previousHash ?? 0;
         }
 
@@ -549,8 +591,10 @@ namespace Datadog.Trace.Agent
         /// "key:value" byte arrays, in configured (pre-sorted) order. Called only on the cold path
         /// (new bucket creation). Values exceeding <see cref="AdditionalTagMaxValueLength"/> are
         /// substituted with <see cref="BlockedByTracerSentinel"/>, matching the hash computation.
+        /// When <paramref name="forceBlocked"/> is true (per-bucket cardinality cap hit), every value
+        /// is masked.
         /// </summary>
-        private List<byte[]> GetEncodedAdditionalTags(Span span, in AdditionalTagResults results)
+        private List<byte[]> GetEncodedAdditionalTags(Span span, in AdditionalTagResults results, bool forceBlocked)
         {
             if (results.TagCount == 0)
             {
@@ -566,7 +610,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                if (tagValue.Length > AdditionalTagMaxValueLength)
+                if (forceBlocked || tagValue.Length > AdditionalTagMaxValueLength)
                 {
                     // Sentinel is a constant; copy its pre-encoded bytes rather than re-encoding the string.
                     result.Add([..tagKey.Utf8Prefix, ..BlockedByTracerSentinelUtf8]);
@@ -599,6 +643,10 @@ namespace Datadog.Trace.Agent
                 lock (_buffers)
                 {
                     _currentBuffer = (_currentBuffer + 1) % BufferCount;
+
+                    // Reset per-flush values
+                    _numberOfBucketsContainingAdditionalTags = 0;
+                    _additionalTagsBlockLoggedThisBucket = 0;
                 }
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
@@ -657,12 +705,49 @@ namespace Datadog.Trace.Agent
 
             if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
-                // Cold path: encode the peer tags and span-derived primary tags for storage in the new bucket
-                bucket = new StatsBucket(
-                    key,
-                    GetEncodedPeerTags(span, peerTagKeys, in peerTagResults),
-                    GetEncodedAdditionalTags(span, in additionalTagResults));
-                buffer.Buckets.Add(key, bucket);
+                // New MetricKey. Spans whose full key already exists merge above regardless of the cap,
+                // so values admitted earlier in this bucket keep accurate per-value attribution.
+                var hasAdditionalTags = additionalTagResults.TagCount > 0;
+
+                if (!hasAdditionalTags || _numberOfBucketsContainingAdditionalTags < _additionalTagsBucketCountLimit)
+                {
+                    // Cold path: encode the peer tags and span-derived primary tags for storage in the new bucket
+                    bucket = new StatsBucket(
+                        key,
+                        GetEncodedPeerTags(span, peerTagKeys, in peerTagResults),
+                        GetEncodedAdditionalTags(span, in additionalTagResults, forceBlocked: false));
+                    buffer.Buckets.Add(key, bucket);
+
+                    if (hasAdditionalTags)
+                    {
+                        _numberOfBucketsContainingAdditionalTags++;
+                    }
+
+                    // A per-value length block also counts as a block event for observability.
+                    if (additionalTagResults.FirstBlockedTagName is not null)
+                    {
+                        OnAdditionalTagsBlocked(additionalTagResults.FirstBlockedTagName);
+                    }
+                }
+                else
+                {
+                    // Maximum number of buckets containing additional tag values is reached.
+                    // Collapse into a single "blocked" bucket whose values. Only additional tags
+                    // are blocked, the other properties are still added normally
+                    key = key.WithAdditionalMetricTagsHash(ComputeBlockedAdditionalMetricTagsHash(span));
+
+                    if (!buffer.Buckets.TryGetValue(key, out bucket))
+                    {
+                        // The blocked bucket is itself the overflow sink, so it doesn't count against the cap.
+                        bucket = new StatsBucket(
+                            key,
+                            GetEncodedPeerTags(span, peerTagKeys, in peerTagResults),
+                            GetEncodedAdditionalTags(span, in additionalTagResults, forceBlocked: true));
+                        buffer.Buckets.Add(key, bucket);
+                    }
+
+                    OnAdditionalTagsBlocked(additionalTagResults.FirstPresentTagName);
+                }
             }
 
             bucket.Hits++;
@@ -686,6 +771,25 @@ namespace Datadog.Trace.Agent
             else
             {
                 bucket.OkSummary.Add(ConvertTimestamp(duration));
+            }
+
+            void OnAdditionalTagsBlocked(string triggeringTagName)
+            {
+                // One-shot warn per flush bucket, so an attack-shaped workload can't flood the logs.
+                // Both the per-value length cap and the per-bucket cardinality cap funnel through here.
+                if (_additionalTagsBlockLoggedThisBucket == 0)
+                {
+                    // TODO: logging this once per log cycle might be too much...
+                    _additionalTagsBlockLoggedThisBucket = 1;
+                    Log.Warning(
+                        "Span-derived additional tag values are being masked with '{Sentinel}' in the current stats flush bucket " +
+                        "(triggered by tag: {TagName}). This is caused by a tag value exceeding 200 characters or " +
+                        "by exceeding DD_TRACE_STATS_ADDITIONAL_TAGS_CARDINALITY_LIMIT.",
+                        BlockedByTracerSentinel,
+                        triggeringTagName ?? "<unknown>");
+                }
+
+                // TODO: emit a tracer-internal health metric counting block events
             }
         }
 
@@ -760,6 +864,12 @@ namespace Datadog.Trace.Agent
         internal readonly struct AdditionalTagResults
         {
             public int TagCount { get; init; }
+
+            // First configured tag present on the span (for cap-block diagnostics); null if none present.
+            public string FirstPresentTagName { get; init; }
+
+            // First configured tag whose value was masked by the per-value length cap; null if none.
+            public string FirstBlockedTagName { get; init; }
         }
     }
 }
