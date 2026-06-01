@@ -26,8 +26,11 @@ namespace Datadog.Trace.Agent
     {
         private const int BufferCount = 2;
 
+        private const int AdditionalTagMaxValueLength = 200;
+        private const string BlockedByTracerSentinel = "blocked_by_tracer";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
-        private static readonly List<byte[]> EmptyPeerTags = [];
+        private static readonly List<byte[]> EmptyTags = [];
         private static readonly byte[] PeerTagSeparator = [0];
         private static readonly byte[] BaseServiceUtf8Prefix = EncodingHelpers.Utf8NoBom.GetBytes(Tags.BaseService + ":");
 
@@ -51,6 +54,7 @@ namespace Datadog.Trace.Agent
         private readonly RareSampler _rareSampler;
         private readonly AnalyticsEventsSampler _analyticsEventSampler;
         private readonly IDisposable _settingSubscription;
+        private readonly AdditionalTagKey[] _additionalTagKeys;
 
         private int _currentBuffer;
 
@@ -73,6 +77,22 @@ namespace Datadog.Trace.Agent
             _errorSampler = new ErrorSampler();
             _rareSampler = new RareSampler(settings, this);
             _analyticsEventSampler = new AnalyticsEventsSampler();
+
+            // StatsAdditionalTags is already deduplicated, sorted, and capped.
+            // Pre-encode the UTF-8 key prefixes so BuildKey can hash without per-call string encoding.
+            var additionalTagCount = settings.StatsAdditionalTags.Length;
+            if (additionalTagCount == 0)
+            {
+                _additionalTagKeys = [];
+            }
+            else
+            {
+                _additionalTagKeys = new AdditionalTagKey[additionalTagCount];
+                for (var i = 0; i < additionalTagCount; i++)
+                {
+                    _additionalTagKeys[i] = new AdditionalTagKey(settings.StatsAdditionalTags[i]);
+                }
+            }
 
             // Create with the initial mutable settings, but be aware that this could change later
             var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
@@ -258,15 +278,17 @@ namespace Datadog.Trace.Agent
         }
 
         public StatsAggregationKey BuildKey(Span span)
-            => BuildKey(span, Volatile.Read(ref _peerTagKeys), out _);
+            => BuildKey(span, Volatile.Read(ref _peerTagKeys), out _, out _);
 
         /// <summary>
-        /// Computes a <see cref="StatsAggregationKey"/> for the given span, including the peer tags hash.
+        /// Computes a <see cref="StatsAggregationKey"/> for the given span, including the peer tags hash
+        /// and the span-derived additional-tags hash.
         /// The <paramref name="peerTagResults"/> carries context to <see cref="GetEncodedPeerTags"/>
         /// so the cold path can skip re-deriving spanKind/baseService and pre-allocate the result list.
+        /// The <paramref name="additionalTagResults"/> carries context to <see cref="GetEncodedAdditionalTags"/>.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults)
+        internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults, out AdditionalTagResults additionalTagResults)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -345,6 +367,18 @@ namespace Datadog.Trace.Agent
                 peerTagResults = default;
             }
 
+            // Span-derived additional tags: hash the configured tag values present on the span.
+            ulong additionalTagsHash;
+            if (_additionalTagKeys.Length == 0)
+            {
+                additionalTagsHash = 0;
+                additionalTagResults = default;
+            }
+            else
+            {
+                additionalTagsHash = ComputeSpanDerivedAdditionalTagsHash(span, out additionalTagResults);
+            }
+
             // When submitting trace metrics over OTLP, we must create inidividual timeseries
             // timeseries for each unique set of attributes, including the Error and IsTopLevel attributes.
             // As a result, we must create distinct Aggregation keys (and consequently, unique stats) by these attributes.
@@ -365,7 +399,7 @@ namespace Datadog.Trace.Agent
                 grpcStatusCode,
                 serviceSource,
                 peerTagsHash,
-                additionalMetricTagsHash: 0);
+                additionalTagsHash);
         }
 
         /// <summary>
@@ -422,7 +456,7 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// Encodes the peer tags for a span into a <see cref="List{T}"/> of UTF-8 byte arrays.
         /// Called only on the cold path (new bucket creation).
-        /// Uses <paramref name="results"/> from <see cref="BuildKey(Span, List{PeerTagKey}, out PeerTagResults)"/>
+        /// Uses <paramref name="results"/> from <see cref="BuildKey(Span, List{PeerTagKey}, out PeerTagResults, out AdditionalTagResults)"/>
         /// to skip re-deriving spanKind/baseService and to pre-allocate the result list.
         /// </summary>
         internal static List<byte[]> GetEncodedPeerTags(Span span, List<PeerTagKey> peerTagKeys, in PeerTagResults results)
@@ -434,7 +468,7 @@ namespace Datadog.Trace.Agent
 
             if (results.PeerTagCount == 0)
             {
-                return EmptyPeerTags;
+                return EmptyTags;
             }
 
             var result = new List<byte[]>(results.PeerTagCount);
@@ -448,6 +482,77 @@ namespace Datadog.Trace.Agent
 
                 tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
                 result.Add(EncodingHelpers.Utf8NoBom.GetBytes($"{peerTag.Name}:{tagValue}"));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the FNV-64 hash of the span-derived additional tags present on the span, in the
+        /// configured (pre-sorted) order. Values exceeding <see cref="AdditionalTagMaxValueLength"/>
+        /// are substituted with <see cref="BlockedByTracerSentinel"/> so the hash matches the encoded value.
+        /// Tags that are missing or empty on the span are skipped (not part of the dimension set).
+        /// </summary>
+        private ulong ComputeSpanDerivedAdditionalTagsHash(Span span, out AdditionalTagResults results)
+        {
+            // Hash should be generated as TAGNAME:TAGVALUE, in sorted order (_additionalTagKeys is pre-sorted).
+            ulong? previousHash = null;
+            var presentTagCount = 0;
+            foreach (var tagKey in _additionalTagKeys)
+            {
+                var tagValue = span.GetTag(tagKey.Name);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    continue;
+                }
+
+                if (tagValue.Length > AdditionalTagMaxValueLength)
+                {
+                    tagValue = BlockedByTracerSentinel;
+                }
+
+                if (previousHash.HasValue)
+                {
+                    // add the separator between tags
+                    previousHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, previousHash.Value);
+                }
+
+                previousHash = HashTag(tagKey.Utf8Prefix, tagValue, FnvHash64.Version.V1A, previousHash);
+                presentTagCount++;
+            }
+
+            results = new AdditionalTagResults { TagCount = presentTagCount };
+            return previousHash ?? 0;
+        }
+
+        /// <summary>
+        /// Encodes the span-derived additional tags for a span into a <see cref="List{T}"/> of UTF-8
+        /// "key:value" byte arrays, in configured (pre-sorted) order. Called only on the cold path
+        /// (new bucket creation). Values exceeding <see cref="AdditionalTagMaxValueLength"/> are
+        /// substituted with <see cref="BlockedByTracerSentinel"/>, matching the hash computation.
+        /// </summary>
+        private List<byte[]> GetEncodedAdditionalTags(Span span, in AdditionalTagResults results)
+        {
+            if (results.TagCount == 0)
+            {
+                return EmptyTags;
+            }
+
+            var result = new List<byte[]>(results.TagCount);
+            foreach (var tagKey in _additionalTagKeys)
+            {
+                var tagValue = span.GetTag(tagKey.Name);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    continue;
+                }
+
+                if (tagValue.Length > AdditionalTagMaxValueLength)
+                {
+                    tagValue = BlockedByTracerSentinel;
+                }
+
+                result.Add(EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey.Name}:{tagValue}"));
             }
 
             return result;
@@ -533,12 +638,15 @@ namespace Datadog.Trace.Agent
 
             var buffer = CurrentBuffer;
             var peerTagKeys = Volatile.Read(ref _peerTagKeys);
-            var key = BuildKey(span, peerTagKeys, out var peerTagResults);
+            var key = BuildKey(span, peerTagKeys, out var peerTagResults, out var additionalTagResults);
 
             if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
-                // Cold path: encode the peer tags for storage in the new bucket
-                bucket = new StatsBucket(key, GetEncodedPeerTags(span, peerTagKeys, in peerTagResults), EmptyPeerTags);
+                // Cold path: encode the peer tags and span-derived primary tags for storage in the new bucket
+                bucket = new StatsBucket(
+                    key,
+                    GetEncodedPeerTags(span, peerTagKeys, in peerTagResults),
+                    GetEncodedAdditionalTags(span, in additionalTagResults));
                 buffer.Buckets.Add(key, bucket);
             }
 
@@ -629,6 +737,17 @@ namespace Datadog.Trace.Agent
             public int PeerTagCount { get; init; }
 
             public string BaseService { get; init; }
+        }
+
+        internal readonly struct AdditionalTagKey(string name)
+        {
+            public readonly string Name = name;
+            public readonly byte[] Utf8Prefix = EncodingHelpers.Utf8NoBom.GetBytes(name + ":");
+        }
+
+        internal readonly struct AdditionalTagResults
+        {
+            public int TagCount { get; init; }
         }
     }
 }
