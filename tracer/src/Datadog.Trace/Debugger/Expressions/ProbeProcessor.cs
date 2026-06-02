@@ -378,6 +378,7 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 // Condition evaluation errors bypass the per-probe sampler and global limiter.
                 // A hard one-per-5-min cap guarantees at least one diagnostic snapshot per window without flooding.
+                if (probeInfo.HasCondition && !ShouldSampleEvaluationErrorSnapshot())
                 {
                     shouldStopCapture = true;
                 }
