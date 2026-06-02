@@ -49,6 +49,10 @@ ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in th
 - `default`: The default value applied by the tracer when the env var is not set. Use `null` if there is no default.
 
 **Optional fields:**
+- `scope`: Declares which runtime components read this variable. Valid values:
+  - `[managed]` — read only by managed (C#) code; a `ConfigurationKeys.*` constant is generated (default when omitted)
+  - `[native]` — read only by native (C++) code; **no C# constant is generated**, but the entry is required in this registry for coverage tracking
+  - `[managed, native]` — read by both; a C# constant is generated
 - `product`: Groups the key into a product-specific partial class (e.g., `OpenTelemetry`)
 - `aliases`: A list of fallback environment variable names checked in order when the primary key is not found
 - `const_name`: Overrides the auto-generated PascalCase constant name (useful for backward compatibility)
