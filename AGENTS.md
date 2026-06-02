@@ -79,10 +79,26 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 ## Build & Development
 
-**Quick start:**
+**Quick start (managed-only, all platforms, no Docker):**
 - Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
-- Integration tests: `BuildAndRunIntegrationTests`
+- Integration tests: `./tracer/build.sh BuildAndRunIntegrationTests`
+
+**Linux native components** (profiler `.so`, native loader, native tracer, API wrapper) must be built inside the Alpine builder image — direct `cmake` does not work. From macOS this needs Docker (Colima, Docker Desktop, …):
+
+```bash
+# Build everything needed to run the profiler end-to-end:
+./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
+```
+
+**Iterate on the profiler — run a scenario with a freshly-built profiler attached:**
+
+```bash
+./tracer/profiler-run.sh              # default: PiComputation
+./tracer/profiler-run.sh 5 --timeout 30   # scenario 5 = FibonacciComputation, run for 30s
+```
+
+`tracer/profiler-run.sh` is a thin wrapper around the docker run + env soup needed to load the native loader, profiler, tracer and `LD_PRELOAD` API wrapper from the locally-built monitoring home. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files are written under `.profiler-out/` (gitignored). After a code change, rebuild only what you touched (e.g. `BuildProfilerHome` for native profiler changes) and rerun.
 
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
