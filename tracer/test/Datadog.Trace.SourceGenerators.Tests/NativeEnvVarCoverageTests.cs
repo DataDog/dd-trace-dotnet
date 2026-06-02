@@ -61,16 +61,22 @@ public class NativeEnvVarCoverageTests
 
         var nativeVars = GetNativeEnvVars(repoRoot);
 
-        // Build a lookup: var name (key or alias) -> entry
+        // Build a lookup: var name (key or alias) -> entry.
+        // Primary keys are inserted first; aliases use TryAdd so a primary key always
+        // wins when an alias string happens to equal another entry's primary key.
         var keyByName = new Dictionary<string, YamlReader.ConfigurationEntry>(StringComparer.Ordinal);
         foreach (var kvp in parsed.Configurations)
         {
             keyByName[kvp.Key] = kvp.Value;
+        }
+
+        foreach (var kvp in parsed.Configurations)
+        {
             if (kvp.Value.Aliases is not null)
             {
                 foreach (var alias in kvp.Value.Aliases)
                 {
-                    keyByName[alias] = kvp.Value;
+                    keyByName.TryAdd(alias, kvp.Value);
                 }
             }
         }
