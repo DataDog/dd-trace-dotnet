@@ -2131,10 +2131,10 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
-      Enables garbage collection profiling to track GC pause times and frequencies.
+      Enables garbage collection profiling to track GC pause times and frequencies. Default is true.
   DD_PROFILING_HEAPSNAPSHOT_ENABLED:
   - implementation: A
     scope: native
@@ -2163,10 +2163,10 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
-      Enables lock contention profiling to track threads blocked waiting for locks.
+      Enables lock contention profiling to track threads blocked waiting for locks. Default is true.
   DD_PROFILING_LOG_DIR:
   - implementation: A
     scope: native
