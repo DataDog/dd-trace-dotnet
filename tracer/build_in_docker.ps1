@@ -16,8 +16,9 @@ $IMAGE_NAME="dd-trace-dotnet/alpine-base"
    --file "$BUILD_DIR/docker/alpine.dockerfile" `
    "$BUILD_DIR"
 
-# Use -t only when stdout is a terminal so this script works in CI / no-TTY agent harnesses.
-$ttyFlags = if ([Console]::IsOutputRedirected) { @('-i') } else { @('-i','-t') }
+# Use -t only when stdin is a terminal so this script works in CI / no-TTY agent harnesses.
+# Mirrors the bash sibling's `[[ -t 0 ]]` check (stdin / fd 0).
+$ttyFlags = if ([Console]::IsInputRedirected) { @('-i') } else { @('-i','-t') }
 
 &docker run @ttyFlags --rm `
     --mount "type=bind,source=$ROOT_DIR,target=/project" `
