@@ -641,8 +641,8 @@ supportedConfigurations:
     default: 'false'
     product: Tracer
     documentation: |-
-      When true, the native loader writes a copy of each original module to disk before rewriting.
-      Intended for debugging only. Default is false.
+      When true, the instrumented assembly generator saves a copy of each original (pre-rewrite)
+      module to disk alongside the rewritten IL. Only effective on Windows. Intended for debugging only. Default is false.
   DD_CUSTOM_TRACE_ID:
   - implementation: A
     scope: managed
@@ -799,7 +799,7 @@ supportedConfigurations:
     default: 'false'
     product: Tracer
     documentation: |-
-      When true, the native tracer writes rewritten IL to disk for debugging purposes.
+      When true, dumps the original and rewritten IL to the tracer log file for debugging.
       Default is false.
   DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL:
   - implementation: A
@@ -1018,7 +1018,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Enables CPU time tracking on GC threads in the Continuous Profiler.
@@ -1124,7 +1124,7 @@ supportedConfigurations:
     scope: native
     type: string
     default: null
-    product: Tracer
+    product: Profiler
     documentation: |-
       Overrides the hostname reported to Datadog. When set, replaces the auto-detected hostname.
   DD_HTTP_CLIENT_ERROR_STATUSES:
@@ -1437,8 +1437,8 @@ supportedConfigurations:
   DD_INTERNAL_CIVISIBILITY_SPANID:
   - implementation: A
     scope: native
-    type: string
-    default: null
+    type: int
+    default: '0'
     product: CIVisibility
     documentation: |-
       Internal span ID injected by CI Visibility into child processes for trace correlation.
@@ -1449,12 +1449,13 @@ supportedConfigurations:
     default: null
     product: Profiler
     documentation: |-
-      Selects the CPU profiler implementation. Used internally to switch between profiler backends.
+      Selects the CPU profiler implementation type. Defaults to ManualCpuTime on Windows and
+      TimerCreate on Linux/macOS. Used internally to switch between profiler backends.
   DD_INTERNAL_CPU_PROFILING_INTERVAL:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '9'
     product: Profiler
     documentation: |-
       Sampling interval in milliseconds for CPU profiling. Lower values increase resolution at the cost of overhead.
@@ -1465,7 +1466,8 @@ supportedConfigurations:
     default: null
     product: Tracer
     documentation: |-
-      Overrides the path to the CLR profiler DLL. Used internally for testing alternative profiler builds.
+      Set by the native loader to the path of the custom CLR profiler DLL after it has been loaded.
+      This is an output variable written by the loader for downstream consumers, not a user-settable override.
   DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL:
   - implementation: A
     scope: native
@@ -1520,7 +1522,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Internal flag to enable CPU time tracking on GC threads. Use DD_GC_THREADS_CPUTIME_ENABLED instead.
@@ -1552,7 +1554,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '2000'
     product: Profiler
     documentation: |-
       Maximum number of allocations sampled per second by the allocation profiler.
@@ -1560,7 +1562,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '10'
     product: Profiler
     documentation: |-
       Maximum number of threads sampled per code hotspot collection interval.
@@ -1568,7 +1570,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '100'
     product: Profiler
     documentation: |-
       Minimum lock contention duration in milliseconds required to record a contention event.
@@ -1576,7 +1578,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '3000'
     product: Profiler
     documentation: |-
       Maximum number of lock contention events sampled per second.
@@ -1584,7 +1586,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '64'
     product: Profiler
     documentation: |-
       Maximum number of threads sampled per CPU-time collection interval.
@@ -1600,7 +1602,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Enables ETW (Event Tracing for Windows) as the profiling data source (Windows only).
@@ -1608,7 +1610,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '500'
     product: Profiler
     documentation: |-
       Maximum number of exceptions sampled per second by the exception profiler.
@@ -1624,7 +1626,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '250'
     product: Profiler
     documentation: |-
       Interval in milliseconds between checks for heap snapshot trigger conditions.
@@ -1632,15 +1634,15 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '5'
     product: Profiler
     documentation: |-
-      Interval in milliseconds between heap snapshot collections.
+      Interval in minutes between heap snapshot collections. Default is 5.
   DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '85'
     product: Profiler
     documentation: |-
       Memory pressure percentage threshold that triggers an automatic heap snapshot.
@@ -1648,7 +1650,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '4096'
     product: Profiler
     documentation: |-
       Maximum number of heap object handles tracked during heap profiling.
@@ -1664,7 +1666,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '50'
     product: Profiler
     documentation: |-
       Minimum HTTP request duration in milliseconds required to record a request in profiles.
@@ -1698,7 +1700,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'true'
+    default: 'false'
     product: Tracer
     documentation: |-
       Determines if the Fault-Tolerant Instrumentation mechanism is enabled.
@@ -1710,7 +1712,8 @@ supportedConfigurations:
     default: null
     product: Tracer
     documentation: |-
-      Overrides the path to the native loader DLL. Used internally for testing alternative loader builds.
+      Set by the native loader to its own file path at startup, for the tracer and profiler to
+      discover the loader location. This is an output variable written by the loader, not a user-settable override.
   DD_INTERNAL_PROFILING_ENABLED_ARM64:
   - implementation: A
     scope: managed, native
@@ -1733,7 +1736,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '9'
     product: Profiler
     documentation: |-
       Sampling interval in milliseconds for CPU and wall-time profiling.
@@ -1741,7 +1744,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Adds sample timestamps as labels in profiles to enable time-based filtering.
@@ -1753,6 +1756,7 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Enables the managed code cache in the profiler for improved method resolution performance.
+      Defaults to true on ARM64, false on all other architectures.
   DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED:
   - implementation: A
     scope: native
@@ -1765,7 +1769,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '5'
     product: Profiler
     documentation: |-
       Maximum number of threads sampled per wall-time collection interval.
@@ -1773,7 +1777,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Tracer
     documentation: |-
       Enables or disables the skip method body feature, which omits method body rewriting for certain methods.
@@ -1800,7 +1804,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Internal flag to enable thread lifetime tracking. Use DD_THREAD_LIFETIME_ENABLED instead.
@@ -1817,7 +1821,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Tracer
     documentation: |-
       Enables compatibility mode for interoperability with other versions of the Datadog .NET tracer.
@@ -1855,8 +1859,8 @@ supportedConfigurations:
     default: 'false'
     product: Tracer
     documentation: |-
-      Enables the workaround for dotnet/runtime issue 77973, which caused incorrect IL verification
-      behavior on certain .NET runtimes. Default is false.
+      Enables the workaround for dotnet/runtime issue 77973, which disables tiered compilation on
+      affected .NET runtimes (.NET 5, 6.0.0–6.0.12, 7.0.0–7.0.1). Default is false.
   DD_LOADER_NGEN_ENABLED:
   - implementation: A
     scope: native
@@ -2099,7 +2103,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Deprecated. Use DD_PROFILING_LOCK_ENABLED instead.
@@ -2115,7 +2119,7 @@ supportedConfigurations:
   - implementation: B
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Enables exception profiling to track thrown exceptions and their call stacks.
@@ -2182,7 +2186,8 @@ supportedConfigurations:
     default: null
     product: Profiler
     documentation: |-
-      Path to the Continuous Profiler log file. Overrides DD_PROFILING_LOG_DIR if set.
+      Path to the Continuous Profiler log file. Used only when neither DD_PROFILING_LOG_DIR
+      nor DD_TRACE_LOG_DIRECTORY is set — it is the lowest-priority fallback, not an override.
   DD_PROFILING_MIN_CORES_THRESHOLD:
   - implementation: A
     scope: native
@@ -2230,18 +2235,20 @@ supportedConfigurations:
     scope: native
     type: string
     default: null
-    product: Profiler
+    product: Tracer
     documentation: |-
-      Semicolon-separated list of process names that the Continuous Profiler will not instrument.
+      Semicolon-separated list of process executable names that the Datadog SDK (CLR profiler /
+      auto-instrumentation) will not attach to.
   DD_PROFILER_PROCESSES:
   - implementation: A
     scope: native
     type: string
     default: null
-    product: Profiler
+    product: Tracer
     documentation: |-
-      Semicolon-separated list of process names that the Continuous Profiler will instrument.
-      If set, only these processes are profiled; all others are excluded.
+      Semicolon-separated list of process executable names that the Datadog SDK (CLR profiler /
+      auto-instrumentation) will attach to. If set, only matching processes are instrumented;
+      all others are skipped.
   DD_PROFILING_CODEHOTSPOTS_ENABLED:
   - implementation: A
     scope: managed
@@ -2517,7 +2524,7 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Profiler
     documentation: |-
       Enables thread lifetime tracking to record when threads are created and destroyed.
@@ -3081,8 +3088,9 @@ supportedConfigurations:
     default: 'false'
     product: Tracer
     documentation: |-
-      When true, enables buffered log output in the native loader.
-      Default is false.
+      Controls log output buffering in the native loader. Only relevant under Windows
+      single-step instrumentation (SSI). Inside SSI the effective default is true (buffered);
+      outside SSI buffering is always disabled regardless of this setting.
   DD_TRACE_LOG_DIRECTORY:
   - implementation: B
     scope: managed, native
@@ -3470,8 +3478,8 @@ supportedConfigurations:
     default: 'false'
     product: Tracer
     documentation: |-
-      When true, the native loader writes rewritten module IL to disk.
-      Intended for debugging only. Default is false.
+      When true, the instrumented assembly generator writes rewritten module IL to disk.
+      Only effective on Windows. Intended for debugging only. Default is false.
   DD_LOGS_OTEL_ENABLED:
   - implementation: A
     scope: managed
