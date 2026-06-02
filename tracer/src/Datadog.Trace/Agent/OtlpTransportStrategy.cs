@@ -19,7 +19,6 @@ namespace Datadog.Trace.Agent;
 internal static class OtlpTransportStrategy
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpTransportStrategy));
-    internal const string UnixDomainSocketPrefix = "unix://";
     private static readonly Uri Localhost = new Uri("http://localhost");
 
     public static IApiRequestFactory GetTraces(ExporterSettings settings)
@@ -37,7 +36,7 @@ internal static class OtlpTransportStrategy
     {
         var httpHeaderHelper = new OtlpHeaderHelper(signalHeaders);
 
-        if (signalEndpoint.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
+        if (signalEndpoint.OriginalString.StartsWith(ExporterSettings.UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
         {
             var socketPath = signalEndpoint.PathAndQuery;
             var endpointPath = protocol switch
@@ -47,7 +46,7 @@ internal static class OtlpTransportStrategy
             };
 
 #if NET5_0_OR_GREATER
-            Log.Information("Using " + nameof(SocketHandlerRequestFactory) + " for {ProductName} transport, with UDS path {Path}.", productName, socketPath);
+            Log.Information<string, string>("Using " + nameof(SocketHandlerRequestFactory) + " for {ProductName} transport, with Unix Domain Sockets path {Path}.", productName, socketPath);
             // HttpClient only accepts http(s) URIs - use http://localhost and append the fixed relative path (e.g. /v1/traces)
             return new SocketHandlerRequestFactory(
                 new UnixDomainSocketStreamFactory(socketPath),
@@ -55,7 +54,7 @@ internal static class OtlpTransportStrategy
                 endpointPath,
                 timeout: TimeSpan.FromMilliseconds(timeoutMs));
 #elif NETCOREAPP3_1_OR_GREATER
-            Log.Information<string, string, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for {ProductName} transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", productName, socketPath, timeoutMs);
+            Log.Information<string, string>("Using " + nameof(HttpStreamRequestFactory) + " for {ProductName} transport, with Unix Domain Sockets path {Path}.", productName, socketPath);
             // HttpClient only accepts http(s) URIs - use http://localhost and append the fixed relative path (e.g. /v1/traces)
             return new HttpStreamRequestFactory(
                 new UnixDomainSocketStreamFactory(socketPath),
