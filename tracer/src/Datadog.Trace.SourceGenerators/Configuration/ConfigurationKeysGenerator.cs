@@ -119,29 +119,26 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         {
             var entry = kvp.Value;
 
-            // Validate scope values: must be non-empty and contain only recognized tokens.
+            // Validate scope: required, non-empty, and must contain only recognized tokens.
             var validScopeValues = new[] { "managed", "native" };
-            if (entry.Scope is not null)
+            if (entry.Scope is null || entry.Scope.Length == 0)
             {
-                if (entry.Scope.Length == 0)
+                diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use [managed], [native], or [managed, native].", DiagnosticSeverity.Error));
+            }
+            else
+            {
+                foreach (var scopeValue in entry.Scope)
                 {
-                    diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has an empty scope array in supported-configurations.yaml. Use [managed], [native], or [managed, native].", DiagnosticSeverity.Error));
-                }
-                else
-                {
-                    foreach (var scopeValue in entry.Scope)
+                    if (!validScopeValues.Any(v => string.Equals(v, scopeValue, StringComparison.OrdinalIgnoreCase)))
                     {
-                        if (!validScopeValues.Any(v => string.Equals(v, scopeValue, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has unrecognized scope value '{scopeValue}'. Valid values: managed, native.", DiagnosticSeverity.Error));
-                        }
+                        diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has unrecognized scope value '{scopeValue}'. Valid values: managed, native.", DiagnosticSeverity.Error));
                     }
                 }
             }
 
             // Generate a C# constant only when scope includes "managed".
             // [native]-only entries are registered for coverage tracking but have no C# constant.
-            var skipConstantGeneration = entry.Scope is not null &&
+            var skipConstantGeneration = entry.Scope is null ||
                                          !entry.Scope.Any(s => string.Equals(s, "managed", StringComparison.OrdinalIgnoreCase));
 
             // Documentation is mandatory for all configuration keys, including native-only ones.
