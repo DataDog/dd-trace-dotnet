@@ -5,6 +5,8 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
+#include <cstdint>
+
 #ifndef _WINDOWS
 #include <csetjmp>
 #include <csignal>
@@ -387,7 +389,15 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
     uint64_t totalElements = 1;
     for (ULONG32 d = 0; d < rank; d++)
     {
-        totalElements *= dimensionSizes[d];
+        ULONG32 dim = dimensionSizes[d];
+        // A real array cannot have more elements than fit in memory; an overflow
+        // here means the dimension sizes are corrupt, so refuse to enumerate
+        // rather than walking arbitrary memory based on a wrapped count.
+        if (dim != 0 && totalElements > UINT64_MAX / dim)
+        {
+            return;
+        }
+        totalElements *= dim;
     }
 
     if (totalElements == 0)

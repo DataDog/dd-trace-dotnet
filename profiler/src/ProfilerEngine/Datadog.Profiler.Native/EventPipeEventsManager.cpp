@@ -143,6 +143,10 @@ bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata
 
     // skip the name to read keyword and version
     name = EventsParserHelper::ReadWideString(pMetadata, cbMetadata, &offset);
+    if (name == nullptr)
+    {
+        return false;
+    }
 
     if (!EventsParserHelper::Read(keywords, pMetadata, cbMetadata, offset))
     {

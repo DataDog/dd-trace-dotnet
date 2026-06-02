@@ -342,6 +342,12 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
 
                 // Read the null-terminated UTF-16 variable name that follows each entry
                 auto fieldName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
+                if (fieldName == nullptr)
+                {
+                    Log::Debug("[EVENT] GCBulkRootStaticVar: invalid field name, index=", i,
+                               " count=", payload.Count, " cbEventData=", cbEventData);
+                    break;
+                }
 
                 _pGCDumpListener->OnBulkRootStaticVar(value, fieldName);
             }
