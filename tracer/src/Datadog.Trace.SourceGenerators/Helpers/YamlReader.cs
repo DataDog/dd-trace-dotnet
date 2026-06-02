@@ -28,6 +28,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
             string? currentProduct = null;
             string? currentDocumentation = null;
             string? currentConstName = null;
+            string[]? currentScope = null;
             var currentAliases = new List<string>();
             var inDocumentation = false;
             var inAliases = false;
@@ -62,7 +63,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                     if (currentConfigKey != null)
                     {
                         var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                        configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                        configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
                     }
 
                     inSupportedConfigurations = false;
@@ -115,13 +116,14 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                             if (currentConfigKey != null)
                             {
                                 var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
                             }
 
                             currentConfigKey = potentialKey;
                             currentProduct = null;
                             currentDocumentation = null;
                             currentConstName = null;
+                            currentScope = null;
                             currentAliases.Clear();
                             inDocumentation = false;
                             inAliases = false;
@@ -238,6 +240,13 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                                 case "const_name":
                                     currentConstName = propValue;
                                     break;
+                                case "scope":
+                                    // Comma-separated scope values: managed | native | managed, native
+                                    currentScope = propValue.Split(',')
+                                                            .Select(s => s.Trim())
+                                                            .Where(s => s.Length > 0)
+                                                            .ToArray();
+                                    break;
                                 case "aliases":
                                     inAliases = true;
                                     break;
@@ -284,7 +293,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
             if (currentConfigKey != null)
             {
                 var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentScope, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
             }
 
             return new ParsedConfigurationData(configurations, deprecations);
@@ -352,12 +361,13 @@ namespace Datadog.Trace.SourceGenerators.Helpers
         /// </summary>
         internal readonly struct ConfigurationEntry : IEquatable<ConfigurationEntry>
         {
-            public ConfigurationEntry(string key, string? product, string? documentation, string? constName, string[]? aliases = null)
+            public ConfigurationEntry(string key, string? product, string? documentation, string? constName, string[]? scope, string[]? aliases = null)
             {
                 Key = key;
                 Product = product;
                 Documentation = documentation;
                 ConstName = constName;
+                Scope = scope;
                 Aliases = aliases;
             }
 
@@ -369,6 +379,8 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
             public string? ConstName { get; }
 
+            public string[]? Scope { get; }
+
             public string[]? Aliases { get; }
 
             public bool Equals(ConfigurationEntry other)
@@ -378,19 +390,29 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                     return false;
                 }
 
-                if (ReferenceEquals(Aliases, other.Aliases))
+                if (!ArraysEqual(Scope, other.Scope) || !ArraysEqual(Aliases, other.Aliases))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            private static bool ArraysEqual(string[]? a, string[]? b)
+            {
+                if (ReferenceEquals(a, b))
                 {
                     return true;
                 }
 
-                if (Aliases is null || other.Aliases is null || Aliases.Length != other.Aliases.Length)
+                if (a is null || b is null || a.Length != b.Length)
                 {
-                    return Aliases is null && other.Aliases is null;
+                    return a is null && b is null;
                 }
 
-                for (var i = 0; i < Aliases.Length; i++)
+                for (var i = 0; i < a.Length; i++)
                 {
-                    if (Aliases[i] != other.Aliases[i])
+                    if (a[i] != b[i])
                     {
                         return false;
                     }
@@ -404,6 +426,14 @@ namespace Datadog.Trace.SourceGenerators.Helpers
             public override int GetHashCode()
             {
                 var hash = HashCode.Combine(Key, Product, Documentation, ConstName);
+                if (Scope is not null)
+                {
+                    foreach (var s in Scope)
+                    {
+                        hash = HashCode.Combine(hash, s);
+                    }
+                }
+
                 if (Aliases is not null)
                 {
                     foreach (var alias in Aliases)

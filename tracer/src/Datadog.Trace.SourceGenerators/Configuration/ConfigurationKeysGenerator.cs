@@ -25,6 +25,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     private const string SupportedConfigurationsFileName = "supported-configurations.yaml";
     private const string GeneratedClassName = "ConfigurationKeys";
     private const string Namespace = "Datadog.Trace.Configuration";
+    private static readonly string[] ValidScopeValues = ["managed", "native"];
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -118,16 +119,44 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         foreach (var kvp in parsedData.Configurations)
         {
             var entry = kvp.Value;
-            string? deprecationMessage = null;
 
-            // Check if this key has a deprecation message
-            parsedData.Deprecations?.TryGetValue(kvp.Key, out deprecationMessage);
+            // Validate scope: required, non-empty, and must contain only recognized tokens.
+            if (entry.Scope is null || entry.Scope.Length == 0)
+            {
+                diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed, native, or managed, native.", DiagnosticSeverity.Error));
+            }
+            else
+            {
+                foreach (var scopeValue in entry.Scope)
+                {
+                    if (!ValidScopeValues.Any(v => string.Equals(v, scopeValue, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has unrecognized scope value '{scopeValue}'. Valid values: managed, native.", DiagnosticSeverity.Error));
+                    }
+                }
+            }
 
-            // Documentation is mandatory for all configuration keys
+            // Generate a C# constant only when scope includes "managed".
+            // native-only entries are registered for coverage tracking but have no C# constant.
+            var skipConstantGeneration = entry.Scope is null ||
+                                         !entry.Scope.Any(s => string.Equals(s, "managed", StringComparison.OrdinalIgnoreCase));
+
+            // Documentation is mandatory for all configuration keys, including native-only ones.
             if (string.IsNullOrEmpty(entry.Documentation))
             {
                 diagnostics.Add(CreateDiagnosticInfo("DDSG0008", "Missing documentation", $"Configuration key '{kvp.Key}' is missing a 'documentation' field in supported-configurations.yaml", DiagnosticSeverity.Error));
             }
+
+            // Native-only vars are registered for coverage tracking but don't generate C# constants.
+            if (skipConstantGeneration)
+            {
+                continue;
+            }
+
+            string? deprecationMessage = null;
+
+            // Check if this key has a deprecation message
+            parsedData.Deprecations?.TryGetValue(kvp.Key, out deprecationMessage);
 
             configurations[kvp.Key] = new ConfigEntry(
                 entry.Key,
