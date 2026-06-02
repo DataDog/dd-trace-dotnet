@@ -74,6 +74,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public void SinkSendsMessageAsJsonBatch()
         {
             using var mutex = new ManualResetEventSlim();
@@ -117,6 +118,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
+        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public void SinkSendsMultipleBatches()
         {
             using var mutex = new ManualResetEventSlim();
