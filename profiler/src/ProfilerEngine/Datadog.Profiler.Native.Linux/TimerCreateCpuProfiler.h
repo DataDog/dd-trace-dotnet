@@ -64,6 +64,6 @@ private:
     std::shared_ptr<CounterMetric> _totalSampling;
     std::shared_ptr<DiscardMetrics> _discardMetrics;
     std::atomic<std::uint64_t> _nbThreadsInSignalHandler;
-    std::unique_ptr<IUnwinder> _pUnwinder;
+    IUnwinder* _pUnwinder;
     UnwindingRecorderFactory* _pUnwindingRecorderFactory;
 };
