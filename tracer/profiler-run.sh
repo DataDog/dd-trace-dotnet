@@ -35,8 +35,9 @@ fi
 EXTRA_ARGS=("$@")
 
 # --- arch detection -----------------------------------------------------------
+ARCH_ENV=()
 case "$(uname -m)" in
-    arm64|aarch64) RID="linux-musl-arm64"; BUILD_ARCH="ARM64" ;;
+    arm64|aarch64) RID="linux-musl-arm64"; BUILD_ARCH="ARM64"; ARCH_ENV=(--env DD_INTERNAL_PROFILING_ENABLED_ARM64=1) ;;
     x86_64|amd64)  RID="linux-musl-x64";   BUILD_ARCH="x64"   ;;
     *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
 esac
@@ -96,6 +97,7 @@ docker run --rm "${TTY_FLAGS[@]}" \
     --env "DD_NATIVELOADER_CONFIGFILE=/project/${MH_REL}/loader.conf" \
     --env "LD_PRELOAD=/project/${MH_REL}/Datadog.Linux.ApiWrapper.x64.so" \
     --env DD_PROFILING_ENABLED=1 \
+    "${ARCH_ENV[@]}" \
     --env DD_PROFILING_MANAGED_ACTIVATION_ENABLED=0 \
     --env DD_TRACE_ENABLED=0 \
     --env DD_TRACE_DEBUG="${DD_TRACE_DEBUG:-0}" \
