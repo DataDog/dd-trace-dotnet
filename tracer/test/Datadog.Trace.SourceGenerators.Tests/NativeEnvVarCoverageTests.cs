@@ -24,9 +24,6 @@ namespace Datadog.Trace.SourceGenerators.Tests;
 /// Scans both headers (.h) and implementation files (.cpp/.cc) to catch inline string
 /// literals (L"DD_...") that bypass the header constant pattern.
 ///
-/// DD_INTERNAL_* variables are intentionally excluded — they are undocumented internal variables
-/// that are not expected to be registered.
-///
 /// Note: the profiler (profiler/src/) is out of scope — it maintains its own configuration model
 /// separate from supported-configurations.yaml.
 /// </summary>

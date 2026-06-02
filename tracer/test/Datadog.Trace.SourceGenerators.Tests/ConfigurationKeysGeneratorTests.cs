@@ -34,21 +34,21 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_TRACE_ENABLED:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: |-
                                                  Enables or disables the tracer.
                                                  Default is true.
                                              DD_APPSEC_ENABLED:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: AppSec
                                                documentation: |-
                                                  Enables or disables AppSec.
                                                  Default is false.
                                              OTEL_EXPORTER_OTLP_ENDPOINT:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: OpenTelemetry
                                                documentation: |-
                                                  Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
@@ -128,17 +128,17 @@ public class ConfigurationKeysGeneratorTests
             supportedConfigurations:
               DD_CIVISIBILITY_AGENTLESS_ENABLED:
               - implementation: A
-                scope: [managed]
+                scope: managed
                 product: CiVisibility
                 documentation: Enables agentless mode for CI Visibility.
               DD_APPSEC_WAF_TIMEOUT:
               - implementation: A
-                scope: [managed]
+                scope: managed
                 product: AppSec
                 documentation: WAF timeout in microseconds.
               DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED:
               - implementation: A
-                scope: [managed]
+                scope: managed
                 product: Tracer
                 documentation: Removes integration service names.
             """;
@@ -205,11 +205,11 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_ENV:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                documentation: The environment name.
                                              DD_SERVICE:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                documentation: The service name.
                                            """;
 
@@ -237,7 +237,7 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_TRACE_ENABLED:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: |-
                                                  Enables or disables the Datadog tracer.
@@ -318,17 +318,17 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_TRACE_SAMPLE_RATE:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: Sets the sample rate.
                                              DD_TRACE_ENABLED:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: Enables the tracer.
                                              DD_TRACE_DEBUG:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: Enables debug mode.
                                            """;
@@ -361,7 +361,7 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_TRACE_ENABLED:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: |-
                                                  Configuration key for enabling or disabling the Tracer.
@@ -369,7 +369,7 @@ public class ConfigurationKeysGeneratorTests
                                                  <seealso cref="Datadog.Trace.Configuration.TracerSettings.TraceEnabled"/>
                                              DD_LOGS_INJECTION:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: |-
                                                  Configuration key for enabling or disabling the automatic injection
@@ -420,11 +420,11 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_MAX_TRACES_PER_SECOND:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                documentation: Configuration key for the maximum number of traces to submit per second.
                                              DD_TRACE_ENABLED:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                documentation: Enables or disables the tracer.
                                            deprecations:
                                              DD_MAX_TRACES_PER_SECOND: This parameter is obsolete and should be replaced by `DD_TRACE_RATE_LIMIT`
@@ -457,11 +457,11 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_TRACE_ENABLED:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                              DD_TRACE_DEBUG:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: Enables debug mode.
                                            """;
@@ -488,17 +488,17 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_MANAGED_ONLY:
                                              - implementation: A
-                                               scope: [managed]
+                                               scope: managed
                                                product: Tracer
                                                documentation: A managed-only config.
                                              DD_NATIVE_ONLY:
                                              - implementation: A
-                                               scope: [native]
+                                               scope: native
                                                product: Tracer
                                                documentation: A native-only config.
                                              DD_BOTH:
                                              - implementation: A
-                                               scope: [managed, native]
+                                               scope: managed, native
                                                product: Tracer
                                                documentation: A config read by both.
                                            """;
@@ -525,12 +525,12 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              DD_EMPTY_SCOPE:
                                              - implementation: A
-                                               scope: []
+                                               scope:
                                                product: Tracer
                                                documentation: Entry with empty scope array.
                                              DD_TYPO_SCOPE:
                                              - implementation: A
-                                               scope: [managd]
+                                               scope: managd
                                                product: Tracer
                                                documentation: Entry with a typo in scope.
                                            """;

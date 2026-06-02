@@ -241,21 +241,11 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                                     currentConstName = propValue;
                                     break;
                                 case "scope":
-                                    // Parse inline YAML array: [managed], [native], or [managed, native]
-                                    var scopeStr = propValue.Trim();
-                                    if (scopeStr.StartsWith("[", StringComparison.Ordinal) && scopeStr.EndsWith("]", StringComparison.Ordinal))
-                                    {
-                                        currentScope = scopeStr.Substring(1, scopeStr.Length - 2)
-                                                               .Split(',')
-                                                               .Select(s => s.Trim())
-                                                               .Where(s => s.Length > 0)
-                                                               .ToArray();
-                                    }
-                                    else
-                                    {
-                                        currentScope = new[] { scopeStr };
-                                    }
-
+                                    // Comma-separated scope values: managed | native | managed, native
+                                    currentScope = propValue.Split(',')
+                                                            .Select(s => s.Trim())
+                                                            .Where(s => s.Length > 0)
+                                                            .ToArray();
                                     break;
                                 case "aliases":
                                     inAliases = true;
