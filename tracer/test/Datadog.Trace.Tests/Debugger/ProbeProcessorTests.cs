@@ -111,6 +111,24 @@ public class ProbeProcessorTests
     }
 
     [Fact]
+    public void ConditionEvaluationErrorSnapshotBypassesGlobalLimiter()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var sampler = new TestAdaptiveSampler(false);
+        var probe = CreateConditionalLogProbe("snapshot-probe", InvalidConditionJson, captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, sampler.SampleCalls);
+    }
+
+    [Fact]
     public void ConditionEvaluationErrorRateLimitSurvivesProbeUpdate()
     {
         var processor = CreateConditionalProbeProcessor();
