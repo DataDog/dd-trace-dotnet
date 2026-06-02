@@ -22,21 +22,4 @@ internal enum DistributionShared
     /// </summary>
     [TelemetryMetric<MetricTags.InitializationComponent>("init_time", isCommon: true, MetricNamespaceConstants.General)] InitTime,
 #endregion
-#region Live Debugger Namespace
-
-    /// <summary>
-    /// Memory usage percentage recorded when Dynamic Instrumentation memory pressure changes state.
-    /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState>("memory_pressure.memory_usage_pct", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureMemoryUsagePct,
-
-    /// <summary>
-    /// Gen2 collections per second recorded when Dynamic Instrumentation memory pressure changes state.
-    /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState>("memory_pressure.gen2_per_sec", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureGen2PerSec,
-
-    /// <summary>
-    /// Duration of Dynamic Instrumentation high-memory-pressure periods, recorded on exit.
-    /// </summary>
-    [TelemetryMetric("memory_pressure.duration_ms", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDurationMs,
-#endregion
 }

@@ -23,29 +23,33 @@
     },
     "memory_pressure.memory_usage_pct": {
       "tags": [
-        "state"
+        "state",
+        "bucket"
       ],
-      "metric_type": "distribution",
-      "data_type": "percent",
-      "description": "Memory usage percentage recorded when Dynamic Instrumentation memory pressure changes state",
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "Count of DI memory-pressure transitions bucketed by memory load percent at the transition (severity histogram via fixed low-cardinality buckets)",
       "send_to_user": false,
       "user_tags": []
     },
     "memory_pressure.gen2_per_sec": {
       "tags": [
-        "state"
+        "state",
+        "bucket"
       ],
-      "metric_type": "distribution",
-      "data_type": "collections",
-      "description": "Gen2 collections per second recorded when Dynamic Instrumentation memory pressure changes state",
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "Count of DI memory-pressure transitions bucketed by Gen2 collections/sec at the transition (severity histogram via fixed low-cardinality buckets)",
       "send_to_user": false,
       "user_tags": []
     },
     "memory_pressure.duration_ms": {
-      "tags": [],
-      "metric_type": "distribution",
-      "data_type": "milliseconds",
-      "description": "Duration of Dynamic Instrumentation high-memory-pressure periods, recorded on exit",
+      "tags": [
+        "bucket"
+      ],
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "Count of DI high-memory-pressure episodes bucketed by duration, recorded on exit (persistence histogram via fixed low-cardinality buckets)",
       "send_to_user": false,
       "user_tags": []
     }

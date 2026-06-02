@@ -217,6 +217,21 @@ internal enum Count
     /// The number of times the Dynamic Instrumentation memory-pressure monitor disabled itself, tagged by reason.
     /// </summary>
     [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDisabled,
+
+    /// <summary>
+    /// Count of Dynamic Instrumentation memory-pressure transitions bucketed by memory load percentage at the transition.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureMemoryBucket>("memory_pressure.memory_usage_pct", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureMemoryUsagePct,
+
+    /// <summary>
+    /// Count of Dynamic Instrumentation memory-pressure transitions bucketed by Gen2 collections per second at the transition.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGen2Bucket>("memory_pressure.gen2_per_sec", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureGen2PerSec,
+
+    /// <summary>
+    /// Count of Dynamic Instrumentation high-memory-pressure periods bucketed by duration, recorded on exit.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration_ms", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDurationMs,
 #endregion
 #region AppSec Namespace
 

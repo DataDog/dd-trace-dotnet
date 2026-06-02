@@ -12,7 +12,7 @@ internal static partial class DistributionSharedExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionShared" /> metric.
     /// </summary>
-    public const int Length = 4;
+    public const int Length = 1;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -23,9 +23,6 @@ internal static partial class DistributionSharedExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "init_time",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "memory_pressure.memory_usage_pct",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "memory_pressure.gen2_per_sec",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "memory_pressure.duration_ms",
             _ => null!,
         };
 
@@ -49,9 +46,6 @@ internal static partial class DistributionSharedExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "general",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureMemoryUsagePct => "live_debugger",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureGen2PerSec => "live_debugger",
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.DebuggerMemoryPressureDurationMs => "live_debugger",
             _ => null,
         };
 }

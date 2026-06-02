@@ -262,14 +262,15 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
                 collector.AggregateMetrics();
 
                 var metrics = collector.GetMetrics();
-                metrics.Distributions.Should().NotContain(x =>
-                    x.Metric == DistributionShared.DebuggerMemoryPressureMemoryUsagePct.GetName());
-                metrics.Distributions.Should().Contain(x =>
-                    x.Metric == DistributionShared.DebuggerMemoryPressureGen2PerSec.GetName() &&
+                metrics.Metrics.Should().NotContain(x =>
+                    x.Metric == Count.DebuggerMemoryPressureMemoryUsagePct.GetName());
+                metrics.Metrics.Should().Contain(x =>
+                    x.Metric == Count.DebuggerMemoryPressureGen2PerSec.GetName() &&
                     x.Tags != null &&
-                    x.Tags.Length == 1 &&
+                    x.Tags.Length == 2 &&
                     x.Tags[0] == "state:enter" &&
-                    x.Points.Single() == 5.0);
+                    x.Tags[1] == "bucket:gte_5" &&
+                    x.Points.Single().Value == 1);
             }
             finally
             {

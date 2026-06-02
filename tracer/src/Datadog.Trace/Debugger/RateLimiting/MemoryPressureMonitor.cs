@@ -210,19 +210,47 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
             if (memoryUsagePercent.HasValue)
             {
-                TelemetryFactory.Metrics.RecordDistributionSharedDebuggerMemoryPressureMemoryUsagePct(state, memoryUsagePercent.Value);
+                TelemetryFactory.Metrics.RecordCountDebuggerMemoryPressureMemoryUsagePct(state, GetMemoryBucket(memoryUsagePercent.Value));
             }
 
             if (gen2CollectionsPerSecond.HasValue)
             {
-                TelemetryFactory.Metrics.RecordDistributionSharedDebuggerMemoryPressureGen2PerSec(state, gen2CollectionsPerSecond.Value);
+                TelemetryFactory.Metrics.RecordCountDebuggerMemoryPressureGen2PerSec(state, GetGen2Bucket(gen2CollectionsPerSecond.Value));
             }
 
             if (!isHighPressure)
             {
-                TelemetryFactory.Metrics.RecordDistributionSharedDebuggerMemoryPressureDurationMs(highPressureDurationMs);
+                TelemetryFactory.Metrics.RecordCountDebuggerMemoryPressureDurationMs(GetDurationBucket(highPressureDurationMs));
             }
         }
+
+        private static MetricTags.DebuggerMemoryPressureMemoryBucket GetMemoryBucket(double memoryUsagePercent)
+            => memoryUsagePercent switch
+            {
+                < 70 => MetricTags.DebuggerMemoryPressureMemoryBucket.LessThan70,
+                < 80 => MetricTags.DebuggerMemoryPressureMemoryBucket.From70To80,
+                < 85 => MetricTags.DebuggerMemoryPressureMemoryBucket.From80To85,
+                < 90 => MetricTags.DebuggerMemoryPressureMemoryBucket.From85To90,
+                _ => MetricTags.DebuggerMemoryPressureMemoryBucket.GreaterThanOrEqual90,
+            };
+
+        private static MetricTags.DebuggerMemoryPressureGen2Bucket GetGen2Bucket(double gen2CollectionsPerSecond)
+            => gen2CollectionsPerSecond switch
+            {
+                < 1 => MetricTags.DebuggerMemoryPressureGen2Bucket.LessThan1,
+                < 2 => MetricTags.DebuggerMemoryPressureGen2Bucket.From1To2,
+                < 5 => MetricTags.DebuggerMemoryPressureGen2Bucket.From2To5,
+                _ => MetricTags.DebuggerMemoryPressureGen2Bucket.GreaterThanOrEqual5,
+            };
+
+        private static MetricTags.DebuggerMemoryPressureDurationBucket GetDurationBucket(double durationMs)
+            => durationMs switch
+            {
+                < 1_000 => MetricTags.DebuggerMemoryPressureDurationBucket.LessThan1Second,
+                < 5_000 => MetricTags.DebuggerMemoryPressureDurationBucket.From1To5Seconds,
+                < 30_000 => MetricTags.DebuggerMemoryPressureDurationBucket.From5To30Seconds,
+                _ => MetricTags.DebuggerMemoryPressureDurationBucket.GreaterThanOrEqual30Seconds,
+            };
 
         private static void RecordDisabledTelemetry(MetricTags.DebuggerMemoryPressureDisabledReason reason)
         {

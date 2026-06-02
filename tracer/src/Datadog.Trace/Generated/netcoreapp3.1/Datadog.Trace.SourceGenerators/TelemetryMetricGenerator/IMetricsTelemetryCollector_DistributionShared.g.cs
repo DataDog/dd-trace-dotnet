@@ -10,10 +10,4 @@ namespace Datadog.Trace.Telemetry;
 internal partial interface IMetricsTelemetryCollector
 {
     public void RecordDistributionSharedInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value);
-
-    public void RecordDistributionSharedDebuggerMemoryPressureMemoryUsagePct(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag, double value);
-
-    public void RecordDistributionSharedDebuggerMemoryPressureGen2PerSec(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag, double value);
-
-    public void RecordDistributionSharedDebuggerMemoryPressureDurationMs(double value);
 }

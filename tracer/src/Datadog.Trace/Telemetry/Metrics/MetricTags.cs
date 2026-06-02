@@ -208,6 +208,31 @@ internal static class MetricTags
         [Description("reason:error")] Error,
     }
 
+    internal enum DebuggerMemoryPressureMemoryBucket
+    {
+        [Description("bucket:lt_70")] LessThan70,
+        [Description("bucket:70_80")] From70To80,
+        [Description("bucket:80_85")] From80To85,
+        [Description("bucket:85_90")] From85To90,
+        [Description("bucket:gte_90")] GreaterThanOrEqual90,
+    }
+
+    internal enum DebuggerMemoryPressureGen2Bucket
+    {
+        [Description("bucket:lt_1")] LessThan1,
+        [Description("bucket:1_2")] From1To2,
+        [Description("bucket:2_5")] From2To5,
+        [Description("bucket:gte_5")] GreaterThanOrEqual5,
+    }
+
+    internal enum DebuggerMemoryPressureDurationBucket
+    {
+        [Description("bucket:lt_1s")] LessThan1Second,
+        [Description("bucket:1_5s")] From1To5Seconds,
+        [Description("bucket:5_30s")] From5To30Seconds,
+        [Description("bucket:gte_30s")] GreaterThanOrEqual30Seconds,
+    }
+
     internal enum IntegrationName
     {
         // manual integration
