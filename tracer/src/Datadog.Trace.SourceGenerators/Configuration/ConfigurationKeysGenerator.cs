@@ -123,7 +123,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             var validScopeValues = new[] { "managed", "native" };
             if (entry.Scope is null || entry.Scope.Length == 0)
             {
-                diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use [managed], [native], or [managed, native].", DiagnosticSeverity.Error));
+                diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed, native, or managed, native.", DiagnosticSeverity.Error));
             }
             else
             {
@@ -137,7 +137,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             }
 
             // Generate a C# constant only when scope includes "managed".
-            // [native]-only entries are registered for coverage tracking but have no C# constant.
+            // native-only entries are registered for coverage tracking but have no C# constant.
             var skipConstantGeneration = entry.Scope is null ||
                                          !entry.Scope.Any(s => string.Equals(s, "managed", StringComparison.OrdinalIgnoreCase));
 
