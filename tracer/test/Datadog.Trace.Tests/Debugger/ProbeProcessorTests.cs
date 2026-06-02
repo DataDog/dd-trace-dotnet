@@ -27,6 +27,13 @@ public class ProbeProcessorTests
 
     private const string FalseConditionJson = @"{ ""eq"": [1, 0] }";
 
+    private const string UpdatedInvalidConditionJson = @"{
+    ""gt"": [
+      {""ref"": ""updatedUndefined""},
+      2
+    ]
+}";
+
     [Fact]
     public void ConditionEvaluationErrorsBypassSampler()
     {
@@ -129,7 +136,7 @@ public class ProbeProcessorTests
     }
 
     [Fact]
-    public void ConditionEvaluationErrorRateLimitSurvivesProbeUpdate()
+    public void ConditionEvaluationErrorRateLimitResetsOnProbeUpdate()
     {
         var processor = CreateConditionalProbeProcessor();
         var sampler = new TestAdaptiveSampler(true, true);
@@ -140,11 +147,11 @@ public class ProbeProcessorTests
         Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
         Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
 
-        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", InvalidConditionJson, captureSnapshot: false));
+        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false));
 
         var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.True(ProcessEntryStart(processor, secondSnapshotCreator, in probeData, method));
-        Assert.False(ProcessEntryEnd(processor, secondSnapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, secondSnapshotCreator, in probeData, method));
 
         Assert.Equal(0, sampler.SampleCalls);
     }
