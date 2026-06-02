@@ -84,16 +84,17 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
 - Integration tests: `./tracer/build.sh BuildAndRunIntegrationTests`
 
-**Linux native components** (profiler `.so`, native loader, native tracer, API wrapper) must be built inside the Alpine builder image — direct `cmake` does not work. From macOS this needs Docker (Colima, Docker Desktop, …):
+### Linux profiler iteration (host: macOS or Linux)
+
+> Applies only to the **Linux** profiler / native loader / native tracer / API wrapper. For Windows-host profiler development (Windows native code, Visual Studio debugging) see `profiler/README.md`.
+
+The native Linux components must be built inside the Alpine builder image — direct `cmake` does not work. From macOS this needs Docker (Colima, Docker Desktop, …).
 
 ```bash
 # Build everything needed to run the profiler end-to-end:
 ./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
-```
 
-**Iterate on the profiler — run a scenario with a freshly-built profiler attached:**
-
-```bash
+# Run a scenario with the freshly-built profiler attached:
 ./tracer/profiler-run.sh              # default: PiComputation
 ./tracer/profiler-run.sh 5 --timeout 30   # scenario 5 = FibonacciComputation, run for 30s
 ```
