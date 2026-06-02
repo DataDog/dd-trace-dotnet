@@ -109,11 +109,14 @@ Only rebuild more targets if you edited their source: `BuildNativeLoader` for `s
 **Run a scenario** with the freshly-built profiler attached:
 
 ```bash
-./profiler/run-scenario.sh              # default: PiComputation
-./profiler/run-scenario.sh 5 --timeout 30   # scenario 5 = FibonacciComputation, run for 30s
+./tracer/build_in_docker.sh RunProfilerScenario                                # default: PiComputation
+./tracer/build_in_docker.sh RunProfilerScenario --scenario 5 --scenario-timeout 30  # FibonacciComputation, 30s
+./tracer/build_in_docker.sh RunProfilerScenario --scenario 13 --scenario-args "--param 1"
 ```
 
-`profiler/run-scenario.sh` wraps the docker run + env soup needed to load the native loader, profiler, tracer and `LD_PRELOAD` API wrapper from the locally-built monitoring home. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files are written under `.profiler-out/` (gitignored).
+On a Linux host with the build deps available locally, drop the `_in_docker` prefix and call `./tracer/build.sh RunProfilerScenario ...` directly.
+
+`RunProfilerScenario` is a Nuke target (`tracer/build/_build/Build.Profiler.RunScenario.cs`) that sets the CorProfiler env vars, `LD_PRELOAD`s the API wrapper, sets `DD_INTERNAL_PROFILING_ENABLED_ARM64=1` on arm64 hosts, and runs `Samples.Computer01.dll`. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files land under `.profiler-out/` (gitignored). The target surfaces a clear warning if `Datadog.Profiler.Native.so` fails to load.
 
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
