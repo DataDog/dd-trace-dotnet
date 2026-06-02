@@ -56,7 +56,7 @@ ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in th
 **Optional fields:**
 - `product`: Groups the key into a product-specific partial class (e.g., `OpenTelemetry`)
 - `aliases`: A list of fallback environment variable names checked in order when the primary key is not found
-- `const_name`: Overrides the auto-generated PascalCase constant name (useful for backward compatibility). Only valid for `managed` and `managed, native` entries — native-only entries do not generate a C# constant.
+- `const_name`: Overrides the auto-generated constant name (useful for backward compatibility). For `managed`, the default is PascalCase.
 
 These fields are mandatory to keep the configuration registry complete and to ensure consistent behavior and documentation across products.
 
