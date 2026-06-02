@@ -138,12 +138,12 @@ public class NativeEnvVarCoverageTests
             var rootPath = Path.Combine(repoRoot, root);
             if (!Directory.Exists(rootPath))
             {
-                throw new DirectoryNotFoundException(
+                throw new Xunit.Sdk.XunitException(
                     $"Native source root not found: {rootPath}. " +
-                    $"Update {nameof(NativeSourceRoots)} in {nameof(NativeEnvVarCoverageTests)} if the directory was moved.");
+                    $"Update {nameof(NativeSourceRoots)} in {nameof(NativeEnvVarCoverageTests)} if the directory was moved or check out the full repository.");
             }
 
-            // Scan headers (.h) with WStr pattern and implementation files (.cpp/.cc) with both patterns.
+            // Scan all native source files with both patterns:
             // WStr("DD_...") covers header constant declarations and most call sites.
             // L"DD_..." covers inline wide string literals used directly without a header constant.
             var extensions = new[] { "*.h", "*.cpp", "*.cc" };
@@ -157,23 +157,11 @@ public class NativeEnvVarCoverageTests
                     }
 
                     var content = File.ReadAllText(sourceFile);
-                    var patterns = extension == "*.h"
-                        ? new[] { WStrPattern }
-                        : new[] { WStrPattern, WideStrPattern };
-
-                    foreach (var pattern in patterns)
+                    foreach (var pattern in new[] { WStrPattern, WideStrPattern })
                     {
                         foreach (var match in pattern.Matches(content).Cast<Match>())
                         {
-                            var varName = match.Groups[1].Value;
-
-                            // DD_INTERNAL_* are intentionally undocumented internal variables.
-                            if (varName.StartsWith("DD_INTERNAL_", StringComparison.Ordinal))
-                            {
-                                continue;
-                            }
-
-                            vars.Add(varName);
+                            vars.Add(match.Groups[1].Value);
                         }
                     }
                 }

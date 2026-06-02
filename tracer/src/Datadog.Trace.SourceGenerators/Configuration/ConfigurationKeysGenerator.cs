@@ -25,6 +25,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     private const string SupportedConfigurationsFileName = "supported-configurations.yaml";
     private const string GeneratedClassName = "ConfigurationKeys";
     private const string Namespace = "Datadog.Trace.Configuration";
+    private static readonly string[] ValidScopeValues = ["managed", "native"];
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -120,7 +121,6 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             var entry = kvp.Value;
 
             // Validate scope: required, non-empty, and must contain only recognized tokens.
-            var validScopeValues = new[] { "managed", "native" };
             if (entry.Scope is null || entry.Scope.Length == 0)
             {
                 diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed, native, or managed, native.", DiagnosticSeverity.Error));
@@ -129,7 +129,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             {
                 foreach (var scopeValue in entry.Scope)
                 {
-                    if (!validScopeValues.Any(v => string.Equals(v, scopeValue, StringComparison.OrdinalIgnoreCase)))
+                    if (!ValidScopeValues.Any(v => string.Equals(v, scopeValue, StringComparison.OrdinalIgnoreCase)))
                     {
                         diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has unrecognized scope value '{scopeValue}'. Valid values: managed, native.", DiagnosticSeverity.Error));
                     }

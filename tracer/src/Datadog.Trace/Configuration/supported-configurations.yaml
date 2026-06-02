@@ -1713,7 +1713,7 @@ supportedConfigurations:
       Overrides the path to the native loader DLL. Used internally for testing alternative loader builds.
   DD_INTERNAL_PROFILING_ENABLED_ARM64:
   - implementation: A
-    scope: managed
+    scope: managed, native
     type: string
     default: 'false'
     product: ContinuousProfiler
