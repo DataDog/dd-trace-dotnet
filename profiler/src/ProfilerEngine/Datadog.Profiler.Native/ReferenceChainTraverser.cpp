@@ -5,6 +5,43 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
+#ifndef _WINDOWS
+#include <csetjmp>
+#include <csignal>
+
+#include "ProfilerSignalManager.h"
+
+// NOTE (macOS): macOS is not a supported profiler build today
+// (profiler/src/CMakeLists.txt fails with "MACOS builds are not supported yet").
+// If it is ever enabled, this guard needs a macOS path because ProfilerSignalManager
+// lives in the Linux-only project and does not exist there. A macOS port would:
+//   - install its own sigaction() for SIGSEGV and SIGBUS (saving the previous actions),
+//   - in the handler, siglongjmp when t_inGuardedTraversal is set, otherwise manually
+//     chain to the saved previous sa_sigaction/sa_handler (or restore SIG_DFL + re-raise
+//     when there was none) so real faults keep their original crash semantics,
+//   - register once (e.g. std::call_once) so re-creating the traverser does not save our
+//     own handler as the "previous" one.
+// The TLS recovery machinery (t_traversalJmpBuf / t_inGuardedTraversal / sigsetjmp in the
+// wrapper) is portable and would be shared as-is.
+
+namespace
+{
+thread_local sigjmp_buf t_traversalJmpBuf;
+thread_local volatile sig_atomic_t t_inGuardedTraversal = 0;
+
+// ProfilerSignalManager: return false to chain to the CLR's previous SIGSEGV/SIGBUS handler.
+// When in guarded traversal we siglongjmp and do not return.
+bool TraversalFaultHandler(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
+{
+    if (t_inGuardedTraversal != 0)
+    {
+        siglongjmp(t_traversalJmpBuf, 1);
+    }
+    return false;
+}
+} // namespace
+#endif
+
 ReferenceChainTraverser::ReferenceChainTraverser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
@@ -19,6 +56,16 @@ ReferenceChainTraverser::ReferenceChainTraverser(
       _objectsTraversed(0),
       _rootsProcessed(0)
 {
+#ifndef _WINDOWS
+    if (auto* segv = ProfilerSignalManager::Get(SIGSEGV); segv != nullptr)
+    {
+        segv->RegisterHandler(&TraversalFaultHandler);
+    }
+    if (auto* bus = ProfilerSignalManager::Get(SIGBUS); bus != nullptr)
+    {
+        bus->RegisterHandler(&TraversalFaultHandler);
+    }
+#endif
 }
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
@@ -30,6 +77,34 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
         return;
     }
 
+#ifdef _WINDOWS
+    __try
+    {
+        TraverseFromSingleRootImpl(root);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        OnTraversalFault();
+    }
+#else
+    // Linux: recover from SIGSEGV/SIGBUS via a signal handler + siglongjmp.
+    // (macOS is not supported; see the comment at the top of this file.)
+    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
+    {
+        t_inGuardedTraversal = 1;
+        TraverseFromSingleRootImpl(root);
+        t_inGuardedTraversal = 0;
+    }
+    else
+    {
+        t_inGuardedTraversal = 0;
+        OnTraversalFault();
+    }
+#endif
+}
+
+void ReferenceChainTraverser::TraverseFromSingleRootImpl(const RootInfo& root)
+{
     auto startTime = OpSysTools::GetHighPrecisionTimestamp();
     _rootCategoryCounts[static_cast<int>(root.category)]++;
 
@@ -47,6 +122,48 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
     _rootsProcessed++;
     _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
 }
+
+void ReferenceChainTraverser::OnTraversalFault()
+{
+    _gcDescTrusted = false;
+    _selfTest = GCDesc::SelfTestResult::Failed;
+    LogOnce(Warn,
+            "Reference-chain traversal hit a memory access fault while reading object graph memory. "
+            "Disabling reference-chain traversal for the rest of the process. The class histogram is unaffected.");
+}
+
+#ifdef DD_TEST
+void ReferenceChainTraverser::Test_FaultReadUnderGuard(const volatile void* ptr)
+{
+    if (!_gcDescTrusted)
+    {
+        return;
+    }
+
+#ifdef _WINDOWS
+    __try
+    {
+        (void)*reinterpret_cast<const volatile char*>(ptr);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        OnTraversalFault();
+    }
+#else
+    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
+    {
+        t_inGuardedTraversal = 1;
+        (void)*reinterpret_cast<const volatile char*>(ptr);
+        t_inGuardedTraversal = 0;
+    }
+    else
+    {
+        t_inGuardedTraversal = 0;
+        OnTraversalFault();
+    }
+#endif
+}
+#endif
 
 void ReferenceChainTraverser::LogStats() const
 {

@@ -59,7 +59,15 @@ public:
     // traverser; the class histogram (which does not use GCDesc) is unaffected.
     bool IsGCDescTrusted() const { return _gcDescTrusted; }
 
+#ifdef DD_TEST
+    // Unit tests only: perform a guarded read of one byte from ptr using the same
+    // SIGSEGV/SIGBUS (Linux) or SEH (Windows) machinery as TraverseFromSingleRoot.
+    void Test_FaultReadUnderGuard(const volatile void* ptr);
+#endif
+
 private:
+    void TraverseFromSingleRootImpl(const RootInfo& root);
+
     // Iterative object graph traversal using an explicit stack.
     // Uses GCDesc to enumerate reference fields directly from the MethodTable (fast path).
     // Consults InlineVTCache for inline VT tree attribution (slow path, rare).
@@ -106,6 +114,8 @@ private:
 
     bool IsValidObjectAddress(uintptr_t address) const;
     std::string GetClassName(ClassID classID) const;
+
+    void OnTraversalFault();
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
