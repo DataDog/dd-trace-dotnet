@@ -1277,7 +1277,7 @@ supportedConfigurations:
       Configuration key for controlling the percentage of requests
       to be analyzed by IAST, between 1 and 100. Defaults to 30.
   DD_IAST_SECURITY_CONTROLS_CONFIGURATION:
-  - implementation: A
+  - implementation: B
     scope: native
     type: string
     default: null
@@ -1672,10 +1672,10 @@ supportedConfigurations:
   - implementation: A
     scope: native
     type: int
-    default: null
+    default: '30000'
     product: Profiler
     documentation: |-
-      Duration threshold in seconds used by SSI to classify a process as long-lived.
+      Duration threshold in milliseconds used by SSI to classify a process as long-lived.
   DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED:
   - implementation: A
     scope: native
@@ -2112,7 +2112,7 @@ supportedConfigurations:
     documentation: |-
       Enables CPU profiling. Default is true.
   DD_PROFILING_EXCEPTION_ENABLED:
-  - implementation: A
+  - implementation: B
     scope: native
     type: boolean
     default: 'false'
@@ -2200,7 +2200,7 @@ supportedConfigurations:
     documentation: |-
       Interval in seconds between profile uploads to the agent or Datadog intake. Default is 60.
   DD_PROFILING_WALLTIME_ENABLED:
-  - implementation: A
+  - implementation: B
     scope: native
     type: boolean
     default: 'true'
@@ -2708,7 +2708,7 @@ supportedConfigurations:
       Default value is <c>true</c> (enabled).
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureEventHubsBatchLinksEnabled"/>
   DD_TRACE_AZURE_FUNCTIONS_ENABLED:
-  - implementation: A
+  - implementation: B
     scope: native
     type: boolean
     default: 'true'
