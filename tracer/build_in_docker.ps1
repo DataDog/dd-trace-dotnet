@@ -16,7 +16,10 @@ $IMAGE_NAME="dd-trace-dotnet/alpine-base"
    --file "$BUILD_DIR/docker/alpine.dockerfile" `
    "$BUILD_DIR"
 
-&docker run -it --rm `
+# Use -t only when stdout is a terminal so this script works in CI / no-TTY agent harnesses.
+$ttyFlags = if ([Console]::IsOutputRedirected) { @('-i') } else { @('-i','-t') }
+
+&docker run @ttyFlags --rm `
     --mount "type=bind,source=$ROOT_DIR,target=/project" `
     --env NugetPackageDirectory=/project/packages `
     --env artifacts=/project/tracer/bin/artifacts `
