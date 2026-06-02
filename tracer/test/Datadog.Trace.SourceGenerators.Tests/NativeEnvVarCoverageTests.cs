@@ -18,23 +18,21 @@ using Xunit;
 namespace Datadog.Trace.SourceGenerators.Tests;
 
 /// <summary>
-/// Verifies that every DD_* environment variable read by the tracer's native C++ code
-/// has a corresponding entry in supported-configurations.yaml with 'native' in its scope.
+/// Verifies that every DD_* environment variable read by native C++ code in the tracer,
+/// shared loader, and profiler has a corresponding entry in supported-configurations.yaml
+/// with 'native' in its scope.
 ///
 /// Scans both headers (.h) and implementation files (.cpp/.cc) to catch inline string
 /// literals (L"DD_...") that bypass the header constant pattern.
-///
-/// Note: the profiler (profiler/src/) is out of scope — it maintains its own configuration model
-/// separate from supported-configurations.yaml.
 /// </summary>
 public class NativeEnvVarCoverageTests
 {
     // Root directories to scan for native source files (relative to repo root).
-    // The profiler directory is excluded — it has a separate configuration model.
     private static readonly string[] NativeSourceRoots =
     [
         "tracer/src/Datadog.Tracer.Native",
         "shared/src",
+        "profiler/src",
     ];
 
     // Path segments that indicate a file is a test or build artifact and should be excluded.

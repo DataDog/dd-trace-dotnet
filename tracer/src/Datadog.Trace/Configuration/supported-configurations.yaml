@@ -52,7 +52,7 @@ supportedConfigurations:
       <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
   DD_API_KEY:
   - implementation: A
-    scope: managed
+    scope: managed, native
     type: string
     default: null
     const_name: ApiKey
@@ -1014,6 +1014,14 @@ supportedConfigurations:
     const_name: PropagateProcessTags
     documentation: |-
       Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
+  DD_GC_THREADS_CPUTIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables CPU time tracking on GC threads in the Continuous Profiler.
   DD_GIT_BRANCH:
   - implementation: A
     scope: managed
@@ -1072,7 +1080,7 @@ supportedConfigurations:
     documentation: CI Visibility environment variable for git commit message.
   DD_GIT_COMMIT_SHA:
   - implementation: A
-    scope: managed
+    scope: managed, native
     type: string
     default: null
     product: CIVisibility
@@ -1096,7 +1104,7 @@ supportedConfigurations:
     documentation: CI Visibility environment variable for pull request base branch SHA.
   DD_GIT_REPOSITORY_URL:
   - implementation: A
-    scope: managed
+    scope: managed, native
     type: string
     default: null
     product: CIVisibility
@@ -1111,6 +1119,14 @@ supportedConfigurations:
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git tag.
+  DD_HOSTNAME:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Overrides the hostname reported to Datadog. When set, replaces the auto-detected hostname.
   DD_HTTP_CLIENT_ERROR_STATUSES:
   - implementation: A
     scope: managed
@@ -1418,6 +1434,30 @@ supportedConfigurations:
     product: CIVisibility
     documentation: |-
       Internal variable used by the CLR profiler to pass the CI Visibility runtime ID to child processes.
+  DD_INTERNAL_CIVISIBILITY_SPANID:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: CIVisibility
+    documentation: |-
+      Internal span ID injected by CI Visibility into child processes for trace correlation.
+  DD_INTERNAL_CPU_PROFILER_TYPE:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Selects the CPU profiler implementation. Used internally to switch between profiler backends.
+  DD_INTERNAL_CPU_PROFILING_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Sampling interval in milliseconds for CPU profiling. Lower values increase resolution at the cost of overhead.
   DD_INTERNAL_CUSTOM_CLR_PROFILER_PATH:
   - implementation: A
     scope: native
@@ -1460,6 +1500,190 @@ supportedConfigurations:
     documentation: |-
       Internal configuration key to optionally limit the maximum number of probes of each type.
       Default value is <c>0</c>, no probe-count limit is enforced.
+  DD_INTERNAL_ETW_LOGGING_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables ETW-based logging for the Continuous Profiler (Windows only).
+  DD_INTERNAL_ETW_REPLAY_ENDPOINT:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Endpoint for ETW replay, used in testing to simulate ETW events.
+  DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Internal flag to enable CPU time tracking on GC threads. Use DD_GC_THREADS_CPUTIME_ENABLED instead.
+  DD_INTERNAL_METRICS_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables internal profiler metrics collection for observability of the profiler itself.
+  DD_INTERNAL_OPERATIONAL_METRICS_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables operational metrics reporting for internal profiler health monitoring.
+  DD_INTERNAL_PROFILING_ALLOCATION_RECORDER_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables the allocation recorder component used for detailed allocation tracking.
+  DD_INTERNAL_PROFILING_ALLOCATION_SAMPLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Maximum number of allocations sampled per second by the allocation profiler.
+  DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Maximum number of threads sampled per code hotspot collection interval.
+  DD_INTERNAL_PROFILING_CONTENTION_DURATION_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Minimum lock contention duration in milliseconds required to record a contention event.
+  DD_INTERNAL_PROFILING_CONTENTION_SAMPLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Maximum number of lock contention events sampled per second.
+  DD_INTERNAL_PROFILING_CPUTIME_THREADS_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Maximum number of threads sampled per CPU-time collection interval.
+  DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables collection of debug information in profiles for improved symbolication.
+  DD_INTERNAL_PROFILING_ETW_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables ETW (Event Tracing for Windows) as the profiling data source (Windows only).
+  DD_INTERNAL_PROFILING_EXCEPTION_SAMPLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Maximum number of exceptions sampled per second by the exception profiler.
+  DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Forces HTTP request sampling in the profiler. Used for testing only.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_CHECK_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Interval in milliseconds between checks for heap snapshot trigger conditions.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Interval in milliseconds between heap snapshot collections.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Memory pressure percentage threshold that triggers an automatic heap snapshot.
+  DD_INTERNAL_PROFILING_HEAP_HANDLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Maximum number of heap object handles tracked during heap profiling.
+  DD_INTERNAL_PROFILING_HTTP_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Internal flag to enable HTTP request duration profiling. Use DD_PROFILING_HTTP_ENABLED instead.
+  DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Minimum HTTP request duration in milliseconds required to record a request in profiles.
+  DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Duration threshold in seconds used by SSI to classify a process as long-lived.
+  DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables tracking of the profiler's own memory footprint.
   DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH:
   - implementation: A
     scope: managed, native
@@ -1497,6 +1721,54 @@ supportedConfigurations:
     documentation: |-
       Internal gate: on Linux ARM64, the continuous profiler is only considered enabled in managed settings
       when this is set to <c>true</c>. Must match the native profiler <c>DD_INTERNAL_PROFILING_ENABLED_ARM64</c> check.
+  DD_INTERNAL_PROFILING_OUTPUT_DIR:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Directory where the profiler writes profile files for local debugging. If unset, profiles are sent to the agent.
+  DD_INTERNAL_PROFILING_SAMPLING_RATE:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Sampling interval in milliseconds for CPU and wall-time profiling.
+  DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Adds sample timestamps as labels in profiles to enable time-based filtering.
+  DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables the managed code cache in the profiler for improved method resolution performance.
+  DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables wait handle profiling to track contention on OS synchronization primitives.
+  DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: null
+    product: Profiler
+    documentation: |-
+      Maximum number of threads sampled per wall-time collection interval.
   DD_INTERNAL_SKIP_METHOD_BODY_ENABLED:
   - implementation: A
     scope: native
@@ -1506,6 +1778,14 @@ supportedConfigurations:
     documentation: |-
       Enables or disables the skip method body feature, which omits method body rewriting for certain methods.
       Default is false.
+  DD_INTERNAL_SYSTEM_CALLS_SHIELD_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables the system calls shield to prevent profiler signal handlers from interfering with application syscalls. Default is true.
   DD_INTERNAL_TELEMETRY_DEBUG_ENABLED:
   - implementation: A
     scope: managed
@@ -1516,6 +1796,14 @@ supportedConfigurations:
     documentation: |-
       Configuration key for whether to enable debug mode of telemetry.
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.DebugEnabled"/>
+  DD_INTERNAL_THREAD_LIFETIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Internal flag to enable thread lifetime tracking. Use DD_THREAD_LIFETIME_ENABLED instead.
   DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH:
   - implementation: A
     scope: managed, native
@@ -1534,6 +1822,14 @@ supportedConfigurations:
     documentation: |-
       Enables compatibility mode for interoperability with other versions of the Datadog .NET tracer.
       Default is false.
+  DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables development configuration mode, which relaxes certain constraints during profiler development.
   DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH:
   - implementation: A
     scope: managed
@@ -1783,6 +2079,134 @@ supportedConfigurations:
     default: null
     product: CIVisibility
     documentation: AWS CodePipeline pipeline execution ID for CI correlation.
+  DD_PROFILING_AGENTLESS:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables agentless mode, sending profiles directly to Datadog intake without a local agent. Requires DD_API_KEY.
+  DD_PROFILING_ALLOCATION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables allocation profiling to track heap object allocations. Requires .NET 5+.
+  DD_PROFILING_CONTENTION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Deprecated. Use DD_PROFILING_LOCK_ENABLED instead.
+  DD_PROFILING_CPU_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables CPU profiling. Default is true.
+  DD_PROFILING_EXCEPTION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables exception profiling to track thrown exceptions and their call stacks.
+  DD_PROFILING_FRAMES_NATIVE_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables native frame collection in profiles, showing unmanaged call stacks.
+  DD_PROFILING_GC_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables garbage collection profiling to track GC pause times and frequencies.
+  DD_PROFILING_HEAPSNAPSHOT_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables periodic heap snapshot collection for memory leak analysis.
+  DD_PROFILING_HEAP_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables heap profiling to track live heap object allocations and sizes.
+  DD_PROFILING_HTTP_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables HTTP request duration profiling to track time spent in outbound HTTP calls.
+  DD_PROFILING_LOCK_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables lock contention profiling to track threads blocked waiting for locks.
+  DD_PROFILING_LOG_DIR:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Deprecated. Use DD_TRACE_LOG_DIRECTORY instead. Sets the log directory for the Continuous Profiler.
+  DD_PROFILING_LOG_PATH:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Path to the Continuous Profiler log file. Overrides DD_PROFILING_LOG_DIR if set.
+  DD_PROFILING_MIN_CORES_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: decimal
+    default: '1.0'
+    product: Profiler
+    documentation: |-
+      Minimum number of CPU cores (fractional) required for the Continuous Profiler to activate. Default is 1.
+  DD_PROFILING_UPLOAD_PERIOD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '60'
+    product: Profiler
+    documentation: |-
+      Interval in seconds between profile uploads to the agent or Datadog intake. Default is 60.
+  DD_PROFILING_WALLTIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables wall-time profiling. Default is true.
   DD_PROXY_HTTPS:
   - implementation: A
     scope: managed
@@ -1829,7 +2253,7 @@ supportedConfigurations:
       Enables or disables code hotspots collection for the continuous profiler. When disabled, profiling data is not linked to tracing context for hotspot attribution
   DD_PROFILING_ENABLED:
   - implementation: B
-    scope: managed
+    scope: managed, native
     type: string
     default: 'false'
     product: Profiler
@@ -1847,7 +2271,7 @@ supportedConfigurations:
       Controls whether spans add a pprof label with the top-level request endpoint so profiles can be grouped by endpoint. Defaults to true
   DD_PROFILING_MANAGED_ACTIVATION_ENABLED:
   - implementation: A
-    scope: managed
+    scope: managed, native
     type: boolean
     default: 'true'
     product: Profiler
@@ -1915,7 +2339,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceName"/>
   DD_SITE:
   - implementation: C
-    scope: managed
+    scope: managed, native
     type: string
     default: datadoghq.com
     const_name: Site
@@ -2018,7 +2442,7 @@ supportedConfigurations:
       Default value is true (enabled).
   DD_TAGS:
   - implementation: C
-    scope: managed
+    scope: managed, native
     type: map
     default: null
     aliases:
@@ -2089,6 +2513,14 @@ supportedConfigurations:
     documentation: |-
       Configuration key for whether telemetry metrics should be sent.
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
+  DD_THREAD_LIFETIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables thread lifetime tracking to record when threads are created and destroyed.
   _DD_ROOT_DOTNET_SESSION_ID:
   - implementation: A
     scope: managed
@@ -2228,7 +2660,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_TRACE_AGENT_URL:
   - implementation: C
-    scope: managed
+    scope: managed, native
     type: string
     default: http://localhost:8126
     const_name: AgentUri
@@ -2781,7 +3213,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.PeerServiceNameMappings"/>
   DD_TRACE_PIPE_NAME:
   - implementation: A
-    scope: managed
+    scope: managed, native
     type: string
     default: null
     const_name: TracesPipeName
