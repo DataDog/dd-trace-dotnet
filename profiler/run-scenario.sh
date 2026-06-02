@@ -6,10 +6,10 @@
 #   ./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
 #
 # Usage:
-#   ./tracer/profiler-run.sh                       # default scenario: PiComputation (4)
-#   ./tracer/profiler-run.sh 5                     # scenario 5 = FibonacciComputation
-#   ./tracer/profiler-run.sh 5 --timeout 30        # extra args forwarded to the sample
-#   DD_PROFILING_CPU_ENABLED=1 ./tracer/profiler-run.sh 5
+#   ./profiler/run-scenario.sh                       # default scenario: PiComputation (4)
+#   ./profiler/run-scenario.sh 5                     # scenario 5 = FibonacciComputation
+#   ./profiler/run-scenario.sh 5 --timeout 30        # extra args forwarded to the sample
+#   DD_PROFILING_CPU_ENABLED=1 ./profiler/run-scenario.sh 5
 #
 # Scenario IDs are the values of the `Scenario` enum in
 # profiler/src/Demos/Samples.Computer01/Program.cs.

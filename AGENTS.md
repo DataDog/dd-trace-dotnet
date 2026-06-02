@@ -109,11 +109,11 @@ Only rebuild more targets if you edited their source: `BuildNativeLoader` for `s
 **Run a scenario** with the freshly-built profiler attached:
 
 ```bash
-./tracer/profiler-run.sh              # default: PiComputation
-./tracer/profiler-run.sh 5 --timeout 30   # scenario 5 = FibonacciComputation, run for 30s
+./profiler/run-scenario.sh              # default: PiComputation
+./profiler/run-scenario.sh 5 --timeout 30   # scenario 5 = FibonacciComputation, run for 30s
 ```
 
-`tracer/profiler-run.sh` wraps the docker run + env soup needed to load the native loader, profiler, tracer and `LD_PRELOAD` API wrapper from the locally-built monitoring home. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files are written under `.profiler-out/` (gitignored).
+`profiler/run-scenario.sh` wraps the docker run + env soup needed to load the native loader, profiler, tracer and `LD_PRELOAD` API wrapper from the locally-built monitoring home. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files are written under `.profiler-out/` (gitignored).
 
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
