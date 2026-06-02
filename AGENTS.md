@@ -90,16 +90,30 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 The native Linux components must be built inside the Alpine builder image — direct `cmake` does not work. From macOS this needs Docker (Colima, Docker Desktop, …).
 
-```bash
-# Build everything needed to run the profiler end-to-end:
-./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
+**Initial / cold build** (once per fresh clone, or after pulling a large change):
 
-# Run a scenario with the freshly-built profiler attached:
+```bash
+./tracer/build_in_docker.sh BuildTracerHome BuildNativeLoader BuildNativeWrapper BuildProfilerHome BuildProfilerSamples
+```
+
+All five targets are required to run a scenario end-to-end: tracer home (managed tracer + native tracer), native loader (CorProfiler entry point), API wrapper (`LD_PRELOAD`), profiler home (`Datadog.Profiler.Native.so`), and samples (the `Samples.Computer01` demo app).
+
+**Iterative rebuild** after editing native profiler code (the common case):
+
+```bash
+./tracer/build_in_docker.sh BuildProfilerHome
+```
+
+Only rebuild more targets if you edited their source: `BuildNativeLoader` for `shared/src/Datadog.Trace.ClrProfiler.Native/`, `BuildTracerHome` for the managed tracer or `tracer/src/Datadog.Tracer.Native/`, `BuildNativeWrapper` for `profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/`, `BuildProfilerSamples` for `profiler/src/Demos/Samples.Computer01/`.
+
+**Run a scenario** with the freshly-built profiler attached:
+
+```bash
 ./tracer/profiler-run.sh              # default: PiComputation
 ./tracer/profiler-run.sh 5 --timeout 30   # scenario 5 = FibonacciComputation, run for 30s
 ```
 
-`tracer/profiler-run.sh` is a thin wrapper around the docker run + env soup needed to load the native loader, profiler, tracer and `LD_PRELOAD` API wrapper from the locally-built monitoring home. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files are written under `.profiler-out/` (gitignored). After a code change, rebuild only what you touched (e.g. `BuildProfilerHome` for native profiler changes) and rerun.
+`tracer/profiler-run.sh` wraps the docker run + env soup needed to load the native loader, profiler, tracer and `LD_PRELOAD` API wrapper from the locally-built monitoring home. Scenario IDs are values of the `Scenario` enum in `profiler/src/Demos/Samples.Computer01/Program.cs`. Logs and `.pprof` files are written under `.profiler-out/` (gitignored).
 
 - **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
