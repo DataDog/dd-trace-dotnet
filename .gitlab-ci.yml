@@ -33,7 +33,7 @@ variables:
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
   OCI_PACKAGE_MAX_SIZE_BYTES: 43000000
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
-  SLS_CI_BRANCH: v1.3.0
+  SLS_CI_BRANCH: main
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
 
 build-windows-ci-image:
