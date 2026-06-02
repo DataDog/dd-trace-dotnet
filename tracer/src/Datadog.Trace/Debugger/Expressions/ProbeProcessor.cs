@@ -333,6 +333,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                 evaluationResult.Errors ??= new List<EvaluationError>();
                 evaluationResult.Errors.Add(new EvaluationError { Message = $"Failed to evaluate expression for probe ID: {probeInfo.ProbeId}. Error: {e.Message}" });
+                evaluationResult.HasConditionError = probeInfo.HasCondition;
             }
 
             if (state.ShouldCaptureExpressions && evaluationResult.IsNull())
@@ -382,7 +383,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     shouldStopCapture = true;
                 }
 
-                if (!shouldStopCapture)
+                if (!shouldStopCapture && !evaluationResult.HasConditionError)
                 {
                     EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
                 }
