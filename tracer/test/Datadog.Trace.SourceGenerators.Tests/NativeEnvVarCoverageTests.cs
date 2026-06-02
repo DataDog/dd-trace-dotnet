@@ -108,7 +108,7 @@ public class NativeEnvVarCoverageTests
 
             missingScopeNative.Should().BeEmpty(
                 because: "every DD_* variable in native env var headers must have 'native' in its scope array. " +
-                         $"Add or update scope: [native] or scope: [managed, native] for: {string.Join(", ", missingScopeNative)}");
+                         $"Add or update scope to 'native' or 'managed, native' for: {string.Join(", ", missingScopeNative)}");
         }
     }
 
@@ -131,7 +131,7 @@ public class NativeEnvVarCoverageTests
             .ToList();
 
         nativeOnlyWithConstName.Should().BeEmpty(
-            because: "scope:[native]-only entries should not have a const_name — they are not read by managed code. " +
+            because: "scope: native-only entries should not have a const_name — they are not read by managed code. " +
                      $"Offending keys: {string.Join(", ", nativeOnlyWithConstName)}");
     }
 
