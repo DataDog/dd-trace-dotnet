@@ -18,8 +18,11 @@ using Xunit;
 namespace Datadog.Trace.SourceGenerators.Tests;
 
 /// <summary>
-/// Verifies that every DD_* environment variable declared in the tracer's native C++ headers
-/// (those using WStr("DD_...")) has a corresponding entry in supported-configurations.yaml.
+/// Verifies that every DD_* environment variable read by the tracer's native C++ code
+/// has a corresponding entry in supported-configurations.yaml with 'native' in its scope.
+///
+/// Scans both headers (.h) and implementation files (.cpp/.cc) to catch inline string
+/// literals (L"DD_...") that bypass the header constant pattern.
 ///
 /// DD_INTERNAL_* variables are intentionally excluded — they are undocumented internal variables
 /// that are not expected to be registered.
@@ -29,7 +32,7 @@ namespace Datadog.Trace.SourceGenerators.Tests;
 /// </summary>
 public class NativeEnvVarCoverageTests
 {
-    // Root directories to scan for native .h files (relative to repo root).
+    // Root directories to scan for native source files (relative to repo root).
     // The profiler directory is excluded — it has a separate configuration model.
     private static readonly string[] NativeSourceRoots =
     [
@@ -47,7 +50,11 @@ public class NativeEnvVarCoverageTests
         Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar,
     ];
 
+    // WStr("DD_...") — used in header constant declarations and most .cpp call sites
     private static readonly Regex WStrPattern = new(@"WStr\(""(DD_[A-Z][A-Z0-9_]+)""\)", RegexOptions.Compiled);
+
+    // L"DD_..." — wide string literals used directly in .cpp files without a header constant
+    private static readonly Regex WideStrPattern = new(@"L""(DD_[A-Z][A-Z0-9_]+)""", RegexOptions.Compiled);
 
     [Fact]
     public void AllNativeEnvVarsAreCoveredByRegistry()
@@ -141,25 +148,39 @@ public class NativeEnvVarCoverageTests
                     $"Update {nameof(NativeSourceRoots)} in {nameof(NativeEnvVarCoverageTests)} if the directory was moved.");
             }
 
-            foreach (var headerFile in Directory.EnumerateFiles(rootPath, "*.h", SearchOption.AllDirectories))
+            // Scan headers (.h) with WStr pattern and implementation files (.cpp/.cc) with both patterns.
+            // WStr("DD_...") covers header constant declarations and most call sites.
+            // L"DD_..." covers inline wide string literals used directly without a header constant.
+            var extensions = new[] { "*.h", "*.cpp", "*.cc" };
+            foreach (var extension in extensions)
             {
-                if (IsExcluded(headerFile))
+                foreach (var sourceFile in Directory.EnumerateFiles(rootPath, extension, SearchOption.AllDirectories))
                 {
-                    continue;
-                }
-
-                var content = File.ReadAllText(headerFile);
-                foreach (var match in WStrPattern.Matches(content).Cast<Match>())
-                {
-                    var varName = match.Groups[1].Value;
-
-                    // DD_INTERNAL_* are intentionally undocumented internal variables.
-                    if (varName.StartsWith("DD_INTERNAL_", StringComparison.Ordinal))
+                    if (IsExcluded(sourceFile))
                     {
                         continue;
                     }
 
-                    vars.Add(varName);
+                    var content = File.ReadAllText(sourceFile);
+                    var patterns = extension == "*.h"
+                        ? new[] { WStrPattern }
+                        : new[] { WStrPattern, WideStrPattern };
+
+                    foreach (var pattern in patterns)
+                    {
+                        foreach (var match in pattern.Matches(content).Cast<Match>())
+                        {
+                            var varName = match.Groups[1].Value;
+
+                            // DD_INTERNAL_* are intentionally undocumented internal variables.
+                            if (varName.StartsWith("DD_INTERNAL_", StringComparison.Ordinal))
+                            {
+                                continue;
+                            }
+
+                            vars.Add(varName);
+                        }
+                    }
                 }
             }
         }
