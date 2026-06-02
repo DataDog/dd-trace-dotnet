@@ -401,28 +401,27 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 var scaled = value * scale;
                 return scaled >= int.MaxValue ? int.MaxValue : (int)scaled;
             }
+
+            bool DisableCore(MetricTags.DebuggerMemoryPressureDisabledReason reason)
+            {
+                if (IsDisposed() || IsDisabled())
+                {
+                    return false;
+                }
+
+                Volatile.Write(ref _disabled, 1);
+                Volatile.Write(ref _isHighPressure, false);
+                Volatile.Write(ref _currentMemoryUsagePercentTenths, 0);
+                Volatile.Write(ref _gen2CollectionsPerSecondHundredths, 0);
+                _onDisabled(reason);
+                return true;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsStale(long nowMs, long lastRefreshMs)
         {
             return (nowMs - lastRefreshMs) >= _staleThresholdMs;
-        }
-
-        // Only ever called from inside the CAS-guarded Refresh, so no synchronization is required.
-        private bool DisableCore(MetricTags.DebuggerMemoryPressureDisabledReason reason)
-        {
-            if (IsDisposed() || IsDisabled())
-            {
-                return false;
-            }
-
-            Volatile.Write(ref _disabled, 1);
-            Volatile.Write(ref _isHighPressure, false);
-            Volatile.Write(ref _currentMemoryUsagePercentTenths, 0);
-            Volatile.Write(ref _gen2CollectionsPerSecondHundredths, 0);
-            _onDisabled(reason);
-            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
