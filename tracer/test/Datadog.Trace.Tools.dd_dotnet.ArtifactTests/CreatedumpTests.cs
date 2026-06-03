@@ -306,6 +306,13 @@ public class CreatedumpTests : ConsoleTestHelper
         }
 
         report["error"]!["message"].Value<string>().Should().Be("Process was terminated due to an unhandled exception of type 'System.BadImageFormatException'. Message: Expected.");
+
+        var osInfo = report["os_info"];
+        osInfo.Should().NotBeNull();
+        osInfo!["architecture"]!.Value<string>().Should().NotBe("unknown");
+        osInfo!["bitness"]!.Value<string>().Should().NotBe("unknown");
+        osInfo!["os_type"]!.Value<string>().Should().NotBe("unknown");
+        osInfo!["version"]!.Value<string>().Should().NotBe("unknown");
     }
 
 #if !NETFRAMEWORK
