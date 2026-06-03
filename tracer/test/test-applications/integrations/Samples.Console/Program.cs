@@ -25,6 +25,13 @@ namespace Samples.Console_
                     NativeCrash();
                 }
 
+#if NETFRAMEWORK
+                if (args[0].StartsWith("crash-appdomain"))
+                {
+                    CrashAppDomain(args[0]);
+                }
+#endif
+
                 var exception = args[0] == "crash-datadog" ? (Exception)new BadImageFormatException("Expected") : new InvalidOperationException("Expected");
 
                 // Add an indirection to have a BCL type on the callstack, to properly test obfuscation
@@ -219,6 +226,45 @@ namespace Samples.Console_
 
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern IntPtr GetCurrentThread();
+
+        private static void CrashAppDomain(string scenario)
+        {
+            var setup = AppDomain.CurrentDomain.SetupInformation;
+
+            switch (scenario)
+            {
+                case "crash-appdomain-single":
+                {
+                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-a");
+                    var domain = AppDomain.CreateDomain("AppA", null, setup);
+                    domain.DoCallBack(AppDomainCrasher.CrashManaged);
+                    break;
+                }
+
+                case "crash-appdomain-single-native":
+                {
+                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-a");
+                    var domain = AppDomain.CreateDomain("AppA", null, setup);
+                    domain.DoCallBack(AppDomainCrasher.CrashNative);
+                    break;
+                }
+
+                case "crash-appdomain-multi":
+                {
+                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-a");
+                    AppDomain.CreateDomain("AppA", null, setup);
+
+                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-b");
+                    var domainB = AppDomain.CreateDomain("AppB", null, setup);
+
+                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-c");
+                    AppDomain.CreateDomain("AppC", null, setup);
+
+                    domainB.DoCallBack(AppDomainCrasher.CrashManaged);
+                    break;
+                }
+            }
+        }
 #endif
 
         private static int GetMainThreadId()
@@ -232,5 +278,22 @@ namespace Samples.Console_
 
             public override void Send(SendOrPostCallback d, object state) => d(state);
         }
+
+#if NETFRAMEWORK
+        private static class AppDomainCrasher
+        {
+            public static void CrashManaged()
+            {
+                var thread = new Thread(() => throw new BadImageFormatException("Expected"));
+                thread.Start();
+                Thread.Sleep(Timeout.Infinite);
+            }
+
+            public static void CrashNative()
+            {
+                NativeCrash();
+            }
+        }
+#endif
     }
 }
