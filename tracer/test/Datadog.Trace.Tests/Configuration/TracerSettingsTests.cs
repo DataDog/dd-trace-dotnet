@@ -163,7 +163,18 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void StatsAdditionalTags_CapsToSixKeysKeepingAlphabeticallyFirst()
+        public void StatsAdditionalTags_EnabledByExperimentalFeaturesAll()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.ExperimentalFeaturesEnabled, "all"),
+                (ConfigurationKeys.StatsAdditionalTags, "region"));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTags.Should().Equal("region");
+        }
+
+        [Fact]
+        public void StatsAdditionalTags_CapsToFourKeysKeepingAlphabeticallyFirst()
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.StatsAdditionalTags),

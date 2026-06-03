@@ -34,7 +34,7 @@ namespace Datadog.Trace.Configuration
     public partial record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.StatsAdditionalTags];
 
         private readonly Lazy<string> _fallbackApplicationName;
 
