@@ -685,6 +685,98 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 
+    [SkippableTheory]
+    [InlineData("crash-datadog", "test-crash-svc", "test-crash-svc")]
+    [InlineData("crash-native", "test-crash-svc", "test-crash-svc")]
+    [InlineData("crash-datadog", null, "Samples.Console")]
+    public async Task ServiceNameInCrashReport(string crashArg, string ddService, string expectedService)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        if (crashArg == "crash-native" && Utils.IsAlpine())
+        {
+            throw new SkipException("Signal unwinding does not work correctly on Alpine");
+        }
+
+        using var reportFile = new TemporaryFile();
+
+        var envVars = new List<(string, string)> { LdPreloadConfig, CrashReportConfig(reportFile) };
+
+        if (ddService != null)
+        {
+            envVars.Add(("DD_SERVICE", ddService));
+        }
+
+        using var helper = await StartConsoleWithArgs(crashArg, enableProfiler: true, envVars.ToArray());
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+
+        assertionScope.AddReportable("Report", reportFile.GetContent());
+        var report = JObject.Parse(reportFile.GetContent());
+        var metadataTags = (JArray)(report["metadata"]!["tags"]!);
+
+        var serviceTag = GetTagValue(metadataTags, "service:");
+        serviceTag.Should().Be(expectedService);
+
+        var runtimeIdTag = GetTagValue(metadataTags, "runtime_id:");
+        runtimeIdTag.Should().NotBeNullOrEmpty();
+        Guid.TryParse(runtimeIdTag, out _).Should().BeTrue($"runtime_id should be a valid GUID, got: {runtimeIdTag}");
+    }
+
+#if NETFRAMEWORK
+    [SkippableTheory]
+    [InlineData("crash-appdomain-single", "web-app-a")]
+    [InlineData("crash-appdomain-single-native", "web-app-a")]
+    [InlineData("crash-appdomain-multi", "web-app-b")]
+    public async Task ServiceNameInCrashReportFrameworkAppDomains(string crashArg, string expectedService)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               crashArg,
+                               enableProfiler: true,
+                               [CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+
+        assertionScope.AddReportable("Report", reportFile.GetContent());
+        var report = JObject.Parse(reportFile.GetContent());
+        var metadataTags = (JArray)(report["metadata"]!["tags"]!);
+
+        var serviceTag = GetTagValue(metadataTags, "service:");
+        serviceTag.Should().Be(expectedService);
+
+        var runtimeIdTag = GetTagValue(metadataTags, "runtime_id:");
+        runtimeIdTag.Should().NotBeNullOrEmpty();
+        Guid.TryParse(runtimeIdTag, out _).Should().BeTrue($"runtime_id should be a valid GUID, got: {runtimeIdTag}");
+    }
+#endif
+
+    private static string GetTagValue(JArray tags, string prefix)
+    {
+        var tag = tags
+                 .Select(t => t.Value<string>())
+                 .FirstOrDefault(t => t != null && t.StartsWith(prefix));
+
+        return tag?.Substring(prefix.Length);
+    }
+
 #if !NETFRAMEWORK
     /// <summary>
     /// Asserts that createdump was invoked. On arm64 Linux, createdump can intermittently
