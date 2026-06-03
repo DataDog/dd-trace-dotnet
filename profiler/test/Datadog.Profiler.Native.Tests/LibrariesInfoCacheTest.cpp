@@ -216,10 +216,11 @@ TEST(LibrariesInfoCacheTests, BuildSymbolCacheProducesNoDuplicates)
     ServiceWrapper serviceWrapper(&libCache);
 
     std::vector<DlPhdrInfoWrapper> phdrCache;
+    
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
             auto* cache = static_cast<std::vector<DlPhdrInfoWrapper>*>(data);
-            cache->emplace_back(info, size);
+            cache->emplace_back(info, size, MemoryResourceManager::GetDefault());
             return 0;
         },
         &phdrCache);
