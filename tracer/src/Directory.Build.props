@@ -1,6 +1,14 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
+  <!-- Stamp -dev suffix on tracer_version for non-release builds (PR CI and local)
+       so telemetry monitors can filter them using the existing *dev* exclusion.
+       TF_BUILD=True on all Azure DevOps pipeline runs; SYSTEM_PULLREQUEST_SOURCEBRANCH
+       is only set for PR-triggered pipelines, not master/release builds. -->
+  <PropertyGroup Condition="'$(TF_BUILD)' != 'True' OR '$(SYSTEM_PULLREQUEST_SOURCEBRANCH)' != ''">
+    <DefineConstants>$(DefineConstants);DD_CI_BUILD</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1;net6.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

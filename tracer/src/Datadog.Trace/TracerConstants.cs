@@ -14,6 +14,14 @@ namespace Datadog.Trace
         public const string AssemblyVersion = "3.46.0.0";
         public const string ThreePartVersion = "3.46.0";
 
+        // ReportedVersion is used for telemetry tags only — not for native/managed version matching.
+        // PR CI and local builds get a -dev suffix so monitors can filter them out automatically.
+#if DD_CI_BUILD
+        public const string ReportedVersion = "3.46.0-dev";
+#else
+        public const string ReportedVersion = "3.46.0";
+#endif
+
         public static ReadOnlySpan<byte> AssemblyVersionBytes => "3.46.0.0"u8;
     }
 }

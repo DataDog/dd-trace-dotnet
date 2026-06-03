@@ -91,7 +91,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
                 tags.Add($"version:{serviceVersion}");
             }
 
-            tags.Add($"tracer_version:{TracerConstants.ThreePartVersion}");
+            tags.Add($"tracer_version:{TracerConstants.ReportedVersion}");
 
             var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
             if (!string.IsNullOrEmpty(hostName))

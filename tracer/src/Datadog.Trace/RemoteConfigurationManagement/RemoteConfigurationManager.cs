@@ -69,7 +69,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             {
                 var rcmTracer = RcmClientTracer.Create(
                     runtimeId: Util.RuntimeId.Get(),
-                    tracerVersion: TracerConstants.ThreePartVersion,
+                    tracerVersion: TracerConstants.ReportedVersion,
                     // Service Name must be lowercase, otherwise the agent will not be able to find the service
                     service: TraceUtil.NormalizeTag(mutable.DefaultServiceName),
                     env: TraceUtil.NormalizeTag(mutable.Environment),
