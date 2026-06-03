@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
             monitor.RefreshIfStale(1000);
 
             monitor.IsHighMemoryPressure.Should().BeTrue();
-            observer.Transitions.Should().ContainSingle().Which.Trigger.Should().Be(MetricTags.DebuggerMemoryPressureTrigger.Gen2);
+            observer.Transitions.Should().ContainSingle().Which.Trigger.Should().Be(MetricTags.DebuggerMemoryPressureTrigger.Gc);
         }
 
         [Fact]
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
                 metrics.Metrics.Should().NotContain(x =>
                     x.Metric == Count.DebuggerMemoryPressureMemoryUsagePct.GetName());
                 metrics.Metrics.Should().Contain(x =>
-                    x.Metric == Count.DebuggerMemoryPressureGen2PerSec.GetName() &&
+                    x.Metric == Count.DebuggerMemoryPressureGcActivity.GetName() &&
                     x.Tags != null &&
                     x.Tags.Length == 2 &&
                     x.Tags[0] == "state:enter" &&

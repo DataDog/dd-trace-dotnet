@@ -597,11 +597,11 @@ internal sealed partial class MetricsTelemetryCollector
             // memory_pressure.transitions, index = 539
             new(new[] { "state:enter", "trigger:none" }),
             new(new[] { "state:enter", "trigger:memory" }),
-            new(new[] { "state:enter", "trigger:gen2" }),
+            new(new[] { "state:enter", "trigger:gc" }),
             new(new[] { "state:enter", "trigger:both" }),
             new(new[] { "state:exit", "trigger:none" }),
             new(new[] { "state:exit", "trigger:memory" }),
-            new(new[] { "state:exit", "trigger:gen2" }),
+            new(new[] { "state:exit", "trigger:gc" }),
             new(new[] { "state:exit", "trigger:both" }),
             // memory_pressure.disabled, index = 547
             new(new[] { "reason:no_signals" }),
@@ -617,7 +617,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "state:exit", "bucket:80_85" }),
             new(new[] { "state:exit", "bucket:85_90" }),
             new(new[] { "state:exit", "bucket:gte_90" }),
-            // memory_pressure.gen2_per_sec, index = 559
+            // memory_pressure.gc_activity, index = 559
             new(new[] { "state:enter", "bucket:lt_1" }),
             new(new[] { "state:enter", "bucket:1_2" }),
             new(new[] { "state:enter", "bucket:2_5" }),
@@ -626,7 +626,7 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "state:exit", "bucket:1_2" }),
             new(new[] { "state:exit", "bucket:2_5" }),
             new(new[] { "state:exit", "bucket:gte_5" }),
-            // memory_pressure.duration_ms, index = 567
+            // memory_pressure.duration, index = 567
             new(new[] { "bucket:lt_1s" }),
             new(new[] { "bucket:1_5s" }),
             new(new[] { "bucket:5_30s" }),
@@ -1005,13 +1005,13 @@ internal sealed partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountDebuggerMemoryPressureGen2PerSec(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureGen2Bucket tag2, int increment = 1)
+    public void RecordCountDebuggerMemoryPressureGcActivity(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureGcBucket tag2, int increment = 1)
     {
         var index = 559 + ((int)tag1 * 4) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountDebuggerMemoryPressureDurationMs(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureDurationBucket tag, int increment = 1)
+    public void RecordCountDebuggerMemoryPressureDuration(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureDurationBucket tag, int increment = 1)
     {
         var index = 567 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);

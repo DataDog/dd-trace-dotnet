@@ -6,7 +6,6 @@
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.SourceGenerators;
-using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Telemetry.Metrics;
 

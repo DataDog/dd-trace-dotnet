@@ -198,7 +198,7 @@ internal static class MetricTags
     {
         [Description("trigger:none")] None,
         [Description("trigger:memory")] Memory,
-        [Description("trigger:gen2")] Gen2,
+        [Description("trigger:gc")] Gc,
         [Description("trigger:both")] Both,
     }
 
@@ -217,7 +217,7 @@ internal static class MetricTags
         [Description("bucket:gte_90")] GreaterThanOrEqual90,
     }
 
-    internal enum DebuggerMemoryPressureGen2Bucket
+    internal enum DebuggerMemoryPressureGcBucket
     {
         [Description("bucket:lt_1")] LessThan1,
         [Description("bucket:1_2")] From1To2,

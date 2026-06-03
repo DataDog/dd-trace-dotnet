@@ -219,19 +219,19 @@ internal enum Count
     [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDisabled,
 
     /// <summary>
-    /// Count of Dynamic Instrumentation memory-pressure transitions bucketed by memory load percentage at the transition.
+    /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by memory load percentage bucket at the transition.
     /// </summary>
     [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureMemoryBucket>("memory_pressure.memory_usage_pct", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureMemoryUsagePct,
 
     /// <summary>
-    /// Count of Dynamic Instrumentation memory-pressure transitions bucketed by Gen2 collections per second at the transition.
+    /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by GC activity bucket at the transition.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGen2Bucket>("memory_pressure.gen2_per_sec", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureGen2PerSec,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGcBucket>("memory_pressure.gc_activity", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureGcActivity,
 
     /// <summary>
-    /// Count of Dynamic Instrumentation high-memory-pressure periods bucketed by duration, recorded on exit.
+    /// Count of Dynamic Instrumentation high-memory-pressure periods, incremented once on exit and tagged by duration bucket.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration_ms", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDurationMs,
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDuration,
 #endregion
 #region AppSec Namespace
 

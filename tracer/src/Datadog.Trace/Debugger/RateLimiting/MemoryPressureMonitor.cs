@@ -215,12 +215,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
             if (gen2CollectionsPerSecond.HasValue)
             {
-                TelemetryFactory.Metrics.RecordCountDebuggerMemoryPressureGen2PerSec(state, GetGen2Bucket(gen2CollectionsPerSecond.Value));
+                TelemetryFactory.Metrics.RecordCountDebuggerMemoryPressureGcActivity(state, GetGcBucket(gen2CollectionsPerSecond.Value));
             }
 
             if (!isHighPressure)
             {
-                TelemetryFactory.Metrics.RecordCountDebuggerMemoryPressureDurationMs(GetDurationBucket(highPressureDurationMs));
+                TelemetryFactory.Metrics.RecordCountDebuggerMemoryPressureDuration(GetDurationBucket(highPressureDurationMs));
             }
         }
 
@@ -234,13 +234,13 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 _ => MetricTags.DebuggerMemoryPressureMemoryBucket.GreaterThanOrEqual90,
             };
 
-        private static MetricTags.DebuggerMemoryPressureGen2Bucket GetGen2Bucket(double gen2CollectionsPerSecond)
+        private static MetricTags.DebuggerMemoryPressureGcBucket GetGcBucket(double gen2CollectionsPerSecond)
             => gen2CollectionsPerSecond switch
             {
-                < 1 => MetricTags.DebuggerMemoryPressureGen2Bucket.LessThan1,
-                < 2 => MetricTags.DebuggerMemoryPressureGen2Bucket.From1To2,
-                < 5 => MetricTags.DebuggerMemoryPressureGen2Bucket.From2To5,
-                _ => MetricTags.DebuggerMemoryPressureGen2Bucket.GreaterThanOrEqual5,
+                < 1 => MetricTags.DebuggerMemoryPressureGcBucket.LessThan1,
+                < 2 => MetricTags.DebuggerMemoryPressureGcBucket.From1To2,
+                < 5 => MetricTags.DebuggerMemoryPressureGcBucket.From2To5,
+                _ => MetricTags.DebuggerMemoryPressureGcBucket.GreaterThanOrEqual5,
             };
 
         private static MetricTags.DebuggerMemoryPressureDurationBucket GetDurationBucket(double durationMs)
@@ -362,7 +362,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                                   ? MetricTags.DebuggerMemoryPressureTrigger.Both
                                   : aboveEnterMem
                                       ? MetricTags.DebuggerMemoryPressureTrigger.Memory
-                                      : MetricTags.DebuggerMemoryPressureTrigger.Gen2;
+                                      : MetricTags.DebuggerMemoryPressureTrigger.Gc;
                     _highPressureStartMs = nowMs;
                     _hasHighPressureStart = true;
                 }

@@ -715,8 +715,8 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountDebuggerMemoryPressureTransitions(MetricTags.DebuggerMemoryPressureState.Exit, MetricTags.DebuggerMemoryPressureTrigger.None);
         collector.RecordCountDebuggerMemoryPressureDisabled(MetricTags.DebuggerMemoryPressureDisabledReason.NoSignals);
         collector.RecordCountDebuggerMemoryPressureMemoryUsagePct(MetricTags.DebuggerMemoryPressureState.Enter, MetricTags.DebuggerMemoryPressureMemoryBucket.GreaterThanOrEqual90);
-        collector.RecordCountDebuggerMemoryPressureGen2PerSec(MetricTags.DebuggerMemoryPressureState.Enter, MetricTags.DebuggerMemoryPressureGen2Bucket.From2To5);
-        collector.RecordCountDebuggerMemoryPressureDurationMs(MetricTags.DebuggerMemoryPressureDurationBucket.From1To5Seconds);
+        collector.RecordCountDebuggerMemoryPressureGcActivity(MetricTags.DebuggerMemoryPressureState.Enter, MetricTags.DebuggerMemoryPressureGcBucket.From2To5);
+        collector.RecordCountDebuggerMemoryPressureDuration(MetricTags.DebuggerMemoryPressureDurationBucket.From1To5Seconds);
         collector.AggregateMetrics();
 
         var metrics = collector.GetMetrics();
@@ -742,12 +742,12 @@ public class MetricsTelemetryCollectorTests
             Enumerable.SequenceEqual(x.Tags, new[] { "state:enter", "bucket:gte_90" }) &&
             x.Points.Single().Value == 1);
         metrics.Metrics.Should().Contain(x =>
-            x.Metric == Count.DebuggerMemoryPressureGen2PerSec.GetName() &&
+            x.Metric == Count.DebuggerMemoryPressureGcActivity.GetName() &&
             x.Tags != null &&
             Enumerable.SequenceEqual(x.Tags, new[] { "state:enter", "bucket:2_5" }) &&
             x.Points.Single().Value == 1);
         metrics.Metrics.Should().Contain(x =>
-            x.Metric == Count.DebuggerMemoryPressureDurationMs.GetName() &&
+            x.Metric == Count.DebuggerMemoryPressureDuration.GetName() &&
             x.Tags != null &&
             Enumerable.SequenceEqual(x.Tags, new[] { "bucket:1_5s" }) &&
             x.Points.Single().Value == 1);
