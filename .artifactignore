@@ -6,3 +6,7 @@
 !artifacts/monitoring-home/**
 !artifacts/ProfilerResources/**
 !packages/**
+
+# vcpkg's working dirs land under artifacts/obj/vcpkg during the native build
+# (downloads/, buildtrees/, packages/). They're only needed at native-compile time.
+artifacts/obj/vcpkg/**
