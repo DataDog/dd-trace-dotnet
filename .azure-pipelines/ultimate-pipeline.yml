@@ -5106,7 +5106,8 @@ stages:
 
     - job: tests
       displayName: ""
-      timeoutInMinutes: 60
+      # [DIAG do-not-merge] bumped from 60 to 240 for the INTEGRATIONS retry-until-failure loop
+      timeoutInMinutes: 240
       pool:
           vmImage: ubuntu-latest
       dependsOn: compute_scenarios
@@ -5182,7 +5183,54 @@ stages:
             DEBUG_FLAG="--force-dd-trace-debug"
           fi
 
-          ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I) $DEBUG_FLAG
+          # [DIAG do-not-merge] For INTEGRATIONS-containing matrix entries, retry the INTEGRATIONS
+          # scenario alone (skip the other scenarios in the batch) until a failure occurs.
+          # Goal: repro the intermittent Test_SqlServiceNameSource stall (~2% per run, so 50
+          # attempts gives ~64% chance per CI run). Other matrix entries run once as before.
+          # On failure, preserve the failing attempt's logs so the artifact has them.
+          # Match INTEGRATIONS as a comma-delimited element (so we don't trigger on INTEGRATIONS_AWS).
+          if [[ ",${SCENARIOS}," == *,INTEGRATIONS,* ]]; then
+            max_attempts=50
+            attempt=0
+            while [ $attempt -lt $max_attempts ]; do
+              attempt=$((attempt + 1))
+              echo "===== [DIAG] INTEGRATIONS attempt $attempt / $max_attempts ====="
+              # clean previous iteration's logs so the next attempt starts fresh
+              for d in logs_*_ok_*; do [ -d "$d" ] && rm -rf "$d"; done
+              for d in logs_*; do
+                if [ -d "$d" ] && [[ "$d" != *_ok_* && "$d" != *_failed_* ]]; then
+                  rm -rf "$d"
+                fi
+              done
+              # NOTE: run only +S INTEGRATIONS in the loop (not the full $SCENARIOS_TO_RUN batch)
+              # to keep per-attempt time at ~80s instead of ~4 min.
+              if ! ./run.sh +S INTEGRATIONS --splits=$(N) --group=$(I) $DEBUG_FLAG; then
+                echo "===== [DIAG] FAILED on attempt $attempt — preserving logs ====="
+                for d in logs_*; do
+                  if [ -d "$d" ] && [[ "$d" != *_ok_* && "$d" != *_failed_* ]]; then
+                    mv "$d" "${d}_failed_attempt_$(printf %02d $attempt)"
+                  fi
+                done
+                exit 1
+              fi
+              # Keep this attempt's logs around (renamed) so we have history if a later attempt fails
+              for d in logs_*; do
+                if [ -d "$d" ] && [[ "$d" != *_ok_* && "$d" != *_failed_* ]]; then
+                  mv "$d" "${d}_ok_attempt_$(printf %02d $attempt)"
+                fi
+              done
+            done
+            echo "===== [DIAG] No failure in $max_attempts attempts ====="
+            # Restore the last successful iteration's logs to their canonical names so the
+            # downstream "Group logs" step finds something to copy.
+            for d in logs_*_ok_attempt_$(printf %02d $max_attempts); do
+              if [ -d "$d" ]; then
+                cp -r "$d" "${d%_ok_attempt_*}"
+              fi
+            done
+          else
+            ./run.sh $SCENARIOS_TO_RUN --splits=$(N) --group=$(I) $DEBUG_FLAG
+          fi
         workingDirectory: system-tests
         displayName: Run tests
         env:
