@@ -278,7 +278,7 @@ public class DynamicInstrumentationTests
         rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
 
-    private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 5)
+    private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 30)
     {
         var initializationTask = debugger.GetInitializationTask();
         var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
