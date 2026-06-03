@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text;
 
 namespace Datadog.Trace
 {
@@ -11,9 +12,11 @@ namespace Datadog.Trace
     {
         public const string TelemetrySdkName = "datadog";
         public const string Language = "dotnet";
-        public const string AssemblyVersion = "3.46.0.0";
+        public static readonly string AssemblyVersion = typeof(TracerConstants).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
         public const string ThreePartVersion = "3.46.0";
 
-        public static ReadOnlySpan<byte> AssemblyVersionBytes => "3.46.0.0"u8;
+        private static readonly byte[] AssemblyVersionBytesArray = Encoding.UTF8.GetBytes(AssemblyVersion);
+
+        public static ReadOnlySpan<byte> AssemblyVersionBytes => AssemblyVersionBytesArray;
     }
 }
