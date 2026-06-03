@@ -16,6 +16,7 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "5.1",
         MaximumVersion = "5",
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
+        InstrumentationCategory = InstrumentationCategory.Tracing | InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -62,12 +63,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                Log.Debug("Starting {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
-                controllerContext.MonitorBodyAndPathParams(parameters, AspNetWebApi2Integration.HttpContextKey);
+                if (Security.Instance.AppsecEnabled || Datadog.Trace.Iast.Iast.Instance.Settings.Enabled)
+                {
+                    Log.Debug("Starting {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
+                    controllerContext.MonitorBodyAndPathParams(parameters, AspNetWebApi2Integration.HttpContextKey);
+                }
             }
             catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
             {
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
+            }
+
+            try
+            {
+                var codeOrigin = DebuggerManager.Instance.CodeOrigin;
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                {
+                    AspNetFrameworkCodeOriginHelper.AddSpanCodeOrigin(instance, codeOrigin, AspNetWebApi2Integration.HttpContextKey, Log, "HttpActionDescriptor");
+                }
+            }
+            catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
+            {
+                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
             }
 
             return CallTargetState.GetDefault();

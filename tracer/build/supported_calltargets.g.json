@@ -1525,6 +1525,34 @@
     "IntegrationName": "AspNetMvc",
     "AssemblyName": "System.Web.Mvc",
     "TargetTypeName": "System.Web.Mvc.Async.AsyncControllerActionInvoker",
+    "TargetMethodName": "BeginInvokeActionMethod",
+    "TargetReturnType": "System.IAsyncResult",
+    "TargetParameterTypes": [
+      "System.Web.Mvc.ControllerContext",
+      "System.Web.Mvc.ActionDescriptor",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
+      "System.AsyncCallback",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 5,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeActionMethod_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AspNetMvc",
+    "AssemblyName": "System.Web.Mvc",
+    "TargetTypeName": "System.Web.Mvc.Async.AsyncControllerActionInvoker",
     "TargetMethodName": "EndInvokeAction",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [
@@ -1569,7 +1597,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 6
+    "InstrumentationCategory": 7
   },
   {
     "IntegrationName": "AspNetWebApi2",
@@ -1620,7 +1648,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 6
+    "InstrumentationCategory": 7
   },
   {
     "IntegrationName": "AspNetWebApi2",

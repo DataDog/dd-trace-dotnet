@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "4",
         MaximumVersion = "5",
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
+        InstrumentationCategory = InstrumentationCategory.Tracing | InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -63,11 +64,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                controllerContext.MonitorBodyAndPathParams(parameters, AspNetMvcIntegration.HttpContextKey);
+                if (Security.Instance.AppsecEnabled || Datadog.Trace.Iast.Iast.Instance.Settings.Enabled)
+                {
+                    controllerContext.MonitorBodyAndPathParams(parameters, AspNetMvcIntegration.HttpContextKey);
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
+            }
+
+            try
+            {
+                var codeOrigin = DebuggerManager.Instance.CodeOrigin;
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                {
+                    AspNetFrameworkCodeOriginHelper.AddSpanCodeOrigin(actionDescriptor, codeOrigin, AspNetMvcIntegration.HttpContextKey, Log, "ActionDescriptor");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
             }
 
             return CallTargetState.GetDefault();

@@ -26,6 +26,8 @@ internal static class EndpointDetector
     private const MethodAttributes InvalidMethodAttributes = MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
     private const string MvcNamespace = "Microsoft.AspNetCore.Mvc";
     private const string MvcRoutingNamespace = "Microsoft.AspNetCore.Mvc.Routing";
+    private const string SystemWebMvcNamespace = "System.Web.Mvc";
+    private const string SystemWebHttpNamespace = "System.Web.Http";
     private const string RazorPagesNamespace = "Microsoft.AspNetCore.Mvc.RazorPages";
     private const string SignalRNamespace = "Microsoft.AspNetCore.SignalR";
     private const string CompilerServicesNamespace = "System.Runtime.CompilerServices";
@@ -34,6 +36,7 @@ internal static class EndpointDetector
     {
         None,
         Controller,
+        AspNetFrameworkController,
         PageModel,
         SignalRHub,
         CompilerGenerated
@@ -43,6 +46,7 @@ internal static class EndpointDetector
     {
         ControllerAttribute,
         ActionAttribute,
+        AspNetFrameworkNonActionAttribute,
         NoHandlerAttribute,
         CompilerGeneratedAttribute
     }
@@ -50,6 +54,7 @@ internal static class EndpointDetector
     private enum KnownBaseTypeSet
     {
         Controller,
+        AspNetFrameworkController,
         PageModel,
         SignalRHub
     }
@@ -108,6 +113,13 @@ internal static class EndpointDetector
                     continue;
                 }
 
+                if (endpointType == EndpointTypeKind.AspNetFrameworkController &&
+                    !HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, KnownNameSet.AspNetFrameworkNonActionAttribute))
+                {
+                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
+                    continue;
+                }
+
                 if (endpointType == EndpointTypeKind.PageModel && IsPageModelHandler(methodDef, metadataReader))
                 {
                     consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
@@ -157,6 +169,11 @@ internal static class EndpointDetector
             if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.Controller))
             {
                 return EndpointTypeKind.Controller;
+            }
+
+            if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.AspNetFrameworkController))
+            {
+                return EndpointTypeKind.AspNetFrameworkController;
             }
 
             if (fallbackType == EndpointTypeKind.None)
@@ -387,6 +404,11 @@ internal static class EndpointDetector
                        (comparer.Equals(namespaceHandle, MvcRoutingNamespace) &&
                         comparer.Equals(nameHandle, "HttpMethodAttribute"));
 
+            case KnownNameSet.AspNetFrameworkNonActionAttribute:
+                return (comparer.Equals(namespaceHandle, SystemWebMvcNamespace) ||
+                        comparer.Equals(namespaceHandle, SystemWebHttpNamespace)) &&
+                       comparer.Equals(nameHandle, "NonActionAttribute");
+
             case KnownNameSet.NoHandlerAttribute:
                 return comparer.Equals(namespaceHandle, RazorPagesNamespace) &&
                        comparer.Equals(nameHandle, "NonHandlerAttribute");
@@ -409,6 +431,13 @@ internal static class EndpointDetector
                 return comparer.Equals(namespaceHandle, MvcNamespace) &&
                        (comparer.Equals(nameHandle, "Controller") ||
                         comparer.Equals(nameHandle, "ControllerBase"));
+
+            case KnownBaseTypeSet.AspNetFrameworkController:
+                return (comparer.Equals(namespaceHandle, SystemWebMvcNamespace) &&
+                        (comparer.Equals(nameHandle, "Controller") ||
+                         comparer.Equals(nameHandle, "ControllerBase"))) ||
+                       (comparer.Equals(namespaceHandle, SystemWebHttpNamespace) &&
+                        comparer.Equals(nameHandle, "ApiController"));
 
             case KnownBaseTypeSet.PageModel:
                 return comparer.Equals(namespaceHandle, RazorPagesNamespace) &&
