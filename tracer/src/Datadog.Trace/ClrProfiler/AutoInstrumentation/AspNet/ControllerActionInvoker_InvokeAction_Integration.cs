@@ -79,7 +79,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var codeOrigin = DebuggerManager.Instance.CodeOrigin;
                 if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
                 {
-                    AspNetFrameworkCodeOriginHelper.AddSpanCodeOrigin(actionDescriptor, codeOrigin, AspNetMvcIntegration.HttpContextKey, Log, "ActionDescriptor");
+                    var httpContext = HttpContext.Current;
+                    if (SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey) is { Root.Span: { } rootSpan } &&
+                        !codeOrigin.HasCodeOrigin(rootSpan))
+                    {
+                        if (AspNetFrameworkEndpointCodeOrigin.TryGetTypeAndMethod(actionDescriptor, out var type, out var method))
+                        {
+                            codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        }
+                        else
+                        {
+                            Log.Debug("Could not extract type and method from ActionDescriptor type {ActionDescriptorType}", actionDescriptor?.GetType());
+                        }
+                    }
                 }
             }
             catch (Exception ex)
