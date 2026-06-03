@@ -280,13 +280,12 @@ public class DynamicInstrumentationTests
 
     private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 5)
     {
-        var timeout = TimeSpan.FromSeconds(timeoutSeconds);
-        var startTime = DateTime.UtcNow;
+        var initializationTask = debugger.GetInitializationTask();
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
 
-        while (!debugger.IsInitialized && DateTime.UtcNow - startTime < timeout)
-        {
-            await Task.Delay(50);
-        }
+        var completedTask = await Task.WhenAny(initializationTask, timeoutTask);
+        completedTask.Should().Be(initializationTask, "Dynamic Instrumentation initialization should complete");
+        await initializationTask;
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutSeconds = 5)
@@ -379,14 +378,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Probe file should be loaded and applied");
@@ -869,14 +861,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Valid probes should be loaded");
@@ -924,14 +909,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Probes should be loaded");
@@ -969,7 +947,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings, new DiscoveryServiceWithoutRcmMock());
             debugger.Initialize();
-            await WaitForInitializationAsync(debugger);
+            await WaitUntilAsync(() => GetFileProbes(debugger) is not null);
 
             debugger.IsInitialized.Should().BeTrue("file probes should not wait for the RCM availability timeout");
             GetFileProbes(debugger).Should().NotBeNull();
