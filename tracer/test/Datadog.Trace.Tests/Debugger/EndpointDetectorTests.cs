@@ -106,6 +106,13 @@ namespace Datadog.Trace.Tests.Debugger
                         isExpectedEndpoint = true;
                     }
 
+                    // .NET Framework MVC/Web API controllers are convention-based.
+                    else if (type.Name is "NetFxMvcController" or "NetFxMvcDerivedController" or "NetFxWebApiController" &&
+                             method.Name is "Index" or "Get" or "AsyncAction")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+
                     // PageModel handlers (OnGetWithNonHandlerAttribute is excluded by the list
                     // pattern itself - it's covered by the negative-case test, not here).
                     else if (type.Name == "TestPageModel" &&
@@ -195,6 +202,12 @@ namespace Datadog.Trace.Tests.Debugger
 
                     // Regular methods with no HTTP attribute
                     else if (type.Name == "ValidController" && method.Name == "RegularMethod")
+                    {
+                        shouldNotBeEndpoint = true;
+                    }
+
+                    // .NET Framework MVC/Web API non-actions
+                    else if (type.Name is "NetFxMvcController" or "NetFxWebApiController" && method.Name == "Helper")
                     {
                         shouldNotBeEndpoint = true;
                     }
@@ -576,6 +589,24 @@ namespace Microsoft.AspNetCore.Builder
     }
 }
 
+namespace System.Web.Mvc
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ControllerBase { }
+
+    public class Controller : ControllerBase { }
+}
+
+namespace System.Web.Http
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ApiController { }
+}
+
 namespace EndpointDetectorTestNamespace
 {
     // Controller with ControllerAttribute
@@ -740,6 +771,43 @@ namespace EndpointDetectorTestNamespace
 
         // Regular method with no HTTP attribute - should be excluded
         public object RegularMethod() => null;
+    }
+
+    // .NET Framework MVC controller
+    public class NetFxMvcController : System.Web.Mvc.Controller
+    {
+        public object Index() => null;
+
+        public Task<object> AsyncAction() => Task.FromResult<object>(null);
+
+        [System.Web.Mvc.NonAction]
+        public object Helper() => null;
+
+        public string Name { get; set; }
+
+        private object PrivateMethod() => null;
+
+        public static object StaticMethod() => null;
+    }
+
+    public class NetFxMvcBaseController : System.Web.Mvc.Controller
+    {
+    }
+
+    public class NetFxMvcDerivedController : NetFxMvcBaseController
+    {
+        public object Index() => null;
+    }
+
+    // .NET Framework Web API 2 controller
+    public class NetFxWebApiController : System.Web.Http.ApiController
+    {
+        public object Get() => null;
+
+        public Task<object> AsyncAction() => Task.FromResult<object>(null);
+
+        [System.Web.Http.NonAction]
+        public object Helper() => null;
     }
 
     // Minimal API setup to generate compiler-generated methods
