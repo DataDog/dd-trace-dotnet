@@ -209,4 +209,42 @@ TEST(LibrariesInfoCacheTests, GetProcNameReplacesAndRestoresOriginalAccessor)
     ASSERT_EQ(acc->get_proc_name, originalGetProcName)
         << "get_proc_name should be restored to the original after Stop";
 }
+
+TEST(LibrariesInfoCacheTests, BuildSymbolCacheProducesNoDuplicates)
+{
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    ServiceWrapper serviceWrapper(&libCache);
+
+    std::vector<DlPhdrInfoWrapper> phdrCache;
+    dl_iterate_phdr(
+        [](struct dl_phdr_info* info, std::size_t size, void* data) {
+            auto* cache = static_cast<std::vector<DlPhdrInfoWrapper>*>(data);
+            cache->emplace_back(info, size);
+            return 0;
+        },
+        &phdrCache);
+
+    std::vector<ModuleRegion> regions;
+    std::vector<FuncEntry> symbols;
+    libCache.BuildSymbolCache(phdrCache, regions, symbols);
+
+    ASSERT_FALSE(symbols.empty()) << "Expected at least some symbols from the test binary";
+
+    for (size_t r = 0; r < regions.size(); ++r)
+    {
+        auto& region = regions[r];
+        for (uint32_t i = 1; i < region.sym_count; ++i)
+        {
+            auto idx = region.sym_offset + i;
+            auto prev = region.sym_offset + i - 1;
+            bool isDuplicate = symbols[idx].start_ip == symbols[prev].start_ip &&
+                               symbols[idx].end_ip == symbols[prev].end_ip;
+            EXPECT_FALSE(isDuplicate)
+                << "Duplicate symbol entry in region " << r
+                << " at index " << i
+                << ": start_ip=0x" << std::hex << symbols[idx].start_ip
+                << " end_ip=0x" << symbols[idx].end_ip;
+        }
+    }
+}
 #endif

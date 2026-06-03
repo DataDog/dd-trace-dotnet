@@ -16,6 +16,28 @@
 
 using namespace std::chrono_literals;
 
+namespace {
+struct ScopedMmap
+{
+    void* data;
+    size_t size;
+
+    ScopedMmap(int fd, size_t len) : data(MAP_FAILED), size(len)
+    {
+        data = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+        posix_fadvise(fd, 0, len, POSIX_FADV_DONTNEED);
+        close(fd);
+    }
+
+    ~ScopedMmap() { if (data != MAP_FAILED) munmap(data, size); }
+
+    ScopedMmap(const ScopedMmap&) = delete;
+    ScopedMmap& operator=(const ScopedMmap&) = delete;
+
+    explicit operator bool() const { return data != MAP_FAILED; }
+};
+} // anonymous namespace
+
 std::atomic<LibrariesInfoCache*> LibrariesInfoCache::s_instance{nullptr};
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
@@ -271,29 +293,21 @@ void LibrariesInfoCache::BuildSymbolCache(
         }
 
         auto fileSize = static_cast<size_t>(st.st_size);
-        void* mapped = mmap(nullptr, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
-        close(fd);
-
-        if (mapped == MAP_FAILED)
+        ScopedMmap mapping(fd, fileSize);
+        if (!mapping)
             continue;
 
-        auto* ehdr = static_cast<const ElfW(Ehdr)*>(mapped);
+        auto* ehdr = static_cast<const ElfW(Ehdr)*>(mapping.data);
         if (memcmp(ehdr->e_ident, ELFMAG, SELFMAG) != 0)
-        {
-            munmap(mapped, fileSize);
             continue;
-        }
 
         unw_word_t loadOffset = info->dlpi_addr;
 
-        auto base = static_cast<const uint8_t*>(mapped);
+        auto base = static_cast<const uint8_t*>(mapping.data);
 
         if (ehdr->e_shoff == 0 || ehdr->e_shnum == 0 ||
             ehdr->e_shoff + static_cast<size_t>(ehdr->e_shnum) * sizeof(ElfW(Shdr)) > fileSize)
-        {
-            munmap(mapped, fileSize);
             continue;
-        }
 
         auto* shdrs = reinterpret_cast<const ElfW(Shdr)*>(base + ehdr->e_shoff);
 
@@ -328,13 +342,20 @@ void LibrariesInfoCache::BuildSymbolCache(
             }
         }
 
-        munmap(mapped, fileSize);
-
         if (moduleSymbols.empty())
             continue;
 
         std::sort(moduleSymbols.begin(), moduleSymbols.end(),
-                  [](const FuncEntry& a, const FuncEntry& b) { return a.start_ip < b.start_ip; });
+                  [](const FuncEntry& a, const FuncEntry& b) {
+                      return a.start_ip < b.start_ip || (a.start_ip == b.start_ip && a.end_ip < b.end_ip);
+                  });
+
+        // Remove duplicates
+        auto last = std::unique(moduleSymbols.begin(), moduleSymbols.end(),
+                                [](const FuncEntry& a, const FuncEntry& b) {
+                                    return a.start_ip == b.start_ip && a.end_ip == b.end_ip;
+                                });
+        moduleSymbols.erase(last, moduleSymbols.end());
 
         auto symOffset = static_cast<uint32_t>(outSymbols.size());
         auto symCount = static_cast<uint32_t>(moduleSymbols.size());

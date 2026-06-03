@@ -74,9 +74,15 @@ private:
 
     void UpdateCache();
 #ifdef ARM64
+#ifdef DD_TEST
+public:
+#endif
     void BuildSymbolCache(std::vector<DlPhdrInfoWrapper>& phdrCache,
                           std::vector<ModuleRegion>& outRegions,
                           std::vector<FuncEntry>& outSymbols);
+#ifdef DD_TEST
+private:
+#endif
     int FindFunctionStart(unw_word_t ip, unw_word_t* func_start) const;
     int GetProcNameImpl(unw_addr_space_t as, unw_word_t ip,
                         char* buf, size_t buf_len,
@@ -91,8 +97,14 @@ private:
     std::vector<DlPhdrInfoWrapper> _librariesInfo;
 
 #ifdef ARM64
+#ifdef DD_TEST
+public:
+#endif
     std::vector<ModuleRegion> _moduleRegions;
     std::vector<FuncEntry> _symbols;
+#ifdef DD_TEST
+private:
+#endif
 
     using GetProcNameFn = int (*)(unw_addr_space_t, unw_word_t, char*, size_t, unw_word_t*, void*);
     GetProcNameFn _originalGetProcName = nullptr;
