@@ -397,7 +397,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     shouldStopCapture = true;
                 }
 
-                if (!shouldStopCapture)
+                if (!shouldStopCapture && !evaluationResult.HasConditionError)
                 {
                     EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
                 }

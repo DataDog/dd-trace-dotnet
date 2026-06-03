@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -64,6 +65,25 @@ public class ProbeProcessorTests
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
         Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
         Assert.Equal(0, sampler.SampleCalls);
+    }
+
+    [Fact]
+    public void ConditionEvaluationErrorsFinalizeWithoutCaptureData()
+    {
+        var processor = new ProbeProcessor(CreateConditionalLogProbe("probe-id", InvalidConditionJson, captureSnapshot: true));
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+
+        var snapshot = JObject.Parse(FinalizeMethodSnapshot(snapshotCreator, "probe-id", method));
+
+        Assert.NotEmpty(snapshot.SelectToken("debugger.snapshot.evaluationErrors")!);
+        Assert.False(CapturesContainData(snapshot.SelectToken("debugger.snapshot.captures")));
+        Assert.NotNull(snapshot.SelectToken("debugger.snapshot.stack"));
     }
 
     [Fact]
@@ -588,6 +608,66 @@ public class ProbeProcessorTests
         typeof(DebuggerSnapshotCreator)
            .GetProperty(nameof(DebuggerSnapshotCreator.MethodScopeMembers), BindingFlags.Instance | BindingFlags.NonPublic)!
            .SetValue(snapshotCreator, null);
+    }
+
+    private static string FinalizeMethodSnapshot(DebuggerSnapshotCreator snapshotCreator, string probeId, MethodInfo method)
+    {
+        var captureInfo = new CaptureInfo<SampleTarget>(
+            methodMetadataIndex: 0,
+            methodState: MethodState.EntryEnd,
+            value: new SampleTarget(),
+            method: method,
+            type: typeof(SampleTarget),
+            invocationTargetType: typeof(SampleTarget),
+            memberKind: ScopeMemberKind.This);
+
+        return snapshotCreator.FinalizeMethodSnapshot(probeId, 0, ref captureInfo);
+    }
+
+    private static bool CapturesContainData(JToken captures)
+    {
+        if (captures is not JObject capturesObject)
+        {
+            return false;
+        }
+
+        foreach (var property in capturesObject.Properties())
+        {
+            if (property.Name == "lines" && property.Value is JObject lines)
+            {
+                foreach (var lineProperty in lines.Properties())
+                {
+                    if (CapturePointContainsData(lineProperty.Value))
+                    {
+                        return true;
+                    }
+                }
+            }
+            else if (CapturePointContainsData(property.Value))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CapturePointContainsData(JToken capturePoint)
+    {
+        if (capturePoint is not JObject capturePointObject)
+        {
+            return false;
+        }
+
+        return HasContent(capturePointObject["arguments"])
+            || HasContent(capturePointObject["locals"])
+            || HasContent(capturePointObject["staticFields"])
+            || HasContent(capturePointObject["throwable"]);
+    }
+
+    private static bool HasContent(JToken token)
+    {
+        return token != null && token.HasValues;
     }
 
     private sealed class SampleTarget
