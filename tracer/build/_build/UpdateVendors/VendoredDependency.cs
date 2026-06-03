@@ -352,7 +352,30 @@ namespace UpdateVendors
                 transform: filePath => RewriteCsFileWithStandardTransform(
                     filePath,
                     originalNamespace: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
-                    AddIfNetcoreapp31OrGreater,
+                    (filePath, content) =>
+                    {
+                        // We don't want to add this to _all_ of the items, just most of them
+                        content = Path.GetFileName(filePath) is not "ProtobufOtlpCommonFieldNumberConstants.cs"
+                                   and not "ProtobufOtlpTraceFieldNumberConstants.cs"
+                                   and not "ProtobufSerializer.cs"
+                                   and not "ProtobufWireType.cs"
+                                   ? AddIfNetcoreapp31OrGreater(filePath, content)
+                                   : content;
+
+                        // we have to wrap this on non-.NET Core
+                        content = content.Replace(
+                            "using System.Buffers.Binary;",
+                            "#if NETCOREAPP3_1_OR_GREATER\nusing System.Buffers.Binary;\n#endif");
+
+				        // These values are just _wrong_ - fix them to follow the spec instead
+                        // https://github.com/open-telemetry/opentelemetry-proto/blob/6d0a56803a540ed526cd918895e72c79df25fc92/opentelemetry/proto/trace/v1/trace.proto#L153
+                        return content
+                                 .Replace("SpanKind_Internal = 2", "Span_Kind_Internal = 1")
+                                 .Replace("SpanKind_Server = 3", "Span_Kind_Server = 2")
+                                 .Replace("SpanKind_Client = 4", "Span_Kind_Client = 3")
+                                 .Replace("SpanKind_Producer = 5", "Span_Kind_Producer = 4")
+                                 .Replace("SpanKind_Consumer = 6", "Span_Kind_Consumer = 5");
+                    },
                     AddNullableDirectiveTransform,
                     AddOpenTelemetryUsings),
                 onlyIncludePaths: new[]
@@ -364,6 +387,8 @@ namespace UpdateVendors
                     "Implementation/ExportClient/",
                     "Implementation/Serializer/ProtobufOtlpCommonFieldNumberConstants.cs",
                     "Implementation/Serializer/ProtobufOtlpLogFieldNumberConstants.cs",
+                    "Implementation/Serializer/ProtobufOtlpResourceFieldNumberConstants.cs",
+                    "Implementation/Serializer/ProtobufOtlpTraceFieldNumberConstants.cs",
                     "Implementation/Serializer/ProtobufSerializer.cs",
                     "Implementation/Serializer/ProtobufWireType.cs",
                 },
@@ -1147,7 +1172,9 @@ namespace UpdateVendors
                 "using System.Collections.Generic;\n" +
                 "using System.IO;\n" +
                 "using System.Linq;\n" +
+                "#if NETCOREAPP3_1_OR_GREATER\n" +
                 "using System.Net.Http;\n" +
+                "#endif\n" +
                 "using System.Threading;\n" +
                 "using System.Threading.Tasks;\n\n";
 
