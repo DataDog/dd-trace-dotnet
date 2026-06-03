@@ -64,6 +64,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- ClrMD 4.0 ships two pre-compiled DLLs: lib/netstandard2.0 and lib/net10.0.
+         The net10.0 DLL uses DacDataTargetCOM (AOT-compatible). The netstandard2.0 DLL uses
+         LegacyDacDataTargetWrapper whose delegate types need marshalling stubs that NativeAOT
+         can't discover statically. For dd-dotnet targeting net7.0/net8.0/net9.0, NuGet resolves
+         to the netstandard2.0 DLL (no matching TFM), so we need rd.xml to force the compiler
+         to pre-generate those stubs. See rd.xml for details. -->
+    <RdXmlFile Include="rd.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="4.0.726401" />
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
