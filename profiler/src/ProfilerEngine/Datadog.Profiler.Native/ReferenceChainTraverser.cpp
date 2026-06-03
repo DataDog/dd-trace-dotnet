@@ -169,6 +169,12 @@ void ReferenceChainTraverser::Test_FaultReadUnderGuard(const volatile void* ptr)
 
 void ReferenceChainTraverser::LogStats() const
 {
+    // avoid calculation overhead when debug logging is not enabled
+    if (!Log::IsDebugEnabled())
+    {
+        return;
+    }
+
     auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(_totalTraversalDuration).count();
 
     Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",

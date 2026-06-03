@@ -48,7 +48,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     _cachedItemsSize(0),
     _snapshotCooldown(0ns)
 {
-    _isHeapDumpInProgress.store(false),
+    _isHeapDumpInProgress.store(false);
     _inducedGCNumber.store(-1);
     _shouldStartHeapDump.store(false);
     _shouldCleanupHeapDumpSession.store(false);
@@ -209,7 +209,7 @@ std::vector<IHeapSnapshotManager::FileEntry> HeapSnapshotManager::GetAndClearRef
     std::lock_guard lock(_histogramLock);
     std::vector<FileEntry> result;
 
-    if (!_typeReferenceTree || _typeReferenceTree->IsEmpty())
+    if (_typeReferenceTree->IsEmpty())
     {
         return result;
     }
@@ -628,10 +628,7 @@ void HeapSnapshotManager::StartGCDump()
     {
         std::lock_guard lock(_histogramLock);
         _classHistogram.clear();
-        if (_typeReferenceTree)
-        {
-            _typeReferenceTree->Clear();
-        }
+        _typeReferenceTree->Clear();
 
         // Create/reset the traverser so it is ready to process roots during GC callbacks.
         // InlineVTCache is persisted across dumps to avoid re-inspecting types for inline VTs.
