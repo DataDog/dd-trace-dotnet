@@ -36,7 +36,9 @@ partial class Build
             envVars.Add("DD_TRACE_ENABLED", "0");
             envVars.Add(SnapshotExplorationEnabledKey, "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            envVars.Add(SnapshotExplorationRootPathKey, GetSnapshotExplorationRootPath(testRootPath, framework));
+            var snapshotExplorationRootPath = GetSnapshotExplorationRootPath(testRootPath, framework);
+            envVars.Add(SnapshotExplorationRootPathKey, snapshotExplorationRootPath);
+            envVars.Add("DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE", GetSnapshotExplorationProbesFilePath(snapshotExplorationRootPath));
         }
         else if (description.LineProbesEnabled)
         {

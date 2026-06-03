@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using Nuke.Common.IO;
 using Logger = Serilog.Log;
 #nullable enable
@@ -15,7 +16,7 @@ using Logger = Serilog.Log;
 partial class Build
 {
     const string SnapshotExplorationTestFolderName = "SnapshotExplorationTestProbes";
-    const string SnapshotExplorationTestProbesFileName = "SnapshotExplorationTestProbes.csv";
+    const string SnapshotExplorationTestProbesFileName = "SnapshotExplorationTestProbes.json";
     const string SnapshotExplorationTestReportFolderName = "SnapshotExplorationTestReport";
     const string SnapshotExplorationEnabledKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
     const string SnapshotExplorationRootPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH";
@@ -108,19 +109,19 @@ partial class Build
         {
             Logger.Information($"Provided snapshot exploration test name is {ExplorationTestName}.");
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
-            CreateSnapshotExplorationTestCsv(testDescription);
+            CreateSnapshotExplorationTestProbeFile(testDescription);
         }
         else
         {
             Logger.Information("Snapshot exploration test name is not provided, running all.");
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
-                CreateSnapshotExplorationTestCsv(testDescription);
+                CreateSnapshotExplorationTestProbeFile(testDescription);
             }
         }
     }
 
-    void CreateSnapshotExplorationTestCsv(ExplorationTestDescription testDescription)
+    void CreateSnapshotExplorationTestProbeFile(ExplorationTestDescription testDescription)
     {
         var frameworks = Framework != null ? new[] { Framework } : testDescription.SupportedFrameworks;
         foreach (var framework in frameworks)
@@ -135,8 +136,7 @@ partial class Build
             var getClassSymbols = extractorType?.GetMethod("GetClassSymbols", BindingFlags.Instance | BindingFlags.NonPublic, Type.EmptyTypes);
             var testAssembliesPaths = GetAllTestAssemblies(testRootPath);
 
-            var csvBuilder = new StringBuilder();
-            csvBuilder.AppendLine("Probe ID,Type,Method,Signature,Is instance method");
+            var probes = new List<SnapshotExplorationProbeDefinition>();
 
             foreach (var testAssemblyPath in testAssembliesPaths)
             {
@@ -164,16 +164,16 @@ partial class Build
                     }
 
                     var typeName = scope["Name"].ToString();
-                    ProcessNestedScopes((List<IDictionary<string, object>>)scope["Scopes"], typeName, csvBuilder);
+                    ProcessNestedScopes((List<IDictionary<string, object>>)scope["Scopes"], typeName, probes);
                 }
             }
 
-            File.WriteAllText(GetSnapshotExplorationProbesFilePath(snapshotExplorationRootPath), csvBuilder.ToString());
+            WriteSnapshotExplorationProbeFile(GetSnapshotExplorationProbesFilePath(snapshotExplorationRootPath), probes);
         }
 
         return;
 
-        void ProcessNestedScopes(List<IDictionary<string, object>>? scopes, string? typeName, StringBuilder csvBuilder)
+        void ProcessNestedScopes(List<IDictionary<string, object>>? scopes, string? typeName, List<SnapshotExplorationProbeDefinition> probes)
         {
             if (scopes == null || string.IsNullOrEmpty(typeName))
             {
@@ -221,22 +221,22 @@ partial class Build
                     }
 
                     var returnType = ls?.GetType().GetProperty("ReturnType", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(ls)?.ToString();
-                    if (TryGetLine(typeName, methodName, returnType, (List<IDictionary<string, object>>)scope["Symbols"], isStatic, out var line))
+                    if (TryCreateSnapshotExplorationProbe(typeName, methodName, returnType, (List<IDictionary<string, object>>)scope["Symbols"], isStatic, out var probe))
                     {
-                        csvBuilder.AppendLine(line);
+                        probes.Add(probe);
                     }
                     else
                     {
-                        Logger.Warning($"Error to add probe info for: {line}");
+                        Logger.Warning($"Error to add probe info for type: {typeName}, method: {methodName}");
                     }
                 }
             }
         }
     }
 
-    bool TryGetLine(string type, string method, string? returnType, List<IDictionary<string, object>>? methodParameters, bool isStatic, [NotNullWhen(true)] out string? line)
+    bool TryCreateSnapshotExplorationProbe(string type, string method, string? returnType, List<IDictionary<string, object>>? methodParameters, bool isStatic, [NotNullWhen(true)] out SnapshotExplorationProbeDefinition? probe)
     {
-        line = null;
+        probe = null;
         try
         {
             var typeName = SanitiseName(type);
@@ -256,16 +256,15 @@ partial class Build
             var methodSignature = GetMethodSignature(methodParameters);
 
             var isInstanceMethod = !isStatic;
-            line = $"{Guid.NewGuid()},{typeName},{methodName},{methodSignature},{isInstanceMethod}";
+            probe = new SnapshotExplorationProbeDefinition(Guid.NewGuid().ToString(), typeName, methodName, methodSignature, isInstanceMethod);
             return true;
         }
         catch (Exception)
         {
-            line = $"Type: {type}, Method: {method}";
             return false;
         }
 
-        string? SanitiseName(string? name) => name?.Replace(',', SpecialSeparator);
+        static string? SanitiseName(string? name) => name?.Replace(',', SpecialSeparator);
 
         string GetMethodSignature(List<IDictionary<string, object>>? symbols)
         {
@@ -286,6 +285,87 @@ partial class Build
         }
     }
 
+    private static void WriteSnapshotExplorationProbeFile(string probesFilePath, List<SnapshotExplorationProbeDefinition> probes)
+    {
+        using var stream = File.Create(probesFilePath);
+        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
+
+        writer.WriteStartArray();
+        foreach (var probe in probes)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", probe.ProbeId);
+            writer.WriteString("language", "dotnet");
+            writer.WriteString("type", "LOG_PROBE");
+            writer.WriteStartObject("where");
+            writer.WriteString("typeName", probe.TypeName);
+            writer.WriteString("methodName", probe.MethodName);
+            writer.WriteString("signature", probe.Signature.Replace(SpecialSeparator, ','));
+            writer.WriteEndObject();
+            writer.WriteBoolean("captureSnapshot", true);
+
+            if (probe.IsInstanceMethod && ShouldSelectProbeBySignature(probe.TypeName, probe.MethodName, probe.Signature, 50))
+            {
+                writer.WriteStartObject("when");
+                writer.WriteString("dsl", "ref this != null");
+                writer.WritePropertyName("json");
+                writer.WriteStartObject();
+                writer.WriteStartArray("ne");
+                writer.WriteStartObject();
+                writer.WriteString("ref", "this");
+                writer.WriteEndObject();
+                writer.WriteNullValue();
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+                writer.WriteString("str", string.Empty);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    }
+
+    private static bool ShouldSelectProbeBySignature(string type, string method, string signature, int thresholdPercent)
+    {
+        if (thresholdPercent <= 0)
+        {
+            return false;
+        }
+
+        if (thresholdPercent >= 100)
+        {
+            return true;
+        }
+
+        var key = $"{NormalizeForKey(type)}|{NormalizeForKey(method)}|{NormalizeForKey(signature)}";
+        var bytes = Encoding.UTF8.GetBytes(key);
+        using var sha1 = System.Security.Cryptography.SHA1.Create();
+        var hash = sha1.ComputeHash(bytes);
+        return (BitConverter.ToUInt64(hash, 0) % 100UL) < (ulong)thresholdPercent;
+    }
+
+    private static string NormalizeForKey(string s)
+    {
+        if (string.IsNullOrEmpty(s))
+        {
+            return string.Empty;
+        }
+
+        s = s.Trim().ToLowerInvariant();
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", " ");
+        if (s.Length >= 2 &&
+            ((s.StartsWith("\"") && s.EndsWith("\"")) || (s.StartsWith("'") && s.EndsWith("'"))))
+        {
+            s = s.Substring(1, s.Length - 2);
+        }
+
+        return s;
+    }
+
+    private sealed record SnapshotExplorationProbeDefinition(string ProbeId, string TypeName, string MethodName, string Signature, bool IsInstanceMethod);
+
     public void VerifySnapshotExplorationTestResults(string probesFilePath, string reportFolderPath, TimeSpan testDuration)
     {
         var analysisStopwatch = Stopwatch.StartNew();
@@ -294,7 +374,7 @@ partial class Build
         var stepWatch = Stopwatch.StartNew();
 
         var definedProbes = ReadDefinedProbes(probesFilePath);
-        var definedProbeRows = ReadDefinedProbeRows(probesFilePath);
+        var definedProbeDetails = ReadDefinedProbeDetails(probesFilePath);
         timings["ReadDefinedProbes"] = stepWatch.Elapsed;
         if (definedProbes == null || definedProbes.Count == 0)
         {
@@ -375,7 +455,7 @@ partial class Build
             .Select(id => new KeyValuePair<string, string>(id, installedProbeIds.GetValueOrDefault(id, "unknown")))
             .ToList();
 
-        // Probes in CSV but native profiler couldn't install (signature mismatch, method doesn't exist, etc.)
+        // Probes in the generated probe file but native profiler couldn't install (signature mismatch, method doesn't exist, etc.)
         var notInstalled = definedProbeIdKeys.Except(installedProbeIdKeys)
             .Select(id => new KeyValuePair<string, string>(id, definedProbes.GetValueOrDefault(id, "unknown")))
             .ToList();
@@ -422,15 +502,14 @@ partial class Build
         // Calculate funnel numbers
         // Slot-level skips (e.g., byref-like/pinned args/locals) do NOT prevent probe installation.
         // Only probe-install failures should be deducted here.
-        var neverJitCompiled = definedProbes.Count - installedCount - skippedProbes.Count - nativeProbeInstallFailures.Count;
+        var neverJitCompiled = definedProbes.Count - installedCount - nativeProbeInstallFailures.Count;
         if (neverJitCompiled < 0) neverJitCompiled = 0; // Guard against overcounting in logs
 
         Logger.Information("┌─────────────────────────────────────────────────────────────┐");
         Logger.Information("│ PROBE FUNNEL (what happened at each stage)                  │");
         Logger.Information("├─────────────────────────────────────────────────────────────┤");
-        Logger.Information($"│ 1. Probes defined in CSV             {definedProbes.Count,6}                   │");
+        Logger.Information($"│ 1. Probes defined in file            {definedProbes.Count,6}                   │");
         Logger.Information($"│    ├─ Never JIT-compiled (test didn't touch) {neverJitCompiled,6}          │");
-        Logger.Information($"│    ├─ Skipped (signature mismatch)   {skippedProbes.Count,6}                   │");
         Logger.Information($"│    ├─ Rewriter failures (install)      {nativeProbeInstallFailures.Count,6}                   │");
         Logger.Information($"│    └─ Successfully installed         {installedCount,6}                   │");
         Logger.Information($"│                                           ↓                │");
@@ -469,8 +548,9 @@ partial class Build
         {
             Logger.Warning("");
             Logger.Warning("┌─────────────────────────────────────────────────────────────┐");
-            Logger.Warning("│ NATIVE PROFILER SKIPS (signature mismatches)                │");
+            Logger.Warning("│ NATIVE PROFILER SKIPS (debug diagnostic)                    │");
             Logger.Warning("└─────────────────────────────────────────────────────────────┘");
+            Logger.Warning("  These entries come from debug-level native logs and are informational only.");
             var reasonGroups = skippedProbes.GroupBy(p => p.Value).OrderByDescending(g => g.Count());
             foreach (var group in reasonGroups.Take(10))
             {
@@ -614,7 +694,7 @@ partial class Build
                 foreach (var m in topArgByRefLike)
                 {
                     Logger.Warning($"      - {m.Method} ({m.Count}x)");
-                    LogReproProbeIdsWithCsvDetails(Logger.Warning, m.Probes, definedProbeRows, "        ");
+                    LogReproProbeIdsWithDetails(Logger.Warning, m.Probes, definedProbeDetails, "        ");
                 }
 
                 var topLocalByRefLike = byRefLike
@@ -635,7 +715,7 @@ partial class Build
                 foreach (var m in topLocalByRefLike)
                 {
                     Logger.Warning($"      - {m.Method} ({m.Count}x)");
-                    LogReproProbeIdsWithCsvDetails(Logger.Warning, m.Probes, definedProbeRows, "        ");
+                    LogReproProbeIdsWithDetails(Logger.Warning, m.Probes, definedProbeDetails, "        ");
                 }
             }
         }
@@ -806,7 +886,7 @@ partial class Build
             }
             if (skippedProbes.Any())
             {
-                Logger.Warning($"  {actionItem++}. (Optional) Fix {skippedProbes.Count} signature mismatches in CSV generation");
+                Logger.Warning($"  {actionItem++}. (Optional) Inspect {skippedProbes.Count} debug-level signature mismatch log entries");
             }
 
             throw new Exception($"Snapshot exploration test failed: {invalidOrErrorProbes.Count} invalid snapshots, {failedDuringProcessing.Count} processing failures, {probeRelatedErrors.Count} probe errors, {criticalNativeFailures.Count} native rewriter failures, {skippedProbes.Count} signature mismatches");
@@ -835,7 +915,7 @@ partial class Build
             Logger.Warning("Warnings (non-blocking):");
             if (skippedProbes.Any())
             {
-                Logger.Warning($"  - {skippedProbes.Count} probes skipped due to signature mismatches");
+                Logger.Warning($"  - {skippedProbes.Count} debug-level signature mismatch log entries observed");
             }
             if (trulyNotCalled.Any())
             {
@@ -843,73 +923,11 @@ partial class Build
             }
         }
 
-        // === SECTION: Runtime Metrics ===
-        var runtimeMetrics = ReadExplorationTestMetrics(reportFolderPath);
-        if (runtimeMetrics.Count > 0)
-        {
-            Logger.Information("");
-            Logger.Information("┌─────────────────────────────────────────────────────────────┐");
-            Logger.Information("│ RUNTIME PERFORMANCE METRICS                                 │");
-            Logger.Information("├─────────────────────────────────────────────────────────────┤");
-            foreach (var metric in runtimeMetrics)
-            {
-                if (metric.Key == "CacheHitRate")
-                {
-                    Logger.Information($"│ {metric.Key,-25} {metric.Value.TotalMs,8:F1}%                     │");
-                }
-                else if (metric.Key is "CacheHits" or "CacheMisses" or "ProbesRemoved" or "SnapshotsSkipped" or "SnapshotTimeouts")
-                {
-                    Logger.Information($"│ {metric.Key,-25} {metric.Value.Count,8}                         │");
-                }
-                else
-                {
-                    Logger.Information($"│ {metric.Key,-25} {metric.Value.TotalMs,8:F0}ms ({metric.Value.Count} calls, avg {metric.Value.AvgMs:F2}ms) │");
-                }
-            }
-            Logger.Information("└─────────────────────────────────────────────────────────────┘");
-        }
-
         // Output paths for detailed investigation
         Logger.Information("");
         Logger.Information("Log locations for detailed investigation:");
         Logger.Information($"  Logs: {BuildDataDirectory / "logs"}");
         Logger.Information($"  Report folder: {reportFolderPath}");
-    }
-
-    record RuntimeMetric(double TotalMs, long Count, double AvgMs);
-
-    private Dictionary<string, RuntimeMetric> ReadExplorationTestMetrics(string reportFolderPath)
-    {
-        var result = new Dictionary<string, RuntimeMetric>();
-        var metricsFile = Path.Combine(reportFolderPath, "exploration_test_metrics.csv");
-
-        if (!File.Exists(metricsFile))
-        {
-            return result;
-        }
-
-        try
-        {
-            var lines = File.ReadAllLines(metricsFile);
-            foreach (var line in lines.Skip(1)) // Skip header
-            {
-                var parts = line.Split(',');
-                if (parts.Length >= 4)
-                {
-                    var name = parts[0];
-                    var totalMs = double.TryParse(parts[1], out var t) ? t : 0;
-                    var count = long.TryParse(parts[2], out var c) ? c : 0;
-                    var avgMs = double.TryParse(parts[3], out var a) ? a : 0;
-                    result[name] = new RuntimeMetric(totalMs, count, avgMs);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read metrics file: {ex.Message}");
-        }
-
-        return result;
     }
 
     public static Dictionary<string, string> ReadDefinedProbes(string probesPath)
@@ -924,76 +942,54 @@ partial class Build
             throw new FileNotFoundException("The specified report file does not exist", probesPath);
         }
 
-        return File.ReadLines(probesPath)
-                   .Skip(1) // Skip the header row
-                   .Select(line => line.Split(','))
-                   .Where(parts => parts.Length == 5)
+        return ReadDefinedProbeDefinitions(probesPath)
                    .ToDictionary(
-                        parts => parts[0].Trim(), // Probe ID as key
-                        parts => $"{parts[1].Trim()}.{parts[2].Trim()}" // type name + method name as value (signature in parts[3] used separately for matching)
+                        probe => probe.ProbeId,
+                        probe => $"{probe.TypeName}.{probe.MethodName}"
                     );
     }
 
-    private static Dictionary<string, string> ReadDefinedProbeRows(string probesPath)
+    private static Dictionary<string, string> ReadDefinedProbeDetails(string probesPath)
     {
-        // Returns a compact, single-line representation of the original probes CSV row for quick repro/debug.
+        // Returns a compact, single-line representation of the original probe definition for quick repro/debug.
         // Format: "<Type>.<Method>, <Signature>, IsInstance=<true/false>"
-        return File.ReadLines(probesPath)
-                   .Skip(1) // Skip the header row
-                   .Select(line => line.Split(','))
-                   .Where(parts => parts.Length == 5)
+        return ReadDefinedProbeDefinitions(probesPath)
                    .ToDictionary(
-                        parts => parts[0].Trim(),
-                        parts =>
-                        {
-                            var type = parts[1].Trim();
-                            var method = parts[2].Trim();
-                            var signature = parts[3].Trim();
-                            var isInstance = parts[4].Trim();
-                            return $"{type}.{method}, {signature}, IsInstance={isInstance}";
-                        });
+                        probe => probe.ProbeId,
+                        probe => $"{probe.TypeName}.{probe.MethodName}, {probe.Signature}, IsInstance={probe.IsInstanceMethod}");
     }
 
-    private static string FormatReproProbeIdsWithCsvDetails(List<string?> probeIds, Dictionary<string, string> definedProbeRows)
+    private static List<SnapshotExplorationProbeDefinition> ReadDefinedProbeDefinitions(string probesPath)
     {
-        if (probeIds == null || probeIds.Count == 0)
+        using var document = JsonDocument.Parse(File.ReadAllText(probesPath));
+        var result = new List<SnapshotExplorationProbeDefinition>();
+        foreach (var element in document.RootElement.EnumerateArray())
         {
-            return string.Empty;
-        }
-
-        var sb = new StringBuilder();
-        sb.Append(" (repro:");
-        var wroteAny = false;
-
-        foreach (var id in probeIds)
-        {
-            if (string.IsNullOrEmpty(id))
+            var id = element.GetProperty("id").GetString();
+            if (string.IsNullOrEmpty(id) || !element.TryGetProperty("where", out var where))
             {
                 continue;
             }
 
-            if (wroteAny)
+            var typeName = where.TryGetProperty("typeName", out var typeNameElement) ? typeNameElement.GetString() : null;
+            var methodName = where.TryGetProperty("methodName", out var methodNameElement) ? methodNameElement.GetString() : null;
+            var signature = where.TryGetProperty("signature", out var signatureElement) ? signatureElement.GetString() : string.Empty;
+            if (string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(methodName))
             {
-                sb.Append(" |");
+                continue;
             }
 
-            wroteAny = true;
-
-            if (definedProbeRows.TryGetValue(id, out var row))
-            {
-                sb.Append($" {id} → {row}");
-            }
-            else
-            {
-                sb.Append($" {id}");
-            }
+            result.Add(new SnapshotExplorationProbeDefinition(id, typeName, methodName, signature ?? string.Empty, HasThisParameter(signature)));
         }
 
-        sb.Append(')');
-        return wroteAny ? sb.ToString() : string.Empty;
+        return result;
+
+        static bool HasThisParameter(string? signature)
+            => !string.IsNullOrEmpty(signature) &&
+               signature.Split(',', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() == "this";
     }
 
-    private static void LogReproProbeIdsWithCsvDetails(Action<string> log, List<string?> probeIds, Dictionary<string, string> definedProbeRows, string indent)
+    private static void LogReproProbeIdsWithDetails(Action<string> log, List<string?> probeIds, Dictionary<string, string> definedProbeDetails, string indent)
     {
         if (probeIds == null || probeIds.Count == 0)
         {
@@ -1007,7 +1003,7 @@ partial class Build
                 continue;
             }
 
-            if (definedProbeRows.TryGetValue(id, out var row))
+            if (definedProbeDetails.TryGetValue(id, out var row))
             {
                 // One probe per line to keep the report readable and still copy/paste friendly
                 log($"{indent}repro: {id} | {row}");
@@ -1071,7 +1067,7 @@ partial class Build
     /// Checks if log files might have been rolled during test execution.
     /// Returns a warning message if multiple log files per process are detected, or null if logs appear complete.
     /// </summary>
-    private string CheckForLogRolling()
+    private string? CheckForLogRolling()
     {
         var logDirectory = BuildDataDirectory / "logs";
         if (!Directory.Exists(logDirectory))
@@ -1167,13 +1163,8 @@ partial class Build
     }
 
     /// <summary>
-    /// Reads probes that were skipped by the native profiler with their skip reasons.
+    /// Reads optional debug-level native signature mismatch diagnostics.
     /// Format in logs: "* Skipping MethodName: reason"
-    ///
-    /// COUPLED SOURCE FILES (update if log format changes):
-    /// - tracer/src/Datadog.Tracer.Native/debugger_rejit_preprocessor.cpp
-    ///   - "* Skipping ... doesn't have the right number of arguments"
-    ///   - "* Skipping ... doesn't have the right type of arguments"
     /// </summary>
     private Dictionary<string, string> ReadSkippedProbesFromNativeLogs()
     {
@@ -1430,8 +1421,6 @@ partial class Build
     /// Catches ANY exception that occurs in probe-related context (has probeId nearby in logs).
     ///
     /// COUPLED SOURCE FILES (update if log format changes):
-    /// - tracer/src/Datadog.Trace/Debugger/Expressions/ProbeExpressionEvaluator.cs
-    ///   - "Failed to parse probe expression" (line ~510)
     /// - tracer/src/Datadog.Trace/Debugger/Expressions/ProbeProcessor.cs
     ///   - "Failed to process probe" (line ~314)
     ///   - "Failed to evaluate expression" (line ~342)
@@ -1460,19 +1449,6 @@ partial class Build
             for (int i = 0; i < lines.Length; i++)
             {
                 var line = lines[i];
-
-                // Look for "Failed to parse probe expression" - explicit probe error
-                if (line.Contains("Failed to parse probe expression"))
-                {
-                    var probeId = ExtractProbeIdFromContext(lines, i);
-                    var exceptionMatch = FindExceptionInFollowingLines(lines, i, 10);
-                    var errorType = exceptionMatch != null ? ExtractExceptionType(exceptionMatch) : "ExpressionParseError";
-                    var key = $"{probeId}|{errorType}|{exceptionMatch}";
-                    if (seenErrors.Add(key))
-                    {
-                        result.Add(new ManagedLogError(probeId, errorType, exceptionMatch ?? "Unknown expression error", ""));
-                    }
-                }
 
                 // Look for ANY exception that has a probeId in context
                 // This catches InvalidCastException, NullReferenceException, JsonException, etc.
@@ -1621,11 +1597,6 @@ partial class Build
 
         private static IDictionary<string, object> GetObjectProperties(object obj)
         {
-            if (obj == null)
-            {
-                return null;
-            }
-
             var properties = new Dictionary<string, object>();
             var type = obj.GetType();
 
@@ -1636,6 +1607,11 @@ partial class Build
                     if (prop.Name is "Scopes" or "Symbols" or "ScopeType" or "Name" or "LanguageSpecifics" or "Type" or "SymbolType")
                     {
                         var value = prop.GetValue(obj);
+                        if (value == null)
+                        {
+                            continue;
+                        }
+
                         properties[prop.Name] = value;
 
                         if (prop.Name == "Scopes" && value is IEnumerable nestedScopes)

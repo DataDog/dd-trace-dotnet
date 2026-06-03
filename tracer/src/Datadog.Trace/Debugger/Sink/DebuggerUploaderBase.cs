@@ -29,6 +29,7 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
     private readonly TaskCompletionSource<bool> _processExit;
     private readonly int _uploadFlushInterval;
     private readonly int _initialFlushInterval;
+    private int _disposed;
 
     protected DebuggerUploaderBase(DebuggerSettings settings)
     {
@@ -117,12 +118,15 @@ internal abstract class DebuggerUploaderBase : IDebuggerUploader
     {
         if (disposing)
         {
-            Dispose();
+            _processExit.TrySetResult(true);
         }
     }
 
     public void Dispose()
     {
-        _processExit.TrySetResult(true);
+        if (Interlocked.Exchange(ref _disposed, 1) == 0)
+        {
+            Dispose(disposing: true);
+        }
     }
 }

@@ -103,8 +103,6 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
 
         if (FAILED(hr))
         {
-            // NOTE: This log is parsed by Build.SnapshotExplorationTest.cs (ReadNativeRewriterFailuresFromLogs).
-            // Do not change "is By-Ref like" without updating the test analyzer.
             Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
                          " is By-Ref like.");
             // We couldn't reliably determine whether this value is byref-like.
@@ -113,8 +111,6 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         }
         else if (isTypeIsByRefLike)
         {
-            // NOTE: This log is parsed by Build.SnapshotExplorationTest.cs (ReadNativeRewriterFailuresFromLogs).
-            // Do not change "because it's By-Ref like" without updating the test analyzer.
             Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local",
                          " index = ", argOrLocalIndex, " because it's By-Ref like.");
             continue;

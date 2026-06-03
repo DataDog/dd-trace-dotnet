@@ -1617,7 +1617,7 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new Exception($"{nameof(DebuggerExpressionLanguageTests)}.{nameof(GetEvaluator)}: Incorrect folder name");
             }
 
-            return (new ProbeExpressionEvaluator("test-probe-id", templates, condition, metrics, spanDecorations, captureExpressions: null), scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations, captureExpressions: null), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)

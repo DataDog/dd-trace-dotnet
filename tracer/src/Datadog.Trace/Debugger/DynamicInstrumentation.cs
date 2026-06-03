@@ -36,7 +36,7 @@ namespace Datadog.Trace.Debugger
         NativeSpanProbeDefinition[] spanProbes,
         NativeRemoveProbeRequest[] revertProbes);
 
-    internal sealed partial class DynamicInstrumentation : IDisposable
+    internal sealed class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
@@ -389,28 +389,6 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetRateLimit(ProbeDefinition probe)
-        {
-            if (_settings.IsSnapshotExplorationTestEnabled)
-            {
-                ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
-                return;
-            }
-
-            switch (probe)
-            {
-                case LogProbe { Sampling: { } sampling }:
-                    ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
-                    break;
-                case LogProbe logProbe:
-                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot || logProbe.CaptureExpressions is { Length: > 0 } ? 1 : 5000);
-                    break;
-                case SpanDecorationProbe or MetricProbe:
-                    ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
-                    break;
-            }
-        }
-
         private static LineProbeResolveErrorKey GetLineProbeResolveErrorKey(LineProbeResolveResult result)
         {
             return result.ErrorKey.IsEmpty ? new LineProbeResolveErrorKey(result.Reason) : result.ErrorKey;
@@ -436,6 +414,28 @@ namespace Datadog.Trace.Debugger
         private static string? JoinLogValues(string[]? values)
         {
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
+        }
+
+        private void SetRateLimit(ProbeDefinition probe)
+        {
+            if (_settings.IsSnapshotExplorationTestEnabled)
+            {
+                ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                return;
+            }
+
+            switch (probe)
+            {
+                case LogProbe { Sampling: { } sampling }:
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
+                    break;
+                case LogProbe logProbe:
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot || logProbe.CaptureExpressions is { Length: > 0 } ? 1 : 5000);
+                    break;
+                case SpanDecorationProbe or MetricProbe:
+                    ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                    break;
+            }
         }
 
         private void UpdateLastReportedUnboundProbeError(string probeId, LineProbeResolveResult result)
