@@ -106,6 +106,16 @@ namespace Datadog.Trace.Debugger.Expressions
             return result.Count == 0 ? null : result.ToArray();
         }
 
+        private static bool ShouldRefreshMemoryPressureBeforeCapture(MethodState methodState)
+        {
+            return methodState is MethodState.BeginLine
+                or MethodState.BeginLineAsync
+                or MethodState.EntryStart
+                or MethodState.EntryAsync
+                or MethodState.ExitStart
+                or MethodState.ExitStartAsync;
+        }
+
         public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             var state = _state;
@@ -138,8 +148,13 @@ namespace Datadog.Trace.Debugger.Expressions
             }
 
             var probeInfo = state.ProbeInfo;
+            var dynamicInstrumentation = DebuggerManager.Instance.DynamicInstrumentation;
+            if (dynamicInstrumentation is not null && ShouldRefreshMemoryPressureBeforeCapture(info.MethodState))
+            {
+                dynamicInstrumentation.RefreshMemoryPressureIfStale();
+            }
 
-            if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
+            if (dynamicInstrumentation?.IsInitialized == false)
             {
                 Log.Debug("Stop processing probe {ID} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probeData.ProbeId);
                 snapshotCreator.Stop();
