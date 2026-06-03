@@ -55,7 +55,10 @@ namespace Datadog.Trace.Debugger.Sink
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            _snapshotSink.Dispose();
+            if (disposing)
+            {
+                _snapshotSink.Dispose();
+            }
         }
     }
 }

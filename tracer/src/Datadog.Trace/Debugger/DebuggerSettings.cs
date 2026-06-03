@@ -210,11 +210,6 @@ namespace Datadog.Trace.Debugger
 
         public string SnapshotExplorationTestRootPath { get; }
 
-        public string SnapshotExplorationTestProbesFilePath =>
-            StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath)
-                ? string.Empty
-                : Path.Combine(SnapshotExplorationTestRootPath, "SnapshotExplorationTestProbes.csv");
-
         public string SnapshotExplorationTestReportFolderPath =>
             StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath)
                 ? string.Empty

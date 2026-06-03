@@ -37,7 +37,7 @@ namespace Datadog.Trace.Debugger
                 || appDomainName.IndexOf(SnapshotExplorationConstants.TestHostName, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static void WaitForProbeInstallation(int expectedCount, TimeSpan timeout)
+        private static void WaitForProbeInstallation(TimeSpan timeout)
         {
             // No managed signal exists for "native received probes"; the only available
             // indicator is the native log file which is written from a different process.
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger
                         // Give native a small grace window so the queue is in place by the
                         // time tests start hitting probes.
                         Thread.Sleep(SnapshotExplorationConstants.NativeReadyGracePeriod);
-                        Log.Information<int>("Native profiler received {Count} probes, proceeding with tests.", expectedCount);
+                        Log.Information("Native profiler received probes, proceeding with tests.");
                         return;
                     }
                 }
@@ -97,18 +97,7 @@ namespace Datadog.Trace.Debugger
             var tracerManager = TracerManager.Instance;
             var di = DebuggerFactory.CreateDynamicInstrumentation(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, tracerManager.Settings, ServiceNameProvider, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
 
-            if (!string.IsNullOrEmpty(DebuggerSettings.SnapshotExplorationTestReportFolderPath))
-            {
-                ExplorationTestMetrics.Enable(DebuggerSettings.SnapshotExplorationTestReportFolderPath);
-                ExplorationTestProbeTracker.Enable();
-                ExplorationTestState.Activate();
-            }
-
-            var probeCount = di.WithProbesFromFile();
-            Log.Information<int>("Initializing Dynamic Instrumentation for snapshot exploration test with {Count} probes.", probeCount);
-
-            WaitForProbeInstallation(probeCount, SnapshotExplorationConstants.ProbeInstallationTimeout);
-
+            Log.Information("Initializing Dynamic Instrumentation for snapshot exploration test.");
             di.Initialize();
             _dynamicInstrumentation = di;
 
@@ -120,6 +109,7 @@ namespace Datadog.Trace.Debugger
             if (di.IsInitialized)
             {
                 Log.Information("DynamicInstrumentation initialized successfully.");
+                WaitForProbeInstallation(SnapshotExplorationConstants.ProbeInstallationTimeout);
             }
             else
             {

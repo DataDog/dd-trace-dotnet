@@ -98,7 +98,6 @@ namespace Datadog.Trace.Debugger.Sink
                         return;
                     }
 
-                    var start = ExplorationTestMetrics.IsEnabled ? Stopwatch.GetTimestamp() : 0;
                     try
                     {
                         if (!_probesIds.Add(probeId))
@@ -125,13 +124,6 @@ namespace Datadog.Trace.Debugger.Sink
                     catch (Exception e)
                     {
                         Log.Error(e, "Failed to write snapshot for probeId={ProbeId}", probeId);
-                    }
-                    finally
-                    {
-                        if (ExplorationTestMetrics.IsEnabled)
-                        {
-                            ExplorationTestMetrics.RecordSnapshotSinkWrite(Stopwatch.GetTimestamp() - start);
-                        }
                     }
                 }
             }

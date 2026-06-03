@@ -12,7 +12,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf;
-using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
@@ -20,7 +19,6 @@ using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -106,28 +104,6 @@ namespace Datadog.Trace.Debugger.Expressions
             }
 
             return result.Count == 0 ? null : result.ToArray();
-        }
-		
-		/// <summary>
-        /// For exploration tests: checks if we should capture a snapshot for this probe.
-        /// Returns false (skip) if the probe has already captured enough snapshots.
-        /// For non-exploration tests, always returns true.
-        /// </summary>
-        private bool ShouldCaptureSnapshotForExplorationTest()
-        {
-            if (!ExplorationTestProbeTracker.IsEnabled)
-            {
-                return true;
-            }
-
-            if (ExplorationTestProbeTracker.ShouldCaptureSnapshot(ProbeInfo.ProbeId))
-            {
-                return true;
-            }
-
-            // Probe has reached its snapshot limit - skip serialization
-            ExplorationTestMetrics.RecordSnapshotSkipped();
-            return false;
         }
 
         private static bool ShouldRefreshMemoryPressureBeforeCapture(MethodState methodState)
@@ -637,11 +613,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!probeInfo.IsFullSnapshot)
                     {
-						if (!ShouldCaptureSnapshotForExplorationTest())
-                        {
-                            snapshotCreator.Stop();
-                            break;
-                        }
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
                         break;
@@ -667,12 +638,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
                     if (!probeInfo.IsFullSnapshot)
                     {
-                        if (!ShouldCaptureSnapshotForExplorationTest())
-                        {
-                            snapshotCreator.Stop();
-                            break;
-                        }
-
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
                         DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
                         break;
@@ -692,13 +657,6 @@ namespace Datadog.Trace.Debugger.Expressions
                         if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Evaluate)
                         {
                             snapshotCreator.SetEvaluationResult(ref evaluationResult);
-							
-							if (!ShouldCaptureSnapshotForExplorationTest())
-                        	{
-                            	snapshotCreator.Stop();
-	                            break;
-    	                    }
-						
                             if (state.ShouldCaptureExpressions && evaluationResult.HasCaptureExpressions)
                             {
                                 snapshotCreator.StartReturn();
@@ -750,12 +708,6 @@ namespace Datadog.Trace.Debugger.Expressions
                             snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
                             snapshotCreator.EndReturn();
                         }
-                    }
-
-                    if (!ShouldCaptureSnapshotForExplorationTest())
-                    {
-                        snapshotCreator.Stop();
-                        break;
                     }
 
                     if (probeInfo.IsFullSnapshot)

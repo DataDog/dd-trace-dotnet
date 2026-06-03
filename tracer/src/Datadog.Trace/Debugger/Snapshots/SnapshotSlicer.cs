@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Debugger.Sink;
@@ -39,18 +38,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             try
             {
-                var start = ExplorationTestMetrics.IsEnabled ? Stopwatch.GetTimestamp() : 0;
-                try
-                {
-                    return SnapshotPruner.Prune(snapshot, _maxSnapshotSize, _maxDepth);
-                }
-                finally
-                {
-                    if (ExplorationTestMetrics.IsEnabled)
-                    {
-                        ExplorationTestMetrics.RecordSnapshotPruning(Stopwatch.GetTimestamp() - start);
-                    }
-                }
+                return SnapshotPruner.Prune(snapshot, _maxSnapshotSize, _maxDepth);
             }
             catch (Exception e)
             {
