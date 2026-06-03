@@ -66,8 +66,8 @@ public class ProbeProcessorTests
         Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
         Assert.Equal(0, sampler.SampleCalls);
     }
-	
-	[Fact]
+
+    [Fact]
     public void ConditionEvaluationErrorsFinalizeWithoutCaptureData()
     {
         var processor = new ProbeProcessor(CreateConditionalLogProbe("probe-id", InvalidConditionJson, captureSnapshot: true));
