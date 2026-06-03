@@ -418,8 +418,13 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
                 }
 
-                // Track the reason but don't write yet if we're still inside the array
-                if (cts.IsCancellationRequested)
+                // Track the reason but don't write yet if we're still inside the array.
+                // Only report a timeout when we actually stopped short of serializing the collection,
+                // i.e. there are still elements we didn't get to (itemIndex < collection.Count). An
+                // empty (Count == 0) or fully-serialized collection must never be reported as a
+                // timeout, even if the serialization budget happened to elapse in the meantime on a
+                // slow/loaded machine.
+                if (cts.IsCancellationRequested && itemIndex < collection.Count)
                 {
                     notCapturedReason = NotCapturedReason.timeout;
                 }
