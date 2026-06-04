@@ -12,7 +12,9 @@ namespace Datadog.Trace.Activity.Helpers;
 /// We can add more properties to it if they are required by the enumerator, but it should
 /// remain a readonly struct.
 /// </summary>
-internal readonly struct OtelTagsEnumerationState(Span span)
+internal readonly struct OtelTagsEnumerationState(Span span, bool openTelemetryTraceCompatibilityEnabled)
 {
     public Span Span { get; } = span;
+
+    public bool OpenTelemetryTraceCompatibilityEnabled { get; } = openTelemetryTraceCompatibilityEnabled;
 }

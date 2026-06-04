@@ -2458,6 +2458,16 @@ supportedConfigurations:
       Configuration key for specifying a timeout in milliseconds to the execution of the query string obfuscation regex
       Default value is 200ms
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.ObfuscationQueryStringRegexTimeout"/>
+  DD_TRACE_OTEL_COMPATIBILITY_ENABLED:
+  - implementation: A
+    type: boolean
+    default: 'false'
+    product: FeatureFlags
+    const_name: OpenTelemetryTraceCompatibilityEnabled
+    documentation: |-
+      Enables OpenTelemetry trace compatibility mode.
+      Default is <c>false</c> (disabled).
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.OpenTelemetryTraceCompatibilityEnabled"/>
   DD_TRACE_OTEL_ENABLED:
   - implementation: B
     scope: managed
