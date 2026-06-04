@@ -52,8 +52,8 @@ namespace Datadog.Trace.Tests.Debugger
         {
             Redaction.IsSafeToCallToString(type).Should().BeFalse($"Type {type} should use structural handling instead of ToString()");
         }
-		
-		[Theory]
+
+        [Theory]
         [InlineData(typeof(List<int>), true)]
         [InlineData(typeof(HashSet<int>), true)]
         [InlineData(typeof(SortedList), false)]

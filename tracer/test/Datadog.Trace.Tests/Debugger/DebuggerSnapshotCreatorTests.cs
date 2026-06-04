@@ -567,6 +567,11 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 var serializeEnumerable = typeof(DebuggerSnapshotSerializer).GetMethod("SerializeEnumerable", BindingFlags.NonPublic | BindingFlags.Static);
                 Assert.NotNull(serializeEnumerable);
+                var enumerableInfoType = typeof(DebuggerSnapshotSerializer).GetNestedType("SupportedEnumerableInfo", BindingFlags.NonPublic);
+                Assert.NotNull(enumerableInfoType);
+                var enumerableInfoConstructor = enumerableInfoType!.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, types: [typeof(int), typeof(bool)], modifiers: null);
+                Assert.NotNull(enumerableInfoConstructor);
+                var enumerableInfo = enumerableInfoConstructor!.Invoke([collection.Count, false]);
 
                 var limitInfo = new CaptureLimitInfo(
                     MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
@@ -584,6 +589,7 @@ namespace Datadog.Trace.Tests.Debugger
                         collection.GetType(),
                         jsonWriter,
                         collection,
+                        enumerableInfo,
                         0,
                         cts,
                         limitInfo,
