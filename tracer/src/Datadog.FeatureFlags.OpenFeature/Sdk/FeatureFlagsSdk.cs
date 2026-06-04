@@ -27,6 +27,11 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool IsAvailable() => false;
 
+    /// <summary> Gets a value indicating whether FeatureFlags has received its initial configuration </summary>
+    /// <returns> True if FeatureFlagsSDK is ready to evaluate flags </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static bool IsReady() => false;
+
     /// <summary> Installs an event handler to be fired when a new config has been received </summary>
     /// <param name="onNewConfig"> Action to be called when the event is fired </param>
     [MethodImpl(MethodImplOptions.NoInlining)]

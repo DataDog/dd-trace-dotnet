@@ -75,11 +75,22 @@ public class FeatureFlagsModuleTests
         result.Reason.Should().Be(EvaluationReason.Error);
     }
 
-    private static TracerSettings CreateSettings()
+    [Fact]
+    public void IsReady_WhenRemoteConfigurationIsDisabled_ReturnsTrue()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var settings = CreateSettings(remoteConfigurationEnabled: false);
+        var module = new FeatureFlagsModule(settings, rcmManager);
+
+        module.IsReady().Should().BeTrue();
+    }
+
+    private static TracerSettings CreateSettings(bool remoteConfigurationEnabled = true)
     {
         var collection = new NameValueCollection
         {
-            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" }
+            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
+            { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, remoteConfigurationEnabled ? "true" : "false" },
         };
 
         return new TracerSettings(new NameValueConfigurationSource(collection));

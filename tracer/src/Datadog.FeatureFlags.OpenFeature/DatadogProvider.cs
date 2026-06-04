@@ -25,6 +25,7 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 {
     private static Action? _onNewConfig = null;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
+    private readonly TaskCompletionSource<bool> _initialConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
 #endif
@@ -48,10 +49,26 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         _onNewConfig = onNewConfig;
     }
 
+    /// <inheritdoc />
+    public override Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken)
+    {
+        if (FeatureFlagsSdk.IsReady())
+        {
+            return Task.CompletedTask;
+        }
+
+        return WaitForInitialConfig(cancellationToken);
+    }
+
     private void SignalGeneralUpdate()
     {
         try
         {
+            if (FeatureFlagsSdk.IsReady())
+            {
+                _initialConfigReceived.TrySetResult(true);
+            }
+
             _onNewConfig?.Invoke();
 
             // You don't have to provide specific flag keys
@@ -63,6 +80,28 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
             EventChannel.Writer.TryWrite((object)payload);
         }
         catch { }
+    }
+
+    private async Task WaitForInitialConfig(CancellationToken cancellationToken)
+    {
+        if (!cancellationToken.CanBeCanceled)
+        {
+            await _initialConfigReceived.Task.ConfigureAwait(false);
+            return;
+        }
+
+        var cancellationCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellationRegistration = cancellationToken.Register(
+            state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+            cancellationCompletionSource);
+        var cancellationTask = cancellationCompletionSource.Task;
+        var completedTask = await Task.WhenAny(_initialConfigReceived.Task, cancellationTask).ConfigureAwait(false);
+        if (completedTask == cancellationTask)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        await _initialConfigReceived.Task.ConfigureAwait(false);
     }
 
     /// <summary> Gets provider metadata </summary>
