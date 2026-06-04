@@ -7,7 +7,6 @@ using System;
 using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 #nullable enable
@@ -27,12 +26,12 @@ namespace Datadog.Trace.Debugger.Snapshots
         private static readonly object SupportedEnumerableDescriptorCacheLock = new();
         private static readonly object DictionaryEntryDescriptorCacheLock = new();
 
-        private static SupportedEnumerableDescriptor[] _supportedEnumerableDescriptors = [];
-        private static DictionaryEntryDescriptor[] _dictionaryEntryDescriptors = [];
+        private static volatile SupportedEnumerableDescriptor[] _supportedEnumerableDescriptors = [];
+        private static volatile DictionaryEntryDescriptor[] _dictionaryEntryDescriptors = [];
 
         private static DictionaryEntryDescriptor GetDictionaryEntryDescriptor(Type runtimeType)
         {
-            var descriptors = Volatile.Read(ref _dictionaryEntryDescriptors);
+            var descriptors = _dictionaryEntryDescriptors;
             for (var i = 0; i < descriptors.Length; i++)
             {
                 if (descriptors[i].RuntimeType == runtimeType)
@@ -58,7 +57,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     var newDescriptors = new DictionaryEntryDescriptor[descriptors.Length + 1];
                     Array.Copy(descriptors, newDescriptors, descriptors.Length);
                     newDescriptors[descriptors.Length] = descriptor;
-                    Volatile.Write(ref _dictionaryEntryDescriptors, newDescriptors);
+                    _dictionaryEntryDescriptors = newDescriptors;
                 }
 
                 return descriptor;
@@ -106,7 +105,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static bool TryGetSupportedEnumerableDescriptor(Type runtimeType, out SupportedEnumerableDescriptor descriptor)
         {
-            var descriptors = Volatile.Read(ref _supportedEnumerableDescriptors);
+            var descriptors = _supportedEnumerableDescriptors;
             for (var i = 0; i < descriptors.Length; i++)
             {
                 if (descriptors[i].RuntimeType == runtimeType)
@@ -139,7 +138,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     var newDescriptors = new SupportedEnumerableDescriptor[descriptors.Length + 1];
                     Array.Copy(descriptors, newDescriptors, descriptors.Length);
                     newDescriptors[descriptors.Length] = descriptor;
-                    Volatile.Write(ref _supportedEnumerableDescriptors, newDescriptors);
+                    _supportedEnumerableDescriptors = newDescriptors;
                 }
             }
 
