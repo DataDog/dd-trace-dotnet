@@ -584,7 +584,13 @@ public class CreatedumpTests : ConsoleTestHelper
 
             foreach (var expectedFrame in expectedCallstack)
             {
-                var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["function"].Value<string>()));
+                // ClrMD preserves Roslyn's local function ordinal suffix (e.g. g__DoCrash|0)
+                // while .NET's StackTrace API strips it, so we normalize before comparing.
+                var frame = frames.FirstOrDefault(f =>
+                {
+                    var functionName = Regex.Replace(f["function"].Value<string>(), @"\|\d+$", string.Empty);
+                    return expectedFrame.Equals(functionName);
+                });
 
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
             }
