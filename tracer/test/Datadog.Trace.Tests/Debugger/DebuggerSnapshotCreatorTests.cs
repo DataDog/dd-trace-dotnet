@@ -4,16 +4,19 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -102,6 +105,47 @@ namespace Datadog.Trace.Tests.Debugger
 
             Assert.NotNull(snapshot);
             Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+        }
+
+        [Fact]
+        public void Limits_CollectionAtCaptureLimit_DoesNotSetCollectionSizeReason()
+        {
+            var collection = new List<object> { 1, null, 2 };
+            var collectionJson = SerializeCollection(collection, maxCollectionSize: collection.Count);
+
+            Assert.Equal(collection.Count, collectionJson["size"]?.Value<int>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
+        }
+
+        [Fact]
+        public void Limits_CollectionWithTooManyItems_SetsCollectionSizeReason()
+        {
+            var collectionJson = SerializeCollection(new List<object> { 1, null, 2, 3 }, maxCollectionSize: 3);
+
+            Assert.Equal("collectionSize", collectionJson["notCapturedReason"]?.Value<string>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+        }
+
+        [Fact]
+        public void Limits_CollectionCanceledBeforeVisitingAllItems_SetsTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var collectionJson = SerializeCollection(new CancelingCollection([1, 2, 3], cancelAfterVisitedItems: 2, cts), maxCollectionSize: 10, cts);
+
+            Assert.Equal("timeout", collectionJson["notCapturedReason"]?.Value<string>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+        }
+
+        [Fact]
+        public void Limits_CollectionCanceledAfterVisitingAllItems_DoesNotSetTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var collectionJson = SerializeCollection(new CancelingCollection([1, null, 2], cancelAfterVisitedItems: 3, cts), maxCollectionSize: 10, cts);
+
+            Assert.Equal(3, collectionJson["size"]?.Value<int>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
         }
 
         [Fact]
@@ -401,6 +445,50 @@ namespace Datadog.Trace.Tests.Debugger
         {
         }
 
+        private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts = null)
+        {
+            var ownsCancellationTokenSource = cts is null;
+            cts ??= new CancellationTokenSource();
+
+            try
+            {
+                var serializeEnumerable = typeof(DebuggerSnapshotSerializer).GetMethod("SerializeEnumerable", BindingFlags.NonPublic | BindingFlags.Static);
+                Assert.NotNull(serializeEnumerable);
+
+                var limitInfo = new CaptureLimitInfo(
+                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                    MaxCollectionSize: maxCollectionSize,
+                    MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+                using var stringWriter = new System.IO.StringWriter();
+                using var jsonWriter = new JsonTextWriter(stringWriter);
+                jsonWriter.WriteStartObject();
+                serializeEnumerable!.Invoke(
+                    null,
+                    [
+                        collection,
+                        collection.GetType(),
+                        jsonWriter,
+                        collection,
+                        0,
+                        cts,
+                        limitInfo,
+                        new HashSet<object>()
+                    ]);
+                jsonWriter.WriteEndObject();
+
+                return JObject.Parse(stringWriter.ToString());
+            }
+            finally
+            {
+                if (ownsCancellationTokenSource)
+                {
+                    cts.Dispose();
+                }
+            }
+        }
+
         private static CaptureLimitInfo CreateCaptureLimitInfo()
         {
             return new CaptureLimitInfo(
@@ -479,6 +567,75 @@ namespace Datadog.Trace.Tests.Debugger
         private static bool HasContent(JToken token)
         {
             return token != null && token.HasValues;
+        }
+
+        private sealed class CancelingCollection : ICollection
+        {
+            private readonly object[] _items;
+            private readonly int _cancelAfterVisitedItems;
+            private readonly CancellationTokenSource _cts;
+
+            public CancelingCollection(object[] items, int cancelAfterVisitedItems, CancellationTokenSource cts)
+            {
+                _items = items;
+                _cancelAfterVisitedItems = cancelAfterVisitedItems;
+                _cts = cts;
+            }
+
+            public int Count => _items.Length;
+
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => this;
+
+            public void CopyTo(Array array, int index)
+            {
+                _items.CopyTo(array, index);
+            }
+
+            public IEnumerator GetEnumerator()
+            {
+                return new CancelingEnumerator(_items, _cancelAfterVisitedItems, _cts);
+            }
+
+            private sealed class CancelingEnumerator : IEnumerator
+            {
+                private readonly object[] _items;
+                private readonly int _cancelAfterVisitedItems;
+                private readonly CancellationTokenSource _cts;
+                private int _index = -1;
+
+                public CancelingEnumerator(object[] items, int cancelAfterVisitedItems, CancellationTokenSource cts)
+                {
+                    _items = items;
+                    _cancelAfterVisitedItems = cancelAfterVisitedItems;
+                    _cts = cts;
+                }
+
+                public object Current
+                {
+                    get
+                    {
+                        if (_index + 1 == _cancelAfterVisitedItems)
+                        {
+                            _cts.Cancel();
+                        }
+
+                        return _items[_index];
+                    }
+                }
+
+                public bool MoveNext()
+                {
+                    _index++;
+                    return _index < _items.Length;
+                }
+
+                public void Reset()
+                {
+                    _index = -1;
+                }
+            }
         }
 
         private class InfiniteRecursion

@@ -77,7 +77,7 @@ void IpcServer::WaitForNamedPipe(DWORD timeoutMS)
     ::WaitForSingleObject(_hInitializedEvent, timeoutMS);
 }
 
-IpcServer::IpcServer(IIpcLogger* pLogger,
+IpcServer::IpcServer(std::shared_ptr<IIpcLogger> pLogger,
                      const std::string& portName,
                      INamedPipeHandler* pHandler,
                      uint32_t inBufferSize,
@@ -91,7 +91,7 @@ IpcServer::IpcServer(IIpcLogger* pLogger,
     _maxInstances = maxInstances;
     _timeoutMS = timeoutMS;
     _pHandler = pHandler;
-    _pLogger = pLogger;
+    _pLogger = std::move(pLogger);
     _hNamedPipe = nullptr;
     _showMessages = false;
 
@@ -100,7 +100,7 @@ IpcServer::IpcServer(IIpcLogger* pLogger,
 }
 
 IpcServer* IpcServer::StartAsync(
-    IIpcLogger* pLogger,
+    std::shared_ptr<IIpcLogger> pLogger,
     const std::string& portName,
     INamedPipeHandler* pHandler,
     uint32_t inBufferSize,
@@ -116,7 +116,7 @@ IpcServer* IpcServer::StartAsync(
 
     // the lifetime of this instance is the lifetime of the application (i.e. it won't be deleted to avoid random crashes)
     auto server = new IpcServer(
-        pLogger, portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
+        std::move(pLogger), portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
         );
 
     // let a threadpool thread process the command because there is a blocking call to ConnectNamedPipe()
