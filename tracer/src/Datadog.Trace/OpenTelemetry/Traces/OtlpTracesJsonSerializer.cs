@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Agent;
@@ -248,17 +249,16 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
 
         // status (optional)
-        var errorMsg = spanModel.Span.GetTag(Tags.ErrorMsg);
-        SpanStatus? spanStatus = spanModel.Span.GetTag("otel.status_code") switch
+        StatusCode? statusCode = spanModel.Span.GetTag("otel.status_code") switch
         {
-            "STATUS_CODE_OK" => new SpanStatus(StatusCode.Ok, errorMsg),
-            "STATUS_CODE_ERROR" => new SpanStatus(StatusCode.Error, errorMsg),
+            "STATUS_CODE_OK" => StatusCode.Ok,
+            "STATUS_CODE_ERROR" => StatusCode.Error,
             _ => null,
         };
-        if (spanStatus is not null)
+        if (statusCode is not null)
         {
             writer.WritePropertyName("status");
-            WriteSpanStatus(writer, spanStatus.Value);
+            WriteSpanStatus(writer, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
         }
 
         writer.WriteEndObject();
@@ -345,22 +345,22 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteEndObject();
     }
 
-    internal static void WriteSpanStatus(JsonTextWriter writer, SpanStatus status)
+    internal static void WriteSpanStatus(JsonTextWriter writer, StatusCode statusCode, string? errorMsg)
     {
         writer.WriteStartObject();
 
         // message (optional)
-        if (!string.IsNullOrEmpty(status.Message))
+        if (!string.IsNullOrEmpty(errorMsg))
         {
             writer.WritePropertyName("message");
-            writer.WriteValue(status.Message);
+            writer.WriteValue(errorMsg);
         }
 
         // code (optional, default is STATUS_CODE_UNSET)
-        if (status.Code != StatusCode.Unset)
+        if (statusCode != StatusCode.Unset)
         {
             writer.WritePropertyName("code");
-            writer.WriteValue((int)status.Code);
+            writer.WriteValue((int)statusCode);
         }
 
         writer.WriteEndObject();
@@ -511,7 +511,10 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteEndObject();
     }
 
-    internal static void WriteAnyValue(JsonTextWriter writer, object? value)
+    // `expandArrays` is false when called per element from WriteArrayAnyValue, routing byte[] / Array
+    // to the stringify default — caps recursion depth at 1, matching OTel SDK's TagWriter.WriteToArrayTypeChecked.
+    // https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/Shared/TagWriter/TagWriter.cs
+    internal static void WriteAnyValue(JsonTextWriter writer, object? value, bool expandArrays = true)
     {
         writer.WriteStartObject();
 
@@ -534,14 +537,15 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(boolValue);
                 break;
 
-            case int intValue:
+            case byte:
+            case sbyte:
+            case short:
+            case ushort:
+            case int:
+            case uint:
+            case long:
                 writer.WritePropertyName("intValue");
-                writer.WriteValue(intValue.ToString());
-                break;
-
-            case long longValue:
-                writer.WritePropertyName("intValue");
-                writer.WriteValue(longValue.ToString());
+                writer.WriteValue(value.ToString());
                 break;
 
             case double doubleValue:
@@ -554,17 +558,39 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
                 writer.WriteValue(floatValue);
                 break;
 
-            case byte[] bytesValue:
+            case byte[] bytesValue when expandArrays:
                 writer.WritePropertyName("bytesValue");
                 writer.WriteValue(Convert.ToBase64String(bytesValue));
                 break;
 
+            case Array array when expandArrays:
+                writer.WritePropertyName("arrayValue");
+                WriteArrayAnyValue(writer, array);
+                break;
+
             default:
-                // For other types, try to convert to string
+                // ulong (overflows long), decimal (precision loss), char, nint/nuint, and unknown
+                // types stringify here — plus Array / byte[] when expandArrays is false.
                 writer.WritePropertyName("stringValue");
-                writer.WriteValue(value.ToString());
+                writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
                 break;
         }
+
+        writer.WriteEndObject();
+    }
+
+    private static void WriteArrayAnyValue(JsonTextWriter writer, Array array)
+    {
+        writer.WriteStartObject();
+        writer.WritePropertyName("values");
+
+        writer.WriteStartArray();
+        foreach (var item in array)
+        {
+            WriteAnyValue(writer, item, expandArrays: false);
+        }
+
+        writer.WriteEndArray();
 
         writer.WriteEndObject();
     }

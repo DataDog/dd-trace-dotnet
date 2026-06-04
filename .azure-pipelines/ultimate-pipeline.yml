@@ -77,13 +77,13 @@ variables:
   linuxArm64Pool: azure-managed-linux-arm64-1
   windowsX64Pool: azure-managed-windows-x64-2
 
-  relativeArtifacts: /tracer/src/bin/artifacts
-  monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
-  artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  relativeArtifacts: /artifacts/output
+  monitoringHome: $(System.DefaultWorkingDirectory)/artifacts/monitoring-home
+  artifacts: $(System.DefaultWorkingDirectory)/artifacts/output
   outputDir: $(System.DefaultWorkingDirectory)/artifacts
-  symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
-  relativeRunnerTool: tracer/src/bin/runnerTool
-  relativeRunnerStandalone: tracer/src/bin/runnerStandalone
+  symbols: $(System.DefaultWorkingDirectory)/artifacts/native-symbols
+  relativeRunnerTool: artifacts/output/runnerTool
+  relativeRunnerStandalone: artifacts/output/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
@@ -154,7 +154,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.45.0
+  ToolVersion: 3.46.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -293,7 +293,7 @@ stages:
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/bin/Datadog.Trace.Manual/release_netcoreapp3.1/Datadog.Trace.Manual.dll
       displayName: Upload Datadog.Trace.Manual.dll for external CI
       artifact: Datadog.Trace.Manual.dll
 
@@ -808,7 +808,7 @@ stages:
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
         retryCountForRunCommand: 1
 
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/profiler-build
       displayName: Uploading linux profiler output build folder
       artifact: linux-profiler-binaries-$(artifactSuffix)
 
@@ -2265,7 +2265,7 @@ stages:
       jobs: [Test, DockerTest, Serverless]
 
   - job: Test
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
 

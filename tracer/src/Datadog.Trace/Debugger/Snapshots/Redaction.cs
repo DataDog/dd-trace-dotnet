@@ -201,8 +201,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
 
             return TypeExtensions.IsSimple(effectiveType) ||
-                   AllowedTypesSafeToCallToString.Contains(effectiveType) ||
-                   IsSupportedCollection(type);
+                   AllowedTypesSafeToCallToString.Contains(effectiveType);
         }
 
         internal static bool IsSupportedDictionary(object? o)

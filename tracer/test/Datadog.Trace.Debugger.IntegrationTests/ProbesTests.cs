@@ -493,6 +493,47 @@ public class ProbesTests : TestHelper
         await RunCaptureExpressionProbeTest(testDescription);
     }
 
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ConditionErrorFullSnapshotOmitsCaptureData()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(FullSnapshotWithConditionError));
+        var probes = GetProbeConfiguration(testDescription.TestType, unlisted: true, new DeterministicGuidGenerator());
+        var snapshotProbes = probes.Select(p => p.Probe).ToArray();
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher(nameof(ConditionErrorFullSnapshotOmitsCaptureData));
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            SetProbeConfiguration(agent, snapshotProbes);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(snapshotProbes.Length);
+            Assert.Equal(snapshotProbes.Length, snapshots?.Length);
+
+            var snapshot = JToken.Parse(snapshots[0]);
+            var evaluationErrors = snapshot.SelectToken("debugger.snapshot.evaluationErrors") as JArray;
+            evaluationErrors.Should().NotBeNull();
+            evaluationErrors.Should().ContainSingle();
+            evaluationErrors![0]["expr"]?.Value<string>().Should().Be("this.undefined");
+            evaluationErrors[0]["message"]?.Value<string>().Should().NotBeNullOrEmpty();
+            snapshot.SelectToken("debugger.snapshot.captures.entry").Should().BeNull();
+            snapshot.SelectToken("debugger.snapshot.captures.return").Should().BeNull();
+            snapshot.SelectToken("debugger.snapshot.captures.lines").Should().BeNull();
+
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: false, phaseNumber: 1);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]

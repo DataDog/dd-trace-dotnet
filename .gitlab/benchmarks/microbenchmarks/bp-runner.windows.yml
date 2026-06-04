@@ -1,21 +1,24 @@
 # bp-runner config for dd-trace-dotnet microbenchmarks on Windows.
 #
-# Four batches run in parallel on separate NUMA nodes:
-#   - trace (stable benchmarks) on NUMA node 0
-#   - trace-unstable (less stable benchmarks) on NUMA node 1
-#   - otel-instr-api (OpenTelemetry InstrumentedApi) on NUMA node 0
-#   - otel-api (OpenTelemetry Api, skipped on PRs) on NUMA node 1
-#
-# trace batch clones and builds; others wait for .build-complete marker file.
-# Artifact dirs are prefixed with batch name to avoid collisions.
-#
-# bp-runner keywords (enable parallel benchmark execution on isolated CPU sets):
+# bp-runner uses the "run: run_microbenchmarks" template on each "experiment step". 
+# This template orchestrates running microbenchmarks in parallel. It requires the following fields:
 #   - how_to_fetch_release: script to clone/build the repo for baseline/candidate
 #   - how_to_run_benchmarks: script invoked for each parallel item
 #   - cpus: CPU affinity mask for NUMA node isolation
 #   - parallelize.items: benchmark filters, each run in parallel within the batch
 #
-# YAML anchors (&name/*name) define reusable script blocks referenced below.
+# Three experiments run in parallel:
+#   - trace-0: Benchmarks.Trace (9 benchmarks) on NUMA node 0, cores 0-17
+#   - trace-1: Benchmarks.Trace (11 benchmarks) on NUMA node 1, cores 0-21
+#   - otel:    OpenTelemetry benchmarks on NUMA node 0, cores 18-23
+#     - This experiment has two experiment steps that run sequentially (because we don't have enough CPUs): 
+#         - Step 1: InstrumentedApi (always);
+#         - Step 2: Api (master only, after InstrumentedApi finishes)
+#
+# trace-0 clones and builds; others wait for .build-complete marker file.
+# Artifact dirs are prefixed with batch name to avoid collisions.
+#
+# Each benchmark item gets 2 CPUs. We empirically verified noise was too high for .NET 6.0 on single CPUs.
 
 .how_to_fetch_release_build: &how_to_fetch_release_build |
   $ErrorActionPreference = "Stop"
@@ -92,7 +95,7 @@
 
   # Skip if benchmark project DLL not built.
   # Some projects (e.g., Benchmarks.OpenTelemetry.Api) are not built on PRs. See Build.cs GetBenchmarkProjectsWithSettings().
-  $dllPattern = "$env:CODE_SRC\tracer\test\benchmarks\$env:BENCHMARK_PROJECT\bin\Release\*\$env:BENCHMARK_PROJECT.dll"
+  $dllPattern = "$env:CODE_SRC\artifacts\bin\$env:BENCHMARK_PROJECT\release_*\$env:BENCHMARK_PROJECT.dll"
   if (-not (Test-Path $dllPattern)) {
     Write-Output "Skipping: $env:BENCHMARK_PROJECT not built (DLL not found matching $dllPattern)"
     exit 0
@@ -127,26 +130,20 @@
 
   Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
 
-# Run experiments in parallel (each on different NUMA node)
+# Run experiments in parallel
 parallelize: true
 
-# Benchmarks are split into batches:
-# - trace: stable Benchmarks.Trace benchmarks (low variance)
-# - trace-unstable: less stable Benchmarks.Trace benchmarks (higher variance)
-# - otel-instr-api: OpenTelemetry InstrumentedApi benchmarks
-# - otel-api: OpenTelemetry Api benchmarks (skipped on PRs since Nuke doesn't build them)
-
 experiments:
-  - name: trace
+  - name: trace-0
     steps:
-      - name: trace
+      - name: trace-0
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "0,0xFFC00"
+        cpus: "0,0x3FFFF"
         parallelize:
-          # Stable benchmarks (CPUs 10-19 on NUMA node 0)
+          # 9 Benchmarks.Trace benchmarks on NUMA node 0, cores 0-17 (9 × 2 = 18 CPUs)
           items: >-
             *ActivityBenchmark*
             *AppSecBodyBenchmark*
@@ -157,25 +154,24 @@ experiments:
             *NLogBenchmark*
             *RedisBenchmark*
             *SpanBenchmark*
-            *TraceAnnotationsBenchmark*
-          cpus_per_item: 1
+          cpus_per_item: 2
 
         env:
-          BATCH_PREFIX: "trace"
+          BATCH_PREFIX: "trace-0"
           BENCHMARK_PROJECT: "Benchmarks.Trace"
         how_to_fetch_release: *how_to_fetch_release_build
         how_to_run_benchmarks: *how_to_run_benchmarks
 
-  - name: trace-unstable
+  - name: trace-1
     steps:
-      - name: trace-unstable
+      - name: trace-1
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0xFFC00"
+        cpus: "1,0x3FFFFF"
         parallelize:
-          # Less stable benchmarks (CPUs 10-19 on NUMA node 1)
+          # 11 Benchmarks.Trace benchmarks on NUMA node 1, cores 0-21 (11 × 2 = 22 CPUs)
           items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
@@ -187,29 +183,30 @@ experiments:
             *Log4netBenchmark*
             *SerilogBenchmark*
             *StringAspectsBenchmark*
-          cpus_per_item: 1
+            *TraceAnnotationsBenchmark*
+          cpus_per_item: 2
 
         env:
-          BATCH_PREFIX: "trace-unstable"
+          BATCH_PREFIX: "trace-1"
           BENCHMARK_PROJECT: "Benchmarks.Trace"
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
 
-  - name: otel-instr-api
+  - name: otel
     steps:
       - name: otel-instr-api
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "0,0xE00000"
+        cpus: "0,0xFC0000"
         parallelize:
-          # OpenTelemetry InstrumentedApi benchmarks (CPUs 21-23 on NUMA node 0)
+          # OpenTelemetry InstrumentedApi benchmarks on NUMA node 0, cores 18-23 (3 × 2 = 6 CPUs)
           items: >-
             *ActivityBenchmark*
             *TelemetrySpanBenchmark*
             *TracerBenchmark*
-          cpus_per_item: 1
+          cpus_per_item: 2
 
         env:
           BATCH_PREFIX: "otel-instr-api"
@@ -223,21 +220,20 @@ experiments:
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
 
-  - name: otel-api
-    steps:
       - name: otel-api
         run: run_microbenchmarks
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0xE00000"
+        cpus: "0,0xFC0000"
         parallelize:
-          # OpenTelemetry Api benchmarks (CPUs 21-23 on NUMA node 1, skipped on PRs since Nuke doesn't build them)
+          # OpenTelemetry Api benchmarks, same cores as otel-instr-api (runs sequentially after it).
+          # Skipped on PRs since Nuke doesn't build them (see Build.cs GetBenchmarkProjectsWithSettings()).
           items: >-
             *ActivityBenchmark*
             *TelemetrySpanBenchmark*
             *TracerBenchmark*
-          cpus_per_item: 1
+          cpus_per_item: 2
 
         env:
           BATCH_PREFIX: "otel-api"

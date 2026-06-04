@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -11,6 +12,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
@@ -24,8 +26,17 @@ public class ProbeProcessorTests
     ]
 }";
 
+    private const string FalseConditionJson = @"{ ""eq"": [1, 0] }";
+
+    private const string UpdatedInvalidConditionJson = @"{
+    ""gt"": [
+      {""ref"": ""updatedUndefined""},
+      2
+    ]
+}";
+
     [Fact]
-    public void ConditionEvaluationErrorsAreDroppedWhenSamplerRejects()
+    public void ConditionEvaluationErrorsBypassSampler()
     {
         var processor = CreateConditionalProbeProcessor();
         var sampler = new TestAdaptiveSampler(false);
@@ -36,12 +47,12 @@ public class ProbeProcessorTests
         Assert.Equal(0, sampler.SampleCalls);
 
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
-        Assert.False(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
-        Assert.Equal(1, sampler.SampleCalls);
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+        Assert.Equal(0, sampler.SampleCalls);
     }
 
     [Fact]
-    public void ConditionEvaluationErrorsAreCapturedWhenSamplerKeeps()
+    public void ConditionEvaluationErrorsAreCapturedWithoutSampler()
     {
         var processor = CreateConditionalProbeProcessor();
         var sampler = new TestAdaptiveSampler(true);
@@ -53,11 +64,30 @@ public class ProbeProcessorTests
 
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
         Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
-        Assert.Equal(1, sampler.SampleCalls);
+        Assert.Equal(0, sampler.SampleCalls);
     }
 
     [Fact]
-    public void ConditionEvaluationExceptionsAreDroppedWhenSamplerRejects()
+    public void ConditionEvaluationErrorsFinalizeWithoutCaptureData()
+    {
+        var processor = new ProbeProcessor(CreateConditionalLogProbe("probe-id", InvalidConditionJson, captureSnapshot: true));
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+
+        var snapshot = JObject.Parse(FinalizeMethodSnapshot(snapshotCreator, "probe-id", method));
+
+        Assert.NotEmpty(snapshot.SelectToken("debugger.snapshot.evaluationErrors")!);
+        Assert.False(CapturesContainData(snapshot.SelectToken("debugger.snapshot.captures")));
+        Assert.NotNull(snapshot.SelectToken("debugger.snapshot.stack"));
+    }
+
+    [Fact]
+    public void ConditionEvaluationExceptionsBypassSampler()
     {
         var processor = CreateConditionalProbeProcessor();
         var sampler = new TestAdaptiveSampler(false);
@@ -69,8 +99,81 @@ public class ProbeProcessorTests
 
         Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
         ClearMethodScopeMembers(snapshotCreator);
-        Assert.False(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
-        Assert.Equal(1, sampler.SampleCalls);
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+        Assert.Equal(0, sampler.SampleCalls);
+    }
+
+    [Fact]
+    public void ConditionEvaluationErrorsAreRateLimitedWithoutSampler()
+    {
+        var processor = CreateConditionalProbeProcessor();
+        var sampler = new TestAdaptiveSampler(true, true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var firstSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
+
+        var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, secondSnapshotCreator, in probeData, method));
+        Assert.False(ProcessEntryEnd(processor, secondSnapshotCreator, in probeData, method));
+
+        Assert.Equal(0, sampler.SampleCalls);
+    }
+
+    [Fact]
+    public void ConditionEvaluationErrorSamplerRejectionDoesNotBlockFirstSnapshot()
+    {
+        var processor = CreateConditionalProbeProcessor();
+        var sampler = new TestAdaptiveSampler(false);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var firstSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
+
+        Assert.Equal(0, sampler.SampleCalls);
+    }
+
+    [Fact]
+    public void ConditionEvaluationErrorSnapshotBypassesGlobalLimiter()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var sampler = new TestAdaptiveSampler(false);
+        var probe = CreateConditionalLogProbe("snapshot-probe", InvalidConditionJson, captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, sampler.SampleCalls);
+    }
+
+    [Fact]
+    public void ConditionEvaluationErrorRateLimitResetsOnProbeUpdate()
+    {
+        var processor = CreateConditionalProbeProcessor();
+        var sampler = new TestAdaptiveSampler(true, true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+
+        var firstSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
+
+        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false));
+
+        var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        Assert.True(ProcessEntryStart(processor, secondSnapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, secondSnapshotCreator, in probeData, method));
+
+        Assert.Equal(0, sampler.SampleCalls);
     }
 
     [Fact]
@@ -149,6 +252,125 @@ public class ProbeProcessorTests
         Assert.Equal("probe-id", snapshotCreator.ProbeProcessorState.ProbeInfo.ProbeId);
     }
 
+    [Fact]
+    public void TryBeginProcess_UnconditionalSnapshotProbe_SamplesGlobalBeforePerProbe()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(true);
+        var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
+
+        Assert.False(shouldProcess);
+        Assert.Null(snapshotCreator);
+        Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
+        Assert.Equal(0, perProbeSampler.SampleCalls);
+    }
+
+    [Fact]
+    public void TryBeginProcess_UnconditionalSnapshotProbe_CalibratesGlobalSamplerWhenPerProbeRejects()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(true);
+        var perProbeSampler = new TestAdaptiveSampler(false);
+        var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
+
+        Assert.False(shouldProcess);
+        Assert.Null(snapshotCreator);
+        Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
+        Assert.Equal(1, perProbeSampler.SampleCalls);
+    }
+
+    [Fact]
+    public void TryBeginProcess_UnconditionalLogProbe_DoesNotUseGlobalLimiter()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(true);
+        var probe = CreateLogProbe("log-probe", captureSnapshot: false);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
+
+        Assert.True(shouldProcess);
+        Assert.NotNull(snapshotCreator);
+        Assert.Equal(1, perProbeSampler.SampleCalls);
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+    }
+
+    [Fact]
+    public void Process_ConditionalProbe_EvaluatesConditionBeforeRateLimiting()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(true);
+        var probe = CreateConditionalLogProbe("conditional-false", FalseConditionJson, captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        var captureInfo = CreateAsyncEvaluateCaptureInfo();
+
+        var result = processor.Process(ref captureInfo, snapshotCreator, in probeData);
+
+        Assert.False(result);
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, perProbeSampler.SampleCalls);
+    }
+
+    [Fact]
+    public void TryBeginProcess_MetricProbe_DoesNotUseGlobalLimiter()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(true);
+        var probe = new MetricProbe
+        {
+            Id = "metric-probe",
+            MetricName = "metric",
+            Kind = MetricKind.COUNT,
+            Where = new Where { MethodName = nameof(SampleTarget.Execute) },
+            Tags = [],
+        };
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
+
+        Assert.True(shouldProcess);
+        Assert.NotNull(snapshotCreator);
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(1, perProbeSampler.SampleCalls);
+    }
+
+    [Fact]
+    public void TryBeginProcess_SpanDecorationProbe_DoesNotUseGlobalLimiter()
+    {
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(true);
+        var probe = new SpanDecorationProbe
+        {
+            Id = "span-probe",
+            Decorations = [],
+            TargetSpan = TargetSpan.Active,
+            Where = new Where { MethodName = nameof(SampleTarget.Execute) },
+            Tags = [],
+        };
+        var processor = new ProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        var shouldProcess = processor.TryBeginProcess(in probeData, out var snapshotCreator);
+
+        Assert.True(shouldProcess);
+        Assert.NotNull(snapshotCreator);
+        Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
+        Assert.Equal(1, perProbeSampler.SampleCalls);
+    }
+
     private static ProbeProcessor CreateConditionalProbeProcessor()
     {
         return new ProbeProcessor(
@@ -196,6 +418,50 @@ public class ProbeProcessorTests
     private static ProbeProcessor CreateVersionedCaptureExpressionProbeProcessor(string probeId, int version, string captureName)
     {
         return new ProbeProcessor(CreateVersionedCaptureExpressionProbe(probeId, version, captureName));
+    }
+
+    private static LogProbe CreateLogProbe(string probeId, bool captureSnapshot)
+    {
+        return new LogProbe
+        {
+            Id = probeId,
+            CaptureSnapshot = captureSnapshot,
+            EvaluateAt = EvaluateAt.Entry,
+            Where = new Where
+            {
+                TypeName = typeof(SampleTarget).FullName!,
+                MethodName = nameof(SampleTarget.Execute)
+            },
+            Tags = [],
+        };
+    }
+
+    private static LogProbe CreateConditionalLogProbe(string probeId, string conditionJson, bool captureSnapshot)
+    {
+        var probe = CreateLogProbe(probeId, captureSnapshot);
+        probe.When = new SnapshotSegment(dsl: string.Empty, json: conditionJson, str: null);
+        return probe;
+    }
+
+    private static CaptureInfo<object> CreateAsyncEvaluateCaptureInfo()
+    {
+        return new CaptureInfo<object>(
+            methodMetadataIndex: 0,
+            methodState: MethodState.EntryAsync,
+            value: new object(),
+            method: typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!,
+            invocationTargetType: typeof(object),
+            memberKind: ScopeMemberKind.Argument,
+            type: typeof(object),
+            name: "argument",
+            localsCount: 0,
+            argumentsCount: 0,
+            asyncCaptureInfo: new AsyncCaptureInfo(
+                moveNextInvocationTarget: new object(),
+                kickoffInvocationTarget: new object(),
+                kickoffInvocationTargetType: typeof(SampleTarget),
+                hoistedArgs: [],
+                hoistedLocals: []));
     }
 
     private static LogProbe CreateVersionedCaptureExpressionProbe(string probeId, int version, string captureName)
@@ -344,6 +610,66 @@ public class ProbeProcessorTests
            .SetValue(snapshotCreator, null);
     }
 
+    private static string FinalizeMethodSnapshot(DebuggerSnapshotCreator snapshotCreator, string probeId, MethodInfo method)
+    {
+        var captureInfo = new CaptureInfo<SampleTarget>(
+            methodMetadataIndex: 0,
+            methodState: MethodState.EntryEnd,
+            value: new SampleTarget(),
+            method: method,
+            type: typeof(SampleTarget),
+            invocationTargetType: typeof(SampleTarget),
+            memberKind: ScopeMemberKind.This);
+
+        return snapshotCreator.FinalizeMethodSnapshot(probeId, 0, ref captureInfo);
+    }
+
+    private static bool CapturesContainData(JToken captures)
+    {
+        if (captures is not JObject capturesObject)
+        {
+            return false;
+        }
+
+        foreach (var property in capturesObject.Properties())
+        {
+            if (property.Name == "lines" && property.Value is JObject lines)
+            {
+                foreach (var lineProperty in lines.Properties())
+                {
+                    if (CapturePointContainsData(lineProperty.Value))
+                    {
+                        return true;
+                    }
+                }
+            }
+            else if (CapturePointContainsData(property.Value))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CapturePointContainsData(JToken capturePoint)
+    {
+        if (capturePoint is not JObject capturePointObject)
+        {
+            return false;
+        }
+
+        return HasContent(capturePointObject["arguments"])
+            || HasContent(capturePointObject["locals"])
+            || HasContent(capturePointObject["staticFields"])
+            || HasContent(capturePointObject["throwable"]);
+    }
+
+    private static bool HasContent(JToken token)
+    {
+        return token != null && token.HasValues;
+    }
+
     private sealed class SampleTarget
     {
         public void Execute()
@@ -377,6 +703,46 @@ public class ProbeProcessorTests
         public bool Drop() => !Sample();
 
         public double NextDouble() => 0;
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class GlobalRateLimiterMock : IDebuggerGlobalRateLimiter
+    {
+        private readonly Queue<bool> _results = new();
+
+        public GlobalRateLimiterMock(params bool[] results)
+        {
+            foreach (var result in results)
+            {
+                _results.Enqueue(result);
+            }
+        }
+
+        public int ShouldSampleCallCount { get; private set; }
+
+        public string LastProbeId { get; private set; } = string.Empty;
+
+        public bool ShouldSampleSnapshot(string probeId)
+        {
+            ShouldSampleCallCount++;
+            LastProbeId = probeId;
+            return _results.Count == 0 || _results.Dequeue();
+        }
+
+        public void Initialize()
+        {
+        }
+
+        public void SetRate(double? samplesPerSecond)
+        {
+        }
+
+        public void ResetRate()
+        {
+        }
 
         public void Dispose()
         {

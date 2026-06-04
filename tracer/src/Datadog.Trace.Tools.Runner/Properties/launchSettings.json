@@ -2,7 +2,7 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "ci run --tracer-home X:\\github\\DataDog\\dd-trace-dotnet\\shared\\bin\\monitoring-home -- dotnet --version",
+      "commandLineArgs": "ci run --tracer-home X:\\github\\DataDog\\dd-trace-dotnet\\artifacts\\monitoring-home -- dotnet --version",
       "workingDirectory": "X:\\",
       "nativeDebugging": true,
       "environmentVariables": {

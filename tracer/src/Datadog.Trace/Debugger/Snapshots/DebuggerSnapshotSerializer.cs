@@ -342,32 +342,37 @@ namespace Datadog.Trace.Debugger.Snapshots
             try
             {
                 var isDictionary = Redaction.IsSupportedDictionary(source);
+                var collectionCount = collection.Count;
                 jsonWriter.WritePropertyName("type");
                 jsonWriter.WriteValue(type.Name);
                 jsonWriter.WritePropertyName("size");
-                jsonWriter.WriteValue(collection.Count);
+                jsonWriter.WriteValue(collectionCount);
                 jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
                 arrayOpened = true;
 
-                var itemIndex = 0;
+                var enumeratedItemCount = 0;
+                var enumerationCompleted = false;
+                var stoppedByTimeout = false;
                 enumerator = enumerable.GetEnumerator();
 
-                bool hasNext = false;
-                while (itemIndex < limitInfo.MaxCollectionSize)
+                while (!enumerationCompleted && enumeratedItemCount < limitInfo.MaxCollectionSize)
                 {
                     if (cts.IsCancellationRequested)
                     {
+                        stoppedByTimeout = true;
                         break;
                     }
 
                     try
                     {
-                        hasNext = enumerator.MoveNext();
-                        if (!hasNext)
+                        if (!enumerator.MoveNext())
                         {
+                            enumerationCompleted = true;
                             break;
                         }
+
+                        enumeratedItemCount++;
                     }
                     catch (InvalidOperationException e)
                     {
@@ -411,19 +416,25 @@ namespace Datadog.Trace.Debugger.Snapshots
                             collectionsBeingSerialized);
                     }
 
-                    itemIndex++;
                     if (!serialized)
                     {
+                        if (cts.IsCancellationRequested)
+                        {
+                            stoppedByTimeout = true;
+                        }
+
                         break;
                     }
                 }
 
-                // Track the reason but don't write yet if we're still inside the array
-                if (cts.IsCancellationRequested)
+                // Track the reason but don't write yet if we're still inside the array.
+                if (stoppedByTimeout && enumeratedItemCount < collectionCount)
                 {
                     notCapturedReason = NotCapturedReason.timeout;
                 }
-                else if (hasNext && itemIndex >= limitInfo.MaxCollectionSize)
+                else if (!enumerationCompleted &&
+                         enumeratedItemCount >= limitInfo.MaxCollectionSize &&
+                         enumeratedItemCount < collectionCount)
                 {
                     notCapturedReason = NotCapturedReason.collectionSize;
                 }

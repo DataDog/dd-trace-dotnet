@@ -162,6 +162,16 @@ namespace Datadog.Trace.PlatformHelpers
                 AddHeaderTagsToSpan(scope.Span, request, tracer, headerTagsInternal);
             }
 
+            if (request.Headers is { } requestHeaders)
+            {
+                var headersAdapter = new HeadersCollectionAdapter(requestHeaders);
+                tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(scope.Span, headersAdapter);
+                if (proxyContext?.Scope?.Span is { } proxySpan)
+                {
+                    tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(proxySpan, headersAdapter);
+                }
+            }
+
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;

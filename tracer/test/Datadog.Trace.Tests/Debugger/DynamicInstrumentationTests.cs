@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -16,14 +18,19 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
+using DebuggerSampling = Datadog.Trace.Debugger.Configurations.Models.Sampling;
+using ExpressionProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
+using ExpressionProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 #nullable enable
 
@@ -31,6 +38,197 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class DynamicInstrumentationTests
 {
+    [Fact]
+    public void DynamicInstrumentation_ResetsGlobalRateLimiterOnConstruction()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+
+        _ = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            new RcmSubscriptionManagerMock(),
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            NoOpStatsd.Instance,
+            globalRateLimiter);
+
+        globalRateLimiter.InitializeCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void DynamicInstrumentation_DoesNotDisposeGlobalRateLimiterOnDispose()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var logUploader = new LogUploaderMock();
+        var memSource = new CountingMemorySource();
+        var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default, memSource.TryGetMemoryUsageRatio, memSource.TryGetGen2CollectionCount, null);
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            new RcmSubscriptionManagerMock(),
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            logUploader,
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            NoOpStatsd.Instance,
+            globalRateLimiter,
+            memoryPressureMonitor);
+
+        debugger.Dispose();
+
+        globalRateLimiter.DisposeCallCount.Should().Be(0);
+        logUploader.DisposeCallCount.Should().Be(1);
+
+        // The monitor was disposed by DynamicInstrumentation: a forced refresh after disposal samples nothing.
+        memoryPressureMonitor.RefreshIfStale(long.MaxValue / 2);
+        memSource.SampleCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void DynamicInstrumentation_RefreshesMemoryPressure_OnlyThroughDedicatedHook()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var memSource = new CountingMemorySource();
+        var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default, memSource.TryGetMemoryUsageRatio, memSource.TryGetGen2CollectionCount, null);
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            new RcmSubscriptionManagerMock(),
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            NoOpStatsd.Instance,
+            globalRateLimiter,
+            memoryPressureMonitor);
+        var captureLimit = new CaptureLimitInfo(1, 1, 1, 1);
+        var fullSnapshotProbe = new ExpressionProbeInfo("snapshot-probe", 0, ProbeType.Snapshot, ExpressionProbeLocation.Method, EvaluateAt.Exit, null, string.Empty, false, [], null, captureLimit);
+        var logProbe = new ExpressionProbeInfo("log-probe", 0, ProbeType.Log, ExpressionProbeLocation.Method, EvaluateAt.Entry, null, string.Empty, false, [], null, captureLimit);
+        var metricProbe = new ExpressionProbeInfo("metric-probe", 0, ProbeType.Metric, ExpressionProbeLocation.Method, EvaluateAt.Entry, MetricKind.COUNT, "metric", false, [], null, captureLimit);
+
+        // Emit paths must not sample memory pressure. Sampling is driven once per probe activity
+        // from ProbeProcessor via RefreshMemoryPressureIfStale(), not from each snapshot/log/metric.
+        debugger.AddSnapshot(fullSnapshotProbe, "{}");
+        debugger.AddLog(logProbe, "{}");
+        debugger.SendMetrics(metricProbe, MetricKind.COUNT, "metric", 1, "metric-probe");
+        memSource.SampleCount.Should().Be(0);
+
+        debugger.RefreshMemoryPressureIfStale();
+        memSource.SampleCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DynamicInstrumentation_IgnoresAddedConfigurationAfterDispose()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            subscriptionManager,
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            updater,
+            NoOpStatsd.Instance,
+            globalRateLimiter);
+
+        debugger.Dispose();
+        subscriptionManager.LastSubscription.Should().NotBeNull();
+        var subscription = subscriptionManager.LastSubscription!;
+
+        await subscription.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                ["service-config"] =
+                [
+                    CreateRemoteConfiguration(
+                        "datadog/123/LIVE_DEBUGGING/serviceConfig_/config",
+                        """{"service_configuration":{"sampling":{"snapshots_per_second":42}}}""")
+                ]
+            },
+            null);
+
+        globalRateLimiter.SetRateCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task DynamicInstrumentation_IgnoresRemovedConfigurationAfterDispose()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var subscriptionManager = new RcmSubscriptionManagerMock();
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            subscriptionManager,
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            updater,
+            NoOpStatsd.Instance,
+            globalRateLimiter);
+
+        updater.AcceptAdded(
+            new ProbeConfiguration
+            {
+                ServiceConfiguration = new ServiceConfiguration
+                {
+                    Sampling = new DebuggerSampling { SnapshotsPerSecond = 42 }
+                }
+            });
+        globalRateLimiter.ResetCounters();
+
+        debugger.Dispose();
+        subscriptionManager.LastSubscription.Should().NotBeNull();
+        var subscription = subscriptionManager.LastSubscription!;
+
+        await subscription.Invoke(
+            [],
+            new Dictionary<string, List<RemoteConfigurationPath>>
+            {
+                ["service-config"] =
+                [
+                    RemoteConfigurationPath.FromPath("datadog/123/LIVE_DEBUGGING/serviceConfig_/config")
+                ]
+            });
+
+        globalRateLimiter.SetRateCallCount.Should().Be(0);
+    }
+
     [Fact]
     public async Task DynamicInstrumentationEnabled_ServicesCalled()
     {
@@ -45,9 +243,10 @@ public class DynamicInstrumentationTests
         var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create("env", "version", 0);
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
 
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
         debugger.Initialize();
         await WaitForInitializationAsync(debugger);
 
@@ -115,9 +314,10 @@ public class DynamicInstrumentationTests
         var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0);
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter);
 
-        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
         debugger.Initialize();
         lineProbeResolver.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
@@ -127,15 +327,14 @@ public class DynamicInstrumentationTests
         rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
 
-    private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 5)
+    private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 30)
     {
-        var timeout = TimeSpan.FromSeconds(timeoutSeconds);
-        var startTime = DateTime.UtcNow;
+        var initializationTask = debugger.GetInitializationTask();
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
 
-        while (!debugger.IsInitialized && DateTime.UtcNow - startTime < timeout)
-        {
-            await Task.Delay(50);
-        }
+        var completedTask = await Task.WhenAny(initializationTask, timeoutTask);
+        completedTask.Should().Be(initializationTask, "Dynamic Instrumentation initialization should complete");
+        await initializationTask;
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutSeconds = 5)
@@ -147,6 +346,12 @@ public class DynamicInstrumentationTests
         {
             await Task.Delay(50);
         }
+    }
+
+    private static RemoteConfiguration CreateRemoteConfiguration(string path, string json)
+    {
+        var content = Encoding.UTF8.GetBytes(json);
+        return new RemoteConfiguration(RemoteConfigurationPath.FromPath(path), content, content.Length, [], version: 1);
     }
 
     public class ProbeFileLoadingTests : IDisposable
@@ -222,14 +427,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Probe file should be loaded and applied");
@@ -314,6 +512,314 @@ public class DynamicInstrumentationTests
             {
                 debugger.Dispose();
             }
+        }
+
+        [Fact]
+        public void UpdateAddedProbeInstrumentations_RetryableLineProbeResolutionFailureReportsErrorStatus()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                    "Source file location for probe did not uniquely match the PDB document path.",
+                    ErrorKey: SourceMismatchKey(),
+                    ErrorDetails: SourceMismatchDetails(),
+                    ReportError: true));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            var status = probeStatusPoller.UpdatedProbeStatuses.Should().ContainSingle().Subject.ProbeStatus;
+            status.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            status.ErrorMessage.Should().Be("Source file location for probe did not uniquely match the PDB document path.");
+        }
+
+        [Fact]
+        public void UpdateAddedProbeInstrumentations_RetryableLineProbeResolutionFailureBuildsErrorStatusFromKey()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                    ErrorKey: SourceMismatchKey(),
+                    ErrorDetails: SourceMismatchDetails(),
+                    ReportError: true));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            var status = probeStatusPoller.UpdatedProbeStatuses.Should().ContainSingle().Subject.ProbeStatus;
+            status.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            status.ErrorMessage.Should().Contain("Source file location for probe did not uniquely match the PDB document path");
+            status.ErrorMessage.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
+        }
+
+        [Fact]
+        public void UpdateAddedProbeInstrumentations_RetryableLineProbeResolutionFailureKeepsProbeRetryable()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                    "Source file location for probe did not uniquely match the PDB document path.",
+                    ErrorKey: SourceMismatchKey(),
+                    ErrorDetails: SourceMismatchDetails(),
+                    ReportError: true));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Bound,
+                Diagnostics: new LineProbeResolutionDiagnostics(ProbeFile: "wrong/path/MyClass.cs", ProbeLine: 25));
+            debugger.GetType()
+                    .GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Should().Be(global::Datadog.Trace.Debugger.PInvoke.ProbeStatus.Default);
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureCanTransitionToErrorStatus()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(),
+                ReportError: true);
+            debugger.GetType()
+                    .GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Source file location for probe did not uniquely match the PDB document path");
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureDoesNotRepeatSameErrorStatus()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(),
+                ReportError: true);
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureDoesNotRepeatWhenOnlyCountsChange()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(bestMatchingTrailingSegments: 1, qualifiedFallbackMatchCount: 0, sameFileNameMatchCount: 1),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(bestMatchingTrailingSegments: 3, qualifiedFallbackMatchCount: 2, sameFileNameMatchCount: 4),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Same file name matches: 1");
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_RetryableLineProbeResolutionFailureReportsChangedErrorKey()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-source-mismatch",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "wrong/path/MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(),
+                ErrorDetails: SourceMismatchDetails(),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Unbound,
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                ErrorKey: SourceMismatchKey(LineProbeFallbackFailureReason.AmbiguousQualifiedMatches),
+                ErrorDetails: SourceMismatchDetails(LineProbeFallbackFailureReason.AmbiguousQualifiedMatches, bestMatchingTrailingSegments: 3, qualifiedFallbackMatchCount: 2, sameFileNameMatchCount: 2),
+                ReportError: true);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(3);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Contain("Fallback failure reason: NoQualifiedSuffixMatch");
+            probeStatusPoller.UpdatedProbeStatuses[2].ProbeStatus.ErrorMessage.Should().Contain("Fallback failure reason: AmbiguousQualifiedMatches");
+        }
+
+        [Fact]
+        public void CheckUnboundProbes_TerminalLineProbeResolutionFailureStopsRetrying()
+        {
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
+                NullConfigurationTelemetry.Instance);
+            var lineProbeResolver = new LineProbeResolverMock(
+                new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Unbound,
+                    LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable,
+                    "Source file location for probe was not found in any currently loaded assembly."));
+            var probeStatusPoller = new ProbeStatusPollerMock();
+            var debugger = CreateDebugger(settings, lineProbeResolver: lineProbeResolver, probeStatusPoller: probeStatusPoller);
+            var probe = new LogProbe
+            {
+                Id = "line-probe-missing-pdb",
+                Language = "dotnet",
+                Where = new Where { SourceFile = "MyClass.cs", Lines = ["25"] },
+                CaptureSnapshot = true
+            };
+
+            debugger.UpdateAddedProbeInstrumentations([probe]);
+
+            lineProbeResolver.NextResult = new LineProbeResolveResult(
+                LiveProbeResolveStatus.Error,
+                LineProbeResolveReason.MissingPdb,
+                "Failed to read from PDB");
+            var checkUnboundProbes = debugger.GetType().GetMethod("CheckUnboundProbes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+            checkUnboundProbes.Invoke(debugger, [null, new AssemblyLoadEventArgs(typeof(DynamicInstrumentationTests).Assembly)]);
+
+            lineProbeResolver.CallCount.Should().Be(2);
+            probeStatusPoller.UpdatedProbeStatuses.Should().HaveCount(2);
+            probeStatusPoller.UpdatedProbeStatuses[0].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.RECEIVED);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.Status.Should().Be(global::Datadog.Trace.Debugger.Sink.Models.Status.ERROR);
+            probeStatusPoller.UpdatedProbeStatuses[1].ProbeStatus.ErrorMessage.Should().Be("Failed to read from PDB");
         }
 
         [Theory]
@@ -404,14 +910,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Valid probes should be loaded");
@@ -459,14 +958,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Probes should be loaded");
@@ -504,10 +996,30 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings, new DiscoveryServiceWithoutRcmMock());
             debugger.Initialize();
-            await WaitForInitializationAsync(debugger);
+            await WaitUntilAsync(() => GetFileProbes(debugger) is not null);
 
             debugger.IsInitialized.Should().BeTrue("file probes should not wait for the RCM availability timeout");
             GetFileProbes(debugger).Should().NotBeNull();
+        }
+
+        private static LineProbeResolveErrorKey SourceMismatchKey(LineProbeFallbackFailureReason fallbackFailureReason = LineProbeFallbackFailureReason.NoQualifiedSuffixMatch)
+        {
+            return new LineProbeResolveErrorKey(
+                LineProbeResolveReason.LoadedAssemblySourceFileMismatch,
+                fallbackFailureReason);
+        }
+
+        private static LineProbeResolveErrorDetails SourceMismatchDetails(
+            LineProbeFallbackFailureReason fallbackFailureReason = LineProbeFallbackFailureReason.NoQualifiedSuffixMatch,
+            int bestMatchingTrailingSegments = 1,
+            int qualifiedFallbackMatchCount = 0,
+            int sameFileNameMatchCount = 1)
+        {
+            return new LineProbeResolveErrorDetails(
+                SourceMismatchKey(fallbackFailureReason),
+                bestMatchingTrailingSegments,
+                qualifiedFallbackMatchCount,
+                sameFileNameMatchCount);
         }
 
         private static ProbeConfiguration? GetFileProbes(DynamicInstrumentation debugger)
@@ -564,7 +1076,8 @@ public class DynamicInstrumentationTests
                 diagnosticsUploader,
                 probeStatusPoller,
                 ConfigurationUpdater.Create("env", "version", 0),
-                global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance);
+                global::Datadog.Trace.DogStatsd.NoOpStatsd.Instance,
+                instrumentProbes: (_, _, _, _) => { });
             _debuggers.Add(debugger);
             return debugger;
         }
@@ -828,6 +1341,7 @@ public class DynamicInstrumentationTests
 
         public void Unsubscribe(ISubscription subscription)
         {
+            LastSubscription = subscription;
             foreach (var productKey in subscription.ProductKeys)
             {
                 ProductKeys.Remove(productKey);
@@ -852,19 +1366,45 @@ public class DynamicInstrumentationTests
 
     private class LineProbeResolverMock : ILineProbeResolver
     {
+        private readonly LineProbeResolveResult _result;
+
+        public LineProbeResolverMock()
+            : this(new LineProbeResolveResult(LiveProbeResolveStatus.Error, LineProbeResolveReason.MissingPdb, "PDB not available in unit test"))
+        {
+        }
+
+        public LineProbeResolverMock(LineProbeResolveResult result)
+        {
+            _result = result;
+        }
+
         internal bool Called { get; private set; }
+
+        internal int CallCount { get; private set; }
+
+        internal LineProbeResolveResult? NextResult { get; set; }
 
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out LineProbeResolver.BoundLineProbeLocation? location, LineProbeDiagnosticLevel diagnosticLevel = LineProbeDiagnosticLevel.Full)
         {
             Called = true;
+            CallCount++;
+            var result = NextResult ?? _result;
+            if (result.Status == LiveProbeResolveStatus.Bound)
+            {
+                location = new LineProbeResolver.BoundLineProbeLocation(probe, Guid.NewGuid(), methodToken: 1, bytecodeOffset: 0, lineNumber: 25);
+                return result;
+            }
+
             location = null;
-            return new LineProbeResolveResult(LiveProbeResolveStatus.Error, LineProbeResolveReason.MissingPdb, "PDB not available in unit test");
+            return result;
         }
     }
 
     private class UploaderMock : IDebuggerUploader
     {
         internal bool Called { get; private set; }
+
+        internal int DisposeCallCount { get; private set; }
 
         public Task StartFlushingAsync()
         {
@@ -874,6 +1414,7 @@ public class DynamicInstrumentationTests
 
         public void Dispose()
         {
+            DisposeCallCount++;
         }
     }
 
@@ -893,7 +1434,11 @@ public class DynamicInstrumentationTests
 
     private class ProbeStatusPollerMock : IProbeStatusPoller
     {
+        private readonly List<FetchProbeStatus> _updatedProbeStatuses = new();
+
         internal bool Called { get; private set; }
+
+        internal IReadOnlyList<FetchProbeStatus> UpdatedProbeStatuses => _updatedProbeStatuses;
 
         public void StartPolling()
         {
@@ -913,11 +1458,13 @@ public class DynamicInstrumentationTests
         public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
         {
             Called = true;
+            _updatedProbeStatuses.AddRange(newProbeStatuses);
         }
 
         public void UpdateProbe(string probeId, FetchProbeStatus newProbeStatus)
         {
             Called = true;
+            _updatedProbeStatuses.Add(newProbeStatus);
         }
 
         public string[] GetBoundedProbes()
@@ -928,6 +1475,67 @@ public class DynamicInstrumentationTests
 
         public void Dispose()
         {
+        }
+    }
+
+    private class GlobalRateLimiterMock : IDebuggerGlobalRateLimiter
+    {
+        internal int InitializeCallCount { get; private set; }
+
+        internal int DisposeCallCount { get; private set; }
+
+        internal int ResetRateCallCount { get; private set; }
+
+        internal int SetRateCallCount { get; private set; }
+
+        public bool ShouldSampleSnapshot(string probeId) => true;
+
+        public void Initialize()
+        {
+            InitializeCallCount++;
+        }
+
+        public void SetRate(double? samplesPerSecond)
+        {
+            SetRateCallCount++;
+        }
+
+        public void ResetRate()
+        {
+            ResetRateCallCount++;
+        }
+
+        public void ResetCounters()
+        {
+            SetRateCallCount = 0;
+            ResetRateCallCount = 0;
+        }
+
+        public void Dispose()
+        {
+            DisposeCallCount++;
+        }
+    }
+
+    // Counts how many times the real MemoryPressureMonitor sampled memory, so tests can verify the
+    // monitor is driven only through the dedicated hook and is disposed by DynamicInstrumentation.
+    private sealed class CountingMemorySource
+    {
+        private int _sampleCount;
+
+        public int SampleCount => Volatile.Read(ref _sampleCount);
+
+        public bool TryGetMemoryUsageRatio(out double ratio)
+        {
+            Interlocked.Increment(ref _sampleCount);
+            ratio = 0.1;
+            return true;
+        }
+
+        public bool TryGetGen2CollectionCount(out int count)
+        {
+            count = 0;
+            return true;
         }
     }
 }

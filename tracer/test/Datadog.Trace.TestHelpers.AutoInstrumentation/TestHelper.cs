@@ -114,10 +114,25 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
         {
-            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
+            const int maxAttempts = 3;
+            var attempt = 1;
 
-            using var helper = new ProcessHelper(process);
-            return WaitForProcessResult(helper, expectedExitCode, dumpChildProcesses: true);
+            while (true)
+            {
+                var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
+                using var processHelper = new ProcessHelper(process);
+                var result = WaitForProcessResultRaw(processHelper, dumpChildProcesses: true);
+
+                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
+                {
+                    attempt++;
+                    continue;
+                }
+
+                ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+                ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
+                return result;
+            }
         }
 
         public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
@@ -168,53 +183,37 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
-            var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
-            using var helper = new ProcessHelper(process);
+            const int maxAttempts = 3;
+            var attempt = 1;
 
-            return WaitForProcessResult(helper);
+            while (true)
+            {
+                var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
+                using var processHelper = new ProcessHelper(process);
+                var result = WaitForProcessResultRaw(processHelper);
+
+                if (await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, result.ExitCode, result.StandardError, this, Output.WriteLine))
+                {
+                    attempt++;
+                    continue;
+                }
+
+                ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+                ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode: 0, result.StandardError);
+                return result;
+            }
         }
 
         public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false)
         {
-            // this is _way_ too long, but we want to be v. safe
-            // the goal is just to make sure we kill the test before
-            // the whole CI run times out
-            var process = helper.Process;
-            var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
-            var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
-
-            var standardOutput = helper.StandardOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardOutput))
-            {
-                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-            }
-
-            var standardError = helper.ErrorOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardError))
-            {
-                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-            }
-
-            if (!ranToCompletion && !process.HasExited)
-            {
-                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, includeChildProcesses: dumpChildProcesses);
-                process.Kill();
-                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
-            }
-
-            var exitCode = process.ExitCode;
-
-            Output.WriteLine($"ProcessId: " + process.Id);
-            Output.WriteLine($"Exit Code: " + exitCode);
-
-            ErrorHelpers.CheckForKnownSkipConditions(Output, exitCode, standardError, EnvironmentHelper);
-
-            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode, standardError);
-
-            return new ProcessResult(process, standardOutput, standardError, exitCode);
+            var result = WaitForProcessResultRaw(helper, dumpChildProcesses);
+            ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
+            ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
+            return result;
         }
+
+        public Task SendCIMetricAsync(string metricName, params string[] extraTags)
+            => ErrorHelpers.SendMetric(Output, metricName, EnvironmentHelper, extraTags);
 
         public async Task<(ProcessHelper Process, string ConfigFile)> StartIISExpress(
             MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath, bool usePartialTrust, bool useLegacyCasModel)
@@ -686,6 +685,44 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+        }
+
+        private ProcessResult WaitForProcessResultRaw(ProcessHelper helper, bool dumpChildProcesses = false)
+        {
+            // this is _way_ too long, but we want to be v. safe
+            // the goal is just to make sure we kill the test before
+            // the whole CI run times out
+            var process = helper.Process;
+            var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
+
+            var standardOutput = helper.StandardOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            var standardError = helper.ErrorOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            if (!ranToCompletion && !process.HasExited)
+            {
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, includeChildProcesses: dumpChildProcesses);
+                process.Kill();
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
+            }
+
+            var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
+
+            return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
         private bool IsServerSpan(MockSpan span) =>

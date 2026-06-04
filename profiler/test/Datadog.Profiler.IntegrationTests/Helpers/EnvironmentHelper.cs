@@ -294,7 +294,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private static string GetRootOutputDir()
         {
-            return Path.Combine(GetSolutionDirectory(), "profiler", "_build");
+            return Path.Combine(GetSolutionDirectory(), "artifacts", "profiler-build");
         }
 
         /// <summary>
@@ -344,7 +344,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var s = Environment.GetEnvironmentVariable("MonitoringHome");
             if (string.IsNullOrWhiteSpace(s))
             {
-                return Path.Combine(GetSolutionDirectory(), "shared", "bin", "monitoring-home");
+                return Path.Combine(GetSolutionDirectory(), "artifacts", "monitoring-home");
             }
 
             return s;

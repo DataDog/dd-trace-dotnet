@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 // ReSharper disable once RedundantUsingDirective
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Snapshots;
 using FluentAssertions;
 using Xunit;
@@ -37,6 +40,17 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 Redaction.IsSafeToCallToString(type).Should().BeTrue($"Type {type} should be safe to call ToString on");
             }
+        }
+
+        [Theory]
+        [InlineData(typeof(List<int>))]
+        [InlineData(typeof(HashSet<int>))]
+        [InlineData(typeof(Dictionary<string, int>))]
+        [InlineData(typeof(Hashtable))]
+        [InlineData(typeof(ConditionalWeakTable<object, object>))]
+        public void CollectionTypesAreNotSafeToCallToString(Type type)
+        {
+            Redaction.IsSafeToCallToString(type).Should().BeFalse($"Type {type} should use structural handling instead of ToString()");
         }
     }
 }

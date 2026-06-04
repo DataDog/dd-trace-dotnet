@@ -18,10 +18,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [SkippableTheory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public Task SubmitsTraces(bool dataPipelineEnabled) => RunTest(TestTransports.Tcp, dataPipelineEnabled);
+        public Task SubmitsTraces() => RunTest(TestTransports.Tcp);
     }
 }

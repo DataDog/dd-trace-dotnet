@@ -78,7 +78,7 @@ public class ContextPropagationTests
     public async Task InjectTracingContext_ExistingDetail_AddsTraceContext()
     {
         var request = GeneratePutEventsRequest([
-            new PutEventsRequestEntry { Detail = "{\"foo\":\"bar\"}", EventBusName = EventBusName }
+            new PutEventsRequestEntry { Detail = """{"foo":"bar"}""", EventBusName = EventBusName }
         ]);
 
         var proxy = request.DuckCast<IPutEventsRequest>();
@@ -167,7 +167,7 @@ public class ContextPropagationTests
     {
         var request = GeneratePutEventsRequest([
             new PutEventsRequestEntry { Detail = "{}", EventBusName = EventBusName },
-            new PutEventsRequestEntry { Detail = "{\"foo\":\"bar\"}", EventBusName = EventBusName }
+            new PutEventsRequestEntry { Detail = """{"foo":"bar"}""", EventBusName = EventBusName }
         ]);
 
         var proxy = request.DuckCast<IPutEventsRequest>();
@@ -280,6 +280,40 @@ public class ContextPropagationTests
 
         var byteSize = Encoding.UTF8.GetByteCount(entry.Detail);
         byteSize.Should().BeLessThan(MaxSizeBytes);
+    }
+
+    [Theory]
+    [InlineData("bad\"value")]
+    [InlineData("back\\slash")]
+    [InlineData("\"closing-brace\"}")]
+    [InlineData("\"},\"injected\":\"true")]
+    [InlineData("tab\there")]
+    [InlineData("nel\u0085char")]
+    public async Task InjectTracingContext_MaliciousOrigin_ProducesParseableJsonAndRoundTrips(string maliciousOrigin)
+    {
+        var spanContext = new SpanContext(
+            new TraceId(Upper: 1234567890123456789UL, Lower: 9876543210987654321UL),
+            spanId: 6766950223540265769UL,
+            samplingPriority: 1,
+            serviceName: "test-eventbridge",
+            origin: maliciousOrigin);
+
+        var entry = new PutEventsRequestEntry { Detail = """{"foo":"bar"}""", EventBusName = EventBusName };
+        var request = GeneratePutEventsRequest([entry]);
+        var proxy = request.DuckCast<IPutEventsRequest>();
+
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectContext(tracer, proxy, new PropagationContext(spanContext, baggage: null));
+
+        // detail must be parseable JSON (no syntax break)
+        var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail)!;
+        // should have both keys
+        detail.Keys.Should().BeEquivalentTo("foo", DatadogKey);
+        detail["foo"].Should().Be("bar");
+
+        // origin round-trips through the _datadog object
+        var datadog = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(detail[DatadogKey]))!;
+        datadog["x-datadog-origin"].Should().Be(maliciousOrigin);
     }
 
     private static PutEventsRequest GeneratePutEventsRequest(List<PutEventsRequestEntry> entries)

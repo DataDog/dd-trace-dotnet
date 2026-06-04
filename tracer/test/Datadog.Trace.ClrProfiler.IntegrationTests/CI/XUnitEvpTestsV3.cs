@@ -380,6 +380,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
         // ITR tags inside the test suite
         testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
+        testSuites.Should().AllSatisfy(suite => suite.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
         // Check Module
         Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
@@ -388,6 +389,8 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
         testModule.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.SkippingType, IntelligentTestRunnerTags.SkippingTypeTest);
         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
+        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
+        tests.Should().AllSatisfy(test => test.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
         // Check Session
         tests.Should().OnlyContain(t => t.TestSessionId == testSuite.TestSessionId);
@@ -420,6 +423,9 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
                 // Remove user provided service tag
                 targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
+
+                // Remove tags validated outside the per-span checklist
+                Assert.True(targetTest.Meta.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
 
                 // check the name
                 Assert.Equal("xunit.v3.test", targetTest.Name);
