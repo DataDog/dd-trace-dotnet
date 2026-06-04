@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -48,44 +47,36 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
         }
 
         [Fact]
-        public async Task ConcurrentRefresh_DoesNotOverlap()
+        public void ConcurrentRefresh_DoesNotOverlap()
         {
-            using var gc = new BlockingMemoryRatioProvider(blockedRatio: 0.90);
-            using var monitor = CreateMonitor(
+            MemoryPressureMonitor monitor = null!;
+            var gc = new ReentrantMemoryRatioProvider(blockedRatio: 0.90, onSecondRead: () => monitor.RefreshIfStale(2000));
+            monitor = CreateMonitor(
                 MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.80, MaxGen2PerSecond = 1000 },
                 gc.TryGetMemoryUsageRatio,
                 gc.TryGetGen2CollectionCount);
+            using var disposableMonitor = monitor;
 
             monitor.RefreshIfStale(0);
-            var refreshTask = Task.Run(() => monitor.RefreshIfStale(1000));
-            gc.WaitForBlockedCall();
+            monitor.RefreshIfStale(1000);
 
-            monitor.RefreshIfStale(2000);
             gc.MemoryRatioCallCount.Should().Be(2);
-
-            gc.ReleaseBlockedCall();
-            await refreshTask;
             monitor.IsHighMemoryPressure.Should().BeTrue();
         }
 
         [Fact]
-        public async Task Dispose_DuringInFlightRefresh_DoesNotCommitState()
+        public void Dispose_DuringInFlightRefresh_DoesNotCommitState()
         {
-            using var gc = new BlockingMemoryRatioProvider(blockedRatio: 0.90);
-            var monitor = CreateMonitor(
+            MemoryPressureMonitor monitor = null!;
+            var gc = new ReentrantMemoryRatioProvider(blockedRatio: 0.90, onSecondRead: () => monitor.Dispose());
+            monitor = CreateMonitor(
                 MemoryPressureConfig.Default with { HighPressureThresholdRatio = 0.80, MaxGen2PerSecond = 1000 },
                 gc.TryGetMemoryUsageRatio,
                 gc.TryGetGen2CollectionCount);
 
             monitor.RefreshIfStale(0);
-            var refreshTask = Task.Run(() => monitor.RefreshIfStale(1000));
-            gc.WaitForBlockedCall();
+            monitor.RefreshIfStale(1000);
 
-            var disposeTask = Task.Run(() => monitor.Dispose());
-            gc.ReleaseBlockedCall();
-
-            await refreshTask;
-            await disposeTask;
             monitor.IsHighMemoryPressure.Should().BeFalse();
         }
 
@@ -530,18 +521,16 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
             }
         }
 
-        private sealed class BlockingMemoryRatioProvider : IDisposable
+        private sealed class ReentrantMemoryRatioProvider
         {
-            private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(5);
-
-            private readonly ManualResetEventSlim _blocked = new(false);
-            private readonly ManualResetEventSlim _release = new(false);
             private readonly double _blockedRatio;
+            private readonly Action _onSecondRead;
             private int _memoryRatioCallCount;
 
-            public BlockingMemoryRatioProvider(double blockedRatio)
+            public ReentrantMemoryRatioProvider(double blockedRatio, Action onSecondRead)
             {
                 _blockedRatio = blockedRatio;
+                _onSecondRead = onSecondRead;
             }
 
             public int MemoryRatioCallCount => Volatile.Read(ref _memoryRatioCallCount);
@@ -554,27 +543,20 @@ namespace Datadog.Trace.Tests.Debugger.RateLimiting
 
             public bool TryGetMemoryUsageRatio(out double ratio)
             {
-                if (Interlocked.Increment(ref _memoryRatioCallCount) == 1)
+                var callCount = Interlocked.Increment(ref _memoryRatioCallCount);
+                if (callCount == 1)
                 {
                     ratio = 0.10;
                     return true;
                 }
 
-                _blocked.Set();
-                _release.Wait(WaitTimeout).Should().BeTrue("the test should release the blocked memory sample");
+                if (callCount == 2)
+                {
+                    _onSecondRead();
+                }
+
                 ratio = _blockedRatio;
                 return true;
-            }
-
-            public void WaitForBlockedCall() => _blocked.Wait(WaitTimeout).Should().BeTrue("the memory sample should reach the blocking point");
-
-            public void ReleaseBlockedCall() => _release.Set();
-
-            public void Dispose()
-            {
-                _release.Set();
-                _blocked.Dispose();
-                _release.Dispose();
             }
         }
     }
