@@ -228,6 +228,30 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ObjectStructure_ObjectTypedDictionaryEntries_UseRuntimeTypeAndNullFallback()
+        {
+            var local = GetLocalToken(new Dictionary<object, object> { { 42, null }, { "name", "value" } });
+
+            Assert.Equal("Dictionary`2", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["elements"]);
+
+            var entries = local["entries"] as JArray;
+            Assert.NotNull(entries);
+            Assert.Equal(2, entries!.Count);
+            Assert.Contains(entries, entry =>
+                entry[0]?["type"]?.Value<string>() == "Int32" &&
+                entry[0]?["value"]?.Value<int>() == 42 &&
+                entry[1]?["type"]?.Value<string>() == "Object" &&
+                entry[1]?["isNull"]?.Value<string>() == "true");
+            Assert.Contains(entries, entry =>
+                entry[0]?["type"]?.Value<string>() == "String" &&
+                entry[0]?["value"]?.Value<string>() == "name" &&
+                entry[1]?["type"]?.Value<string>() == "String" &&
+                entry[1]?["value"]?.Value<string>() == "value");
+        }
+
+        [Fact]
         public void ObjectStructure_SortedList_IsSerializedAsDictionary()
         {
             var local = GetLocalToken(new SortedList { { "one", 1 }, { "two", 2 } });
