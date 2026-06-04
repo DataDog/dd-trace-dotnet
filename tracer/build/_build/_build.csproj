@@ -8,7 +8,7 @@
     <DefineConstants Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(DefineConstants);NUKE_NOTIFY</DefineConstants>
     <RootNamespace></RootNamespace>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <NoWarn>CS0649;CS0169;SA1652;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <NoWarn>CS0649;CS0169;SA1652;NU1901;NU1902;NU1903;NU1904;CS8632</NoWarn>
     <NukeRootDirectory>..\..\..</NukeRootDirectory>
     <NukeScriptDirectory>..\..</NukeScriptDirectory>
     <NukeExcludeDirectoryBuild>True</NukeExcludeDirectoryBuild>
@@ -63,6 +63,12 @@
   
   <ItemGroup>
     <AdditionalFiles Include="BannedSymbols.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared with the ConfigurationKeys source generator so the native config validation
+         (NativeConfigValidator) parses supported-configurations.yaml with the same reader. -->
+    <Compile Include="..\..\src\Datadog.Trace.SourceGenerators\Helpers\YamlReader.cs" Link="NativeValidation\YamlReader.cs" />
   </ItemGroup>
 
   <ItemGroup>

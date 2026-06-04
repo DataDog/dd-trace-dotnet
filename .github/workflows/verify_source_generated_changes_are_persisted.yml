@@ -25,6 +25,9 @@ jobs:
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 Restore CompileManagedSrc
 
+      - name: "Validate native configurations are registered"
+        run: .\tracer\build.ps1 ValidateNativeConfigurations
+
       - name: "Verify no changes in generated files"
         run: |
           git diff --quiet -- .\tracer\src\Datadog.Trace\Generated .\tracer\src\Datadog.Tracer.Native\Generated .\tracer\build\supported_calltargets.g.json

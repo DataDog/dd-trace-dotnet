@@ -321,4 +321,12 @@ partial class Build
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
         });
+
+    Target ValidateNativeConfigurations => _ => _
+        .Description("Validates that every DD_* environment variable read by native C++ code is registered in supported-configurations.yaml with native scope")
+        .Executes(() =>
+        {
+            var supportedConfigurationsPath = TracerDirectory / "src" / "Datadog.Trace" / "Configuration" / "supported-configurations.yaml";
+            new NativeConfigValidator().Validate(RootDirectory, supportedConfigurationsPath);
+        });
 }
