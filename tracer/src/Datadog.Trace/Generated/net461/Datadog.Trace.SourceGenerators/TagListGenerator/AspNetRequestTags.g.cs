@@ -58,31 +58,31 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "_dd.code_origin.type":
+                case "_dd.code_origin.type": 
                     CodeOriginType = value;
                     break;
-                case "_dd.code_origin.frames.0.index":
+                case "_dd.code_origin.frames.0.index": 
                     CodeOriginFrameIndex = value;
                     break;
-                case "_dd.code_origin.frames.0.method":
+                case "_dd.code_origin.frames.0.method": 
                     CodeOriginFrameMethod = value;
                     break;
-                case "_dd.code_origin.frames.0.type":
+                case "_dd.code_origin.frames.0.type": 
                     CodeOriginFrameType = value;
                     break;
-                case "_dd.code_origin.frames.0.file":
+                case "_dd.code_origin.frames.0.file": 
                     CodeOriginFrameFile = value;
                     break;
-                case "_dd.code_origin.frames.0.line":
+                case "_dd.code_origin.frames.0.line": 
                     CodeOriginFrameLine = value;
                     break;
-                case "_dd.code_origin.frames.0.column":
+                case "_dd.code_origin.frames.0.column": 
                     CodeOriginFrameColumn = value;
                     break;
-                case "component":
+                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AspNetRequestTags));
                     break;
-                default:
+                default: 
                     base.SetTag(key, value);
                     break;
             }

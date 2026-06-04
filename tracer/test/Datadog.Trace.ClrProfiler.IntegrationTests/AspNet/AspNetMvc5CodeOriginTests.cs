@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+#nullable enable
 
 using System.Linq;
 using System.Net;
