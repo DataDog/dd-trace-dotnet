@@ -12,8 +12,8 @@ namespace Datadog.Trace.Processors
         // MaxMetaKeyLen the maximum length of metadata key
         internal const int MaxMetaKeyLen = 200;
 
-        // MaxMetaValLen the maximum length of metadata value
-        internal const int MaxMetaValLen = 5000;
+        // MaxMetaValLen the maximum length of metadata value minus the elipsis length
+        internal const int MaxMetaValLen = 5000 - 3;
 
         // MaxMetricsKeyLen the maximum length of a metric name key
         internal const int MaxMetricsKeyLen = MaxMetaKeyLen;
