@@ -35,41 +35,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> TestData
             => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
-               select new object[] { behaviour, metadataSchemaVersion, dataPipelineEnabled };
+               select new object[] { behaviour, metadataSchemaVersion };
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Flaky("Named pipes is flaky", maxRetries: 3)]
-        public Task NamedPipes_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
+        public Task NamedPipes_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion)
         {
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
-            return SubmitsTraces(behaviour, TestTransports.WindowsNamedPipe, metadataSchemaVersion, dataPipelineEnabled);
+            return SubmitsTraces(behaviour, TestTransports.WindowsNamedPipe, metadataSchemaVersion);
         }
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task Tcp_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
-            => SubmitsTraces(behaviour, TestTransports.Tcp, metadataSchemaVersion, dataPipelineEnabled);
+        public Task Tcp_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion)
+            => SubmitsTraces(behaviour, TestTransports.Tcp, metadataSchemaVersion);
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task Uds_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion, bool dataPipelineEnabled)
-            => SubmitsTraces(behaviour, TestTransports.Uds, metadataSchemaVersion, dataPipelineEnabled);
+        public Task Uds_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion)
+            => SubmitsTraces(behaviour, TestTransports.Uds, metadataSchemaVersion);
 #endif
 
-        private async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
+        private async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             EnvironmentHelper.EnableTransport(transportType);
-            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
 
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: EnvironmentHelper.CanUseStatsD(transportType));
             var customResponse = behaviour switch

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -32,7 +34,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     /// </summary>
-    internal sealed class AdaptiveSampler : IAdaptiveSampler, IDisposable
+    internal sealed class AdaptiveSampler : IAdaptiveSampler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
 
@@ -65,15 +67,16 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private int _countsSlotIndex;
         private Counts[] _countsSlots;
 
-        private Timer _timer;
-        private Action _rollWindowCallback;
+        private Timer? _timer;
+        private Action? _rollWindowCallback;
+        private int _disposeState;
 
         internal AdaptiveSampler(
             TimeSpan windowDuration,
             int samplesPerWindow,
             int averageLookback,
             int budgetLookback,
-            Action rollWindowCallback)
+            Action? rollWindowCallback)
         {
             _timer = new Timer(state => RollWindow(), state: null, windowDuration, windowDuration);
             _totalCountRunningAverage = 0;
@@ -141,7 +144,13 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         public void Dispose()
         {
-            _timer?.Dispose();
+            if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
+            {
+                return;
+            }
+
+            Interlocked.Exchange(ref _timer, null)?.Dispose();
+            _rollWindowCallback = null;
         }
 
         private double ComputeIntervalAlpha(int lookback)
@@ -172,7 +181,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
         {
             try
             {
-                Action rollWindowCallback;
+                if (Volatile.Read(ref _disposeState) != 0)
+                {
+                    return;
+                }
+
+                Action? rollWindowCallback;
 
                 lock (_maintenanceLock)
                 {

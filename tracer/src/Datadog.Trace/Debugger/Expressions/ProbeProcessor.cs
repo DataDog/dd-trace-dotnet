@@ -26,8 +26,12 @@ namespace Datadog.Trace.Debugger.Expressions
     internal sealed class ProbeProcessor : IProbeProcessor
     {
         private const string DynamicPrefix = "_dd.di.";
+        internal const int EvaluationErrorSnapshotRateLimitSeconds = 5 * 60;
+
+        private static readonly long EvaluationErrorSnapshotRateLimitTicks = Stopwatch.Frequency * EvaluationErrorSnapshotRateLimitSeconds;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
         private volatile ProbeProcessorState _state;
 
         /// <summary>
@@ -37,7 +41,13 @@ namespace Datadog.Trace.Debugger.Expressions
         /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
+            : this(probe, DebuggerGlobalRateLimiter.Instance)
         {
+        }
+
+        internal ProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
+        {
+            _globalRateLimiter = globalRateLimiter ?? throw new ArgumentNullException(nameof(globalRateLimiter));
             _state = ProbeProcessorState.Create(probe);
         }
 
@@ -96,10 +106,20 @@ namespace Datadog.Trace.Debugger.Expressions
             return result.Count == 0 ? null : result.ToArray();
         }
 
+        private static bool ShouldRefreshMemoryPressureBeforeCapture(MethodState methodState)
+        {
+            return methodState is MethodState.BeginLine
+                or MethodState.BeginLineAsync
+                or MethodState.EntryStart
+                or MethodState.EntryAsync
+                or MethodState.ExitStart
+                or MethodState.ExitStartAsync;
+        }
+
         public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             var state = _state;
-            if (!state.HasCondition && !probeData.Sampler.Sample())
+            if (!state.HasCondition && !SamplePayload(state.ProbeInfo, probeData.Sampler))
             {
                 snapshotCreator = null;
                 return false;
@@ -107,6 +127,17 @@ namespace Datadog.Trace.Debugger.Expressions
 
             snapshotCreator = new DebuggerSnapshotCreator(state);
             return true;
+        }
+
+        private bool SamplePayload(in ProbeInfo probeInfo, IAdaptiveSampler sampler)
+        {
+            // Global-first matches Java; it can affect per-probe fairness and may be improved later.
+            if (probeInfo.ProbeType == ProbeType.Snapshot && !_globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId))
+            {
+                return false;
+            }
+
+            return sampler.Sample();
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -117,8 +148,13 @@ namespace Datadog.Trace.Debugger.Expressions
             }
 
             var probeInfo = state.ProbeInfo;
+            var dynamicInstrumentation = DebuggerManager.Instance.DynamicInstrumentation;
+            if (dynamicInstrumentation is not null && ShouldRefreshMemoryPressureBeforeCapture(info.MethodState))
+            {
+                dynamicInstrumentation.RefreshMemoryPressureIfStale();
+            }
 
-            if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
+            if (dynamicInstrumentation?.IsInitialized == false)
             {
                 Log.Debug("Stop processing probe {ID} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probeData.ProbeId);
                 snapshotCreator.Stop();
@@ -354,14 +390,14 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.HasError)
             {
-                // Probes with conditions defer sampling until after the condition is evaluated,
-                // so evaluation errors must honor that same sampler before emitting a snapshot.
-                if (probeInfo.HasCondition && !sampler.Sample())
+                // Condition evaluation errors bypass the per-probe sampler and global limiter.
+                // A hard one-per-5-min cap guarantees at least one diagnostic snapshot per window without flooding.
+                if (probeInfo.HasCondition && !state.ShouldSampleEvaluationErrorSnapshot())
                 {
                     shouldStopCapture = true;
                 }
 
-                if (!shouldStopCapture)
+                if (!shouldStopCapture && !evaluationResult.HasConditionError)
                 {
                     EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
                 }
@@ -371,7 +407,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Condition != null && // i.e. not a metric, span probe, or span decoration
                 (evaluationResult.Condition is false ||
-                !sampler.Sample()))
+                !SamplePayload(in probeInfo, sampler)))
             {
                 // if the expression evaluated to false, or there is a rate limit, stop capture
                 shouldStopCapture = true;
@@ -693,6 +729,7 @@ namespace Datadog.Trace.Debugger.Expressions
         internal sealed class ProbeProcessorState
         {
             private ProbeExpressionEvaluator? _evaluator;
+            private long _lastEvaluationErrorSnapshotTimestamp = -EvaluationErrorSnapshotRateLimitTicks;
 
             private ProbeProcessorState(
                 ProbeInfo probeInfo,
@@ -824,6 +861,18 @@ namespace Datadog.Trace.Debugger.Expressions
                 var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions);
                 var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, null);
                 return previousEvaluator ?? newEvaluator;
+            }
+
+            internal bool ShouldSampleEvaluationErrorSnapshot()
+            {
+                var timestamp = Stopwatch.GetTimestamp();
+                var lastTimestamp = Volatile.Read(ref _lastEvaluationErrorSnapshotTimestamp);
+                if (timestamp - lastTimestamp < EvaluationErrorSnapshotRateLimitTicks)
+                {
+                    return false;
+                }
+
+                return Interlocked.CompareExchange(ref _lastEvaluationErrorSnapshotTimestamp, timestamp, lastTimestamp) == lastTimestamp;
             }
 
             internal void LogEvaluationState(MethodScopeMembers methodScopeMembers)

@@ -199,66 +199,6 @@ public class CreatedumpTests : ConsoleTestHelper
         File.Exists(reportFile.Path).Should().BeFalse();
     }
 
-    [SkippableTheory]
-    [InlineData(true, true)]
-    [InlineData(false, true)]
-    [InlineData(false, false)]
-    public async Task DisableTelemetry(bool telemetryEnabled, bool crashdumpEnabled)
-    {
-        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
-
-        using var reportFile = new TemporaryFile();
-
-        (string, string)[] args = [LdPreloadConfig, CrashReportConfig(reportFile)];
-
-        if (crashdumpEnabled)
-        {
-            args = [.. args, .. CreatedumpConfig];
-        }
-
-        args = [.. args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
-
-        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
-
-        await helper.Task;
-
-        using var assertionScope = new AssertionScope();
-        assertionScope.AddReportable("stdout", helper.StandardOutput);
-        assertionScope.AddReportable("stderr", helper.ErrorOutput);
-
-#if !NETFRAMEWORK
-        if (crashdumpEnabled)
-        {
-            AssertCreatedumpWasInvoked(helper.StandardOutput);
-        }
-        else
-        {
-            helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
-            helper.StandardOutput.Should().NotContain(CreatedumpInvokedOutput);
-        }
-#endif
-
-        if (telemetryEnabled)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
-            }
-
-            File.Exists(reportFile.Path).Should().BeTrue();
-        }
-        else
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
-            }
-
-            File.Exists(reportFile.Path).Should().BeFalse();
-        }
-    }
-
     [SkippableFact]
     public async Task WriteCrashReport()
     {

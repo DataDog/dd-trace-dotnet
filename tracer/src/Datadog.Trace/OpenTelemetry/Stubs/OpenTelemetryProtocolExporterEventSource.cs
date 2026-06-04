@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-#if NETCOREAPP3_1_OR_GREATER
 
 using System;
 
@@ -88,4 +87,3 @@ namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Imp
         }
     }
 }
-#endif

@@ -1,4 +1,4 @@
-echo 'Should be run from <github tracer root>\shared\bin\monitoring-home'
+echo 'Should be run from <github tracer root>\artifacts\monitoring-home'
 
 # Find the script location
 $path = $MyInvocation.MyCommand.Path

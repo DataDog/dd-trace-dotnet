@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
-using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -43,18 +42,15 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             _output = output;
         }
 
-        // Some very, very approximate tests here :)
-
         [Fact]
-        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public async Task WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatchOnDispose()
         {
-            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            await using var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
             sink.Start();
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
-            await sink.DisposeAsync();
+            await sink.RunFinalFlushAsync();
 
             sink.Batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
@@ -62,17 +58,16 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         }
 
         [Fact]
-        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
         public async Task WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatch()
         {
-            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            await using var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
             sink.Start();
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
-            var batches = await WaitForBatchesAsync(sink);
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            batches.Count.Should().Be(1);
+            sink.Batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
             batch.Should().BeEquivalentTo(new List<DirectSubmissionLogEvent> { evt });
         }
@@ -86,109 +81,101 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             await sink.DisposeAsync();
             sink.EnqueueLog(evt);
 
-            // slightly arbitrary time to wait
-            await Task.Delay(1_000);
+            await sink.RunOneIterationAsync(noDelay: true);
+
             sink.Batches.Should().BeEmpty();
         }
 
         [Fact]
         public async Task AfterMultipleFailures_SinkIsPermanentlyDisabled()
         {
-            using var mutex = new ManualResetEventSlim();
-            var emitResults = Enumerable.Repeat(false, FailuresBeforeCircuitBreak);
-            var sink = new InMemoryBatchedSink(
+            var disableActionCalled = false;
+            var emitResults = Enumerable.Repeat(false, FailuresBeforeCircuitBreak).ToArray();
+            await using var sink = new InMemoryBatchedSink(
                 DefaultBatchingOptions,
-                () => mutex.Set(),
-                emitResults.ToArray());
+                () => disableActionCalled = true,
+                emitResults);
             sink.Start();
             var evt = new TestEvent("Some event");
 
+            CircuitStatus lastStatus = default;
             for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
             {
                 sink.EnqueueLog(evt);
-                await WaitForBatchesAsync(sink, batchCount: i + 1);
+                lastStatus = await sink.RunOneIterationAsync(noDelay: true);
             }
 
-            mutex.Wait(30_000).Should().BeTrue($"Sink should be disabled after {FailuresBeforeCircuitBreak} faults");
+            lastStatus.Should().Be(CircuitStatus.PermanentlyBroken);
+            disableActionCalled.Should().BeTrue();
+            sink.Batches.Count.Should().Be(FailuresBeforeCircuitBreak);
         }
 
         [Fact]
         public async Task SinkDoesNotStartEmittingUntilStartIsCalled()
         {
-            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            // This is the one test that needs the real background loop, because it's
+            // verifying the gate at the top of FlushBuffersTaskLoopAsync.
+            await using var sink = new InMemoryBatchedSink(DefaultBatchingOptions, startBackgroundLoop: true);
             var evt = new TestEvent("Some event");
             sink.EnqueueLog(evt);
 
-            await Task.Delay(5_000);
+            // FlushAsync queues a TCS that an iteration sets. Without Start(), the loop is
+            // parked at the _tracerInitialized gate and the TCS never completes.
+            // In overloaded CI, this doesn't _prove_ that it waits, but if it fails, it proves it _doesn't_.
+            var pendingFlush = sink.FlushAsync();
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(3));
+            var winner = await Task.WhenAny(pendingFlush, timeoutTask);
+            winner.Should().Be(timeoutTask, "sink should not flush before Start");
             sink.Batches.Should().BeEmpty();
 
             sink.Start();
-            var batches = await WaitForBatchesAsync(sink);
-            batches.Should().ContainSingle();
+            await pendingFlush; // gate released; pending flush completes
+            sink.Batches.Should().ContainSingle();
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task AfterInitialSuccessThenMultipleFailures_SinkIsTemporarilyDisabled()
         {
             var emitResults = new[] { true }
-               .Concat(Enumerable.Repeat(false, FailuresBeforeCircuitBreak));
+                .Concat(Enumerable.Repeat(false, FailuresBeforeCircuitBreak))
+                .ToArray();
 
-            var sink = new InMemoryBatchedSink(
-                DefaultBatchingOptions,
-                emitResults: emitResults.ToArray());
+            await using var sink = new InMemoryBatchedSink(DefaultBatchingOptions, emitResults: emitResults);
             sink.Start();
             var evt = new TestEvent("Some event");
 
-            // Initial success ensures we don't permanently disable the sink
-            _output.WriteLine("Queueing first event and waiting for sink");
+            // Initial success ensures the circuit becomes Broken (not PermanentlyBroken) after the failures.
             sink.EnqueueLog(evt);
-            var batches = await WaitForBatchesAsync(sink, batchCount: 1);
-            _output.WriteLine($"Found {batches.Count} batches");
+            var status = await sink.RunOneIterationAsync(noDelay: true);
+            status.Should().Be(CircuitStatus.Closed);
+            sink.Batches.Count.Should().Be(1);
+            _output.WriteLine($"After initial success: status={status}, batches={sink.Batches.Count}");
 
-            // There's a race condition here which is tricky to avoid - after the batch is emitted,
-            // there's a short delay before the result is processed and logging is disabled. By
-            // hooking into the sink DelayEvents, we can make sure the result is processed _before_
-            // we add the next event
-            using var mutex = new ManualResetEventSlim();
-            sink.DelayEventAction = x =>
+            // The 10th failure transitions the circuit to Broken.
+            for (var i = 1; i <= FailuresBeforeCircuitBreak; i++)
             {
-                _output.WriteLine($"Flushing delayed for {x} seconds");
-                mutex.Set();
-            };
-
-            // Put the sink in a broken status (temporary)
-            for (var i = 1; i < FailuresBeforeCircuitBreak; i++)
-            {
-                _output.WriteLine($"Queueing broken event {i}");
-                mutex.Reset();
                 sink.EnqueueLog(evt);
-                mutex.Wait(TimeSpan.FromSeconds(1));
-                batches = await WaitForBatchesAsync(sink, batchCount: i + 1); // +1 because of initial success event
-                _output.WriteLine($"Found {batches.Count} batches");
+                status = await sink.RunOneIterationAsync(noDelay: true);
+                _output.WriteLine($"Failure {i}: status={status}, batches={sink.Batches.Count}");
+                sink.Batches.Count.Should().Be(i + 1);
+                var expected = i < FailuresBeforeCircuitBreak ? CircuitStatus.Closed : CircuitStatus.Broken;
+                status.Should().Be(expected);
             }
 
-            _output.WriteLine($"Queueing broken event {FailuresBeforeCircuitBreak} to break the circuit");
-            mutex.Reset();
-            sink.EnqueueLog(evt);
-            mutex.Wait(TimeSpan.FromSeconds(1));
-            batches = await WaitForBatchesAsync(sink, batchCount: FailuresBeforeCircuitBreak + 1);
-            _output.WriteLine($"Found {batches.Count} batches (should now be broken)");
-
-            // This should be ignored if the circuit breaker is still broken
+            // While Broken, _enqueueLogEnabled is false — this enqueue must be dropped.
             sink.EnqueueLog(evt);
 
-            // wait for 2 flushes to be sure
-            await sink.FlushAsync();
-            await sink.FlushAsync();
+            // The next iteration sees an empty queue, MarkSkipped transitions Broken -> HalfBroken.
+            status = await sink.RunOneIterationAsync(noDelay: true);
+            status.Should().Be(CircuitStatus.HalfBroken);
+            sink.Batches.Count.Should().Be(FailuresBeforeCircuitBreak + 1); // dropped enqueue confirmed
 
-            // ensure we still _don't_ have any more batches
-            sink.Batches.Count.Should().Be(FailuresBeforeCircuitBreak + 1);
-
-            // queue another log now circuit is partially open
-            _output.WriteLine($"Queueing event in partially open sink");
+            // In HalfBroken, enqueues are accepted again; EmitBatch returns true (past emitResults),
+            // MarkSuccess transitions HalfBroken -> Closed.
             sink.EnqueueLog(evt);
-            batches = await WaitForBatchesAsync(sink, batchCount: FailuresBeforeCircuitBreak + 2);
-            _output.WriteLine($"Found {batches.Count} batches");
+            status = await sink.RunOneIterationAsync(noDelay: true);
+            status.Should().Be(CircuitStatus.Closed);
+            sink.Batches.Count.Should().Be(FailuresBeforeCircuitBreak + 2);
         }
 
         [Fact]
@@ -198,31 +185,29 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var evt = new TestEvent("Some event");
             sink.EnqueueLog(evt);
             sink.Start();
-            (await WaitForBatchesAsync(sink)).Should().HaveCount(1);
+            await sink.RunOneIterationAsync(noDelay: true);
+            sink.Batches.Should().ContainSingle();
 
             sink.CloseImmediately();
-            await Task.Delay(500);
             sink.EnqueueLog(evt);
+            await sink.RunOneIterationAsync(noDelay: true);
+            sink.Batches.Should().ContainSingle();
 
-            await Task.Delay(2_000);
-            sink.Batches.Should().HaveCountLessOrEqualTo(1);
             await sink.DisposeAsync();
-
-            await Task.Delay(2_000);
-            sink.Batches.Should().HaveCountLessOrEqualTo(1);
+            sink.Batches.Should().ContainSingle();
         }
 
         [Fact]
         public void ClosingImmediatelyCallsDisableSinkAction()
         {
-            using var mutex = new ManualResetEventSlim();
-            var sink = new InMemoryBatchedSink(DefaultBatchingOptions, () => mutex.Set());
+            var disableActionCallCount = 0;
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions, () => Interlocked.Increment(ref disableActionCallCount));
             var evt = new TestEvent("Some event");
             sink.EnqueueLog(evt);
             sink.Start();
 
             sink.CloseImmediately();
-            mutex.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue();
+            disableActionCallCount.Should().Be(1);
         }
 
         [Fact]
@@ -235,21 +220,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.CloseImmediately();
             sink.Start();
 
-            await Task.Delay(5_000);
+            await sink.RunOneIterationAsync(noDelay: true);
             sink.Batches.Should().BeEmpty();
-        }
-
-        private static async Task<ConcurrentStack<IList<DirectSubmissionLogEvent>>> WaitForBatchesAsync(InMemoryBatchedSink pbs, int batchCount = 1)
-        {
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            var batches = pbs.Batches;
-            while (batches.Count < batchCount && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(TinyWait);
-                batches = pbs.Batches;
-            }
-
-            return batches;
         }
 
         internal class TestEvent : DirectSubmissionLogEvent
@@ -275,15 +247,14 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             public InMemoryBatchedSink(
                 BatchingSinkOptions sinkOptions,
                 Action disableSinkAction = null,
-                bool[] emitResults = null)
-                : base(sinkOptions, disableSinkAction)
+                bool[] emitResults = null,
+                bool startBackgroundLoop = false)
+                : base(sinkOptions, disableSinkAction, startBackgroundLoop)
             {
                 _emitResults = emitResults ?? Array.Empty<bool>();
             }
 
             public ConcurrentStack<IList<DirectSubmissionLogEvent>> Batches { get; } = new();
-
-            public Action<TimeSpan> DelayEventAction { get; set; } = _ => { };
 
             protected override Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
@@ -302,7 +273,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             protected override void DelayEvents(TimeSpan delayUntilNextFlush)
             {
-                DelayEventAction(delayUntilNextFlush);
             }
         }
     }

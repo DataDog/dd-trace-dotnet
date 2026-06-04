@@ -319,7 +319,7 @@ void TimerCreateCpuProfiler::RegisterThreadImpl(ManagedThreadInfo* threadInfo)
     clockid_t clock = ((~tid) << 3) | 6; // CPUCLOCK_SCHED | CPUCLOCK_PERTHREAD_MASK thread_cpu_clock(tid);
     if (syscall(__NR_timer_create, clock, &sev, &timerId) < 0)
     {
-        Log::Error("Call to timer_create failed for thread ", tid);
+        Log::Error("Call to timer_create failed for thread ", tid, ". Error: ", strerror(errno));
         return;
     }
 

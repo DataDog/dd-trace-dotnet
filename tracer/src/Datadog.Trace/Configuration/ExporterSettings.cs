@@ -112,8 +112,7 @@ namespace Datadog.Trace.Configuration
             {
                 TracesEncoding = otlpTraceSettings.OtlpProtocol switch
                 {
-                    OtlpProtocol.Grpc => TracesEncoding.DatadogV0_4,
-                    OtlpProtocol.HttpProtobuf => TracesEncoding.DatadogV0_4,
+                    OtlpProtocol.HttpProtobuf => TracesEncoding.OtlpProtobuf,
                     OtlpProtocol.HttpJson => TracesEncoding.OtlpJson,
                     _ => TracesEncoding.DatadogV0_4,
                 };

@@ -42,18 +42,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> Data =>
             from transport in Transports
-            from dataPipelineEnabled in new[] { false } // TODO: re-enable datapipeline tests - Currently it causes too much flake with duplicate spans
-            select new object[] { transport, dataPipelineEnabled };
+            select new object[] { transport };
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Flaky("Named pipes is flaky", maxRetries: 3)]
-        public async Task TransportsWorkCorrectly(TestTransports transport, bool dataPipelineEnabled)
+        public async Task TransportsWorkCorrectly(TestTransports transport)
         {
             var transportType = TracesTransportTypeFromTestTransport(transport);
-            await RunTest(transportType, dataPipelineEnabled);
+            await RunTest(transportType);
         }
 
         private TracesTransportType TracesTransportTypeFromTestTransport(TestTransports transport)
@@ -67,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
         }
 
-        private async Task RunTest(TracesTransportType transportType, bool dataPipelineEnabled)
+        private async Task RunTest(TracesTransportType transportType)
         {
             const int expectedSpanCount = 1;
 
@@ -76,7 +75,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
-            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
             var transportTypeGeneral = GetTransport(transportType);
             EnvironmentHelper.EnableTransport(transportTypeGeneral);
 

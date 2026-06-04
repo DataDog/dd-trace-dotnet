@@ -4,6 +4,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <LangVersion>latest</LangVersion>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <!-- Normalize so that downstream tools that string-compare paths (e.g. GenerateBundle's dedupe) don't trip on the `tracer\..\` segment -->
+    <ArtifactsPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\artifacts'))</ArtifactsPath>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>

@@ -273,12 +273,14 @@ internal sealed class ProbeExpressionEvaluator
             if (compiledExpression.Errors != null)
             {
                 (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                result.HasConditionError = true;
             }
         }
         catch (Exception e)
         {
             HandleException(ref result, compiledExpression, e);
             result.Condition = true;
+            result.HasConditionError = true;
         }
     }
 

@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
@@ -167,6 +168,95 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ConditionEvaluationErrors_OmitMethodCaptureData()
+        {
+            var captureLimitInfo = CreateCaptureLimitInfo();
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: true,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: true,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var method = typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
+            var entryStartCapture = new CaptureInfo<Type>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryStart,
+                method: method,
+                type: typeof(DebuggerSnapshotCreatorTests),
+                invocationTargetType: typeof(DebuggerSnapshotCreatorTests),
+                localsCount: 1,
+                argumentsCount: 1);
+
+            snapshotCreator.DefineSnapshotBehavior(ref entryStartCapture, EvaluateAt.Entry, hasCondition: true);
+            snapshotCreator.AddScopeMember("arg", typeof(string), "argument-value", ScopeMemberKind.Argument);
+            snapshotCreator.AddScopeMember("local", typeof(string), "local-value", ScopeMemberKind.Local);
+
+            var entryEndCapture = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryEnd,
+                value: new object(),
+                method: method,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This,
+                hasLocalOrArgument: true);
+
+            Assert.Equal(CaptureBehaviour.Evaluate, snapshotCreator.DefineSnapshotBehavior(ref entryEndCapture, EvaluateAt.Entry, hasCondition: true));
+
+            var evaluationResult = CreateConditionEvaluationErrorResult();
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            Assert.True(snapshotCreator.ProcessDelayedSnapshot(ref entryEndCapture, hasCondition: true));
+            snapshotCreator.CaptureEntryMethodEndMarker(entryEndCapture.Value, entryEndCapture.Type);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref entryEndCapture));
+
+            Assert.Equal("condition failed", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+            Assert.False(CapturesContainData(snapshot.SelectToken("debugger.snapshot.captures")));
+            Assert.NotNull(snapshot.SelectToken("debugger.snapshot.stack"));
+        }
+
+        [Fact]
+        public void ConditionEvaluationErrors_OmitLineCaptureData()
+        {
+            var captureLimitInfo = CreateCaptureLimitInfo();
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: true,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Line,
+                hasCondition: true,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var method = typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
+            var beginLineCapture = CreateLineCaptureInfo(MethodState.BeginLine, method);
+
+            snapshotCreator.DefineSnapshotBehavior(ref beginLineCapture, EvaluateAt.Entry, hasCondition: true);
+            snapshotCreator.AddScopeMember("arg", typeof(string), "argument-value", ScopeMemberKind.Argument);
+            snapshotCreator.AddScopeMember("local", typeof(string), "local-value", ScopeMemberKind.Local);
+
+            var endLineCapture = CreateLineCaptureInfo(MethodState.EndLine, method);
+
+            Assert.Equal(CaptureBehaviour.Evaluate, snapshotCreator.DefineSnapshotBehavior(ref endLineCapture, EvaluateAt.Entry, hasCondition: true));
+
+            var evaluationResult = CreateConditionEvaluationErrorResult();
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            Assert.True(snapshotCreator.ProcessDelayedSnapshot(ref endLineCapture, hasCondition: true));
+            snapshotCreator.CaptureEndLine(ref endLineCapture);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeLineSnapshot("probe-id", 1, ref endLineCapture));
+
+            Assert.Equal("condition failed", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+            Assert.False(CapturesContainData(snapshot.SelectToken("debugger.snapshot.captures")));
+            Assert.NotNull(snapshot.SelectToken("debugger.snapshot.stack"));
+        }
+
+        [Fact]
         public void CaptureExpressions_AreWrittenWithoutArgumentsOrLocals()
         {
             var captureLimitInfo = new CaptureLimitInfo(
@@ -309,6 +399,86 @@ namespace Datadog.Trace.Tests.Debugger
 
         private static void DummyMethod()
         {
+        }
+
+        private static CaptureLimitInfo CreateCaptureLimitInfo()
+        {
+            return new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+        }
+
+        private static ExpressionEvaluationResult CreateConditionEvaluationErrorResult()
+        {
+            return new ExpressionEvaluationResult
+            {
+                Template = "template message",
+                HasConditionError = true,
+                Errors = [new EvaluationError { Expression = "definitelyDoesNotExist", Message = "condition failed" }]
+            };
+        }
+
+        private static CaptureInfo<object> CreateLineCaptureInfo(MethodState methodState, MethodInfo method)
+        {
+            return new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: methodState,
+                value: new object(),
+                method: method,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This,
+                localsCount: 1,
+                argumentsCount: 1,
+                lineCaptureInfo: new LineCaptureInfo(42, "test-file.cs"));
+        }
+
+        private static bool CapturesContainData(JToken captures)
+        {
+            if (captures is not JObject capturesObject)
+            {
+                return false;
+            }
+
+            foreach (var property in capturesObject.Properties())
+            {
+                if (property.Name == "lines" && property.Value is JObject lines)
+                {
+                    foreach (var lineProperty in lines.Properties())
+                    {
+                        if (CapturePointContainsData(lineProperty.Value))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else if (CapturePointContainsData(property.Value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CapturePointContainsData(JToken capturePoint)
+        {
+            if (capturePoint is not JObject capturePointObject)
+            {
+                return false;
+            }
+
+            return HasContent(capturePointObject["arguments"])
+                || HasContent(capturePointObject["locals"])
+                || HasContent(capturePointObject["staticFields"])
+                || HasContent(capturePointObject["throwable"]);
+        }
+
+        private static bool HasContent(JToken token)
+        {
+            return token != null && token.HasValues;
         }
 
         private class InfiniteRecursion

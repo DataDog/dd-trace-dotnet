@@ -95,7 +95,7 @@
 
   # Skip if benchmark project DLL not built.
   # Some projects (e.g., Benchmarks.OpenTelemetry.Api) are not built on PRs. See Build.cs GetBenchmarkProjectsWithSettings().
-  $dllPattern = "$env:CODE_SRC\tracer\test\benchmarks\$env:BENCHMARK_PROJECT\bin\Release\*\$env:BENCHMARK_PROJECT.dll"
+  $dllPattern = "$env:CODE_SRC\artifacts\bin\$env:BENCHMARK_PROJECT\release_*\$env:BENCHMARK_PROJECT.dll"
   if (-not (Test-Path $dllPattern)) {
     Write-Output "Skipping: $env:BENCHMARK_PROJECT not built (DLL not found matching $dllPattern)"
     exit 0
