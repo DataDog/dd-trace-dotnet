@@ -193,10 +193,12 @@ partial class Build
         Solution.GetProject(Projects.FleetInstallerTests),
     };
 
+    // DdTrace/DdDotnet integration tests are looked up in FullSolution because they live outside
+    // Build.g.sln (along with the rest of the Tools.Runner / Tools.dd_dotnet families).
     Project[] ClrProfilerIntegrationTests
         => IsOsx
-               ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
-               : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
+               ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), FullSolution.GetProject(Projects.DdTraceIntegrationTests) }
+               : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), FullSolution.GetProject(Projects.DdTraceIntegrationTests), FullSolution.GetProject(Projects.DdDotnetIntegrationTests) };
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
@@ -488,6 +490,8 @@ partial class Build
                 "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
+                "src/Datadog.Trace.Tools.dd_dotnet*/*.csproj",              // dd_dotnet + dd_dotnet.SourceGenerators; built by BuildDdDotnet (analyzer ref pulls in source generators)
+                "src/Datadog.Trace.Tools.Shared/*.csproj",                  // only consumed by tool projects (Runner / dd_dotnet)
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
@@ -733,13 +737,15 @@ partial class Build
         .Executes(() =>
         {
             // Copy the native files to all the test projects for simplicity.
-            var testProjects = Solution.GetProjects("*Tests")
+            // Use FullSolution so we also copy native files into tool test projects
+            // (Tools.Runner.Tests, Tools.dd_dotnet.Tests, etc.) which live outside Build.g.sln.
+            var testProjects = FullSolution.GetProjects("*Tests")
                                        .Where(p => p.SolutionFolder.Name == "test"
                                                &&  p.Path.ToString().EndsWith(".csproj")); // exclude native test projects
             foreach(var projectName in testProjects)
             {
                 Logger.Information("Copying native files for project {ProjectName}", projectName);
-                var project = Solution.GetProject(projectName);
+                var project = FullSolution.GetProject(projectName);
                 var testDir = project!.Directory;
                 var frameworks = project.GetTargetFrameworks();
 
@@ -1423,7 +1429,22 @@ partial class Build
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
+            // Tool unit tests (Tools.Runner.Tests, Tools.dd_dotnet.Tests) live outside Build.g.sln
+            // and aren't covered by the upstream solution-wide Restore. Build them with restore on demand.
+            var allTests = TracerDirectory.GlobFiles("test/**/*.Tests.csproj").ToList();
+            bool IsToolUnitTest(AbsolutePath path) =>
+                ((string)path).Contains(Projects.DdTrace + ".Tests")
+                || ((string)path).Contains(Projects.DdDotnet + ".Tests");
+
+            var toolTests = allTests.Where(IsToolUnitTest).ToList();
+            var otherTests = allTests.Where(p => !IsToolUnitTest(p)).ToList();
+
+            if (toolTests.Count > 0)
+            {
+                DotnetBuild(toolTests, noRestore: false, noDependencies: false);
+            }
+
+            DotnetBuild(otherTests);
         });
 
     Target RunManagedUnitTests => _ => _
@@ -1432,8 +1453,10 @@ partial class Build
         .DependsOn(CleanTestLogs)
         .Executes(() =>
         {
+            // Use FullSolution: tool unit tests (Tools.Runner.Tests, Tools.dd_dotnet.Tests) live
+            // outside Build.g.sln and would resolve to null via Solution.GetProject(...).
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
-                .Select(x => Solution.GetProject(x))
+                .Select(x => FullSolution.GetProject(x))
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
@@ -1566,7 +1589,8 @@ partial class Build
             var projects = TracerDirectory
                     .GlobFiles("test/*.IntegrationTests/*.csproj")
                     .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
+                    // Tool integration test projects live outside Build.g.sln, so resolve via FullSolution.
+                    .Where(project => FullSolution.GetProject(project).GetTargetFrameworks().Contains(Framework));
 
             if (!IsWin)
             {
@@ -1574,7 +1598,24 @@ partial class Build
                                    .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
             }
 
-            DotnetBuild(projects, framework: Framework, noRestore: IsWin);
+            // Tool integration tests (DdTrace/DdDotnet) live outside Build.g.sln, so their packages
+            // aren't in the upstream solution-wide restore. Build them with restore enabled.
+            // The other integration tests keep the existing perf optimisation (noRestore on Windows
+            // where the build-stage Restore has already populated the cache).
+            bool IsToolIntegrationTest(AbsolutePath path) =>
+                ((string)path).Contains(Projects.DdTraceIntegrationTests)
+                || ((string)path).Contains(Projects.DdDotnetIntegrationTests);
+
+            var allProjects = projects.ToList();
+            var toolTestProjects = allProjects.Where(IsToolIntegrationTest).ToList();
+            var otherProjects = allProjects.Where(p => !IsToolIntegrationTest(p)).ToList();
+
+            if (toolTestProjects.Count > 0)
+            {
+                DotnetBuild(toolTestProjects, framework: Framework, noRestore: false, noDependencies: false);
+            }
+
+            DotnetBuild(otherProjects, framework: Framework, noRestore: IsWin);
 
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
@@ -2143,7 +2184,9 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotnetBuild(Solution.GetProject(Projects.DdDotnetIntegrationTests), noRestore: false);
+            // noDependencies: false so transitive ProjectReferences (Tools.dd_dotnet, Tools.Shared)
+            // are built — they live outside Build.g.sln and weren't built by CompileManagedSrc.
+            DotnetBuild(FullSolution.GetProject(Projects.DdDotnetIntegrationTests), noRestore: false, noDependencies: false);
         });
 
     Target RunLinuxDdDotnetIntegrationTests => _ => _
@@ -2153,7 +2196,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
+            var project = FullSolution.GetProject(Projects.DdTraceIntegrationTests);
             EnsureResultsDirectory(project);
 
             try
@@ -2208,7 +2251,8 @@ partial class Build
          .After(InstallDdTraceTool)
          .Executes(() =>
           {
-              DotnetBuild(Solution.GetProject(Projects.DdTraceArtifactsTests));
+              // DdTraceArtifactsTests is outside Build.g.sln, so restore on demand.
+              DotnetBuild(FullSolution.GetProject(Projects.DdTraceArtifactsTests), noRestore: false, noDependencies: false);
           });
 
     Target BuildDdDotnetArtifactTests => _ => _
@@ -2217,7 +2261,8 @@ partial class Build
      .Requires(() => Framework)
      .Executes(() =>
      {
-         DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests), Framework);
+         // DdDotnetArtifactsTests is outside Build.g.sln, so restore on demand.
+         DotnetBuild(FullSolution.GetProject(Projects.DdDotnetArtifactsTests), Framework, noRestore: false, noDependencies: false);
 
          // Compile the required samples
          var sampleProjects = new List<AbsolutePath>
@@ -2252,7 +2297,7 @@ partial class Build
        .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var project = Solution.GetProject(Projects.DdTraceArtifactsTests);
+            var project = FullSolution.GetProject(Projects.DdTraceArtifactsTests);
 
             DotNetTest(config => config
                 .SetProjectFile(project)
@@ -2276,7 +2321,7 @@ partial class Build
            try
            {
                var isDebugRun = IsDebugRun();
-               var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
+               var project = FullSolution.GetProject(Projects.DdDotnetArtifactsTests);
 
                DotNetTest(config => config
                        .SetProjectFile(project)
