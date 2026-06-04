@@ -447,35 +447,46 @@ namespace Datadog.Trace.Tests.Debugger
 
         private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts = null)
         {
+            var ownsCancellationTokenSource = cts is null;
             cts ??= new CancellationTokenSource();
 
-            var serializeEnumerable = typeof(DebuggerSnapshotSerializer).GetMethod("SerializeEnumerable", BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.NotNull(serializeEnumerable);
+            try
+            {
+                var serializeEnumerable = typeof(DebuggerSnapshotSerializer).GetMethod("SerializeEnumerable", BindingFlags.NonPublic | BindingFlags.Static);
+                Assert.NotNull(serializeEnumerable);
 
-            var limitInfo = new CaptureLimitInfo(
-                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
-                MaxCollectionSize: maxCollectionSize,
-                MaxLength: DebuggerSettings.DefaultMaxStringLength,
-                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+                var limitInfo = new CaptureLimitInfo(
+                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                    MaxCollectionSize: maxCollectionSize,
+                    MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
 
-            using var stringWriter = new System.IO.StringWriter();
-            using var jsonWriter = new JsonTextWriter(stringWriter);
-            jsonWriter.WriteStartObject();
-            serializeEnumerable!.Invoke(
-                null,
-                [
-                    collection,
-                    collection.GetType(),
-                    jsonWriter,
-                    collection,
-                    0,
-                    cts,
-                    limitInfo,
-                    new HashSet<object>()
-                ]);
-            jsonWriter.WriteEndObject();
+                using var stringWriter = new System.IO.StringWriter();
+                using var jsonWriter = new JsonTextWriter(stringWriter);
+                jsonWriter.WriteStartObject();
+                serializeEnumerable!.Invoke(
+                    null,
+                    [
+                        collection,
+                        collection.GetType(),
+                        jsonWriter,
+                        collection,
+                        0,
+                        cts,
+                        limitInfo,
+                        new HashSet<object>()
+                    ]);
+                jsonWriter.WriteEndObject();
 
-            return JObject.Parse(stringWriter.ToString());
+                return JObject.Parse(stringWriter.ToString());
+            }
+            finally
+            {
+                if (ownsCancellationTokenSource)
+                {
+                    cts.Dispose();
+                }
+            }
         }
 
         private static CaptureLimitInfo CreateCaptureLimitInfo()
