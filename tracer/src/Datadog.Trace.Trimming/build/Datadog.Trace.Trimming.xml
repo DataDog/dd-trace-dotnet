@@ -405,6 +405,7 @@
       <type fullname="System.Net.Http.Headers.RetryConditionHeaderValue" />
       <type fullname="System.Net.Http.HttpClient" />
       <type fullname="System.Net.Http.HttpClientHandler" />
+      <type fullname="System.Net.Http.HttpCompletionOption" />
       <type fullname="System.Net.Http.HttpContent" />
       <type fullname="System.Net.Http.HttpMessageHandler" />
       <type fullname="System.Net.Http.HttpMessageInvoker" />

@@ -342,32 +342,37 @@ namespace Datadog.Trace.Debugger.Snapshots
             try
             {
                 var isDictionary = Redaction.IsSupportedDictionary(source);
+                var collectionCount = collection.Count;
                 jsonWriter.WritePropertyName("type");
                 jsonWriter.WriteValue(type.Name);
                 jsonWriter.WritePropertyName("size");
-                jsonWriter.WriteValue(collection.Count);
+                jsonWriter.WriteValue(collectionCount);
                 jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
                 arrayOpened = true;
 
-                var itemIndex = 0;
+                var enumeratedItemCount = 0;
+                var enumerationCompleted = false;
+                var stoppedByTimeout = false;
                 enumerator = enumerable.GetEnumerator();
 
-                bool hasNext = false;
-                while (itemIndex < limitInfo.MaxCollectionSize)
+                while (!enumerationCompleted && enumeratedItemCount < limitInfo.MaxCollectionSize)
                 {
                     if (cts.IsCancellationRequested)
                     {
+                        stoppedByTimeout = true;
                         break;
                     }
 
                     try
                     {
-                        hasNext = enumerator.MoveNext();
-                        if (!hasNext)
+                        if (!enumerator.MoveNext())
                         {
+                            enumerationCompleted = true;
                             break;
                         }
+
+                        enumeratedItemCount++;
                     }
                     catch (InvalidOperationException e)
                     {
@@ -411,24 +416,25 @@ namespace Datadog.Trace.Debugger.Snapshots
                             collectionsBeingSerialized);
                     }
 
-                    itemIndex++;
                     if (!serialized)
                     {
+                        if (cts.IsCancellationRequested)
+                        {
+                            stoppedByTimeout = true;
+                        }
+
                         break;
                     }
                 }
 
                 // Track the reason but don't write yet if we're still inside the array.
-                // Only report a timeout when we actually stopped short of serializing the collection,
-                // i.e. there are still elements we didn't get to (itemIndex < collection.Count). An
-                // empty (Count == 0) or fully-serialized collection must never be reported as a
-                // timeout, even if the serialization budget happened to elapse in the meantime on a
-                // slow/loaded machine.
-                if (cts.IsCancellationRequested && itemIndex < collection.Count)
+                if (stoppedByTimeout && enumeratedItemCount < collectionCount)
                 {
                     notCapturedReason = NotCapturedReason.timeout;
                 }
-                else if (hasNext && itemIndex >= limitInfo.MaxCollectionSize)
+                else if (!enumerationCompleted &&
+                         enumeratedItemCount >= limitInfo.MaxCollectionSize &&
+                         enumeratedItemCount < collectionCount)
                 {
                     notCapturedReason = NotCapturedReason.collectionSize;
                 }
