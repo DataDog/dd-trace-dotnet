@@ -15,8 +15,7 @@
 struct ServiceWrapper
 {
     ServiceWrapper(ServiceBase* service) : _service(service) {
-        auto started = _service->Start();
-        std::cerr << "[DIAG] Start() returned " << started << std::endl;
+        EXPECT_TRUE(_service->Start()) << "Failed to start " << _service->GetName();
     }
     ~ServiceWrapper() {
         auto stopped = _service->Stop();

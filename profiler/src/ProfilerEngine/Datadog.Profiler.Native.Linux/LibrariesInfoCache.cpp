@@ -74,11 +74,21 @@ bool LibrariesInfoCache::StartImpl()
     _worker = std::thread(&LibrariesInfoCache::Work, this, startEvent);
 
     // Wait for the thread to be fully started and the cache populated
-    // before setting s_instance and registering with libunwind. 2s timeout for CI.
-    if (!startEvent->Wait(2s))
+    // before setting s_instance and registering with libunwind.
+    // BuildSymbolCache (ARM64) parses ELF symbol tables for every loaded library,
+    // which can be slow under sanitizers — use a longer timeout in that case.
+#if defined(ARM64) && defined(__SANITIZE_ADDRESS__)
+    constexpr auto startTimeout = 10s;
+#else
+    constexpr auto startTimeout = 2s;
+#endif
+    if (!startEvent->Wait(startTimeout))
     {
         Log::Error("Failed to populate LibrariesInfoCache within timeout. "
                    "Not registering custom iterate_phdr_function with libunwind.");
+        _stopRequested = true;
+        _event.Set();
+        _worker.join();
         return false;
     }
 
