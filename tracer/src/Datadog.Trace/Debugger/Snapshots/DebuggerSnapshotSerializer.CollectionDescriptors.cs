@@ -10,6 +10,8 @@ using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
+#nullable enable
+
 namespace Datadog.Trace.Debugger.Snapshots
 {
     internal static partial class DebuggerSnapshotSerializer
@@ -186,22 +188,22 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             internal static readonly SupportedEnumerableDescriptor NotSupported = new(null, null, isDictionary: false);
 
-            private readonly Func<object, int> _getCount;
+            private readonly Func<object, int>? _getCount;
 
-            internal SupportedEnumerableDescriptor(Type runtimeType, Func<object, int> getCount, bool isDictionary)
+            internal SupportedEnumerableDescriptor(Type? runtimeType, Func<object, int>? getCount, bool isDictionary)
             {
                 RuntimeType = runtimeType;
                 _getCount = getCount;
                 IsDictionary = isDictionary;
             }
 
-            internal Type RuntimeType { get; }
+            internal Type? RuntimeType { get; }
 
             internal bool IsSupported => _getCount != null;
 
             internal bool IsDictionary { get; }
 
-            internal int GetCount(object source) => _getCount(source);
+            internal int GetCount(object source) => _getCount!(source);
         }
 
         private readonly struct DictionaryEntryDescriptor
@@ -226,9 +228,9 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             internal Type ValueType { get; }
 
-            internal object GetKey(object source) => _reflectionObject.GetValue(source, "Key");
+            internal object? GetKey(object source) => _reflectionObject.GetValue(source, "Key");
 
-            internal object GetValue(object source) => _reflectionObject.GetValue(source, "Value");
+            internal object? GetValue(object source) => _reflectionObject.GetValue(source, "Value");
         }
     }
 }
