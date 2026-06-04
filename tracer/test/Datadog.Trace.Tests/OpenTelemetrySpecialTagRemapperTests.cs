@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -141,6 +142,44 @@ namespace Datadog.Trace.Tests
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             Assert.Equal(expected, span.GetMetric(Tags.Analytics));
+        }
+
+        [Fact]
+        public void HttpStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelCompatibilityEnabled()
+        {
+            const string key = "http.status_code";
+            const int statusCode = 200;
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
+            var tagObjects = new Dictionary<string, object> { { key, statusCode } };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetryTraceCompatibilityEnabled: true);
+
+            span.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            span.GetMetric(key).Should().Be((double)statusCode);
+        }
+
+        [Fact]
+        public void HttpResponseStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelCompatibilityEnabled()
+        {
+            const string key = "http.response.status_code";
+            const int statusCode = 200;
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
+            var tagObjects = new Dictionary<string, object> { { key, statusCode } };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetryTraceCompatibilityEnabled: true);
+
+            span.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            span.GetMetric(key).Should().Be((double)statusCode);
         }
     }
 }

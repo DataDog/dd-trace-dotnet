@@ -113,6 +113,13 @@ internal static partial class ConfigurationKeys
         public const string InjectContextIntoStoredProceduresEnabled = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
 
         /// <summary>
+        /// Enables OpenTelemetry trace compatibility mode.
+        /// Default is <c>false</c> (disabled).
+        /// </summary>
+        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.OpenTelemetryTraceCompatibilityEnabled"/>
+        public const string OpenTelemetryTraceCompatibilityEnabled = "DD_TRACE_OTEL_COMPATIBILITY_ENABLED";
+
+        /// <summary>
         /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
         /// </summary>
         public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";

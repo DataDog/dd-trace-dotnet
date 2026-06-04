@@ -32,14 +32,14 @@ namespace Datadog.Trace.Activity
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
 
-        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
+        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span, bool openTelemetryTraceCompatibilityEnabled = false)
             where TInner : IActivity
         {
-            AgentConvertSpan(activity, span);
+            AgentConvertSpan(activity, span, openTelemetryTraceCompatibilityEnabled);
         }
 
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
-        private static void AgentConvertSpan<TInner>(TInner activity, Span span)
+        private static void AgentConvertSpan<TInner>(TInner activity, Span span, bool openTelemetryTraceCompatibilityEnabled)
             where TInner : IActivity
         {
             // This code path _should_ only be called from places where the span being closed was created with OTel tags
@@ -79,20 +79,20 @@ namespace Datadog.Trace.Activity
             {
                 if (activity5.HasTagObjects())
                 {
-                    var state = new OtelTagsEnumerationState(span);
+                    var state = new OtelTagsEnumerationState(span, openTelemetryTraceCompatibilityEnabled);
                     ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref s, kvp) =>
                     {
-                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetryTraceCompatibilityEnabled);
                         return true;
                     });
                 }
             }
             else if (activity.HasTags())
             {
-                var state = new OtelTagsEnumerationState(span);
+                var state = new OtelTagsEnumerationState(span, openTelemetryTraceCompatibilityEnabled);
                 ActivityEnumerationHelper.EnumerateTags(activity, ref state, static (ref s, kvp) =>
                 {
-                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetryTraceCompatibilityEnabled);
                     return true;
                 });
             }
@@ -377,7 +377,8 @@ namespace Datadog.Trace.Activity
         /// <param name="allowUnrolling">When enabled, enumerable values will be set as multiple indexed tags, e.g. (key[0], value0), (key[1], value1) </param>
         /// <param name="setKnownValues">When enabled, the key value can be used to set "standard" properties, such as <see cref="Span.OperationName"/>.
         /// When disabled, tags that would otherwise set these values are ignored. </param>
-        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true, bool setKnownValues = true)
+        /// <param name="remapOtelKeys">When enabled, remaps OpenTelemetry keys that we must special-case. This must be false when observing the OpenTelemetry semantic conventions. </param>
+        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true, bool setKnownValues = true, bool remapOtelKeys = true)
         {
             if (value is null)
             {
@@ -388,13 +389,13 @@ namespace Datadog.Trace.Activity
             switch (value)
             {
                 case char c:
-                    AgentSetOtlpTag(span, key, c.ToString());
+                    AgentSetOtlpTag(span, key, c.ToString(), remapOtelKeys: remapOtelKeys);
                     break;
                 case string s:
-                    AgentSetOtlpTag(span, key, s);
+                    AgentSetOtlpTag(span, key, s, remapOtelKeys: remapOtelKeys);
                     break;
                 case bool b:
-                    AgentSetOtlpTag(span, key, b ? "true" : "false");
+                    AgentSetOtlpTag(span, key, b ? "true" : "false", remapOtelKeys: remapOtelKeys);
                     break;
                 case byte b:
                     span.SetMetric(key, b);
@@ -410,7 +411,8 @@ namespace Datadog.Trace.Activity
                     break;
                 case int i: // TODO: Can't get here from OTEL API, test with Activity API
                     // special case where we need to remap "http.response.status_code" and the deprecated "http.status_code"
-                    if (key == "http.response.status_code" || key == "http.status_code")
+                    // If we opt-in to using the OTEL semantic conventions, we must not remap any tags.
+                    if (remapOtelKeys && (key == "http.response.status_code" || key == "http.status_code"))
                     {
                         if (setKnownValues)
                         {
@@ -445,32 +447,38 @@ namespace Datadog.Trace.Activity
                         foreach (var element in (enumerable))
                         {
                             // we are only supporting a single level of unrolling
-                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false);
+                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false, remapOtelKeys: remapOtelKeys);
                             index++;
                         }
 
                         if (index == 0)
                         {
                             // indicates that it was an empty array, we need to add the tag
-                            AgentSetOtlpTag(span, key, "[]");
+                            AgentSetOtlpTag(span, key, "[]", remapOtelKeys: remapOtelKeys);
                         }
                     }
                     else
                     {
                         // we've already unrolled once, don't do it again for IEnumerable values
-                        AgentSetOtlpTag(span, key, JsonHelper.SerializeObject(value));
+                        AgentSetOtlpTag(span, key, JsonHelper.SerializeObject(value), remapOtelKeys: remapOtelKeys);
                     }
 
                     break;
                 default:
-                    AgentSetOtlpTag(span, key, value.ToString());
+                    AgentSetOtlpTag(span, key, value.ToString(), remapOtelKeys: remapOtelKeys);
                     break;
             }
         }
 
         // See trace agent func setMetaOTLP: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L424
-        internal static void AgentSetOtlpTag(Span span, string key, string? value, bool setKnownValues = true)
+        internal static void AgentSetOtlpTag(Span span, string key, string? value, bool setKnownValues = true, bool remapOtelKeys = true)
         {
+            if (!remapOtelKeys)
+            {
+                span.SetTag(key, value);
+                return;
+            }
+
             switch (key)
             {
                 case "operation.name":
