@@ -116,11 +116,12 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         var configurations = new Dictionary<string, ConfigEntry>();
         var diagnostics = new List<DiagnosticInfo>();
 
+        // Validate every entry's scope and documentation, regardless of scope.
         foreach (var kvp in parsedData.Configurations)
         {
             var entry = kvp.Value;
 
-            // Validate scope: required, non-empty, and must contain only recognized tokens.
+            // Scope is required, non-empty, and must contain only recognized tokens.
             if (entry.Scope is null || entry.Scope.Length == 0)
             {
                 diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed, native, or managed, native.", DiagnosticSeverity.Error));
@@ -136,19 +137,20 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
                 }
             }
 
-            // Generate a C# constant only when scope includes "managed".
-            // native-only entries are registered for coverage tracking but have no C# constant.
-            var skipConstantGeneration = entry.Scope is null ||
-                                         !entry.Scope.Any(s => string.Equals(s, "managed", StringComparison.OrdinalIgnoreCase));
-
             // Documentation is mandatory for all configuration keys, including native-only ones.
             if (string.IsNullOrEmpty(entry.Documentation))
             {
                 diagnostics.Add(CreateDiagnosticInfo("DDSG0008", "Missing documentation", $"Configuration key '{kvp.Key}' is missing a 'documentation' field in supported-configurations.yaml", DiagnosticSeverity.Error));
             }
+        }
 
-            // Native-only vars are registered for coverage tracking but don't generate C# constants.
-            if (skipConstantGeneration)
+        // Generate C# constants only for managed-scoped keys. native-only keys are registered
+        // for coverage tracking (enforced by the ValidateNativeConfigurations Nuke step) and
+        // produce no constant. Scope is already validated above, so filtering on "managed" is safe.
+        foreach (var kvp in parsedData.Configurations)
+        {
+            var entry = kvp.Value;
+            if (entry.Scope is null || !entry.Scope.Any(s => string.Equals(s, "managed", StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }
