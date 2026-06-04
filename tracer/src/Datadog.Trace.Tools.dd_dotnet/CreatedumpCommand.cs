@@ -615,18 +615,6 @@ internal class CreatedumpCommand : Command
         return true;
     }
 
-    private static bool IsTelemetryEnabled()
-    {
-        var value = Environment.GetEnvironmentVariable(ConfigurationKeys.Telemetry.Enabled);
-
-        if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) || value == "0")
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     private static bool IsMethodSuspicious(ClrMethod method)
     {
         var assemblyName = Path.GetFileName(method.Type.Module.Name ?? string.Empty);
@@ -671,20 +659,13 @@ internal class CreatedumpCommand : Command
 
         try
         {
-            if (IsTelemetryEnabled())
+            if (ParseArguments(allArguments, out var pid, out var signal, out var signalCode, out var crashThread, out var nativeExceptionCode))
             {
-                if (ParseArguments(allArguments, out var pid, out var signal, out var signalCode, out var crashThread, out var nativeExceptionCode))
-                {
-                    GenerateCrashReport(pid, signal, signalCode, crashThread, nativeExceptionCode);
-                }
-                else
-                {
-                    AddError($"Unable to parse the command-line arguments: {string.Join(" ", allArguments)}");
-                }
+                GenerateCrashReport(pid, signal, signalCode, crashThread, nativeExceptionCode);
             }
             else
             {
-                DebugPrint("Telemetry is disabled, not generating crash report");
+                AddError($"Unable to parse the command-line arguments: {string.Join(" ", allArguments)}");
             }
         }
         catch (Exception ex)

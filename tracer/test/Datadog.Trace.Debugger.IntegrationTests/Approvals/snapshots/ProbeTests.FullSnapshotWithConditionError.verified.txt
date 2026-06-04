@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -9,7 +9,7 @@
         "duration": "ScrubbedValue",
         "evaluationErrors": [
           {
-            "expr": "\"undefined\" > 2",
+            "expr": "this.undefined",
             "message": "ScrubbedValue"
           }
         ],
@@ -19,7 +19,7 @@
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.TestRuns.ExpressionTests.InvalidCondition"
+            "type": "Samples.Probes.TestRuns.ExpressionTests.FullSnapshotWithConditionError"
           },
           "version": 0
         },
@@ -31,7 +31,7 @@
     "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.TestRuns.ExpressionTests.InvalidCondition",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.FullSnapshotWithConditionError",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
