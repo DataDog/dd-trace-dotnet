@@ -42,7 +42,7 @@ EtwEventsManager::EtwEventsManager(
         pGCSuspensionsListener,
         nullptr // no GC dump for .NET Framework (TODO: how to trigger it from ETW?)
         );
-    _logger = std::make_unique<ProfilerLogger>();
+    _logger = std::make_shared<ProfilerLogger>();
     _IpcClient = nullptr;
     _IpcServer = nullptr;
 }
@@ -363,9 +363,9 @@ bool EtwEventsManager::Start()
 
     Log::Info("Exposing ", pipeName);
 
-    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this, nullptr);
+    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger, this, nullptr);
     _IpcServer = IpcServer::StartAsync(
-        _logger.get(),
+        _logger,
         pipeName,
         _eventsHandler.get(),
         (1 << 16) + sizeof(IpcHeader),  // in buffer size = 64K + header
@@ -382,7 +382,7 @@ bool EtwEventsManager::Start()
     pipeName = (_agentReplayEndpoint.empty()) ? NamedPipeAgent : _agentReplayEndpoint;
     Log::Info("Contacting ", pipeName, "...");
 
-    _IpcClient = IpcClient::Connect(_logger.get(), pipeName, TimeoutMS);
+    _IpcClient = IpcClient::Connect(_logger, pipeName, TimeoutMS);
     if (_IpcClient == nullptr)
     {
         Log::Error("Impossible to connect to the Datadog Agent named pipe...");

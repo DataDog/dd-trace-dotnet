@@ -16,19 +16,11 @@
 class IpcServer
 {
 public:
-    IpcServer();
-    IpcServer(IIpcLogger* pLogger,
-              const std::string& portName,
-              INamedPipeHandler* pHandler,
-              uint32_t inBufferSize,
-              uint32_t outBufferSize,
-              uint32_t maxInstances,
-              uint32_t timeoutMS);
     ~IpcServer();
 
     // TODO: remove this method and use Start instead in the sample application
     static IpcServer* StartAsync(
-        IIpcLogger* pLogger,
+        std::shared_ptr<IIpcLogger> pLogger,
         const std::string& portName,
         INamedPipeHandler* pHandler,
         uint32_t inBufferSize,
@@ -39,6 +31,15 @@ public:
     void Stop();
 
 private:
+    IpcServer();
+    IpcServer(std::shared_ptr<IIpcLogger> pLogger,
+              const std::string& portName,
+              INamedPipeHandler* pHandler,
+              uint32_t inBufferSize,
+              uint32_t outBufferSize,
+              uint32_t maxInstances,
+              uint32_t timeoutMS);
+
     static void CALLBACK StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context);
     void ShowLastError(const char* message, uint32_t lastError = ::GetLastError());
 
@@ -50,7 +51,7 @@ private:
     uint32_t _maxInstances;
     uint32_t _timeoutMS;
     INamedPipeHandler* _pHandler;
-    IIpcLogger* _pLogger;
+    std::shared_ptr<IIpcLogger> _pLogger;
     HANDLE _hNamedPipe;
 
     // will be set when the server is initialized
