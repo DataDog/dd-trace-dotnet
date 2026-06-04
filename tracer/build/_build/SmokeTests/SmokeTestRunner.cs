@@ -155,11 +155,16 @@ public static partial class SmokeTestRunner
             // 10. Run crash test
             if (scenario.RunCrashTest)
             {
-                crashTestContainerId = await RunCrashTestAsync(
+                // Capture the container id via callback (not the return value) so that if the
+                // crash test throws (e.g. the wait times out), the finally block can still dump
+                // its logs and clean it up. Otherwise the container leaks and keeps the network
+                // alive, masking the real failure behind a "network has active endpoints" warning.
+                await RunCrashTestAsync(
                     imageTag, networkName,
                     environment.ToHostPath(logsDir),
                     environment.ToHostPath(dumpsDir),
-                    scenario.GetEnvironment(isCrashTest: true));
+                    scenario.GetEnvironment(isCrashTest: true),
+                    id => crashTestContainerId = id);
             }
         }
         finally
@@ -380,12 +385,13 @@ public static partial class SmokeTestRunner
         Logger.Information("Snapshot verification passed");
     }
 
-    static async Task<string> RunCrashTestAsync(
+    static async Task RunCrashTestAsync(
         string imageTag,
         string networkName,
         string logsDir,
         string dumpsDir,
-        Dictionary<string, string> environmentVariables)
+        Dictionary<string, string> environmentVariables,
+        Action<string> onContainerStarted)
     {
         LogSection("Running crash test");
         using var crashCts = new CancellationTokenSource(TimeSpan.FromMinutes(4));
@@ -400,6 +406,10 @@ public static partial class SmokeTestRunner
             environmentVariables);
         var containerId = await DockerService.CreateAndStartContainerWithRetryAsync(
             "crash-test", containerParams, ct);
+
+        // Register the container id immediately so the caller can clean it up / dump its logs
+        // even if the wait below times out and throws.
+        onContainerStarted(containerId);
 
         // Wait for the container to exit (non-zero exit is expected)
         var statusCode = await DockerService.WaitForContainerAsync("Crash test", containerId, ct);
@@ -422,8 +432,6 @@ public static partial class SmokeTestRunner
             throw new InvalidOperationException(
                 $"Crash test failed: did not find '{expectedMessage}' in container logs");
         }
-
-        return containerId;
     }
 
 
