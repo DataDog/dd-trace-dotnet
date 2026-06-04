@@ -95,7 +95,7 @@ internal static class AspNetCoreEndpointCodeOrigin
         }
         catch (Exception e)
         {
-            Log.Error(e, "Fail to extract type and method from ActionDescriptor");
+            Log.Error(e, "Failed to extract type and method from ActionDescriptor");
         }
 
         type = null;

@@ -50,25 +50,25 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aspnet.route":
+                case "aspnet.route": 
                     AspNetRoute = value;
                     break;
-                case "aspnet.controller":
+                case "aspnet.controller": 
                     AspNetController = value;
                     break;
-                case "aspnet.action":
+                case "aspnet.action": 
                     AspNetAction = value;
                     break;
-                case "aspnet.area":
+                case "aspnet.area": 
                     AspNetArea = value;
                     break;
-                case "http.route":
+                case "http.route": 
                     HttpRoute = value;
                     break;
-                case "component":
+                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AspNetTags));
                     break;
-                default:
+                default: 
                     base.SetTag(key, value);
                     break;
             }
