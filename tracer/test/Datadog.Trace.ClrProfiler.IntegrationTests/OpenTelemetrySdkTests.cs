@@ -274,7 +274,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup, bool openTelemetryTraceCompatibilityEnabled)
         {
             SetServiceVersion("1.0.x"); // We need this to be consistent with the in-code 1.0.x version set in the OTel SDK builder
-            // SetEnvironmentVariable("DD_TRACE_OTEL_COMPATIBILITY_ENABLED", openTelemetryTraceCompatibilityEnabled.ToString());
+            SetEnvironmentVariable("DD_TRACE_OTEL_COMPATIBILITY_ENABLED", openTelemetryTraceCompatibilityEnabled.ToString());
 
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
