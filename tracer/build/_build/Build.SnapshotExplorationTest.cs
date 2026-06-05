@@ -18,7 +18,6 @@ partial class Build
     const string SnapshotExplorationTestFolderName = "SnapshotExplorationTestProbes";
     const string SnapshotExplorationTestProbesFileName = "SnapshotExplorationTestProbes.json";
     const string SnapshotExplorationTestReportFolderName = "SnapshotExplorationTestReport";
-    const string SnapshotExplorationEnabledKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
     const string SnapshotExplorationRootPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH";
     const char SpecialSeparator = '#';
 

@@ -56,8 +56,6 @@ public class ConfigurationTests
                 "_DD_ROOT_DOTNET_SESSION_ID",
                 "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
                 "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
-                // Debug-only snapshot exploration escape hatch kept intentionally out of supported config.
-                "DD_INTERNAL_DEBUGGER_SNAPSHOT_FLOW_LOGS",
                 "DD_DOTNET_TRACER_HOME",
                 "DD_INSTRUMENTATION_INSTALL_ID",
                 "DD_INSTRUMENTATION_INSTALL_TYPE",

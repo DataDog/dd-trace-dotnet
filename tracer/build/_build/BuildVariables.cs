@@ -34,7 +34,6 @@ partial class Build
             // never reach Api.cs / SendWithRetry and we don't accumulate retry storms
             // / "failed to send" log noise in the test logs.
             envVars.Add("DD_TRACE_ENABLED", "0");
-            envVars.Add(SnapshotExplorationEnabledKey, "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             var snapshotExplorationRootPath = GetSnapshotExplorationRootPath(testRootPath, framework);
             envVars.Add(SnapshotExplorationRootPathKey, snapshotExplorationRootPath);

@@ -156,8 +156,10 @@ namespace Datadog.Trace.Debugger
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
-            IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
             SnapshotExplorationTestRootPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestRootPath).AsString(string.Empty);
+            // Snapshot exploration is an internal test mode. The dynamically-computed root path is both
+            // the opt-in signal and the location used for the probes/report files.
+            IsSnapshotExplorationTestEnabled = !StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath);
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
