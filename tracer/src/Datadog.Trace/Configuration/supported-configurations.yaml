@@ -2496,7 +2496,7 @@ supportedConfigurations:
     scope: native
     type: string
     default: null
-    product: Tracer
+    product: Telemetry
     documentation: |-
       Path to the telemetry forwarder binary used for single-step instrumentation telemetry.
       Set automatically by the single-step installer; not intended for manual configuration.
