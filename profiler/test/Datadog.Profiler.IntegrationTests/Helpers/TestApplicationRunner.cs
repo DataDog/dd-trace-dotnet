@@ -152,7 +152,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 throw new Exception($"Unable to find executing assembly at {applicationPath}");
             }
 
-            var arguments = $"--timeout {TestDurationInSeconds} --urls http://localhost:0";
+            var arguments = $"--timeout {TestDurationInSeconds} --urls http://127.0.0.1:0";
             if (!string.IsNullOrEmpty(_commandLine))
             {
                 arguments += $" {_commandLine}";
