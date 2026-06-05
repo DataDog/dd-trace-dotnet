@@ -7,6 +7,7 @@ using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -151,10 +152,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 throw new Exception($"Unable to find executing assembly at {applicationPath}");
             }
 
-            // Look for a free open port to pass to the ASP.NET Core applications
-            // that accept --urls on their command line
-            _appListenerPort = $"http://localhost:{TcpPortProvider.GetOpenPort()}";
-            var arguments = $"--timeout {TestDurationInSeconds} --urls {_appListenerPort}";
+            var arguments = $"--timeout {TestDurationInSeconds} --urls http://localhost:0";
             if (!string.IsNullOrEmpty(_commandLine))
             {
                 arguments += $" {_commandLine}";
@@ -195,6 +193,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
             ProcessOutput = standardOutput;
+            _appListenerPort = ParseListeningUrl(standardOutput);
 
             if (!ranToCompletion)
             {
@@ -245,6 +244,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     false,
                     $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode:X})");
             }
+        }
+
+        private static string ParseListeningUrl(string output)
+        {
+            if (output is null)
+            {
+                return null;
+            }
+
+            var match = Regex.Match(output, @"##LISTENING_URL:(.+?)##");
+            return match.Success ? match.Groups[1].Value : null;
         }
 
         private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
