@@ -139,7 +139,11 @@ partial class Build
 
             foreach (var testAssemblyPath in testAssembliesPaths)
             {
-                var assembly = Assembly.LoadFile(testAssemblyPath);
+                if (!TryLoadAssembly(testAssemblyPath, out var assembly))
+                {
+                    continue;
+                }
+
                 if (assembly.IsDynamic
                  || assembly.ManifestModule.IsResource()
                  || IgnoredNamespaces.Any(name => assembly.ManifestModule.Name.ToLower().StartsWith(name)))
@@ -381,12 +385,12 @@ partial class Build
         }
 
         stepWatch.Restart();
-        var installedProbeIds = ReadInstalledProbeIdsFromNativeLogs(out var nativeLogBytes);
-        timings["ReadNativeLogs(installed)"] = stepWatch.Elapsed;
-        fileSizes["NativeLogs"] = nativeLogBytes;
+        var installedProbeIds = ReadInstalledProbeIdsFromProbeStatusReport(reportFolderPath, definedProbes, out var probeStatusReportBytes);
+        timings["ReadProbeStatusReport(installed)"] = stepWatch.Elapsed;
+        fileSizes["ProbeStatusReport"] = probeStatusReportBytes;
         if (installedProbeIds == null || definedProbes.Count == 0)
         {
-            throw new Exception("Snapshot exploration test failed. Could not read installed probes file");
+            throw new Exception("Snapshot exploration test failed. Could not read probe status report");
         }
 
         stepWatch.Restart();
@@ -1105,56 +1109,50 @@ partial class Build
         return null;
     }
 
-    /// <summary>
-    /// Reads probe IDs that were successfully installed (instrumented) by the native profiler.
-    ///
-    /// COUPLED SOURCE FILE (update if log format changes):
-    /// - tracer/src/Datadog.Tracer.Native/debugger_method_rewriter.cpp
-    ///   - "*** DebuggerMethodRewriter::Rewrite() Finished. ProbeID: ... Method: ..."
-    /// </summary>
-    private Dictionary<string, string> ReadInstalledProbeIdsFromNativeLogs(out long totalBytesRead)
+    private Dictionary<string, string> ReadInstalledProbeIdsFromProbeStatusReport(
+        string reportFolderPath,
+        Dictionary<string, string> definedProbes,
+        out long totalBytesRead)
     {
         var result = new Dictionary<string, string>();
-        var logDirectory = BuildDataDirectory / "logs";
+        var latestStatuses = new Dictionary<string, string>(StringComparer.Ordinal);
         totalBytesRead = 0;
 
-        if (!Directory.Exists(logDirectory))
+        if (!Directory.Exists(reportFolderPath))
         {
-            throw new Exception($"Log folder does not exist in path: {logDirectory}");
+            throw new Exception($"Snapshot exploration report folder does not exist in path: {reportFolderPath}");
         }
 
-        var logFiles = Directory.GetFiles(logDirectory, "dotnet-tracer-native-*.log");
-        const string marker = "*** DebuggerMethodRewriter::Rewrite() Finished. ProbeID: ";
+        var reportFiles = Directory.GetFiles(reportFolderPath, "*_SnapshotExplorationProbeStatuses.csv");
 
-        foreach (var logFile in logFiles)
+        foreach (var reportFile in reportFiles)
         {
-            totalBytesRead += new FileInfo(logFile).Length;
-            var logLines = File.ReadAllLines(logFile);
+            totalBytesRead += new FileInfo(reportFile).Length;
+            var lines = File.ReadAllLines(reportFile);
 
-            foreach (var line in logLines)
+            foreach (var line in lines.Skip(1))
             {
-                if (!line.Contains(marker))
+                var parts = line.Split(',');
+                if (parts.Length < 2)
                 {
                     continue;
                 }
 
-                var probeIdStart = line.IndexOf(marker) + marker.Length;
-                var probeIdEnd = line.IndexOf(" Method: ", probeIdStart);
-                if (probeIdEnd == -1) continue;
-
-                var probeId = line.Substring(probeIdStart, probeIdEnd - probeIdStart).Trim();
-                if (probeId == "null" || string.IsNullOrEmpty(probeId))
+                var probeId = parts[0].Trim();
+                if (string.IsNullOrEmpty(probeId))
                 {
                     continue;
                 }
 
-                var methodStart = probeIdEnd + " Method: ".Length;
-                var methodEnd = line.IndexOf("() [IsVoid=", methodStart);
-                if (methodEnd == -1) continue;
+                latestStatuses[probeId] = parts[1].Trim();
+            }
+        }
 
-                var methodName = line.Substring(methodStart, methodEnd - methodStart).Trim();
-
-                result.TryAdd(probeId, methodName);
+        foreach (var pair in latestStatuses)
+        {
+            if (pair.Value is "INSTALLED" or "INSTRUMENTED" or "EMITTING")
+            {
+                result[pair.Key] = definedProbes.GetValueOrDefault(pair.Key, "unknown");
             }
         }
 
@@ -1235,7 +1233,6 @@ partial class Build
         }
 
         var logFiles = Directory.GetFiles(logDirectory, "dotnet-tracer-native-*.log");
-        const string finishedMarker = "*** DebuggerMethodRewriter::Rewrite() Finished. ProbeID: ";
 
         // Map warning messages to error type categories
         var errorPatterns = new Dictionary<string, string>
@@ -1257,33 +1254,9 @@ partial class Build
         {
             var logLines = File.ReadAllLines(logFile);
 
-            // We can correlate "ByRefLike" skip lines to a method name by using the native log prefix "[pid|tid]".
-            // Those skip lines don't include the method/probe id, but the subsequent "Rewrite() Finished..." line does.
-            // We buffer pending errors per thread and assign them to the next finished rewrite on that thread.
-            var pendingByThread = new Dictionary<string, List<(string ErrorType, string RawLog)>>();
-
             for (int i = 0; i < logLines.Length; i++)
             {
                 var line = logLines[i];
-
-                // Update correlation context when we see the "Finished" marker
-                if (line.Contains(finishedMarker))
-                {
-                    var threadKey = TryExtractNativeThreadKey(line);
-                    var methodName = TryExtractMethodNameFromFinishedLine(line);
-                    var probeId = TryExtractProbeIdFromFinishedLine(line);
-                    if (threadKey != null && methodName != null &&
-                        pendingByThread.TryGetValue(threadKey, out var pending) &&
-                        pending.Count > 0)
-                    {
-                        foreach (var p in pending)
-                        {
-                            result.Add(new NativeRewriterError(methodName, p.ErrorType, p.RawLog, probeId));
-                        }
-
-                        pending.Clear();
-                    }
-                }
 
                 foreach (var pattern in errorPatterns)
                 {
@@ -1300,23 +1273,6 @@ partial class Build
                         var methodName = ExtractMethodNameFromNativeLine(line);
                         var raw = line.Length > 200 ? line.Substring(0, 200) + "..." : line;
 
-                        // If we can't extract method name from this line, buffer it for correlation by thread.
-                        if (methodName == "unknown")
-                        {
-                            var threadKey = TryExtractNativeThreadKey(line);
-                            if (threadKey != null)
-                            {
-                                if (!pendingByThread.TryGetValue(threadKey, out var pending))
-                                {
-                                    pending = new List<(string ErrorType, string RawLog)>();
-                                    pendingByThread[threadKey] = pending;
-                                }
-
-                                pending.Add((pattern.Value, raw));
-                                break; // Don't double-count
-                            }
-                        }
-
                         result.Add(new NativeRewriterError(methodName, pattern.Value, raw, ProbeId: null));
                         break; // Don't double-count
                     }
@@ -1325,32 +1281,6 @@ partial class Build
         }
 
         return result;
-    }
-
-    private string? TryExtractNativeThreadKey(string line)
-    {
-        // Native logs include a prefix like: "... [23424|8916] [warning] ..."
-        var match = System.Text.RegularExpressions.Regex.Match(line, @"\[(\d+)\|(\d+)\]");
-        return match.Success ? $"{match.Groups[1].Value}|{match.Groups[2].Value}" : null;
-    }
-
-    private string? TryExtractMethodNameFromFinishedLine(string line)
-    {
-        // Example: "*** DebuggerMethodRewriter::Rewrite() Finished. ProbeID: <id> Method: <Type>.<Method>() ..."
-        var match = System.Text.RegularExpressions.Regex.Match(line, @"Method:\s+([^\[]+)$");
-        if (match.Success)
-        {
-            return match.Groups[1].Value.Trim();
-        }
-
-        match = System.Text.RegularExpressions.Regex.Match(line, @"Method:\s+(.+?)\s+\[");
-        return match.Success ? match.Groups[1].Value.Trim() : null;
-    }
-
-    private string? TryExtractProbeIdFromFinishedLine(string line)
-    {
-        var match = System.Text.RegularExpressions.Regex.Match(line, @"ProbeID:\s*([a-f0-9\-]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        return match.Success ? match.Groups[1].Value.Trim() : null;
     }
 
     private string ExtractMethodNameFromNativeLine(string line)
