@@ -42,9 +42,13 @@ internal sealed class DebuggerFactory
 
         var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
         var logUploader = CreateLogUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
-        var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
+        IDebuggerUploader diagnosticsUploader = debuggerSettings.IsSnapshotExplorationTestEnabled
+                                                    ? NoOpDebuggerUploader.Instance
+                                                    : CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
-        var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
+        IProbeStatusPoller probeStatusPoller = debuggerSettings.IsSnapshotExplorationTestEnabled
+                                                   ? new SnapshotExplorationProbeStatusPoller(debuggerSettings.SnapshotExplorationTestReportFolderPath)
+                                                   : ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
         var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default);
 
