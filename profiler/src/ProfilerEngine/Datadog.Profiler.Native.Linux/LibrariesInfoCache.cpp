@@ -200,13 +200,15 @@ void LibrariesInfoCache::LogStats()
 
 void LibrariesInfoCache::SetupCpuTimer()
 {
+    const int cpuTimerSignal = SIGRTMIN + 10;
+
     struct sigaction sa = {};
     sa.sa_handler = CpuTickSignalHandler;
     sa.sa_flags = SA_RESTART;
     sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGUSR2, &sa, nullptr) != 0)
+    if (sigaction(cpuTimerSignal, &sa, nullptr) != 0)
     {
-        Log::Warn("LibrariesInfoCache: Failed to install SIGUSR2 handler for CPU measurement: ", strerror(errno));
+        Log::Warn("LibrariesInfoCache: Failed to install signal handler (signal=", cpuTimerSignal, ") for CPU measurement: ", strerror(errno));
         return;
     }
 
@@ -215,7 +217,7 @@ void LibrariesInfoCache::SetupCpuTimer()
     auto tid = static_cast<int>(syscall(SYS_gettid));
 
     struct sigevent sev = {};
-    sev.sigev_signo = SIGUSR2;
+    sev.sigev_signo = cpuTimerSignal;
     sev.sigev_notify = SIGEV_THREAD_ID;
     ((int*)&sev.sigev_notify)[1] = tid;
 
@@ -232,7 +234,16 @@ void LibrariesInfoCache::SetupCpuTimer()
     struct itimerspec its = {};
     its.it_interval = {0, 10'000'000}; // 10ms
     its.it_value = {0, 10'000'000};
-    syscall(__NR_timer_settime, _cpuTimerId, 0, &its, nullptr);
+    if (syscall(__NR_timer_settime, _cpuTimerId, 0, &its, nullptr) < 0)
+    {
+        Log::Warn("LibrariesInfoCache: Failed to arm CPU timer: ", strerror(errno));
+        syscall(__NR_timer_delete, _cpuTimerId);
+        _cpuTimerCreated = false;
+        s_cpuTicksPtr = nullptr;
+        return;
+    }
+
+    Log::Info("LibrariesInfoCache: CPU timer armed on worker thread (tid=", tid, ")");
 }
 
 void LibrariesInfoCache::TeardownCpuTimer()
