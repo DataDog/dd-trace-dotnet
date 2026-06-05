@@ -1997,13 +1997,23 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
         return E_FAIL;
     }
 
+    // The Interface column is a TypeDefOrRef coded token. For debugger-instrumented application modules,
+    // IAsyncStateMachine is imported from corelib and should therefore be a TypeRef. TypeDef/TypeSpec tokens
+    // represent other interfaces for our purposes, so they are not async state machines and should not be logged.
+    if (TypeFromToken(interfaceToken) != mdtTypeRef)
+    {
+        isTypeImplementIAsyncStateMachine = false;
+        return S_OK;
+    }
+
     // get the interface type props
     WCHAR type_name[kNameMaxSize]{};
     DWORD type_name_len = 0;
     mdAssembly assemblyToken;
     if (metadataImport->GetTypeRefProps(interfaceToken, &assemblyToken, type_name, kNameMaxSize, &type_name_len) != S_OK)
     {
-        Logger::Warn("DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine: failed to get type ref props");
+        // The token is a TypeRef but could not be resolved, so keep this diagnostic at Debug.
+        Logger::Debug("DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine: failed to get type ref props");
         return E_FAIL;
     }
 
