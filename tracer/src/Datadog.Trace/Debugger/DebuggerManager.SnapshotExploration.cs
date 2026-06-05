@@ -7,8 +7,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
 
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Debugger
         private void InitForSnapshotExploration()
         {
             var tracerManager = TracerManager.Instance;
-            var di = DebuggerFactory.CreateDynamicInstrumentation(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, tracerManager.Settings, ServiceNameProvider, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+            var di = DebuggerFactory.CreateDynamicInstrumentation(NullDiscoveryService.Instance, RcmSubscriptionManager.Instance, tracerManager.Settings, ServiceNameProvider, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
 
             Log.Information("Initializing Dynamic Instrumentation for snapshot exploration test.");
             di.Initialize();

@@ -950,6 +950,12 @@ namespace Datadog.Trace.Debugger
 
         private async Task<bool> WaitForRcmAvailabilityAsync()
         {
+            if (_discoveryService is NullDiscoveryService)
+            {
+                // No agent discovery means no RCM signal. File-probe mode can still initialize without waiting.
+                return false;
+            }
+
             var rcmAvailabilityTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _discoveryService.SubscribeToChanges(DiscoveryCallback);
 
