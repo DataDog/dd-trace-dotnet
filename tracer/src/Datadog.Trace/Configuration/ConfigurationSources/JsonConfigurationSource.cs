@@ -266,7 +266,7 @@ namespace Datadog.Trace.Configuration
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue = true)
         {
             var token = SelectToken(key);
             if (token == null)
@@ -301,7 +301,7 @@ namespace Datadog.Trace.Configuration
                     catch (Exception e)
                     {
                         Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
-                        telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
+                        telemetry.Record(key, tokenAsString, recordValue, Origin, TelemetryErrorCode.JsonStringError);
                         return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
                     }
                 }
@@ -311,7 +311,7 @@ namespace Datadog.Trace.Configuration
             }
             catch (InvalidCastException)
             {
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.JsonStringError);
+                telemetry.Record(key, tokenAsString, recordValue, Origin, TelemetryErrorCode.JsonStringError);
                 throw; // Exising behaviour
             }
 
@@ -319,11 +319,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (validator is null || validator(dictionary))
                 {
-                    telemetry.Record(key, tokenAsString, recordValue: true, Origin);
+                    telemetry.Record(key, tokenAsString, recordValue, Origin);
                     return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary, tokenAsString);
                 }
 
-                telemetry.Record(key, tokenAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
+                telemetry.Record(key, tokenAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
             }
         }

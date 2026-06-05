@@ -9,6 +9,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
@@ -340,6 +341,55 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
             settings.TraceAgentUriBase.Should().Be(@"\\.\pipe\" + pipeName);
+        }
+
+        [Fact]
+        public void OtlpHeaders_AreRedactedInConfigurationTelemetry()
+        {
+            const string baseSentinel = "SENTINEL_OTLP_BASE";
+            const string metricsSentinel = "SENTINEL_OTLP_METRICS";
+            const string tracesSentinel = "SENTINEL_OTLP_TRACES";
+            const string endpoint = "http://localhost:4318";
+
+            var telemetry = new ConfigurationTelemetry();
+            _ = new ExporterSettings(
+                BuildSource(
+                    $"{ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders}:dd-api-key={baseSentinel}",
+                    $"{ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders}:dd-api-key={metricsSentinel}",
+                    $"{ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders}:dd-api-key={tracesSentinel}",
+                    $"{ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint}:{endpoint}"),
+                NoFile(),
+                telemetry);
+
+            var entries = telemetry.GetQueueForTesting().ToList();
+
+            using var scope = new AssertionScope();
+
+            // Each header key is recorded as a redacted entry with no source value
+            foreach (var key in new[]
+                     {
+                         ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders,
+                         ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders,
+                         ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders,
+                     })
+            {
+                var entry = entries.Should().ContainSingle(e => e.Key == key, $"'{key}' should be recorded once").Subject;
+                entry.Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted);
+                entry.StringValue.Should().BeNull();
+            }
+
+            // None of the configured header values appear in any recorded telemetry value
+            foreach (var sentinel in new[] { baseSentinel, metricsSentinel, tracesSentinel })
+            {
+                entries.Select(e => e.StringValue)
+                       .Should()
+                       .NotContain(v => v != null && v.Contains(sentinel), $"sentinel '{sentinel}' must not appear in configuration telemetry");
+            }
+
+            // A non-sensitive exporter config is still recorded with its real value
+            var endpointEntry = entries.Should().ContainSingle(e => e.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).Subject;
+            endpointEntry.Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.String);
+            endpointEntry.StringValue.Should().Be(endpoint);
         }
 
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)
