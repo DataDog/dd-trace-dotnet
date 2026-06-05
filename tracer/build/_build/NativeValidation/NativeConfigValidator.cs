@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Datadog.Trace.SourceGenerators.Helpers;
 using Nuke.Common.IO;
+using YamlDotNet.RepresentationModel;
 using Logger = Serilog.Log;
 
 namespace NativeValidation;
@@ -19,7 +19,9 @@ namespace NativeValidation;
 /// has a corresponding entry in supported-configurations.yaml with "native" in its scope.
 ///
 /// This runs as a Nuke step (rather than a managed unit test) so that developers working
-/// only in the native solutions surface coverage gaps locally, not just in CI.
+/// only in the native solutions surface coverage gaps locally, not just in CI. The registry
+/// is parsed with YamlDotNet (already referenced by the build project) so this validator has
+/// no dependency on the managed source generators.
 /// </summary>
 public class NativeConfigValidator
 {
@@ -66,20 +68,20 @@ public class NativeConfigValidator
     /// </summary>
     public void Validate(AbsolutePath rootDirectory, AbsolutePath supportedConfigurationsPath)
     {
-        var parsed = YamlReader.ParseSupportedConfigurations(File.ReadAllText(supportedConfigurationsPath));
+        var registry = ParseRegistry(supportedConfigurationsPath);
 
         // var name (key or alias) -> entry. Keys are assigned unconditionally so a primary
         // key always wins over an alias of the same name regardless of iteration order;
         // aliases are only added when the name is not already taken.
-        var entryByName = new Dictionary<string, YamlReader.ConfigurationEntry>(StringComparer.Ordinal);
-        foreach (var kvp in parsed.Configurations)
+        var entryByName = new Dictionary<string, RegistryEntry>(StringComparer.Ordinal);
+        foreach (var entry in registry.Values)
         {
-            entryByName[kvp.Key] = kvp.Value;
-            foreach (var alias in kvp.Value.Aliases ?? Enumerable.Empty<string>())
+            entryByName[entry.Name] = entry;
+            foreach (var alias in entry.Aliases)
             {
                 if (!entryByName.ContainsKey(alias))
                 {
-                    entryByName[alias] = kvp.Value;
+                    entryByName[alias] = entry;
                 }
             }
         }
@@ -98,21 +100,18 @@ public class NativeConfigValidator
                 continue;
             }
 
-            var hasNativeScope = entry.Scope is not null &&
-                                 entry.Scope.Any(s => string.Equals(s, "native", StringComparison.OrdinalIgnoreCase));
-            if (!hasNativeScope)
+            if (!entry.Scope.Any(s => string.Equals(s, "native", StringComparison.OrdinalIgnoreCase)))
             {
                 missingNativeScope.Add(name);
             }
         }
 
         // Native-only entries must not declare a const_name — no C# constant is generated for them.
-        var nativeOnlyWithConstName = parsed.Configurations.Values
-            .Where(e => e.Scope is not null
-                     && e.Scope.Any(s => string.Equals(s, "native", StringComparison.OrdinalIgnoreCase))
+        var nativeOnlyWithConstName = registry.Values
+            .Where(e => e.Scope.Any(s => string.Equals(s, "native", StringComparison.OrdinalIgnoreCase))
                      && !e.Scope.Any(s => string.Equals(s, "managed", StringComparison.OrdinalIgnoreCase))
                      && !string.IsNullOrEmpty(e.ConstName))
-            .Select(e => e.Key)
+            .Select(e => e.Name)
             .OrderBy(k => k, StringComparer.Ordinal)
             .ToList();
 
@@ -158,6 +157,72 @@ public class NativeConfigValidator
         Logger.Information("Native configuration validation passed: all {Count} native DD_* variables are registered with native scope", nativeVars.Count);
     }
 
+    private static Dictionary<string, RegistryEntry> ParseRegistry(AbsolutePath supportedConfigurationsPath)
+    {
+        var stream = new YamlStream();
+        using (var reader = new StreamReader(supportedConfigurationsPath))
+        {
+            stream.Load(reader);
+        }
+
+        var root = (YamlMappingNode)stream.Documents[0].RootNode;
+        if (!root.Children.TryGetValue(new YamlScalarNode("supportedConfigurations"), out var supportedNode))
+        {
+            throw new Exception($"'supportedConfigurations' section not found in {supportedConfigurationsPath.Name}");
+        }
+
+        var result = new Dictionary<string, RegistryEntry>(StringComparer.Ordinal);
+        foreach (var kvp in ((YamlMappingNode)supportedNode).Children)
+        {
+            var name = ((YamlScalarNode)kvp.Key).Value;
+            if (name is null)
+            {
+                continue;
+            }
+
+            var scope = new List<string>();
+            string constName = null;
+            var aliases = new List<string>();
+
+            // Each key maps to a sequence of implementation blocks (usually one).
+            foreach (var implNode in (YamlSequenceNode)kvp.Value)
+            {
+                foreach (var prop in ((YamlMappingNode)implNode).Children)
+                {
+                    switch (((YamlScalarNode)prop.Key).Value)
+                    {
+                        case "scope":
+                            // Comma-separated scalar (managed, native) or a YAML sequence.
+                            if (prop.Value is YamlScalarNode scopeScalar && scopeScalar.Value is not null)
+                            {
+                                scope.AddRange(scopeScalar.Value.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0));
+                            }
+                            else if (prop.Value is YamlSequenceNode scopeSeq)
+                            {
+                                scope.AddRange(scopeSeq.OfType<YamlScalarNode>().Select(n => n.Value?.Trim()).Where(s => !string.IsNullOrEmpty(s)));
+                            }
+
+                            break;
+                        case "const_name":
+                            constName = (prop.Value as YamlScalarNode)?.Value;
+                            break;
+                        case "aliases":
+                            if (prop.Value is YamlSequenceNode aliasSeq)
+                            {
+                                aliases.AddRange(aliasSeq.OfType<YamlScalarNode>().Select(n => n.Value).Where(s => !string.IsNullOrEmpty(s)));
+                            }
+
+                            break;
+                    }
+                }
+            }
+
+            result[name] = new RegistryEntry(name, scope, constName, aliases);
+        }
+
+        return result;
+    }
+
     private static HashSet<string> ScanNativeEnvVars(AbsolutePath rootDirectory)
     {
         var vars = new HashSet<string>(StringComparer.Ordinal);
@@ -201,5 +266,24 @@ public class NativeConfigValidator
         }
 
         return vars;
+    }
+
+    private sealed class RegistryEntry
+    {
+        public RegistryEntry(string name, List<string> scope, string constName, List<string> aliases)
+        {
+            Name = name;
+            Scope = scope;
+            ConstName = constName;
+            Aliases = aliases;
+        }
+
+        public string Name { get; }
+
+        public List<string> Scope { get; }
+
+        public string ConstName { get; }
+
+        public List<string> Aliases { get; }
     }
 }
