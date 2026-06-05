@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 
 namespace Datadog.Trace.Debugger;
 
@@ -64,4 +65,12 @@ internal static class SnapshotExplorationConstants
     /// avoid races at the start of the test run.
     /// </summary>
     public static readonly TimeSpan NativeReadyGracePeriod = TimeSpan.FromMilliseconds(500);
+
+    public static bool IsRunningInTestHost()
+    {
+        var processName = Process.GetCurrentProcess().ProcessName;
+        var appDomainName = AppDomain.CurrentDomain.FriendlyName;
+        return processName.IndexOf(TestHostName, StringComparison.OrdinalIgnoreCase) >= 0
+            || appDomainName.IndexOf(TestHostName, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
 }

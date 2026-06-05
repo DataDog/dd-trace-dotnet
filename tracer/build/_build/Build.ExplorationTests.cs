@@ -197,6 +197,7 @@ partial class Build
                .Description("Runs the Snapshot Exploration Test")
                .Requires(() => ExplorationTestUseCase)
                .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpSnapshotExplorationTests)
+               .DependsOn(CleanTestLogs)
                .Executes(() =>
                 {
                     if (ExplorationTestUseCase != global::ExplorationTestUseCase.Debugger)

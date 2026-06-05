@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -24,19 +23,6 @@ namespace Datadog.Trace.Debugger
     /// </summary>
     internal sealed partial class DebuggerManager
     {
-        /// <summary>
-        /// Returns true when the current process is a test host (vstest/xunit/nunit/MSBuild),
-        /// which is the only place where snapshot exploration test infrastructure should
-        /// initialize. Avoids initializing in child processes spawned by the tests.
-        /// </summary>
-        private static bool IsRunningInTestHost()
-        {
-            var processName = Process.GetCurrentProcess().ProcessName;
-            var appDomainName = AppDomain.CurrentDomain.FriendlyName;
-            return processName.IndexOf(SnapshotExplorationConstants.TestHostName, StringComparison.OrdinalIgnoreCase) >= 0
-                || appDomainName.IndexOf(SnapshotExplorationConstants.TestHostName, StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
         private static void WaitForProbeInstallation(TimeSpan timeout)
         {
             // No managed signal exists for "native received probes"; the only available
@@ -98,6 +84,7 @@ namespace Datadog.Trace.Debugger
             var di = DebuggerFactory.CreateDynamicInstrumentation(NullDiscoveryService.Instance, RcmSubscriptionManager.Instance, tracerManager.Settings, ServiceNameProvider, DebuggerSettings, tracerManager.GitMetadataTagsProvider);
 
             Log.Information("Initializing Dynamic Instrumentation for snapshot exploration test.");
+            EnsureSnapshotPipelineConfigured(DebuggerSettings);
             di.Initialize();
             _dynamicInstrumentation = di;
 
