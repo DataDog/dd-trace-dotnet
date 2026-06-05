@@ -704,34 +704,30 @@ partial class Build
 
             foreach (var platform in platforms)
             {
-                var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
-                var pprofsOutputDir = baseOutputDir / "pprofs";
-                Logger.Information($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
-
-                var pprofFiles = pprofsOutputDir.GlobFiles(
-                    $"*.pprof"
-                );
-
-                if (pprofFiles.Count == 0)
-                {
-                    Logger.Error("::error::No pprof file(s) was/were generated. Maybe the profiler is not correctly attached.");
-                    throw new Exception("No pprof file(s) was/were generated.");
-                }
-
-                var logsOutputDir = baseOutputDir / "logs";
-                Logger.Information($"Look for profiler log file(s) in {logsOutputDir}");
-
-                var logFiles = logsOutputDir.GlobFiles(
-                    $"DD-DotNet-Profiler-Native-*.log"
-                );
-
-                if (logFiles.Count == 0)
-                {
-                    Logger.Error("::error::No profiler log files was/were found. Was the profiler attached to the app?");
-                    throw new Exception("No profiler log files was/were found.");
-                }
+                AssertProfilerOutputs(ProfilerBuildDataDirectory / platform.ToString());
             }
         });
+
+    // Asserts that the profiler produced at least one pprof and at least one native log under outputBaseDir.
+    // Shared between RunSampleWithSanitizer (CI sanitizer jobs) and RunProfilerScenario (dev iteration loop).
+    void AssertProfilerOutputs(AbsolutePath outputBaseDir)
+    {
+        var pprofsOutputDir = outputBaseDir / "pprofs";
+        Logger.Information($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
+        if (pprofsOutputDir.GlobFiles("*.pprof").Count == 0)
+        {
+            Logger.Error("::error::No pprof file(s) was/were generated. Maybe the profiler is not correctly attached.");
+            throw new Exception($"No pprof file(s) was/were generated under {pprofsOutputDir}.");
+        }
+
+        var logsOutputDir = outputBaseDir / "logs";
+        Logger.Information($"Look for profiler log file(s) in {logsOutputDir}");
+        if (logsOutputDir.GlobFiles("DD-DotNet-Profiler-Native-*.log").Count == 0)
+        {
+            Logger.Error("::error::No profiler log files was/were found. Was the profiler attached to the app?");
+            throw new Exception($"No profiler log files was/were found under {logsOutputDir}.");
+        }
+    }
 
     Target BuildProfilerUbsanTest => _ => _
         .Unlisted()
@@ -905,62 +901,139 @@ partial class Build
 
     void RunSampleWithSanitizer(MSBuildTargetPlatform platform, SanitizerKind sanitizer)
     {
+        if (sanitizer is SanitizerKind.None)
+        {
+            throw new Exception("No sanitizer has been selected. This job must run with a sanitizer.");
+        }
+
+        // Sanitizer jobs run with extra DD_PROFILING_*_ENABLED toggles so the sanitized binary exercises every profiler.
+        var extraEnv = new Dictionary<string, string>
+        {
+            ["DD_PROFILING_EXCEPTION_ENABLED"] = "1",
+            ["DD_PROFILING_ALLOCATION_ENABLED"] = "1",
+            ["DD_PROFILING_LOCK_ENABLED"] = "1",
+            ["DD_PROFILING_HEAP_ENABLED"] = "1",
+            ["DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED"] = "1",
+            ["DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED"] = "1",
+        };
+
+        RunSampleWithProfiler(
+            platform,
+            framework: Framework,
+            scenario: 1,
+            timeoutSeconds: 120,
+            outputBaseDir: ProfilerBuildDataDirectory / platform.ToString(),
+            sanitizer: sanitizer,
+            extraEnv: extraEnv,
+            configuration: Configuration.Release); // BuildProfilerSampleForSanitiserTests always builds the sample in Release.
+    }
+
+    // Runs Samples.Computer01 with the profiler attached. Shared between CI sanitizer jobs
+    // (RunSampleWithSanitizer) and the developer iteration target (RunProfilerScenario).
+    //
+    // - sanitizer=None      : production LD_PRELOAD path (Datadog.Linux.ApiWrapper).
+    // - sanitizer=Asan/Ubsan: LD_PRELOAD set to libasan/libubsan instead (skips the wrapper, which is what we want for sanitizer runs).
+    //
+    // outputBaseDir receives DD_INTERNAL_PROFILING_OUTPUT_DIR (pprofs/) and DD_TRACE_LOG_DIRECTORY (logs/).
+    // Call AssertProfilerOutputs(outputBaseDir) afterwards to fail fast if the profiler didn't actually attach.
+    AbsolutePath SampleAppDllPath(Nuke.Common.ProjectModel.Project sampleApp, MSBuildTargetPlatform platform, TargetFramework framework, Configuration configuration) =>
+        ProfilerOutputDirectory / "bin" / $"{configuration}-{platform}" / "profiler" / "src" / "Demos" / sampleApp.Name / framework / $"{sampleApp.Name}.dll";
+
+    void RunSampleWithProfiler(
+        MSBuildTargetPlatform platform,
+        TargetFramework framework,
+        int scenario,
+        int timeoutSeconds,
+        AbsolutePath outputBaseDir,
+        SanitizerKind sanitizer = SanitizerKind.None,
+        string extraArgs = null,
+        IReadOnlyDictionary<string, string> extraEnv = null,
+        Configuration configuration = null)
+    {
+        var callerProvidedConfiguration = configuration is not null;
+        configuration ??= BuildConfiguration;
+
         var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
-        var envVars = new Dictionary<string, string>()
-            {
-                { "DD_TRACE_ENABLED", "0" }, // Disable tracer for this test
-                { "DD_PROFILING_ENABLED", "1" },
-                { "DD_PROFILING_EXCEPTION_ENABLED", "1" },
-                { "DD_PROFILING_ALLOCATION_ENABLED", "1"},
-                { "DD_PROFILING_LOCK_ENABLED","1" },
-                { "DD_PROFILING_HEAP_ENABLED", "1"},
-                { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
-                { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
-                { "DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0" },  // disable StableConfig (i.e. don't wait for the tracer to set the configuration)
-            };
+        var envVars = new Dictionary<string, string>
+        {
+            ["DD_TRACE_ENABLED"] = "0",
+            ["DD_PROFILING_ENABLED"] = "1",
+            ["DD_PROFILING_MANAGED_ACTIVATION_ENABLED"] = "0", // disable StableConfig (don't wait for tracer to set configuration)
+        };
 
         if (IsArm64)
         {
-            // Temporary flag to enable profiling on arm64. This will be removed when the native profiler is updated to support arm64.
+            // Temporary flag to enable profiling on arm64. To be removed when the native profiler is updated to support arm64 by default.
             envVars["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
         }
 
         if (IsLinux)
         {
-            if (sanitizer is SanitizerKind.Asan)
+            switch (sanitizer)
             {
-                // libasan SONAME differs between the two ASAN CI images:
-                //   - arm64: older Ubuntu/Debian base shipping gcc 9 -> libasan.so.5.
-                //   - x64:   newer image shipping gcc 10+ -> libasan.so.6.
-                // If/when the arm64 image is upgraded to gcc 10+, this can be
-                // collapsed to libasan.so.6 unconditionally.
-                envVars["LD_PRELOAD"] = IsArm64 ? "libasan.so.5" : "libasan.so.6";
-                // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
-                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
-            }
-            else if (sanitizer is SanitizerKind.Ubsan)
-            {
-                envVars["LD_PRELOAD"] = "libubsan.so.1";
-                envVars["UBSAN_OPTIONS"] = "print_stacktrace=1";
-            }
-            else if (sanitizer is SanitizerKind.None)
-            {
-                throw new Exception($"No sanitizer has been selected. This job must run with a sanitizer");
+                case SanitizerKind.Asan:
+                    // libasan SONAME differs between ASAN CI images:
+                    //   arm64: older Ubuntu/Debian base shipping gcc 9 -> libasan.so.5
+                    //   x64:   newer image shipping gcc 10+ -> libasan.so.6
+                    envVars["LD_PRELOAD"] = IsArm64 ? "libasan.so.5" : "libasan.so.6";
+                    envVars["ASAN_OPTIONS"] = "detect_leaks=0"; // false positives: not all libs are compiled against ASAN (e.g. CLR binaries)
+                    break;
+                case SanitizerKind.Ubsan:
+                    envVars["LD_PRELOAD"] = "libubsan.so.1";
+                    envVars["UBSAN_OPTIONS"] = "print_stacktrace=1";
+                    break;
+                case SanitizerKind.None:
+                    // Production LD_PRELOAD path: the API wrapper next to the monitoring home.
+                    // (DD_NATIVELOADER_CONFIGFILE is not set: the native loader picks loader.conf up next to itself.)
+                    var (arch, _) = GetUnixArchitectureAndExtension();
+                    envVars["LD_PRELOAD"] = MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+                    break;
             }
         }
 
         AddContinuousProfilerEnvironmentVariables(envVars);
 
-        var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
+        // Clear stale outputs so AssertProfilerOutputs can't pass on artifacts from a previous run
+        // (a sample that exits 0 without the profiler attached would otherwise look successful).
+        var pprofsDir = outputBaseDir / "pprofs";
+        var logsDir = outputBaseDir / "logs";
+        if (pprofsDir.DirectoryExists()) DeleteDirectory(pprofsDir);
+        if (logsDir.DirectoryExists()) DeleteDirectory(logsDir);
+        EnsureExistingDirectory(pprofsDir);
+        EnsureExistingDirectory(logsDir);
+        envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = pprofsDir;
+        envVars["DD_TRACE_LOG_DIRECTORY"] = logsDir;
 
-        envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = baseOutputDir / "pprofs";
-        envVars["DD_TRACE_LOG_DIRECTORY"] = baseOutputDir / "logs";
+        if (extraEnv != null)
+        {
+            foreach (var kv in extraEnv) envVars[kv.Key] = kv.Value;
+        }
 
-        var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{Configuration.Release}-{platform}" / "profiler" / "src" / "Demos";
-        var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";
+        // If the caller didn't pin a configuration and the primary build is missing, fall back to
+        // the opposite (so a dev with only a Debug build doesn't have to pass --build-configuration).
+        var sampleAppDll = SampleAppDllPath(sampleApp, platform, framework, configuration);
+        if (!File.Exists(sampleAppDll) && callerProvidedConfiguration == false)
+        {
+            var fallback = configuration == Configuration.Release ? Configuration.Debug : Configuration.Release;
+            var fallbackDll = SampleAppDllPath(sampleApp, platform, framework, fallback);
+            if (File.Exists(fallbackDll))
+            {
+                sampleAppDll = fallbackDll;
+            }
+        }
+        if (!File.Exists(sampleAppDll))
+        {
+            throw new Exception($"Sample not found: {sampleAppDll}. Run BuildProfilerSamples first.");
+        }
 
-        DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
+        var args = $"{sampleAppDll} --scenario {scenario} --timeout {timeoutSeconds}";
+        if (!string.IsNullOrWhiteSpace(extraArgs))
+        {
+            args += " " + extraArgs;
+        }
+
+        DotNet(args, platform, environmentVariables: envVars);
 
         static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, IReadOnlyDictionary<string, string> environmentVariables)
         {
@@ -968,7 +1041,6 @@ partial class Build
             using var process = ProcessTasks.StartProcess(toolPath: dotnetPath, arguments: arguments, environmentVariables: environmentVariables, customLogger: DotNetTasks.DotNetLogger);
             process.AssertZeroExitCode();
             return process.Output;
-
         }
     }
 
