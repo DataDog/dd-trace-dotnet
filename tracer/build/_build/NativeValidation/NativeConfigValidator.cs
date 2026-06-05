@@ -173,7 +173,7 @@ public class NativeConfigValidator
             foreach (var file in Directory.EnumerateFiles(rootPath, "*.*", SearchOption.AllDirectories))
             {
                 var ext = Path.GetExtension(file);
-                if (ext is not (".h" or ".hpp" or ".cpp" or ".cc"))
+                if (ext is not (".h" or ".hpp" or ".cpp" or ".cc" or ".cxx" or ".c"))
                 {
                     continue;
                 }
