@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger
     /// <summary>
     /// Snapshot-exploration-test specific initialization for <see cref="DebuggerManager"/>.
     /// Kept as a partial class so the regular debugger code path stays free of test plumbing.
-    /// All code in this file only runs when <c>DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED=1</c>
+    /// All code in this file only runs when <c>DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH</c> is set
     /// and the current process is a vstest test host.
     /// </summary>
     internal sealed partial class DebuggerManager
