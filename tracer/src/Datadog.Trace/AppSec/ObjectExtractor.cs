@@ -123,7 +123,10 @@ namespace Datadog.Trace.AppSec
 
                     var item = value is null ? null : ExtractType(memberExtractor.Type, value, depth, visited, extractorCache, createExtractors);
 
-                    dict.Add(memberExtractor.Name, item);
+                    // Use the indexer rather than Add: DataContract types can resolve two members
+                    // to the same name (explicit [DataMember(Name = ...)], shadowed/inherited members),
+                    // and Add would throw and abort the whole extraction. Last one wins, matching the serializer.
+                    dict[memberExtractor.Name] = item;
                 }
             }
 

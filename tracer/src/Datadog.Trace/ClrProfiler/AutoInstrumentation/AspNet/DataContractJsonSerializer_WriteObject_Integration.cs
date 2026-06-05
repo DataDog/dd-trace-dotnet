@@ -116,11 +116,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     {
         private const string MethodName = "System.Runtime.Serialization.Json.DataContractJsonSerializer.WriteObject()";
 
+        // Marks that the response body has already been captured for API Security on this request,
+        // so we only extract and run the WAF once per response.
+        private const string ResponseBodyCapturedKey = "__Datadog.ApiSecurity.DataContractResponseCaptured";
+
         private static readonly Type? HttpResponseStreamType = typeof(HttpResponse).Assembly.GetType("System.Web.HttpResponseStream");
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DataContractJsonSerializerWriteObjectCommon));
+        private static readonly object CapturedMarker = new();
 
         internal static CallTargetState CreateState(object graph, HttpContext httpContext, Scope scope)
-            => new(scope, new DataContractJsonSerializerState(graph, httpContext));
+        {
+            // Both overloads (Stream and XmlDictionaryWriter) fire for a single WriteObject(Stream, ...)
+            // call because the Stream overload internally writes through an XmlJsonWriter. Mark the request
+            // so the nested/subsequent hook is skipped instead of re-extracting and re-running the WAF.
+            httpContext.Items[ResponseBodyCapturedKey] = CapturedMarker;
+            return new(scope, new DataContractJsonSerializerState(graph, httpContext));
+        }
 
         internal static CallTargetReturn OnMethodEnd(Exception? exception, in CallTargetState state)
         {
@@ -177,6 +188,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             httpContext = HttpContext.Current;
             if (httpContext is null)
             {
+                return false;
+            }
+
+            if (httpContext.Items.Contains(ResponseBodyCapturedKey))
+            {
+                // Response body already captured for API Security on this request.
                 return false;
             }
 

@@ -158,6 +158,23 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
+        public void TestDuplicateDataMemberNamesDoNotThrow()
+        {
+            // Two members resolving to the same [DataMember(Name = ...)] previously threw from dict.Add,
+            // aborting the whole extraction. Now the last one wins and extraction succeeds.
+            var target = new TestDuplicateDataMemberPoco { First = "first", Second = "second" };
+
+            Dictionary<string, object> result = null;
+            Action act = () => result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            act.Should().NotThrow();
+            result.Should().NotBeNull();
+            result.Should().HaveCount(1);
+            result.Should().ContainKey("value");
+            result!["value"].Should().BeOneOf("first", "second");
+        }
+
+        [Fact]
         public void TestAnonymousTypeEmpty()
         {
             var target = new { };
@@ -570,6 +587,16 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [IgnoreDataMember]
         public string Ignored { get; set; }
+    }
+
+    [DataContract]
+    public class TestDuplicateDataMemberPoco
+    {
+        [DataMember(Name = "value")]
+        public string First { get; set; }
+
+        [DataMember(Name = "value")]
+        public string Second { get; set; }
     }
 
     public class TestNestedPropertiesPoco
