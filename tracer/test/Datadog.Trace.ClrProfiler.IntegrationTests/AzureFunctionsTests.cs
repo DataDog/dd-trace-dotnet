@@ -40,9 +40,7 @@ public abstract class AzureFunctionsTests : TestHelper
         SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Process)}_ENABLED", "0");
         // Add an extra exclude for calls to storage emulator. These aren't necessary in production
         // as they are already covered by the existing excludes
-        // "admin/host/status" excludes the host-readiness probe issued from the sample's APIM timer
-        // (see WaitForHostReady in AllTriggers.cs) so it does not produce extra http.request spans.
-        SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts, admin/host/status");
+        SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
     }
 
     protected static IList<MockSpan> FilterOutSocketsHttpHandler(IImmutableList<MockSpan> spans)
@@ -424,6 +422,13 @@ public abstract class AzureFunctionsTests : TestHelper
             SetEnvironmentVariable("DD_TEST_APIM_ENABLED", "1");
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            // The sample's APIM timer polls the host's status endpoint before issuing the traced call
+            // (see WaitForHostReady in AllTriggers.cs). The host instruments that request as an
+            // azure_functions.invoke span; drop it at the agent so it is neither counted while waiting
+            // for spans nor included in the assertions/snapshot.
+            agent.SpanFilters.Add(s => !s.Resource.Contains("/admin/host/status"));
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),

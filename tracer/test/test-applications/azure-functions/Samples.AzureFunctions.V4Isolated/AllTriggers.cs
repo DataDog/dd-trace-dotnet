@@ -190,9 +190,9 @@ public class AllTriggers
 
     private async Task WaitForHostReady(string httpFunctionUrl)
     {
-        // Calls to the host's admin status endpoint are excluded from http-client tracing
-        // (see DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS in AzureFunctionsTests), so polling
-        // here does not produce spans that would affect the asserted span count.
+        // Requests to this admin status endpoint are filtered out by the test
+        // (see the SpanFilters entry in AzureFunctionsTests.SubmitsTracesWithAzureApimHeaders), so
+        // polling here does not produce spans that would affect the asserted span count.
         var statusUri = $"http://{httpFunctionUrl}/admin/host/status";
         var deadline = DateTime.UtcNow.AddSeconds(60);
         var delay = TimeSpan.FromMilliseconds(250);
