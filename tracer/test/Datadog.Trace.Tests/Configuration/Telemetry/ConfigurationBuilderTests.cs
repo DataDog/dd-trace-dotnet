@@ -1172,6 +1172,52 @@ public class ConfigurationBuilderTests
                               Origin = "default",
                           });
         }
+
+        [Fact]
+        public void AsRedactedDictionaryResult_ParsesValueButRedactsTelemetry()
+        {
+            const string key = "key_no_spaces";
+            var telemetry = new ConfigurationTelemetry();
+            var actual = new ConfigurationBuilder(_source, telemetry)
+                        .WithKeys(key)
+                        .AsRedactedDictionaryResult(separator: ':')
+                        .WithDefault(new(new Dictionary<string, string>(), "[]"));
+
+            // The parsed dictionary is still returned in full
+            actual.Should().BeEquivalentTo(_withoutOptional[key]);
+
+            // ... but the value is redacted in telemetry: the type is Redacted and the source value is absent
+            var entry = telemetry.GetQueueForTesting().OrderBy(x => x.SeqId).Should().ContainSingle().Subject;
+            entry.Key.Should().Be(key);
+            entry.Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted);
+            entry.StringValue.Should().BeNull();
+
+            // None of the configured values should appear in any recorded telemetry value
+            foreach (var configuredValue in _withoutOptional[key].Values)
+            {
+                telemetry.GetQueueForTesting()
+                         .Select(x => x.StringValue)
+                         .Should()
+                         .NotContain(v => v != null && v.Contains(configuredValue));
+            }
+        }
+
+        [Fact]
+        public void AsRedactedDictionaryResult_WithDefault_RedactsDefaultTelemetry()
+        {
+            const string key = "unknown";
+            var telemetry = new ConfigurationTelemetry();
+            var actual = new ConfigurationBuilder(_source, telemetry)
+                        .WithKeys(key)
+                        .AsRedactedDictionaryResult(separator: ':')
+                        .WithDefault(new(new Dictionary<string, string>(), "[]"));
+
+            actual.Should().BeEmpty();
+            var entry = telemetry.GetQueueForTesting().OrderBy(x => x.SeqId).Should().ContainSingle().Subject;
+            entry.Key.Should().Be(key);
+            entry.Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted);
+            entry.StringValue.Should().BeNull();
+        }
     }
 
     public class Result<T>
