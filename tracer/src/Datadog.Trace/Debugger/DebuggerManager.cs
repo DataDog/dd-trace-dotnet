@@ -221,7 +221,7 @@ namespace Datadog.Trace.Debugger
             // Snapshot exploration test runs take a different initialization path (no agent
             // discovery, no-op symbols/probe-status pollers, sink writes to CSV).
             // Route here so that Instrumentation.cs stays free of debugger test plumbing.
-            if (settings.IsSnapshotExplorationTestEnabled && IsRunningInTestHost())
+            if (settings.IsSnapshotExplorationTestEnabled)
             {
                 try
                 {
