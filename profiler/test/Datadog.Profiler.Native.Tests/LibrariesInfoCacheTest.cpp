@@ -18,8 +18,7 @@ struct ServiceWrapper
         EXPECT_TRUE(_service->Start()) << "Failed to start " << _service->GetName();
     }
     ~ServiceWrapper() {
-        auto stopped = _service->Stop();
-        std::cerr << "[DIAG] Stop() returned " << stopped << std::endl;
+        EXPECT_TRUE(_service->Stop()) << "Failed to stop " << _service->GetName();
     }
     ServiceBase* _service;
 };
@@ -31,25 +30,11 @@ TEST(LibrariesInfoCacheTests, MakeSureWeDoNotLeakMemory)
 {
     auto cache = LibrariesInfoCache(MemoryResourceManager::GetDefault());
 
-    auto t0 = std::chrono::steady_clock::now();
-    auto started = cache.Start();
-    auto t1 = std::chrono::steady_clock::now();
-    auto startMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-    std::cerr << "[DIAG] Start() returned " << started << " after " << startMs << "ms" << std::endl;
-
-    for(auto i = 0; i < 2; i++)
+    for(auto i = 0; i < 5; i++)
     {
         cache.NotifyCacheUpdateImpl();
         std::this_thread::sleep_for(100ms);
     }
-
-    auto t2 = std::chrono::steady_clock::now();
-    std::cerr << "[DIAG] Calling Stop()..." << std::endl;
-    auto stopped = cache.Stop();
-    auto t3 = std::chrono::steady_clock::now();
-    auto stopMs = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
-    std::cerr << "[DIAG] Stop() returned " << stopped << " after " << stopMs << "ms" << std::endl;
-    std::cerr << "[DIAG] IsStarted() = " << cache.IsStarted() << std::endl;
 }
 
 TEST(LibrariesInfoCacheTests, MakeSureWeUseTheCorrectAddressSpace)
