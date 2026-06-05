@@ -140,7 +140,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                             if (propColonIdx > 0)
                             {
                                 var propName = trimmedLine.Substring(0, propColonIdx);
-                                if (propName is "const_name" or "product" or "implementation" or "type" or "default" or "aliases" or "deprecation_message")
+                                if (propName is "const_name" or "product" or "implementation" or "type" or "default" or "aliases" or "deprecation_message" or "sensitive")
                                 {
                                     // End of documentation, process this property
                                     inDocumentation = false;

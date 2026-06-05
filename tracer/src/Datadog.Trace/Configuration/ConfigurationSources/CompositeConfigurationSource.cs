@@ -192,14 +192,14 @@ namespace Datadog.Trace.Configuration
             => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings: false, separator: null);
 
         /// <inheritdoc />
-        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-            => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings, separator);
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue = true)
+            => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings, separator, recordValue);
 
         /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
             => GetDictionary(key, telemetry, validator, parser, allowOptionalMappings: false, separator: null);
 
-        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>>? parser, bool allowOptionalMappings, char? separator)
+        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>>? parser, bool allowOptionalMappings, char? separator, bool recordValue = true)
         {
             // We iterate in reverse order, and keep the last successful value
             // because we need to record the data for all the sources in telemetry
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Configuration
                 }
                 else if (separator.HasValue)
                 {
-                    value = source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator.Value);
+                    value = source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator.Value, recordValue);
                 }
                 else
                 {
@@ -238,7 +238,7 @@ namespace Datadog.Trace.Configuration
             if (result.IsValid && !isLastFound)
             {
                 // there should always be a telemetry override by convention, so just record a sentinel for now if there's not for some reason
-                telemetry.Record(key, result.TelemetryOverride ?? "<MISSING>", recordValue: true, origin);
+                telemetry.Record(key, result.TelemetryOverride ?? "<MISSING>", recordValue, origin);
             }
 
             return result;

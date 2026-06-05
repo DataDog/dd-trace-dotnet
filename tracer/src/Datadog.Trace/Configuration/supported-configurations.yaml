@@ -2506,6 +2506,7 @@ supportedConfigurations:
     default: ''
     product: OpenTelemetry
     const_name: ExporterOtlpHeaders
+    sensitive: true
     documentation: |-
       Configuration key to set custom headers for OTLP export (fallback for metrics-specific headers).
       Used when <see cref="ExporterOtlpMetricsHeaders"/> is not set.
@@ -2563,6 +2564,7 @@ supportedConfigurations:
     aliases:
     - OTEL_EXPORTER_OTLP_HEADERS
     const_name: ExporterOtlpMetricsHeaders
+    sensitive: true
     documentation: |-
       Configuration key to set custom headers for OTLP metrics export.
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
@@ -2575,6 +2577,7 @@ supportedConfigurations:
     aliases:
     - OTEL_EXPORTER_OTLP_HEADERS
     const_name: ExporterOtlpLogsHeaders
+    sensitive: true
     documentation: |-
       Configuration key to set custom headers for OTLP logs export.
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
@@ -2654,6 +2657,7 @@ supportedConfigurations:
     aliases:
     - OTEL_EXPORTER_OTLP_HEADERS
     const_name: ExporterOtlpTracesHeaders
+    sensitive: true
     documentation: |-
       Configuration key to set custom headers for OTLP traces export.
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
