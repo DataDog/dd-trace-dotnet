@@ -1459,6 +1459,26 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Sampling interval in milliseconds for CPU profiling. Lower values increase resolution at the cost of overhead.
+  DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Internal variable used by the Linux crash-handling wrapper to carry the original minidump
+      name across the fork/exec boundary so a child process can restore it. Set programmatically;
+      not intended for manual configuration.
+  DD_INTERNAL_CRASHTRACKING_PASSTHROUGH:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: null
+    product: Tracer
+    documentation: |-
+      Internal flag set by the Linux crash-handling wrapper to tell dd-dotnet whether to forward
+      the crash to the runtime's createdump after handling it. Set programmatically;
+      not intended for manual configuration.
   DD_INTERNAL_CUSTOM_CLR_PROFILER_PATH:
   - implementation: A
     scope: native
