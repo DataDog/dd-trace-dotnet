@@ -12,6 +12,9 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <signal.h>
+#include <sys/syscall.h>
+#include <time.h>
 #include <unistd.h>
 
 using namespace std::chrono_literals;
@@ -42,10 +45,26 @@ std::atomic<LibrariesInfoCache*> LibrariesInfoCache::s_instance{nullptr};
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
+namespace {
+std::atomic<std::uint64_t>* s_cpuTicksPtr = nullptr;
+
+void CpuTickSignalHandler(int /*sig*/)
+{
+    auto* ptr = s_cpuTicksPtr;
+    if (ptr != nullptr)
+    {
+        ptr->fetch_add(1, std::memory_order_relaxed);
+    }
+}
+} // anonymous namespace
+
 LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
+    _trackingResource{resource},
+    _wrappersAllocator{&_trackingResource},
+    _librariesInfo{&_trackingResource},
+    _newCache{&_trackingResource},
     _stopRequested{false},
-    _event(true), // set the event to force updating the cache the first time Wait is called
-    _wrappersAllocator{resource}
+    _event(true) // set the event to force updating the cache the first time Wait is called
 {
 }
 
@@ -142,6 +161,8 @@ bool LibrariesInfoCache::StopImpl()
     NotifyCacheUpdateImpl();
     Log::Debug("Notification to stop the worker has been sent.");
     _worker.join();
+
+    LogStats();
     _librariesInfo.clear();
 #ifdef ARM64
     _moduleRegions.clear();
@@ -151,9 +172,83 @@ bool LibrariesInfoCache::StopImpl()
     return true;
 }
 
+void LibrariesInfoCache::LogStats()
+{
+    auto cpuMs = _cpuTicks.load(std::memory_order_relaxed) * 10;
+    auto avgReloadUs = _reloadCount > 0
+        ? std::chrono::duration_cast<std::chrono::microseconds>(_totalReloadDuration).count() / _reloadCount
+        : 0;
+    auto maxReloadUs = std::chrono::duration_cast<std::chrono::microseconds>(_maxReloadDuration).count();
+    auto avgLockUs = _reloadCount > 0
+        ? std::chrono::duration_cast<std::chrono::microseconds>(_totalLockHoldDuration).count() / _reloadCount
+        : 0;
+    auto maxLockUs = std::chrono::duration_cast<std::chrono::microseconds>(_maxLockHoldDuration).count();
+
+    Log::Info("LibrariesInfoCache stats:");
+    Log::Info("  CPU time (worker thread): ", cpuMs, "ms");
+    Log::Info("  Notifications received: ", _notificationCount);
+    Log::Info("  Cache reloads: ", _reloadCount);
+    Log::Info("  Reload duration avg: ", avgReloadUs, "us, max: ", maxReloadUs, "us");
+    Log::Info("  Lock hold duration avg: ", avgLockUs, "us, max: ", maxLockUs, "us");
+    Log::Info("  Libraries in cache: ", _librariesInfo.size());
+    Log::Info("  Memory current: ", _trackingResource.GetCurrentUsage(), " bytes");
+    Log::Info("  Memory peak: ", _trackingResource.GetPeakUsage(), " bytes");
+    Log::Info("  Memory total allocated: ", _trackingResource.GetTotalAllocated(), " bytes");
+    Log::Info("  Memory total deallocated: ", _trackingResource.GetTotalDeallocated(), " bytes");
+    Log::Info("  Memory allocation count: ", _trackingResource.GetAllocationCount());
+}
+
+void LibrariesInfoCache::SetupCpuTimer()
+{
+    struct sigaction sa = {};
+    sa.sa_handler = CpuTickSignalHandler;
+    sa.sa_flags = SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGUSR2, &sa, nullptr) != 0)
+    {
+        Log::Warn("LibrariesInfoCache: Failed to install SIGUSR2 handler for CPU measurement: ", strerror(errno));
+        return;
+    }
+
+    s_cpuTicksPtr = &_cpuTicks;
+
+    auto tid = static_cast<int>(syscall(SYS_gettid));
+
+    struct sigevent sev = {};
+    sev.sigev_signo = SIGUSR2;
+    sev.sigev_notify = SIGEV_THREAD_ID;
+    ((int*)&sev.sigev_notify)[1] = tid;
+
+    clockid_t clock = ((~tid) << 3) | 6; // CPUCLOCK_SCHED | CPUCLOCK_PERTHREAD_MASK
+    if (syscall(__NR_timer_create, clock, &sev, &_cpuTimerId) < 0)
+    {
+        Log::Warn("LibrariesInfoCache: Failed to create CPU timer: ", strerror(errno));
+        s_cpuTicksPtr = nullptr;
+        return;
+    }
+
+    _cpuTimerCreated = true;
+
+    struct itimerspec its = {};
+    its.it_interval = {0, 10'000'000}; // 10ms
+    its.it_value = {0, 10'000'000};
+    syscall(__NR_timer_settime, _cpuTimerId, 0, &its, nullptr);
+}
+
+void LibrariesInfoCache::TeardownCpuTimer()
+{
+    if (_cpuTimerCreated)
+    {
+        syscall(__NR_timer_delete, _cpuTimerId);
+        _cpuTimerCreated = false;
+    }
+    s_cpuTicksPtr = nullptr;
+}
+
 void LibrariesInfoCache::Work(std::shared_ptr<AutoResetEvent> startEvent)
 {
     OpSysTools::SetNativeThreadName(WStr("DD_LibsCache"));
+    SetupCpuTimer();
 
     auto timeout = InfiniteTimeout;
     if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
@@ -194,6 +289,8 @@ void LibrariesInfoCache::Work(std::shared_ptr<AutoResetEvent> startEvent)
     {
         dd_notify_libraries_cache_update = nullptr;
     }
+
+    TeardownCpuTimer();
 }
 
 void LibrariesInfoCache::UpdateCache()
@@ -206,19 +303,20 @@ void LibrariesInfoCache::UpdateCache()
     // But the Cache Thread is blocked (T1 owns the malloc lock)
     // T1 is blocked when libwunding calls DlIteratePhdr.
 
-    // OPTIM: make it static to reuse buffer overtime
-    // Safe to make it static to the function, this variable is accessed only by one thread.
-    static std::vector<DlPhdrInfoWrapper> newCache;
-    newCache.reserve(_librariesInfo.capacity());
+    _reloadCount++;
+    _trackingResource.ResetPerReloadStats();
+    auto reloadStart = std::chrono::steady_clock::now();
+
+    _newCache.reserve(_librariesInfo.capacity());
 
     struct Data
     {
     public:
-        std::vector<DlPhdrInfoWrapper>* Cache;
+        std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>* Cache;
         shared::pmr::memory_resource* Allocator;
     };
 
-    auto data = Data{.Cache = &newCache, .Allocator = _wrappersAllocator};
+    auto data = Data{.Cache = &_newCache, .Allocator = _wrappersAllocator};
 
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
@@ -233,9 +331,11 @@ void LibrariesInfoCache::UpdateCache()
     static std::vector<FuncEntry> newSymbols;
     newRegions.clear();
     newSymbols.clear();
-    BuildSymbolCache(newCache, newRegions, newSymbols);
+    BuildSymbolCache(_newCache, newRegions, newSymbols);
 #endif
 
+
+    auto lockStart = std::chrono::steady_clock::now();
     {
         std::unique_lock l{_cacheLock};
         _librariesInfo.swap(newCache);
@@ -244,12 +344,28 @@ void LibrariesInfoCache::UpdateCache()
         _symbols.swap(newSymbols);
 #endif
     }
+    auto lockEnd = std::chrono::steady_clock::now();
 
-    newCache.clear();
-#ifdef ARM64
-    newRegions.clear();
-    newSymbols.clear();
-#endif
+    _newCache.clear();
+    #ifdef ARM64
+        newRegions.clear();
+        newSymbols.clear();
+    #endif
+
+    auto reloadEnd = std::chrono::steady_clock::now();
+    auto reloadDuration = reloadEnd - reloadStart;
+    auto lockDuration = lockEnd - lockStart;
+
+    _totalReloadDuration += reloadDuration;
+    _totalLockHoldDuration += lockDuration;
+    if (reloadDuration > _maxReloadDuration)
+    {
+        _maxReloadDuration = reloadDuration;
+    }
+    if (lockDuration > _maxLockHoldDuration)
+    {
+        _maxLockHoldDuration = lockDuration;
+    }
 }
 
 #ifdef ARM64
@@ -476,6 +592,7 @@ void LibrariesInfoCache::NotifyCacheUpdate()
 
 void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
+    _notificationCount++;
     _event.Set();
 }
 
