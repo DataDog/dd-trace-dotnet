@@ -105,8 +105,7 @@ namespace Datadog.Trace.TestHelpers
                 // default
                 monitoringHome = Path.Combine(
                     EnvironmentTools.GetSolutionDirectory(),
-                    "shared",
-                    "bin",
+                    "artifacts",
                     "monitoring-home");
             }
 
