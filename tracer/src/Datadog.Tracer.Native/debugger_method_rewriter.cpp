@@ -1970,6 +1970,8 @@ bool DebuggerMethodRewriter::DoesILContainUnsupportedInstructions(ILRewriter& re
 HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,
                                                                   const ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine)
 {
+    isTypeImplementIAsyncStateMachine = false;
+
     HCORENUM interfaceImplsEnum = nullptr;
     ULONG actualImpls;
     mdInterfaceImpl impls;
@@ -1985,7 +1987,6 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
     if (actualImpls != 1)
     {
         // our compiler generated nested type should implement exactly one interface
-        isTypeImplementIAsyncStateMachine = false;
         return S_OK;
     }
 
@@ -2002,7 +2003,6 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
     // represent other interfaces for our purposes, so they are not async state machines and should not be logged.
     if (TypeFromToken(interfaceToken) != mdtTypeRef)
     {
-        isTypeImplementIAsyncStateMachine = false;
         return S_OK;
     }
 
@@ -2025,7 +2025,6 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
         return S_OK;
     }
 
-    isTypeImplementIAsyncStateMachine = false;
     return S_OK;
 }
 
