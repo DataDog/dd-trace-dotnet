@@ -144,11 +144,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
                 // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manually if needed.
-                // yield return [packageVersion[0], "false", "true", "http/protobuf", false];
-                yield return [packageVersion[0], "true", "false", "http/json", false];
-                yield return [packageVersion[0], "true", "false", "http/json", true];
-                yield return [packageVersion[0], "true", "false", "http/protobuf", false];
-                yield return [packageVersion[0], "true", "false", "http/protobuf", true];
+                // yield return [packageVersion[0], "false", "true", "http/protobuf", false, false];
+                yield return [packageVersion[0], "true", "false", "http/json", false, false];
+                yield return [packageVersion[0], "true", "false", "http/json", true, false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false, false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true, false];
+                yield return [packageVersion[0], "true", "false", "http/json", false, true];
+                yield return [packageVersion[0], "true", "false", "http/json", true, true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false, true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true, true];
             }
         }
 
@@ -267,9 +271,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTracesTestData))]
-        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup)
+        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup, bool openTelemetryTraceCompatibilityEnabled)
         {
             SetServiceVersion("1.0.x"); // We need this to be consistent with the in-code 1.0.x version set in the OTel SDK builder
+            // SetEnvironmentVariable("DD_TRACE_OTEL_COMPATIBILITY_ENABLED", openTelemetryTraceCompatibilityEnabled.ToString());
 
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
@@ -284,9 +289,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => string.Empty
             };
 
-            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD";
+            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetryTraceCompatibilityEnabled ? "_OtelCompat" : string.Empty)}";
 
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
             await ClearTestAgentSession(testAgentHost);
@@ -325,12 +330,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                using var httpClient = new System.Net.Http.HttpClient();
-                var tracesResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/traces");
-                tracesResponse.EnsureSuccessStatusCode();
-
-                var tracesJson = await tracesResponse.Content.ReadAsStringAsync();
-                var tracesRequests = JToken.Parse(tracesJson);
+                // The sample exports traces during shutdown, so there can be a brief delay
+                // between process exit and the data appearing in the test-agent. Poll with
+                // retries to avoid a race, matching the pattern used by SubmitsOtlpMetrics
+                // and SubmitsOtlpLogs.
+                var tracesRequests = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/traces");
 
                 tracesRequests.Should().NotBeNullOrEmpty();
 

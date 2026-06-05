@@ -81,58 +81,62 @@ internal static class OtlpMapper
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
+    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, bool openTelemetryTraceCompatibilityEnabled)
     {
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
+            openTelemetryTraceCompatibilityEnabled,
             ref writeKeyValue,
             static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
     }
 
-    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, bool openTelemetryTraceCompatibilityEnabled, ref TState state, KeyValueWriter<TState> writeKeyValue)
     {
         int count = 0;
         int droppedAttributesCount = 0;
 
-        if (count < limit)
+        if (!openTelemetryTraceCompatibilityEnabled)
         {
-            writeKeyValue(ref state, new KeyValue("service.name", spanModel.Span.ServiceName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("service.name", spanModel.Span.ServiceName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("operation.name", spanModel.Span.OperationName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("operation.name", spanModel.Span.OperationName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("resource.name", spanModel.Span.ResourceName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("resource.name", spanModel.Span.ResourceName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("span.type", spanModel.Span.Type));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("span.type", spanModel.Span.Type));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
         }
 
         // Write trace tags
