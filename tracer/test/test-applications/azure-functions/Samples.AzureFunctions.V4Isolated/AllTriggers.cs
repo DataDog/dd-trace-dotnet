@@ -157,6 +157,15 @@ public class AllTriggers
     private async Task<string> CallFunctionHttpWithProxy(string path)
     {
         var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
+
+        // TriggerAllTimer runs on host startup (RunOnStartup=true) and immediately calls back into
+        // this same host. On a loaded CI agent the host/worker can be slow to start servicing
+        // requests, so the self-call below would otherwise fail or time out and throw out of the
+        // timer before _mutex.Set() is reached, hanging the whole run until ExitApp's 5 min mutex
+        // wait expires. Wait until the host reports ready first, so the single (traced) APIM call
+        // succeeds on the first attempt and we don't emit extra spans from failed attempts.
+        await WaitForHostReady(httpFunctionUrl);
+
         var uri = $"http://{httpFunctionUrl}/api/{path}";
         _logger.LogInformation("Calling Uri with APIM headers: {Uri}", uri);
 
@@ -177,6 +186,44 @@ public class AllTriggers
         _logger.LogInformation("APIM proxy call completed with status: {StatusCode}", response.StatusCode);
 
         return content;
+    }
+
+    private async Task WaitForHostReady(string httpFunctionUrl)
+    {
+        // Calls to the host's admin status endpoint are excluded from http-client tracing
+        // (see DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS in AzureFunctionsTests), so polling
+        // here does not produce spans that would affect the asserted span count.
+        var statusUri = $"http://{httpFunctionUrl}/admin/host/status";
+        var deadline = DateTime.UtcNow.AddSeconds(60);
+        var delay = TimeSpan.FromMilliseconds(250);
+
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                using var statusResponse = await HttpClient.GetAsync(statusUri, cts.Token);
+                if (statusResponse.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Function host reported ready ({StatusCode})", statusResponse.StatusCode);
+                    return;
+                }
+
+                _logger.LogInformation("Function host not ready yet ({StatusCode}), retrying", statusResponse.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, "Function host not reachable yet, retrying");
+            }
+
+            await Task.Delay(delay);
+            if (delay < TimeSpan.FromSeconds(2))
+            {
+                delay += TimeSpan.FromMilliseconds(250);
+            }
+        }
+
+        _logger.LogWarning("Timed out waiting for function host to become ready; attempting APIM call anyway");
     }
 
     private async Task Attempt(string endpoint, bool expectFailure = false)

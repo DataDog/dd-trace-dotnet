@@ -40,7 +40,9 @@ public abstract class AzureFunctionsTests : TestHelper
         SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Process)}_ENABLED", "0");
         // Add an extra exclude for calls to storage emulator. These aren't necessary in production
         // as they are already covered by the existing excludes
-        SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
+        // "admin/host/status" excludes the host-readiness probe issued from the sample's APIM timer
+        // (see WaitForHostReady in AllTriggers.cs) so it does not produce extra http.request spans.
+        SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts, admin/host/status");
     }
 
     protected static IList<MockSpan> FilterOutSocketsHttpHandler(IImmutableList<MockSpan> spans)
