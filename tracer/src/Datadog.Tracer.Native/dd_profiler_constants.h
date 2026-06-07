@@ -60,6 +60,7 @@ const shared::WSTRING include_assemblies[]{
     WStr("System.Diagnostics.Process"),
     WStr("Microsoft.Extensions.Identity.Core"),
     WStr("System.Runtime.Remoting"),
+    WStr("System.Runtime.Serialization"),
 };
 
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
