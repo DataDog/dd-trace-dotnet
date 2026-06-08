@@ -455,6 +455,117 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
         }
 
+        [Fact]
+        public void TestEmitDefaultValueFalse_OmitsNullAndDefaultMembers()
+        {
+            // EmitDefaultValue=false: null/default members should be absent (serializer omits them)
+            var target = new TestEmitDefaultValuePoco { Id = 0, Name = null, Tag = null, Flag = false };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().NotContainKey("id");    // int default 0, EmitDefaultValue=false
+            result.Should().NotContainKey("name");  // null, EmitDefaultValue=false
+            result.Should().ContainKey("tag");      // null but EmitDefaultValue=true (default)
+            result.Should().NotContainKey("flag");  // bool default false, EmitDefaultValue=false
+        }
+
+        [Fact]
+        public void TestEmitDefaultValueFalse_IncludesNonDefaultMembers()
+        {
+            var target = new TestEmitDefaultValuePoco { Id = 42, Name = "hello", Tag = "t", Flag = true };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!["id"].Should().Be(42);
+            result["name"].Should().Be("hello");
+            result["tag"].Should().Be("t");
+            result["flag"].Should().Be(true);
+        }
+
+        [Fact]
+        public void TestInheritedDataContractMembers()
+        {
+            // Private [DataMember] on a base [DataContract] type must be included
+            var target = new TestDerivedDataContractPoco { DerivedName = "derived", BaseId = 7 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().ContainKey("derived_name");
+            result.Should().ContainKey("base_id");
+            result!["derived_name"].Should().Be("derived");
+            result["base_id"].Should().Be(7);
+        }
+
+        [Fact]
+        public void TestPublicFieldsIncludedForNonDataContractType()
+        {
+            // DataContractJsonSerializer serializes public fields on plain POCOs
+            var target = new TestPublicFieldPoco { PublicField = "hello", PublicIntField = 5 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().ContainKey(nameof(TestPublicFieldPoco.PublicField));
+            result.Should().ContainKey(nameof(TestPublicFieldPoco.PublicIntField));
+            result![nameof(TestPublicFieldPoco.PublicField)].Should().Be("hello");
+            result[nameof(TestPublicFieldPoco.PublicIntField)].Should().Be(5);
+        }
+
+        [Fact]
+        public void TestPolymorphicMemberUsesRuntimeType()
+        {
+            // Members declared as 'object' should be extracted using the runtime type,
+            // matching what the serializer actually wrote to the response body.
+            var target = new TestPolymorphicMemberPoco { Value = 42 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            // Should be the int value 42, not an empty dict from treating 'object' as a POCO
+            result!["value"].Should().Be(42);
+        }
+
+        [Fact]
+        public void TestDictionaryExtractedAsKeyValuePairsWhenNotSimpleFormat()
+        {
+            // DataContractJsonSerializer with UseSimpleDictionaryFormat=false (the default) writes
+            // Dictionary<K,V> as [{Key:k,Value:v}] arrays, not {k:v} objects.
+            var target = new TestDictionaryMemberPoco
+            {
+                Data = new Dictionary<string, string> { { "a", "1" }, { "b", "2" } }
+            };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: false) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var data = result!["data"] as List<object>;
+            data.Should().NotBeNull();
+            data.Should().HaveCount(2);
+            var first = data![0] as Dictionary<string, object>;
+            first.Should().ContainKey("Key");
+            first.Should().ContainKey("Value");
+        }
+
+        [Fact]
+        public void TestDictionaryExtractedAsMapWhenSimpleFormat()
+        {
+            // With UseSimpleDictionaryFormat=true the serializer writes {k:v} objects as usual.
+            var target = new TestDictionaryMemberPoco
+            {
+                Data = new Dictionary<string, string> { { "a", "1" } }
+            };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: true) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var data = result!["data"] as Dictionary<string, object>;
+            data.Should().NotBeNull();
+            data!["a"].Should().Be("1");
+        }
+
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
             var current = target;
@@ -634,5 +745,58 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             return Test.GetHashCode() + Prop.GetHashCode();
         }
+    }
+
+    [DataContract]
+    public class TestEmitDefaultValuePoco
+    {
+        [DataMember(Name = "id", EmitDefaultValue = false)]
+        public int Id { get; set; }
+
+        [DataMember(Name = "name", EmitDefaultValue = false)]
+        public string Name { get; set; }
+
+        [DataMember(Name = "tag")]
+        public string Tag { get; set; }
+
+        [DataMember(Name = "flag", EmitDefaultValue = false)]
+        public bool Flag { get; set; }
+    }
+
+    [DataContract]
+    public class TestBaseDataContractPoco
+    {
+        [DataMember(Name = "base_id")]
+        public int BaseId { get; set; }
+    }
+
+    [DataContract]
+    public class TestDerivedDataContractPoco : TestBaseDataContractPoco
+    {
+        [DataMember(Name = "derived_name")]
+        public string DerivedName { get; set; }
+    }
+
+#pragma warning disable SA1401 // Fields should be private — public fields are the subject under test
+    public class TestPublicFieldPoco
+    {
+        public string PublicField;
+
+        public int PublicIntField;
+    }
+#pragma warning restore SA1401
+
+    [DataContract]
+    public class TestPolymorphicMemberPoco
+    {
+        [DataMember(Name = "value")]
+        public object Value { get; set; }
+    }
+
+    [DataContract]
+    public class TestDictionaryMemberPoco
+    {
+        [DataMember(Name = "data")]
+        public Dictionary<string, string> Data { get; set; }
     }
 }
