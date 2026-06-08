@@ -156,6 +156,26 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountDebuggerMemoryPressureTransitions(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureTrigger tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureDisabled(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureDisabledReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureMemoryUsagePct(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureMemoryBucket tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureGcActivity(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureGcBucket tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureDuration(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureDurationBucket tag, int increment = 1)
+    {
+    }
+
     public void RecordCountWafInit(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
     }

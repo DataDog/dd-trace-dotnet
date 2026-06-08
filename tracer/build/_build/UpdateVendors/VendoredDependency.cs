@@ -346,57 +346,74 @@ namespace UpdateVendors
             
             Add(
                 libraryName: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
-                version: "core-1.13.1",
-                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.13.1.zip",
-                pathToSrc: new[] { "opentelemetry-dotnet-core-1.13.1", "src", "OpenTelemetry.Exporter.OpenTelemetryProtocol" },
+                version: "core-1.15.3",
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.15.3.zip",
+                pathToSrc: new[] { "opentelemetry-dotnet-core-1.15.3", "src", "OpenTelemetry.Exporter.OpenTelemetryProtocol" },
                 transform: filePath => RewriteCsFileWithStandardTransform(
                     filePath,
                     originalNamespace: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
-                    AddIfNetcoreapp31OrGreater,
+                    (filePath, content) =>
+                    {
+                        // We don't want to add this to _all_ of the items, just most of them
+                        content = Path.GetFileName(filePath) is not "ProtobufOtlpCommonFieldNumberConstants.cs"
+                                   and not "ProtobufOtlpTraceFieldNumberConstants.cs"
+                                   and not "ProtobufSerializer.cs"
+                                   and not "ProtobufWireType.cs"
+                                   ? AddIfNetcoreapp31OrGreater(filePath, content)
+                                   : content;
+
+                        // we have to wrap this on non-.NET Core
+                        content = content.Replace(
+                            "using System.Buffers.Binary;",
+                            "#if NETCOREAPP3_1_OR_GREATER\nusing System.Buffers.Binary;\n#endif");
+
+				        // These values are just _wrong_ - fix them to follow the spec instead
+                        // https://github.com/open-telemetry/opentelemetry-proto/blob/6d0a56803a540ed526cd918895e72c79df25fc92/opentelemetry/proto/trace/v1/trace.proto#L153
+                        return content
+                                 .Replace("SpanKind_Internal = 2", "Span_Kind_Internal = 1")
+                                 .Replace("SpanKind_Server = 3", "Span_Kind_Server = 2")
+                                 .Replace("SpanKind_Client = 4", "Span_Kind_Client = 3")
+                                 .Replace("SpanKind_Producer = 5", "Span_Kind_Producer = 4")
+                                 .Replace("SpanKind_Consumer = 6", "Span_Kind_Consumer = 5");
+                    },
                     AddNullableDirectiveTransform,
                     AddOpenTelemetryUsings),
-                relativePathsToExclude: new[]
+                onlyIncludePaths: new[]
                 {
                     // Vendor gRPC and HTTP export clients for logs and metrics
                     // Vendor low-level protobuf utilities: ProtobufSerializer, ProtobufWireType
                     // Vendor ONLY field constants we actually use (Logs and Common)
                     // EXCLUDE high-level serializers that depend on OpenTelemetry SDK types
-                    ".publicApi/",
-                    "Builder/",
-                    "PersistentStorage/",
-                    "Implementation/Serializer/ProtobufOtlpLogSerializer.cs",          
-                    "Implementation/Serializer/ProtobufOtlpMetricSerializer.cs",        
-                    "Implementation/Serializer/ProtobufOtlpTraceSerializer.cs",        
-                    "Implementation/Serializer/ProtobufOtlpResourceSerializer.cs",     
-                    "Implementation/Serializer/ProtobufOtlpTagWriter.cs",              
-                    "Implementation/Serializer/ProtobufOtlpMetricFieldNumberConstants.cs",  // Not used - metrics has own FieldNumbers ATM
+                    "Implementation/ExportClient/",
+                    "Implementation/Serializer/ProtobufOtlpCommonFieldNumberConstants.cs",
+                    "Implementation/Serializer/ProtobufOtlpLogFieldNumberConstants.cs",
+                    "Implementation/Serializer/ProtobufOtlpResourceFieldNumberConstants.cs",
                     "Implementation/Serializer/ProtobufOtlpTraceFieldNumberConstants.cs",
-                    "Implementation/Transmission/",
-                    "Implementation/ActivityExtensions.cs",
-                    "Implementation/ExperimentalOptions.cs",
-                    "Implementation/SdkLimitOptions.cs",
-                    "Implementation/TelemetryType.cs",
-                    "Implementation/OpenTelemetryProtocolExporterEventSource.cs",
-                    "Implementation/OtlpServiceCollectionExtensions.cs",
-                    "Implementation/OtlpExporterOptionsConfigurationType.cs",
-                    "Implementation/OtlpSpecConfigDefinitions.cs",
-                    "Implementation/TimestampHelpers.cs",
+                    "Implementation/Serializer/ProtobufSerializer.cs",
+                    "Implementation/Serializer/ProtobufWireType.cs",
+                },
+                relativePathsToExclude: new[]
+                {
                     "Implementation/ExportClient/OtlpRetry.cs",
-                    "CHANGELOG.md",
-                    "README.md",
-                    "IOtlpExporterOptions.cs",
-                    "OtlpExporterOptions.cs",
-                    "OtlpExporterOptionsExtensions.cs",
-                    "OtlpExportProtocol.cs",  // In parent namespace OpenTelemetry.Exporter; keep in stub instead
-                    "OtlpExportProtocolParser.cs",
-                    "OtlpLogExporter.cs",
-                    "OtlpLogExporterHelperExtensions.cs",
-                    "OtlpMetricExporter.cs",
-                    "OtlpMetricExporterExtensions.cs",
-                    "OtlpSignalType.cs",
-                    "OtlpTraceExporter.cs",
-                    "OtlpTraceExporterHelperExtensions.cs"
                 });
+
+            Add(
+                libraryName: "OpenTelemetry",
+                version: "core-1.15.3", // Keep this in sync with above code
+                downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.15.3.zip",
+                pathToSrc: new[] { "opentelemetry-dotnet-core-1.15.3", "src", "Shared" },
+                transform: filePath => RewriteCsFileWithStandardTransform(
+                    filePath,
+                    originalNamespace: "",
+                    AddIfNetcoreapp31OrGreater,
+                    AddNullableDirectiveTransform,
+                    AddOpenTelemetryUsings),
+                onlyIncludePaths: new[]
+                {
+                    // Used by OpenTelemetry.Exporter.OpenTelemetryProtocol
+                    "HttpClientHelpers.cs",
+                },
+                isNuGetPackage: false);
 
             Add(
                 libraryName: "spdlog",
@@ -1155,7 +1172,9 @@ namespace UpdateVendors
                 "using System.Collections.Generic;\n" +
                 "using System.IO;\n" +
                 "using System.Linq;\n" +
+                "#if NETCOREAPP3_1_OR_GREATER\n" +
                 "using System.Net.Http;\n" +
+                "#endif\n" +
                 "using System.Threading;\n" +
                 "using System.Threading.Tasks;\n\n";
 

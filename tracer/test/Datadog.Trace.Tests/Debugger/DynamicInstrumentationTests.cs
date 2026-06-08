@@ -10,6 +10,7 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -28,6 +29,8 @@ using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
 using DebuggerSampling = Datadog.Trace.Debugger.Configurations.Models.Sampling;
+using ExpressionProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
+using ExpressionProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 #nullable enable
 
@@ -69,6 +72,8 @@ public class DynamicInstrumentationTests
 
         var globalRateLimiter = new GlobalRateLimiterMock();
         var logUploader = new LogUploaderMock();
+        var memSource = new CountingMemorySource();
+        var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default, memSource.TryGetMemoryUsageRatio, memSource.TryGetGen2CollectionCount, null);
         var debugger = new DynamicInstrumentation(
             settings,
             new DiscoveryServiceMock(),
@@ -80,12 +85,56 @@ public class DynamicInstrumentationTests
             new ProbeStatusPollerMock(),
             ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
             NoOpStatsd.Instance,
-            globalRateLimiter);
+            globalRateLimiter,
+            memoryPressureMonitor);
 
         debugger.Dispose();
 
         globalRateLimiter.DisposeCallCount.Should().Be(0);
         logUploader.DisposeCallCount.Should().Be(1);
+
+        // The monitor was disposed by DynamicInstrumentation: a forced refresh after disposal samples nothing.
+        memoryPressureMonitor.RefreshIfStale(long.MaxValue / 2);
+        memSource.SampleCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void DynamicInstrumentation_RefreshesMemoryPressure_OnlyThroughDedicatedHook()
+    {
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
+
+        var memSource = new CountingMemorySource();
+        var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default, memSource.TryGetMemoryUsageRatio, memSource.TryGetGen2CollectionCount, null);
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var debugger = new DynamicInstrumentation(
+            settings,
+            new DiscoveryServiceMock(),
+            new RcmSubscriptionManagerMock(),
+            new LineProbeResolverMock(),
+            new SnapshotUploaderMock(),
+            new LogUploaderMock(),
+            new UploaderMock(),
+            new ProbeStatusPollerMock(),
+            ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+            NoOpStatsd.Instance,
+            globalRateLimiter,
+            memoryPressureMonitor);
+        var captureLimit = new CaptureLimitInfo(1, 1, 1, 1);
+        var fullSnapshotProbe = new ExpressionProbeInfo("snapshot-probe", 0, ProbeType.Snapshot, ExpressionProbeLocation.Method, EvaluateAt.Exit, null, string.Empty, false, [], null, captureLimit);
+        var logProbe = new ExpressionProbeInfo("log-probe", 0, ProbeType.Log, ExpressionProbeLocation.Method, EvaluateAt.Entry, null, string.Empty, false, [], null, captureLimit);
+        var metricProbe = new ExpressionProbeInfo("metric-probe", 0, ProbeType.Metric, ExpressionProbeLocation.Method, EvaluateAt.Entry, MetricKind.COUNT, "metric", false, [], null, captureLimit);
+
+        // Emit paths must not sample memory pressure. Sampling is driven once per probe activity
+        // from ProbeProcessor via RefreshMemoryPressureIfStale(), not from each snapshot/log/metric.
+        debugger.AddSnapshot(fullSnapshotProbe, "{}");
+        debugger.AddLog(logProbe, "{}");
+        debugger.SendMetrics(metricProbe, MetricKind.COUNT, "metric", 1, "metric-probe");
+        memSource.SampleCount.Should().Be(0);
+
+        debugger.RefreshMemoryPressureIfStale();
+        memSource.SampleCount.Should().Be(1);
     }
 
     [Fact]
@@ -278,15 +327,14 @@ public class DynamicInstrumentationTests
         rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
 
-    private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 5)
+    private static async Task WaitForInitializationAsync(DynamicInstrumentation debugger, int timeoutSeconds = 30)
     {
-        var timeout = TimeSpan.FromSeconds(timeoutSeconds);
-        var startTime = DateTime.UtcNow;
+        var initializationTask = debugger.GetInitializationTask();
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
 
-        while (!debugger.IsInitialized && DateTime.UtcNow - startTime < timeout)
-        {
-            await Task.Delay(50);
-        }
+        var completedTask = await Task.WhenAny(initializationTask, timeoutTask);
+        completedTask.Should().Be(initializationTask, "Dynamic Instrumentation initialization should complete");
+        await initializationTask;
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutSeconds = 5)
@@ -379,14 +427,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Probe file should be loaded and applied");
@@ -869,14 +910,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Valid probes should be loaded");
@@ -924,14 +958,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings);
             debugger.Initialize();
-
-            var timeout = TimeSpan.FromSeconds(5);
-            var startTime = DateTime.UtcNow;
-
-            while (GetFileProbes(debugger) is null && DateTime.UtcNow - startTime < timeout)
-            {
-                await Task.Delay(50);
-            }
+            await WaitForInitializationAsync(debugger);
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull("Probes should be loaded");
@@ -969,7 +996,7 @@ public class DynamicInstrumentationTests
 
             var debugger = CreateDebugger(settings, new DiscoveryServiceWithoutRcmMock());
             debugger.Initialize();
-            await WaitForInitializationAsync(debugger);
+            await WaitUntilAsync(() => GetFileProbes(debugger) is not null);
 
             debugger.IsInitialized.Should().BeTrue("file probes should not wait for the RCM availability timeout");
             GetFileProbes(debugger).Should().NotBeNull();
@@ -1487,6 +1514,28 @@ public class DynamicInstrumentationTests
         public void Dispose()
         {
             DisposeCallCount++;
+        }
+    }
+
+    // Counts how many times the real MemoryPressureMonitor sampled memory, so tests can verify the
+    // monitor is driven only through the dedicated hook and is disposed by DynamicInstrumentation.
+    private sealed class CountingMemorySource
+    {
+        private int _sampleCount;
+
+        public int SampleCount => Volatile.Read(ref _sampleCount);
+
+        public bool TryGetMemoryUsageRatio(out double ratio)
+        {
+            Interlocked.Increment(ref _sampleCount);
+            ratio = 0.1;
+            return true;
+        }
+
+        public bool TryGetGen2CollectionCount(out int count)
+        {
+            count = 0;
+            return true;
         }
     }
 }

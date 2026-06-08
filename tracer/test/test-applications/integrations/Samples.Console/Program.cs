@@ -141,7 +141,7 @@ namespace Samples.Console_
                 var declaringType = method.DeclaringType.FullName;
                 var methodName = method.Name;
 
-                var symbol = method.Module.Assembly == typeof(Program).Assembly ? "REDACTED" : $"{declaringType}.{methodName}";
+                var symbol =$"{declaringType}.{methodName}";
 
                 // .NET and ClrMD reports generics with a different syntax
                 symbol = symbol.Replace("Progress`1", "Progress<System.__Canon>");
