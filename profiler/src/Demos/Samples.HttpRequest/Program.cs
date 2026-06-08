@@ -76,6 +76,7 @@ Thread runner = new Thread(() =>
         // send the requests
         var client = new System.Net.Http.HttpClient();
         var baseUrl = app.Urls.First();
+        Console.WriteLine($"##LISTENING_URL:{baseUrl}##");
         for (int iteration = 0; iteration < iterations; iteration++)
         {
             var url = BuildUrl($"{baseUrl}/endpoint", code, redirections, requestDuration, responseDuration, output);
