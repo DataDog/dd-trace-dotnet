@@ -75,9 +75,9 @@ bool LibrariesInfoCache::StartImpl()
 
     // Wait for the thread to be fully started and the cache populated
     // before setting s_instance and registering with libunwind.
-    // BuildSymbolCache (ARM64) parses ELF symbol tables for every loaded library,
-    // which can be slow under sanitizers — use a longer timeout in that case.
-#if defined(ARM64) && defined(__SANITIZE_ADDRESS__)
+    // Cache population can be slow under sanitizers (ASAN/UBSAN add overhead to
+    // every allocation and memory access) — use a longer timeout in that case.
+#if defined(DD_SANITIZERS)
     constexpr auto startTimeout = 10s;
 #else
     constexpr auto startTimeout = 2s;
