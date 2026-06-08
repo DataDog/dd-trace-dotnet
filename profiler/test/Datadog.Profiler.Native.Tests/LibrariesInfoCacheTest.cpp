@@ -6,6 +6,7 @@
 #include "MemoryResourceManager.h"
 #include "LibrariesInfoCache.h"
 
+#include <chrono>
 #include <cstdlib>
 
 #ifndef ARM64
@@ -15,10 +16,20 @@
 struct ServiceWrapper
 {
     ServiceWrapper(ServiceBase* service) : _service(service) {
-        EXPECT_TRUE(_service->Start()) << "Failed to start " << _service->GetName();
+        auto start = std::chrono::steady_clock::now();
+        bool ok = _service->Start();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start);
+        EXPECT_TRUE(ok) << "Failed to start " << _service->GetName()
+                        << " after " << elapsed.count() << "ms";
     }
     ~ServiceWrapper() {
-        EXPECT_TRUE(_service->Stop()) << "Failed to stop " << _service->GetName();
+        auto start = std::chrono::steady_clock::now();
+        bool ok = _service->Stop();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start);
+        EXPECT_TRUE(ok) << "Failed to stop " << _service->GetName()
+                        << " after " << elapsed.count() << "ms";
     }
     ServiceBase* _service;
 };
