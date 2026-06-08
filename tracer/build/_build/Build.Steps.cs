@@ -1935,37 +1935,10 @@ partial class Build
         return filter + $"&(Area={Area})";
     }
 
-    Target CompileAzureFunctionsSamplesWindows => _ => _
-        .Unlisted()
-        .DependsOn(HackForMissingMsBuildLocation)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            // This does some "unnecessary" rebuilding and restoring
-            var azureFunctions = TracerDirectory.GlobFiles("test/test-applications/azure-functions/**/*.csproj");
-
-            // Azure-functions samples live in SamplesSolution (the default Solution = Datadog.Trace.Build.g.sln excludes standalone samples).
-            var projects = azureFunctions
-                .Where(path =>
-                {
-                    var project = SamplesSolution.GetProject(path);
-                    return project.TryGetTargetFrameworks() switch
-                    {
-                        { } targets => targets.Contains(Framework),
-                        _ => true,
-                    };
-                });
-
-
-            DotnetBuild(projects, noRestore: false);
-        });
-
     Target RunWindowsAzureFunctionsTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileAzureFunctionsSamplesWindows)
         .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)

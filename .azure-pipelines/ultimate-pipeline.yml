@@ -1912,7 +1912,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1941,6 +1941,10 @@ stages:
         where dotnet
       displayName: 'Rename default dotnet.exe'
     - template: steps/restore-working-directory.yml
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(framework)
+        includeMultiVersions: false
 
     - template: steps/install-msi.yml
       parameters:
