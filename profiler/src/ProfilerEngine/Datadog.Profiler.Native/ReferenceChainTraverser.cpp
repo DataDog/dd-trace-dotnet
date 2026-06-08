@@ -59,11 +59,13 @@ ReferenceChainTraverser::ReferenceChainTraverser(
       _rootsProcessed(0)
 {
 #ifndef _WINDOWS
-    if (auto* segv = ProfilerSignalManager::Get(SIGSEGV); segv != nullptr)
+    auto* segv = ProfilerSignalManager::Get(SIGSEGV);
+    if (segv != nullptr)
     {
         segv->RegisterHandler(&TraversalFaultHandler);
     }
-    if (auto* bus = ProfilerSignalManager::Get(SIGBUS); bus != nullptr)
+    auto* bus = ProfilerSignalManager::Get(SIGBUS);
+    if (bus != nullptr)
     {
         bus->RegisterHandler(&TraversalFaultHandler);
     }
