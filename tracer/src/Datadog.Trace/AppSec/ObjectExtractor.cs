@@ -43,15 +43,16 @@ namespace Datadog.Trace.AppSec
         ];
 
         internal static object? Extract(object? body)
-            => Extract(body, TypeToExtractorMap, CreateDefaultExtractors);
+            => Extract(body, TypeToExtractorMap, CreateDefaultExtractors, useSimpleDictionaryFormat: true);
 
-        internal static object? ExtractDataContract(object? body)
-            => Extract(body, DataContractTypeToExtractorMap, CreateDataContractAwareExtractors);
+        internal static object? ExtractDataContract(object? body, bool useSimpleDictionaryFormat = false)
+            => Extract(body, DataContractTypeToExtractorMap, CreateDataContractAwareExtractors, useSimpleDictionaryFormat);
 
         private static object? Extract(
             object? body,
             ConcurrentDictionary<Type, MemberExtractor?[]> extractorCache,
-            Func<Type, MemberExtractor?[]> createExtractors)
+            Func<Type, MemberExtractor?[]> createExtractors,
+            bool useSimpleDictionaryFormat = false)
         {
             if (body is null)
             {
@@ -59,7 +60,7 @@ namespace Datadog.Trace.AppSec
             }
 
             var visited = new HashSet<object>();
-            var item = ExtractType(body.GetType(), body, 0, visited, extractorCache, createExtractors);
+            var item = ExtractType(body.GetType(), body, 0, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             return item;
         }
 
@@ -68,7 +69,8 @@ namespace Datadog.Trace.AppSec
             int depth,
             HashSet<object> visited,
             ConcurrentDictionary<Type, MemberExtractor?[]> extractorCache,
-            Func<Type, MemberExtractor?[]> createExtractors)
+            Func<Type, MemberExtractor?[]> createExtractors,
+            bool useSimpleDictionaryFormat)
         {
             try
             {
@@ -116,12 +118,22 @@ namespace Datadog.Trace.AppSec
                 if (memberExtractor is not null)
                 {
                     var value = memberExtractor.Accessor.Invoke(body);
+
+                    // [DataMember(EmitDefaultValue = false)] means the serializer omits this member
+                    // when its value is null/default — skip it to match the actual response body.
+                    if (!memberExtractor.EmitDefaultValue && memberExtractor.IsDefault(value))
+                    {
+                        continue;
+                    }
+
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug("ExtractProperties - property: {BodyType}.{Name} {Value}", bodyType.FullName, memberExtractor.Name, value);
                     }
 
-                    var item = value is null ? null : ExtractType(memberExtractor.Type, value, depth, visited, extractorCache, createExtractors);
+                    // Use the runtime type so polymorphic members (declared as object/interface/base)
+                    // are extracted correctly, matching what the serializer actually wrote.
+                    var item = value is null ? null : ExtractType(value.GetType(), value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
 
                     // Use the indexer rather than Add: DataContract types can resolve two members
                     // to the same name (explicit [DataMember(Name = ...)], shadowed/inherited members),
@@ -169,6 +181,9 @@ namespace Datadog.Trace.AppSec
         private static MemberExtractor?[] CreateDataContractExtractors(Type bodyType)
         {
             var extractors = new List<MemberExtractor>();
+
+            // GetProperties/GetFields without DeclaredOnly returns inherited public/protected members
+            // but silently drops private members from base types — we handle those below.
             foreach (var property in bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 if (property.GetIndexParameters().Length > 0
@@ -180,7 +195,7 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var name = StringUtil.IsNullOrEmpty(dataMember.Name) ? property.Name : dataMember.Name;
-                extractors.Add(new MemberExtractor(name!, property.PropertyType, CreatePropertyAccessor(bodyType, getter, property.PropertyType)));
+                extractors.Add(new MemberExtractor(name!, property.PropertyType, CreatePropertyAccessor(bodyType, getter, property.PropertyType), dataMember.EmitDefaultValue));
             }
 
             foreach (var field in bodyType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
@@ -192,7 +207,45 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var name = StringUtil.IsNullOrEmpty(dataMember.Name) ? GetPropertyName(field.Name) ?? field.Name : dataMember.Name;
-                extractors.Add(new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field)));
+                extractors.Add(new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field), dataMember.EmitDefaultValue));
+            }
+
+            // DataContractSerializer includes private [DataMember] members from base [DataContract] types.
+            // Those are invisible to the non-DeclaredOnly queries above, so walk the hierarchy explicitly.
+            for (var type = bodyType.BaseType; type is not null && type != typeof(object); type = type.BaseType)
+            {
+                if (type.GetCustomAttribute<DataContractAttribute>() is null)
+                {
+                    break;
+                }
+
+                foreach (var property in type.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                {
+                    var getter = property.GetGetMethod(nonPublic: true);
+                    if (getter?.IsPrivate is not true
+                        || property.GetIndexParameters().Length > 0
+                        || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                        || property.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
+                    {
+                        continue;
+                    }
+
+                    var name = StringUtil.IsNullOrEmpty(dataMember.Name) ? property.Name : dataMember.Name;
+                    extractors.Add(new MemberExtractor(name!, property.PropertyType, CreatePropertyAccessor(bodyType, getter, property.PropertyType), dataMember.EmitDefaultValue));
+                }
+
+                foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                {
+                    if (!field.IsPrivate
+                        || field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                        || field.GetCustomAttribute<DataMemberAttribute>() is not { } dataMember)
+                    {
+                        continue;
+                    }
+
+                    var name = StringUtil.IsNullOrEmpty(dataMember.Name) ? GetPropertyName(field.Name) ?? field.Name : dataMember.Name;
+                    extractors.Add(new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field), dataMember.EmitDefaultValue));
+                }
             }
 
             return extractors.ToArray();
@@ -206,7 +259,7 @@ namespace Datadog.Trace.AppSec
                 fields = fields.Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField")).ToArray();
             }
 
-            var fieldExtractors = new MemberExtractor[fields.Length];
+            var extractors = new List<MemberExtractor?>(fields.Length);
             for (var i = 0; i < fields.Length; i++)
             {
                 var field = fields[i];
@@ -214,21 +267,36 @@ namespace Datadog.Trace.AppSec
                 if (StringUtil.IsNullOrEmpty(propertyName))
                 {
                     Log.Warning("ExtractProperties - couldn't extract property name from: {FieldName}", field.Name);
+                    extractors.Add(null);
                     continue;
                 }
 
                 var property = bodyType.GetProperty(propertyName!, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (property?.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null)
                 {
+                    extractors.Add(null);
                     continue;
                 }
 
                 var dataMemberName = property?.GetCustomAttribute<DataMemberAttribute>()?.Name;
                 var name = StringUtil.IsNullOrEmpty(dataMemberName) ? propertyName : dataMemberName;
-                fieldExtractors[i] = new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field));
+                extractors.Add(new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field)));
             }
 
-            return fieldExtractors;
+            // DataContractJsonSerializer also serializes public fields on non-[DataContract] types.
+            foreach (var field in bodyType.GetFields(BindingFlags.Instance | BindingFlags.Public))
+            {
+                if (field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null)
+                {
+                    continue;
+                }
+
+                var dataMemberName = field.GetCustomAttribute<DataMemberAttribute>()?.Name;
+                var name = StringUtil.IsNullOrEmpty(dataMemberName) ? field.Name : dataMemberName;
+                extractors.Add(new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field)));
+            }
+
+            return extractors.ToArray();
         }
 
         private static Func<object, object?> CreateFieldAccessor(Type bodyType, FieldInfo field)
@@ -308,7 +376,8 @@ namespace Datadog.Trace.AppSec
             int depth,
             HashSet<object> visited,
             ConcurrentDictionary<Type, MemberExtractor?[]> extractorCache,
-            Func<Type, MemberExtractor?[]> createExtractors)
+            Func<Type, MemberExtractor?[]> createExtractors,
+            bool useSimpleDictionaryFormat)
         {
             if (itemType == typeof(string))
             {
@@ -317,19 +386,23 @@ namespace Datadog.Trace.AppSec
 
             if (itemType.IsArray || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(List<>)))
             {
-                return ExtractListOrArray(value, depth, visited, extractorCache, createExtractors);
+                return ExtractListOrArray(value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             }
 
             if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
-                return ExtractDictionary(value, itemType, depth, visited, extractorCache, createExtractors);
+                // DataContractJsonSerializer with UseSimpleDictionaryFormat=false (the default) writes
+                // dictionaries as [{Key:k, Value:v}] arrays rather than {k:v} objects.
+                return useSimpleDictionaryFormat
+                    ? ExtractDictionary(value, itemType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat)
+                    : ExtractDictionaryAsKeyValuePairs(value, itemType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             }
 
             // case of System.Web.Routing.RouteValueDictionary and types inheriting IDictionary
             var iDictionaryType = typeof(IDictionary<string, object>);
             if (iDictionaryType.IsAssignableFrom(itemType))
             {
-                return ExtractDictionary(value, iDictionaryType, depth, visited, extractorCache, createExtractors);
+                return ExtractDictionary(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             }
 
             if (WafProcessableTypes.Contains(itemType))
@@ -346,7 +419,7 @@ namespace Datadog.Trace.AppSec
                 return value.ToString();
             }
 
-            var nestedDict = ExtractProperties(value, depth, visited, extractorCache, createExtractors);
+            var nestedDict = ExtractProperties(value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             return nestedDict;
         }
 
@@ -356,7 +429,8 @@ namespace Datadog.Trace.AppSec
             int depth,
             HashSet<object> visited,
             ConcurrentDictionary<Type, MemberExtractor?[]> extractorCache,
-            Func<Type, MemberExtractor?[]> createExtractors)
+            Func<Type, MemberExtractor?[]> createExtractors,
+            bool useSimpleDictionaryFormat)
         {
             if (!visited.Add(value))
             {
@@ -397,7 +471,7 @@ namespace Datadog.Trace.AppSec
                         }
                         else
                         {
-                            var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth + 1, visited, extractorCache, createExtractors);
+                            var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
                             items.Add(dictKey, extractedvalue);
                         }
 
@@ -412,12 +486,63 @@ namespace Datadog.Trace.AppSec
             return items;
         }
 
+        // DataContractJsonSerializer with UseSimpleDictionaryFormat=false serializes Dictionary<K,V>
+        // as [{Key:k, Value:v}] arrays rather than {k:v} objects. Mirror that structure.
+        private static List<object?> ExtractDictionaryAsKeyValuePairs(
+            object value,
+            Type dictType,
+            int depth,
+            HashSet<object> visited,
+            ConcurrentDictionary<Type, MemberExtractor?[]> extractorCache,
+            Func<Type, MemberExtractor?[]> createExtractors,
+            bool useSimpleDictionaryFormat)
+        {
+            if (!visited.Add(value))
+            {
+                return [];
+            }
+
+            var gtkvp = typeof(KeyValuePair<,>);
+            var tkvp = gtkvp.MakeGenericType(dictType.GetGenericArguments());
+            var keyProp = tkvp.GetProperty("Key");
+            var valueProp = tkvp.GetProperty("Value");
+
+            var sourceDict = value as IEnumerable;
+            var items = value is ICollection sourceColl
+                ? new List<object?>(Math.Min(WafConstants.MaxContainerSize, sourceColl.Count))
+                : new List<object?>();
+
+            if (sourceDict is not null && keyProp is not null && valueProp is not null)
+            {
+                foreach (var entry in sourceDict)
+                {
+                    var dictKey = keyProp.GetValue(entry);
+                    var dictValue = valueProp.GetValue(entry);
+
+                    var pair = new Dictionary<string, object?>(2)
+                    {
+                        ["Key"] = dictKey is null ? null : ExtractType(dictKey.GetType(), dictKey, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                        ["Value"] = dictValue is null ? null : ExtractType(dictValue.GetType(), dictValue, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                    };
+                    items.Add(pair);
+
+                    if (items.Count >= WafConstants.MaxContainerSize)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return items;
+        }
+
         private static List<object?> ExtractListOrArray(
             object value,
             int depth,
             HashSet<object> visited,
             ConcurrentDictionary<Type, MemberExtractor?[]> extractorCache,
-            Func<Type, MemberExtractor?[]> createExtractors)
+            Func<Type, MemberExtractor?[]> createExtractors,
+            bool useSimpleDictionaryFormat)
         {
             if (visited.Contains(value))
             {
@@ -436,7 +561,7 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    var extractedvalue = ExtractType(item.GetType(), item, depth + 1, visited, extractorCache, createExtractors);
+                    var extractedvalue = ExtractType(item.GetType(), item, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
                     items.Add(extractedvalue);
                 }
 
@@ -449,13 +574,34 @@ namespace Datadog.Trace.AppSec
             return items;
         }
 
-        private sealed class MemberExtractor(string name, Type type, Func<object, object?> accessor)
+        private sealed class MemberExtractor
         {
-            public string Name { get; } = name;
+            // Pre-computed default value for value types when EmitDefaultValue=false,
+            // used by IsDefault() to avoid allocating a new instance on every member check.
+            private readonly object? _valueTypeDefault;
 
-            public Type Type { get; } = type;
+            public MemberExtractor(string name, Type type, Func<object, object?> accessor, bool emitDefaultValue = true)
+            {
+                Name = name;
+                Type = type;
+                Accessor = accessor;
+                EmitDefaultValue = emitDefaultValue;
+                if (!emitDefaultValue && type.IsValueType)
+                {
+                    _valueTypeDefault = Activator.CreateInstance(type);
+                }
+            }
 
-            public Func<object, object?> Accessor { get; } = accessor;
+            public string Name { get; }
+
+            public Type Type { get; }
+
+            public Func<object, object?> Accessor { get; }
+
+            public bool EmitDefaultValue { get; }
+
+            public bool IsDefault(object? value)
+                => value is null || (_valueTypeDefault is not null && value.Equals(_valueTypeDefault));
         }
     }
 }
