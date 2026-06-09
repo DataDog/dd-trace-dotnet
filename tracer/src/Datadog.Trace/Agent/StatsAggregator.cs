@@ -112,6 +112,7 @@ namespace Datadog.Trace.Agent
         /// StatsBuffer is not thread-safe, this property is not intended to be used outside of the class,
         /// except for tests.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
         public bool? CanComputeStats
