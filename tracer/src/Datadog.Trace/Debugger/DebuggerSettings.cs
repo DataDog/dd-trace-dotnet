@@ -156,7 +156,10 @@ namespace Datadog.Trace.Debugger
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
-            SnapshotExplorationTestRootPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestRootPath).AsString(string.Empty);
+            // This is an internal test harness flag, not a registry-backed tracer configuration.
+#pragma warning disable RS0030
+            SnapshotExplorationTestRootPath = Environment.GetEnvironmentVariable(SnapshotExplorationConstants.TestRootPathKey) ?? string.Empty;
+#pragma warning restore RS0030
             // Snapshot exploration is an internal test mode for the test host only. Child processes may inherit the
             // root path, but they should keep the normal debugger sinks/pollers/rate limits.
             IsSnapshotExplorationTestEnabled =

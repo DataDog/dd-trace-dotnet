@@ -17,6 +17,11 @@ namespace Datadog.Trace.Debugger;
 internal static class SnapshotExplorationConstants
 {
     /// <summary>
+    /// Internal test harness key used to pass the snapshot exploration root path to the test host.
+    /// </summary>
+    public const string TestRootPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH";
+
+    /// <summary>
     /// Process / AppDomain name fragment used to detect a vstest test host.
     /// Snapshot-exploration test infrastructure is only initialized when the
     /// current process matches this name to avoid double-initialization in
