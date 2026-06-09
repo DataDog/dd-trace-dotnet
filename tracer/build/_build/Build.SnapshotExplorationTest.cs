@@ -81,8 +81,7 @@ partial class Build
         {
             if (!testDescription.IsFrameworkSupported(framework))
             {
-                Logger.Information($"Skipping exploration test: {testDescription.Name}.");
-                Logger.Warning($"The framework '{framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+                throw new InvalidOperationException($"The framework '{framework}' is not listed in the project's target frameworks of {testDescription.Name}");
             }
 
             testDescription.IsSnapshotScenario = true;
