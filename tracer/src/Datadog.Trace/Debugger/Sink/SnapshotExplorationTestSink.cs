@@ -13,6 +13,7 @@ using System.Text;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Sink
@@ -29,14 +30,8 @@ namespace Datadog.Trace.Debugger.Sink
             _reportWriter = new ProbeReportWriter(reportFolderPath);
         }
 
-        public void Add(string probeId, string? snapshot)
+        public void Add(string probeId, string snapshot)
         {
-            if (snapshot == null)
-            {
-                Log.Information("Skip adding snapshot exploration snapshot because snapshot is null");
-                return;
-            }
-
             var slicedSnapshot = _snapshotSlicer.SliceIfNeeded(probeId, snapshot);
             _reportWriter.Enqueue(probeId, slicedSnapshot);
         }
@@ -48,6 +43,8 @@ namespace Datadog.Trace.Debugger.Sink
 
         public int RemainingCapacity()
         {
+            // This sink writes straight to a CSV file and never batches/buffers, so it always reports
+            // ample capacity. The value only needs to be positive to satisfy callers that gate on it.
             return 1000;
         }
 
@@ -216,7 +213,7 @@ namespace Datadog.Trace.Debugger.Sink
                                 reader.Skip();
                             }
 
-                            if (!string.IsNullOrEmpty(typeName) && !string.IsNullOrEmpty(methodName))
+                            if (!StringUtil.IsNullOrEmpty(typeName) && !StringUtil.IsNullOrEmpty(methodName))
                             {
                                 return true;
                             }

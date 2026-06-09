@@ -111,8 +111,7 @@ partial class Build
     {
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
-            throw new InvalidOperationException(
-                $"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+            throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
         var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
@@ -150,8 +149,8 @@ partial class Build
                 .SetProjectFile(projectPath)
                 .SetConfiguration(BuildConfiguration)
                 .SetProcessArgumentConfigurator(arguments => arguments
-                    .Add("-consoleLoggerParameters:ErrorsOnly")
-                    .Add("-property:NuGetAudit=false"))
+                                                            .Add("-consoleLoggerParameters:ErrorsOnly")
+                                                            .Add("-property:NuGetAudit=false"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
     }

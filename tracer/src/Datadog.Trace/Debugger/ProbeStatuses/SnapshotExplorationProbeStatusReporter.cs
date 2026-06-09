@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.ProbeStatuses
 {
@@ -82,7 +83,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         private static string Csv(string? value)
         {
-            if (string.IsNullOrEmpty(value))
+            if (StringUtil.IsNullOrEmpty(value))
             {
                 return string.Empty;
             }
