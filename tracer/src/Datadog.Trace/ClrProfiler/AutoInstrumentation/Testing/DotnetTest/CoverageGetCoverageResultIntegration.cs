@@ -5,11 +5,15 @@
 #nullable enable
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
@@ -35,57 +39,161 @@ public sealed class CoverageGetCoverageResultIntegration
 {
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
-        if (!DotnetCommon.IsDataCollectorDomain && !DotnetCommon.IsMsBuildTask)
+        try
         {
-            return new CallTargetReturn<TReturn>(returnValue);
-        }
-
-        object? modules = null;
-        if (returnValue.TryDuckCast<ICoverageResultProxy>(out var coverageResultProxy))
-        {
-            modules = coverageResultProxy.Modules;
-        }
-        else if (returnValue.TryDuckCast<ICoverageResultProxyV3>(out var coverageResultProxyV3))
-        {
-            modules = coverageResultProxyV3.Modules;
-        }
-        else
-        {
-            Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not cast to ICoverageResultProxy or ICoverageResultProxyV3");
-            return new CallTargetReturn<TReturn>(returnValue);
-        }
-
-        if (modules is not null &&
-            instance?.GetType().Assembly() is { } assembly &&
-            assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
-        {
-            var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
-            var coverageDetails = coverageSummary!.CalculateLineCoverage(modules);
-            var percentage = coverageDetails.Percent;
-            DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", percentage);
-
-            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-                EnvironmentHelpers.GetEnvironmentVariables(),
-                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-
-            if (context.SpanContext is { } sessionContext)
+            if (!DotnetCommon.IsDataCollectorDomain && !DotnetCommon.IsMsBuildTask)
             {
+                return new CallTargetReturn<TReturn>(returnValue);
+            }
+
+            object? modules = null;
+            if (returnValue.TryDuckCast<ICoverageResultProxy>(out var coverageResultProxy))
+            {
+                modules = coverageResultProxy.Modules;
+            }
+            else if (returnValue.TryDuckCast<ICoverageResultProxyV3>(out var coverageResultProxyV3))
+            {
+                modules = coverageResultProxyV3.Modules;
+            }
+            else
+            {
+                Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not cast to ICoverageResultProxy or ICoverageResultProxyV3");
+                return new CallTargetReturn<TReturn>(returnValue);
+            }
+
+            if (modules is not null &&
+                instance?.GetType().Assembly() is { } assembly &&
+                assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
+            {
+                var backfilled = false;
+                var backfillValidated = false;
+                var backfillNotApplicable = false;
+                CodeCoverageBackfillValidation? backfillValidation = null;
+                CoverletCoverageBackfill.CoverletCoverageBackfillRollback? rollback = null;
                 try
                 {
-                    var name = $"session_{sessionContext.SpanId}";
-                    Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
-                    using var ipcClient = new IpcClient(name);
-                    Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                    ipcClient.TrySendMessage(new SessionCodeCoverageMessage(percentage));
+                    if (!TryGetParentSessionSpanId(out var sessionSpanId))
+                    {
+                        Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not find the parent test session context for Coverlet coverage IPC.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        return new CallTargetReturn<TReturn>(returnValue);
+                    }
+
+                    if (DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(sessionSpanId, out var backfillData))
+                    {
+                        var applyResult = CoverletCoverageBackfill.TryApplyForCurrentResult(modules, backfillData, CIEnvironmentValues.Instance, out var updatedLines, out backfillValidation, out rollback);
+                        if (applyResult == CoverletCoverageBackfillApplyResult.Failed)
+                        {
+                            DotnetCommon.Log.Warning("CoverageGetCoverageResult: Coverlet modules could not be matched to backend coverage, so no stale coverage percentage will be sent.");
+                            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                            RecordCoverletCoverageIpcFailure();
+                            return new CallTargetReturn<TReturn>(returnValue);
+                        }
+
+                        if (applyResult == CoverletCoverageBackfillApplyResult.Applied)
+                        {
+                            backfillValidated = backfillValidation?.CanPublish() == true;
+                            backfilled = updatedLines > 0;
+                            DotnetCommon.Log.Information<int, bool>("CoverageGetCoverageResult.BackfilledLines: {Value}, BackfillValidated={BackfillValidated}", updatedLines, backfillValidated);
+                        }
+                        else
+                        {
+                            backfillNotApplicable = true;
+                            backfillValidation = null;
+                            DotnetCommon.Log.Debug("CoverageGetCoverageResult: Backend coverage did not apply to this Coverlet result.");
+                        }
+                    }
+
+                    var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
+                    var coverageDetails = coverageSummary!.CalculateLineCoverage(modules);
+                    var percentage = coverageDetails.Percent;
+                    DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", percentage);
+
+                    var coverageResultId = CoverageBackfillDataStore.RecordCoverageIpcResult(
+                        sessionSpanId,
+                        CodeCoverageReportSource.Coverlet,
+                        percentage,
+                        backfilled,
+                        coverageDetails.Total,
+                        coverageDetails.Covered,
+                        backfillValidated: backfillValidated,
+                        backfillNotApplicable: backfillNotApplicable,
+                        backfillValidation: backfillValidation);
+
+                    try
+                    {
+                        var name = $"session_{sessionSpanId}";
+                        Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
+                        using var ipcClient = new IpcClient(name);
+                        Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
+                        if (!ipcClient.TrySendMessage(
+                                new SessionCodeCoverageMessage(
+                                    CodeCoverageReportSource.Coverlet,
+                                    percentage,
+                                    backfilled,
+                                    coverageDetails.Total,
+                                    coverageDetails.Covered,
+                                    resultId: coverageResultId,
+                                    backfillValidated: backfillValidated,
+                                    backfillNotApplicable: backfillNotApplicable,
+                                    backfillValidation: backfillValidation)))
+                        {
+                            Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
+                            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                            CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.Coverlet));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.Log.Error(ex, "Error enabling IPC client and sending coverage data");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.Coverlet));
+                    }
                 }
-                catch (Exception ex)
+                finally
                 {
-                    Common.Log.Error(ex, "Error enabling IPC client and sending coverage data");
+                    if (!backfillValidated &&
+                        rollback is not null &&
+                        !rollback.TryRollback())
+                    {
+                        Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not roll back temporary Coverlet coverage backfill.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    }
                 }
             }
         }
+        catch (Exception ex)
+        {
+            Common.Log.Error(ex, "CoverageGetCoverageResultIntegration: Error processing Coverlet coverage result.");
+            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            RecordCoverletCoverageIpcFailure();
+        }
 
         return new CallTargetReturn<TReturn>(returnValue);
+    }
+
+    private static bool TryGetParentSessionSpanId(out ulong sessionSpanId)
+    {
+        var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+            EnvironmentHelpers.GetEnvironmentVariables(),
+            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+        if (context.SpanContext is { } sessionContext)
+        {
+            sessionSpanId = sessionContext.SpanId;
+            return true;
+        }
+
+        sessionSpanId = 0;
+        return false;
+    }
+
+    private static void RecordCoverletCoverageIpcFailure()
+    {
+        if (TryGetParentSessionSpanId(out var sessionSpanId))
+        {
+            CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.Coverlet));
+        }
     }
 
     internal interface ICoverageResultProxy : IDuckType
@@ -108,6 +216,19 @@ public sealed class CoverageGetCoverageResultIntegration
     [DuckCopy]
     internal struct CoverageDetails
     {
+        /// <summary>
+        /// Gets the number of line entries Coverlet counted as covered.
+        /// </summary>
+        public double Covered;
+
+        /// <summary>
+        /// Gets the total number of executable line entries Coverlet counted.
+        /// </summary>
+        public int Total;
+
+        /// <summary>
+        /// Gets Coverlet's source-native line coverage percentage after Datadog has optionally backfilled skipped-test coverage.
+        /// </summary>
         public double Percent;
     }
 }
