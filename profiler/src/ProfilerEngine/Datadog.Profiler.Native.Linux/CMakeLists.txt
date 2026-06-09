@@ -179,11 +179,11 @@ add_library(${PROFILER_SHARED_LIB_NAME} SHARED
 
 set_target_properties(${PROFILER_SHARED_LIB_NAME} PROPERTIES PREFIX "")
 set_target_properties(${PROFILER_SHARED_LIB_NAME} PROPERTIES LINK_DEPENDS "${dd_profiling_linker_script}")
+set_target_properties(${PROFILER_SHARED_LIB_NAME} PROPERTIES BUILD_RPATH "$ORIGIN")
 target_link_options(${PROFILER_SHARED_LIB_NAME} PRIVATE
                     "LINKER:--version-script=${dd_profiling_linker_script}")
 
 # Define linker libraries
 target_link_libraries(${PROFILER_SHARED_LIB_NAME}
     -Wl,--whole-archive $<TARGET_FILE:${PROFILER_STATIC_LIB_NAME}> -Wl,--no-whole-archive
-    -Wl,-rpath,'$ORIGIN'
     ${PROFILER_STATIC_LIB_NAME})
