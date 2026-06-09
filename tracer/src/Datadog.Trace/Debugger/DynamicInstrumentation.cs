@@ -857,7 +857,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void AddSnapshot(ProbeInfo probe, string? snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string snapshot)
         {
             if (IsDisposed)
             {
@@ -874,7 +874,7 @@ namespace Datadog.Trace.Debugger
             SetProbeStatusToEmitting(probe);
         }
 
-        internal void AddLog(ProbeInfo probe, string? log)
+        internal void AddLog(ProbeInfo probe, string log)
         {
             if (IsDisposed)
             {

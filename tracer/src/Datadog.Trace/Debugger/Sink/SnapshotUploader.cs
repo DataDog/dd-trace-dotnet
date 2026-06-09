@@ -42,13 +42,8 @@ namespace Datadog.Trace.Debugger.Sink
             return _snapshotSink.RemainingCapacity();
         }
 
-        public void Add(string probeId, string? snapshot)
+        public void Add(string probeId, string snapshot)
         {
-            if (snapshot == null)
-            {
-                return;
-            }
-
             _snapshotSink.Add(probeId, snapshot);
         }
 

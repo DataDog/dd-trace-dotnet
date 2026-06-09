@@ -259,6 +259,7 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         CompiledExpression<bool> compiledExpression = default;
+
         try
         {
             if (!cached.HasValue)
@@ -523,15 +524,6 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         return compiledExpressions;
-    }
-
-    internal CompiledProbeExpressions CompileAll(MethodScopeMembers scopeMembers)
-    {
-        return new CompiledProbeExpressions(
-            CompileTemplates(scopeMembers),
-            CompileCondition(scopeMembers),
-            CompileMetric(scopeMembers),
-            CompileDecorations(scopeMembers));
     }
 
     private CompiledExpression<bool>? CompileCondition(MethodScopeMembers scopeMembers)

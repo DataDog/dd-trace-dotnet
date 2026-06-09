@@ -42,6 +42,10 @@ partial class Build
         else if (description.LineProbesEnabled)
         {
             envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
+            // Line-probe instrumentation is gated behind method-level instrument-all on the native side:
+            // PerformInstrumentAllIfNeeded returns early unless DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL is set,
+            // so both flags must be present for line probes to be installed.
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, LineProbesFileName));
