@@ -649,10 +649,13 @@ partial class Build
                             var triplet = $"{arch}-windows";
                             // note that the following are all quoted when entered into the vcpkg call itself
                             // this is necessary to support cases where we have a space in the folder name
+                            // Working dirs live under artifacts/deps/vcpkg (alongside the install root) so
+                            // they're outside the .artifactignore include list — without this they were
+                            // landing in build-windows-working-directory (~389 MB / 8.6k files of cache).
                             var installRoot = $@"{BuildArtifactsDirectory}\deps\vcpkg\{triplet}";
-                            var downloads = $@"{BuildArtifactsDirectory}\obj\vcpkg\downloads";
-                            var packages = $@"{BuildArtifactsDirectory}\obj\vcpkg\packages";
-                            var buildTrees = $@"{BuildArtifactsDirectory}\obj\vcpkg\buildtrees";
+                            var downloads = $@"{BuildArtifactsDirectory}\deps\vcpkg\downloads";
+                            var packages = $@"{BuildArtifactsDirectory}\deps\vcpkg\packages";
+                            var buildTrees = $@"{BuildArtifactsDirectory}\deps\vcpkg\buildtrees";
 
                             const int maxRetries = 3;
 
