@@ -566,6 +566,85 @@ namespace Datadog.Trace.Security.Unit.Tests
             data!["a"].Should().Be("1");
         }
 
+        [Fact]
+        public void TestCollectionOfTPoco_ExtractedAsArray()
+        {
+            // Collection<T> should produce a List<object>, not an empty dict
+            var target = new TestCollectionPoco { Items = new System.Collections.ObjectModel.Collection<string> { "a", "b", "c" } };
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result![nameof(TestCollectionPoco.Items)] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(3);
+            items.Should().ContainInOrder("a", "b", "c");
+        }
+
+        [Fact]
+        public void TestObservableCollectionPoco_ExtractedAsArray()
+        {
+            // ObservableCollection<T> (inherits Collection<T>) should produce a List<object>
+            var target = new TestObservableCollectionPoco { Items = new System.Collections.ObjectModel.ObservableCollection<string> { "x", "y" } };
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result![nameof(TestObservableCollectionPoco.Items)] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().ContainInOrder("x", "y");
+        }
+
+        [Fact]
+        public void TestHashSetPoco_ExtractedAsArray()
+        {
+            // HashSet<T> does not implement non-generic ICollection; must not throw InvalidCastException
+            var target = new TestHashSetPoco { Items = new HashSet<int> { 1, 2, 3 } };
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result![nameof(TestHashSetPoco.Items)] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(3);
+            // HashSet is unordered; assert by membership
+            items.Should().Contain(1).And.Contain(2).And.Contain(3);
+        }
+
+        [Fact]
+        public void TestDataContractCollectionOfTPoco_ExtractedAsArray()
+        {
+            // ExtractDataContract path: Collection<T> member should produce a List<object>
+            var target = new TestDataContractCollectionPoco { Items = new System.Collections.ObjectModel.Collection<string> { "a", "b" } };
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result!["items"] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().ContainInOrder("a", "b");
+        }
+
+        [Fact]
+        public void TestDataContractObservableCollectionPoco_ExtractedAsArray()
+        {
+            // ExtractDataContract path: ObservableCollection<T> member should produce a List<object>
+            var target = new TestDataContractObservableCollectionPoco { Items = new System.Collections.ObjectModel.ObservableCollection<string> { "p", "q" } };
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result!["items"] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().ContainInOrder("p", "q");
+        }
+
+        [Fact]
+        public void TestDataContractHashSetPoco_ExtractedAsArray()
+        {
+            // ExtractDataContract path: HashSet<T> member must not throw InvalidCastException
+            var target = new TestDataContractHashSetPoco { Items = new HashSet<int> { 10, 20 } };
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result!["items"] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().Contain(10).And.Contain(20);
+        }
+
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
             var current = target;
@@ -798,5 +877,41 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         [DataMember(Name = "data")]
         public Dictionary<string, string> Data { get; set; }
+    }
+
+    public class TestCollectionPoco
+    {
+        public System.Collections.ObjectModel.Collection<string> Items { get; set; }
+    }
+
+    public class TestObservableCollectionPoco
+    {
+        public System.Collections.ObjectModel.ObservableCollection<string> Items { get; set; }
+    }
+
+    public class TestHashSetPoco
+    {
+        public HashSet<int> Items { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractCollectionPoco
+    {
+        [DataMember(Name = "items")]
+        public System.Collections.ObjectModel.Collection<string> Items { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractObservableCollectionPoco
+    {
+        [DataMember(Name = "items")]
+        public System.Collections.ObjectModel.ObservableCollection<string> Items { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractHashSetPoco
+    {
+        [DataMember(Name = "items")]
+        public HashSet<int> Items { get; set; }
     }
 }
