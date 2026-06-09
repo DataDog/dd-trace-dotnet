@@ -396,10 +396,10 @@ partial class Build
         }
 
         stepWatch.Restart();
-        var installedProbeIds = ReadInstalledProbeIdsFromProbeStatusReport(reportFolderPath, definedProbes, out var probeStatusReportBytes);
+        var installedProbeIds = ReadInstalledProbeIdsFromProbeStatusReport(reportFolderPath, definedProbes, out var probeStatusReportBytes, out var probeStatusCount);
         timings["ReadProbeStatusReport(installed)"] = stepWatch.Elapsed;
         fileSizes["ProbeStatusReport"] = probeStatusReportBytes;
-        if (installedProbeIds == null || definedProbes.Count == 0)
+        if (installedProbeIds == null || probeStatusCount == 0)
         {
             throw new Exception("Snapshot exploration test failed. Could not read probe status report");
         }
@@ -428,9 +428,9 @@ partial class Build
         var logRollingWarning = CheckForLogRolling();
 
         stepWatch.Restart();
-        var probesReport = ReadReportedSnapshotProbesIds(reportFolderPath);
+        var probesReport = ReadReportedSnapshotProbesIds(reportFolderPath, out var snapshotReportFileCount);
         timings["ReadProbesReport"] = stepWatch.Elapsed;
-        if (probesReport == null || definedProbes.Count == 0)
+        if (probesReport == null || snapshotReportFileCount == 0)
         {
             throw new Exception("Snapshot exploration test failed. Could not read report file");
         }
@@ -1029,7 +1029,7 @@ partial class Build
         }
     }
 
-    List<ProbeReportInfo> ReadReportedSnapshotProbesIds(string reportFolderPath)
+    List<ProbeReportInfo> ReadReportedSnapshotProbesIds(string reportFolderPath, out int reportFileCount)
     {
         if (string.IsNullOrEmpty(reportFolderPath))
         {
@@ -1042,9 +1042,11 @@ partial class Build
         }
 
         var reportInfo = new List<ProbeReportInfo>();
+        reportFileCount = 0;
 
         foreach (var file in Directory.EnumerateFiles(reportFolderPath, "*_SnapshotExplorationTestReport.csv"))
         {
+            reportFileCount++;
             reportInfo.AddRange(
             File.ReadLines(file)
                 .Skip(1) // Skip the header row
@@ -1109,7 +1111,7 @@ partial class Build
 
     /// <summary>
     /// Checks if log files might have been rolled during test execution.
-    /// Returns a warning message if multiple log files per process are detected, or null if logs appear complete.
+    /// Returns a warning message if rolled log files are detected, or null if logs appear complete.
     /// </summary>
     private string? CheckForLogRolling()
     {
@@ -1126,12 +1128,12 @@ partial class Build
         var totalNativeSize = nativeLogs.Sum(f => new FileInfo(f).Length);
         var totalManagedSize = managedLogs.Sum(f => new FileInfo(f).Length);
 
-        // Check for rolled logs by looking for multiple files with same PID pattern or numbered suffixes
+        // Check for rolled logs by looking for numbered suffixes.
         // Rolled files use pattern: dotnet-tracer-managed-{process}-{pid}_{sequence}.log
         var rolledNative = nativeLogs.Where(f => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(f), @"_\d+\.log$")).ToList();
         var rolledManaged = managedLogs.Where(f => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(f), @"_\d+\.log$")).ToList();
 
-        if (rolledNative.Count > 1 || rolledManaged.Count > 1)
+        if (rolledNative.Count > 0 || rolledManaged.Count > 0)
         {
             // We read ALL rolled files, but warn about the volume for awareness
             return $"Log rolling occurred: {rolledNative.Count} native log files, {rolledManaged.Count} managed log files. " +
@@ -1153,11 +1155,13 @@ partial class Build
     private Dictionary<string, string> ReadInstalledProbeIdsFromProbeStatusReport(
         string reportFolderPath,
         Dictionary<string, string> definedProbes,
-        out long totalBytesRead)
+        out long totalBytesRead,
+        out int probeStatusCount)
     {
         var result = new Dictionary<string, string>();
         var latestStatuses = new Dictionary<string, string>(StringComparer.Ordinal);
         totalBytesRead = 0;
+        probeStatusCount = 0;
 
         if (!Directory.Exists(reportFolderPath))
         {
@@ -1185,6 +1189,7 @@ partial class Build
                     continue;
                 }
 
+                probeStatusCount++;
                 latestStatuses[probeId] = parts[1].Trim();
             }
         }
