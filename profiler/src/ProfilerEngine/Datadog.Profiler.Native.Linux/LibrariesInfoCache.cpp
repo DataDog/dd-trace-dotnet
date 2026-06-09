@@ -20,6 +20,9 @@
 using namespace std::chrono_literals;
 
 namespace {
+
+constexpr auto CpuTimerInterval = 10ms;
+
 struct ScopedMmap
 {
     void* data;
@@ -58,7 +61,7 @@ void CpuTickSignalHandler(int /*sig*/)
 }
 } // anonymous namespace
 
-LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
+LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource, MetricsRegistry& metricsRegistry) :
     _trackingResource{resource},
     _wrappersAllocator{&_trackingResource},
     _librariesInfo{&_trackingResource},
@@ -72,6 +75,30 @@ LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
     _stopRequested{false},
     _event(true) // set the event to force updating the cache the first time Wait is called
 {
+    _libCountMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_count", [this]() {
+        return static_cast<double_t>(_librariesInfo.size());
+    });
+    _memoryFootprintMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_libs_cache", [this]() {
+        return static_cast<double_t>(_trackingResource.GetCurrentUsage());
+    });
+    _memoryPeakMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_memory_peak", [this]() {
+        return static_cast<double_t>(_trackingResource.GetPeakUsage());
+    });
+    _cpuTicksMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_cpu_ticks", [this]() {
+        return static_cast<double_t>(_cpuTicks.load(std::memory_order_relaxed));
+    });
+#ifdef ARM64
+    _moduleCountMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_module_regions", [this]() {
+        return static_cast<double_t>(_moduleRegions.size());
+    });
+    _symbolCountMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_symbols", [this]() {
+        return static_cast<double_t>(_symbols.size());
+    });
+#endif
+    _updateCpuMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_update_cpu_ns");
+    _reloadDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_reload_duration_ns");
+    _lockHoldDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_lock_hold_duration_ns");
+    _reloadAllocationsMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_reload_allocations");
 }
 
 LibrariesInfoCache::~LibrariesInfoCache() = default;
@@ -180,22 +207,27 @@ bool LibrariesInfoCache::StopImpl()
 
 void LibrariesInfoCache::LogStats()
 {
-    auto cpuMs = _cpuTicks.load(std::memory_order_relaxed) * 10;
-    auto avgReloadUs = _reloadCount > 0
-        ? std::chrono::duration_cast<std::chrono::microseconds>(_totalReloadDuration).count() / _reloadCount
-        : 0;
-    auto maxReloadUs = std::chrono::duration_cast<std::chrono::microseconds>(_maxReloadDuration).count();
-    auto avgLockUs = _reloadCount > 0
-        ? std::chrono::duration_cast<std::chrono::microseconds>(_totalLockHoldDuration).count() / _reloadCount
-        : 0;
-    auto maxLockUs = std::chrono::duration_cast<std::chrono::microseconds>(_maxLockHoldDuration).count();
+    if (!Log::IsDebugEnabled())
+    {
+        return;
+    }
+
+    auto cpuTime = CpuTimerInterval * _cpuTicks.load(std::memory_order_relaxed);
+    auto avgReloadDuration = _reloadCount > 0
+        ? std::chrono::duration_cast<std::chrono::microseconds>(_totalReloadDuration) / _reloadCount
+        : std::chrono::microseconds{0};
+    auto maxReloadDuration = std::chrono::duration_cast<std::chrono::microseconds>(_maxReloadDuration);
+    auto avgLockDuration = _reloadCount > 0
+        ? std::chrono::duration_cast<std::chrono::microseconds>(_totalLockHoldDuration) / _reloadCount
+        : std::chrono::microseconds{0};
+    auto maxLockDuration = std::chrono::duration_cast<std::chrono::microseconds>(_maxLockHoldDuration);
 
     Log::Info("LibrariesInfoCache stats:");
-    Log::Info("  CPU time (worker thread): ", cpuMs, "ms");
+    Log::Info("  CPU time (worker thread): ", cpuTime);
     Log::Info("  Notifications received: ", _notificationCount);
     Log::Info("  Cache reloads: ", _reloadCount);
-    Log::Info("  Reload duration avg: ", avgReloadUs, "us, max: ", maxReloadUs, "us");
-    Log::Info("  Lock hold duration avg: ", avgLockUs, "us, max: ", maxLockUs, "us");
+    Log::Info("  Reload duration avg: ", avgReloadDuration, ", max: ", maxReloadDuration);
+    Log::Info("  Lock hold duration avg: ", avgLockDuration, ", max: ", maxLockDuration);
     Log::Info("  Libraries in cache: ", _librariesInfo.size());
     Log::Info("  Memory current: ", _trackingResource.GetCurrentUsage(), " bytes");
     Log::Info("  Memory peak: ", _trackingResource.GetPeakUsage(), " bytes");
@@ -238,8 +270,10 @@ void LibrariesInfoCache::SetupCpuTimer()
     _cpuTimerCreated = true;
 
     struct itimerspec its = {};
-    its.it_interval = {0, 10'000'000}; // 10ms
-    its.it_value = {0, 10'000'000};
+
+    constexpr auto cpuTimerIntervalNs = std::chrono::duration_cast<std::chrono::nanoseconds>(CpuTimerInterval).count();
+    its.it_interval = {0, cpuTimerIntervalNs};
+    its.it_value = {0, cpuTimerIntervalNs};
     if (syscall(__NR_timer_settime, _cpuTimerId, 0, &its, nullptr) < 0)
     {
         Log::Warn("LibrariesInfoCache: Failed to arm CPU timer: ", strerror(errno));
@@ -324,6 +358,10 @@ void LibrariesInfoCache::UpdateCache()
     _trackingResource.ResetPerReloadStats();
     auto reloadStart = std::chrono::steady_clock::now();
 
+    // use to measure how much CPU ONE reload is consuming
+    struct timespec cpuStart = {};
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpuStart);
+
     _newCache.reserve(_librariesInfo.capacity());
 
     struct Data
@@ -380,6 +418,18 @@ void LibrariesInfoCache::UpdateCache()
     {
         _maxLockHoldDuration = lockDuration;
     }
+
+    struct timespec cpuEnd = {};
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpuEnd);
+    auto cpuNs = static_cast<double_t>(
+        (cpuEnd.tv_sec - cpuStart.tv_sec) * 1'000'000'000LL + (cpuEnd.tv_nsec - cpuStart.tv_nsec));
+
+    _updateCpuMetric->Add(cpuNs);
+    _reloadDurationMetric->Add(static_cast<double_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(reloadDuration).count()));
+    _lockHoldDurationMetric->Add(static_cast<double_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(lockDuration).count()));
+    _reloadAllocationsMetric->Add(static_cast<double_t>(_trackingResource.GetReloadAllocations()));
 }
 
 #ifdef ARM64

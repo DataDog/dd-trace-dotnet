@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 
 #include "MemoryResourceManager.h"
+#include "MetricsRegistry.h"
 #include "LibrariesInfoCache.h"
 
 #include <chrono>
@@ -39,7 +40,8 @@ struct ServiceWrapper
 // For that we need to use the default memory resource (new/delete)
 TEST(LibrariesInfoCacheTests, MakeSureWeDoNotLeakMemory)
 {
-    auto cache = LibrariesInfoCache(MemoryResourceManager::GetDefault());
+    MetricsRegistry metricsRegistry;
+    auto cache = LibrariesInfoCache(MemoryResourceManager::GetDefault(), metricsRegistry);
 
     for(auto i = 0; i < 5; i++)
     {
@@ -76,7 +78,8 @@ TEST(LibrariesInfoCacheTests, CheckBehaviorAgainstDlIteratePhdr)
         &cache);
 
     std::vector<Info> cache2;
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
     LibrariesInfoCache::DlIteratePhdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
@@ -121,7 +124,8 @@ __attribute__((noinline)) int KnownTestFunction_Third(int x, int y)
 
 TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForKnownFunction)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     auto ip = reinterpret_cast<unw_word_t>(&KnownTestFunction_ForGetProcNameTest);
@@ -138,7 +142,8 @@ TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForKnownFunction)
 
 TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForMultipleKnownFunctions)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     auto* as = static_cast<unw_addr_space_t>(LibrariesInfoCache::GetLocalAddressSpace());
@@ -167,7 +172,8 @@ TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForMultipleKnownFun
 
 TEST(LibrariesInfoCacheTests, GetProcNameReturnsOffsetForAddressInsideFunction)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     auto funcAddr = reinterpret_cast<unw_word_t>(&KnownTestFunction_Third);
@@ -185,7 +191,8 @@ TEST(LibrariesInfoCacheTests, GetProcNameReturnsOffsetForAddressInsideFunction)
 
 TEST(LibrariesInfoCacheTests, GetProcNameFailsForBogusAddress)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     unw_word_t ip = 0x1;
@@ -207,7 +214,8 @@ TEST(LibrariesInfoCacheTests, GetProcNameReplacesAndRestoresOriginalAccessor)
     auto originalGetProcName = acc->get_proc_name;
 
     {
-        LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+        MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault(), metricsRegistry);
         ServiceWrapper serviceWrapper(&libCache);
 
         ASSERT_EQ(acc->get_proc_name, &LibrariesInfoCache::GetProcName)
@@ -223,7 +231,8 @@ TEST(LibrariesInfoCacheTests, GetProcNameReplacesAndRestoresOriginalAccessor)
 TEST(LibrariesInfoCacheTests, BuildSymbolCacheProducesNoDuplicates)
 {
     auto* resource = MemoryResourceManager::GetDefault();
-    LibrariesInfoCache libCache(resource);
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(resource, metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     using PhdrVector = std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>;

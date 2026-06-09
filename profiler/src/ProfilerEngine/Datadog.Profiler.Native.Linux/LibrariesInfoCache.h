@@ -8,7 +8,10 @@
 #include "DlPhdrInfoWrapper.h"
 
 #include "AutoResetEvent.h"
+#include "MeanMaxMetric.h"
 #include "MemoryResourceManager.h"
+#include "MetricsRegistry.h"
+#include "ProxyMetric.h"
 #include "ServiceBase.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
@@ -102,7 +105,7 @@ private:
 class LibrariesInfoCache : public ServiceBase
 {
 public:
-    LibrariesInfoCache(shared::pmr::memory_resource* resource);
+    LibrariesInfoCache(shared::pmr::memory_resource* resource, MetricsRegistry& metricsRegistry);
     ~LibrariesInfoCache();
 
     LibrariesInfoCache(LibrariesInfoCache const&) = delete;
@@ -196,4 +199,18 @@ private:
     std::chrono::steady_clock::duration _maxLockHoldDuration{0};
     timer_t _cpuTimerId{};
     bool _cpuTimerCreated{false};
+
+    // Metrics (emitted via DogStatsD)
+    std::shared_ptr<ProxyMetric> _libCountMetric;
+    std::shared_ptr<ProxyMetric> _memoryFootprintMetric;
+    std::shared_ptr<ProxyMetric> _memoryPeakMetric;
+    std::shared_ptr<ProxyMetric> _cpuTicksMetric;
+#ifdef ARM64
+    std::shared_ptr<ProxyMetric> _moduleCountMetric;
+    std::shared_ptr<ProxyMetric> _symbolCountMetric;
+#endif
+    std::shared_ptr<MeanMaxMetric> _updateCpuMetric;
+    std::shared_ptr<MeanMaxMetric> _reloadDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _lockHoldDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _reloadAllocationsMetric;
 };
