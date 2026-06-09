@@ -60,6 +60,11 @@ namespace Datadog.Trace.Debugger
 
         private static bool NativeLogContainsProbeReceivedMarker(string logDir)
         {
+            if (!Directory.Exists(logDir))
+            {
+                return false;
+            }
+
             foreach (var logFile in Directory.GetFiles(logDir, SnapshotExplorationConstants.NativeLogFilePattern))
             {
                 using var fs = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
