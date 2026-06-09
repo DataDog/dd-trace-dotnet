@@ -222,21 +222,23 @@ TEST(LibrariesInfoCacheTests, GetProcNameReplacesAndRestoresOriginalAccessor)
 
 TEST(LibrariesInfoCacheTests, BuildSymbolCacheProducesNoDuplicates)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    auto* resource = MemoryResourceManager::GetDefault();
+    LibrariesInfoCache libCache(resource);
     ServiceWrapper serviceWrapper(&libCache);
 
-    std::vector<DlPhdrInfoWrapper> phdrCache;
-    
+    using PhdrVector = std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>;
+    PhdrVector phdrCache(resource);
+
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
-            auto* cache = static_cast<std::vector<DlPhdrInfoWrapper>*>(data);
+            auto* cache = static_cast<PhdrVector*>(data);
             cache->emplace_back(info, size, MemoryResourceManager::GetDefault());
             return 0;
         },
         &phdrCache);
 
-    std::vector<ModuleRegion> regions;
-    std::vector<FuncEntry> symbols;
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>> regions(resource);
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>> symbols(resource);
     libCache.BuildSymbolCache(phdrCache, regions, symbols);
 
     ASSERT_FALSE(symbols.empty()) << "Expected at least some symbols from the test binary";

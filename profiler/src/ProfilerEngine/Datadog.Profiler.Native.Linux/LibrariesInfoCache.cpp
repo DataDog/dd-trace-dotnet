@@ -63,6 +63,12 @@ LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
     _wrappersAllocator{&_trackingResource},
     _librariesInfo{&_trackingResource},
     _newCache{&_trackingResource},
+#ifdef ARM64
+    _moduleRegions{&_trackingResource},
+    _symbols{&_trackingResource},
+    _newRegions{&_trackingResource},
+    _newSymbols{&_trackingResource},
+#endif
     _stopRequested{false},
     _event(true) // set the event to force updating the cache the first time Wait is called
 {
@@ -338,30 +344,27 @@ void LibrariesInfoCache::UpdateCache()
         &data);
 
 #ifdef ARM64
-    static std::vector<ModuleRegion> newRegions;
-    static std::vector<FuncEntry> newSymbols;
-    newRegions.clear();
-    newSymbols.clear();
-    BuildSymbolCache(_newCache, newRegions, newSymbols);
+    _newRegions.clear();
+    _newSymbols.clear();
+    BuildSymbolCache(_newCache, _newRegions, _newSymbols);
 #endif
-
 
     auto lockStart = std::chrono::steady_clock::now();
     {
         std::unique_lock l{_cacheLock};
-        _librariesInfo.swap(newCache);
+        _librariesInfo.swap(_newCache);
 #ifdef ARM64
-        _moduleRegions.swap(newRegions);
-        _symbols.swap(newSymbols);
+        _moduleRegions.swap(_newRegions);
+        _symbols.swap(_newSymbols);
 #endif
     }
     auto lockEnd = std::chrono::steady_clock::now();
 
     _newCache.clear();
-    #ifdef ARM64
-        newRegions.clear();
-        newSymbols.clear();
-    #endif
+#ifdef ARM64
+    _newRegions.clear();
+    _newSymbols.clear();
+#endif
 
     auto reloadEnd = std::chrono::steady_clock::now();
     auto reloadDuration = reloadEnd - reloadStart;
@@ -381,9 +384,9 @@ void LibrariesInfoCache::UpdateCache()
 
 #ifdef ARM64
 void LibrariesInfoCache::BuildSymbolCache(
-    std::vector<DlPhdrInfoWrapper>& phdrCache,
-    std::vector<ModuleRegion>& outRegions,
-    std::vector<FuncEntry>& outSymbols)
+    std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>& phdrCache,
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>>& outRegions,
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>>& outSymbols)
 {
     std::vector<FuncEntry> moduleSymbols;
 

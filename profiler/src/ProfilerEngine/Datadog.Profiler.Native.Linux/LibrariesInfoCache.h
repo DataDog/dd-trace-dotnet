@@ -140,9 +140,9 @@ private:
 #ifdef DD_TEST
 public:
 #endif
-    void BuildSymbolCache(std::vector<DlPhdrInfoWrapper>& phdrCache,
-                          std::vector<ModuleRegion>& outRegions,
-                          std::vector<FuncEntry>& outSymbols);
+    void BuildSymbolCache(std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>& phdrCache,
+                          std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>>& outRegions,
+                          std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>>& outSymbols);
 #ifdef DD_TEST
 private:
 #endif
@@ -170,8 +170,10 @@ private:
 #ifdef DD_TEST
 public:
 #endif
-    std::vector<ModuleRegion> _moduleRegions;
-    std::vector<FuncEntry> _symbols;
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>> _moduleRegions;
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>> _symbols;
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>> _newRegions;
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>> _newSymbols;
 #ifdef DD_TEST
 private:
 #endif
