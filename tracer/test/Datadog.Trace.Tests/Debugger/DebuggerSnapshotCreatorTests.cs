@@ -257,14 +257,16 @@ namespace Datadog.Trace.Tests.Debugger
             object[] dictionaries =
             [
                 new Dictionary<string, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
-                new Dictionary<object, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } }
+                new Dictionary<object, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Hashtable { { "password", "DD_SECRET_LEAK" }, { "name", "value" } }
             ];
 
             foreach (var dictionary in dictionaries)
             {
                 var local = GetLocalToken(dictionary);
+                var expectedType = dictionary is Hashtable ? "Hashtable" : "Dictionary`2";
 
-                Assert.Equal("Dictionary`2", local["type"]?.Value<string>());
+                Assert.Equal(expectedType, local["type"]?.Value<string>());
                 Assert.Equal(2, local["size"]?.Value<int>());
                 Assert.Null(local["elements"]);
 
