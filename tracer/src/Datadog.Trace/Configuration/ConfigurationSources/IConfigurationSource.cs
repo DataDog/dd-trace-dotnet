@@ -93,8 +93,9 @@ public interface IConfigurationSource
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
     /// <param name="separator">Sets the character that separates keys and values in the input</param>
+    /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator);
+    ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue = true);
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
