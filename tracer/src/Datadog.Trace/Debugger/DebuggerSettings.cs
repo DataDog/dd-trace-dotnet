@@ -163,7 +163,7 @@ namespace Datadog.Trace.Debugger
             // Snapshot exploration is an internal test mode for the test host only. Child processes may inherit the
             // root path, but they should keep the normal debugger sinks/pollers/rate limits.
             IsSnapshotExplorationTestEnabled =
-                !StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath) &&
+                !StringUtil.IsNullOrWhiteSpace(SnapshotExplorationTestRootPath) &&
                 SnapshotExplorationConstants.IsRunningInTestHost();
         }
 
@@ -218,7 +218,7 @@ namespace Datadog.Trace.Debugger
         public string SnapshotExplorationTestRootPath { get; }
 
         public string SnapshotExplorationTestReportFolderPath =>
-            StringUtil.IsNullOrEmpty(SnapshotExplorationTestRootPath)
+            StringUtil.IsNullOrWhiteSpace(SnapshotExplorationTestRootPath)
                 ? string.Empty
                 : Path.Combine(SnapshotExplorationTestRootPath, "SnapshotExplorationTestReport");
 
