@@ -16,9 +16,14 @@
 #endif
 
 #include <sys/syscall.h> /* Definition of SYS_* constants */
+#include <sys/resource.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <ucontext.h>
 #include <unistd.h>
+
+#include <fstream>
+#include <string>
 
 std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
 
@@ -75,6 +80,32 @@ const char* TimerCreateCpuProfiler::GetName()
 
 bool TimerCreateCpuProfiler::StartImpl()
 {
+    // Dump environment info to help diagnose timer_create failures
+    {
+        struct utsname uts;
+        if (uname(&uts) == 0)
+        {
+            Log::Info("Kernel: ", uts.sysname, " ", uts.release, " ", uts.machine);
+        }
+
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_SIGPENDING, &rl) == 0)
+        {
+            Log::Info("RLIMIT_SIGPENDING: soft=", rl.rlim_cur, " hard=", rl.rlim_max);
+        }
+
+        std::ifstream status("/proc/self/status");
+        std::string line;
+        while (std::getline(status, line))
+        {
+            if (line.rfind("SigQ:", 0) == 0)
+            {
+                Log::Info("Signal queue at startup: ", line);
+                break;
+            }
+        }
+    }
+
     if (_pSignalManager == nullptr)
     {
         Log::Info("Profiler Signal manager was not correctly initialized (see previous messages).",
@@ -319,7 +350,26 @@ void TimerCreateCpuProfiler::RegisterThreadImpl(ManagedThreadInfo* threadInfo)
     clockid_t clock = ((~tid) << 3) | 6; // CPUCLOCK_SCHED | CPUCLOCK_PERTHREAD_MASK thread_cpu_clock(tid);
     if (syscall(__NR_timer_create, clock, &sev, &timerId) < 0)
     {
-        Log::Error("Call to timer_create failed for thread ", tid, ". Error: ", strerror(errno));
+        auto err = errno;
+        Log::Error("Call to timer_create failed for thread ", tid,
+                   ". errno=", err, " (", strerror(err), ")");
+
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_SIGPENDING, &rl) == 0)
+        {
+            Log::Error("RLIMIT_SIGPENDING: soft=", rl.rlim_cur, " hard=", rl.rlim_max);
+        }
+
+        std::ifstream status("/proc/self/status");
+        std::string line;
+        while (std::getline(status, line))
+        {
+            if (line.rfind("SigQ:", 0) == 0)
+            {
+                Log::Error("Signal queue: ", line);
+                break;
+            }
+        }
         return;
     }
 

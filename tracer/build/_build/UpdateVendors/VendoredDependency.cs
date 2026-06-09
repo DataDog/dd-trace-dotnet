@@ -63,7 +63,7 @@ namespace UpdateVendors
                 version: "6.0.0",
                 downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/6.0.0.zip",
                 pathToSrc: new[] { "dogstatsd-csharp-client-6.0.0", "src", "StatsdClient" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient", AddAnonymousImpersonationToStatsdNamedPipe));
 
             Add(
                 libraryName: "MessagePack",
@@ -525,6 +525,22 @@ namespace UpdateVendors
             {
                 return "#nullable enable" + Environment.NewLine + content;
             }
+
+            return content;
+        }
+
+        private static string AddAnonymousImpersonationToStatsdNamedPipe(string filePath, string content)
+        {
+            if (!filePath.Replace('\\', '/').EndsWith("Transport/NamedPipeTransport.cs", StringComparison.OrdinalIgnoreCase))
+            {
+                return content;
+            }
+
+            // The agent does not authenticate clients on the named pipe, so request Anonymous
+            // impersonation so the listener cannot identify or impersonate the calling process.
+            content = content.Replace(
+                "_namedPipe = new NamedPipeClientStream(\".\", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);",
+                "_namedPipe = new NamedPipeClientStream(\".\", pipeName, PipeDirection.Out, PipeOptions.Asynchronous, System.Security.Principal.TokenImpersonationLevel.Anonymous);");
 
             return content;
         }
