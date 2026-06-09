@@ -78,6 +78,7 @@ namespace Datadog.Trace.Debugger.Sink
 #else
                 var fileName = Process.GetCurrentProcess().Id + "_" + _fileName;
 #endif
+                Directory.CreateDirectory(folderPath);
                 _fullPath = Path.Combine(folderPath, fileName);
                 _probesIds = new HashSet<string>();
 
