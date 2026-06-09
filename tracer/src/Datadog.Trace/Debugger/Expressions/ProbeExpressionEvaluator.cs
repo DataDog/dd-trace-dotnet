@@ -643,7 +643,7 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return string.IsNullOrEmpty(expression.Value.Json);
+        return StringUtil.IsNullOrEmpty(expression.Value.Json);
     }
 
     private bool IsLiteral<T>(CompiledExpression<T> expression)
@@ -658,7 +658,7 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return !string.IsNullOrEmpty(expression.Value.Json) && string.IsNullOrEmpty(expression.Value.Str);
+        return !StringUtil.IsNullOrEmpty(expression.Value.Json) && StringUtil.IsNullOrEmpty(expression.Value.Str);
     }
 
     private bool IsExpression<T>(CompiledExpression<T> expression)
